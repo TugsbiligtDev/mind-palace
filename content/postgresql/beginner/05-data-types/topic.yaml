@@ -1,0 +1,4 @@
+title: Data Types
+module: 5
+summary: Integers, exact decimals vs. floating point (why money is never a float), text, booleans, dates, timestamps, intervals, and casting.
+minutes: 30

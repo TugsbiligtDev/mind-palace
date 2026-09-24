@@ -1,0 +1,53 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT 7 / 2 AS result;
+    options:
+      - "3.5"
+      - "3"
+      - "4"
+      - An error
+    answer: 1
+    explanation: Both 7 and 2 are integers, so PostgreSQL does whole-number division and drops the remainder. Write `7.0 / 2` to get 3.5.
+
+  - type: predict
+    prompt: "`numeric` division keeps decimals. What does this return?"
+    code: |
+      SELECT 620.00 / 4 AS per_night;
+    options:
+      - "155"
+      - "155.00"
+      - "155.0000000000000000"
+      - An error
+    answer: 2
+    explanation: Dividing a `numeric` gives a precise decimal result, and PostgreSQL shows it with plenty of decimal places. You'll learn to round it in Module 6.
+
+  - type: fill
+    prompt: Label the `name` column as **attraction** in the result.
+    code: |
+      SELECT name ____ attraction FROM attractions;
+    answer: AS
+    accept: ["as"]
+    explanation: "`AS` gives a result column a new label (an alias). It doesn't change the table."
+
+  - type: mcq
+    prompt: "In `SELECT DISTINCT city_id, category FROM attractions;` what does DISTINCT remove?"
+    options:
+      - Rows where city_id repeats
+      - Rows where category repeats
+      - Rows where the combination of city_id **and** category repeats
+      - Nothing, because DISTINCT only works with one column
+    answer: 2
+    explanation: DISTINCT works on the whole result row. Two rows are duplicates only if every selected column matches.
+
+  - type: mcq
+    prompt: "You run `SELECT cost * 2 AS doubled FROM trip_stops;`. What happens to the costs stored in the table?"
+    options:
+      - They're all doubled
+      - Nothing. The doubling exists only in the result
+      - A new column called doubled is added to the table
+      - It errors, because you can't multiply a column
+    answer: 1
+    explanation: SELECT only reads. Calculated columns exist in the result set, and the stored data is untouched.

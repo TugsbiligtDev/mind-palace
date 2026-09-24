@@ -1,0 +1,135 @@
+steps:
+  - kind: explain
+    title: ORDER BY sorts the result
+    body: |
+      Without `ORDER BY`, PostgreSQL returns rows in whatever order is convenient for it. That order can change from one run to the next. When order matters, **say so**:
+
+      ```sql
+      SELECT name, population
+      FROM cities
+      ORDER BY population DESC;
+      ```
+
+      - `ASC` = ascending (smallest first, A→Z, oldest date first). It's the default, so you can leave it out.
+      - `DESC` = descending (largest first, Z→A, newest first).
+
+      `ORDER BY` comes **after** `WHERE`: first filter, then sort what's left.
+
+  - kind: try
+    title: Biggest cities first
+    body: |
+      Run it. Then remove `DESC` and see the order flip.
+    sql: |
+      SELECT name, population
+      FROM cities
+      ORDER BY population DESC;
+
+  - kind: explain
+    title: Sorting by more than one column
+    body: |
+      When two rows tie on the first sort column, the next column decides:
+
+      ```sql
+      ORDER BY entry_fee, name
+      ```
+
+      This sorts by fee (cheapest first), and **among equal fees** alphabetically by name. Each column can have its own direction: `ORDER BY category ASC, entry_fee DESC`.
+
+      A tiebreaker also makes the order **predictable**. Without one, tied rows can come back in any order.
+
+  - kind: try
+    title: Your turn to sort
+    body: |
+      List every attraction's `name` and `entry_fee`, **cheapest first**. Several attractions are free, so break ties **alphabetically by name**.
+    sql: |
+      SELECT name, entry_fee
+      FROM attractions;
+    expect: |
+      SELECT name, entry_fee
+      FROM attractions
+      ORDER BY entry_fee, name;
+    ordered: true
+
+  - kind: explain
+    title: Where do NULLs go?
+    body: |
+      NULL has no value, so where does it sort? PostgreSQL treats NULL as **larger than everything**:
+
+      - `ORDER BY email` (ascending): NULLs come **last**
+      - `ORDER BY email DESC`: NULLs come **first**
+
+      You can override that with **`NULLS FIRST`** or **`NULLS LAST`**:
+
+      ```sql
+      ORDER BY email DESC NULLS LAST
+      ```
+
+      This matters most for "top N" questions. Sort a column with missing values in descending order, and the NULLs quietly take the top spots.
+
+  - kind: try
+    title: NULLs rising to the top
+    body: |
+      Run it. The traveler with no email appears **first**. Then add `NULLS LAST` after `DESC` and run it again.
+    sql: |
+      SELECT full_name, email
+      FROM travelers
+      ORDER BY email DESC;
+
+  - kind: explain
+    title: LIMIT and OFFSET
+    body: |
+      - **`LIMIT n`** returns at most *n* rows.
+      - **`OFFSET m`** skips the first *m* rows before returning any.
+
+      Together they let you **page** through results: page 1 is `LIMIT 10`, page 2 is `LIMIT 10 OFFSET 10`, and so on.
+
+      **Always pair them with `ORDER BY`.** "The first 3 rows" means nothing until you've said what order they're in. Without it you'd get 3 rows, but not reliably the same 3.
+
+  - kind: try
+    title: Your turn for a top 3
+    body: |
+      Return the `name` and `entry_fee` of the **3 most expensive** attractions, most expensive first.
+    sql: |
+      SELECT name, entry_fee
+      FROM attractions;
+    expect: |
+      SELECT name, entry_fee
+      FROM attractions
+      ORDER BY entry_fee DESC
+      LIMIT 3;
+    ordered: true
+
+  - kind: try
+    title: Page 2
+    body: |
+      Attractions in alphabetical order, 3 per page. This is page 2: skip 3, show 3. Change it to page 3.
+    sql: |
+      SELECT name
+      FROM attractions
+      ORDER BY name
+      LIMIT 3 OFFSET 3;
+
+  - kind: info
+    title: "🔹 FETCH FIRST … ROWS ONLY"
+    body: |
+      You may see this in other people's SQL:
+
+      ```sql
+      SELECT name FROM attractions
+      ORDER BY name
+      OFFSET 3 ROWS
+      FETCH FIRST 3 ROWS ONLY;
+      ```
+
+      It's the **SQL-standard** spelling of `LIMIT 3 OFFSET 3`. It works in PostgreSQL and in databases that don't support LIMIT. Just recognize it. `LIMIT` is what you'll normally write.
+
+  - kind: why
+    body: |
+      "Top 10", "most recent", "cheapest first", "page 2": most questions people ask of data are ranked questions. Sorting correctly, NULLs included, is what makes those answers trustworthy.
+
+  - kind: recap
+    body: |
+      - `ORDER BY col` (ASC by default) or `col DESC`. Add more columns as tiebreakers.
+      - NULLs sort as *largest*: last in ASC, first in DESC. Override with `NULLS FIRST` / `NULLS LAST`.
+      - `LIMIT n` caps the rows, and `OFFSET m` skips rows first. Always use them with `ORDER BY`.
+      - 🔹 `FETCH FIRST n ROWS ONLY` is the standard spelling of `LIMIT n`.

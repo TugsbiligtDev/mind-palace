@@ -1,0 +1,169 @@
+steps:
+  - kind: explain
+    title: Statements and semicolons
+    body: |
+      A **statement** is one complete instruction to the database, like "show me the country names". SQL statements end with a **semicolon** `;`, the way a sentence ends with a full stop.
+
+      ```sql
+      SELECT name FROM countries;
+      ```
+
+      The semicolon matters most in psql. If you press Enter *without* one, psql assumes you're not finished yet. The prompt changes from `learn_sql=#` to `learn_sql-#` and it waits for more. Nothing is broken. Type `;` and press Enter.
+
+  - kind: try
+    title: Two statements, two answers
+    body: |
+      Because each statement ends with `;`, you can send several at once. PostgreSQL runs them in order and returns one result for each.
+
+      Run this. You'll get two result tables.
+    sql: |
+      SELECT name FROM countries;
+      SELECT name FROM cities;
+
+  - kind: explain
+    title: Keywords, identifiers, literals
+    body: |
+      Every piece of a SQL statement is one of three things:
+
+      | Kind | What it is | Examples |
+      |---|---|---|
+      | **Keyword** | A word that belongs to SQL itself | `SELECT`, `FROM`, `WHERE` |
+      | **Identifier** | A *name* of something in the database | `countries`, `name`, `continent` |
+      | **Literal** | A fixed value you type in | `'Japan'`, `42`, `28.30` |
+
+      The quote marks tell them apart:
+
+      - **Single quotes** `'…'` make a **text literal**, a piece of text: `'Asia'`.
+      - **Double quotes** `"…"` make an **identifier**, a name: `"countries"`.
+
+      Mixing these up is one of the most common beginner errors in PostgreSQL.
+
+  - kind: explain
+    title: Upper or lower case?
+    body: |
+      **Keywords don't care about case.** `SELECT`, `select` and `SeLeCt` are identical.
+
+      **Unquoted identifiers are folded to lowercase.** If you write `Countries` or `COUNTRIES`, PostgreSQL quietly reads it as `countries`, which exists, so it works.
+
+      **Quoted identifiers are taken exactly as written.** `"Countries"` means a table named with a capital C, which doesn't exist.
+
+      The convention you'll see everywhere (and that this course uses):
+
+      - Keywords in UPPERCASE: `SELECT`, `FROM`
+      - Names in lowercase with underscores (called *snake_case*): `trip_stops`, `entry_fee`
+      - Never quote names unless you have to
+
+  - kind: try
+    title: Case folding in action
+    body: |
+      This messy query still works, because keywords ignore case and the unquoted names get folded to lowercase.
+
+      Run it, then rewrite it in the conventional style (keywords uppercase, names lowercase) and run it again.
+    sql: |
+      SeLeCt NaMe FrOm CoUnTrIeS;
+    expect: |
+      SELECT name FROM countries;
+
+  - kind: try
+    title: When quotes bite
+    body: |
+      Now the same table name **in double quotes** with a capital C. Run it and read the error.
+
+      PostgreSQL searched for a table named exactly `Countries`, capital C and all. There isn't one. Remove the quotes (or lowercase the name) and it works.
+    sql: |
+      SELECT name FROM "Countries";
+    expect_error: true
+
+  - kind: try
+    title: Text needs single quotes
+    body: |
+      This tries to show the text *hello*, but uses double quotes. Run it.
+
+      The error says **column "hello" does not exist**. Double quotes turned `hello` into a *name*, so PostgreSQL went looking for a column called hello. Change it to `'hello'` with single quotes and it works.
+    sql: |
+      SELECT "hello";
+    expect_error: true
+
+  - kind: explain
+    title: Comments and formatting
+    body: |
+      A **comment** is a note for humans. PostgreSQL ignores it.
+
+      - `--` starts a comment that runs to the end of the line.
+      - `/* … */` wraps a comment that can span several lines.
+
+      PostgreSQL also ignores extra spaces and line breaks, so you can lay a query out however reads best. The usual style is one clause per line:
+
+      ```sql
+      SELECT name,        -- the country
+             continent    -- where it is
+      FROM countries;
+      ```
+
+  - kind: try
+    title: Try a commented query
+    body: |
+      Run it. The comments change nothing about the result. Then add a comment of your own on a new line.
+    sql: |
+      /* Which countries does Wanderly serve?
+         One row per country. */
+      SELECT name,        -- the country
+             continent    -- where it is
+      FROM countries;
+
+  - kind: explain
+    title: Reading an error message
+    body: |
+      Errors are not failures. They're PostgreSQL telling you *exactly* where it got confused. psql shows them like this:
+
+      ```text
+      ERROR:  syntax error at or near "FROM"
+      LINE 1: SELECT name, FROM countries;
+                           ^
+      ```
+
+      - **`ERROR:`**: what went wrong.
+      - **`LINE 1:`**: the line it happened on.
+      - **`^`**: the exact spot. The real mistake is usually **just before** the caret. Here it's the stray comma after `name`.
+
+      The ones you'll meet most:
+
+      | Message | Usual cause |
+      |---|---|
+      | `syntax error at or near "X"` | Typo, or a missing or extra comma just before X |
+      | `column "x" does not exist` | Misspelled column, or text in double quotes |
+      | `relation "x" does not exist` | Misspelled table, quoted capitals, or wrong database |
+
+  - kind: try
+    title: Fix it yourself
+    body: |
+      This query has one mistake. Run it, read the error and the caret, fix it, and run it again.
+    sql: |
+      SELEC name FROM countries;
+    broken_starter: true
+    expect: |
+      SELECT name FROM countries;
+
+  - kind: try
+    title: The silent trap
+    body: |
+      Some mistakes produce **no error at all**. Run this. It's missing the comma between `name` and `continent`.
+
+      You get *one* column, labeled `continent`, full of country names. Without the comma, PostgreSQL read `continent` as a new label (an *alias*, Module 2) for the `name` column. Add the comma and you get two columns.
+    sql: |
+      SELECT name continent FROM countries;
+    expect: |
+      SELECT name, continent FROM countries;
+
+  - kind: why
+    body: |
+      Every query you'll ever write is built from keywords, names and values. Knowing which is which, and reading errors calmly, turns "it's broken" into a thirty-second fix.
+
+  - kind: recap
+    body: |
+      - A **statement** ends with `;`. psql waits (`learn_sql-#`) until it sees one.
+      - **Keywords** (`SELECT`), **identifiers** (`countries`) and **literals** (`'Asia'`, `42`).
+      - `'single quotes'` = text. `"double quotes"` = a name, matched exactly, case and all.
+      - Unquoted names fold to lowercase. Style: KEYWORDS upper, names lower_snake_case.
+      - `--` and `/* */` are comments.
+      - Errors: read `ERROR`, then `LINE`, then look **just before** the `^`. And watch for silent traps, like a missing comma.

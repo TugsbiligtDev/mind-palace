@@ -1,0 +1,15 @@
+id: intermediate
+title: Intermediate
+season: 2
+season_title: Coming soon
+season_pitch: Multiple tables and structure. JOINs, subqueries, constraints, schema design and transactions.
+status: coming_soon
+topics: []
+planned:
+  - "Module 9: Relationships and Keys"
+  - "Module 10: JOINs"
+  - "Module 11: Set Operations"
+  - "Module 12: Subqueries"
+  - "Module 13: Creating Tables and Constraints"
+  - "Module 14: Schema Design Basics"
+  - "Module 15: Transactions"

@@ -1,0 +1,9 @@
+id: postgresql
+title: PostgreSQL
+tagline: Question real data with SQL, from your first SELECT to window functions.
+color: "#2563eb"
+engine: postgres
+engine_version: "18"
+last_reviewed: "2026-09-24"
+dataset: dataset.sql
+levels: [beginner, intermediate, advanced]

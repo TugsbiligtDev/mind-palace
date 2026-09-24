@@ -1,0 +1,186 @@
+steps:
+  - kind: explain
+    title: From reading to writing
+    body: |
+      Everything so far has been **read-only**. Now you'll change data:
+
+      - **`INSERT`** adds new rows
+      - **`UPDATE`** changes values in existing rows
+      - **`DELETE`** removes rows
+
+      **Here, in the browser sandbox,** every run starts from a fresh copy, so experiment freely.
+
+      **On your Mac,** these changes are **permanent the moment they run**. psql has no undo button. (Module 15 covers transactions, the safety net.) The habits in this module are what keep real data safe.
+
+  - kind: explain
+    title: INSERT … VALUES
+    body: |
+      ```sql
+      INSERT INTO countries (name, continent)
+      VALUES ('Egypt', 'Africa');
+      ```
+
+      - List the **columns** you're filling, then the **values** in the same order.
+      - Leave out columns that fill themselves. `country_id` is *generated always as identity*, so PostgreSQL assigns the next number, and you're not allowed to type one.
+      - Columns with a **default** (like `status` in trips) get it when you leave them out.
+      - Insert several rows at once by separating the value lists with commas: `VALUES (…), (…), (…)`.
+
+      Add **`RETURNING`** to see the rows you just wrote, including values PostgreSQL generated for you:
+
+      ```sql
+      INSERT INTO countries (name, continent)
+      VALUES ('Egypt', 'Africa')
+      RETURNING country_id, name;
+      ```
+
+  - kind: try
+    title: Insert a country
+    body: |
+      Run it and note the `country_id` PostgreSQL assigned. Then try adding `country_id` to the column list and a number to the values. What does the error say?
+    sql: |
+      INSERT INTO countries (name, continent)
+      VALUES ('Egypt', 'Africa')
+      RETURNING *;
+
+  - kind: try
+    title: Your turn for a multi-row insert
+    body: |
+      Italy is `country_id` **5**. In **one** INSERT, add two Italian cities, **Venice** (population 250000) and **Milan** (population 1370000), and return their `city_id` and `name`.
+    sql: |
+      INSERT INTO cities (name, country_id, population)
+      VALUES ('Venice', 5, 250000)
+      RETURNING city_id, name;
+    expect: |
+      INSERT INTO cities (name, country_id, population)
+      VALUES ('Venice', 5, 250000), ('Milan', 5, 1370000)
+      RETURNING city_id, name;
+
+  - kind: explain
+    title: UPDATE, and the forgotten WHERE
+    body: |
+      ```sql
+      UPDATE trips
+      SET status = 'cancelled'
+      WHERE trip_id = 6;
+      ```
+
+      `SET` gives the new values (several are allowed, separated by commas), and `WHERE` picks **which rows** to change.
+
+      **Forget the WHERE and every row changes.** This is the most famous mistake in SQL. It has taken down real companies' data. Habits that prevent it:
+
+      1. **Write the WHERE first**, then go back and fill in the SET.
+      2. **Run it as a SELECT first**, `SELECT * FROM trips WHERE trip_id = 6;`, to see exactly which rows you're about to touch.
+      3. **Check the result count.** psql answers `UPDATE 1`. If you expected 1 and see `UPDATE 7`, stop.
+
+  - kind: try
+    title: Cancel one trip
+    body: |
+      Run it, and notice that psql reports how many rows changed. RETURNING shows the new values.
+    sql: |
+      UPDATE trips
+      SET status = 'cancelled'
+      WHERE trip_id = 6
+      RETURNING trip_id, trip_name, status;
+
+  - kind: try
+    title: Watch the disaster (safely)
+    body: |
+      No WHERE. Run it and look at the SELECT underneath: **every** attraction is now free. On your Mac, that would be real. Here, it's gone the moment you run again.
+    sql: |
+      UPDATE attractions SET entry_fee = 0;
+      SELECT name, entry_fee FROM attractions;
+
+  - kind: try
+    title: Your turn to update
+    body: |
+      The Colosseum raised its fee. Set its `entry_fee` to **20.00**, changing **only that row**, and return its `name` and `entry_fee`.
+    sql: |
+      SELECT name, entry_fee
+      FROM attractions
+      WHERE name = 'Colosseum';
+    expect: |
+      UPDATE attractions
+      SET entry_fee = 20.00
+      WHERE name = 'Colosseum'
+      RETURNING name, entry_fee;
+
+  - kind: explain
+    title: DELETE vs TRUNCATE
+    body: |
+      ```sql
+      DELETE FROM reviews WHERE rating < 5;
+      ```
+
+      **`DELETE`** removes the rows matching WHERE. Without WHERE it removes **all** of them (same danger, same habits). It works row by row, and it can use RETURNING.
+
+      **`TRUNCATE reviews;`** empties a whole table in one quick operation. It takes no WHERE, and it's meant for "throw everything away".
+
+      **Foreign keys** protect you here. `trips.traveler_id` *references* `travelers`, so PostgreSQL refuses to delete a traveler who still has trips. Otherwise those trips would point at nobody. (Module 9 covers keys properly.)
+
+  - kind: try
+    title: Protected by a foreign key
+    body: |
+      Amina (traveler 1) has trips and reviews. Try to delete her, and read the error: it names the constraint and the table that still depends on her.
+    sql: |
+      DELETE FROM travelers WHERE traveler_id = 1;
+    expect_error: true
+
+  - kind: try
+    title: A safe delete
+    body: |
+      Reviews reference attractions and travelers, but nothing references reviews, so they can be deleted. RETURNING shows what's gone.
+    sql: |
+      DELETE FROM reviews
+      WHERE rating < 5
+      RETURNING review_id, rating;
+
+  - kind: explain
+    title: "Upsert: INSERT … ON CONFLICT"
+    body: |
+      `countries.name` is **UNIQUE**: two countries can't share a name. Insert `'Japan'` again and you get an error. Often, though, you want *"insert it, or if it's already there, do something else"*. That's an **upsert** (update + insert):
+
+      ```sql
+      INSERT INTO countries (name, continent)
+      VALUES ('Japan', 'Asia')
+      ON CONFLICT (name) DO NOTHING;           -- skip it quietly
+
+      INSERT INTO countries (name, continent)
+      VALUES ('Peru', 'Americas')
+      ON CONFLICT (name) DO UPDATE
+        SET continent = EXCLUDED.continent;    -- overwrite with the new value
+      ```
+
+      `ON CONFLICT (name)` names the unique column to watch. **`EXCLUDED`** means "the row you tried to insert".
+
+  - kind: try
+    title: Try both upserts
+    body: |
+      The first INSERT returns **no rows**, because Japan exists and DO NOTHING skipped it. The second updates Peru's continent.
+    sql: |
+      INSERT INTO countries (name, continent)
+      VALUES ('Japan', 'Asia')
+      ON CONFLICT (name) DO NOTHING
+      RETURNING *;
+
+      INSERT INTO countries (name, continent)
+      VALUES ('Peru', 'Americas')
+      ON CONFLICT (name) DO UPDATE SET continent = EXCLUDED.continent
+      RETURNING *;
+
+  - kind: info
+    title: "🔹 MERGE"
+    body: |
+      PostgreSQL also has **`MERGE`**, the SQL-standard way to compare a *source* of rows with a table and, in one statement, INSERT the new ones, UPDATE the matching ones and even DELETE some, with separate rules for each case. It's powerful for syncing whole batches of data. For single-table "insert or update", `ON CONFLICT` is simpler and more common. Just recognize `MERGE INTO … USING … WHEN MATCHED THEN …` when you see it.
+
+  - kind: why
+    body: |
+      Reading data can't hurt anything. Writing can. The skills here are less about syntax and more about **care**: see before you change, change exactly what you meant, and confirm what changed.
+
+  - kind: recap
+    body: |
+      - `INSERT INTO t (cols) VALUES (…), (…)`. Identity and default columns fill themselves.
+      - `UPDATE t SET col = value WHERE …`. **No WHERE = every row.** Write the WHERE first, and preview with SELECT.
+      - `DELETE FROM t WHERE …` removes matching rows. `TRUNCATE t` empties the table.
+      - `RETURNING` shows the rows you just wrote, changed or removed.
+      - Foreign keys block deletes that would leave orphans.
+      - Upsert: `ON CONFLICT (col) DO NOTHING` or `DO UPDATE SET col = EXCLUDED.col`. 🔹 `MERGE` exists for bigger syncs.

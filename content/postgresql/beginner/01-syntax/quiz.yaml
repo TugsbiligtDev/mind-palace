@@ -1,0 +1,56 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "In `SELECT name FROM countries WHERE continent = 'Asia';` which part is a **literal**?"
+    options:
+      - "SELECT"
+      - "name"
+      - "countries"
+      - "'Asia'"
+    answer: 3
+    explanation: "`'Asia'` is a fixed text value in single quotes, so it's a literal. `SELECT` is a keyword, and `name` and `countries` are identifiers."
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT 'Asia' AS continent;
+    options:
+      - "Asia"
+      - "continent"
+      - "'Asia'"
+      - An error, because there's no FROM
+    answer: 0
+    explanation: "Single quotes make a text literal, so the value is just `Asia`. `continent` is only the column's label. A SELECT without FROM is fine in PostgreSQL when you're not reading from a table."
+
+  - type: mcq
+    prompt: "What happens when you run `SELECT name FROM \"Countries\";`?"
+    options:
+      - It works, because table names ignore case
+      - "Error, because relation \"Countries\" does not exist: double quotes keep the capital C"
+      - It returns the word Countries
+      - Error, because double quotes aren't allowed in SQL
+    answer: 1
+    explanation: Double quotes make an identifier that's matched *exactly*. The table is `countries` (lowercase), so `"Countries"` isn't found. Without the quotes it would be folded to lowercase and work.
+
+  - type: fill
+    prompt: Complete the single-line comment so PostgreSQL ignores the rest of the line.
+    code: "____ this line is ignored by PostgreSQL"
+    answer: "--"
+    explanation: "`--` starts a comment that runs to the end of the line. For comments across several lines, use `/* … */`."
+
+  - type: mcq
+    prompt: |
+      You see this error. Where is the mistake?
+
+      ```text
+      ERROR:  syntax error at or near "FROM"
+      LINE 1: SELECT name, FROM countries;
+                           ^
+      ```
+    options:
+      - FROM is misspelled
+      - The table countries doesn't exist
+      - The comma after name, just before the caret
+      - The semicolon at the end
+    answer: 2
+    explanation: The caret points at FROM, but the real mistake is just **before** it. A comma promises another column is coming, then FROM arrives instead.

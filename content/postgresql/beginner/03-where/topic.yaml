@@ -1,0 +1,4 @@
+title: "WHERE: Filtering Rows"
+module: 3
+summary: Keep only the rows you want, using comparisons, AND/OR/NOT, BETWEEN, IN, LIKE/ILIKE, and the special rules of NULL.
+minutes: 30

@@ -1,0 +1,52 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which type should a column holding **hotel prices** use?
+    options:
+      - "real"
+      - "double precision"
+      - "numeric(8,2)"
+      - "text"
+    answer: 2
+    explanation: Money must add up exactly, so use `numeric`. Floating-point types store most decimals approximately, and text can't do arithmetic.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT 0.1::numeric + 0.2::numeric AS total;
+    options:
+      - "0.3"
+      - "0.30000000000000004"
+      - "0"
+      - An error
+    answer: 0
+    explanation: "`numeric` is exact, so 0.1 + 0.2 is exactly 0.3. With `double precision` you'd get 0.30000000000000004."
+
+  - type: predict
+    prompt: The Europe Grand Tour ran from 2026-02-01 to 2026-02-20. What does this return?
+    code: |
+      SELECT '2026-02-20'::date - '2026-02-01'::date AS days;
+    options:
+      - "20"
+      - "19"
+      - "19 days"
+      - An error
+    answer: 1
+    explanation: Subtracting one `date` from another gives a plain integer number of days. (Subtracting `timestamptz` values would give an interval instead.)
+
+  - type: fill
+    prompt: Convert the text `'42'` into an integer using PostgreSQL's shorthand.
+    code: |
+      SELECT '42'____integer;
+    answer: "::"
+    explanation: "`value::type` is PostgreSQL's cast shorthand. `CAST('42' AS integer)` is the standard spelling of the same thing."
+
+  - type: mcq
+    prompt: What's the key difference between `timestamptz` and `timestamp`?
+    options:
+      - timestamptz can't store times, only dates
+      - timestamptz stores an exact moment and displays it in your time zone. timestamp is a wall-clock time with no zone
+      - timestamp is newer and replaces timestamptz
+      - There is no difference
+    answer: 1
+    explanation: A `timestamptz` pins down a real moment in time. A plain `timestamp` like "14:00" doesn't say *where* it was 14:00, which is why timestamptz is the safer default.

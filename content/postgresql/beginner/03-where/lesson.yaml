@@ -1,0 +1,176 @@
+steps:
+  - kind: explain
+    title: WHERE keeps some rows
+    body: |
+      `SELECT` chooses **columns**. `WHERE` chooses **rows**.
+
+      ```sql
+      SELECT name, population
+      FROM cities
+      WHERE population > 2000000;
+      ```
+
+      PostgreSQL checks the condition against **each row, one at a time**. Rows where it's true are kept, and the rest are left out of the result (not deleted, just not shown). `WHERE` always comes after `FROM`.
+
+  - kind: try
+    title: Big cities only
+    body: |
+      Run it. Then change `2000000` to `1000000` and see which cities join the list.
+    sql: |
+      SELECT name, population
+      FROM cities
+      WHERE population > 2000000;
+
+  - kind: explain
+    title: Comparison operators
+    body: |
+      | Operator | Meaning |
+      |---|---|
+      | `=` | equal to |
+      | `<>` or `!=` | not equal to |
+      | `<` `>` | less than, greater than |
+      | `<=` `>=` | less or equal, greater or equal |
+
+      Compare text and dates with **single-quoted** literals: `status = 'completed'`, `start_date > '2026-05-01'`. Dates are written `'YYYY-MM-DD'`.
+
+      Text comparisons are **exact**, including capitals: `'Completed'` would not match `'completed'`.
+
+  - kind: try
+    title: Your turn to filter
+    body: |
+      Show the `trip_name` and `status` of every trip whose status is **completed**.
+    sql: |
+      SELECT trip_name, status
+      FROM trips;
+    expect: |
+      SELECT trip_name, status
+      FROM trips
+      WHERE status = 'completed';
+
+  - kind: explain
+    title: AND, OR, NOT, and who goes first
+    body: |
+      Combine conditions:
+
+      - `A AND B`: both must be true
+      - `A OR B`: at least one must be true
+      - `NOT A`: flips true and false
+
+      **`AND` is evaluated before `OR`**, the way × comes before + in maths. So
+
+      ```sql
+      WHERE category = 'museum' OR category = 'landmark' AND entry_fee > 22
+      ```
+
+      really means *museum* **or** *(landmark with a fee over 22)*. Probably not what you meant.
+
+      **Rule: when you mix AND and OR, add parentheses.** They cost nothing and remove all doubt.
+
+  - kind: try
+    title: See precedence change the answer
+    body: |
+      This query has no parentheses. Run it: you get 5 rows, including cheap museums.
+
+      Now wrap the two category checks in parentheses, `(category = 'museum' OR category = 'landmark') AND entry_fee > 22`, and run it again. Only 3 rows are left, every one over 22.
+    sql: |
+      SELECT name, category, entry_fee
+      FROM attractions
+      WHERE category = 'museum' OR category = 'landmark' AND entry_fee > 22;
+
+  - kind: try
+    title: Your turn to combine
+    body: |
+      Find the `name` and `entry_fee` of every **museum** that costs **less than 25**.
+    sql: |
+      SELECT name, entry_fee
+      FROM attractions;
+    expect: |
+      SELECT name, entry_fee
+      FROM attractions
+      WHERE category = 'museum' AND entry_fee < 25;
+
+  - kind: explain
+    title: BETWEEN, IN, LIKE and ILIKE
+    body: |
+      Shortcuts for common filters:
+
+      - **`BETWEEN a AND b`**: a range, **including both ends**. `nights BETWEEN 3 AND 5` means 3, 4 or 5.
+      - **`IN (…)`**: matches any value in a list. `country_id IN (1, 5)` is short for `country_id = 1 OR country_id = 5`.
+      - **`LIKE`**: text pattern matching. `%` means "any number of characters", and `_` means "exactly one character". `name LIKE 'P%'` = names starting with capital P.
+      - **`ILIKE`**: the same, but **ignores upper/lower case**. It's PostgreSQL's case-insensitive LIKE.
+
+  - kind: try
+    title: A date range
+    body: |
+      Trips starting between March and June 2026, inclusive. Change the range and watch rows come and go.
+    sql: |
+      SELECT trip_name, start_date
+      FROM trips
+      WHERE start_date BETWEEN '2026-03-01' AND '2026-06-30';
+
+  - kind: try
+    title: Your turn with IN
+    body: |
+      Japan is `country_id` 1 and Italy is 5. Return the `name` of every city in **either** country, using `IN`.
+    sql: |
+      SELECT name
+      FROM cities;
+    expect: |
+      SELECT name
+      FROM cities
+      WHERE country_id IN (1, 5);
+
+  - kind: try
+    title: Your turn with ILIKE
+    body: |
+      Find the `name` of every attraction with **temple** anywhere in its name, whatever the capitalization.
+
+      Try `LIKE '%temple%'` first. Why does it find nothing?
+    sql: |
+      SELECT name
+      FROM attractions;
+    expect: |
+      SELECT name
+      FROM attractions
+      WHERE name ILIKE '%temple%';
+
+  - kind: explain
+    title: NULL means "unknown"
+    body: |
+      **NULL** isn't zero and isn't empty text. It means *no value / unknown*. One traveler has a NULL email: we simply don't know it.
+
+      Here's the rule that trips everyone up: **comparing anything to NULL gives "unknown", never true.** Even `NULL = NULL` is unknown. And WHERE only keeps rows where the condition is **true**.
+
+      So `WHERE email = NULL` matches **nothing, ever**, and it doesn't even raise an error.
+
+      To test for missing values, use the dedicated operators:
+
+      - `email IS NULL`: the value is missing
+      - `email IS NOT NULL`: the value is present
+
+      A side effect: `WHERE email <> 'x@example.com'` also skips NULL rows, because "unknown" isn't true.
+
+  - kind: try
+    title: Find the missing email
+    body: |
+      This query looks reasonable and returns **zero rows**. Run it to see. Then fix it so it finds the traveler whose email is missing.
+    sql: |
+      SELECT full_name, email
+      FROM travelers
+      WHERE email = NULL;
+    expect: |
+      SELECT full_name, email
+      FROM travelers
+      WHERE email IS NULL;
+
+  - kind: why
+    body: |
+      Real tables have thousands or millions of rows. WHERE is how you get from "everything" to "exactly the rows that answer my question". And NULL handling is where most wrong answers quietly come from.
+
+  - kind: recap
+    body: |
+      - `WHERE condition` keeps only rows where the condition is **true**.
+      - Operators: `= <> < > <= >=`. Text and dates go in single quotes.
+      - `AND` binds tighter than `OR`, so use parentheses when mixing them.
+      - `BETWEEN a AND b` (inclusive), `IN (list)`, `LIKE` with `%` and `_`, `ILIKE` (ignores case).
+      - NULL = unknown. `= NULL` never matches. Use `IS NULL` / `IS NOT NULL`.

@@ -1,0 +1,4 @@
+title: "Writing Data: INSERT, UPDATE, DELETE"
+module: 8
+summary: Add, change and remove rows safely, see what changed with RETURNING, and insert-or-update with ON CONFLICT.
+minutes: 35

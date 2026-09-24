@@ -1,0 +1,248 @@
+"use client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { Markdown } from "@/components/markdown";
+import { SqlRunner, type Engine } from "@/components/sql/sql-runner";
+import type { Step } from "@/lib/content/schema";
+import { completeLesson, completeStep, setLast, setLessonStep, useProgress } from "@/lib/progress";
+import type { RunOutput } from "@/lib/sql/core";
+import { gradeSql } from "@/lib/sql/client";
+
+const KIND_LABEL: Record<Step["kind"], string> = {
+  explain: "Learn",
+  try: "Try it",
+  info: "Good to know",
+  mac: "On your Mac",
+  why: "Why this matters",
+  recap: "Recap",
+};
+
+export function LessonPlayer({
+  topicKey,
+  title,
+  module,
+  steps,
+  engine,
+  href,
+  quizHref,
+}: {
+  topicKey: string;
+  title: string;
+  module: number;
+  steps: Step[];
+  engine: Engine;
+  href: string;
+  quizHref: string;
+}) {
+  const router = useRouter();
+  const p = useProgress();
+  const saved = p?.lessons[topicKey];
+  // Resume at the saved step until the learner picks one.
+  const [chosen, setIndex] = useState<number | null>(null);
+  const index = chosen ?? (p ? Math.min(saved?.step ?? 0, steps.length - 1) : null);
+
+  useEffect(() => {
+    if (index !== null) {
+      setLessonStep(topicKey, index);
+      setLast(href, `Module ${module}: ${title} · step ${index + 1}`);
+    }
+  }, [index, topicKey, href, module, title]);
+
+  if (!p || index === null) return <div className="h-96" />;
+
+  const step = steps[index];
+  const done = saved?.stepsDone.includes(index) ?? false;
+  const needsAction = (step.kind === "try" || step.kind === "mac") && !done;
+  const last = index === steps.length - 1;
+
+  function next() {
+    if (step.kind !== "try" && step.kind !== "mac") completeStep(topicKey, index!);
+    advance();
+  }
+
+  function advance() {
+    if (last) {
+      completeLesson(topicKey);
+      router.push(quizHref);
+    } else setIndex(index! + 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mb-6 flex items-center gap-4">
+        <p className="text-sm text-muted">
+          Module {module} · <span className="text-text">{title}</span>
+        </p>
+        <div className="flex flex-1 gap-1" aria-label={`Step ${index + 1} of ${steps.length}`}>
+          {steps.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              aria-label={`Go to step ${i + 1}`}
+              className={`h-1.5 flex-1 rounded-full transition-colors ${
+                i === index ? "bg-brand" : saved?.stepsDone.includes(i) ? "bg-brand/40" : "bg-border"
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-sm text-muted tabular-nums">
+          {index + 1}/{steps.length}
+        </p>
+      </div>
+
+      <div className={step.kind === "try" ? "grid gap-6 lg:grid-cols-2" : "mx-auto max-w-2xl"}>
+        <article className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+          <p className="mb-2 text-xs font-medium tracking-wide text-brand uppercase">{KIND_LABEL[step.kind]}</p>
+          {"title" in step && <h1 className="mb-4 text-2xl font-semibold tracking-tight">{step.title}</h1>}
+          <Markdown>{step.body}</Markdown>
+          {step.kind === "mac" && <MacCommands commands={step.commands} />}
+        </article>
+
+        {step.kind === "try" && (
+          <TryPanel key={`${topicKey}-${index}`} step={step} engine={engine} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />
+        )}
+      </div>
+
+      <div className={`mt-6 flex items-center gap-3 ${step.kind === "try" ? "" : "mx-auto max-w-2xl"}`}>
+        <button
+          onClick={() => setIndex(Math.max(0, index - 1))}
+          disabled={index === 0}
+          className="rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-subtle hover:text-text disabled:opacity-40"
+        >
+          ← Back
+        </button>
+        <div className="ml-auto flex items-center gap-3">
+          {step.kind === "mac" && !done && (
+            <button onClick={advance} className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-subtle hover:text-text">
+              Skip for now
+            </button>
+          )}
+          {step.kind === "mac" && !done && (
+            <button
+              onClick={() => completeStep(topicKey, index)}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-subtle"
+            >
+              I ran it ✓
+            </button>
+          )}
+          {needsAction && step.kind === "try" && <span className="text-sm text-muted">Run the query to continue</span>}
+          <button
+            onClick={next}
+            disabled={needsAction}
+            className="rounded-lg bg-brand px-5 py-2 text-sm font-medium text-brand-contrast shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40"
+          >
+            {last ? "Finish · take the quiz →" : "Continue →"}
+          </button>
+        </div>
+      </div>
+      <p className="mt-10 text-center text-sm text-muted">
+        Already confident? <Link href={quizHref} className="text-brand underline underline-offset-4">Jump to the quiz</Link>
+      </p>
+    </div>
+  );
+}
+
+function TryPanel({
+  step,
+  engine,
+  slot,
+  done,
+  onDone,
+}: {
+  step: Extract<Step, { kind: "try" }>;
+  engine: Engine;
+  slot: string;
+  done: boolean;
+  onDone: () => void;
+}) {
+  const p = useProgress();
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const [misses, setMisses] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+
+  const onRan = useCallback(
+    async (input: string, out: RunOutput) => {
+      if (step.expect_error) {
+        if (out.error) {
+          setFeedback({ ok: true, text: "That's the error we wanted to see. Read it carefully: the ERROR line says what went wrong, and LINE points to where." });
+          onDone();
+        } else setFeedback({ ok: false, text: "No error this time. Run the broken version to see the message." });
+        return;
+      }
+      if (out.error) {
+        setFeedback({ ok: false, text: "An error. Read the message, fix the query, and run it again." });
+        return;
+      }
+      if (!step.expect) {
+        onDone();
+        setFeedback(null);
+        return;
+      }
+      const v = await gradeSql(engine.key, engine.setup, input, { mode: "result", solution: step.expect, ordered: step.ordered });
+      if (v.correct) {
+        setFeedback({ ok: true, text: "Correct! That's exactly the result we were after." });
+        onDone();
+      } else {
+        setMisses((m) => m + 1);
+        setFeedback({ ok: false, text: v.message });
+      }
+    },
+    [step, engine, onDone],
+  );
+
+  return (
+    <div className="space-y-3">
+      <SqlRunner
+        engine={engine}
+        initial={p?.code[slot] ?? step.sql}
+        starter={step.sql}
+        slot={slot}
+        onRan={onRan}
+        minHeight="160px"
+      />
+      {feedback && (
+        <p className={`rounded-lg px-3 py-2 text-sm ${feedback.ok ? "bg-success/10 text-success" : "bg-xp/10 text-text"}`}>
+          {feedback.ok ? "✓ " : ""}
+          {feedback.text}
+        </p>
+      )}
+      {done && !feedback && <p className="text-sm text-success">✓ Step complete</p>}
+      {step.expect && misses >= 2 && !done && (
+        <div className="text-sm">
+          {showAnswer ? (
+            <pre className="overflow-x-auto rounded-lg border border-border bg-code p-3 font-mono text-xs">{step.expect}</pre>
+          ) : (
+            <button onClick={() => setShowAnswer(true)} className="text-muted underline underline-offset-4 hover:text-text">
+              Stuck? Show one working answer
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MacCommands({ commands }: { commands: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-5">
+      <div className="mb-1.5 flex items-center justify-between text-xs text-muted">
+        <span>Terminal</span>
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(commands).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            });
+          }}
+          className="hover:text-text"
+        >
+          {copied ? "Copied ✓" : "Copy"}
+        </button>
+      </div>
+      <pre className="overflow-x-auto rounded-xl bg-[#0b0f19] p-4 font-mono text-[0.82rem] leading-relaxed text-[#e5e7eb]">{commands}</pre>
+    </div>
+  );
+}

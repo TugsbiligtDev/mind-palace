@@ -1,0 +1,14 @@
+id: advanced
+title: Advanced
+season: 3
+season_title: Coming soon
+season_pitch: Practical, real-world skills. Views, indexes, window functions, JSON, everyday operations, and a capstone.
+status: coming_soon
+topics: []
+planned:
+  - "Module 16: Views"
+  - "Module 17: Indexes and Basic Performance"
+  - "Module 18: Window Functions"
+  - "Module 19: Working With JSON"
+  - "Module 20: Everyday Operational Skills"
+  - "Module 21: Capstone"

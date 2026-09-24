@@ -1,0 +1,57 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT name
+      FROM countries
+      WHERE continent = 'Asia' AND name <> 'Japan';
+    options:
+      - "Japan"
+      - "Mongolia"
+      - "Japan | Mongolia"
+      - No rows
+    answer: 1
+    explanation: Two countries are in Asia (Japan and Mongolia). `AND name <> 'Japan'` removes Japan, leaving Mongolia.
+
+  - type: mcq
+    prompt: "What does `SELECT full_name FROM travelers WHERE email = NULL;` return?"
+    options:
+      - The traveler with no email
+      - Every traveler
+      - No rows, because comparing to NULL is never true
+      - An error
+    answer: 2
+    explanation: "`= NULL` gives *unknown* for every row, and WHERE only keeps rows where the condition is true. There's no error, just an empty result. Use `IS NULL`."
+
+  - type: fill
+    prompt: Find travelers whose email is **missing**.
+    code: |
+      SELECT full_name FROM travelers WHERE email ____ NULL;
+    answer: IS
+    accept: ["is"]
+    explanation: "`IS NULL` is the only correct way to test for a missing value. (`IS NOT NULL` finds the ones that *have* an email.)"
+
+  - type: mcq
+    prompt: "Which nights values does `WHERE nights BETWEEN 3 AND 5` keep?"
+    options:
+      - "4 only"
+      - "3 and 4"
+      - "3, 4 and 5"
+      - "4 and 5"
+    answer: 2
+    explanation: BETWEEN includes both ends of the range.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT name
+      FROM attractions
+      WHERE name ILIKE 'e%';
+    options:
+      - No rows, because no name starts with a lowercase e
+      - "Eiffel Tower"
+      - "Eiffel Tower\nSenso-ji Temple"
+      - An error
+    answer: 1
+    explanation: "ILIKE ignores case, so `'e%'` matches names starting with E or e. Only the Eiffel Tower does. With `LIKE 'e%'` you'd get no rows."

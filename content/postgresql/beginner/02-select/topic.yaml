@@ -1,0 +1,4 @@
+title: "SELECT: Asking Your First Questions"
+module: 2
+summary: Choose columns, rename them with aliases, calculate new ones, and remove duplicates with DISTINCT.
+minutes: 25

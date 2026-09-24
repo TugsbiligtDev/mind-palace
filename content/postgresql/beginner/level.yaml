@@ -1,0 +1,18 @@
+id: beginner
+title: Beginner
+season: 1
+season_title: The Wanderly Files
+season_pitch: |
+  Someone has been rewriting Wanderly's records and signing their work **~C**. Learn how a
+  database is organized, how to ask it questions, and how to fix it carefully, one case at a time.
+status: open
+topics:
+  - 00-landscape
+  - 01-syntax
+  - 02-select
+  - 03-where
+  - 04-order-by
+  - 05-data-types
+  - 06-functions
+  - 07-aggregation
+  - 08-writing-data

@@ -1,0 +1,53 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: There are 6 travelers, and one has no email. What does this return?
+    code: |
+      SELECT count(email) AS with_email FROM travelers;
+    options:
+      - "6"
+      - "5"
+      - "1"
+      - "NULL"
+    answer: 1
+    explanation: "`count(column)` skips NULLs, so the traveler with no email isn't counted. `count(*)` would give 6."
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT count(DISTINCT continent) AS continents FROM countries;
+    options:
+      - "5"
+      - "3"
+      - "2"
+      - "4"
+    answer: 1
+    explanation: The five countries are in Asia, Europe, Asia, South America and Europe. That's 3 different continents.
+
+  - type: mcq
+    prompt: You want only the categories that have **more than 2** attractions. Which clause filters on `count(*)`?
+    options:
+      - "WHERE count(*) > 2"
+      - "HAVING count(*) > 2"
+      - "ORDER BY count(*) > 2"
+      - "GROUP BY count(*) > 2"
+    answer: 1
+    explanation: HAVING filters groups after they've been aggregated. WHERE runs before grouping, when there are no counts yet.
+
+  - type: fill
+    prompt: Count the attractions in each category.
+    code: |
+      SELECT category, count(*) FROM attractions ____ category;
+    answer: GROUP BY
+    accept: ["group by"]
+    explanation: "`GROUP BY category` puts rows with the same category in one bucket, and `count(*)` then counts each bucket."
+
+  - type: mcq
+    prompt: In what order does PostgreSQL *logically* process these clauses?
+    options:
+      - SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY
+      - FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY
+      - FROM → SELECT → WHERE → HAVING → GROUP BY → ORDER BY
+      - WHERE → FROM → GROUP BY → SELECT → HAVING → ORDER BY
+    answer: 1
+    explanation: Find the table, filter rows, group them, filter groups, then compute the SELECT columns, and finally sort. That's why SELECT aliases work in ORDER BY but not in WHERE.

@@ -1,6 +1,9 @@
 packages:
   - "."
 
+# Which dependencies may run install scripts (pnpm 10 reads onlyBuiltDependencies, pnpm 11 reads allowBuilds).
+onlyBuiltDependencies:
+  - esbuild
 allowBuilds:
   esbuild: true
   unrs-resolver: false

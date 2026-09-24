@@ -1,0 +1,53 @@
+
+> mind-palace@0.1.0 build /Users/tugsbiligt/Projects/mind-palace
+> node scripts/copy-pglite.mjs && tsx scripts/check-content.ts && next build
+
+Copied PGlite engine files to public/pglite
+  checked postgresql/beginner (9 topics)
+  checked postgresql/intermediate (0 topics)
+  checked postgresql/advanced (0 topics)
+Content check passed (147 SQL checks).
+▲ Next.js 16.3.6 (Turbopack)
+✓ Running next.config.ts took 120ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 830ms
+  Running TypeScript ...
+  Finished TypeScript in 1023ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/35) ...
+  Generating static pages using 7 workers (8/35) 
+  Generating static pages using 7 workers (17/35) 
+  Generating static pages using 7 workers (26/35) 
+✓ Generating static pages using 7 workers (35/35) in 607ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /case-files
+├ ○ /courses
+├   /courses/[track]
+│ └ ● /courses/postgresql
+├   /courses/[track]/[level]/[topic]
+│ ├ ● /courses/postgresql/beginner/00-landscape
+│ ├ ● /courses/postgresql/beginner/01-syntax
+│ ├ ● /courses/postgresql/beginner/02-select
+│ └ ● [+6 more paths]
+├   /courses/[track]/[level]/[topic]/case
+│ ├ ● /courses/postgresql/beginner/00-landscape/case
+│ ├ ● /courses/postgresql/beginner/01-syntax/case
+│ ├ ● /courses/postgresql/beginner/02-select/case
+│ └ ● [+6 more paths]
+├   /courses/[track]/[level]/[topic]/quiz
+│ ├ ● /courses/postgresql/beginner/00-landscape/quiz
+│ ├ ● /courses/postgresql/beginner/01-syntax/quiz
+│ ├ ● /courses/postgresql/beginner/02-select/quiz
+│ └ ● [+6 more paths]
+└   /courses/[track]/setup
+  └ ● /courses/postgresql/setup
+
+
+○  (Static)  prerendered as static content
+●  (SSG)     prerendered as static HTML (uses generateStaticParams)
+

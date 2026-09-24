@@ -1,7 +1,7 @@
 // Web Worker that owns the in-browser PostgreSQL (PGlite). Each setup (course dataset,
 // or dataset + a case's evidence) is loaded once; every run gets a fresh clone, so a
 // learner's DELETE or DROP never leaks into the next attempt.
-import { PGlite } from "@electric-sql/pglite";
+import type { PGlite } from "@electric-sql/pglite";
 import { grade, rawTextParsers, runInput, type CaseCheck } from "./core";
 
 type Request =
@@ -9,16 +9,16 @@ type Request =
   | { id: number; type: "grade"; key: string; setup: string; input: string; check: CaseCheck }
   | { id: number; type: "warm"; key: string; setup: string };
 
-let assets: Promise<{ pgliteWasmModule: WebAssembly.Module; initdbWasmModule: WebAssembly.Module; fsBundle: Blob }> | null =
-  null;
+type PGliteModule = typeof import("@electric-sql/pglite");
 
-function loadAssets() {
-  assets ??= Promise.all([
-    WebAssembly.compileStreaming(fetch("/pglite/pglite.wasm")),
-    WebAssembly.compileStreaming(fetch("/pglite/initdb.wasm")),
-    fetch("/pglite/pglite.data").then((r) => r.blob()),
-  ]).then(([pgliteWasmModule, initdbWasmModule, fsBundle]) => ({ pgliteWasmModule, initdbWasmModule, fsBundle }));
-  return assets;
+// PGlite is served as-is from /public/pglite (copied by scripts/copy-pglite.mjs) and loaded
+// outside the bundler: minifying it breaks its WebAssembly startup code.
+const ENGINE_URL = "/pglite/index.js";
+let engine: Promise<PGliteModule> | null = null;
+
+function loadEngine() {
+  engine ??= import(/* webpackIgnore: true */ /* turbopackIgnore: true */ ENGINE_URL) as Promise<PGliteModule>;
+  return engine;
 }
 
 const bases = new Map<string, Promise<PGlite>>();
@@ -26,8 +26,8 @@ const bases = new Map<string, Promise<PGlite>>();
 function base(key: string, setup: string) {
   let db = bases.get(key);
   if (!db) {
-    db = loadAssets().then(async (a) => {
-      const pg = await PGlite.create({ ...a, parsers: rawTextParsers });
+    db = loadEngine().then(async ({ PGlite, types }) => {
+      const pg = await PGlite.create({ parsers: rawTextParsers(types) });
       if (setup.trim()) await pg.exec(setup);
       return pg;
     });

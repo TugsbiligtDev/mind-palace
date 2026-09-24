@@ -45,12 +45,14 @@ task: |
   2. **Remove the fraud:** delete **every refund approved by `gtsog`**, and no others.
   3. **Close the case:** insert **one** row into `evidence.case_log` with the culprit **`Gerel Tsog`** (exactly that spelling).
 
-  The grader inspects the **state of the database** afterwards, so any extra change, or any missed one, counts against you. Use **Run** to check your work with SELECTs first. That's the professional habit.
+  The grader inspects the **state of the database** afterwards, so any extra change, or any missed one, counts against you. Every **Run** starts from fresh data, so put checking SELECTs *below* your changes and run them together. That's the professional habit.
 starter: |
   -- Moth's first attempt. Something is badly wrong with it.
-  -- Run it, then look at trip_stops with a SELECT before you submit anything!
+  -- Each Run starts from fresh data, so the SELECT below checks the UPDATE above it.
   UPDATE trip_stops
   SET nights = 5, cost = 300.00;
+
+  SELECT * FROM trip_stops ORDER BY trip_stop_id;
 check:
   mode: state
   solution: |
@@ -71,7 +73,7 @@ check:
     SELECT 'log', culprit, NULL, NULL FROM evidence.case_log
     ORDER BY 1, 2;
 hints:
-  - "Run Moth's UPDATE, then `SELECT * FROM trip_stops;`. How many stops now have 5 nights and cost 300? What's missing from the statement?"
+  - "Run Moth's attempt as it is. The SELECT underneath shows the result. How many stops now have 5 nights and cost 300? What's missing from the UPDATE?"
   - "Each change needs its own precise `WHERE`: the UPDATE by `trip_stop_id`, and the DELETE by `approved_by`. The INSERT only needs the `culprit` column, because the others fill themselves."
   - "Three statements: `UPDATE trip_stops SET … WHERE trip_stop_id = 7;`, then `DELETE FROM evidence.refunds WHERE approved_by = 'gtsog';`, then `INSERT INTO evidence.case_log (culprit) VALUES ('Gerel Tsog');`"
 reveal: |
@@ -80,8 +82,8 @@ reveal: |
   Trip stop 7 reads *5 nights, 300.00* again. The four fraudulent refunds are gone. And the
   case log holds one line: **Gerel Tsog**.
 
-  Inspector Bold signs the file. "Operations manager. Cut the booking, refunded the difference
-  to themselves, twice, then covered it with a float report and a wiped department. Clever
+  Inspector Bold signs the file. "Operations manager. Cut the booking, refunded the difference,
+  twice, then covered it with a float report and a wiped department. Clever
   enough to change the data. Not clever enough to change *all* of it."
 
   Moth hesitates at the door. "The refunds went out to a bank account. It isn't Gerel's. It's

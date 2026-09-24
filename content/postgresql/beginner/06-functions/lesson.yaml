@@ -95,7 +95,7 @@ steps:
   - kind: try
     title: Take dates apart
     body: |
-      `date_trunc` returns a timestamp, so `::date` casts it back to a plain date for readability.
+      `date_trunc` returns a timestamp (with time zone), so `::date` casts it back to a plain date for readability.
     sql: |
       SELECT trip_name, start_date,
              EXTRACT(MONTH FROM start_date) AS month_no,

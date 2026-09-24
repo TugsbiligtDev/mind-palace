@@ -38,8 +38,8 @@ task: |
 
   1. `folio_id`
   2. `hotel`
-  3. **`total`**: the room rate times the number of nights, calculated **exactly** (money is never a float)
-  4. **`stay_length`**: how long they actually stayed, from check-in to check-out
+  3. **`total`**: the room rate times the number of nights, calculated **exactly** (money is never a float, and the night count is a whole number)
+  4. **`stay_length`**: the exact time between check-in and check-out (subtract the two timestamps, which gives an interval)
 starter: |
   SELECT folio_id, hotel,
          room_rate_text * nights_text AS total

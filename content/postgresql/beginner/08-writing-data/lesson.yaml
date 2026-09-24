@@ -75,7 +75,7 @@ steps:
   - kind: try
     title: Cancel one trip
     body: |
-      Run it, and notice that psql reports how many rows changed. RETURNING shows the new values.
+      Run it. RETURNING shows the changed row with its new values, so one row back means one row changed. (Without RETURNING, psql would answer `UPDATE 1`.)
     sql: |
       UPDATE trips
       SET status = 'cancelled'
@@ -170,7 +170,7 @@ steps:
   - kind: info
     title: "🔹 MERGE"
     body: |
-      PostgreSQL also has **`MERGE`**, the SQL-standard way to compare a *source* of rows with a table and, in one statement, INSERT the new ones, UPDATE the matching ones and even DELETE some, with separate rules for each case. It's powerful for syncing whole batches of data. For single-table "insert or update", `ON CONFLICT` is simpler and more common. Just recognize `MERGE INTO … USING … WHEN MATCHED THEN …` when you see it.
+      PostgreSQL also has **`MERGE`**, the SQL-standard way to compare a *source* of rows with a table and, in one statement, INSERT the new ones, UPDATE the matching ones and even DELETE some, with separate rules for each case. It's powerful for syncing whole batches of data. For single-table "insert or update", `ON CONFLICT` is simpler and more common. Just recognize `MERGE INTO … USING … ON … WHEN MATCHED THEN …` when you see it.
 
   - kind: why
     body: |

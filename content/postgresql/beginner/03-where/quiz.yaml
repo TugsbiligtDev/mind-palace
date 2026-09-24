@@ -30,7 +30,7 @@ questions:
       SELECT full_name FROM travelers WHERE email ____ NULL;
     answer: IS
     accept: ["is"]
-    explanation: "`IS NULL` is the only correct way to test for a missing value. (`IS NOT NULL` finds the ones that *have* an email.)"
+    explanation: "`IS NULL` is the way to test for a missing value. (`IS NOT NULL` finds the ones that *have* an email.)"
 
   - type: mcq
     prompt: "Which nights values does `WHERE nights BETWEEN 3 AND 5` keep?"

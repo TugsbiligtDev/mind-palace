@@ -1,7 +1,7 @@
 // Content checks: every file must match its schema, and every piece of SQL must really
 // work on PostgreSQL. Runs before each build, so broken content never goes live.
 //   pnpm check:content
-import { PGlite } from "@electric-sql/pglite";
+import { PGlite, types } from "@electric-sql/pglite";
 import { loadAllTracks, loadStory } from "../src/lib/content/load";
 import { grade, lastRows, rawTextParsers, resultText, runInput } from "../src/lib/sql/core";
 
@@ -13,7 +13,7 @@ function fail(where: string, msg: string) {
 }
 
 async function makeBase(setup: string) {
-  const db = await PGlite.create({ parsers: rawTextParsers });
+  const db = await PGlite.create({ parsers: rawTextParsers(types) });
   if (setup.trim()) await db.exec(setup);
   return db;
 }

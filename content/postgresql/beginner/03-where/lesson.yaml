@@ -54,7 +54,7 @@ steps:
 
       - `A AND B`: both must be true
       - `A OR B`: at least one must be true
-      - `NOT A`: flips true and false
+      - `NOT A`: flips true and false (NOT *unknown* is still unknown, as you'll see with NULL)
 
       **`AND` is evaluated before `OR`**, the way × comes before + in maths. So
 

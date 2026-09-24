@@ -42,7 +42,7 @@ questions:
     options:
       - psql lists the tables, then shows the countries data
       - An error, because meta-commands need a semicolon
-      - psql treats `SELECT`, `*`, `FROM`… as extra arguments to `\dt`, and the SQL never runs
+      - psql reads `SELECT * FROM countries;` as arguments to `\dt`, and the SQL never runs
       - The SQL runs first, then the tables are listed
     answer: 2
     explanation: A meta-command ends at the **end of the line**. Everything after `\dt` on that line is read as its arguments. Put `\dt` and your SQL on separate lines.

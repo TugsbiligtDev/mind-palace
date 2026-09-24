@@ -23,7 +23,7 @@ steps:
   - kind: explain
     title: Keywords, identifiers, literals
     body: |
-      Every piece of a SQL statement is one of three things:
+      Most words in a SQL statement are one of three things (the rest are symbols like `,` `;` `*` `=`):
 
       | Kind | What it is | Examples |
       |---|---|---|

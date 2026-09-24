@@ -69,6 +69,8 @@ steps:
       | `*` | multiply | `entry_fee * 2` |
       | `/` | divide | `cost / nights` |
 
+      (`*` right after SELECT means "all columns". Between two values it means multiply.)
+
       Two things to know:
 
       1. The calculation happens **only in the result**. The stored data stays the same.

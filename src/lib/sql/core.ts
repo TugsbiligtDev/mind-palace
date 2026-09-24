@@ -2,7 +2,6 @@
 // PGlite database and returns psql-like output. Used by the browser worker and by the
 // content check script, so both grade answers the exact same way.
 import type { PGliteInterface } from "@electric-sql/pglite";
-import { types } from "@electric-sql/pglite";
 
 export type Block =
   | { kind: "rows"; title?: string; columns: string[]; rows: (string | null)[][] }
@@ -13,11 +12,14 @@ export type RunError = { message: string; line?: number; lineText?: string; care
 export type RunOutput = { blocks: Block[]; error?: RunError };
 
 // Keep every value as the raw text Postgres sends, exactly like psql prints it.
-export const rawTextParsers: Record<number, (x: string) => string> = Object.fromEntries(
-  (Object.values(types) as unknown[])
-    .filter((v): v is number => typeof v === "number")
-    .map((oid) => [oid, (x: string) => x]),
-);
+// `types` is PGlite's table of type IDs (passed in so this file never loads PGlite itself).
+export function rawTextParsers(types: Record<string, unknown>): Record<number, (x: string) => string> {
+  return Object.fromEntries(
+    Object.values(types)
+      .filter((v): v is number => typeof v === "number")
+      .map((oid) => [oid, (x: string) => x]),
+  );
+}
 
 type Piece = { kind: "sql"; text: string; startLine: number } | { kind: "meta"; text: string; line: number };
 
@@ -280,7 +282,7 @@ export function sameRows(
   ordered: boolean,
 ): boolean {
   if (!a || !b || a.columns.length !== b.columns.length || a.rows.length !== b.rows.length) return false;
-  const key = (r: (string | null)[]) => JSON.stringify(r);
+  const key = (r: (string | null)[]) => JSON.stringify(r.map(normalizeNumber));
   const ak = a.rows.map(key);
   const bk = b.rows.map(key);
   if (!ordered) {
@@ -288,6 +290,12 @@ export function sameRows(
     bk.sort();
   }
   return ak.every((k, i) => k === bk[i]);
+}
+
+// "60.00" and "60.0000" are the same number: compare numeric-looking values by value.
+function normalizeNumber(v: string | null) {
+  if (v === null || !/^-?\d+\.\d+$/.test(v)) return v;
+  return v.replace(/\.?0+$/, "");
 }
 
 // Text form of a result used by "predict the output" questions: one line per row,

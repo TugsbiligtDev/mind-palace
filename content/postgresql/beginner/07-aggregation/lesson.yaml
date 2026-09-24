@@ -47,7 +47,7 @@ steps:
   - kind: explain
     title: "GROUP BY: one answer per group"
     body: |
-      `GROUP BY` sorts rows into **buckets** that share a value, then runs the aggregates **once per bucket**:
+      `GROUP BY` puts rows into **buckets** that share a value, then runs the aggregates **once per bucket**. (It doesn't sort the output. Add ORDER BY for that.)
 
       ```sql
       SELECT trip_id, sum(cost) AS total_cost
@@ -57,7 +57,7 @@ steps:
 
       Picture it: all the stops for trip 1 go into one pile and trip 2's into another, then each pile gets summed. You get **one row per group**.
 
-      The rule: every column in `SELECT` must either be in `GROUP BY` or be inside an aggregate. Otherwise PostgreSQL wouldn't know *which* row's value to show for the whole group.
+      The rule: every column in `SELECT` must either be in `GROUP BY` or be inside an aggregate. Otherwise PostgreSQL wouldn't know *which* row's value to show for the whole group. (There's one exception, when you group by a table's primary key, which you'll meet in Module 9.)
 
   - kind: try
     title: Totals per trip
@@ -110,7 +110,7 @@ steps:
 
       **FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT**
 
-      This order explains a lot. For example, an alias you create in SELECT can be used in ORDER BY (which runs after SELECT) but not in WHERE (which runs before it).
+      This order explains a lot. For example, an alias you create in SELECT can be used in ORDER BY (which runs after SELECT) but not in WHERE or HAVING (which run before it). That's why the HAVING above repeats `sum(cost)` instead of using `total_cost`.
 
   - kind: try
     title: Big-spending trips

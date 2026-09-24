@@ -26,7 +26,7 @@ evidence_setup: |
   (4, 3, 'Casa Inca',          'Cusco',       900.00, '2026-05-19'),
   (5, 7, 'Blue Sky Hotel',     'Ulaanbaatar', NULL,   '2025-11-12'),
   (6, 4, 'Hotel du Marais',    'Paris',       700.00, '2026-06-07'),
-  (7, 5, 'Taxi Roma',          'Rome',         45.50, '2026-02-02'),
+  (7, 5, 'Taxi Roma',          'Rome',         45.50, '2026-02-01'),
   (8, 2, 'Villa Borghese Inn', 'Rome',        NULL,   '2026-08-10'),
   (9, 1, 'Tokyo Stay',         'Tokyo',       620.00, '2026-03-05');
 clues:
@@ -60,6 +60,6 @@ reveal: |
   February 6.
 
   Bold does the arithmetic out loud. "Three hundred. The booking says one night at sixty.
-  Three hundred at sixty a night is **five nights**." She circles February 2 and February 6 on
-  the calendar. "Checked in on the second, paid on the sixth. The receipt was never the lie.
-  The booking was."
+  Three hundred at sixty a night is **five nights**." She circles February 1 and February 6 on
+  the calendar. "A taxi from the station on the first, the hotel bill paid on the sixth. The
+  receipt was never the lie. The booking was."

@@ -43,7 +43,7 @@ steps:
     body: |
       Storing into `numeric(6,2)` rounds to 2 decimal places. Run it.
 
-      Then try `123456.78::numeric(6,2)`. It needs 8 digits, the type only allows 6, and PostgreSQL refuses (*numeric field overflow*) rather than silently mangling the value.
+      Then try `123456.78::numeric(6,2)`. It has 6 digits before the point, but `numeric(6,2)` leaves room for only 4, so PostgreSQL refuses (*numeric field overflow*) rather than silently mangling the value.
     sql: |
       SELECT 28.305::numeric(6,2) AS rounded,
              1234.5::numeric(6,2) AS padded;
@@ -54,7 +54,7 @@ steps:
       - **`text`** holds text of any length. It's what the course tables use.
       - **`varchar(n)`** holds text up to *n* characters. Longer values raise an error.
 
-      In PostgreSQL both are stored and processed **the same way**, so neither is faster. Use `text`, and reach for `varchar(n)` only when a maximum length is a real business rule, like a 2-letter country code.
+      In PostgreSQL both are stored the same way, and there's **no meaningful performance difference**. Use `text`, and reach for `varchar(n)` only when a maximum length is a real business rule, like a 2-letter country code.
 
   - kind: info
     title: "🔹 char(n)"

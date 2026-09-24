@@ -103,6 +103,8 @@ steps:
     title: Page 2
     body: |
       Attractions in alphabetical order, 3 per page. This is page 2: skip 3, show 3. Change it to page 3.
+
+      Heads-up: *teamLab Planets* may sort after all the capitalized names. How text sorts depends on the database's **collation** (its rules for ordering text), and in this sandbox uppercase letters come before lowercase ones.
     sql: |
       SELECT name
       FROM attractions

@@ -55,7 +55,7 @@ steps:
     body: |
       You're connected to `learn_sql`. Which tables does it have?
 
-      `\dt` means **d**escribe **t**ables. It lists the tables in the current database. Type it in the editor and run it.
+      `\dt` means **d**escribe **t**ables. It lists the tables in the current database's default schema, `public`. (Tables in other schemas need `\dt schema_name.*`, which you'll use soon.) Type it in the editor and run it.
 
       You should see the 7 course tables: `attractions`, `cities`, `countries`, `reviews`, `travelers`, `trip_stops` and `trips`. They all live in the `public` schema.
     sql: |
@@ -93,7 +93,7 @@ steps:
     body: |
       A few more you'll use constantly:
 
-      - `\c learn_sql`: **c**onnect to a different database (in psql on your Mac, `\c postgres` switches databases)
+      - `\c dbname`: **c**onnect to a different database (on your Mac, `\c postgres`; this sandbox only has `learn_sql`)
       - `\dn`: list schemas (you'll see `public`)
       - `\?`: help, listing every meta-command
       - `\q`: **q**uit psql

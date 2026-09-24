@@ -31,7 +31,7 @@ task: |
   1. `login_id`
   2. **`full_name`**: first name, one space, surname, **all uppercase**, with no extra spaces (like `SARAA OTGON`)
   3. **`dept`**: the department, or **`UNASSIGNED`** if it's missing
-  4. **`status`**: **`SUSPECT`** if `last_edit` falls in the week after the tour, **2026-02-20 to 2026-02-27 inclusive**, otherwise **`clear`**
+  4. **`status`**: **`SUSPECT`** if `last_edit` falls between the tour's last day and a week later, **2026-02-20 to 2026-02-27 inclusive**, otherwise **`clear`**
 starter: |
   SELECT login_id, raw_name, dept, last_edit
   FROM evidence.staff_logins;

@@ -16,13 +16,13 @@ evidence_setup: |
       note           TEXT
   );
   INSERT INTO evidence.sightings VALUES
-  (1, 'DULGUUN E.',      'Rome',     '2026-02-02', 'Checking in at a hotel near Termini'),
+  (1, 'DULGUUN E.',      'Rome',     '2026-02-02', 'Leaving a hotel near Termini'),
   (2, 'dulguun erdene',  'Rome',     '2026-02-05', 'Buying a train ticket to Paris'),
   (3, 'Dulguun',         'Tokyo',    '2026-02-04', 'Different person, same first name'),
-  (4, 'Dulguun Erdene',  'Paris',    '2026-02-12', 'In the Louvre ticket queue'),
+  (4, 'Dulguun Erdene',  'Paris',    '2026-02-10', 'In the Louvre ticket queue'),
   (5, 'Dulguun Erdene',  'Rome',     '2026-03-15', 'Photo from a later trip'),
   (6, 'Baatar Otgon',    'Paris',    '2026-02-11', 'Different traveler'),
-  (7, 'Erdene, Dulguun', 'Florence', '2026-02-08', 'Day trip from Rome?');
+  (7, 'Erdene, Dulguun', 'Florence', '2026-02-04', 'Day trip from Rome?');
 clues:
   - "`travelers` holds everyone's details. Exactly one traveler has no email."
   - "`evidence.sightings` columns: `sighting_id`, `traveler_name` (spelled inconsistently), `city`, `seen_on`, `note`."
@@ -52,8 +52,8 @@ hints:
   - "You need three conditions joined with `AND`: a case-insensitive pattern on the name (`ILIKE` with `%`), a list of cities (`IN`), and a date range (`BETWEEN`)."
   - "Try `WHERE traveler_name ILIKE '%dulguun%' AND city IN (…) AND seen_on BETWEEN … AND …`. You still need to fill in the cities and the two dates."
 reveal: |
-  Three sightings. **Rome on February 2** (checking into a hotel). **Rome again on February 5**
-  (buying a ticket to Paris). **Paris on February 12**.
+  Three sightings. **Rome on February 2** (leaving a hotel). **Rome again on February 5**
+  (buying a ticket to Paris). **Paris on February 10**.
 
   "Rome from the 2nd to at least the 5th," Bold says. "That's three nights, at the very least.
   Wanderly's records say *one*." She pins the three sightings to the board next to the 60-a-night

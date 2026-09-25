@@ -1,34 +1,36 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { DifficultyBadge } from "@/components/case/difficulty-badge";
 import { Markdown } from "@/components/markdown";
+import { NoRunnerYet } from "@/components/no-runner-yet";
 import { SqlRunner, type Engine } from "@/components/sql/sql-runner";
-import type { Case } from "@/lib/content/schema";
-import { caseReward, caseState, recordCase, setLast, takeHint, useProgress } from "@/lib/progress";
+import type { Case, Track } from "@/lib/content/schema";
+import { caseReward, recordCase, setLast, takeHint, useProgress } from "@/lib/progress";
 import { gradeSql } from "@/lib/sql/client";
 
 export function CasePlayer({
-  topicKey,
-  topicKeys,
-  topicIndex,
+  id,
   data,
+  language,
   engine,
   informant,
   href,
-  quizHref,
-  prevCaseHref,
+  trackTitle,
+  topicHref,
+  topicTitle,
   nextHref,
   nextLabel,
 }: {
-  topicKey: string;
-  topicKeys: string[];
-  topicIndex: number;
+  id: string;
   data: Case;
+  language: Track["engine"];
   engine: Engine;
   informant: string;
   href: string;
-  quizHref: string;
-  prevCaseHref?: string;
+  trackTitle: string;
+  topicHref?: string;
+  topicTitle?: string;
   nextHref: string;
   nextLabel: string;
 }) {
@@ -36,61 +38,48 @@ export function CasePlayer({
   const [verdict, setVerdict] = useState<{ correct: boolean; message: string; earned: number } | null>(null);
   const [grading, setGrading] = useState(false);
 
-  useEffect(() => setLast(href, `Episode ${data.episode}: ${data.title}`), [href, data.episode, data.title]);
+  useEffect(() => setLast(href, `Case: ${data.title}`), [href, data.title]);
 
   if (!p) return <div className="h-96" />;
+  if (language !== "postgres") return <NoRunnerYet language={language} />;
 
-  const state = caseState(p, topicKeys, topicIndex);
-  const record = p.cases[topicKey];
+  const record = p.cases[id];
   const hints = record?.hints ?? 0;
-  const slot = `${topicKey}#case`;
-
-  if (!state.unlocked && !state.solved) {
-    return (
-      <div className="mx-auto w-full max-w-xl px-4 py-20 text-center sm:px-6">
-        <p className="text-5xl">🔒</p>
-        <p className="mt-4 text-sm font-medium tracking-wide text-muted uppercase">Episode {data.episode}</p>
-        <h1 className="mt-1 font-serif text-3xl">{data.title}</h1>
-        <p className="mt-4 text-muted">
-          {!state.quizPassed
-            ? "This case file is sealed until you pass this module's knowledge check."
-            : "Solve the previous episode first. The story builds on it."}
-        </p>
-        <div className="mt-8 flex justify-center gap-3">
-          {!state.quizPassed ? (
-            <Link href={quizHref} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-contrast">
-              Take the quiz →
-            </Link>
-          ) : (
-            prevCaseHref && (
-              <Link href={prevCaseHref} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-contrast">
-                Go to the previous case →
-              </Link>
-            )
-          )}
-        </div>
-      </div>
-    );
-  }
+  const slot = `case:${id}`;
 
   async function submit(input: string) {
     setGrading(true);
     const v = await gradeSql(engine.key, engine.setup, input, data.check);
-    const earned = recordCase(topicKey, v.correct);
+    const earned = recordCase(id, data.difficulty, v.correct);
     setVerdict({ correct: v.correct, message: v.message, earned });
     setGrading(false);
     return v.output;
   }
 
-  const solved = state.solved || verdict?.correct;
+  const solved = record?.solved || verdict?.correct;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
+        <Link href="/practice" className="hover:text-text">
+          ← Practice hub
+        </Link>
+        <span aria-hidden>·</span>
+        <span>{trackTitle}</span>
+        <DifficultyBadge difficulty={data.difficulty} />
+        {topicHref && topicTitle && (
+          <Link href={topicHref} className="hover:text-text">
+            Uses {topicTitle}
+          </Link>
+        )}
+      </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <div className="space-y-5">
           <article className="rounded-2xl border border-paper-border bg-paper p-6 shadow-sm sm:p-8">
             <div className="flex items-baseline justify-between gap-4 border-b border-dashed border-paper-border pb-3">
-              <p className="font-mono text-xs tracking-widest text-muted uppercase">Case file · Episode {data.episode}</p>
+              <p className="font-mono text-xs tracking-widest text-muted uppercase">
+                Case file{data.series ? ` · ${data.series.name}, episode ${data.series.episode}` : ""}
+              </p>
               {solved && <span className="rotate-[-4deg] rounded border-2 border-success px-2 py-0.5 font-mono text-xs font-bold text-success">SOLVED</span>}
             </div>
             <h1 className="mt-4 font-serif text-3xl leading-tight">{data.title}</h1>
@@ -148,8 +137,8 @@ export function CasePlayer({
               hints={data.hints}
               used={hints}
               informant={informant}
-              reward={caseReward(hints)}
-              onTake={() => takeHint(topicKey)}
+              reward={caseReward(data.difficulty, hints)}
+              onTake={() => takeHint(id)}
             />
           )}
         </div>
@@ -197,3 +186,4 @@ function HintPanel({
     </div>
   );
 }
+

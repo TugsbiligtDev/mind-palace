@@ -1,0 +1,61 @@
+difficulty: hard
+topic: postgresql/beginner/08-writing-data
+concepts: [DELETE, OR, ILIKE, "NULL"]
+title: The Newsletter Purge
+briefing: |
+  A travel blog's mailing list is a mess. Before the next newsletter goes out, the owner wants
+  two kinds of rows **deleted**:
+
+  - **test addresses**: anything at `@test.local`, in any capitalization,
+  - anyone who **unsubscribed before 2026**.
+
+  Everybody else stays, including people who never unsubscribed at all.
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.subscribers (
+      sub_id           INTEGER PRIMARY KEY,
+      email            TEXT NOT NULL,
+      unsubscribed_on  DATE
+  );
+  INSERT INTO evidence.subscribers VALUES
+  (1, 'maya@example.com',     NULL),
+  (2, 'test1@test.local',     NULL),
+  (3, 'jon@example.com',      '2025-11-02'),
+  (4, 'QA-Bot@TEST.LOCAL',    NULL),
+  (5, 'sara@example.com',     '2026-02-14'),
+  (6, 'li@example.com',       NULL),
+  (7, 'old@example.com',      '2024-06-30'),
+  (8, 'demo@test.local',      '2025-01-01');
+clues:
+  - "`evidence.subscribers`: `sub_id`, `email`, `unsubscribed_on` (NULL if still subscribed)."
+  - Sara unsubscribed **in 2026**, so she is *not* deleted (the owner wants to send her a last "sorry to see you go").
+task: |
+  **Delete** every subscriber who has a `@test.local` address (any capitalization) **or**
+  unsubscribed **before 2026-01-01**. Keep everyone else.
+
+  The grader checks the **state of the table** afterwards.
+starter: |
+  DELETE FROM evidence.subscribers
+  WHERE email LIKE '%@test.local'
+     OR unsubscribed_on IS NOT NULL;
+check:
+  mode: state
+  solution: |
+    DELETE FROM evidence.subscribers
+    WHERE email ILIKE '%@test.local'
+       OR unsubscribed_on < '2026-01-01';
+  state_query: |
+    SELECT sub_id, email
+    FROM evidence.subscribers
+    ORDER BY sub_id;
+hints:
+  - "The starter has two bugs. One misses a test address, the other deletes someone who should stay. Check QA-Bot and Sara."
+  - "`LIKE` cares about capitals, so use its case-insensitive cousin. And *unsubscribed before 2026* is a date comparison, not just *has a date*."
+  - "`WHERE email ILIKE '%@test.local' OR unsubscribed_on < '2026-01-01'`. Rows with a NULL date aren't matched by `<`, so they stay safely."
+reveal: |
+  Three subscribers remain: **maya, sara and li**. Five rows were deleted: the three test
+  addresses (including **QA-Bot**, which plain `LIKE` missed) and the two early leavers, jon and old.
+  demo@test.local matched *both* rules, and `OR` only needs one.
+
+  The starter would also have deleted **Sara**, who left in 2026 and was meant to stay.
+  The newsletter goes out to three real readers. Small, but honest.

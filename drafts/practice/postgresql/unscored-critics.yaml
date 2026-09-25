@@ -1,0 +1,56 @@
+difficulty: medium
+topic: postgresql/beginner/04-order-by
+concepts: [ORDER BY, NULLS LAST, multi-column sort]
+title: The Unscored Critics
+briefing: |
+  A food magazine's "best restaurants by city" list came out wrong: in every city, the places
+  the critics **hadn't scored yet** were printed at the top, above the real winners.
+
+  The editor wants the list rebuilt properly before the next issue.
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.critic_scores (
+      restaurant  TEXT PRIMARY KEY,
+      city        TEXT NOT NULL,
+      score       INTEGER
+  );
+  INSERT INTO evidence.critic_scores VALUES
+  ('Modern Nomads',  'Ulaanbaatar', 8),
+  ('Hazara',         'Ulaanbaatar', 9),
+  ('The Blue Gate',  'Ulaanbaatar', NULL),
+  ('Sakura Soba',    'Kyoto',       7),
+  ('Kyo Kitchen',    'Kyoto',       NULL),
+  ('Hanami',         'Kyoto',       9),
+  ('Trattoria Sole', 'Florence',    6),
+  ('Il Forno',       'Florence',    8);
+clues:
+  - "`evidence.critic_scores`: `restaurant`, `city`, `score` (NULL if not scored yet)."
+task: |
+  Return **`city`, `restaurant`, `score`** for every restaurant,
+
+  - sorted by **`city` A to Z**,
+  - then, within each city, by **`score` highest first**,
+  - with **unscored restaurants at the bottom** of their city.
+
+  Order matters: the grader checks the rows *in order*.
+starter: |
+  SELECT city, restaurant, score
+  FROM evidence.critic_scores
+  ORDER BY city, score DESC;
+check:
+  mode: result
+  ordered: true
+  solution: |
+    SELECT city, restaurant, score
+    FROM evidence.critic_scores
+    ORDER BY city, score DESC NULLS LAST;
+hints:
+  - "Run the starter. Where do the NULL scores end up in each city?"
+  - "In descending order, NULLs count as *largest*, so they come first. You can override that for one sort column."
+  - "`ORDER BY city, score DESC NULLS LAST`"
+reveal: |
+  Florence: Il Forno, Trattoria Sole. Kyoto: **Hanami**, Sakura Soba, then Kyo Kitchen (unscored).
+  Ulaanbaatar: **Hazara**, Modern Nomads, then The Blue Gate.
+
+  The magazine's database hadn't changed at all. Only the sort had. The editor prints a
+  correction and adds `NULLS LAST` to the office style guide.

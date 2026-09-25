@@ -1,0 +1,49 @@
+difficulty: easy
+topic: postgresql/beginner/03-where
+concepts: [WHERE, IS NULL]
+title: The Missing Postcards
+briefing: |
+  A small post office in Kharkhorin has a complaint from tourists: postcards they mailed home
+  never arrived. The clerk swears everything was sent.
+
+  The post office records a `delivered_on` date when a card arrives. If it never arrived, the
+  date is left **empty** (NULL).
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.postcards (
+      card_id       INTEGER PRIMARY KEY,
+      sender        TEXT NOT NULL,
+      destination   TEXT NOT NULL,
+      posted_on     DATE NOT NULL,
+      delivered_on  DATE
+  );
+  INSERT INTO evidence.postcards VALUES
+  (1, 'Anna Kowalski', 'Warsaw',  '2026-07-01', '2026-07-12'),
+  (2, 'Tom Hughes',    'Leeds',   '2026-07-01', NULL),
+  (3, 'Mei Lin',       'Taipei',  '2026-07-02', '2026-07-09'),
+  (4, 'Tom Hughes',    'Leeds',   '2026-07-03', NULL),
+  (5, 'Sofia Reyes',   'Seville', '2026-07-03', '2026-07-15'),
+  (6, 'Bold Enkh',     'Erdenet', '2026-07-04', NULL);
+clues:
+  - "`evidence.postcards`: `card_id`, `sender`, `destination`, `posted_on`, `delivered_on` (NULL if it never arrived)."
+task: |
+  Return the columns **`card_id`, `sender`, `destination`** for every postcard that was **never delivered**.
+starter: |
+  SELECT card_id, sender, destination
+  FROM evidence.postcards
+  WHERE delivered_on = NULL;
+check:
+  mode: result
+  solution: |
+    SELECT card_id, sender, destination
+    FROM evidence.postcards
+    WHERE delivered_on IS NULL;
+hints:
+  - "Run the starter. Zero rows, but you can see empty dates in the table. Something about `= NULL` isn't working."
+  - "NULL means *unknown*, so comparing anything to it with `=` gives *unknown*, never true. There's a special operator for this."
+  - "`WHERE delivered_on IS NULL`"
+reveal: |
+  Three cards lost: **2 and 4**, both from Tom Hughes to Leeds, and **6** to Erdenet.
+
+  Two of the three are Tom's. Moth checks the sorting shelf and finds them wedged behind the
+  "Leeds, Alabama" pigeonhole. "Wrong Leeds," Moth says, and posts them again.

@@ -1,0 +1,53 @@
+difficulty: hard
+topic: postgresql/beginner/08-writing-data
+concepts: [UPDATE, WHERE, round]
+title: The Price Correction
+briefing: |
+  A tour operator's prices in **Kyoto** were set before the yen moved, and they're now too low.
+  The owner wants every Kyoto tour raised by **10%**, rounded to cents. **No other city** may
+  change. Last time an intern ran an UPDATE without a WHERE, every price in the company doubled.
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.tour_prices (
+      tour_id  INTEGER PRIMARY KEY,
+      tour     TEXT NOT NULL,
+      city     TEXT NOT NULL,
+      price    NUMERIC(8,2) NOT NULL
+  );
+  INSERT INTO evidence.tour_prices VALUES
+  (1, 'Temple walk',        'Kyoto',  45.00),
+  (2, 'Tea ceremony',       'Kyoto',  62.50),
+  (3, 'Gion by night',      'Kyoto',  38.75),
+  (4, 'Senso-ji at dawn',   'Tokyo',  40.00),
+  (5, 'Sushi masterclass',  'Tokyo',  95.00),
+  (6, 'Nara deer day trip', 'Nara',   55.00);
+clues:
+  - "`evidence.tour_prices`: `tour_id`, `tour`, `city`, `price`."
+  - "*Raise by 10%* means the new price is the old price **times 1.1**."
+task: |
+  Raise the price of **every Kyoto tour by 10%**, **rounded to 2 decimal places**. Change nothing else.
+
+  The grader checks the **state of the table** afterwards. Put a checking `SELECT` *below* your
+  `UPDATE` and run them together.
+starter: |
+  UPDATE evidence.tour_prices
+  SET price = price * 1.1;
+check:
+  mode: state
+  solution: |
+    UPDATE evidence.tour_prices
+    SET price = round(price * 1.1, 2)
+    WHERE city = 'Kyoto';
+  state_query: |
+    SELECT tour_id, city, price::text
+    FROM evidence.tour_prices
+    ORDER BY tour_id;
+hints:
+  - "Run the starter with a `SELECT * FROM evidence.tour_prices;` underneath. Look at Tokyo and Nara."
+  - "An `UPDATE` without `WHERE` changes every row. Add one for Kyoto, and round the new price."
+  - "`SET price = round(price * 1.1, 2) WHERE city = 'Kyoto'`"
+reveal: |
+  Temple walk **49.50**, Tea ceremony **68.75**, Gion by night **42.63** (42.625, rounded up).
+  Tokyo and Nara untouched.
+
+  The owner frames the query and hangs it next to the intern's desk. As a reminder, not a punishment.

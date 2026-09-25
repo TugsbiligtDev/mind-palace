@@ -1,0 +1,69 @@
+difficulty: hard
+topic: postgresql/beginner/07-aggregation
+concepts: [WHERE, GROUP BY, HAVING, ORDER BY]
+title: The March Big Spenders
+briefing: |
+  A bank's fraud team suspects a stolen card was used in **March 2026**. They want every
+  cardholder whose March spending **went over 500**, biggest spender first. Charges from
+  other months don't count.
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.card_charges (
+      charge_id   INTEGER PRIMARY KEY,
+      cardholder  TEXT NOT NULL,
+      merchant    TEXT NOT NULL,
+      amount      NUMERIC(8,2) NOT NULL,
+      charged_on  DATE NOT NULL
+  );
+  INSERT INTO evidence.card_charges VALUES
+  ( 1, 'Anu Batbold',  'Sky Mall',        220.00, '2026-03-02'),
+  ( 2, 'Carlos Vega',  'Air Mongolia',    640.00, '2026-02-27'),
+  ( 3, 'Anu Batbold',  'Nomin Market',    180.50, '2026-03-09'),
+  ( 4, 'Jin Park',     'Hotel Mandala',   410.00, '2026-03-15'),
+  ( 5, 'Carlos Vega',  'Cafe Amsterdam',   12.00, '2026-03-03'),
+  ( 6, 'Anu Batbold',  'Electronics Pro', 299.99, '2026-03-28'),
+  ( 7, 'Jin Park',     'Sky Mall',         95.00, '2026-03-31'),
+  ( 8, 'Ruth Mendel',  'Air Mongolia',    880.00, '2026-03-20'),
+  ( 9, 'Carlos Vega',  'Hotel Mandala',   350.00, '2026-04-01'),
+  (10, 'Jin Park',     'Nomin Market',     20.00, '2026-03-05');
+clues:
+  - "`evidence.card_charges`: `charge_id`, `cardholder`, `merchant`, `amount`, `charged_on`."
+  - March 2026 runs from **2026-03-01 to 2026-03-31**, inclusive.
+task: |
+  For each cardholder whose **total March 2026 spending is over 500**, return:
+
+  1. `cardholder`
+  2. **`charges`**: how many March charges they made
+  3. **`total`**: their March total
+
+  Sort by **`total`, largest first**. Order matters: the grader checks the rows *in order*.
+starter: |
+  SELECT cardholder, count(*) AS charges, sum(amount) AS total
+  FROM evidence.card_charges
+  GROUP BY cardholder
+  HAVING sum(amount) > 500;
+check:
+  mode: result
+  ordered: true
+  solution: |
+    SELECT cardholder, count(*) AS charges, sum(amount) AS total
+    FROM evidence.card_charges
+    WHERE charged_on BETWEEN '2026-03-01' AND '2026-03-31'
+    GROUP BY cardholder
+    HAVING sum(amount) > 500
+    ORDER BY total DESC;
+hints:
+  - "The starter counts every month. Carlos's February flight and April hotel sneak in. Which clause removes rows *before* grouping?"
+  - "Filter the dates with `WHERE … BETWEEN`, keep `HAVING` for the *total*, and finish with a sort."
+  - "Add `WHERE charged_on BETWEEN '2026-03-01' AND '2026-03-31'` before `GROUP BY`, and `ORDER BY total DESC` at the end."
+reveal: |
+  | cardholder | charges | total |
+  |---|---|---|
+  | Ruth Mendel | 1 | 880.00 |
+  | Anu Batbold | 3 | 700.49 |
+  | Jin Park | 3 | 525.00 |
+
+  Carlos Vega spent 1002.00 overall, but only 12.00 of it in March, so he's off the list.
+
+  Anu's three charges look like a normal month. Ruth's single 880.00 flight, booked on a card
+  she'd reported lost on March 19, does not. The fraud team takes it from here.

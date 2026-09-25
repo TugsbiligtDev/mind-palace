@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
 import { allTopicParams, topicContext } from "@/lib/content/load";
+import { practiceHrefFor } from "@/lib/content/practice";
 
 export const dynamicParams = false;
 export const generateStaticParams = allTopicParams;
@@ -18,15 +19,15 @@ export default async function QuizPage({ params }: PageProps<"/courses/[track]/[
   return (
     <QuizPlayer
       topicKey={ctx.topic.key}
-      topicKeys={ctx.topicKeys}
-      topicIndex={ctx.index}
       title={ctx.topic.topic.title}
       module={ctx.topic.topic.module}
       questions={ctx.topic.quiz.questions}
       pass={ctx.topic.quiz.pass}
       href={ctx.quizHref}
       lessonHref={ctx.href}
-      caseHref={ctx.caseHref}
+      practiceHref={practiceHrefFor(ctx.topic.key)}
+      nextHref={ctx.nextHref}
+      nextLabel={ctx.nextLabel}
     />
   );
 }

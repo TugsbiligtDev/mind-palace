@@ -9,7 +9,7 @@ export const trackSchema = z.object({
   title: z.string(),
   tagline: z.string(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  engine: z.enum(["postgres", "python"]),
+  engine: z.enum(["postgres", "python", "javascript"]),
   engine_version: z.string(),
   last_reviewed: z.string(),
   dataset: z.string().optional(),
@@ -90,8 +90,15 @@ export const quizSchema = z.object({
   questions: z.array(question).min(3).max(5),
 });
 
+// A practice problem ("case file") in the Practice hub. Content lives in
+// content/practice/<track>/<id>.yaml, independent of the courses.
 export const caseSchema = z.object({
-  episode: z.number().int(),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  // The course topic whose skills this case practises, e.g. "postgresql/beginner/03-where".
+  topic: z.string().optional(),
+  concepts: z.array(z.string()).min(1),
+  // Story cases belong to a season and are numbered; standalone cases leave this out.
+  series: z.object({ name: z.string(), episode: z.number().int() }).optional(),
   title: z.string(),
   briefing: md,
   evidence_setup: z.string().default(""),
@@ -121,4 +128,5 @@ export type Step = Lesson["steps"][number];
 export type Quiz = z.infer<typeof quizSchema>;
 export type Question = Quiz["questions"][number];
 export type Case = z.infer<typeof caseSchema>;
+export type Difficulty = Case["difficulty"];
 export type Story = z.infer<typeof storySchema>;

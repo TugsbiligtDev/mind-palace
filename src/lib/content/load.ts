@@ -4,14 +4,12 @@ import path from "node:path";
 import YAML from "yaml";
 import type { z } from "zod";
 import {
-  caseSchema,
   lessonSchema,
   levelSchema,
   quizSchema,
   storySchema,
   topicSchema,
   trackSchema,
-  type Case,
   type Lesson,
   type Level,
   type Quiz,
@@ -21,7 +19,7 @@ import {
 
 export const CONTENT_DIR = path.join(process.cwd(), "content");
 
-function readYaml<S extends z.ZodType>(file: string, schema: S): z.infer<S> {
+export function readYaml<S extends z.ZodType>(file: string, schema: S): z.infer<S> {
   const parsed = schema.safeParse(YAML.parse(fs.readFileSync(file, "utf8")));
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n");
@@ -36,7 +34,6 @@ export type TopicBundle = {
   topic: Topic;
   lesson: Lesson;
   quiz: Quiz;
-  case: Case;
 };
 
 export type LevelBundle = { level: Level; topics: TopicBundle[] };
@@ -72,7 +69,6 @@ export function loadTrack(id: string): TrackBundle {
         topic: readYaml(path.join(t, "topic.yaml"), topicSchema),
         lesson: readYaml(path.join(t, "lesson.yaml"), lessonSchema),
         quiz: readYaml(path.join(t, "quiz.yaml"), quizSchema),
-        case: readYaml(path.join(t, "case.yaml"), caseSchema),
       };
     });
     return { level, topics };
@@ -94,7 +90,7 @@ export function findTopic(trackId: string, levelId: string, topicId: string) {
   return { bundle, level, index, topic: level.topics[index] };
 }
 
-// A compact, serializable summary of a level for client components (unlock logic, HQ).
+// A compact, serializable summary of a level for client components.
 export type LevelSummary = {
   trackId: string;
   trackTitle: string;
@@ -104,7 +100,7 @@ export type LevelSummary = {
   season: number;
   seasonTitle: string;
   status: Level["status"];
-  topics: { id: string; key: string; title: string; module: number; caseTitle: string; episode: number; quizPass: number }[];
+  topics: { id: string; key: string; title: string; summary: string; module: number; minutes: number; steps: number }[];
 };
 
 export function summarize(bundle: TrackBundle): LevelSummary[] {
@@ -121,10 +117,10 @@ export function summarize(bundle: TrackBundle): LevelSummary[] {
       id: t.id,
       key: t.key,
       title: t.topic.title,
+      summary: t.topic.summary,
       module: t.topic.module,
-      caseTitle: t.case.title,
-      episode: t.case.episode,
-      quizPass: t.quiz.pass,
+      minutes: t.topic.minutes,
+      steps: t.lesson.steps.length,
     })),
   }));
 }
@@ -139,22 +135,18 @@ export function topicContext(trackId: string, levelId: string, topicId: string) 
   if (!found) return undefined;
   const { bundle, level, index, topic } = found;
   const base = topicHref(trackId, levelId, topicId);
-  const prev = level.topics[index - 1];
   const next = level.topics[index + 1];
   return {
     bundle,
     level,
     index,
     topic,
-    topicKeys: level.topics.map((t) => t.key),
     href: base,
+    levelHref: `/courses/${trackId}/${levelId}`,
     quizHref: `${base}/quiz`,
-    caseHref: `${base}/case`,
-    prevCaseHref: prev ? `${topicHref(trackId, levelId, prev.id)}/case` : undefined,
-    nextHref: next ? topicHref(trackId, levelId, next.id) : `/courses/${trackId}`,
-    nextLabel: next ? `Next: Module ${next.topic.module}, ${next.topic.title} →` : "Season complete, back to the course →",
+    nextHref: next ? topicHref(trackId, levelId, next.id) : `/courses/${trackId}/${levelId}`,
+    nextLabel: next ? `Next: Module ${next.topic.module}, ${next.topic.title} →` : "Level complete, back to the level →",
     lessonEngine: { key: trackId, setup: bundle.dataset },
-    caseEngine: { key: `${topic.key}#case`, setup: `${bundle.dataset}\n${topic.case.evidence_setup}` },
   };
 }
 
@@ -162,4 +154,22 @@ export function allTopicParams() {
   return loadAllTracks().flatMap((b) =>
     b.levels.flatMap((l) => l.topics.map((t) => ({ track: b.track.id, level: l.level.id, topic: t.id }))),
   );
+}
+
+export function allLevelParams() {
+  return loadAllTracks().flatMap((b) => b.levels.map((l) => ({ track: b.track.id, level: l.level.id })));
+}
+
+// Courses shown as "Coming soon" until their folder exists in /content.
+const UPCOMING = [
+  { id: "python", title: "Python", tagline: "From your first variable to real programs.", color: "var(--color-python)" },
+  { id: "dsa", title: "Data Structures & Algorithms", tagline: "Think like a problem solver, in JavaScript.", color: "var(--color-dsa)" },
+  { id: "ethical-hacking", title: "Ethical Hacking", tagline: "How attacks work, so you can defend against them.", color: "var(--color-hacking)" },
+];
+
+export type UpcomingTrack = (typeof UPCOMING)[number];
+
+export function upcomingTracks(): UpcomingTrack[] {
+  const live = new Set(listTrackIds());
+  return UPCOMING.filter((t) => !live.has(t.id));
 }

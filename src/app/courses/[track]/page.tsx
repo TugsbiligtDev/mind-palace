@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { TopicList } from "@/components/course/topic-list";
-import { Markdown } from "@/components/markdown";
+import { LevelCards } from "@/components/course/level-cards";
 import { listTrackIds, loadTrack, summarize } from "@/lib/content/load";
 
 export const dynamicParams = false;
@@ -16,17 +15,24 @@ export default async function TrackPage({ params }: PageProps<"/courses/[track]"
   const { track: trackId } = await params;
   if (!listTrackIds().includes(trackId)) notFound();
   const bundle = loadTrack(trackId);
-  const summaries = summarize(bundle);
+  const levels = summarize(bundle).map((s, i) => ({
+    ...s,
+    pitch: bundle.levels[i].level.season_pitch,
+    planned: bundle.levels[i].level.planned,
+  }));
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
       <Link href="/courses" className="text-sm text-muted hover:text-text">
         ← Courses
       </Link>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">{bundle.track.title}</h1>
-          <p className="mt-2 text-muted">{bundle.track.tagline}</p>
+        <div className="flex items-center gap-4">
+          <span className="size-11 shrink-0 rounded-xl" style={{ background: bundle.track.color }} />
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">{bundle.track.title}</h1>
+            <p className="mt-1 text-muted">{bundle.track.tagline}</p>
+          </div>
         </div>
         {bundle.setup && (
           <Link href={`/courses/${trackId}/setup`} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-subtle">
@@ -34,32 +40,8 @@ export default async function TrackPage({ params }: PageProps<"/courses/[track]"
           </Link>
         )}
       </div>
-
-      <div className="mt-10 space-y-12">
-        {bundle.levels.map(({ level }, i) => (
-          <section key={level.id}>
-            <p className="text-xs font-medium tracking-wide text-brand uppercase">
-              {level.title} · Season {level.season}
-            </p>
-            <h2 className="mt-1 font-serif text-2xl">{level.season_title}</h2>
-            <Markdown className="mt-2 text-muted">{level.season_pitch}</Markdown>
-            <div className="mt-5">
-              {level.status === "open" ? (
-                <TopicList level={summaries[i]} />
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border p-5">
-                  <p className="text-sm font-medium">Coming soon</p>
-                  <ul className="mt-3 space-y-1 text-sm text-muted">
-                    {level.planned.map((m) => (
-                      <li key={m}>{m}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </section>
-        ))}
-      </div>
+      <p className="mt-8 text-sm text-muted">Choose a level. Each one is a set of short lessons, each followed by a quick quiz.</p>
+      <LevelCards levels={levels} />
     </div>
   );
 }

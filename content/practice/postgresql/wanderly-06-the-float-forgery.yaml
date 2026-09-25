@@ -1,0 +1,74 @@
+difficulty: medium
+topic: postgresql/beginner/05-data-types
+concepts: [numeric, casting, intervals]
+series: { name: The Wanderly Files, episode: 6 }
+title: The Float Forgery
+briefing: |
+  Hotel Aurelia has sent over its **folio**, the hotel's own bill, for Dulguun Erdene's stay.
+  It came from an old system that exported *everything* as text: prices, night counts, all of it.
+
+  There's also a "summary report" someone filed at Wanderly, signed ~C, claiming the totals
+  "match the booking to within rounding error". It was calculated in floating point.
+
+  "Rounding error," Bold repeats flatly. "We don't round. We calculate exactly."
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.hotel_folio (
+      folio_id        INTEGER PRIMARY KEY,
+      traveler_id     INTEGER NOT NULL,
+      hotel           TEXT NOT NULL,
+      room_rate_text  TEXT NOT NULL,
+      nights_text     TEXT NOT NULL,
+      checked_in      TIMESTAMPTZ NOT NULL,
+      checked_out     TIMESTAMPTZ NOT NULL
+  );
+  INSERT INTO evidence.hotel_folio VALUES
+  (1, 4, 'Hotel Aurelia', '60.00',  '1', '2026-02-01 14:00+01', '2026-02-06 11:00+01'),
+  (2, 4, 'Hotel Lumiere', '170.00', '5', '2026-02-06 18:00+01', '2026-02-11 10:00+01'),
+  (3, 1, 'Tokyo Stay',    '155.00', '4', '2026-03-01 15:00+09', '2026-03-05 10:00+09');
+  CREATE TABLE evidence.summary_report (
+      line_no         INTEGER PRIMARY KEY,
+      reported_total  REAL,
+      signed_by       TEXT
+  );
+  INSERT INTO evidence.summary_report VALUES (1, 60.000004, '~C'), (2, 849.99994, '~C');
+clues:
+  - "`evidence.hotel_folio`: `folio_id`, `traveler_id`, `hotel`, `room_rate_text` and `nights_text` (**both stored as text**), `checked_in`, `checked_out` (timestamptz)."
+  - Dulguun Erdene is traveler **4**.
+  - "The folio's `nights_text` was copied from Wanderly's booking. The check-in and check-out times come from the hotel's own door-key system."
+task: |
+  For **traveler 4's** folios only, return exactly these four columns:
+
+  1. `folio_id`
+  2. `hotel`
+  3. **`total`**: the room rate times the number of nights, calculated **exactly** (money is never a float, and the night count is a whole number)
+  4. **`stay_length`**: the exact time between check-in and check-out (subtract the two timestamps, which gives an interval)
+starter: |
+  SELECT folio_id, hotel,
+         room_rate_text * nights_text AS total
+  FROM evidence.hotel_folio
+  WHERE traveler_id = 4;
+check:
+  mode: result
+  solution: |
+    SELECT folio_id, hotel,
+           room_rate_text::numeric(8,2) * nights_text::integer AS total,
+           checked_out - checked_in AS stay_length
+    FROM evidence.hotel_folio
+    WHERE traveler_id = 4;
+hints:
+  - "The error says you can't multiply `text` by `text`. You need to convert (cast) both values to number types first."
+  - "The rate is money, so cast it to an exact decimal type (`::numeric(8,2)`). The night count is a whole number (`::integer`). For the stay, subtract one timestamp from the other."
+  - "`room_rate_text::numeric(8,2) * nights_text::integer AS total`, and then `checked_out - checked_in AS …`. Don't forget the label."
+reveal: |
+  | folio | hotel | total | stay_length |
+  |---|---|---|---|
+  | 1 | Hotel Aurelia | 60.00 | **4 days 21:00:00** |
+  | 2 | Hotel Lumiere | 850.00 | 4 days 16:00:00 |
+
+  The Paris folio is honest: 5 nights at 170.00 is 850.00, matching the booking to the cent.
+  But the Aurelia folio bills **one** night while the door keys show almost **five days**.
+
+  "The float report was a smokescreen," Bold says. "Nobody hides a missing four nights in
+  rounding error. The night count was changed, and whoever changed it knew the folio would
+  copy the booking."

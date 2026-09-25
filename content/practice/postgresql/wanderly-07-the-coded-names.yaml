@@ -1,0 +1,67 @@
+difficulty: medium
+topic: postgresql/beginner/06-functions
+concepts: [text functions, COALESCE, CASE]
+series: { name: The Wanderly Files, episode: 7 }
+title: The Coded Names
+briefing: |
+  Whoever changed the Rome booking needed a Wanderly staff login. IT has handed over the login
+  table, and it's a mess: names typed as `surname|first name` in random capitals, stray spaces
+  everywhere, departments missing.
+
+  "The guest book puts ~C in the server room on February 21 and 22," Bold says. "The tour ended
+  on the 20th. I want every staff login, cleaned up, with anyone who edited records in the week
+  right after the tour flagged."
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.staff_logins (
+      login_id   TEXT PRIMARY KEY,
+      raw_name   TEXT NOT NULL,   -- 'surname|first name', messy
+      dept       TEXT,
+      last_edit  DATE NOT NULL
+  );
+  INSERT INTO evidence.staff_logins VALUES
+  ('sotgon',    '  otgon|saraa  ', 'Sales',   '2026-01-10'),
+  ('gtsog',     'TSOG|gerel ',     NULL,      '2026-02-21'),
+  ('mlarsen',   ' larsen|mia',     'Support', '2025-12-01'),
+  ('nbatbayar', 'batbayar|NOMIN',  'IT',      '2026-02-12'),
+  ('edash',     'dash|enkh ',      'Finance', '2026-02-28');
+clues:
+  - "`evidence.staff_logins`: `login_id`, `raw_name` (as `surname|first name`, with messy spaces and capitals), `dept` (sometimes missing), `last_edit` (the last day this login edited any record)."
+  - The Grand Tour ended on **2026-02-20**.
+task: |
+  Return **every** login with exactly these four columns:
+
+  1. `login_id`
+  2. **`full_name`**: first name, one space, surname, **all uppercase**, with no extra spaces (like `SARAA OTGON`)
+  3. **`dept`**: the department, or **`UNASSIGNED`** if it's missing
+  4. **`status`**: **`SUSPECT`** if `last_edit` falls between the tour's last day and a week later, **2026-02-20 to 2026-02-27 inclusive**, otherwise **`clear`**
+starter: |
+  SELECT login_id, raw_name, dept, last_edit
+  FROM evidence.staff_logins;
+check:
+  mode: result
+  solution: |
+    SELECT login_id,
+           upper(trim(split_part(raw_name, '|', 2))) || ' ' ||
+           upper(trim(split_part(raw_name, '|', 1))) AS full_name,
+           COALESCE(dept, 'UNASSIGNED') AS dept,
+           CASE
+             WHEN last_edit BETWEEN '2026-02-20' AND '2026-02-27' THEN 'SUSPECT'
+             ELSE 'clear'
+           END AS status
+    FROM evidence.staff_logins;
+hints:
+  - "Work one column at a time. `split_part(raw_name, '|', 1)` gives the surname part, and `2` gives the first-name part. Run just that and look at the spaces."
+  - "Clean each part with `trim()`, then `upper()`, and join them with `|| ' ' ||`, first name first. The department needs `COALESCE`, and the status needs a `CASE` with `BETWEEN`."
+  - "`upper(trim(split_part(raw_name, '|', 2))) || ' ' || upper(trim(split_part(raw_name, '|', 1))) AS full_name`. Now add the `COALESCE(…)` and `CASE WHEN last_edit BETWEEN … THEN 'SUSPECT' ELSE 'clear' END` columns."
+reveal: |
+  One row comes back flagged:
+
+  **gtsog · GEREL TSOG · UNASSIGNED · SUSPECT**
+
+  Last edit: **February 21**, the same night the guest book puts ~C in the server room.
+
+  Moth goes pale. "Gerel runs Operations. Or did. Operations can edit bookings. And the
+  department field wasn't *missing* when I worked nights. Somebody cleared it."
+
+  "A name isn't proof," Bold says. "Money is. Let's follow it."

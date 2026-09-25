@@ -1,44 +1,50 @@
 "use client";
 import Link from "next/link";
 import type { LevelSummary } from "@/lib/content/load";
-import { caseState, useProgress } from "@/lib/progress";
+import { useProgress } from "@/lib/progress";
 
-function Dot({ done, label }: { done: boolean; label: string }) {
+function Pill({ done, label, href }: { done: boolean; label: string; href: string }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs ${done ? "bg-success/10 text-success" : "bg-subtle text-muted"}`}>
+    <Link
+      href={href}
+      className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
+        done ? "bg-success/10 text-success" : "bg-subtle text-muted hover:text-text"
+      }`}
+    >
       {done ? "✓ " : ""}
       {label}
-    </span>
+    </Link>
   );
 }
 
 export function TopicList({ level }: { level: LevelSummary }) {
   const p = useProgress();
-  const keys = level.topics.map((t) => t.key);
   return (
     <ol className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
-      {level.topics.map((t, i) => {
+      {level.topics.map((t) => {
         const href = `/courses/${level.trackId}/${level.levelId}/${t.id}`;
-        const s = caseState(p, keys, i);
+        const lesson = p?.lessons[t.key];
+        const quiz = p?.quizzes[t.key];
+        const action = quiz?.passed ? "Review" : lesson?.done ? "Take quiz" : lesson ? "Continue" : "Start";
         return (
           <li key={t.key} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
             <span className="w-8 font-mono text-sm text-muted">{String(t.module).padStart(2, "0")}</span>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 basis-56">
               <Link href={href} className="font-medium hover:text-brand">
                 {t.title}
               </Link>
-              <p className="mt-0.5 font-serif text-sm text-muted italic">Episode {t.episode}: {t.caseTitle}</p>
+              <p className="mt-0.5 text-sm text-muted">{t.summary}</p>
             </div>
             <div className="flex items-center gap-1.5">
-              <Dot done={!!p?.lessons[t.key]?.done} label="Lesson" />
-              <Dot done={!!p?.quizzes[t.key]?.passed} label="Quiz" />
-              <Dot done={s.solved} label="Case" />
+              <span className="mr-1 text-xs text-muted">{t.minutes} min</span>
+              <Pill done={!!lesson?.done} label="Lesson" href={href} />
+              <Pill done={!!quiz?.passed} label="Quiz" href={`${href}/quiz`} />
             </div>
             <Link
-              href={s.unlocked && !s.solved ? `${href}/case` : href}
-              className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-subtle"
+              href={action === "Take quiz" ? `${href}/quiz` : href}
+              className="w-24 rounded-lg border border-border px-3 py-1.5 text-center text-sm hover:bg-subtle"
             >
-              {s.solved ? "Review" : s.unlocked ? "Open case" : p?.lessons[t.key] ? "Continue" : "Start"}
+              {action}
             </Link>
           </li>
         );

@@ -1,0 +1,51 @@
+difficulty: hard
+topic: postgresql/beginner/03-where
+concepts: [AND, OR, parentheses, "NULL"]
+title: The Precedence Problem
+briefing: |
+  Steppe Air owes compensation for flights **from Ulaanbaatar (ULN)** that were **cancelled or
+  delayed by more than 60 minutes**. A clerk's report included flights from other airports,
+  and the airline almost paid out twice as much as it should.
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.flights (
+      flight_no    TEXT PRIMARY KEY,
+      origin       TEXT NOT NULL,
+      destination  TEXT NOT NULL,
+      status       TEXT NOT NULL,
+      delay_min    INTEGER
+  );
+  INSERT INTO evidence.flights VALUES
+  ('SA101', 'ULN', 'PEK', 'landed',    15),
+  ('SA102', 'ULN', 'ICN', 'cancelled', NULL),
+  ('SA103', 'ULN', 'NRT', 'landed',    95),
+  ('SA104', 'ICN', 'ULN', 'landed',    120),
+  ('SA105', 'ULN', 'IST', 'landed',    60),
+  ('SA106', 'PEK', 'ULN', 'cancelled', NULL),
+  ('SA107', 'ULN', 'FRA', 'landed',    61),
+  ('SA108', 'NRT', 'ULN', 'landed',    NULL);
+clues:
+  - "`evidence.flights`: `flight_no`, `origin`, `destination`, `status`, `delay_min` (NULL for cancelled or unknown)."
+  - A delay of **exactly 60** minutes does **not** qualify.
+task: |
+  Return **all columns** for flights **from `ULN`** that were **cancelled**, or **delayed by more than 60 minutes**.
+starter: |
+  SELECT *
+  FROM evidence.flights
+  WHERE origin = 'ULN' AND status = 'cancelled' OR delay_min > 60;
+check:
+  mode: result
+  solution: |
+    SELECT *
+    FROM evidence.flights
+    WHERE origin = 'ULN' AND (status = 'cancelled' OR delay_min > 60);
+hints:
+  - "Run the starter. SA104 departs from Seoul (ICN), so why is it in the list?"
+  - "`AND` binds tighter than `OR`, so the starter means *(ULN and cancelled) or (any flight delayed over 60)*."
+  - "Put brackets around the two *reasons*: `WHERE origin = 'ULN' AND (status = 'cancelled' OR delay_min > 60)`"
+reveal: |
+  Three flights: **SA102** (cancelled), **SA103** (95 minutes) and **SA107** (61 minutes, just over).
+  SA105 at exactly 60 doesn't qualify, and SA104 left from Seoul, so it's a different airline
+  desk's problem.
+
+  Two brackets saved the airline one very expensive afternoon.

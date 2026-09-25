@@ -1,0 +1,58 @@
+difficulty: medium
+topic: postgresql/beginner/04-order-by
+concepts: [ORDER BY, LIMIT, OFFSET, paging]
+title: Page Two of the Manifest
+briefing: |
+  Steppe Air prints its passenger manifests **five names per page**, sorted by seat number.
+  Page 2 of flight SA311's manifest was lost, and it's the page the police want.
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.passengers (
+      seat_no  INTEGER PRIMARY KEY,
+      name     TEXT NOT NULL,
+      booked   DATE NOT NULL
+  );
+  INSERT INTO evidence.passengers VALUES
+  (14, 'Harriet Vance',   '2026-05-01'),
+  ( 3, 'Batsaikhan O.',   '2026-04-20'),
+  (22, 'Lucia Ferraro',   '2026-05-03'),
+  ( 7, 'Oliver Grant',    '2026-04-28'),
+  (11, 'Sun-hee Kang',    '2026-04-30'),
+  ( 1, 'Mateo Ruiz',      '2026-04-18'),
+  (18, 'Khulan Erdene',   '2026-05-02'),
+  ( 9, 'Pieter de Vries', '2026-04-29'),
+  ( 5, 'Amara Obi',       '2026-04-25'),
+  (25, 'Noah Fischer',    '2026-05-04'),
+  (16, 'Elif Yilmaz',     '2026-05-01'),
+  ( 2, 'Tserendorj B.',   '2026-04-19');
+clues:
+  - "`evidence.passengers`: `seat_no`, `name`, `booked`."
+  - Pages hold **5** rows each, sorted by `seat_no` from lowest to highest.
+task: |
+  Return **`seat_no`, `name`** for the passengers on **page 2** of the manifest (rows 6 to 10),
+  in seat order.
+
+  Order matters: the grader checks the rows *in order*.
+starter: |
+  SELECT seat_no, name
+  FROM evidence.passengers
+  ORDER BY seat_no
+  LIMIT 5;
+check:
+  mode: result
+  ordered: true
+  solution: |
+    SELECT seat_no, name
+    FROM evidence.passengers
+    ORDER BY seat_no
+    LIMIT 5 OFFSET 5;
+hints:
+  - "The starter shows page 1. How many rows do you need to skip to reach page 2?"
+  - "`OFFSET n` skips the first *n* rows of the sorted result, then `LIMIT` takes the next few."
+  - "`ORDER BY seat_no LIMIT 5 OFFSET 5`"
+reveal: |
+  Seats **9, 11, 14, 16 and 18**: Pieter de Vries, Sun-hee Kang, Harriet Vance, Elif Yilmaz and
+  Khulan Erdene.
+
+  The police only needed one of them, the passenger in 14, who'd left a camera on board with
+  some very interesting photos. Page 2, recovered.

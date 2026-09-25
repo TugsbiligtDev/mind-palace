@@ -1,0 +1,65 @@
+difficulty: hard
+topic: postgresql/beginner/07-aggregation
+concepts: [GROUP BY, HAVING, round, calculated columns, ORDER BY]
+title: The Real Price of a Night
+briefing: |
+  Wanderly's rival, a budget travel agency, advertises "the cheapest nights in Asia". The agency
+  has their booking data, and wants the **true average cost per night in each city**.
+
+  An average of averages would lie. Bold wants **total cost ÷ total nights**, per city.
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.hotel_stays (
+      stay_id  INTEGER PRIMARY KEY,
+      city     TEXT NOT NULL,
+      hotel    TEXT NOT NULL,
+      nights   INTEGER NOT NULL,
+      cost     NUMERIC(8,2) NOT NULL
+  );
+  INSERT INTO evidence.hotel_stays VALUES
+  (1, 'Bangkok', 'Lotus Inn',        3,  90.00),
+  (2, 'Bangkok', 'River View',       1,  70.00),
+  (3, 'Hanoi',   'Old Quarter Stay', 4, 100.00),
+  (4, 'Hanoi',   'Lake Hotel',       2,  90.00),
+  (5, 'Hanoi',   'Lantern House',    1,  20.00),
+  (6, 'Seoul',   'Han River Hotel',  2, 240.00),
+  (7, 'Taipei',  'Night Market Inn', 5, 200.00),
+  (8, 'Taipei',  'Peak Hostel',      2,  44.00);
+clues:
+  - "`evidence.hotel_stays`: `stay_id`, `city`, `hotel`, `nights`, `cost` (for the whole stay)."
+  - A city needs **at least 2 stays** to count. One booking proves nothing.
+task: |
+  For each city with **at least 2 stays**, return:
+
+  1. `city`
+  2. **`stays`**: how many stays
+  3. **`per_night`**: total cost divided by total nights, **rounded to 2 decimals**
+
+  Sort by **`per_night`, cheapest first**. Order matters: the grader checks the rows *in order*.
+starter: |
+  SELECT city, count(*) AS stays, round(avg(cost / nights), 2) AS per_night
+  FROM evidence.hotel_stays
+  GROUP BY city
+  ORDER BY per_night;
+check:
+  mode: result
+  ordered: true
+  solution: |
+    SELECT city, count(*) AS stays, round(sum(cost) / sum(nights), 2) AS per_night
+    FROM evidence.hotel_stays
+    GROUP BY city
+    HAVING count(*) >= 2
+    ORDER BY per_night;
+hints:
+  - "Two problems: Seoul has only one stay, and `avg(cost / nights)` treats a 1-night stay the same as a 4-night stay."
+  - "Divide the **sums**: `sum(cost) / sum(nights)`. And filter the groups by their size, which is a job for `HAVING`."
+  - "`round(sum(cost) / sum(nights), 2) AS per_night … GROUP BY city HAVING count(*) >= 2 ORDER BY per_night`"
+reveal: |
+  | city | stays | per_night |
+  |---|---|---|
+  | Hanoi | 3 | 30.00 |
+  | Taipei | 2 | 34.86 |
+  | Bangkok | 2 | 40.00 |
+
+  The average-of-averages shortcut said Taipei was 31.00 and Bangkok 50.00: a 1-night stay
+  counted as much as a 5-night one. And Seoul, the "bargain" in the ads, has one booking to its name.

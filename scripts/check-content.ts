@@ -2,7 +2,8 @@
 // work on PostgreSQL. Runs before each build, so broken content never goes live.
 //   pnpm check:content
 import { PGlite, types } from "@electric-sql/pglite";
-import { loadAllTracks, loadStory } from "../src/lib/content/load";
+import { loadAllTracks, loadStory, loadTrack } from "../src/lib/content/load";
+import { loadPractice } from "../src/lib/content/practice";
 import { grade, lastRows, rawTextParsers, resultText, runInput } from "../src/lib/sql/core";
 
 const problems: string[] = [];
@@ -21,17 +22,23 @@ async function makeBase(setup: string) {
 async function main() {
   loadStory();
   for (const bundle of loadAllTracks()) {
-    if (bundle.track.engine !== "postgres") continue;
+    if (bundle.track.engine !== "postgres") {
+      if (bundle.levels.some((l) => l.topics.length))
+        fail(bundle.track.id, `there's no automatic checker for ${bundle.track.engine} lessons yet, so they can't go live`);
+      continue;
+    }
     const lessonBase = await makeBase(bundle.dataset);
-    const fresh = () => lessonBase.clone();
+    let copies: PGlite[] = [];
+    const fresh = async () => {
+      const copy = (await lessonBase.clone()) as PGlite;
+      copies.push(copy);
+      return copy;
+    };
 
     for (const { level, topics } of bundle.levels) {
-      topics.forEach((t, i) => {
-        if (t.case.episode !== i + 1) fail(t.key, `case episode is ${t.case.episode}, expected ${i + 1}`);
-      });
-
       for (const t of topics) {
-        // Lesson steps
+        await Promise.all(copies.map((c) => c.close()));
+        copies = [];
         for (const [i, step] of t.lesson.steps.entries()) {
           if (step.kind !== "try") continue;
           const where = `${t.key} lesson step ${i + 1}`;
@@ -48,7 +55,6 @@ async function main() {
           }
         }
 
-        // Quiz
         if (t.quiz.pass > t.quiz.questions.length) fail(`${t.key} quiz`, "pass mark is higher than the number of questions");
         for (const [i, q] of t.quiz.questions.entries()) {
           const where = `${t.key} quiz Q${i + 1}`;
@@ -75,33 +81,14 @@ async function main() {
           }
         }
 
-        // Case
-        const where = `${t.key} case`;
-        let caseBase: PGlite;
-        try {
-          caseBase = await makeBase(`${bundle.dataset}\n${t.case.evidence_setup}`);
-        } catch (e) {
-          fail(where, `evidence_setup errors: ${(e as Error).message}`);
-          continue;
-        }
-        const caseFresh = () => caseBase.clone();
-        try {
-          const good = await grade(caseFresh, t.case.check.solution, t.case.check);
-          checks++;
-          if (!good.correct) fail(where, "the reference solution doesn't pass its own check");
-          if (t.case.check.mode === "result" && !lastRows(good.output)) fail(where, "the solution's last statement returns no rows");
-          const bad = await grade(caseFresh, t.case.starter, t.case.check);
-          checks++;
-          if (bad.correct) fail(where, "the starter code already solves the case");
-        } catch (e) {
-          fail(where, (e as Error).message);
-        }
-        await caseBase.close();
       }
       console.log(`  checked ${bundle.track.id}/${level.id} (${topics.length} topics)`);
     }
+    await Promise.all(copies.map((c) => c.close()));
     await lessonBase.close();
   }
+
+  await checkPractice();
 
   if (problems.length) {
     console.error(`\nContent check failed: ${problems.length} problem(s)\n\n${problems.join("\n")}\n`);
@@ -109,6 +96,77 @@ async function main() {
   }
   console.log(`Content check passed (${checks} SQL checks).`);
   process.exit(0);
+}
+
+// Practice hub: every case's reference solution must pass its own check, and the
+// starter code must not. Story episodes must be numbered 1, 2, 3… with no gaps.
+// Each course gets at most MAX_PER_COURSE cases (the owner's rule: 10 per skill).
+const MAX_PER_COURSE = 10;
+
+async function checkPractice() {
+  const cases = loadPractice();
+  const perCourse = new Map<string, number>();
+  cases.forEach((c) => perCourse.set(c.track, (perCourse.get(c.track) ?? 0) + 1));
+  for (const [track, n] of perCourse)
+    if (n > MAX_PER_COURSE) fail(`practice/${track}`, `has ${n} cases; the limit is ${MAX_PER_COURSE} per course`);
+  const topicKeys = new Set(loadAllTracks().flatMap((b) => b.levels.flatMap((l) => l.topics.map((t) => t.key))));
+  const series = new Map<string, number[]>();
+  const titles = new Set<string>();
+
+  for (const c of cases) {
+    const where = `practice/${c.id}`;
+    if (c.topic && !topicKeys.has(c.topic)) fail(where, `topic "${c.topic}" doesn't exist`);
+    if (titles.has(`${c.track}:${c.title}`)) fail(where, `another ${c.track} case already has the title "${c.title}"`);
+    titles.add(`${c.track}:${c.title}`);
+    if (c.series) series.set(c.series.name, [...(series.get(c.series.name) ?? []), c.series.episode]);
+
+    let track;
+    try {
+      track = loadTrack(c.track);
+    } catch {
+      fail(where, `the folder "${c.track}" isn't a course id`);
+      continue;
+    }
+    if (track.track.engine !== "postgres") {
+      fail(where, `there's no automatic checker for ${track.track.engine} cases yet, so it can't go live`);
+      continue;
+    }
+
+    let base: PGlite;
+    try {
+      base = await makeBase(`${track.dataset}\n${c.evidence_setup}`);
+    } catch (e) {
+      fail(where, `evidence_setup errors: ${(e as Error).message}`);
+      continue;
+    }
+    // Every grade opens fresh copies of the database; close them all afterwards or memory runs out.
+    const copies: PGlite[] = [];
+    const fresh = async () => {
+      const copy = (await base.clone()) as PGlite;
+      copies.push(copy);
+      return copy;
+    };
+    try {
+      const good = await grade(fresh, c.check.solution, c.check);
+      checks++;
+      if (!good.correct) fail(where, "the reference solution doesn't pass its own check");
+      if (c.check.mode === "result" && !lastRows(good.output)) fail(where, "the solution's last statement returns no rows");
+      const bad = await grade(fresh, c.starter, c.check);
+      checks++;
+      if (bad.correct) fail(where, "the starter code already solves the case");
+    } catch (e) {
+      fail(where, (e as Error).message);
+    }
+    await Promise.all(copies.map((c) => c.close()));
+    await base.close();
+  }
+
+  for (const [name, eps] of series) {
+    eps.sort((a, b) => a - b).forEach((e, i) => {
+      if (e !== i + 1) fail(`series "${name}"`, `episodes are ${eps.join(", ")}; expected 1 to ${eps.length} with no gaps`);
+    });
+  }
+  console.log(`  checked practice hub (${cases.length} cases)`);
 }
 
 main().catch((e) => {

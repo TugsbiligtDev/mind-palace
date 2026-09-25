@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Markdown } from "@/components/markdown";
 import type { Question } from "@/lib/content/schema";
-import { caseState, recordQuiz, setLast, useProgress } from "@/lib/progress";
+import { recordQuiz, setLast } from "@/lib/progress";
 
 export function normalizeFill(s: string) {
   return s.trim().replace(/;+$/, "").replace(/\s+/g, " ").toLowerCase();
@@ -25,28 +25,27 @@ function shuffled<T>(items: T[]) {
 
 export function QuizPlayer({
   topicKey,
-  topicKeys,
-  topicIndex,
   title,
   module,
   questions,
   pass,
   href,
   lessonHref,
-  caseHref,
+  practiceHref,
+  nextHref,
+  nextLabel,
 }: {
   topicKey: string;
-  topicKeys: string[];
-  topicIndex: number;
   title: string;
   module: number;
   questions: Question[];
   pass: number;
   href: string;
   lessonHref: string;
-  caseHref: string;
+  practiceHref?: string;
+  nextHref: string;
+  nextLabel: string;
 }) {
-  const p = useProgress();
   const [round, setRound] = useState(0);
   const order = useMemo(
     () => (round === 0 ? questions.map((_, i) => i) : shuffled(questions.map((_, i) => i))),
@@ -94,7 +93,6 @@ export function QuizPlayer({
 
   if (result) {
     const passed = result.score >= pass;
-    const state = caseState(p, topicKeys, topicIndex);
     return (
       <div className="mx-auto w-full max-w-xl px-4 py-16 text-center sm:px-6">
         <p className="text-5xl">{passed ? "🔎" : "🧩"}</p>
@@ -103,7 +101,7 @@ export function QuizPlayer({
         </h1>
         <p className="mt-2 text-muted">
           You got <span className="font-medium text-text">{result.score} of {questions.length}</span> right
-          {passed ? "." : `. You need ${pass} to open the case.`}
+          {passed ? "." : `. You need ${pass} to pass.`}
         </p>
         {result.earned > 0 && <p className="mt-3 font-medium text-xp">+{result.earned} XP</p>}
         <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -115,14 +113,20 @@ export function QuizPlayer({
               Review the lesson
             </Link>
           )}
-          {state.unlocked && (
-            <Link href={caseHref} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-contrast hover:opacity-90">
-              {state.solved ? "Revisit the case →" : "Open the case →"}
+          {passed && (
+            <Link href={nextHref} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-contrast hover:opacity-90">
+              {nextLabel}
             </Link>
           )}
         </div>
-        {passed && !state.prevSolved && (
-          <p className="mt-6 text-sm text-muted">This case opens once you&apos;ve solved the previous episode.</p>
+        {passed && practiceHref && (
+          <p className="mt-6 text-sm text-muted">
+            Want to lock it in?{" "}
+            <Link href={practiceHref} className="text-brand underline underline-offset-4">
+              Solve case files that use this module
+            </Link>{" "}
+            in the Practice hub.
+          </p>
         )}
       </div>
     );

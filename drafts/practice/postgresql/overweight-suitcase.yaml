@@ -1,0 +1,49 @@
+difficulty: easy
+topic: postgresql/beginner/03-where
+concepts: [WHERE, comparison operators]
+title: The Overweight Suitcase
+briefing: |
+  Steppe Air's baggage hall has a problem: a conveyor belt keeps jamming, and the engineers
+  think somebody is sneaking over-limit bags through check-in.
+
+  The airline's limit is **23 kg**. Anything heavier should have been tagged as oversize.
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.luggage (
+      tag_id     TEXT PRIMARY KEY,
+      owner      TEXT NOT NULL,
+      flight     TEXT NOT NULL,
+      weight_kg  NUMERIC(4,1) NOT NULL
+  );
+  INSERT INTO evidence.luggage VALUES
+  ('SA-1001', 'Tuya Ganbold',   'SA204', 18.5),
+  ('SA-1002', 'Leon Weber',     'SA204', 23.0),
+  ('SA-1003', 'Priya Nair',     'SA311', 27.4),
+  ('SA-1004', 'Oyuun Dorj',     'SA204', 22.9),
+  ('SA-1005', 'Marco Bellini',  'SA311', 31.2),
+  ('SA-1006', 'Hana Sato',      'SA118', 12.0),
+  ('SA-1007', 'Leon Weber',     'SA204', 23.6);
+clues:
+  - "`evidence.luggage`: `tag_id`, `owner`, `flight`, `weight_kg`."
+  - A bag of **exactly** 23.0 kg is allowed. Only heavier bags break the rule.
+task: |
+  Return **all columns** for every bag that weighs **more than 23 kg**.
+starter: |
+  SELECT *
+  FROM evidence.luggage;
+check:
+  mode: result
+  solution: |
+    SELECT *
+    FROM evidence.luggage
+    WHERE weight_kg > 23;
+hints:
+  - "You need to keep only some rows. Which clause does that?"
+  - "Add a `WHERE` with a comparison on `weight_kg`. Careful: is 23.0 itself over the limit?"
+  - "`WHERE weight_kg > 23` (not `>=`, because exactly 23 kg is allowed)."
+reveal: |
+  Three bags: **SA-1003** (27.4 kg), **SA-1005** (31.2 kg) and **SA-1007** (23.6 kg).
+
+  Leon Weber checked in two bags on the same flight, one at exactly 23.0 and one just over.
+  "He moved a pair of boots from one to the other at the desk," Moth says. "The clerk only
+  weighed the first one twice." Mystery of the jammed belt: solved.

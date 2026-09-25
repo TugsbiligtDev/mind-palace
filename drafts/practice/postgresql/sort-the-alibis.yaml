@@ -1,0 +1,55 @@
+difficulty: medium
+topic: postgresql/beginner/06-functions
+concepts: [CASE, IS NULL]
+title: Sort the Alibis
+briefing: |
+  A jewel went missing from a hotel safe between 10 pm and 4 am. Each suspect's alibi has been
+  checked, and the **number of hours** someone can vouch for them is recorded.
+
+  Bold's rule: **6 or more hours** is a *solid* alibi. **No hours at all**, or nothing recorded,
+  is *none*. Anything in between is *shaky*.
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.alibis (
+      suspect         TEXT PRIMARY KEY,
+      vouched_hours   INTEGER
+  );
+  INSERT INTO evidence.alibis VALUES
+  ('The night manager',  6),
+  ('The pastry chef',    2),
+  ('The guest in 12B',   NULL),
+  ('The security guard', 0),
+  ('The sommelier',      5),
+  ('The countess',       6);
+clues:
+  - "`evidence.alibis`: `suspect`, `vouched_hours` (NULL if nobody was asked)."
+task: |
+  Return **`suspect`** and **`alibi`**, where `alibi` is:
+
+  - **`none`** if `vouched_hours` is NULL or 0,
+  - **`solid`** if it is 6 or more,
+  - **`shaky`** otherwise.
+starter: |
+  SELECT suspect,
+         CASE WHEN vouched_hours >= 6 THEN 'solid' ELSE 'shaky' END AS alibi
+  FROM evidence.alibis;
+check:
+  mode: result
+  solution: |
+    SELECT suspect,
+           CASE
+             WHEN vouched_hours IS NULL OR vouched_hours = 0 THEN 'none'
+             WHEN vouched_hours >= 6 THEN 'solid'
+             ELSE 'shaky'
+           END AS alibi
+    FROM evidence.alibis;
+hints:
+  - "The starter calls the security guard and the guest in 12B *shaky*. They have no alibi at all."
+  - "`CASE` checks its `WHEN`s top to bottom and stops at the first true one. Add a `WHEN` for the *none* case, first."
+  - "`WHEN vouched_hours IS NULL OR vouched_hours = 0 THEN 'none'` goes before the `>= 6` line."
+reveal: |
+  Solid: the night manager and the countess. Shaky: the pastry chef and the sommelier.
+  **None: the guest in 12B and the security guard.**
+
+  The guard's shift log shows him "on patrol" all night, and nobody saw him once. The jewel
+  turns up in his locker the next morning.

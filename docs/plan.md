@@ -30,6 +30,8 @@ Rules: everything runs 100% in the browser at all levels. Soft lock: lessons alw
 - Game mechanics (MVP): XP + ranks (Rookie → Detective → Inspector → Chief), daily streak with earned freezes. Point values/thresholds tuned by playtesting.
 
 ## 3. Tech stack (revised 2026-09-24: owner switched to Next.js + a database for cross-device progress)
+
+> **Update 2026-09-25:** Supabase is in, with **email-code** sign-in only (Google sign-in was dropped as too complex). One `profiles` row per person holds their progress (the owner decided against a leaderboard). Progress still works signed out, in the browser.
 | Part | Choice |
 |---|---|
 | Site | Next.js (App Router, TypeScript); course content stays as files in the repo |

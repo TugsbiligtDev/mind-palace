@@ -1,0 +1,50 @@
+difficulty: hard
+topic: postgresql/beginner/05-data-types
+concepts: [numeric vs float, casting, GROUP BY, SUM]
+title: The Floating Total
+briefing: |
+  A hostel's booking app stored payments as **text**, and its developer added them up per guest
+  by converting to `double precision`. Some totals come out like `0.30000000000000004`, and the
+  guests' receipts don't match.
+
+  "Money is never a float," Bold says. "Do it again, exactly."
+evidence_setup: |
+  CREATE SCHEMA evidence;
+  CREATE TABLE evidence.payments (
+      payment_id   INTEGER PRIMARY KEY,
+      guest        TEXT NOT NULL,
+      amount_text  TEXT NOT NULL
+  );
+  INSERT INTO evidence.payments VALUES
+  (1, 'Batbayar', '10.10'),
+  (2, 'Batbayar', '20.20'),
+  (3, 'Batbayar', '30.00'),
+  (4, 'Ingrid',   '0.10'),
+  (5, 'Ingrid',   '0.20'),
+  (6, 'Kofi',     '19.99'),
+  (7, 'Kofi',     '0.01');
+clues:
+  - "`evidence.payments`: `payment_id`, `guest`, `amount_text` (text)."
+task: |
+  Return **one row per guest** with **`guest`** and **`total`**: the sum of their payments,
+  calculated **exactly** (as `numeric`, not a float).
+starter: |
+  SELECT guest, sum(amount_text::double precision) AS total
+  FROM evidence.payments
+  GROUP BY guest;
+check:
+  mode: result
+  solution: |
+    SELECT guest, sum(amount_text::numeric) AS total
+    FROM evidence.payments
+    GROUP BY guest;
+hints:
+  - "Run the starter and look closely at Ingrid's total."
+  - "The grouping is already right. Only the type you convert to is wrong."
+  - "`sum(amount_text::numeric)`"
+reveal: |
+  Batbayar **60.30**, Ingrid **0.30**, Kofi **20.00**. With floats, Ingrid's 0.10 + 0.20
+  came out as 0.30000000000000004, a number no receipt can show. The other two only *looked*
+  right by luck: floats round in binary, so the next pair of prices could go wrong just as easily.
+
+  The developer changes one word in the app, and the receipts finally match.

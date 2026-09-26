@@ -1,4 +1,0 @@
-title: SQL Syntax Basics
-module: 1
-summary: Statements and semicolons, keywords vs. identifiers vs. literals, comments, and reading error messages without panic.
-minutes: 25

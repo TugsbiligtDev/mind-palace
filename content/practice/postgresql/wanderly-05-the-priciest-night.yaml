@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/04-order-by
+topic: postgresql/beginner/07-null
 concepts: [ORDER BY, NULLS LAST, LIMIT, OFFSET]
 series: { name: The Wanderly Files, episode: 5 }
 title: The Priciest Night

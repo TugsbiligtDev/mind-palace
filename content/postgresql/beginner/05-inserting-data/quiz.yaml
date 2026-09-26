@@ -1,0 +1,50 @@
+pass: 3
+questions:
+  - type: fill
+    prompt: Insert Chile and get back the ID PostgreSQL generated.
+    code: |
+      INSERT INTO countries (name, continent) VALUES ('Chile', 'South America') ____ country_id;
+    answer: RETURNING
+    accept: ["returning"]
+    explanation: "`RETURNING` shows the rows you just inserted, including generated values like the identity ID."
+
+  - type: predict
+    prompt: The `status` column of `trips` defaults to `'planned'`. What does this return?
+    code: |
+      INSERT INTO trips (traveler_id, trip_name, start_date)
+      VALUES (2, 'Gobi Loop', '2026-07-01')
+      RETURNING status;
+    options:
+      - "NULL"
+      - "planned"
+      - "completed"
+      - An error, because status is missing
+    answer: 1
+    explanation: A column left out of the INSERT gets its default value. For `status` that's `'planned'`.
+
+  - type: mcq
+    prompt: "What's wrong with `INSERT INTO countries (name, continent) VALUES (\"Chile\", \"South America\");`?"
+    options:
+      - Nothing
+      - Double quotes mean names, so PostgreSQL looks for a column called Chile. Values need single quotes.
+      - The column list is in the wrong order
+      - INSERT can't add text
+    answer: 1
+    explanation: "Double quotes make identifiers (names). Text values need single quotes: `'Chile'`."
+
+  - type: fill
+    prompt: Complete the text so the stored name is **D'Arcy**.
+    code: |
+      SELECT ____ AS name;
+    answer: "'D''Arcy'"
+    explanation: "Inside single-quoted text, two apostrophes in a row stand for one real apostrophe."
+
+  - type: mcq
+    prompt: One INSERT adds three rows, and the third breaks a CHECK rule. What's saved?
+    options:
+      - The first two rows
+      - Only the third row
+      - Nothing. The whole statement fails
+      - All three, with the bad value set to NULL
+    answer: 2
+    explanation: A statement is all-or-nothing. If any row fails, none of them are saved.

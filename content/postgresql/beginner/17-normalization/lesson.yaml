@@ -1,0 +1,227 @@
+steps:
+  - kind: explain
+    title: The one-big-table temptation
+    body: |
+      Wanderly's tour desk kept bookings in a single sheet, one row per booking:
+
+      | booking | traveler | tour | tour_date | guide | guide_phone | seats |
+      |---|---|---|---|---|---|---|
+      | 1 | Amina | Gobi Sunset | 2026-07-01 | Bat | 9911-2233 | 2 |
+      | 2 | Erik | Gobi Sunset | 2026-07-01 | Bat | 9911-2233 | 1 |
+      | 3 | Chen | City Walk | 2026-07-03 | Saruul | 8800-4455 | 3 |
+
+      It's easy to read. But the guide's phone is written on **every** booking, the tour's date too. Repeated facts are where the trouble starts.
+
+      **Normalization** is a step-by-step method for splitting a table like this so that **each fact is stored exactly once**.
+
+  - kind: explain
+    title: Three anomalies
+    body: |
+      Repeating facts causes three kinds of **anomaly** (a way data goes wrong):
+
+      - **Update anomaly:** Bat gets a new phone. You update booking 1 but miss booking 2. Now Bat has two phone numbers, and nobody knows which is right.
+      - **Insert anomaly:** a new guide joins. You can't record them until they have a booking, because every row *is* a booking.
+      - **Delete anomaly:** Chen cancels, so you delete booking 3. Saruul's phone number disappears with it: it was only stored there.
+
+  - kind: try
+    title: See an update anomaly
+    body: |
+      Bat's phone is updated on one booking only. Run it: the last query now shows **two** phone numbers for one guide.
+    sql: |
+      CREATE TABLE tour_sheet (
+          booking_no   integer PRIMARY KEY,
+          traveler     text,
+          tour         text,
+          tour_date    date,
+          guide        text,
+          guide_phone  text,
+          seats        integer
+      );
+      INSERT INTO tour_sheet VALUES
+        (1, 'Amina', 'Gobi Sunset', '2026-07-01', 'Bat',    '9911-2233', 2),
+        (2, 'Erik',  'Gobi Sunset', '2026-07-01', 'Bat',    '9911-2233', 1),
+        (3, 'Chen',  'City Walk',   '2026-07-03', 'Saruul', '8800-4455', 3);
+
+      UPDATE tour_sheet SET guide_phone = '9900-0000' WHERE booking_no = 1;
+
+      SELECT DISTINCT guide, guide_phone FROM tour_sheet ORDER BY guide;
+
+  - kind: explain
+    title: "Functional dependency, in plain English"
+    body: |
+      **A → B** ("A determines B") means: *if you know A, there's exactly one possible B.*
+
+      - `guide → guide_phone`: know the guide, and you know their phone.
+      - `tour → tour_date, guide`: know the tour, and you know its date and guide.
+      - `booking → traveler, tour, seats`: the booking number determines everything about the booking.
+
+      Normalization boils down to one idea: **every fact should be stored in the table whose key determines it.** The guide's phone is determined by the guide, not by the booking, so it belongs in a `guides` table.
+
+  - kind: explain
+    title: "First normal form (1NF): one value per cell"
+    body: |
+      A table is in **1NF** when:
+
+      1. Every cell holds **one** value, not a list.
+      2. There are no **repeating columns** like `phone1`, `phone2`, `phone3`.
+      3. Rows can be told apart: there's a primary key.
+
+      These break 1NF:
+
+      | guide | languages | phone1 | phone2 |
+      |---|---|---|---|
+      | Bat | English, French | 9911-2233 | 9911-5566 |
+
+      A list in a cell can't be joined, indexed or constrained, and editing one item means string surgery. Repeating columns give you a fixed maximum (what about a 3rd phone?) and make "find the guide with this phone" check every column.
+
+      **The fix:** one row per value, in its own table: `guide_languages (guide_id, language)`, `guide_phones (guide_id, phone)`.
+
+  - kind: try
+    title: The comma-list trap
+    body: |
+      Bat no longer speaks French. The "obvious" fix removes `'French, '` from the text. Run it: nothing changes, because French is **last** in the list, with no comma after it.
+
+      In a `guide_languages` table this would simply be `DELETE … WHERE language = 'French'`.
+    sql: |
+      CREATE TABLE guides_flat (guide text, languages text);
+      INSERT INTO guides_flat VALUES ('Bat', 'English, French');
+
+      UPDATE guides_flat
+      SET languages = replace(languages, 'French, ', '')
+      WHERE guide = 'Bat';
+
+      SELECT * FROM guides_flat;
+
+  - kind: explain
+    title: "Second normal form (2NF): the whole key"
+    body: |
+      2NF only matters for tables with a **composite key** (Module 11). A table is in **2NF** when it's in 1NF and every non-key column depends on the **whole** key, not just part of it.
+
+      ```text
+      bookings (traveler_id, tour_id, seats, tour_title)
+                └──── primary key ────┘
+      ```
+
+      - `seats` depends on **both**: how many seats *this traveler* booked on *this tour*. ✓
+      - `tour_title` depends on `tour_id` **alone**. ✗ It repeats on every booking for that tour.
+
+      **The fix:** move `tour_title` to the `tours` table, where `tour_id` is the whole key.
+
+  - kind: explain
+    title: "Third normal form (3NF): nothing but the key"
+    body: |
+      A table is in **3NF** when it's in 2NF and no non-key column depends on **another non-key column**.
+
+      ```text
+      tours (tour_id, title, guide_id, guide_phone)
+      ```
+
+      `guide_phone` depends on `guide_id`, which isn't the key. That's a chain, `tour_id → guide_id → guide_phone`, and chains mean repeats: every tour Bat leads repeats Bat's phone.
+
+      **The fix:** `guide_phone` moves to `guides`.
+
+      The classic summary of all three: *every non-key column must depend on **the key** (1NF), **the whole key** (2NF), and **nothing but the key** (3NF).*
+
+  - kind: explain
+    title: The tour sheet, normalized
+    body: |
+      Apply all three and the single sheet becomes four tables, each fact stored once:
+
+      ```text
+      travelers (traveler_id PK, full_name)
+      guides    (guide_id PK, full_name, phone)
+      tours     (tour_id PK, title, tour_date, guide_id FK → guides)
+      bookings  (traveler_id FK, tour_id FK, seats, PK (traveler_id, tour_id))
+      ```
+
+      - Bat's phone lives in **one** row. Update anomaly: gone.
+      - A new guide is just a new `guides` row. Insert anomaly: gone.
+      - Deleting a booking leaves the guide and tour intact. Delete anomaly: gone.
+
+      Nothing is lost, either: a join (Module 14) rebuilds the original sheet whenever you want it.
+
+  - kind: try
+    title: Your turn to rebuild the sheet
+    body: |
+      The normalized tables are built and filled. Write a query that rebuilds the original sheet with these columns, in this order: **traveler**, **tour**, `tour_date`, **guide**, **guide_phone**, `seats`. Sort by traveler.
+    sql: |
+      CREATE TABLE travelers2 (traveler_id integer PRIMARY KEY, full_name text NOT NULL);
+      CREATE TABLE guides    (guide_id integer PRIMARY KEY, full_name text NOT NULL, phone text);
+      CREATE TABLE tours     (tour_id integer PRIMARY KEY, title text NOT NULL, tour_date date NOT NULL,
+                              guide_id integer NOT NULL REFERENCES guides);
+      CREATE TABLE bookings  (traveler_id integer REFERENCES travelers2, tour_id integer REFERENCES tours,
+                              seats integer NOT NULL, PRIMARY KEY (traveler_id, tour_id));
+      INSERT INTO travelers2 VALUES (1, 'Amina'), (2, 'Erik'), (3, 'Chen');
+      INSERT INTO guides VALUES (1, 'Bat', '9911-2233'), (2, 'Saruul', '8800-4455');
+      INSERT INTO tours VALUES (1, 'Gobi Sunset', '2026-07-01', 1), (2, 'City Walk', '2026-07-03', 2);
+      INSERT INTO bookings VALUES (1, 1, 2), (2, 1, 1), (3, 2, 3);
+
+      SELECT * FROM bookings;
+    expect: |
+      CREATE TABLE travelers2 (traveler_id integer PRIMARY KEY, full_name text NOT NULL);
+      CREATE TABLE guides    (guide_id integer PRIMARY KEY, full_name text NOT NULL, phone text);
+      CREATE TABLE tours     (tour_id integer PRIMARY KEY, title text NOT NULL, tour_date date NOT NULL,
+                              guide_id integer NOT NULL REFERENCES guides);
+      CREATE TABLE bookings  (traveler_id integer REFERENCES travelers2, tour_id integer REFERENCES tours,
+                              seats integer NOT NULL, PRIMARY KEY (traveler_id, tour_id));
+      INSERT INTO travelers2 VALUES (1, 'Amina'), (2, 'Erik'), (3, 'Chen');
+      INSERT INTO guides VALUES (1, 'Bat', '9911-2233'), (2, 'Saruul', '8800-4455');
+      INSERT INTO tours VALUES (1, 'Gobi Sunset', '2026-07-01', 1), (2, 'City Walk', '2026-07-03', 2);
+      INSERT INTO bookings VALUES (1, 1, 2), (2, 1, 1), (3, 2, 3);
+
+      SELECT tr.full_name AS traveler, t.title AS tour, t.tour_date,
+             g.full_name AS guide, g.phone AS guide_phone, b.seats
+      FROM bookings b
+      JOIN travelers2 tr ON tr.traveler_id = b.traveler_id
+      JOIN tours t       ON t.tour_id = b.tour_id
+      JOIN guides g      ON g.guide_id = t.guide_id
+      ORDER BY tr.full_name;
+    ordered: true
+
+  - kind: explain
+    title: "Mistake: storing what you can calculate"
+    body: |
+      A column like `total_price` next to `nights` and `price_per_night` looks convenient. But it's a copy of a fact you can already work out, and copies drift: change `nights` and forget `total_price`, and the row contradicts itself.
+
+      Calculate it in the query instead: `nights * price_per_night AS total_price`. Same goes for ages (store the birth date, not the age) and counts (count the rows, don't store "number_of_trips").
+
+      There are good reasons to store a calculated value sometimes, for speed on huge tables. That's **deliberate denormalization**, covered in Module 40, and it's a choice you make on purpose, never by accident. (Module 29's *generated columns* also let PostgreSQL keep one in sync for you.)
+
+  - kind: try
+    title: A total that went stale
+    body: |
+      The stay was extended to 4 nights, but `total_price` still says 3 nights' worth. Run it and compare the two totals.
+    sql: |
+      CREATE TABLE hotel_stays (
+          guest            text,
+          nights           integer,
+          price_per_night  numeric(8,2),
+          total_price      numeric(8,2)
+      );
+      INSERT INTO hotel_stays VALUES ('Amina', 3, 120.00, 360.00);
+      UPDATE hotel_stays SET nights = 4 WHERE guest = 'Amina';
+
+      SELECT guest, total_price AS stored_total,
+             nights * price_per_night AS true_total
+      FROM hotel_stays;
+
+  - kind: info
+    title: "🔹 BCNF"
+    body: |
+      **Boyce-Codd normal form** is a slightly stricter 3NF: *every* column that determines another must be a candidate key. The tables where 3NF and BCNF differ are rare (usually ones with several overlapping composite keys). If your tables are in 3NF, you're in good shape. Just recognize the name.
+
+  - kind: why
+    body: |
+      Normalized tables can't contradict themselves: each fact has one home. That's what makes updates safe, reports trustworthy and new features easy to add. It's also the design skill interviewers love to test.
+
+  - kind: recap
+    body: |
+      - Repeated facts cause **update**, **insert** and **delete anomalies**.
+      - **A → B**: knowing A tells you exactly one B. Store each fact in the table whose key determines it.
+      - **1NF**: one value per cell, no repeating columns, a primary key.
+      - **2NF**: with a composite key, every column depends on the **whole** key.
+      - **3NF**: no column depends on another non-key column.
+      - "The key, the whole key, and nothing but the key."
+      - Joins rebuild the combined view, so nothing is lost.
+      - Don't store what you can calculate, unless you denormalize deliberately.
+      - 🔹 BCNF is a stricter 3NF, rarely different in practice.

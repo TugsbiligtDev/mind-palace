@@ -1,0 +1,143 @@
+steps:
+  - kind: explain
+    title: Data vs. information
+    body: |
+      **Data** is raw facts: `Japan Highlights`, `2026-03-01`, `completed`. On its own, a fact like that doesn't tell you much.
+
+      **Information** is data that answers a question: *"How many trips were completed this year?"* or *"Which traveler spends the most?"*
+
+      A **database** is an organized place to keep data so you can turn it into information quickly and reliably, today and years from now.
+
+  - kind: try
+    title: Raw data
+    body: |
+      This is Wanderly's list of trips, exactly as stored. Press **Run** (or **⌘ + Enter**).
+
+      It's all facts, no answers yet. You don't need to understand the SQL yet; you'll learn it in the next modules.
+    sql: |
+      SELECT * FROM trips;
+
+  - kind: try
+    title: Turning it into information
+    body: |
+      Same data, but now we ask a question: *how many trips are there of each status?* Run it.
+
+      Seven rows of facts became three lines that actually tell you something.
+    sql: |
+      SELECT status, count(*) AS trips
+      FROM trips
+      GROUP BY status;
+
+  - kind: explain
+    title: Why not just use a spreadsheet?
+    body: |
+      Spreadsheets are great for small, personal lists. They start to hurt when data grows and people share it:
+
+      | Problem | Spreadsheet | Database |
+      |---|---|---|
+      | **Duplicate data** | A customer's address is copied into every order row. Change it in one place and the copies disagree. | Each fact is stored **once** and linked to where it's needed. |
+      | **Several users at once** | Two people edit the same file and one person's changes get lost. | Many people and apps read and write at the same time, safely. |
+      | **Rules that keep data correct** | Anyone can type `abc` in the price column. | You set rules (a price must be a number, never negative) and the database refuses bad data. |
+
+      Databases also handle millions of rows without slowing to a crawl.
+
+  - kind: try
+    title: A rule in action
+    body: |
+      Wanderly's `reviews` table has a rule: ratings must be between 1 and 5. This tries to save a rating of **7**.
+
+      Run it and read the error. The database refused to store bad data. A spreadsheet would have happily accepted it.
+    sql: |
+      INSERT INTO reviews (attraction_id, traveler_id, rating)
+      VALUES (1, 1, 7);
+    expect_error: true
+
+  - kind: explain
+    title: The DBMS
+    body: |
+      A **DBMS** (Database Management System) is the software that manages databases. It:
+
+      - stores the data safely on disk
+      - answers questions about it
+      - enforces the rules
+      - lets many people use it at once without chaos
+
+      **PostgreSQL** is a DBMS. So are MySQL and SQLite. People often say "database" when they mean the DBMS. That's fine in conversation, but it helps to know they're different things: the DBMS is the software, and a database is the collection of data it manages.
+
+  - kind: explain
+    title: "The relational model: tables, rows, columns"
+    body: |
+      PostgreSQL is a **relational** database. It keeps data in **tables**, like grids:
+
+      - A **table** holds one kind of thing: `countries`, `cities`, `trips`.
+      - A **row** is one thing: the country *Japan*. It's also called a *record*.
+      - A **column** is one piece of information every row has: `continent`. It's also called a *field*.
+
+      The "relational" part is that tables **link** to each other. Each city row stores a `country_id`, the ID of the country it belongs to. So "Tokyo is in Japan" is stored as a number that points at Japan's row, not as a copy of the word *Japan*.
+
+  - kind: try
+    title: Tables that point at each other
+    body: |
+      Run this. Every city has a `country_id`. Tokyo and Kyoto both have `1`.
+
+      Now change `cities` to `countries` and run it again. Which country has `country_id` 1?
+    sql: |
+      SELECT * FROM cities;
+
+  - kind: explain
+    title: "SQL: the language"
+    body: |
+      **SQL** (Structured Query Language, said "S-Q-L" or "sequel") is how you talk to a relational database. Every relational DBMS understands it, with small differences in dialect.
+
+      SQL is **declarative**: you describe *what* you want, not *how* to find it.
+
+      ```sql
+      SELECT name FROM cities WHERE population > 2000000;
+      ```
+
+      reads almost like English: *"give me the names of cities with more than two million people."* You never tell PostgreSQL which rows to look at first or how to search. It works that out for you.
+
+  - kind: explain
+    title: Client and server
+    body: |
+      Using PostgreSQL always involves **two programs**:
+
+      - The **server** runs quietly in the background. It holds the data, does the work, and waits for requests. It never shows you a window.
+      - A **client** is any app that connects to the server, sends it SQL, and shows you the answer. Examples: **psql** (a text tool in Terminal), **pgAdmin** (a visual app), a website's code, and **this page**.
+
+      Think of a restaurant: the server is the kitchen, the client is the waiter, and SQL is the language you order in. One kitchen serves many waiters at once.
+
+      This page runs a real PostgreSQL 18 server **inside your browser tab**, with Wanderly's data loaded. Every time you press Run you get a fresh copy, so you can't break anything.
+
+  - kind: explain
+    title: Where PostgreSQL fits
+    body: |
+      **PostgreSQL** (often just "Postgres") is:
+
+      - **free and open source**: no license fees, and anyone can read its code
+      - **over 30 years old** and known for being reliable and correct
+      - **an industry standard**, used by startups, banks and governments, and offered by every big cloud provider
+
+      The skills you learn here carry over to almost every other SQL database.
+
+  - kind: info
+    title: "🔹 Other databases you'll hear about"
+    body: |
+      Just recognize these names:
+
+      - **MySQL**: another popular free relational database, common behind websites.
+      - **SQLite**: a tiny relational database that lives in a single file. It runs inside phone apps and browsers, with no separate server.
+      - **NoSQL databases** such as **MongoDB**: they store data as flexible documents instead of tables. They're useful for some jobs, but they don't use SQL and are built around different rules.
+
+  - kind: why
+    body: |
+      Almost every app you use (banking, maps, messaging, shopping) keeps its data in a database. Knowing what a database is, and why it beats a spreadsheet, is the foundation for everything else in this course.
+
+  - kind: recap
+    body: |
+      - **Data** is raw facts. **Information** is data that answers a question.
+      - Databases beat spreadsheets on duplicate data, many users at once, and rules that keep data correct.
+      - A **DBMS** is the software that manages databases. PostgreSQL is one.
+      - **Relational** = tables of rows and columns that link to each other by IDs.
+      - **SQL** is the declarative language you use to ask for data.
+      - A **server** holds the data. **Clients** (psql, pgAdmin, apps, this page) connect and send SQL.

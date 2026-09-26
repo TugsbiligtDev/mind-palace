@@ -1,5 +1,5 @@
 difficulty: easy
-topic: postgresql/beginner/01-syntax
+topic: postgresql/beginner/03-databases-schemas-tables
 concepts: [syntax, quoting, error messages]
 series: { name: The Wanderly Files, episode: 2 }
 title: The Garbled Telegram
@@ -27,7 +27,7 @@ task: |
 
   It has **several** mistakes, and one of them doesn't cause an error at all. Fix them all, then **Submit**.
 
-  *You haven't learned `WHERE` yet (Module 3). You don't need to. Just fix the grammar. `<>` means "is not equal to".*
+  *You haven't learned `WHERE` yet (Module 6). You don't need to. Just fix the grammar. `<>` means "is not equal to".*
 starter: |
   SELEC word_no word
   FROM evidence."Telegram"

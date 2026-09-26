@@ -1,0 +1,4 @@
+title: Primary Keys
+module: 11
+summary: Why every table needs a primary key, natural vs. surrogate keys, identity columns, UUIDs, and keys made of two columns.
+minutes: 30

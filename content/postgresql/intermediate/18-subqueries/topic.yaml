@@ -1,0 +1,4 @@
+title: Subqueries
+module: 18
+summary: Queries inside queries. Compare against a calculated value, filter with IN and EXISTS, escape the NOT IN trap, and build tables on the fly in FROM.
+minutes: 40

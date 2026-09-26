@@ -1,0 +1,177 @@
+steps:
+  - kind: explain
+    title: '"The latest one for each…"'
+    body: |
+      Some of the most common questions have this shape:
+
+      - *the most recent payment for each trip*
+      - *each traveler's first trip*
+      - *the two best-paid people in each department*
+
+      "Per group, but keep the **whole row**, not just a max value." `GROUP BY` can't do it directly: `max(paid_at)` gives you the latest time, but not the amount and method that go with it.
+
+      PostgreSQL has two tools for this. This module covers both.
+
+  - kind: explain
+    title: DISTINCT ON
+    body: |
+      **`DISTINCT ON (columns)`** keeps **the first row of each group**, where "first" is decided by ORDER BY:
+
+      ```sql
+      SELECT DISTINCT ON (trip_id)
+             trip_id, amount, paid_at
+      FROM payments
+      ORDER BY trip_id, paid_at DESC;
+      ```
+
+      Read it as: *group by trip_id, sort each group newest first, keep the top row.*
+
+      **The rule:** ORDER BY must **start with the DISTINCT ON columns**, in the same order. The columns after them decide which row wins. Forget the tiebreaker part and you get an arbitrary row from each group.
+
+      DISTINCT ON is PostgreSQL-specific. Other databases don't have it.
+
+  - kind: try
+    title: Latest payment per trip
+    body: |
+      Run it: one row per trip, the newest payment. Trip 5's latest is a **refund** of −300. Interesting.
+
+      Then change `paid_at DESC` to `paid_at` to get the **first** payment per trip instead.
+    sql: |
+      SELECT DISTINCT ON (trip_id)
+             trip_id, amount, paid_at, method
+      FROM payments
+      ORDER BY trip_id, paid_at DESC;
+
+  - kind: try
+    title: Break the rule
+    body: |
+      ORDER BY here doesn't start with `trip_id`. Run it and read the error: *SELECT DISTINCT ON expressions must match initial ORDER BY expressions*.
+    sql: |
+      SELECT DISTINCT ON (trip_id)
+             trip_id, amount, paid_at
+      FROM payments
+      ORDER BY paid_at DESC;
+    expect_error: true
+
+  - kind: try
+    title: Your turn with DISTINCT ON
+    body: |
+      Show each traveler's **first** trip (the earliest `start_date`): `traveler_id`, `trip_name` and `start_date`.
+    sql: |
+      SELECT traveler_id, trip_name, start_date
+      FROM trips;
+    expect: |
+      SELECT DISTINCT ON (traveler_id)
+             traveler_id, trip_name, start_date
+      FROM trips
+      ORDER BY traveler_id, start_date;
+
+  - kind: explain
+    title: LATERAL
+    body: |
+      Normally a subquery in FROM can't see the other tables in the same FROM. **`LATERAL`** lifts that rule: a LATERAL subquery can use columns from the tables **to its left**, so it runs **once per row** of them, like a correlated subquery (Module 18) that returns a whole table:
+
+      ```sql
+      SELECT d.department, top.full_name, top.salary
+      FROM (SELECT DISTINCT department FROM employees) AS d
+      CROSS JOIN LATERAL (
+          SELECT full_name, salary
+          FROM employees e
+          WHERE e.department = d.department   -- uses d, from the left
+          ORDER BY salary DESC, full_name
+          LIMIT 2
+      ) AS top;
+      ```
+
+      For each department, the inner query finds its top 2 earners. This is the go-to pattern for **"top N per group"** when N is more than 1.
+
+      - `CROSS JOIN LATERAL`: rows on the left with **no** result on the right disappear (like an inner join).
+      - `LEFT JOIN LATERAL (…) ON true`: keeps them, with NULLs (like a left join).
+
+  - kind: try
+    title: Top two per department
+    body: |
+      Run it. Notice Temuulen and Nomin both earn 2400 in Operations. The tiebreaker `full_name` decides who makes the top 2, so the answer is the same every time.
+
+      Change `LIMIT 2` to `LIMIT 1`.
+    sql: |
+      SELECT d.department, top.full_name, top.salary
+      FROM (SELECT DISTINCT department FROM employees) AS d
+      CROSS JOIN LATERAL (
+          SELECT full_name, salary
+          FROM employees e
+          WHERE e.department = d.department
+          ORDER BY salary DESC, full_name
+          LIMIT 2
+      ) AS top
+      ORDER BY d.department, top.salary DESC;
+
+  - kind: try
+    title: Your turn with LATERAL
+    body: |
+      For **every trip**, show `trip_name` and its **single most expensive stop's** `cost`, labeled **top_cost**. Keep trips that have **no stops**, with NULL.
+
+      Hint: `LEFT JOIN LATERAL ( … ORDER BY cost DESC LIMIT 1 ) AS s ON true`.
+    sql: |
+      SELECT t.trip_name
+      FROM trips t;
+    expect: |
+      SELECT t.trip_name, s.cost AS top_cost
+      FROM trips t
+      LEFT JOIN LATERAL (
+          SELECT cost
+          FROM trip_stops ts
+          WHERE ts.trip_id = t.trip_id
+          ORDER BY cost DESC
+          LIMIT 1
+      ) AS s ON true;
+
+  - kind: explain
+    title: A function per row
+    body: |
+      Some functions return **many rows** (they're called *set-returning functions*). `generate_series(start, stop, step)` is the famous one: it makes a row for every step.
+
+      With LATERAL, you can call it **once per row**, using that row's values:
+
+      ```sql
+      SELECT t.trip_name, day::date
+      FROM trips t
+      CROSS JOIN LATERAL generate_series(t.start_date, t.end_date, interval '1 day') AS day
+      WHERE t.trip_id = 4;
+      ```
+
+      One row per **day** of each trip, great for calendars and "who was traveling on date X?". (For a function in FROM, the word `LATERAL` is actually optional, because PostgreSQL assumes it. Many people write it anyway for clarity.)
+
+  - kind: try
+    title: Every day of a trip
+    body: |
+      Run it: the 7 days of Chen's Paris trip. Remove the WHERE to see every day of every trip. Which trip is missing, and why? (Hint: `end_date`.)
+    sql: |
+      SELECT t.trip_name, day::date AS day
+      FROM trips t
+      CROSS JOIN LATERAL generate_series(t.start_date, t.end_date, interval '1 day') AS day
+      WHERE t.trip_id = 4;
+
+  - kind: explain
+    title: Which tool when?
+    body: |
+      | Question | Reach for |
+      |---|---|
+      | Exactly **one row per group** ("latest per trip") | **DISTINCT ON**: shortest and clearest |
+      | **N rows per group**, or a per-row query with its own filters | **LATERAL** + ORDER BY + LIMIT |
+      | Running a **set-returning function** per row | **LATERAL** |
+      | Rankings with **ties**, numbering, comparing to the row before, or keeping **every** row with a rank next to it | **Window functions**, the next module |
+
+      All three can often answer the same question. Pick the one that reads most naturally, then check speed with EXPLAIN (Module 33) if it matters.
+
+  - kind: why
+    body: |
+      "Latest status per order", "most recent login per user", "top 3 products per category": these per-group questions fill dashboards and reports. DISTINCT ON and LATERAL answer them in a few clear lines, where GROUP BY alone can't.
+
+  - kind: recap
+    body: |
+      - `SELECT DISTINCT ON (g) … ORDER BY g, tiebreak`: the first row per group. ORDER BY must start with the DISTINCT ON columns.
+      - `LATERAL` subqueries can use columns from tables to their left, so they run once per row.
+      - Top N per group: `CROSS JOIN LATERAL (… ORDER BY … LIMIT n)`. `LEFT JOIN LATERAL … ON true` keeps rows with no match.
+      - Set-returning functions like `generate_series` can run per row.
+      - One per group → DISTINCT ON. N per group → LATERAL. Rankings and ties → window functions.

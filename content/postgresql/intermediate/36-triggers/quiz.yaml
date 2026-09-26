@@ -1,0 +1,62 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: You want a trigger to lowercase emails before they're saved. Which kind?
+    options:
+      - AFTER INSERT, FOR EACH STATEMENT
+      - BEFORE INSERT OR UPDATE, FOR EACH ROW, changing NEW
+      - AFTER DELETE
+      - An event trigger
+    answer: 1
+    explanation: Only BEFORE row triggers can change the row being written, by modifying NEW and returning it.
+
+  - type: mcq
+    prompt: In a DELETE trigger, which record holds the row being removed?
+    options:
+      - NEW
+      - OLD
+      - TG_OP
+      - Both NEW and OLD
+    answer: 1
+    explanation: OLD is the row as it was. For a DELETE there is no NEW row.
+
+  - type: predict
+    prompt: What does the last statement return?
+    code: |
+      CREATE TABLE t (x int);
+      CREATE TABLE hits (n int);
+      INSERT INTO hits VALUES (0);
+      CREATE FUNCTION bump() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN UPDATE hits SET n = n + 1; RETURN NULL; END; $$;
+      CREATE TRIGGER t_bump AFTER INSERT ON t FOR EACH ROW EXECUTE FUNCTION bump();
+      INSERT INTO t VALUES (1), (2), (3);
+      SELECT n FROM hits;
+    options:
+      - "0"
+      - "1"
+      - "3"
+      - An error
+    answer: 2
+    explanation: A FOR EACH ROW trigger runs once per inserted row, so three rows means three bumps. FOR EACH STATEMENT would give 1.
+
+  - type: fill
+    prompt: Attach the function so it runs for every changed row.
+    code: |
+      CREATE TABLE t (x int, updated_at timestamptz);
+      CREATE FUNCTION touch() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN NEW.updated_at := now(); RETURN NEW; END; $$;
+      CREATE TRIGGER t_touch BEFORE UPDATE ON t
+      FOR EACH ____ EXECUTE FUNCTION touch();
+    answer: ROW
+    accept: ["row"]
+    explanation: "`FOR EACH ROW` runs the function once per changed row, with NEW and OLD available."
+
+  - type: mcq
+    prompt: A price must never be negative. What's the best tool?
+    options:
+      - A BEFORE trigger that raises an error
+      - A CHECK constraint
+      - An AFTER trigger
+      - An event trigger
+    answer: 1
+    explanation: Prefer constraints for rules. They're simpler, visible in the table definition, and can't be forgotten. Save triggers for what constraints can't do.

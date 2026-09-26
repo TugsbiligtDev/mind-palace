@@ -1,0 +1,55 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does the last statement return?
+    code: |
+      CREATE TABLE badges (label text);
+      INSERT INTO badges VALUES ('Rookie'), ('Chief');
+      ALTER TABLE badges ADD COLUMN points integer DEFAULT 10;
+      SELECT sum(points) FROM badges;
+    options:
+      - "NULL"
+      - "10"
+      - "20"
+      - "0"
+    answer: 2
+    explanation: A new column with a DEFAULT fills existing rows with that value. Two rows × 10 = 20.
+
+  - type: mcq
+    prompt: "`ALTER TABLE trips ALTER COLUMN end_date SET NOT NULL;` fails. Why?"
+    options:
+      - You can't change NOT NULL after creating a table
+      - At least one trip already has a NULL end_date
+      - end_date is a date, not text
+      - trips has a primary key
+    answer: 1
+    explanation: New rules are checked against every existing row. Trip 6 has no end date, so the rule can't be added until that row is fixed.
+
+  - type: fill
+    prompt: Convert a text column of numbers into `numeric`, telling PostgreSQL how.
+    code: |
+      CREATE TABLE raw_prices (price text);
+      ALTER TABLE raw_prices ALTER COLUMN price TYPE numeric ____ price::numeric;
+    answer: USING
+    accept: ["using"]
+    explanation: "`USING expression` tells ALTER COLUMN … TYPE how to convert each existing value."
+
+  - type: mcq
+    prompt: What does `DROP TABLE travelers CASCADE;` do to the rows in `trips`?
+    options:
+      - Deletes them all
+      - Nothing to the rows, but the foreign key rule linking them to travelers is dropped
+      - Sets every traveler_id to NULL
+      - It's refused
+    answer: 1
+    explanation: "`DROP … CASCADE` removes dependent **objects**, like the foreign key constraint. The trip rows stay, now unprotected. (`ON DELETE CASCADE` is the one that deletes rows.)"
+
+  - type: mcq
+    prompt: You want to add a CHECK rule, but some existing rows break it. What's the right approach?
+    options:
+      - Drop the table and start over
+      - Fix or remove the bad rows first, then add the rule
+      - Add the rule with CASCADE
+      - Rules can't be added to tables with data
+    answer: 1
+    explanation: Clean the data first, then enforce the rule. PostgreSQL checks every existing row when you add it.

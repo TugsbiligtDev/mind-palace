@@ -1,0 +1,4 @@
+title: Reading Query Plans
+module: 33
+summary: Ask PostgreSQL how it will run a query with EXPLAIN, read scans, joins, estimates and buffers, and recognize the classic slow patterns and their fixes.
+minutes: 40

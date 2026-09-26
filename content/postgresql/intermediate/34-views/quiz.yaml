@@ -1,0 +1,57 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A new trip is inserted. When does it show up in a plain view built on trips?
+    options:
+      - After REFRESH
+      - Immediately, because a view reruns its query every time it's read
+      - Never
+      - After restarting PostgreSQL
+    answer: 1
+    explanation: A view stores no data. It's a saved query, so it's always current.
+
+  - type: predict
+    prompt: What does the last statement return?
+    code: |
+      CREATE TABLE t (x int);
+      INSERT INTO t VALUES (1);
+      CREATE MATERIALIZED VIEW mv AS SELECT count(*) AS n FROM t;
+      INSERT INTO t VALUES (2);
+      SELECT n FROM mv;
+    options:
+      - "1"
+      - "2"
+      - "0"
+      - An error
+    answer: 0
+    explanation: The materialized view stored the count (1) when it was created. The second row isn't counted until REFRESH.
+
+  - type: fill
+    prompt: Rebuild the stored results without blocking readers.
+    code: |
+      CREATE MATERIALIZED VIEW mv AS SELECT 1 AS id;
+      CREATE UNIQUE INDEX ON mv (id);
+      REFRESH MATERIALIZED VIEW ____ mv;
+    answer: CONCURRENTLY
+    accept: ["concurrently"]
+    explanation: "`REFRESH MATERIALIZED VIEW CONCURRENTLY` keeps the old data readable while it rebuilds. It needs a unique index."
+
+  - type: mcq
+    prompt: A dashboard query takes 20 seconds, and hourly-old numbers are fine. What's a good fit?
+    options:
+      - A plain view
+      - A materialized view refreshed every hour
+      - A CTE
+      - A trigger
+    answer: 1
+    explanation: A materialized view stores the heavy result, so the dashboard reads it instantly, and an hourly refresh keeps it fresh enough.
+
+  - type: mcq
+    prompt: Which is **not** a typical reason to create a plain view?
+    options:
+      - Sharing one definition of a tricky join
+      - Showing some users only certain columns
+      - Making a slow query faster by storing its result
+      - Hiding table changes behind a stable name
+    answer: 2
+    explanation: A plain view doesn't store results, so it's exactly as fast as its query. Storing results is what materialized views do.

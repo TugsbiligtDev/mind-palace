@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Under MVCC, a long report is reading trips while another session updates one. What happens?
+    options:
+      - The report waits until the update finishes
+      - The update waits until the report finishes
+      - Neither waits. The report sees the row version from its snapshot.
+      - The report sees half of the update
+    answer: 2
+    explanation: With MVCC, readers and writers don't block each other. The report keeps reading the version it's allowed to see.
+
+  - type: mcq
+    prompt: Two cashiers both run `SELECT qty` (5), then both run `UPDATE stock SET qty = 4`. What's the final qty?
+    options:
+      - "3"
+      - "4"
+      - "5"
+      - An error
+    answer: 1
+    explanation: That's a lost update. The second write overwrote the first. `SET qty = qty - 1` or `SELECT … FOR UPDATE` would give the correct 3.
+
+  - type: fill
+    prompt: Worker query that skips jobs other workers have already locked.
+    code: |
+      CREATE TABLE jobs (job_id int, status text);
+      SELECT job_id FROM jobs WHERE status = 'pending'
+      ORDER BY job_id LIMIT 1 FOR UPDATE ____ LOCKED;
+    answer: SKIP
+    accept: ["skip"]
+    explanation: "`FOR UPDATE SKIP LOCKED` takes the first job no one else is holding, without waiting."
+
+  - type: mcq
+    prompt: Your app uses SERIALIZABLE and sometimes gets *could not serialize access*. What should it do?
+    options:
+      - Switch to Read Committed and ignore it
+      - Retry the whole transaction
+      - Commit anyway
+      - Restart the server
+    answer: 1
+    explanation: Serialization errors are expected at the stricter levels. The correct response is to retry the whole transaction.
+
+  - type: mcq
+    prompt: What's the standard way to prevent deadlocks between money transfers?
+    options:
+      - Use bigger servers
+      - Always lock (update) the accounts in the same order, e.g. lowest ID first
+      - Never use transactions
+      - Use DISTINCT
+    answer: 1
+    explanation: If every transaction takes locks in the same order, a waiting cycle can't form.

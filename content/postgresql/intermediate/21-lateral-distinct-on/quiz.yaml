@@ -1,0 +1,56 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "In `SELECT DISTINCT ON (trip_id) … ORDER BY trip_id, paid_at DESC`, what decides which row is kept for each trip?"
+    options:
+      - The first row inserted
+      - The ORDER BY after trip_id, here the newest paid_at
+      - A random row
+      - The largest amount
+    answer: 1
+    explanation: DISTINCT ON keeps the first row of each group in ORDER BY order. The columns after the DISTINCT ON columns decide which row that is.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT DISTINCT ON (department) department, full_name
+      FROM employees
+      WHERE department = 'Sales'
+      ORDER BY department, hired_on;
+    options:
+      - "Sales | Saruul Dash"
+      - "Sales | Anu Batbold"
+      - "Sales | Khongor Munkh"
+      - "Sales | Saruul Dash\nSales | Anu Batbold\nSales | Khongor Munkh"
+    answer: 0
+    explanation: "It keeps the earliest-hired Sales employee. Saruul Dash was hired in 2020, before Anu (2021) and Khongor (2025)."
+
+  - type: mcq
+    prompt: What does LATERAL allow a subquery in FROM to do?
+    options:
+      - Return more than one column
+      - Use columns from tables that appear to its left, so it runs per row
+      - Skip the alias
+      - Update rows
+    answer: 1
+    explanation: A LATERAL subquery can refer to earlier FROM items, like a correlated subquery that returns a whole table.
+
+  - type: fill
+    prompt: Keep trips even when the lateral subquery finds nothing for them.
+    code: |
+      SELECT t.trip_name, s.cost
+      FROM trips t
+      LEFT JOIN LATERAL (SELECT cost FROM trip_stops ts WHERE ts.trip_id = t.trip_id LIMIT 1) s ON ____;
+    answer: "true"
+    accept: ["TRUE"]
+    explanation: "`LEFT JOIN LATERAL … ON true` keeps every left row. The matching already happens inside the subquery."
+
+  - type: mcq
+    prompt: You need the **3 most recent** reviews for each attraction. What's the most natural tool?
+    options:
+      - DISTINCT ON
+      - LATERAL with ORDER BY and LIMIT 3
+      - UNION ALL
+      - GROUP BY with max()
+    answer: 1
+    explanation: DISTINCT ON gives only one row per group. LATERAL + ORDER BY + LIMIT n gives the top N.

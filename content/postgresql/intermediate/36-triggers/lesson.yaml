@@ -1,0 +1,248 @@
+steps:
+  - kind: explain
+    title: Code that runs by itself
+    body: |
+      A **trigger** makes PostgreSQL run a function **automatically** whenever rows in a table are inserted, updated or deleted. Nobody has to remember to call it: every app, script and psql session sets it off.
+
+      Two pieces:
+
+      1. A **trigger function**: a PL/pgSQL function (Module 35) that `RETURNS trigger`.
+      2. A **trigger** that attaches the function to a table and an event.
+
+      ```sql
+      CREATE TRIGGER trips_touch
+      BEFORE UPDATE ON trips
+      FOR EACH ROW
+      EXECUTE FUNCTION touch_updated_at();
+      ```
+
+  - kind: explain
+    title: NEW, OLD, BEFORE and AFTER
+    body: |
+      Inside a row trigger function you get two special records:
+
+      - **`NEW`**: the row as it **will be** (INSERT and UPDATE)
+      - **`OLD`**: the row as it **was** (UPDATE and DELETE)
+
+      And the timing:
+
+      | | BEFORE | AFTER |
+      |---|---|---|
+      | Runs | before the row is written | after the row is written |
+      | Can change the row | **yes**: modify `NEW` and `RETURN NEW` | no |
+      | Can cancel the row | yes: `RETURN NULL` skips it | no (but it can raise an error) |
+      | Typical use | fill in or clean values | audit logs, notifying other tables |
+
+      Level:
+
+      - **`FOR EACH ROW`**: runs once **per row** changed.
+      - **`FOR EACH STATEMENT`**: runs once **per statement**, even if it changed 10,000 rows (or none).
+
+  - kind: explain
+    title: The classic, auto-updating updated_at
+    body: |
+      Many tables have an `updated_at` column. Apps forget to set it. A BEFORE trigger never forgets:
+
+      ```sql
+      CREATE FUNCTION touch_updated_at()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          NEW.updated_at := now();
+          RETURN NEW;
+      END;
+      $$;
+
+      CREATE TRIGGER trips_touch
+      BEFORE UPDATE ON trips
+      FOR EACH ROW
+      EXECUTE FUNCTION touch_updated_at();
+      ```
+
+      One function can serve many tables: attach the same function with a trigger on each.
+
+  - kind: try
+    title: See updated_at fill itself
+    body: |
+      The UPDATE never mentions `updated_at`, yet it's set. Run it. (`now()` is the transaction's start time, so yours will show today.)
+    sql: |
+      ALTER TABLE trips ADD COLUMN updated_at timestamptz;
+
+      CREATE FUNCTION touch_updated_at()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          NEW.updated_at := now();
+          RETURN NEW;
+      END;
+      $$;
+
+      CREATE TRIGGER trips_touch
+      BEFORE UPDATE ON trips
+      FOR EACH ROW
+      EXECUTE FUNCTION touch_updated_at();
+
+      UPDATE trips SET status = 'cancelled' WHERE trip_id = 6;
+      SELECT trip_id, status, updated_at FROM trips WHERE trip_id IN (5, 6);
+
+  - kind: try
+    title: Your turn to clean on the way in
+    body: |
+      Write a **BEFORE INSERT OR UPDATE** row trigger on `travelers` that stores every email **trimmed and lowercased**. Name the function `clean_email` and the trigger `travelers_clean_email`. The INSERT and SELECT below will check it.
+    sql: |
+      INSERT INTO travelers (full_name, email) VALUES ('Nara Nomad', '  Nara@Example.COM ');
+
+      SELECT full_name, email FROM travelers WHERE full_name = 'Nara Nomad';
+    expect: |
+      CREATE FUNCTION clean_email()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          NEW.email := lower(trim(NEW.email));
+          RETURN NEW;
+      END;
+      $$;
+
+      CREATE TRIGGER travelers_clean_email
+      BEFORE INSERT OR UPDATE ON travelers
+      FOR EACH ROW
+      EXECUTE FUNCTION clean_email();
+
+      INSERT INTO travelers (full_name, email) VALUES ('Nara Nomad', '  Nara@Example.COM ');
+
+      SELECT full_name, email FROM travelers WHERE full_name = 'Nara Nomad';
+
+  - kind: explain
+    title: Audit tables
+    body: |
+      *Who changed that refund, and what was it before?* An **AFTER** trigger can record every change in an **audit table**:
+
+      ```sql
+      CREATE TABLE payments_audit (
+          audit_id    bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          operation   text NOT NULL,          -- INSERT / UPDATE / DELETE
+          payment_id  integer NOT NULL,
+          old_amount  numeric(8,2),
+          new_amount  numeric(8,2),
+          changed_by  text NOT NULL DEFAULT current_user,
+          changed_at  timestamptz NOT NULL DEFAULT now()
+      );
+      ```
+
+      In the trigger function, **`TG_OP`** tells you which operation fired it. For a DELETE, `NEW` is NULL, and for an INSERT, `OLD` is NULL.
+
+      An AFTER row trigger's return value is ignored, so `RETURN NULL;` is the convention.
+
+  - kind: try
+    title: Catch a changed payment
+    body: |
+      Someone edits payment 7 (the refund) and deletes payment 13. Run it: the audit table recorded both, with the old values.
+    sql: |
+      CREATE TABLE payments_audit (
+          audit_id    bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          operation   text NOT NULL,
+          payment_id  integer NOT NULL,
+          old_amount  numeric(8,2),
+          new_amount  numeric(8,2),
+          changed_by  text NOT NULL DEFAULT current_user,
+          changed_at  timestamptz NOT NULL DEFAULT now()
+      );
+
+      CREATE FUNCTION audit_payments()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          IF TG_OP = 'DELETE' THEN
+              INSERT INTO payments_audit (operation, payment_id, old_amount)
+              VALUES (TG_OP, OLD.payment_id, OLD.amount);
+          ELSE
+              INSERT INTO payments_audit (operation, payment_id, old_amount, new_amount)
+              VALUES (TG_OP, NEW.payment_id, OLD.amount, NEW.amount);
+          END IF;
+          RETURN NULL;
+      END;
+      $$;
+
+      CREATE TRIGGER payments_audit_trg
+      AFTER INSERT OR UPDATE OR DELETE ON payments
+      FOR EACH ROW
+      EXECUTE FUNCTION audit_payments();
+
+      UPDATE payments SET amount = -500.00 WHERE payment_id = 7;
+      DELETE FROM payments WHERE payment_id = 13;
+
+      SELECT operation, payment_id, old_amount, new_amount FROM payments_audit ORDER BY audit_id;
+
+  - kind: try
+    title: Your turn to audit status changes
+    body: |
+      The `trip_status_log` table is ready. Write an **AFTER UPDATE** row trigger on `trips` (function `log_status`, trigger `trips_log_status`) that inserts `trip_id`, the **old** status and the **new** status, but **only when the status actually changed**.
+
+      Hint: `IF NEW.status IS DISTINCT FROM OLD.status THEN …` (Module 7). The UPDATEs below change one status and leave another the same.
+    sql: |
+      CREATE TABLE trip_status_log (trip_id integer, old_status text, new_status text);
+
+      UPDATE trips SET status = 'cancelled' WHERE trip_id = 6;
+      UPDATE trips SET status = 'completed' WHERE trip_id = 1;
+
+      SELECT * FROM trip_status_log;
+    expect: |
+      CREATE TABLE trip_status_log (trip_id integer, old_status text, new_status text);
+
+      CREATE FUNCTION log_status()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          IF NEW.status IS DISTINCT FROM OLD.status THEN
+              INSERT INTO trip_status_log VALUES (NEW.trip_id, OLD.status, NEW.status);
+          END IF;
+          RETURN NULL;
+      END;
+      $$;
+
+      CREATE TRIGGER trips_log_status
+      AFTER UPDATE ON trips
+      FOR EACH ROW
+      EXECUTE FUNCTION log_status();
+
+      UPDATE trips SET status = 'cancelled' WHERE trip_id = 6;
+      UPDATE trips SET status = 'completed' WHERE trip_id = 1;
+
+      SELECT * FROM trip_status_log;
+
+  - kind: explain
+    title: Trigger pitfalls
+    body: |
+      Triggers are powerful and easy to overuse:
+
+      - **Hidden behavior.** Someone runs a simple UPDATE and three other tables change. Nothing in their query hints at it. Document triggers, and keep them small.
+      - **Performance.** A row trigger runs **once per row**. An UPDATE of a million rows runs the function a million times. Bulk loads can crawl.
+      - **Trigger chains.** A trigger that updates another table can fire *that* table's triggers, and so on. A trigger that updates its **own** table can loop.
+      - **Order.** Several triggers on the same event run in **alphabetical order** of their names.
+      - **Gaps.** `TRUNCATE` doesn't fire DELETE triggers (it has its own TRUNCATE event), and `COPY` does fire INSERT triggers.
+
+      Prefer **constraints** for rules (Module 12) and **generated columns** for derived values (Module 29). Reach for a trigger when those can't do the job: auditing, `updated_at`, syncing a summary table.
+
+  - kind: info
+    title: "🔹 Event triggers"
+    body: |
+      Normal triggers fire on **data** changes. **Event triggers** fire on **structure** changes, like `CREATE TABLE`, `ALTER TABLE` and `DROP`, for the whole database. They're used for things like logging every schema change or blocking drops in production. They require superuser rights, and you'll rarely write one.
+
+  - kind: why
+    body: |
+      Some things must happen every single time, no matter which app changed the data: stamping `updated_at`, cleaning inputs, recording who changed a payment. Triggers guarantee that. Used sparingly, they're the database's safety cameras.
+
+  - kind: recap
+    body: |
+      - A trigger runs a `RETURNS trigger` function automatically on INSERT, UPDATE or DELETE.
+      - `NEW` = the row after, `OLD` = the row before. `TG_OP` = which operation.
+      - BEFORE can change `NEW` (`RETURN NEW`) or skip the row (`RETURN NULL`). AFTER suits audits (`RETURN NULL`).
+      - `FOR EACH ROW` runs per row. `FOR EACH STATEMENT` runs once per statement.
+      - Classic uses: `updated_at`, cleaning inputs, audit tables.
+      - Pitfalls: hidden behavior, per-row cost, chains and loops, alphabetical order, TRUNCATE. Prefer constraints and generated columns when they fit.
+      - 🔹 Event triggers fire on schema changes.

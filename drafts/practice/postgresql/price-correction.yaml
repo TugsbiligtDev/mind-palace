@@ -1,5 +1,5 @@
 difficulty: hard
-topic: postgresql/beginner/08-writing-data
+topic: postgresql/beginner/09-functions
 concepts: [UPDATE, WHERE, round]
 title: The Price Correction
 briefing: |

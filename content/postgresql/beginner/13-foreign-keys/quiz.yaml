@@ -1,0 +1,62 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: One country has many cities. Which table should hold the foreign key?
+    options:
+      - "`countries`, as a `city_id` column"
+      - "`cities`, as a `country_id` column"
+      - Both tables
+      - A junction table
+    answer: 1
+    explanation: In a one-to-many relationship, the FK goes on the "many" side. Each city stores the one country it belongs to.
+
+  - type: mcq
+    prompt: Students take many courses, and each course has many students. How do you model it?
+    options:
+      - A `course_id` column in students
+      - A `student_id` column in courses
+      - A junction table with a `student_id` FK, a `course_id` FK, and a composite primary key
+      - A text column listing course names
+    answer: 2
+    explanation: Many-to-many needs a junction table. Each row links one student to one course, and the composite PK stops duplicate links.
+
+  - type: predict
+    prompt: What does the last statement return?
+    code: |
+      CREATE TABLE parents (id integer PRIMARY KEY);
+      CREATE TABLE kids (
+          id        integer PRIMARY KEY,
+          parent_id integer REFERENCES parents (id) ON DELETE CASCADE
+      );
+      INSERT INTO parents VALUES (1), (2);
+      INSERT INTO kids VALUES (10, 1), (11, 1), (12, 2);
+      DELETE FROM parents WHERE id = 1;
+      SELECT count(*) FROM kids;
+    options:
+      - "3"
+      - "2"
+      - "1"
+      - An error
+    answer: 2
+    explanation: CASCADE deletes parent 1's two kids along with it. Only kid 12 (parent 2) remains.
+
+  - type: fill
+    prompt: Keep the staff member but clear their link when their manager is deleted.
+    code: |
+      CREATE TABLE crew (
+          crew_id    integer PRIMARY KEY,
+          manager_id integer REFERENCES crew (crew_id) ON DELETE ____
+      );
+    answer: SET NULL
+    accept: ["set null"]
+    explanation: "`ON DELETE SET NULL` keeps the child row and sets its foreign key to NULL."
+
+  - type: mcq
+    prompt: You add a foreign key `trips.traveler_id`. What does PostgreSQL **not** do for you automatically?
+    options:
+      - Check that each traveler_id exists in travelers
+      - Refuse to delete a traveler who has trips
+      - Create an index on `trips.traveler_id`
+      - Reject a traveler_id of 99 when there's no traveler 99
+    answer: 2
+    explanation: PostgreSQL indexes primary keys automatically, but not foreign key columns. Add the index yourself to keep lookups and parent deletes fast.

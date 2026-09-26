@@ -1,0 +1,58 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Salaries are 5000, 4000, 4000 and 3000. What does `dense_rank() OVER (ORDER BY salary DESC)` give them?
+    options:
+      - 1, 2, 3, 4
+      - 1, 2, 2, 4
+      - 1, 2, 2, 3
+      - 1, 1, 2, 3
+    answer: 2
+    explanation: dense_rank gives ties the same rank and doesn't leave a gap afterwards. `rank()` would give 1, 2, 2, 4.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT sum(amount) OVER (ORDER BY paid_at) AS running
+      FROM payments
+      WHERE trip_id = 5
+      ORDER BY paid_at;
+    options:
+      - "300.00\n610.00\n-300.00"
+      - "300.00\n910.00\n610.00"
+      - "610.00\n610.00\n610.00"
+      - "300.00\n910.00\n1210.00"
+    answer: 1
+    explanation: "Trip 5's payments are 300, 610 and −300. The running total goes 300, then 910, then back down to 610."
+
+  - type: mcq
+    prompt: "Why does `SELECT … WHERE row_number() OVER (ORDER BY salary) <= 3` fail?"
+    options:
+      - row_number needs PARTITION BY
+      - Window functions are computed after WHERE, so WHERE can't use them. Rank in a CTE, then filter.
+      - WHERE can't use numbers
+      - You must use rank() instead
+    answer: 1
+    explanation: WHERE runs before window functions exist. Compute the ranking in a CTE or subquery, then filter on it outside.
+
+  - type: fill
+    prompt: Show each payment's amount next to the **previous** payment's amount.
+    code: |
+      SELECT paid_at, amount, ____(amount) OVER (ORDER BY paid_at) AS previous
+      FROM payments;
+    answer: lag
+    accept: ["LAG"]
+    explanation: "`lag(col)` reads the value from the previous row in the window's order. `lead` reads the next one."
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT count(*) FILTER (WHERE method = 'card') AS card_payments
+      FROM payments;
+    options:
+      - "14"
+      - "9"
+      - "4"
+      - "1"
+    answer: 1
+    explanation: Of the 14 payments, 9 were by card, 4 by transfer and 1 in cash. FILTER counts only the card ones.

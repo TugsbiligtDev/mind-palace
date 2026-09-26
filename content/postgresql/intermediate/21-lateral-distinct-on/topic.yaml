@@ -1,0 +1,4 @@
+title: LATERAL Joins & DISTINCT ON
+module: 21
+summary: One row per group with DISTINCT ON, the latest N per group with LATERAL, running a function once per row, and choosing between them and window functions.
+minutes: 35

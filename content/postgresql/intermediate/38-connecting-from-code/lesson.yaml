@@ -1,0 +1,212 @@
+steps:
+  - kind: explain
+    title: Apps are clients too
+    body: |
+      psql and pgAdmin are clients (Module 1). So is every app that uses a database: a website's backend, a Python script, a mobile app's server. They connect through a **driver**, a library that speaks PostgreSQL's network protocol, and send SQL just like you do.
+
+      This module covers what you need to connect an app **safely**. The code itself runs on your Mac, but the SQL ideas can be tried right here.
+
+  - kind: explain
+    title: Connection strings
+    body: |
+      Apps usually describe a connection in one line, a **connection string** (or *URL*):
+
+      ```text
+      postgresql://app_user:s3cret@db.example.com:5432/wanderly?sslmode=require
+      └─scheme──┘ └─user─┘ └pass┘ └────host─────┘ └port┘ └─db──┘ └─options──┘
+      ```
+
+      - The same pieces as Module 2: user, password, host, port, database.
+      - `?sslmode=require` asks for an **encrypted** connection. Always use it for databases over the internet (Module 45).
+      - Special characters in the password (`@`, `:`, `/`, `#`) must be **URL-encoded** (`@` → `%40`), or the string is misread.
+
+  - kind: explain
+    title: Drivers
+    body: |
+      **Python: psycopg 3**
+
+      ```python
+      import os, psycopg
+
+      with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+          rows = conn.execute(
+              "SELECT trip_name FROM trips WHERE traveler_id = %s",
+              (1,),
+          ).fetchall()
+      ```
+
+      **JavaScript (Node.js): node-postgres (`pg`)**
+
+      ```javascript
+      import pg from "pg";
+      const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+
+      const { rows } = await pool.query(
+        "SELECT trip_name FROM trips WHERE traveler_id = $1",
+        [1],
+      );
+      ```
+
+      Notice that neither puts the value **into** the SQL text. The `%s` and `$1` are **placeholders**. That's the most important habit in this module.
+
+  - kind: explain
+    title: SQL injection
+    body: |
+      Suppose a login form's email box is glued straight into the SQL:
+
+      ```python
+      # NEVER do this
+      sql = f"SELECT * FROM travelers WHERE email = '{email_from_form}'"
+      ```
+
+      A normal visitor types `amina@example.com`. An attacker types:
+
+      ```text
+      nobody@example.com' OR '1'='1
+      ```
+
+      and the query becomes:
+
+      ```sql
+      SELECT * FROM travelers WHERE email = 'nobody@example.com' OR '1'='1'
+      ```
+
+      `'1'='1'` is always true, so **every traveler** comes back. With other inputs, an attacker can read any table, change data, or drop tables. This is **SQL injection**, for decades one of the most common ways websites get hacked.
+
+  - kind: try
+    title: What the attacker's query returns
+    body: |
+      This is exactly the SQL the careless app would build. Run it: every traveler's email leaks, for a login that should have matched nobody.
+    sql: |
+      SELECT full_name, email
+      FROM travelers
+      WHERE email = 'nobody@example.com' OR '1'='1';
+
+  - kind: explain
+    title: The fix is parameterized queries
+    body: |
+      With a **parameterized query**, the SQL text and the values travel **separately**. PostgreSQL parses the SQL first, with a placeholder where the value goes, and then plugs the value in as **pure data**. Quotes in it are just characters. They can never change the query's structure.
+
+      ```python
+      conn.execute("SELECT * FROM travelers WHERE email = %s", (email_from_form,))
+      ```
+
+      Rules:
+
+      - **Never** build SQL with `+`, f-strings, `format()` or template strings from anything a user could influence.
+      - Placeholders work for **values**, not for table or column **names**. If a name must vary, choose it from a fixed allow-list in code (or use your driver's identifier helper, like `psycopg.sql.Identifier`).
+      - Escaping quotes by hand is not a fix. Let the driver do it.
+
+      PostgreSQL's own `PREPARE` / `EXECUTE` shows the same mechanism in plain SQL.
+
+  - kind: try
+    title: The same attack, parameterized
+    body: |
+      `PREPARE` stores the query with a `$1` placeholder, and `EXECUTE` passes the attacker's text as the value. Run it: **no rows**, because no email is literally `nobody@example.com' OR '1'='1`.
+    sql: |
+      PREPARE find_traveler(text) AS
+          SELECT full_name, email FROM travelers WHERE email = $1;
+
+      EXECUTE find_traveler('nobody@example.com'' OR ''1''=''1');
+
+  - kind: try
+    title: Your turn to parameterize
+    body: |
+      Prepare a statement named **trips_for** that takes an **integer** traveler ID and returns `trip_name` and `status` of that traveler's trips. Then execute it for traveler **1**.
+    sql: |
+      SELECT trip_name, status FROM trips WHERE traveler_id = 1;
+    expect: |
+      PREPARE trips_for(integer) AS
+          SELECT trip_name, status FROM trips WHERE traveler_id = $1;
+
+      EXECUTE trips_for(1);
+
+  - kind: explain
+    title: Keep passwords out of your code
+    body: |
+      A connection string contains a password. If it's written in your code, it ends up in Git, on GitHub, in screenshots and in every copy of the project.
+
+      - Put it in an **environment variable**, conventionally `DATABASE_URL`, and read it with `os.environ["DATABASE_URL"]` or `process.env.DATABASE_URL`.
+      - For local development, a **`.env`** file holds these values. **Add `.env` to `.gitignore`** so it's never committed. (This site does exactly that with its Supabase keys.)
+      - Give each app its **own role** with least privilege (Module 37), so a leaked password unlocks as little as possible.
+      - If a password does leak, **change it** at once. Deleting the commit isn't enough.
+
+  - kind: explain
+    title: Connection limits and pools
+    body: |
+      Each connection is a separate process on the server, using memory. PostgreSQL allows **`max_connections`** at once, 100 by default. A busy app that opens a new connection for every web request quickly hits *FATAL: sorry, too many clients already*.
+
+      The fix is a **connection pool**: a small set of connections kept open and **reused** by every request.
+
+      - In the app: `pg.Pool` (node-postgres), `psycopg_pool.ConnectionPool` (Python).
+      - In front of the database: **PgBouncer**, a separate pooling server (Module 47).
+
+      Also: always **close** connections (or return them to the pool), and never hold one open while waiting for a person.
+
+  - kind: explain
+    title: ORMs vs. raw SQL
+    body: |
+      An **ORM** (object-relational mapper) lets you work with tables as objects in your programming language, and writes the SQL for you:
+
+      | Language | Popular ORMs |
+      |---|---|
+      | Python | **SQLAlchemy**, the **Django ORM** |
+      | JavaScript / TypeScript | **Prisma**, **Drizzle** |
+
+      ```python
+      # Django: roughly SELECT * FROM trips WHERE status = 'planned'
+      Trip.objects.filter(status="planned")
+      ```
+
+      **Pros:** less repetitive code, parameterization by default, migrations built in (Module 39).
+      **Cons:** complex reports are awkward, and it's easy to write code that sends terrible SQL without noticing.
+
+      Most teams use an ORM for everyday work and **drop down to raw SQL** for reporting and tricky queries. Knowing SQL well is what lets you do both.
+
+  - kind: explain
+    title: The ORM N+1 trap
+    body: |
+      This innocent-looking loop:
+
+      ```python
+      trips = Trip.objects.all()           # 1 query
+      for trip in trips:
+          print(trip.traveler.full_name)   # +1 query per trip!
+      ```
+
+      runs **1 + N** queries: one for the trips, then one more for each trip's traveler (Module 33). With 1,000 trips, that's 1,001 round trips.
+
+      ORMs have a switch to load related rows up front, in one JOIN or one `IN (…)` query:
+
+      - Django: `Trip.objects.select_related("traveler")`
+      - SQLAlchemy: `select(Trip).options(joinedload(Trip.traveler))`
+      - Prisma: `prisma.trip.findMany({ include: { traveler: true } })`
+
+      Turn on query logging in development, and you'll see N+1 immediately.
+
+  - kind: mac
+    title: A Python script with psycopg
+    body: |
+      This makes a small project folder, installs psycopg 3 in a private environment, writes a script that uses a **parameterized** query and reads the connection string from an environment variable, and runs it. It prints the trips of the traveler whose email you pass in.
+    commands: |
+      mkdir -p ~/Documents/sql/pyapp && cd ~/Documents/sql/pyapp
+      python3 -m venv .venv
+      source .venv/bin/activate
+      pip install "psycopg[binary]"
+      printf 'import os, sys, psycopg\nwith psycopg.connect(os.environ["DATABASE_URL"]) as conn:\n    rows = conn.execute("SELECT t.trip_name FROM trips t JOIN travelers tr USING (traveler_id) WHERE tr.email = %%s", (sys.argv[1],)).fetchall()\n    print(rows)\n' > trips.py
+      export DATABASE_URL="postgresql://localhost:5432/learn_sql"
+      python trips.py amina@example.com
+      python trips.py "nobody@example.com' OR '1'='1"
+
+  - kind: why
+    body: |
+      Every real use of a database goes through app code. Parameterized queries alone prevent one of the most damaging classes of security bugs, and pools, secrets hygiene and N+1 awareness are what keep an app fast and safe once real people use it.
+
+  - kind: recap
+    body: |
+      - Connection string: `postgresql://user:password@host:5432/db?sslmode=require`. URL-encode special characters.
+      - Drivers: **psycopg 3** (Python, `%s`), **node-postgres** (JavaScript, `$1`).
+      - **SQL injection** happens when user input is glued into SQL text. **Always use parameterized queries.** Placeholders are for values, and names come from an allow-list.
+      - Passwords go in environment variables (`DATABASE_URL`, a git-ignored `.env`), never in code.
+      - Connections are limited (`max_connections`). Use a pool (`pg.Pool`, psycopg_pool, PgBouncer).
+      - ORMs (SQLAlchemy, Django, Prisma, Drizzle) for everyday work, raw SQL for hard queries. Watch for N+1 and fix it with eager loading.

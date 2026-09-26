@@ -1,5 +1,5 @@
 difficulty: hard
-topic: postgresql/beginner/07-aggregation
+topic: postgresql/beginner/10-aggregation
 concepts: [GROUP BY, HAVING, round, calculated columns, ORDER BY]
 title: The Real Price of a Night
 briefing: |

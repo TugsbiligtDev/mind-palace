@@ -1,5 +1,5 @@
 difficulty: easy
-topic: postgresql/beginner/03-where
+topic: postgresql/beginner/06-querying-one-table
 concepts: [WHERE, IN]
 title: The Museum Guest List
 briefing: |

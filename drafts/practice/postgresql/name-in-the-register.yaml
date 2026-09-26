@@ -1,5 +1,5 @@
 difficulty: easy
-topic: postgresql/beginner/03-where
+topic: postgresql/beginner/06-querying-one-table
 concepts: [WHERE, ILIKE, wildcards]
 title: A Name in the Register
 briefing: |

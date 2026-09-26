@@ -1,0 +1,60 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does the last statement return?
+    code: |
+      CREATE FUNCTION double_it(p_x integer) RETURNS integer
+      LANGUAGE sql IMMUTABLE AS $$ SELECT p_x * 2; $$;
+      SELECT double_it(double_it(3)) AS result;
+    options:
+      - "6"
+      - "9"
+      - "12"
+      - An error
+    answer: 2
+    explanation: The inner call gives 6, and the outer call doubles that to 12.
+
+  - type: mcq
+    prompt: Which can COMMIT partway through its work?
+    options:
+      - A function
+      - A procedure called with CALL
+      - A view
+      - A CHECK constraint
+    answer: 1
+    explanation: Procedures can control transactions (COMMIT and ROLLBACK inside). Functions always run inside the caller's transaction.
+
+  - type: mcq
+    prompt: A function reads the `trips` table. Which volatility label is correct?
+    options:
+      - IMMUTABLE
+      - STABLE (or VOLATILE)
+      - It doesn't matter
+      - It can't be labeled
+    answer: 1
+    explanation: Its result can change when the table changes, so it can't promise IMMUTABLE. STABLE fits a read-only function. Mislabeling as IMMUTABLE can give wrong results.
+
+  - type: fill
+    prompt: Stop with an error when the input is negative.
+    code: |
+      CREATE FUNCTION check_amount(p_amount numeric) RETURNS numeric LANGUAGE plpgsql AS $$
+      BEGIN
+          IF p_amount < 0 THEN
+              RAISE ____ 'negative amount: %', p_amount;
+          END IF;
+          RETURN p_amount;
+      END;
+      $$;
+    answer: EXCEPTION
+    accept: ["exception"]
+    explanation: "`RAISE EXCEPTION` aborts with an error message. `%` is replaced by the next argument."
+
+  - type: mcq
+    prompt: You need to add 1 night to every stop of trip 5. What's the better approach?
+    options:
+      - A PL/pgSQL loop that updates one stop at a time
+      - "A single `UPDATE trip_stops SET nights = nights + 1 WHERE trip_id = 5;`"
+      - A procedure that commits after each row
+      - A materialized view
+    answer: 1
+    explanation: Think in sets. One statement is simpler and much faster than a row-by-row loop.

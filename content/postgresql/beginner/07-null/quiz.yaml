@@ -1,0 +1,55 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What does `SELECT full_name FROM travelers WHERE email = NULL;` return?"
+    options:
+      - The traveler with no email
+      - Every traveler
+      - No rows, because comparing to NULL is never true
+      - An error
+    answer: 2
+    explanation: "`= NULL` gives *unknown* for every row, and WHERE only keeps rows where the condition is true. There's no error, just an empty result. Use `IS NULL`."
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT COALESCE(NULL, NULL, 'Rome', 'Paris') AS city;
+    options:
+      - "NULL"
+      - "Rome"
+      - "Paris"
+      - "Rome, Paris"
+    answer: 1
+    explanation: COALESCE returns the first value that isn't NULL, which is 'Rome'.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT count(*) AS rows
+      FROM countries
+      WHERE country_id NOT IN (1, NULL);
+    options:
+      - "0"
+      - "4"
+      - "5"
+      - An error
+    answer: 0
+    explanation: "`country_id NOT IN (1, NULL)` includes `country_id <> NULL`, which is always unknown. The condition is never true, so no rows are counted."
+
+  - type: fill
+    prompt: Sort trips by end date, newest first, but put trips **without** an end date at the bottom.
+    code: |
+      SELECT trip_name FROM trips ORDER BY end_date DESC NULLS ____;
+    answer: LAST
+    accept: ["last"]
+    explanation: "In DESC order NULLs come first by default. `NULLS LAST` moves them to the end."
+
+  - type: mcq
+    prompt: "What's the value of `NULL IS DISTINCT FROM NULL`?"
+    options:
+      - "true"
+      - "false"
+      - NULL (unknown)
+      - An error
+    answer: 1
+    explanation: IS DISTINCT FROM treats NULL as a comparable value. Two NULLs are *not* distinct, so the answer is false. (`NULL <> NULL` would be unknown.)

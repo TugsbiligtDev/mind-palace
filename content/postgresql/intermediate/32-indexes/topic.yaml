@@ -1,0 +1,4 @@
+title: Indexes
+module: 32
+summary: What an index is and what it costs, B-tree basics, multi-column order, unique, partial and expression indexes, indexing foreign keys, GIN for jsonb and arrays, and building indexes without blocking writes.
+minutes: 40

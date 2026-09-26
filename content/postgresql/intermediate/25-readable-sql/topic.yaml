@@ -1,0 +1,4 @@
+title: Writing Readable SQL & Problem-Solving
+module: 25
+summary: Format queries so people can read them, break hard questions into named steps, prove your answer is right, and spot the logic mistakes that return wrong numbers without errors.
+minutes: 35

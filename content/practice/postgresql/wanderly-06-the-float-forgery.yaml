@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/05-data-types
+topic: postgresql/beginner/06-querying-one-table
 concepts: [numeric, casting, intervals]
 series: { name: The Wanderly Files, episode: 6 }
 title: The Float Forgery

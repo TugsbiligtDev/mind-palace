@@ -1,0 +1,54 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What does `UPDATE trips SET status = 'cancelled';` do?"
+    options:
+      - Nothing, because UPDATE needs a WHERE
+      - Cancels the most recent trip
+      - Cancels **every** trip
+      - An error
+    answer: 2
+    explanation: Without WHERE, UPDATE applies to every row in the table, and PostgreSQL won't ask whether you're sure. Write the WHERE first.
+
+  - type: predict
+    prompt: Trip 1 has two stops, with 4 and 3 nights. What does this return?
+    code: |
+      UPDATE trip_stops
+      SET nights = nights + 1
+      WHERE trip_id = 1
+      RETURNING nights;
+    options:
+      - "4\n3"
+      - "5\n4"
+      - "5"
+      - "UPDATE 2"
+    answer: 1
+    explanation: Both of trip 1's stops get one more night, and RETURNING shows the **new** values, 5 and 4.
+
+  - type: fill
+    prompt: Remove only the reviews with a rating below 3.
+    code: |
+      DELETE FROM reviews ____ rating < 3;
+    answer: WHERE
+    accept: ["where"]
+    explanation: WHERE limits the DELETE to matching rows. Without it, every review would be removed.
+
+  - type: mcq
+    prompt: What's the difference between `DELETE FROM reviews;` and `TRUNCATE reviews;`?
+    options:
+      - DELETE removes the table, and TRUNCATE removes the rows
+      - Both empty the table. DELETE works row by row (and can take a WHERE), while TRUNCATE empties the whole table in one quick operation
+      - TRUNCATE can be undone and DELETE can't
+      - There's no difference
+    answer: 1
+    explanation: Both leave the table empty but still existing. DELETE is flexible (WHERE, RETURNING). TRUNCATE is a quick "throw it all away".
+
+  - type: mcq
+    prompt: Before running an UPDATE on a real database, what's the safest habit?
+    options:
+      - Run it twice to be sure
+      - Run the same WHERE as a SELECT first, to see exactly which rows will change
+      - Leave out WHERE so nothing is missed
+      - Use TRUNCATE instead
+    answer: 1
+    explanation: A SELECT with the same WHERE shows you the exact rows the UPDATE will touch, before anything changes.

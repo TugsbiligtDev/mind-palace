@@ -1,5 +1,5 @@
 difficulty: easy
-topic: postgresql/beginner/00-landscape
+topic: postgresql/beginner/02-terminal-and-psql
 concepts: [psql meta-commands, schemas]
 series: { name: The Wanderly Files, episode: 1 }
 title: The Locked Archive

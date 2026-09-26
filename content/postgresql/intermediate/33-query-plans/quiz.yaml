@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What's the key difference between `EXPLAIN` and `EXPLAIN ANALYZE`?
+    options:
+      - There is none
+      - EXPLAIN ANALYZE actually runs the query and shows real times and row counts
+      - EXPLAIN ANALYZE only works on SELECT
+      - EXPLAIN runs the query twice
+    answer: 1
+    explanation: EXPLAIN only plans. EXPLAIN ANALYZE executes the statement, so wrap UPDATE and DELETE in a transaction you roll back.
+
+  - type: mcq
+    prompt: A plan step shows `rows=750` estimated but `rows=7` actual. What's the first thing to try?
+    options:
+      - Add more indexes
+      - Run ANALYZE on the table to refresh its statistics
+      - Rewrite the query with UNION
+      - Nothing, estimates never matter
+    answer: 1
+    explanation: The planner chooses scans and joins from its row estimates. Stale or missing statistics are the most common cause of bad estimates.
+
+  - type: mcq
+    prompt: "Which WHERE clause can use a plain index on `created_at`?"
+    options:
+      - "`WHERE created_at::date = '2026-03-01'`"
+      - "`WHERE EXTRACT(MONTH FROM created_at) = 3`"
+      - "`WHERE created_at >= '2026-03-01' AND created_at < '2026-03-02'`"
+      - "`WHERE date_trunc('day', created_at) = '2026-03-01'`"
+    answer: 2
+    explanation: Only the range leaves the indexed column untouched. Wrapping it in a function or cast hides it from a plain index.
+
+  - type: mcq
+    prompt: An app loads 100 orders, then runs one query per order to fetch its customer. What's this called?
+    options:
+      - A deadlock
+      - The N+1 query problem
+      - Fan-out
+      - Keyset pagination
+    answer: 1
+    explanation: One query plus N more. Fetch the customers in a single JOIN or `IN (…)` query instead.
+
+  - type: mcq
+    prompt: Why is `LIMIT 20 OFFSET 500000` slow, and what's the usual fix?
+    options:
+      - LIMIT is slow. Remove it.
+      - PostgreSQL must produce and discard 500,000 rows. Use keyset pagination (WHERE id > last_seen).
+      - OFFSET needs a GIN index
+      - It isn't slow
+    answer: 1
+    explanation: OFFSET still generates the skipped rows. Keyset pagination jumps straight to where the last page ended, using an index.

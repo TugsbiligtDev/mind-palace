@@ -1,4 +1,0 @@
-title: "The Landscape: server, database, client"
-module: 0
-summary: What's actually running when you "use PostgreSQL", how a database is organized, and your first psql commands.
-minutes: 25

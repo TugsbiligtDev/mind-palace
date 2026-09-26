@@ -1,0 +1,137 @@
+steps:
+  - kind: explain
+    title: Stacking results instead of joining them
+    body: |
+      A **join** puts tables *side by side*: more columns. A **set operation** stacks two query results *on top of each other*: more rows.
+
+      ```sql
+      SELECT home_city FROM travelers
+      UNION
+      SELECT name FROM cities;
+      ```
+
+      This gives one list of every place Wanderly knows about, whether someone lives there or visits it.
+
+      | Operator | Keeps |
+      |---|---|
+      | `UNION` | rows in **either** result, duplicates removed |
+      | `UNION ALL` | rows in either result, **duplicates kept** |
+      | `INTERSECT` | rows in **both** results |
+      | `EXCEPT` | rows in the **first** result but **not** the second |
+
+  - kind: try
+    title: Every known place
+    body: |
+      Run it: 11 places. Ulaanbaatar is both a home city and a destination, but appears once.
+
+      Then change `UNION` to `UNION ALL` and count again.
+    sql: |
+      SELECT home_city FROM travelers
+      UNION
+      SELECT name FROM cities;
+
+  - kind: explain
+    title: The matching rules
+    body: |
+      The two queries must line up:
+
+      - the **same number of columns**
+      - **compatible types** in each position (text with text, numbers with numbers)
+
+      Columns are matched **by position**, not by name. The result takes its column names from the **first** query.
+
+      `ORDER BY` goes once, at the very **end**, and sorts the combined result.
+
+  - kind: try
+    title: Mismatched columns
+    body: |
+      The first query has 2 columns and the second has 1. Run it and read the error. Then add `country_id` to the second query so both have 2... and read the *next* error: text and integer don't mix in the second column. Fix it by selecting `continent` in the first query instead of `population`.
+    sql: |
+      SELECT name, population FROM cities
+      UNION
+      SELECT name FROM countries;
+    expect_error: true
+
+  - kind: explain
+    title: UNION vs. UNION ALL
+    body: |
+      `UNION` removes duplicates, which means PostgreSQL has to **sort or hash** the whole result to find them. `UNION ALL` just appends.
+
+      Use **`UNION ALL` by default**, whenever duplicates are impossible (different sources) or you actually want them (you'll count them later). Use `UNION` only when you really want each row once. It's both faster and more honest about your data.
+
+      A handy trick is a **label column** saying where each row came from:
+
+      ```sql
+      SELECT full_name, 'traveler' AS kind FROM travelers
+      UNION ALL
+      SELECT full_name, 'staff' FROM employees;
+      ```
+
+  - kind: try
+    title: Your turn to build a people list
+    body: |
+      Build one list of **everyone** Wanderly knows: every traveler's `full_name` with the label `'traveler'` in a column called **kind**, stacked with every employee's `full_name` labeled `'staff'`. Sort it by `full_name`.
+    sql: |
+      SELECT full_name FROM travelers;
+    expect: |
+      SELECT full_name, 'traveler' AS kind FROM travelers
+      UNION ALL
+      SELECT full_name, 'staff' FROM employees
+      ORDER BY full_name;
+    ordered: true
+
+  - kind: explain
+    title: INTERSECT and EXCEPT
+    body: |
+      ```sql
+      -- home cities that are also destinations
+      SELECT home_city FROM travelers
+      INTERSECT
+      SELECT name FROM cities;
+
+      -- destinations where no traveler lives
+      SELECT name FROM cities
+      EXCEPT
+      SELECT home_city FROM travelers;
+      ```
+
+      Both remove duplicates, like UNION. (`INTERSECT ALL` and `EXCEPT ALL` keep them.)
+
+      **Order matters for EXCEPT**: `A EXCEPT B` is "A without B", which is different from `B EXCEPT A`.
+
+      A bonus: set operations treat **two NULLs as equal**. So `EXCEPT` doesn't have the NOT IN + NULL trap from Module 18.
+
+  - kind: try
+    title: Your turn with EXCEPT
+    body: |
+      Which travelers have **never written a review**? Return their `traveler_id`s: all IDs from `travelers`, except the ones that appear in `reviews`.
+    sql: |
+      SELECT traveler_id FROM travelers;
+    expect: |
+      SELECT traveler_id FROM travelers
+      EXCEPT
+      SELECT traveler_id FROM reviews;
+
+  - kind: try
+    title: EXCEPT ignores the NULL trap
+    body: |
+      The same traveler with an unknown home city from Module 18 is back. NOT IN returned nothing. Run this EXCEPT version: all 6 destinations still appear.
+    sql: |
+      INSERT INTO travelers (full_name) VALUES ('Nara Nomad');
+
+      SELECT name FROM cities
+      EXCEPT
+      SELECT home_city FROM travelers;
+
+  - kind: why
+    body: |
+      Combining lists from different places (two sign-up sources, last year vs. this year, staff vs. customers) and comparing them ("who's in both?", "who's missing?") comes up constantly in reconciliation and data-cleaning work.
+
+  - kind: recap
+    body: |
+      - Set operations stack results vertically. Joins combine them sideways.
+      - `UNION` (no duplicates), `UNION ALL` (keeps duplicates, faster, the usual default), `INTERSECT` (in both), `EXCEPT` (in the first, not the second).
+      - Same number of columns, compatible types, matched by position. Names come from the first query.
+      - One `ORDER BY` at the very end.
+      - A label column (`'staff' AS kind`) records where each row came from.
+      - Set operations treat NULLs as equal, so EXCEPT is safe where NOT IN isn't.

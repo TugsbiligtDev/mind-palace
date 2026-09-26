@@ -1,0 +1,64 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT 'Dulguun' || NULL AS joined;
+    options:
+      - "Dulguun"
+      - "NULL"
+      - "DulguunNULL"
+      - An error
+    answer: 1
+    explanation: "Joining anything to NULL with `||` gives NULL. `concat('Dulguun', NULL)` would give `Dulguun`."
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT split_part('Erdene, Dulguun', ', ', 2) AS first_name;
+    options:
+      - "Erdene"
+      - "Dulguun"
+      - "Erdene, Dulguun"
+      - "NULL"
+    answer: 1
+    explanation: The text is split on `', '` (comma plus space), giving the pieces Erdene and Dulguun. Piece 2 is Dulguun, with no leading space because the space was part of the separator.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT round(136.666666, 2) AS per_night;
+    options:
+      - "136.66"
+      - "136.67"
+      - "137"
+      - "136.666666"
+    answer: 1
+    explanation: "`round(x, 2)` rounds to two decimal places, and 136.666… rounds up to 136.67."
+
+  - type: fill
+    prompt: Divide safely, so a stop with 0 nights gives NULL instead of a division-by-zero error.
+    code: |
+      SELECT cost / ____(nights, 0) FROM trip_stops;
+    answer: NULLIF
+    accept: ["nullif"]
+    explanation: "`NULLIF(nights, 0)` turns a 0 into NULL, and dividing by NULL gives NULL instead of an error."
+
+  - type: mcq
+    prompt: |
+      An attraction costs 0. Which label does it get?
+
+      ```sql
+      CASE
+        WHEN entry_fee < 25 THEN 'budget'
+        WHEN entry_fee = 0  THEN 'free'
+        ELSE 'premium'
+      END
+      ```
+    options:
+      - "free"
+      - "budget"
+      - "premium"
+      - Both free and budget
+    answer: 1
+    explanation: CASE uses the **first** WHEN that's true. 0 < 25 is true, so it's 'budget' and the 'free' branch is never reached. Put the most specific conditions first.

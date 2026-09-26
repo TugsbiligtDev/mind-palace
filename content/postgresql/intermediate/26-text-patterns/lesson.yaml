@@ -1,0 +1,182 @@
+steps:
+  - kind: explain
+    title: "LIKE recap, and its limits"
+    body: |
+      From Module 6: `LIKE` matches simple patterns, where `%` = any number of characters and `_` = exactly one. `ILIKE` ignores case.
+
+      ```sql
+      WHERE email LIKE '%@example.com'   -- ends with @example.com
+      WHERE name ILIKE 'e%'              -- starts with e or E
+      ```
+
+      Two things to know:
+
+      - To match a real `%` or `_`, escape it with a backslash: `LIKE '100\%'`.
+      - LIKE can't say *"a digit"*, *"one or more letters"*, or *"this or that"*. For those, you need regular expressions.
+
+  - kind: explain
+    title: Regular expressions
+    body: |
+      A **regular expression** (regex) is a small pattern language. PostgreSQL's operators:
+
+      | Operator | Means |
+      |---|---|
+      | `~` | matches (case-sensitive) |
+      | `~*` | matches, ignoring case |
+      | `!~` / `!~*` | does **not** match |
+
+      Unlike LIKE, a regex matches **anywhere** in the text unless you anchor it. The building blocks you'll use most:
+
+      | Piece | Matches | Example |
+      |---|---|---|
+      | `^` / `$` | start / end of the text | `^Rome$` = exactly Rome |
+      | `.` | any one character | `R.me` |
+      | `\d` / `\D` | a digit / a non-digit | `\d\d\d\d` |
+      | `\s` | a space, tab or newline | |
+      | `[abc]`, `[a-z]` | one of these characters | `[A-Z]` = a capital |
+      | `*` `+` `?` | 0 or more, 1 or more, 0 or 1 of the thing before | `\d+` |
+      | `{n}` | exactly n times | `\d{4}` |
+      | `a\|b` | a or b | `museum\|gallery` |
+      | `\.` | a real dot (plain `.` means any character) | |
+
+  - kind: try
+    title: Match with a regex
+    body: |
+      Attractions with *museum* or *gallery* in the name, any capitalization. Run it. Then change `~*` to `~` and see what disappears.
+    sql: |
+      SELECT name
+      FROM attractions
+      WHERE name ~* 'museum|gallery';
+
+  - kind: try
+    title: Your turn to validate a format
+    body: |
+      Wanderly's phone list is a mess. Return the `phone` values in **exactly** the format `4 digits, a dash, 4 digits` (like `9911-2233`) and nothing else before or after.
+
+      Hint: anchor both ends, `^…$`, and use `\d{4}`.
+    sql: |
+      CREATE TABLE contacts (name text, phone text);
+      INSERT INTO contacts VALUES
+        ('Anu',    '9911-2233'),
+        ('Bat',    '(976) 9911-5566'),
+        ('Saruul', '8800 4455'),
+        ('Temka',  '7700-1122'),
+        ('Nomin',  '99112233x');
+
+      SELECT phone FROM contacts;
+    expect: |
+      CREATE TABLE contacts (name text, phone text);
+      INSERT INTO contacts VALUES
+        ('Anu',    '9911-2233'),
+        ('Bat',    '(976) 9911-5566'),
+        ('Saruul', '8800 4455'),
+        ('Temka',  '7700-1122'),
+        ('Nomin',  '99112233x');
+
+      SELECT phone FROM contacts WHERE phone ~ '^\d{4}-\d{4}$';
+
+  - kind: explain
+    title: The regexp functions
+    body: |
+      | Function | Does | Example → result |
+      |---|---|---|
+      | `regexp_replace(t, pattern, new, 'g')` | replaces matches (`'g'` = every match, not just the first) | `regexp_replace('(976) 9911-2233', '\D', '', 'g')` → `97699112233` |
+      | `regexp_substr(t, pattern)` | the first matching piece | `regexp_substr('Room 214, floor 2', '\d+')` → `214` |
+      | `regexp_matches(t, pattern, 'g')` | every match, one row each, as an array of the parts in `( )` | `regexp_matches('A1 B22', '[A-Z](\d+)', 'g')` → `{1}`, `{22}` |
+      | `regexp_split_to_table(t, pattern)` | splits text into rows | `regexp_split_to_table('a  b c', '\s+')` → `a`, `b`, `c` |
+
+      `regexp_substr` is new in PostgreSQL 15. On older versions you'll see `substring(t from pattern)` for the same job.
+
+  - kind: try
+    title: Split reviews into words
+    body: |
+      One row per word of every review. Run it. Then wrap it: `SELECT lower(word), count(*) FROM (…) AS w GROUP BY 1 ORDER BY 2 DESC` to find the most common words.
+    sql: |
+      SELECT review_id,
+             regexp_split_to_table(review_text, '\s+') AS word
+      FROM reviews;
+
+  - kind: try
+    title: Your turn to extract digits
+    body: |
+      Using the same messy contacts, return each `name` and the phone with **every non-digit removed**, labeled **digits**.
+    sql: |
+      CREATE TABLE contacts (name text, phone text);
+      INSERT INTO contacts VALUES
+        ('Anu', '9911-2233'), ('Bat', '(976) 9911-5566'), ('Saruul', '8800 4455');
+
+      SELECT name, phone FROM contacts;
+    expect: |
+      CREATE TABLE contacts (name text, phone text);
+      INSERT INTO contacts VALUES
+        ('Anu', '9911-2233'), ('Bat', '(976) 9911-5566'), ('Saruul', '8800 4455');
+
+      SELECT name, regexp_replace(phone, '\D', '', 'g') AS digits FROM contacts;
+
+  - kind: explain
+    title: Cleaning messy text
+    body: |
+      Text typed by humans arrives with stray spaces, random capitals and odd characters. A typical cleaning pipeline, innermost first:
+
+      ```sql
+      initcap(                              -- 3. Capitalize Each Word
+        regexp_replace(
+          trim(raw_name),                   -- 1. drop spaces at both ends
+          '\s+', ' ', 'g'                   -- 2. squash runs of spaces into one
+        )
+      )
+      ```
+
+      Other common steps: `lower(email)` before comparing emails, `regexp_replace(x, '[^A-Za-z0-9 ]', '', 'g')` to keep only letters, digits and spaces.
+
+      Clean on the way **in** (in an import's staging step, Module 24) when you can, so the stored data is already tidy.
+
+  - kind: try
+    title: Your turn to tidy names
+    body: |
+      Return each sign-up's name cleaned: no spaces at the ends, single spaces between words, and each word capitalized. Label it **clean_name**.
+    sql: |
+      CREATE TABLE signups (raw_name text);
+      INSERT INTO signups VALUES ('  aMINA   yusuf '), ('ERIK larsen'), ('chen    wei  ');
+
+      SELECT raw_name FROM signups;
+    expect: |
+      CREATE TABLE signups (raw_name text);
+      INSERT INTO signups VALUES ('  aMINA   yusuf '), ('ERIK larsen'), ('chen    wei  ');
+
+      SELECT initcap(regexp_replace(trim(raw_name), '\s+', ' ', 'g')) AS clean_name FROM signups;
+
+  - kind: explain
+    title: "Performance warning: patterns are slow"
+    body: |
+      A normal index (Module 32) works like a phone book: great for "names starting with Sm…", useless for "names containing …ith". So:
+
+      - `LIKE 'Rom%'` (fixed start) **can** use an index, with the right setup.
+      - `LIKE '%ome'`, `ILIKE '%rome%'` and most regexes **can't**. PostgreSQL has to read and test **every row**.
+
+      On 10 rows you won't notice. On 10 million, it's seconds per search. The fix is a *trigram* index from the `pg_trgm` extension, covered in Module 46.
+
+  - kind: info
+    title: "🔹 SIMILAR TO"
+    body: |
+      `SIMILAR TO` is the SQL standard's halfway house between LIKE and regex: it uses `%` and `_` like LIKE, plus `|` and `( )` like regex, and must match the **whole** text:
+
+      ```sql
+      WHERE category SIMILAR TO '(museum|gallery)'
+      ```
+
+      It's rarely used. Recognize it, and reach for `~` instead.
+
+  - kind: why
+    body: |
+      Real text is never clean: phone numbers in five formats, names in random capitals, codes buried inside sentences. Regex and the cleaning functions turn that mess into data you can match, group and join on.
+
+  - kind: recap
+    body: |
+      - LIKE / ILIKE for simple patterns (`%`, `_`). Escape a real `%` with `\%`.
+      - Regex: `~` (match), `~*` (ignore case), `!~` (no match). It matches anywhere unless anchored with `^ … $`.
+      - Pieces: `.` `\d` `\s` `[a-z]` `*` `+` `?` `{n}` `|` `\.`.
+      - `regexp_replace(t, p, new, 'g')`, `regexp_substr`, `regexp_matches(…, 'g')`, `regexp_split_to_table`.
+      - Clean with `trim`, `regexp_replace('\s+', ' ')`, `initcap` / `lower`, ideally on the way in.
+      - Leading-wildcard LIKE and regex can't use normal indexes. `pg_trgm` fixes that (Module 46).
+      - 🔹 SIMILAR TO exists. Use `~`.

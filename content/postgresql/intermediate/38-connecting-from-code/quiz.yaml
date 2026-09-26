@@ -1,0 +1,54 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which Python line is safe from SQL injection?
+    options:
+      - "`conn.execute(f\"SELECT * FROM travelers WHERE email = '{email}'\")`"
+      - "`conn.execute(\"SELECT * FROM travelers WHERE email = '\" + email + \"'\")`"
+      - "`conn.execute(\"SELECT * FROM travelers WHERE email = %s\", (email,))`"
+      - "`conn.execute(\"SELECT * FROM travelers WHERE email = '%s'\" % email)`"
+    answer: 2
+    explanation: Only the third passes the value separately as a parameter. The others paste user input into the SQL text.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      PREPARE by_email(text) AS SELECT count(*) FROM travelers WHERE email = $1;
+      EXECUTE by_email('x'' OR ''1''=''1');
+    options:
+      - "0"
+      - "6"
+      - "5"
+      - An error
+    answer: 0
+    explanation: The parameter is treated as one plain text value. No email equals that odd string, so the count is 0. The injection attempt does nothing.
+
+  - type: mcq
+    prompt: Where should an app's database password live?
+    options:
+      - In the source code, so it's easy to find
+      - In an environment variable (e.g. DATABASE_URL), with local .env files kept out of Git
+      - In a comment in the SQL
+      - In the README
+    answer: 1
+    explanation: Environment variables keep secrets out of the code and out of version control.
+
+  - type: mcq
+    prompt: A busy app gets *too many clients already*. What's the usual fix?
+    options:
+      - Open a new connection for every query
+      - Use a connection pool (in the app, or PgBouncer) so a few connections are reused
+      - Restart PostgreSQL every hour
+      - Use more indexes
+    answer: 1
+    explanation: Each connection costs server memory and there's a limit. A pool shares a small number of connections across all requests.
+
+  - type: mcq
+    prompt: "An ORM loop prints `trip.traveler.full_name` for 500 trips and the page is slow. What's the likely cause and fix?"
+    options:
+      - Missing primary key. Add one.
+      - N+1 queries. Load travelers up front (select_related, joinedload, include).
+      - Too many columns. Use SELECT *.
+      - The ORM is broken. Rewrite in raw SQL.
+    answer: 1
+    explanation: Each access to trip.traveler runs another query. Eager loading fetches them all in one go.

@@ -1,0 +1,4 @@
+title: Upserts & Bulk Data
+module: 24
+summary: Insert-or-update with ON CONFLICT, sync tables with MERGE, load and export CSV files with COPY and \copy, and survive messy imports.
+minutes: 35

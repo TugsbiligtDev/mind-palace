@@ -1,0 +1,4 @@
+title: Window Functions
+module: 22
+summary: Aggregates that keep every row, rankings with ties, comparing a row with the one before it, running totals and moving averages, top-N per group, and FILTER.
+minutes: 45

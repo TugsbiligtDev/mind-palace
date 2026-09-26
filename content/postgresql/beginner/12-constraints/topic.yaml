@@ -1,0 +1,4 @@
+title: Constraints
+module: 12
+summary: Rules the database enforces for you (NOT NULL, UNIQUE, CHECK and DEFAULT), how to name them, and how to read the errors they raise.
+minutes: 30

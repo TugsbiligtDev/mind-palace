@@ -1,0 +1,61 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A primary key column automatically gets which two rules?
+    options:
+      - DEFAULT and CHECK
+      - UNIQUE and NOT NULL
+      - NOT NULL and a foreign key
+      - UNIQUE and DEFAULT
+    answer: 1
+    explanation: A primary key must identify exactly one row, so it can't repeat (UNIQUE) and can't be missing (NOT NULL).
+
+  - type: mcq
+    prompt: Why is `email` usually a poor choice for a primary key?
+    options:
+      - Emails are too short
+      - People change emails, and some don't have one, but a key must never change or be missing
+      - PostgreSQL can't index text
+      - Emails can't be UNIQUE
+    answer: 1
+    explanation: Keys should be stable forever. Use a surrogate key for identity, and put a UNIQUE rule on email separately.
+
+  - type: predict
+    prompt: What does the last statement return?
+    code: |
+      CREATE TABLE notes (
+          note_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          body    text
+      );
+      INSERT INTO notes (body) VALUES ('a'), ('b');
+      DELETE FROM notes WHERE note_id = 2;
+      INSERT INTO notes (body) VALUES ('c') RETURNING note_id;
+    options:
+      - "2"
+      - "3"
+      - "1"
+      - An error
+    answer: 1
+    explanation: Identity numbers are never reused. The deleted 2 stays unused, and the new row gets 3.
+
+  - type: fill
+    prompt: Make `(trip_id, visit_order)` the primary key together.
+    code: |
+      CREATE TABLE stops_copy (
+          trip_id     integer,
+          visit_order integer,
+          ____ (trip_id, visit_order)
+      );
+    answer: PRIMARY KEY
+    accept: ["primary key"]
+    explanation: A composite primary key goes on its own line, listing its columns in parentheses. The combination must be unique.
+
+  - type: mcq
+    prompt: When is a UUID key a better choice than an identity number?
+    options:
+      - Always, because UUIDs are newer
+      - When IDs are created in many places, or shouldn't be guessable in URLs
+      - When the table is small
+      - When you want IDs that are easy to read aloud
+    answer: 1
+    explanation: UUIDs can be generated anywhere without clashing, and they can't be guessed. Identity numbers are smaller, faster and friendlier otherwise.

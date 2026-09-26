@@ -1,0 +1,187 @@
+steps:
+  - kind: explain
+    title: How will PostgreSQL run this?
+    body: |
+      SQL says **what** you want (Module 1). The **planner** decides **how**: which index, which join method, in which order. When a query is slow, you look at its **plan**.
+
+      - **`EXPLAIN query`** shows the plan with **estimates**. It doesn't run the query.
+      - **`EXPLAIN ANALYZE query`** **runs** the query and shows the plan with **actual** times and row counts.
+
+      ⚠️ `EXPLAIN ANALYZE` really executes the statement. For an UPDATE or DELETE, wrap it: `BEGIN; EXPLAIN ANALYZE DELETE …; ROLLBACK;`.
+
+  - kind: try
+    title: Your first plan
+    body: |
+      Run it. The plan is a small tree. Here, it's a single step: read the trips table from start to end (*Seq Scan*), keeping rows that match the *Filter*.
+    sql: |
+      EXPLAIN SELECT * FROM trips WHERE status = 'planned';
+
+  - kind: explain
+    title: Reading a plan
+    body: |
+      ```text
+      Hash Join  (cost=23.73..43.20 rows=750 width=64)
+        Hash Cond: (t.traveler_id = tr.traveler_id)
+        ->  Seq Scan on trips t  (cost=0.00..17.50 rows=750 width=36)
+        ->  Hash  (cost=16.10..16.10 rows=610 width=36)
+              ->  Seq Scan on travelers tr  (cost=0.00..16.10 rows=610 width=36)
+      ```
+
+      - It's a **tree**. Each `->` is a step feeding the one above it. Read from the **most indented** lines up: scan travelers, build a hash, scan trips, join.
+      - **`cost=start..total`**: the planner's estimate of effort, in made-up units. Useful for comparing plans, not as seconds.
+      - **`rows`**: how many rows the planner **expects** that step to produce.
+      - **`width`**: the average row size in bytes.
+
+      With `ANALYZE` you also get **`actual time=…`** (in milliseconds), **actual `rows`**, and **`loops`** (how many times the step ran).
+
+  - kind: explain
+    title: Scan types
+    body: |
+      | Scan | What it does | Usually means |
+      |---|---|---|
+      | **Seq Scan** | reads the whole table | small table, no useful index, or most rows are needed |
+      | **Index Scan** | walks the index, then fetches each matching row | few matching rows |
+      | **Index Only Scan** | answers from the index alone, never touching the table | every needed column is in the index |
+      | **Bitmap Index Scan + Bitmap Heap Scan** | collects matching locations from the index, then reads those pages in order | a medium number of rows, or combining two indexes |
+
+      A Seq Scan isn't automatically bad. Reading a small table start to finish is often the fastest option. It's bad when a big table is scanned to find a handful of rows.
+
+  - kind: explain
+    title: Join methods
+    body: |
+      | Join | How | Good when |
+      |---|---|---|
+      | **Nested Loop** | for each row on one side, look up matches on the other | one side is small, and the other has an index |
+      | **Hash Join** | build a hash table from one side, probe it with the other | larger unsorted inputs, equality joins |
+      | **Merge Join** | walk two inputs already sorted on the join key, side by side | both sides sorted (for example by indexes) |
+
+      You don't choose. The planner does, based on its row estimates. That's why estimates matter so much.
+
+  - kind: explain
+    title: Estimated vs. actual rows
+    body: |
+      Look at the join plan again: **rows=750** for trips. Wanderly has **7** trips.
+
+      The planner estimates from **statistics** that `ANALYZE` collects (autovacuum usually runs it for you, Module 43). These tables were just loaded and never analyzed, so the planner is guessing.
+
+      When estimates and actual rows are **far apart** (10× or more), the planner may choose the wrong join or scan. The first fix is always the same: **`ANALYZE table_name;`** to refresh the statistics. Module 42 covers harder cases.
+
+  - kind: try
+    title: Fix a bad estimate
+    body: |
+      The first plan guesses 750 rows. After `ANALYZE trips`, the second knows there are 7. Run it and compare the `rows=` numbers.
+    sql: |
+      EXPLAIN SELECT * FROM trips;
+      ANALYZE trips;
+      EXPLAIN SELECT * FROM trips;
+
+  - kind: explain
+    title: Buffers
+    body: |
+      Since PostgreSQL 18, `EXPLAIN ANALYZE` also shows **buffers** by default: how many 8 kB **pages** each step touched.
+
+      ```text
+      Buffers: shared hit=40 read=2
+      ```
+
+      - **hit**: pages found in PostgreSQL's memory cache (fast)
+      - **read**: pages fetched from disk or the OS cache (slower)
+
+      Fewer pages touched = less work. Buffers are often a better signal than time, because times vary with how busy the machine is.
+
+  - kind: explain
+    title: "Slow pattern 1: a function on an indexed column"
+    body: |
+      An index on `booked_on` stores dates, not years. So
+
+      ```sql
+      WHERE EXTRACT(YEAR FROM booked_on) = 2021       -- can't use the index
+      ```
+
+      makes PostgreSQL compute the year for **every row**. Rewrite the condition so the column stands alone, as a range:
+
+      ```sql
+      WHERE booked_on >= '2021-01-01' AND booked_on < '2022-01-01'   -- uses the index
+      ```
+
+      The same goes for `lower(email) = …` (use an expression index, Module 32), `amount + 0 > 10`, and casts like `created_at::date = …`.
+
+  - kind: try
+    title: See the rewrite win
+    body: |
+      Same answer, two plans. Run it: the first scans the whole table, the second uses the index on `booked_on`. Compare the Execution Times.
+    sql: |
+      CREATE TABLE bookings_big AS
+      SELECT g AS booking_id,
+             date '2020-01-01' + (g % 2000) AS booked_on
+      FROM generate_series(1, 200000) AS g;
+      CREATE INDEX ON bookings_big (booked_on);
+      VACUUM ANALYZE bookings_big;
+
+      EXPLAIN ANALYZE SELECT count(*) FROM bookings_big
+      WHERE EXTRACT(YEAR FROM booked_on) = 2021;
+
+      EXPLAIN ANALYZE SELECT count(*) FROM bookings_big
+      WHERE booked_on >= '2021-01-01' AND booked_on < '2022-01-01';
+
+  - kind: explain
+    title: "Slow patterns 2 and 3: wildcards and N+1"
+    body: |
+      **Leading-wildcard LIKE.** `WHERE name LIKE '%tower%'` can't use a B-tree (Module 26). The fix is a trigram index (Module 46).
+
+      **N+1 queries.** An app loads 50 trips with one query, then runs **one more query per trip** to get its traveler: 1 + 50 = 51 round trips to the database. Each is fast, but together they're slow, and the plan of any single query looks fine. The fix: get everything in **one** query with a JOIN, or with `WHERE traveler_id IN (…)`. You'll see where this comes from (ORMs) in Module 38.
+
+  - kind: explain
+    title: "Slow pattern 4: deep OFFSET"
+    body: |
+      Page 7,500 of a list, 20 per page:
+
+      ```sql
+      SELECT … ORDER BY booking_id LIMIT 20 OFFSET 150000;
+      ```
+
+      PostgreSQL has to produce **150,020 rows** and throw away the first 150,000. Every later page is slower than the one before.
+
+      **Keyset pagination** remembers where the last page **ended** and asks for what comes **after** it:
+
+      ```sql
+      SELECT … WHERE booking_id > 150000   -- last id seen on the previous page
+      ORDER BY booking_id
+      LIMIT 20;
+      ```
+
+      With an index on `booking_id`, it jumps straight there. Page 7,500 is as fast as page 1. The trade-off: you can go "next" and "previous", but not jump to "page 7,500" directly.
+
+  - kind: try
+    title: Your turn for keyset pagination
+    body: |
+      The starter pages with OFFSET. Rewrite it with **keyset pagination**: the previous page ended at `booking_id` **150000**. Return the next **5** `booking_id`s. Then add `EXPLAIN ANALYZE` in front of both versions and compare.
+    sql: |
+      CREATE TABLE bookings_big AS SELECT g AS booking_id FROM generate_series(1, 200000) AS g;
+      ALTER TABLE bookings_big ADD PRIMARY KEY (booking_id);
+
+      SELECT booking_id FROM bookings_big
+      ORDER BY booking_id
+      LIMIT 5 OFFSET 150001;
+    expect: |
+      CREATE TABLE bookings_big AS SELECT g AS booking_id FROM generate_series(1, 200000) AS g;
+      ALTER TABLE bookings_big ADD PRIMARY KEY (booking_id);
+
+      SELECT booking_id FROM bookings_big
+      WHERE booking_id > 150000
+      ORDER BY booking_id
+      LIMIT 5;
+    ordered: true
+
+  - kind: why
+    body: |
+      "It's slow" is the most common database complaint. EXPLAIN turns guessing into looking: you can see exactly where the time goes, whether an index is used, and whether the planner's picture of your data is wrong. Nearly every performance fix starts here.
+
+  - kind: recap
+    body: |
+      - `EXPLAIN` = the plan with estimates. `EXPLAIN ANALYZE` = runs it, with actual times and rows (wrap writes in BEGIN … ROLLBACK).
+      - Read the tree from the most indented lines up. `cost` is relative, `rows` is the estimate, `actual` is reality.
+      - Scans: Seq, Index, Index Only, Bitmap. Joins: Nested Loop, Hash, Merge.
+      - Estimates far from actual rows → run `ANALYZE`.
+      - Buffers: `hit` = memory, `read` = disk. Fewer pages = less work.
+      - Slow patterns: functions on indexed columns (rewrite as a range), leading-wildcard LIKE, N+1 queries (one JOIN instead), deep OFFSET (use keyset pagination).

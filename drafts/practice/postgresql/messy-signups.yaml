@@ -1,5 +1,5 @@
 difficulty: hard
-topic: postgresql/beginner/06-functions
+topic: postgresql/beginner/09-functions
 concepts: [trim, lower, COUNT DISTINCT]
 title: How Many People, Really?
 briefing: |

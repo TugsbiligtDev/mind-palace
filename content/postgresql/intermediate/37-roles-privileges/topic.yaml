@@ -1,0 +1,4 @@
+title: Roles & Privileges
+module: 37
+summary: Users and groups are both roles. Grant and revoke exactly the access each person or app needs, set default privileges for future tables, and lock down the public schema.
+minutes: 35

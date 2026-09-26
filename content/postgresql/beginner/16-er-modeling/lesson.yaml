@@ -1,0 +1,214 @@
+steps:
+  - kind: explain
+    title: Draw before you build
+    body: |
+      So far you've been handed tables. In real projects someone has to **decide** them: which tables, which columns, which links. Getting it wrong is expensive, because every query, app and report is built on top of the design.
+
+      An **entity-relationship (ER) model** is a sketch of the data **before** any CREATE TABLE. It's cheap to change on paper and very expensive to change once millions of rows exist.
+
+  - kind: explain
+    title: Entities, attributes, relationships
+    body: |
+      Three building blocks:
+
+      | Block | What it is | Wanderly examples | Becomes |
+      |---|---|---|---|
+      | **Entity** | a kind of *thing* you keep data about | traveler, trip, city | a **table** |
+      | **Attribute** | a *fact* about each thing | full name, start date, population | a **column** |
+      | **Relationship** | how things are *connected* | a traveler *books* trips | a **foreign key** (or junction table) |
+
+      A handy trick when reading requirements: **nouns** are usually entities or attributes, and **verbs** are usually relationships.
+
+  - kind: explain
+    title: From requirements to a model
+    body: |
+      Wanderly writes:
+
+      > *"We want to offer guided tours. Each **tour** has a title and a date and is **led by** exactly one **guide**. A guide can lead many tours, or none yet. Each guide **speaks** one or more **languages**. **Travelers** **book** tours; a booking records how many **seats** they reserved."*
+
+      Underline and sort:
+
+      - **Entities:** tour, guide, language, traveler (and booking, see below)
+      - **Attributes:** tour title, tour date, number of seats
+      - **Relationships:** guide *leads* tour, guide *speaks* language, traveler *books* tour
+
+      "Seats" isn't a fact about the traveler or the tour alone. It's a fact about **one booking**, a traveler + tour pair. Facts like that live on the relationship itself.
+
+  - kind: explain
+    title: Cardinality and optionality
+    body: |
+      For each relationship, ask two questions, **in both directions**:
+
+      - **Cardinality**, *how many?*: one, or many?
+      - **Optionality**, *can it be zero?*: is the link required or optional?
+
+      For *guide leads tour*:
+
+      - A tour is led by **exactly one** guide (one, required).
+      - A guide leads **zero or more** tours (many, optional: a new guide has none yet).
+
+      So it's **one-to-many**. And "required" on the tour side means the FK column `tours.guide_id` is **NOT NULL**.
+
+  - kind: explain
+    title: "Crow's-foot diagrams"
+    body: |
+      ER diagrams draw each entity as a box and each relationship as a line. The line ends show cardinality and optionality. The fork that looks like a bird's foot means **many**:
+
+      | Line end | Read it as |
+      |---|---|
+      | `\|\|` | exactly one |
+      | `o\|` | zero or one |
+      | `\|<` | one or more |
+      | `o<` | zero or more |
+
+      The symbol **next to a box** describes how many of *that* box take part. Our tours model:
+
+      ```text
+      guides ||--------o< tours          a guide leads zero or more tours;
+                                         a tour has exactly one guide
+
+      guides >o--------|< languages      a guide speaks one or more languages;
+                                         a language is spoken by zero or more guides
+                                         (many-to-many: needs a junction table)
+
+      travelers ||----o< bookings >o----|| tours
+      ```
+
+      `bookings` is the junction between travelers and tours, and it carries the `seats` attribute.
+
+  - kind: try
+    title: Wanderly's relationships
+    body: |
+      Every foreign key in the database is a relationship line in its ER diagram. This lists them all, child → parent. Run it and try sketching the diagram on paper: 9 boxes and 9 lines (one line loops from `employees` back to itself).
+    sql: |
+      SELECT conrelid::regclass  AS child_table,
+             confrelid::regclass AS parent_table,
+             conname             AS foreign_key
+      FROM pg_constraint
+      WHERE contype = 'f'
+      ORDER BY 2, 1;
+
+  - kind: explain
+    title: From diagram to tables
+    body: |
+      The translation is mechanical once the model is right:
+
+      1. **Each entity → a table**, with a surrogate primary key (`guide_id`).
+      2. **Each attribute → a column** with a type. Required attributes get `NOT NULL`.
+      3. **One-to-many → an FK on the "many" side.** Required (`||`) means `NOT NULL`, optional (`o|`) means NULL is allowed.
+      4. **Many-to-many → a junction table** with two FKs and a composite PK. Attributes of the relationship (`seats`) go here.
+      5. **One-to-one → an FK with UNIQUE.**
+
+      ```sql
+      CREATE TABLE bookings (
+          traveler_id  integer NOT NULL REFERENCES travelers (traveler_id),
+          tour_id      integer NOT NULL REFERENCES tours (tour_id),
+          seats        integer NOT NULL CHECK (seats > 0),
+          PRIMARY KEY (traveler_id, tour_id)
+      );
+      ```
+
+  - kind: try
+    title: Your turn to build from the model
+    body: |
+      `guides` exists. Create **tours** from the model:
+
+      - `tour_id`: identity primary key
+      - `title`: text, required
+      - `tour_date`: date, required
+      - `guide_id`: the guide who leads it. Every tour has **exactly one**, so it's required, and it must reference `guides`.
+
+      The last query summarizes the table's rules: `f` = foreign key, `n` = not null, `p` = primary key.
+    sql: |
+      CREATE TABLE guides (
+          guide_id   integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          full_name  text NOT NULL
+      );
+
+      -- Create tours here.
+
+      SELECT contype, count(*)
+      FROM pg_constraint
+      WHERE conrelid = 'tours'::regclass
+      GROUP BY contype
+      ORDER BY contype;
+    broken_starter: true
+    expect: |
+      CREATE TABLE guides (
+          guide_id   integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          full_name  text NOT NULL
+      );
+
+      CREATE TABLE tours (
+          tour_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          title      text NOT NULL,
+          tour_date  date NOT NULL,
+          guide_id   integer NOT NULL REFERENCES guides (guide_id)
+      );
+
+      SELECT contype, count(*)
+      FROM pg_constraint
+      WHERE conrelid = 'tours'::regclass
+      GROUP BY contype
+      ORDER BY contype;
+
+  - kind: explain
+    title: Naming foreign keys
+    body: |
+      The convention: **name the FK column after the table it points at, plus `_id`**: `guide_id`, `customer_id`, `city_id`. Anyone reading `tours` can guess where `guide_id` leads, and `USING (guide_id)` just works (Module 14).
+
+      When one table points at the **same** parent twice, name each column by its **role**:
+
+      ```sql
+      departure_city_id    integer REFERENCES cities (city_id),
+      destination_city_id  integer REFERENCES cities (city_id)
+      ```
+
+      Same for self-references: `manager_id`, not `staff_id_2`.
+
+  - kind: explain
+    title: Diagram tools
+    body: |
+      You can sketch on paper, but tools keep diagrams tidy and shareable:
+
+      - **dbdiagram.io** (free, in the browser): you *type* the tables, and it draws the diagram. Fast to change.
+      - **DBeaver** (free app): connect to a database and open any schema's **ER Diagram** tab to see the existing tables drawn for you.
+      - **pgAdmin 4**, which you have: right-click a database → **ERD For Database**.
+
+      Typing a model in dbdiagram.io looks like this:
+
+      ```text
+      Table guides {
+        guide_id integer [pk]
+        full_name text [not null]
+      }
+      Table tours {
+        tour_id integer [pk]
+        guide_id integer [not null, ref: > guides.guide_id]
+      }
+      ```
+
+  - kind: mac
+    title: See Wanderly's diagram
+    body: |
+      Open **pgAdmin 4**, expand *Servers → Local PostgreSQL → Databases*, right-click **learn_sql**, and choose **ERD For Database**. Compare the lines to the list of foreign keys from earlier. Or open **dbdiagram.io** and type the tours model above.
+
+      In Terminal, real psql's `\d` lists a table's foreign keys at the bottom of its output:
+    commands: |
+      psql learn_sql
+      \d trips
+      \q
+
+  - kind: why
+    body: |
+      A good model makes every later query simple, and a bad one makes every query a fight. Ten minutes turning requirements into entities, relationships and crow's feet saves months of workarounds.
+
+  - kind: recap
+    body: |
+      - **Entities** → tables, **attributes** → columns, **relationships** → foreign keys or junction tables.
+      - In requirements, nouns are entities or attributes, and verbs are relationships.
+      - Ask **cardinality** (one or many?) and **optionality** (can it be zero?), in both directions.
+      - Crow's foot: `||` exactly one, `o|` zero or one, `|<` one or more, `o<` zero or more.
+      - Required relationship → FK `NOT NULL`. Many-to-many → junction table, which also holds the relationship's own attributes.
+      - FK columns are named `<table>_id`, or by role when there are two.
+      - Tools: dbdiagram.io, DBeaver's ER view, pgAdmin's ERD.

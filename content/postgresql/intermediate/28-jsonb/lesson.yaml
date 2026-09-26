@@ -1,0 +1,181 @@
+steps:
+  - kind: explain
+    title: Documents inside a column
+    body: |
+      **JSON** is the text format apps use to send data around: `{"indoor": true, "duration_hours": 2}`. Curly braces hold **keys** and values, and square brackets hold **lists** (arrays).
+
+      PostgreSQL can store JSON in a column. Wanderly's `attractions.details` does, for facts that vary from attraction to attraction.
+
+      Two types:
+
+      | | `json` | `jsonb` |
+      |---|---|---|
+      | Stored as | the exact text you gave | a parsed binary form |
+      | Duplicate keys | kept | last one wins |
+      | Key order, spaces | kept | normalized |
+      | Speed to query | re-parsed every time | fast |
+      | Can be indexed | no | **yes** (GIN, Module 32) |
+
+      **Use `jsonb`.** Pick `json` only if you must keep the exact original text.
+
+  - kind: try
+    title: json vs. jsonb
+    body: |
+      The same text, stored both ways. Run it: `jsonb` dropped the duplicate key and reordered the keys.
+    sql: |
+      SELECT '{"b": 1, "a": 1, "a": 2}'::json  AS as_json,
+             '{"b": 1, "a": 1, "a": 2}'::jsonb AS as_jsonb;
+
+  - kind: explain
+    title: Getting values out
+    body: |
+      | Operator | Returns | Example |
+      |---|---|---|
+      | `->  'key'` | the value **as jsonb** | `details -> 'indoor'` → `true` |
+      | `->> 'key'` | the value **as text** | `details ->> 'duration_hours'` → `'2'` |
+      | `#>  '{a,b}'` | a nested value by path, as jsonb | `doc #> '{hours,open}'` |
+      | `#>> '{a,b}'` | a nested value by path, as text | |
+      | `-> 0` | the first element of an array | `doc -> 'tags' -> 0` |
+
+      The rule of thumb: **`->` to keep digging, `->>` to finish.** `->>` gives text, so cast it for maths or comparisons: `(details ->> 'duration_hours')::numeric > 2`.
+
+      A missing key gives NULL, not an error.
+
+  - kind: try
+    title: Read the details
+    body: |
+      Run it. Then add a column `details -> 'indoor' AS indoor_json` and notice it's JSON `true`, not text.
+    sql: |
+      SELECT name,
+             details ->> 'duration_hours' AS hours_text,
+             (details ->> 'duration_hours')::numeric * 60 AS minutes
+      FROM attractions;
+
+  - kind: try
+    title: Your turn to filter on a JSON value
+    body: |
+      Return the `name` and the duration as a number, labeled **hours**, of every attraction that takes **3 hours or more**.
+    sql: |
+      SELECT name, details
+      FROM attractions;
+    expect: |
+      SELECT name, (details ->> 'duration_hours')::numeric AS hours
+      FROM attractions
+      WHERE (details ->> 'duration_hours')::numeric >= 3;
+
+  - kind: explain
+    title: Containment and key checks
+    body: |
+      Two operators search documents, and both can use a GIN index:
+
+      - **`@>`** "contains": `details @> '{"indoor": true}'` is true when details has `indoor` set to `true`. It works with nested objects and arrays too: `doc @> '{"tags": ["family"]}'`.
+      - **`?`** "has this key (or array element)": `details ? 'duration_hours'`. Also `?|` (any of these keys) and `?&` (all of them).
+
+      Prefer `@>` over `details ->> 'indoor' = 'true'`: it's shorter, handles types properly, and is index-friendly.
+
+  - kind: try
+    title: Indoor, and nested documents
+    body: |
+      The first query uses `@>`. The second works on a nested document with a list inside. Run both, then change `'family'` to `'night'`.
+    sql: |
+      SELECT name FROM attractions
+      WHERE details @> '{"indoor": true}';
+
+      SELECT doc #>> '{hours,open}'   AS opens,
+             doc -> 'tags' -> 0        AS first_tag,
+             doc -> 'tags' ? 'family'  AS family_friendly
+      FROM (SELECT '{"hours": {"open": "09:00", "close": "17:00"},
+                     "tags": ["family", "outdoor"]}'::jsonb AS doc) AS d;
+
+  - kind: explain
+    title: Building JSON from rows
+    body: |
+      Apps often want JSON back. PostgreSQL can build it:
+
+      - `jsonb_build_object('name', name, 'fee', entry_fee)` builds an object from key/value pairs.
+      - `jsonb_agg(expr ORDER BY …)` is an aggregate that collects values into a JSON **array**.
+      - `to_jsonb(t)` turns a whole row into an object.
+
+      ```sql
+      SELECT c.name AS city,
+             jsonb_agg(a.name ORDER BY a.name) AS attractions
+      FROM cities c
+      JOIN attractions a ON a.city_id = c.city_id
+      GROUP BY c.name;
+      ```
+
+      Changing a document: `doc || '{"indoor": true}'` merges keys in, `doc - 'key'` removes one, and `jsonb_set(doc, '{hours,open}', '"10:00"')` replaces a nested value.
+
+  - kind: try
+    title: Your turn to build JSON
+    body: |
+      For each attraction, return its `name` and one jsonb object labeled **card** with two keys: `"city_id"` and `"fee"` (the entry fee).
+    sql: |
+      SELECT name, city_id, entry_fee
+      FROM attractions;
+    expect: |
+      SELECT name,
+             jsonb_build_object('city_id', city_id, 'fee', entry_fee) AS card
+      FROM attractions;
+
+  - kind: explain
+    title: The SQL/JSON functions
+    body: |
+      PostgreSQL 17 added the **SQL-standard** JSON functions. They use **JSON paths** like `'$.duration_hours'` (`$` means "the document"):
+
+      | Function | Does |
+      |---|---|
+      | `JSON_VALUE(doc, '$.a' RETURNING numeric)` | one plain value, already converted to a type |
+      | `JSON_QUERY(doc, '$.tags')` | a piece of JSON (an object or array) |
+      | `JSON_EXISTS(doc, '$.tags')` | true or false: is this path there? |
+      | `JSON_TABLE(doc, '$.items[*]' COLUMNS (…))` | turns a JSON array into **rows and columns** |
+
+      `JSON_TABLE` is the star: it turns a nested document, like an order from an app, into an ordinary table you can join and aggregate.
+
+  - kind: try
+    title: JSON_TABLE
+    body: |
+      An order arrives from the gift shop app as one JSON document. JSON_TABLE turns its items into rows. Run it, then add `sum(qty * price)` in an outer query to total the order.
+    sql: |
+      SELECT items.*
+      FROM JSON_TABLE(
+        '{"order": 17,
+          "items": [{"sku": "MAP-1", "qty": 2, "price": 4.50},
+                    {"sku": "PIN-3", "qty": 1, "price": 2.00}]}'::jsonb,
+        '$.items[*]'
+        COLUMNS (
+          sku   text    PATH '$.sku',
+          qty   integer PATH '$.qty',
+          price numeric PATH '$.price'
+        )
+      ) AS items;
+
+  - kind: explain
+    title: When JSONB fits, and when it hides data
+    body: |
+      JSONB is great for:
+
+      - data whose shape **varies**: product attributes (a shirt has sizes, a book has pages)
+      - storing a payload **as received** (API responses, webhooks) to process later
+      - optional, rarely queried extras
+
+      It's the **wrong** choice when it hides data that belongs in columns:
+
+      - Values you **filter, join or sum** all the time should be real columns, with real types.
+      - JSON has **no constraints**: nothing stops `"price": "cheap"` or a missing key. Columns get NOT NULL, CHECK and foreign keys (Modules 12–13).
+      - Keys are **retyped in every row**, which wastes space.
+
+      A good rule: **columns for what every row has, JSONB for what varies.** If you find yourself writing `->>` in every query, it's time for a column.
+
+  - kind: why
+    body: |
+      Modern apps speak JSON. JSONB lets PostgreSQL store flexible data alongside strict tables, search it quickly, and hand results straight back to an app, while you keep the discipline to put core data in real columns.
+
+  - kind: recap
+    body: |
+      - Use `jsonb` (parsed, indexable). `json` keeps the exact text.
+      - `->` returns jsonb (keep digging), `->>` returns text (cast it). `#>` / `#>>` follow a path.
+      - `@>` = contains, `?` = has key. Both are index-friendly.
+      - Build JSON with `jsonb_build_object`, `jsonb_agg`, `to_jsonb`. Edit with `||`, `-`, `jsonb_set`.
+      - SQL/JSON (PG17): `JSON_VALUE`, `JSON_QUERY`, `JSON_EXISTS`, and `JSON_TABLE` to turn arrays into rows.
+      - Columns for what every row has. JSONB for what varies.

@@ -1,0 +1,54 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT '{"a": {"b": 5}}'::jsonb #>> '{a,b}' AS v;
+    options:
+      - "5"
+      - "{\"b\": 5}"
+      - "NULL"
+      - An error
+    answer: 0
+    explanation: "`#>>` follows the path a → b and returns the value as text: 5."
+
+  - type: mcq
+    prompt: "`details ->> 'duration_hours' > 2` gives odd results. What's wrong?"
+    options:
+      - "`->>` returns text, so it's compared as text. Cast it: `(details ->> 'duration_hours')::numeric > 2`."
+      - You must use `->` instead
+      - JSON can't hold numbers
+      - Nothing
+    answer: 0
+    explanation: "`->>` always returns text. Comparing text sorts character by character ('10' < '9'), so cast before numeric comparisons."
+
+  - type: fill
+    prompt: 'Find attractions whose details **contain** `"indoor": true`.'
+    code: |
+      SELECT name FROM attractions WHERE details ____ '{"indoor": true}';
+    answer: "@>"
+    explanation: "`@>` checks whether the left document contains the right one, and it can use a GIN index."
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT jsonb_agg(name ORDER BY name) AS names
+      FROM countries
+      WHERE continent = 'Europe';
+    options:
+      - "[\"France\", \"Italy\"]"
+      - "{France,Italy}"
+      - "France, Italy"
+      - "[\"Italy\", \"France\"]"
+    answer: 0
+    explanation: jsonb_agg collects the values into a JSON array, here sorted by name.
+
+  - type: mcq
+    prompt: Every order has a total that you sum in reports every day. Where should it live?
+    options:
+      - In a jsonb column, for flexibility
+      - In a real numeric column, with NOT NULL and a CHECK
+      - In a text column
+      - In an array
+    answer: 1
+    explanation: Values every row has, and that you filter or sum constantly, belong in typed columns with constraints. JSONB is for what varies.

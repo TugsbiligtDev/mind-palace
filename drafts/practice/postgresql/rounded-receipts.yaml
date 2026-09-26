@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/05-data-types
+topic: postgresql/beginner/09-functions
 concepts: [casting, numeric, round]
 title: The Rounded Receipts
 briefing: |

@@ -1,0 +1,4 @@
+title: Inserting Data
+module: 5
+summary: Add one row or many, name your columns, let defaults fill themselves, see what you wrote with RETURNING, and get quotes right.
+minutes: 25

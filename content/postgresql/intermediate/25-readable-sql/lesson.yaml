@@ -1,0 +1,204 @@
+steps:
+  - kind: explain
+    title: Written once, read many times
+    body: |
+      A query that works isn't finished. Someone (probably you, in three months) will need to read it, trust it and change it. The hardest SQL bugs aren't errors: they're queries that **run fine and return the wrong number**.
+
+      This module is about two habits: **writing SQL that's easy to read**, and **checking that the answer is actually right**.
+
+  - kind: explain
+    title: Formatting conventions
+    body: |
+      Compare:
+
+      ```sql
+      select t.trip_name,tr.full_name,sum(s.cost) from trips t join travelers tr on tr.traveler_id=t.traveler_id join trip_stops s on s.trip_id=t.trip_id group by t.trip_name,tr.full_name order by 3 desc
+      ```
+
+      ```sql
+      SELECT t.trip_name,
+             tr.full_name,
+             sum(s.cost) AS total_cost
+      FROM trips t
+      JOIN travelers  tr ON tr.traveler_id = t.traveler_id
+      JOIN trip_stops s  ON s.trip_id      = t.trip_id
+      GROUP BY t.trip_name, tr.full_name
+      ORDER BY total_cost DESC;
+      ```
+
+      The conventions most teams use:
+
+      - **Keywords in UPPERCASE**, names in lowercase.
+      - **Each clause on its own line** (SELECT, FROM, JOIN, WHERE, GROUP BY…).
+      - **One column per line** when there are more than two or three.
+      - **Label every calculated column** with AS.
+      - Spaces around `=` and after commas.
+
+      **The comma debate:** some teams put commas at the **start** of lines (`, tr.full_name`) so you can comment out any column except the first without breaking the query. Others find trailing commas more natural. Either is fine. **Consistency within a project matters more than which you pick.**
+
+  - kind: try
+    title: Your turn to tidy up
+    body: |
+      This query works but is hard to read. Reformat it using the conventions above, and give the sum a label, **total_cost**. The result will be checked, so keep the logic the same.
+    sql: |
+      select t.trip_name,sum(s.cost) from trips t join trip_stops s on s.trip_id=t.trip_id group by t.trip_name
+    expect: |
+      SELECT t.trip_name,
+             sum(s.cost) AS total_cost
+      FROM trips t
+      JOIN trip_stops s ON s.trip_id = t.trip_id
+      GROUP BY t.trip_name;
+
+  - kind: explain
+    title: Aliases that mean something
+    body: |
+      `FROM trips a JOIN travelers b JOIN trip_stops c` forces every reader to keep a decoder ring in their head. By the fifth join, nobody knows what `c.cost` is.
+
+      Use **short but meaningful** aliases: the table's initials or a clear abbreviation.
+
+      | Table | Weak | Better |
+      |---|---|---|
+      | trips | `a` | `t` |
+      | travelers | `b` | `tr` |
+      | trip_stops | `c` | `ts` or `s` |
+      | employees (as manager) | `e2` | `mgr` |
+
+      The same goes for CTE names: `per_traveler`, `monthly_totals`, `latest_payment` say what they hold. `x`, `temp` and `cte1` don't.
+
+  - kind: explain
+    title: Break the problem into steps
+    body: |
+      Hard question: *"Which traveler has paid Wanderly the most, and what share of all money received is that?"*
+
+      Don't write it in one go. Write the **steps in plain English** first, then make each one a CTE (Module 19):
+
+      1. **per_traveler**: total paid per traveler (payments → trips → traveler).
+      2. **grand_total**: the total of all payments.
+      3. **Final**: each traveler's total, their share as a percentage, biggest first.
+
+      Run each step on its own before adding the next. When something looks wrong, you'll know exactly which step to look at.
+
+  - kind: try
+    title: Your turn, step by step
+    body: |
+      Step 1 is done. Add the remaining steps so the final result shows `full_name`, **paid**, and **pct**: the share of all payments, as a percentage rounded to 1 decimal. Sort biggest first.
+
+      Hint: `round(100 * paid / grand_total, 1)`. The grand total can be a scalar subquery `(SELECT sum(amount) FROM payments)` or its own CTE.
+    sql: |
+      WITH per_traveler AS (
+          SELECT t.traveler_id, sum(p.amount) AS paid
+          FROM payments p
+          JOIN trips t ON t.trip_id = p.trip_id
+          GROUP BY t.traveler_id
+      )
+      SELECT * FROM per_traveler;
+    expect: |
+      WITH per_traveler AS (
+          SELECT t.traveler_id, sum(p.amount) AS paid
+          FROM payments p
+          JOIN trips t ON t.trip_id = p.trip_id
+          GROUP BY t.traveler_id
+      )
+      SELECT tr.full_name,
+             pt.paid,
+             round(100 * pt.paid / (SELECT sum(amount) FROM payments), 1) AS pct
+      FROM per_traveler pt
+      JOIN travelers tr ON tr.traveler_id = pt.traveler_id
+      ORDER BY pt.paid DESC;
+    ordered: true
+
+  - kind: explain
+    title: Check your answer
+    body: |
+      A result that *looks* plausible isn't proof. Quick checks that catch most mistakes:
+
+      - **Count rows before and after each join.** If `trips` has 7 rows and your joined result has 10, rows were multiplied (fan-out). If it has 6, rows were dropped.
+      - **Test the edge cases.** Does it handle NULLs? A group with no rows? Duplicates? A trip with no stops? A refund (negative amount)?
+      - **Compare with a simpler query.** If per-traveler totals are right, they should add up to `SELECT sum(amount) FROM payments`. Percentages should add up to about 100.
+      - **Spot-check one row by hand.** Pick one traveler and add up their payments yourself.
+
+  - kind: try
+    title: Count before and after
+    body: |
+      Run it: 7 trips, but 10 rows after joining stops, and only 6 different trips. The join both **multiplied** rows (trips with 2 stops) and **dropped** one (trip 6 has no stops).
+    sql: |
+      SELECT (SELECT count(*) FROM trips) AS trips,
+             (SELECT count(*)
+              FROM trips t JOIN trip_stops s ON s.trip_id = t.trip_id) AS joined_rows,
+             (SELECT count(DISTINCT t.trip_id)
+              FROM trips t JOIN trip_stops s ON s.trip_id = t.trip_id) AS trips_after_join;
+
+  - kind: explain
+    title: Logic mistakes that don't raise errors
+    body: |
+      The usual suspects:
+
+      - **An inner join silently drops rows.** Trips without stops, travelers without trips: gone. Use LEFT JOIN when "none" is a valid answer.
+      - **A WHERE on the right side of a LEFT JOIN turns it back into an inner join.** `LEFT JOIN reviews r … WHERE r.rating = 5` removes every unmatched row, because their `r.rating` is NULL. Put conditions about the right-hand table in the **ON** clause instead.
+      - **Averages over the wrong grain.** `avg(cost)` from trip_stops is the average **stop**, not the average **trip**. Decide what one row represents first (Module 18).
+      - **Fan-out inflates sums and counts** (Module 14).
+      - **`count(*)` vs. `count(col)`** after a LEFT JOIN (Module 14).
+
+  - kind: try
+    title: Your turn to fix a LEFT JOIN
+    body: |
+      *"List every attraction, with its 5-star rating if it has one."* This returns only 4 attractions, because the WHERE throws away the unmatched ones. Move the rating condition into the ON clause so all 9 attractions appear.
+    sql: |
+      SELECT a.name, r.rating
+      FROM attractions a
+      LEFT JOIN reviews r ON r.attraction_id = a.attraction_id
+      WHERE r.rating = 5;
+    expect: |
+      SELECT a.name, r.rating
+      FROM attractions a
+      LEFT JOIN reviews r ON r.attraction_id = a.attraction_id
+                         AND r.rating = 5;
+
+  - kind: try
+    title: The wrong grain
+    body: |
+      Two "average costs", two different questions. Run it: the average **stop** costs 527, and the average **trip** costs about 878. Both are correct. Only one answers "how much does a trip cost?"
+    sql: |
+      SELECT round(avg(cost), 2) AS avg_per_stop,
+             (SELECT round(avg(total), 2)
+              FROM (SELECT trip_id, sum(cost) AS total
+                    FROM trip_stops GROUP BY trip_id) AS per_trip) AS avg_per_trip
+      FROM trip_stops;
+
+  - kind: explain
+    title: Comment the why
+    body: |
+      Comments (Module 3) should explain **why**, not **what**. The SQL already says what.
+
+      ```sql
+      -- Weak: filter status
+      WHERE status <> 'cancelled'
+
+      -- Useful: cancelled trips were refunded in full, so they'd count twice
+      WHERE status <> 'cancelled'
+      ```
+
+      Good places for a comment: a business rule ("refunds are negative amounts"), a surprising choice ("LEFT JOIN: trips without stops must still appear"), or a known limitation ("assumes one currency").
+
+  - kind: info
+    title: "🔹 Formatters and linters"
+    body: |
+      Tools can format and check SQL for you:
+
+      - **pgFormatter**: reformats PostgreSQL queries consistently. There's a web version, and it's built into some editors.
+      - **SQLFluff**: a *linter* that checks style rules (and some likely bugs) and can fix many automatically. Teams often run it on every change.
+
+      Useful once you're working on a shared codebase.
+
+  - kind: why
+    body: |
+      Wrong numbers that look right are how bad decisions get made. The habits here (named steps, row-count checks, edge-case tests, comments that explain why) are what make people trust your queries. And readable SQL is what lets someone else fix them when you're not around.
+
+  - kind: recap
+    body: |
+      - Format for humans: uppercase keywords, a clause per line, a column per line, label calculations. Be consistent.
+      - Use meaningful aliases and CTE names.
+      - Break hard questions into plain-English steps, one CTE each, and run each step as you go.
+      - Check: row counts before and after joins, edge cases (NULLs, empty groups, duplicates), totals against a simpler query, one row by hand.
+      - Watch for inner joins dropping rows, WHERE undoing a LEFT JOIN, the wrong grain, fan-out, and `count(*)`.
+      - Comment the **why**. 🔹 pgFormatter and SQLFluff automate style.

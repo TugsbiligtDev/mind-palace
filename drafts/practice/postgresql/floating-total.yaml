@@ -1,5 +1,5 @@
 difficulty: hard
-topic: postgresql/beginner/05-data-types
+topic: postgresql/beginner/10-aggregation
 concepts: [numeric vs float, casting, GROUP BY, SUM]
 title: The Floating Total
 briefing: |

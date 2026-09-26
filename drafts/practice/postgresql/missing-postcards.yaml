@@ -1,5 +1,5 @@
 difficulty: easy
-topic: postgresql/beginner/03-where
+topic: postgresql/beginner/07-null
 concepts: [WHERE, IS NULL]
 title: The Missing Postcards
 briefing: |

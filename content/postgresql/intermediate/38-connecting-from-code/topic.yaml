@@ -1,0 +1,4 @@
+title: Connecting from Code
+module: 38
+summary: Connection strings, drivers for Python and JavaScript, SQL injection and parameterized queries, keeping passwords out of code, connection limits and pools, ORMs, and the ORM N+1 trap.
+minutes: 35

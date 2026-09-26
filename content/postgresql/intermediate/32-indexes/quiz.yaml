@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "An index exists on `(last_name, first_name)`. Which query can use it best?"
+    options:
+      - "`WHERE first_name = 'John'`"
+      - "`WHERE last_name = 'Smith' AND first_name = 'John'`"
+      - "`WHERE lower(last_name) = 'smith'`"
+      - "`WHERE first_name LIKE '%oh%'`"
+    answer: 1
+    explanation: The index is sorted by last_name first. It helps queries that pin down last_name. First name alone, an expression, or a contains-search can't use it well.
+
+  - type: mcq
+    prompt: What's the main downside of adding many indexes to a table?
+    options:
+      - SELECTs get slower
+      - Every INSERT, UPDATE and DELETE must also maintain each index, and they take space
+      - Indexes delete old data
+      - Tables can only have one index
+    answer: 1
+    explanation: Indexes speed up reads but cost on every write, plus disk and memory. Only build the ones queries actually use.
+
+  - type: fill
+    prompt: Build the index without blocking writes on a busy table.
+    code: |
+      CREATE TABLE big (x int);
+      CREATE INDEX ____ big_x_idx ON big (x);
+    answer: CONCURRENTLY
+    accept: ["concurrently"]
+    explanation: "`CREATE INDEX CONCURRENTLY` lets inserts and updates continue while the index is built. It can't run inside BEGIN."
+
+  - type: mcq
+    prompt: "There's an index on `lower(email)`. Which query can use it?"
+    options:
+      - "`WHERE email = 'a@b.com'`"
+      - "`WHERE lower(email) = 'a@b.com'`"
+      - "`WHERE upper(email) = 'A@B.COM'`"
+      - "`WHERE email ILIKE 'a@b.com'`"
+    answer: 1
+    explanation: An expression index only helps queries that use the exact same expression.
+
+  - type: mcq
+    prompt: |
+      You often search `WHERE details @> '{"indoor": true}'` on a big jsonb column. Which index type helps?
+    options:
+      - B-tree
+      - GIN
+      - Hash
+      - None can
+    answer: 1
+    explanation: GIN indexes the keys and values inside jsonb documents, so containment searches like `@>` can use it.

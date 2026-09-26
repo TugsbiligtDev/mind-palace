@@ -1,0 +1,4 @@
+title: Foreign Keys & Relationships
+module: 13
+summary: Link tables with REFERENCES, prevent orphan rows, model one-to-many, one-to-one and many-to-many, and choose what happens when a parent is deleted.
+minutes: 40

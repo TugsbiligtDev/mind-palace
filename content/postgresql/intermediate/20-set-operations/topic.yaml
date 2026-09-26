@@ -1,0 +1,4 @@
+title: Set Operations
+module: 20
+summary: Stack results with UNION and UNION ALL, find what two results share with INTERSECT, and what one has that the other doesn't with EXCEPT.
+minutes: 25

@@ -1,5 +1,5 @@
 difficulty: hard
-topic: postgresql/beginner/07-aggregation
+topic: postgresql/beginner/10-aggregation
 concepts: [WHERE, GROUP BY, HAVING, ORDER BY]
 title: The March Big Spenders
 briefing: |

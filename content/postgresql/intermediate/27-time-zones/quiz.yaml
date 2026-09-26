@@ -1,0 +1,59 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What changes when you run `SET TimeZone = 'Asia/Ulaanbaatar';`?
+    options:
+      - Every stored timestamptz value is shifted by 8 hours
+      - Only how timestamptz values are displayed (and how zoneless text is interpreted). The stored moments don't change.
+      - All timestamps become plain timestamps
+      - Nothing at all
+    answer: 1
+    explanation: A timestamptz is a fixed moment. The session zone only affects display and input interpretation.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SET TimeZone = 'UTC';
+      SELECT ('2026-02-20 23:40:00+00'::timestamptz AT TIME ZONE 'Asia/Ulaanbaatar')::date AS ub_date;
+    options:
+      - "2026-02-20"
+      - "2026-02-21"
+      - "2026-02-19"
+      - An error
+    answer: 1
+    explanation: Ulaanbaatar is UTC+8, so 23:40 UTC on the 20th is 07:40 on the 21st there.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT count(*) FROM payments
+      WHERE paid_at BETWEEN '2026-02-01' AND '2026-02-20';
+    options:
+      - "0"
+      - "1"
+      - "2"
+      - "3"
+    answer: 0
+    explanation: "The only early-February payment was at 23:40 on the 20th, but `'2026-02-20'` means midnight at the start of that day, so it's excluded. Use `< '2026-02-21'`."
+
+  - type: mcq
+    prompt: Why prefer `'Europe/Rome'` over `'+01'`?
+    options:
+      - Offsets are slower
+      - The named zone knows about daylight saving, and Rome is +01 in winter but +02 in summer
+      - '+01 is not valid syntax'
+      - There's no difference
+    answer: 1
+    explanation: A fixed offset can't follow daylight-saving changes, so it's wrong for part of the year.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT (date_trunc('month', '2028-02-10'::date) + interval '1 month' - interval '1 day')::date;
+    options:
+      - "2028-02-28"
+      - "2028-02-29"
+      - "2028-03-01"
+      - "2028-02-10"
+    answer: 1
+    explanation: 2028 is a leap year. Start of February plus one month is 1 March, minus one day is 29 February. The pattern handles leap years for you.

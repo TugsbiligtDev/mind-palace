@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/03-where
+topic: postgresql/beginner/07-null
 concepts: [WHERE, IS NULL, ILIKE, IN, BETWEEN]
 series: { name: The Wanderly Files, episode: 4 }
 title: The Traveler Without a Trace

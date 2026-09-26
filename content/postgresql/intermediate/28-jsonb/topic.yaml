@@ -1,0 +1,4 @@
+title: JSON & JSONB
+module: 28
+summary: Store and query flexible documents with jsonb, pull values out with -> and ->>, search with @> and ?, build JSON from rows, use the SQL/JSON functions, and know when JSON is the wrong choice.
+minutes: 40

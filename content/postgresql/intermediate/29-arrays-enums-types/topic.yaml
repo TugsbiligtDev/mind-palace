@@ -1,0 +1,4 @@
+title: Arrays, Enums & Other Types
+module: 29
+summary: When an array column is fine and when you need a junction table, ENUM vs. lookup table vs. CHECK, generated columns that can't go stale, and a tour of ranges, domains, inet and citext.
+minutes: 35

@@ -2,7 +2,7 @@
 // or dataset + a case's evidence) is loaded once; every run gets a fresh clone, so a
 // learner's DELETE or DROP never leaks into the next attempt.
 import type { PGlite } from "@electric-sql/pglite";
-import { grade, rawTextParsers, runInput, type CaseCheck } from "./core";
+import { freshCopy, grade, rawTextParsers, runInput, type CaseCheck } from "./core";
 
 type Request =
   | { id: number; type: "run"; key: string; setup: string; input: string }
@@ -29,6 +29,8 @@ function base(key: string, setup: string) {
     db = loadEngine().then(async ({ PGlite, types }) => {
       const pg = await PGlite.create({ parsers: rawTextParsers(types) });
       if (setup.trim()) await pg.exec(setup);
+      // Flush to disk so copies don't restart ID sequences 32 numbers ahead.
+      await pg.exec("CHECKPOINT");
       return pg;
     });
     bases.set(key, db);
@@ -39,10 +41,11 @@ function base(key: string, setup: string) {
 
 async function withClones<T>(key: string, setup: string, fn: (fresh: () => Promise<PGlite>) => Promise<T>) {
   const origin = await base(key, setup);
+  const pglite = await loadEngine();
   const clones: PGlite[] = [];
   try {
     return await fn(async () => {
-      const c = (await origin.clone()) as PGlite;
+      const c = (await freshCopy(origin, pglite)) as PGlite;
       clones.push(c);
       return c;
     });

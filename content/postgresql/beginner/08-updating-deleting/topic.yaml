@@ -1,0 +1,4 @@
+title: Updating & Deleting
+module: 8
+summary: Change and remove rows safely, avoid the forgotten-WHERE disaster, check your work with SELECT and RETURNING, and empty a table with TRUNCATE.
+minutes: 30

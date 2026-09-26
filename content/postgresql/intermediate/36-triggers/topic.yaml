@@ -1,0 +1,4 @@
+title: Triggers
+module: 36
+summary: Run a function automatically when rows change. BEFORE vs. AFTER, row vs. statement level, auto-updating updated_at, audit tables, and the pitfalls of hidden behavior.
+minutes: 35

@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which of these is **information** rather than raw data?
+    options:
+      - "`2026-03-01`"
+      - "`Japan Highlights`"
+      - Four of Wanderly's seven trips are completed
+      - "`completed`"
+    answer: 2
+    explanation: The first, second and fourth are single stored facts. "Four of seven trips are completed" answers a question, so it's information.
+
+  - type: mcq
+    prompt: A customer's address is copied into every one of their order rows in a spreadsheet. They move house. What's the risk?
+    options:
+      - None, spreadsheets update copies automatically
+      - Some copies get updated and others don't, so the data disagrees with itself
+      - The spreadsheet will refuse the new address
+      - The file becomes read-only
+    answer: 1
+    explanation: Duplicate data drifts apart. A database stores the address once and links orders to it, so there's only one place to change.
+
+  - type: mcq
+    prompt: What is a **DBMS**?
+    options:
+      - A single table of data
+      - The software that stores, protects and answers questions about databases, like PostgreSQL
+      - A spreadsheet file format
+      - The SQL language itself
+    answer: 1
+    explanation: The DBMS (Database Management System) is the software. PostgreSQL, MySQL and SQLite are all DBMSs.
+
+  - type: mcq
+    prompt: In the restaurant picture of client and server, which one is **psql**?
+    options:
+      - The kitchen (server)
+      - The waiter (client)
+      - The menu (SQL)
+      - The ingredients (data)
+    answer: 1
+    explanation: psql is a client. It carries your SQL to the server and brings back the results. pgAdmin, apps and this page are clients too.
+
+  - type: mcq
+    prompt: How does the `cities` table record that Tokyo is in Japan?
+    options:
+      - It stores the word "Japan" in every Japanese city row
+      - It stores `country_id` 1, which points at Japan's row in `countries`
+      - Tokyo and Japan are in the same row of one big table
+      - It doesn't; you have to remember it
+    answer: 1
+    explanation: That's the "relational" idea. Tables link by IDs instead of copying the same facts over and over.

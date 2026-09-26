@@ -1,0 +1,4 @@
+title: Dates, Times & Time Zones
+module: 27
+summary: How timestamptz really works, the session time zone, AT TIME ZONE, named zones vs. offsets, daylight saving, month-end maths, and the safe way to filter by date.
+minutes: 40

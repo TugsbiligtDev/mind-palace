@@ -2,10 +2,12 @@
 import type { PGliteInterface } from "@electric-sql/pglite";
 import type { Block, Piece, RunError } from "./core";
 
+// Rows arrive as arrays (rowMode "array", so two columns both called "count" stay
+// separate) or as objects keyed by column name (meta-command queries).
 export function toRows(fields: { name: string }[], rows: unknown[]): (string | null)[][] {
   return rows.map((r) =>
-    fields.map((f) => {
-      const v = (r as Record<string, unknown>)[f.name];
+    fields.map((f, i) => {
+      const v = Array.isArray(r) ? r[i] : (r as Record<string, unknown>)[f.name];
       if (v === null || v === undefined) return null;
       return typeof v === "object" ? JSON.stringify(v) : String(v);
     }),
@@ -23,6 +25,7 @@ Informational
   \\d                     list tables, views and sequences
   \\dt [PATTERN]          list tables (e.g. \\dt  or  \\dt evidence.*)
   \\dn                    list schemas
+  \\du                    list roles (users)
 
 Only this subset of psql works in the browser. Try the rest in your Terminal.`;
 
@@ -80,6 +83,21 @@ export async function runMeta(db: PGliteInterface, piece: Extract<Piece, { kind:
          WHERE nspname NOT LIKE 'pg\\_%' AND nspname <> 'information_schema' ORDER BY 1`,
       );
       blocks.push({ kind: "rows", title: "List of schemas", columns: ["Name", "Owner"], rows: toRows(r.fields, r.rows) });
+      return;
+    }
+    case "\\du": {
+      warnExtra(0);
+      // The sandbox's own superuser is shown as "detective", matching \l and \c.
+      const r = await db.query(
+        `SELECT CASE WHEN rolname = current_user THEN 'detective' ELSE rolname END AS "Role name",
+                concat_ws(', ',
+                  CASE WHEN rolsuper THEN 'Superuser' END,
+                  CASE WHEN rolcreaterole THEN 'Create role' END,
+                  CASE WHEN rolcreatedb THEN 'Create DB' END,
+                  CASE WHEN NOT rolcanlogin THEN 'Cannot login' END) AS "Attributes"
+         FROM pg_roles WHERE rolname NOT LIKE 'pg\\_%' ORDER BY 1`,
+      );
+      blocks.push({ kind: "rows", title: "List of roles", columns: ["Role name", "Attributes"], rows: toRows(r.fields, r.rows) });
       return;
     }
     case "\\dt":

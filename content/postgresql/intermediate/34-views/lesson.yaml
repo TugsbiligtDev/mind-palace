@@ -1,0 +1,168 @@
+steps:
+  - kind: explain
+    title: A saved query with a name
+    body: |
+      You've written the "trips with traveler names and totals" join many times. A **view** saves a query under a name so you can use it like a table:
+
+      ```sql
+      CREATE VIEW trip_summary AS
+      SELECT t.trip_id, t.trip_name, tr.full_name AS traveler,
+             t.status, sum(s.cost) AS total_cost
+      FROM trips t
+      JOIN travelers tr ON tr.traveler_id = t.traveler_id
+      LEFT JOIN trip_stops s ON s.trip_id = t.trip_id
+      GROUP BY t.trip_id, tr.full_name;
+
+      SELECT * FROM trip_summary WHERE status = 'completed';
+      ```
+
+      A view **stores no data**. Every time you select from it, PostgreSQL runs the saved query, so it's **always up to date**.
+
+  - kind: try
+    title: Create and use a view
+    body: |
+      Run it. Then add a second query below: `SELECT traveler, sum(total_cost) FROM trip_summary GROUP BY traveler;`. You can filter, join and group a view like any table.
+    sql: |
+      CREATE VIEW trip_summary AS
+      SELECT t.trip_id, t.trip_name, tr.full_name AS traveler,
+             t.status, sum(s.cost) AS total_cost
+      FROM trips t
+      JOIN travelers tr ON tr.traveler_id = t.traveler_id
+      LEFT JOIN trip_stops s ON s.trip_id = t.trip_id
+      GROUP BY t.trip_id, tr.full_name;
+
+      SELECT * FROM trip_summary WHERE status = 'completed';
+
+  - kind: try
+    title: Your turn to create a view
+    body: |
+      Create a view named **payment_totals** with one row per trip: `trip_id` and the sum of its payments labeled **paid**. Then select every row from it where `paid` is **under 800**.
+    sql: |
+      SELECT trip_id, amount FROM payments;
+    expect: |
+      CREATE VIEW payment_totals AS
+      SELECT trip_id, sum(amount) AS paid
+      FROM payments
+      GROUP BY trip_id;
+
+      SELECT * FROM payment_totals WHERE paid < 800;
+
+  - kind: explain
+    title: What views are good for
+    body: |
+      - **Reuse**: write a tricky join once, and everyone uses the same logic, so reports agree.
+      - **Hiding complexity**: analysts query `trip_summary` without knowing it joins three tables.
+      - **A stable interface**: you can reorganize the tables underneath and update the view, and queries using it keep working.
+      - **Security**: grant access to a view that shows only some columns or rows, not the whole table (Module 37).
+
+      Managing them:
+
+      - `CREATE OR REPLACE VIEW` changes a view's query. It can add columns at the end, but not remove or rename existing ones (drop and recreate for that).
+      - `DROP VIEW name;`
+      - Views are **dependencies**: PostgreSQL won't let you drop a table or column a view uses, unless you use CASCADE (Module 15).
+      - Simple views (one table, no GROUP BY) are even **updatable**: an UPDATE on the view changes the table underneath.
+
+  - kind: explain
+    title: Materialized views
+    body: |
+      A view reruns its query every time. If the query is slow (millions of payments summed per month), every dashboard load pays that cost.
+
+      A **materialized view** runs the query **once** and **stores the result** like a table:
+
+      ```sql
+      CREATE MATERIALIZED VIEW monthly_revenue AS
+      SELECT date_trunc('month', paid_at)::date AS month,
+             sum(amount) AS received
+      FROM payments
+      GROUP BY 1;
+      ```
+
+      Reading it is as fast as reading a small table, and you can **index** it. The catch: it's a **snapshot**. New payments don't appear until you refresh it:
+
+      ```sql
+      REFRESH MATERIALIZED VIEW monthly_revenue;
+      ```
+
+  - kind: try
+    title: Stale until refreshed
+    body: |
+      A new payment arrives in September after the materialized view was built. Run it: the first SELECT doesn't show September. After REFRESH, it does.
+    sql: |
+      CREATE MATERIALIZED VIEW monthly_revenue AS
+      SELECT date_trunc('month', paid_at)::date AS month, sum(amount) AS received
+      FROM payments
+      GROUP BY 1;
+
+      INSERT INTO payments (trip_id, amount, paid_at, method)
+      VALUES (6, 400.00, '2026-09-01 10:00+00', 'card');
+
+      SELECT * FROM monthly_revenue WHERE month = '2026-09-01';
+
+      REFRESH MATERIALIZED VIEW monthly_revenue;
+      SELECT * FROM monthly_revenue WHERE month = '2026-09-01';
+
+  - kind: explain
+    title: REFRESH … CONCURRENTLY
+    body: |
+      A plain REFRESH **locks the materialized view** while it rebuilds, so dashboards reading it have to wait.
+
+      ```sql
+      REFRESH MATERIALIZED VIEW CONCURRENTLY monthly_revenue;
+      ```
+
+      With **CONCURRENTLY**, readers keep seeing the old data until the new result is ready, then it's swapped in. It needs a **unique index** on the materialized view (so PostgreSQL can match old rows to new ones), and it's slower to run.
+
+      Refreshes are usually scheduled: every night, every hour, or after a batch import.
+
+  - kind: try
+    title: Your turn to refresh without blocking
+    body: |
+      Add a **unique index** on `monthly_revenue (month)`, then refresh the view **concurrently** so the new September payment appears. Finally show the September row.
+    sql: |
+      CREATE MATERIALIZED VIEW monthly_revenue AS
+      SELECT date_trunc('month', paid_at)::date AS month, sum(amount) AS received
+      FROM payments
+      GROUP BY 1;
+
+      INSERT INTO payments (trip_id, amount, paid_at, method)
+      VALUES (6, 400.00, '2026-09-01 10:00+00', 'card');
+
+      REFRESH MATERIALIZED VIEW CONCURRENTLY monthly_revenue;
+      SELECT * FROM monthly_revenue WHERE month = '2026-09-01';
+    broken_starter: true
+    expect: |
+      CREATE MATERIALIZED VIEW monthly_revenue AS
+      SELECT date_trunc('month', paid_at)::date AS month, sum(amount) AS received
+      FROM payments
+      GROUP BY 1;
+
+      INSERT INTO payments (trip_id, amount, paid_at, method)
+      VALUES (6, 400.00, '2026-09-01 10:00+00', 'card');
+
+      CREATE UNIQUE INDEX monthly_revenue_month_idx ON monthly_revenue (month);
+      REFRESH MATERIALIZED VIEW CONCURRENTLY monthly_revenue;
+      SELECT * FROM monthly_revenue WHERE month = '2026-09-01';
+
+  - kind: explain
+    title: Which one when?
+    body: |
+      | | View | Materialized view |
+      |---|---|---|
+      | Stores data | no | yes |
+      | Always current | **yes** | only as of the last REFRESH |
+      | Read speed | as fast as the query underneath | fast, like a table, and can be indexed |
+      | Good for | reuse, simplicity, security | slow, heavy summaries read often (dashboards, reports) |
+
+      Start with a plain view. Switch to a materialized view only when the query is too slow **and** slightly old data is acceptable.
+
+  - kind: why
+    body: |
+      Views give a team one shared, trusted definition of "trip total" or "active customer". Materialized views make heavy reports load instantly. Both are how databases stay understandable as they grow.
+
+  - kind: recap
+    body: |
+      - `CREATE VIEW name AS SELECT …`: a saved query. It stores no data and is always current.
+      - Views give reuse, simplicity, a stable interface and column/row-level access. `CREATE OR REPLACE` can only add columns at the end.
+      - `CREATE MATERIALIZED VIEW`: stores the result. Fast and indexable, but stale until `REFRESH MATERIALIZED VIEW`.
+      - `REFRESH … CONCURRENTLY` doesn't block readers, and needs a unique index.
+      - Start with a view. Materialize only when it's too slow and slightly stale data is fine.

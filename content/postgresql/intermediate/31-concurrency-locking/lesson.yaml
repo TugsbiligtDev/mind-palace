@@ -1,0 +1,212 @@
+steps:
+  - kind: explain
+    title: Many people, one database
+    body: |
+      A real database has many **sessions** at once: website visitors, the booking app, a nightly report, you in psql. They read and change the same rows at the same moment.
+
+      Two questions follow:
+
+      - What does each session **see** while others are changing things?
+      - What happens when two sessions change **the same row**?
+
+      This page's sandbox is a single session, so this module uses **timelines** (who does what, when) and a Mac exercise with two Terminal windows.
+
+  - kind: explain
+    title: "MVCC: versions, not overwrites"
+    body: |
+      PostgreSQL uses **MVCC** (multi-version concurrency control). An UPDATE doesn't overwrite a row in place. It writes a **new version** of the row and marks the old one as expired.
+
+      Each transaction reads from a **snapshot**: the versions that were committed when its snapshot was taken. So:
+
+      - **Readers never wait for writers**, and **writers never wait for readers**. A report can read trips while someone updates them. It simply sees the older version.
+      - **Writers of the same row do wait for each other** (below).
+      - Old versions pile up and are cleaned later by **VACUUM** (Module 43).
+
+      You can peek at versions: every row has a hidden column **`xmin`**, the ID of the transaction that created that version.
+
+  - kind: try
+    title: A new version appears
+    body: |
+      Run it. After the UPDATE, trip 6 has a **different `xmin`**: it's a new row version, written by this transaction.
+    sql: |
+      BEGIN;
+      SELECT xmin, trip_id, status FROM trips WHERE trip_id = 6;
+      UPDATE trips SET status = 'completed' WHERE trip_id = 6;
+      SELECT xmin, trip_id, status FROM trips WHERE trip_id = 6;
+      COMMIT;
+
+  - kind: explain
+    title: Isolation levels
+    body: |
+      How strictly transactions are kept apart is set by the **isolation level**:
+
+      | Level | Each… sees data committed before it started | When two transactions clash |
+      |---|---|---|
+      | **Read Committed** (the default) | **statement** | waits, then works on the latest version |
+      | **Repeatable Read** | **transaction** (one snapshot for the whole thing) | error: *could not serialize access due to concurrent update* |
+      | **Serializable** | transaction, plus checks that the result matches *some* one-at-a-time order | error: *could not serialize access…* |
+
+      - In Read Committed, two SELECTs in the same transaction can give **different answers** if someone commits in between.
+      - With Repeatable Read and Serializable, your app must **catch the serialization error and retry** the whole transaction. That's the price of the stronger guarantee.
+      - PostgreSQL never shows you another session's **uncommitted** changes, at any level.
+
+      ```sql
+      BEGIN ISOLATION LEVEL SERIALIZABLE;
+      ```
+
+  - kind: try
+    title: Check and change the level
+    body: |
+      Run it: the default, then a transaction running at Repeatable Read.
+    sql: |
+      SHOW transaction_isolation;
+
+      BEGIN ISOLATION LEVEL REPEATABLE READ;
+      SHOW transaction_isolation;
+      COMMIT;
+
+  - kind: explain
+    title: The lost update
+    body: |
+      The gift shop has **5** maps. Two cashiers each sell one at the same moment. Their app reads the count, subtracts 1 in the app, and writes it back:
+
+      | Time | Cashier A | Cashier B | qty in the table |
+      |---|---|---|---|
+      | 1 | `SELECT qty` → 5 | | 5 |
+      | 2 | | `SELECT qty` → 5 | 5 |
+      | 3 | `UPDATE … SET qty = 4` | | 4 |
+      | 4 | | `UPDATE … SET qty = 4` | **4** |
+
+      Two maps sold, but the count says 4, not 3. B's write **silently erased** A's. No error, just wrong stock. This is a **lost update**, and Read Committed doesn't prevent it by itself.
+
+  - kind: explain
+    title: Three fixes
+    body: |
+      **1. Let the database do the maths (best when possible).**
+
+      ```sql
+      UPDATE stock SET qty = qty - 1 WHERE item = 'map';
+      ```
+
+      The second UPDATE **waits** for the first to commit, then applies `qty - 1` to the **new** value. Result: 3. ✓
+
+      **2. Lock the row when you read it: `SELECT … FOR UPDATE`.**
+
+      ```sql
+      BEGIN;
+      SELECT qty FROM stock WHERE item = 'map' FOR UPDATE;   -- locks this row
+      -- app checks, decides...
+      UPDATE stock SET qty = 4 WHERE item = 'map';
+      COMMIT;                                                -- lock released
+      ```
+
+      Cashier B's `SELECT … FOR UPDATE` now **waits** until A commits, then reads 4. Use this when the app must look at the value before deciding. (`FOR SHARE` is a weaker lock: others can also read-lock, but nobody can change the row.)
+
+      **3. Use Serializable (or Repeatable Read) and retry** when PostgreSQL reports a conflict.
+
+  - kind: try
+    title: Your turn for the safe decrement
+    body: |
+      Sell **2** maps using an update that's safe from lost updates: let the database subtract from the current value. Return the new `qty`.
+    sql: |
+      CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL CHECK (qty >= 0));
+      INSERT INTO stock VALUES ('map', 5);
+
+      UPDATE stock SET qty = 3 WHERE item = 'map' RETURNING qty;
+    expect: |
+      CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL CHECK (qty >= 0));
+      INSERT INTO stock VALUES ('map', 5);
+
+      UPDATE stock SET qty = qty - 2 WHERE item = 'map' RETURNING qty;
+
+  - kind: explain
+    title: Job queues with SKIP LOCKED
+    body: |
+      A common pattern: a `jobs` table (send this email, build that report) and several **workers** taking jobs off it. Each job must be taken by **exactly one** worker.
+
+      ```sql
+      BEGIN;
+      SELECT job_id, task
+      FROM jobs
+      WHERE status = 'pending'
+      ORDER BY job_id
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED;
+      -- do the work, then:
+      UPDATE jobs SET status = 'done' WHERE job_id = …;
+      COMMIT;
+      ```
+
+      `FOR UPDATE` locks the job so no one else takes it. **`SKIP LOCKED`** means *"if a row is already locked by another worker, don't wait, skip to the next one"*. Ten workers grab ten different jobs instantly, without queuing up behind each other.
+
+  - kind: try
+    title: Take a job
+    body: |
+      In this single-session sandbox, the first pending job is taken. With several workers running this at once, each would get a different job. Run it.
+    sql: |
+      CREATE TABLE jobs (job_id integer PRIMARY KEY, task text, status text DEFAULT 'pending');
+      INSERT INTO jobs (job_id, task) VALUES (1, 'email Amina'), (2, 'email Erik'), (3, 'monthly report');
+
+      BEGIN;
+      SELECT job_id, task
+      FROM jobs
+      WHERE status = 'pending'
+      ORDER BY job_id
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED;
+      UPDATE jobs SET status = 'done' WHERE job_id = 1;
+      COMMIT;
+
+      SELECT * FROM jobs ORDER BY job_id;
+
+  - kind: explain
+    title: Deadlocks
+    body: |
+      Two transactions each lock a row, then each wants the other's row:
+
+      | Time | Session A | Session B |
+      |---|---|---|
+      | 1 | updates account **1** (locks it) | |
+      | 2 | | updates account **2** (locks it) |
+      | 3 | wants account **2**, so waits for B | |
+      | 4 | | wants account **1**, so waits for A |
+
+      Neither can ever continue: a **deadlock**. PostgreSQL notices after about a second (`deadlock_timeout`), cancels one of them with *ERROR: deadlock detected*, and the other proceeds. The cancelled one must retry.
+
+      **Prevention: always lock rows in the same order.** If every transfer updates the **lower account ID first**, A and B both start with account 1, and one simply waits for the other. No cycle, no deadlock.
+
+  - kind: mac
+    title: Watch a session wait
+    body: |
+      Open **two** Terminal windows side by side, and run `psql learn_sql` in both. In window 1, run the first two lines. In window 2, run the third: it **hangs**, waiting for the row lock. Back in window 1, run `COMMIT;`, and window 2 finishes instantly. Then run the last line in either window.
+    commands: |
+      BEGIN;                                                    -- window 1
+      UPDATE trips SET status = 'planned' WHERE trip_id = 6;    -- window 1
+      UPDATE trips SET status = 'cancelled' WHERE trip_id = 6;  -- window 2 (waits)
+      COMMIT;                                                   -- window 1
+      SELECT status FROM trips WHERE trip_id = 6;
+
+  - kind: info
+    title: "🔹 Advisory locks"
+    body: |
+      Sometimes you need a lock on an **idea**, not a row: "only one copy of the nightly import may run". **Advisory locks** are named by a number you choose:
+
+      ```sql
+      SELECT pg_try_advisory_lock(42);   -- true if you got it, false if someone else has it
+      SELECT pg_advisory_unlock(42);
+      ```
+
+      PostgreSQL doesn't attach any meaning to them. Your code agrees on what 42 stands for.
+
+  - kind: why
+    body: |
+      Bugs from concurrency (double-sold seats, stock that drifts, two workers doing the same job) only show up under real traffic, and they're miserable to track down afterwards. Knowing the patterns (atomic updates, FOR UPDATE, SKIP LOCKED, consistent lock order, retry on serialization errors) prevents them from the start.
+
+  - kind: recap
+    body: |
+      - **MVCC**: updates write new row versions. Readers and writers don't block each other, but writers of the same row do.
+      - **Read Committed** (default): each statement sees what's committed. **Repeatable Read**: one snapshot per transaction. **Serializable**: as if one at a time. The stricter two need **retry** on serialization errors.
+      - **Lost update**: read, compute in the app, write back. Fix with `SET qty = qty - 1`, `SELECT … FOR UPDATE`, or Serializable + retry.
+      - Job queues: `FOR UPDATE SKIP LOCKED`.
+      - **Deadlocks**: PostgreSQL cancels one. Prevent them by locking rows in a consistent order.
+      - 🔹 Advisory locks lock an agreed-upon number, not a row.

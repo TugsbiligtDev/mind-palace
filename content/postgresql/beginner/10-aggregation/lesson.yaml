@@ -1,0 +1,225 @@
+steps:
+  - kind: explain
+    title: Many rows in, one answer out
+    body: |
+      So far every query returned one result row per table row. **Aggregate functions** do the opposite: they take *many* rows and collapse them into *one* value.
+
+      | Function | Returns |
+      |---|---|
+      | `count(*)` | how many rows |
+      | `sum(x)` | the total of x |
+      | `avg(x)` | the average of x |
+      | `min(x)` / `max(x)` | the smallest / largest x |
+
+      `sum`, `avg`, `min` and `max` **ignore NULLs**. They work with the values that exist.
+
+  - kind: try
+    title: Summarize every trip stop
+    body: |
+      One query, one row, five answers about all 10 trip stops.
+    sql: |
+      SELECT count(*)   AS stops,
+             sum(cost)  AS total_cost,
+             avg(cost)  AS avg_cost,
+             min(nights) AS fewest_nights,
+             max(nights) AS most_nights
+      FROM trip_stops;
+
+  - kind: explain
+    title: Three ways to count
+    body: |
+      - **`count(*)`** counts **rows**, all of them.
+      - **`count(email)`** counts rows where `email` **is not NULL**.
+      - **`count(DISTINCT home_city)`** counts **different** non-NULL values.
+
+      The gap between the first two is a quick way to measure missing data.
+
+  - kind: try
+    title: See the difference
+    body: |
+      6 travelers, but not 6 emails, and fewer than 6 different home cities. Which city appears twice?
+    sql: |
+      SELECT count(*)                  AS travelers,
+             count(email)              AS with_email,
+             count(DISTINCT home_city) AS home_cities
+      FROM travelers;
+
+  - kind: explain
+    title: "GROUP BY: one answer per group"
+    body: |
+      `GROUP BY` puts rows into **buckets** that share a value, then runs the aggregates **once per bucket**. (It doesn't sort the output. Add ORDER BY for that.)
+
+      ```sql
+      SELECT trip_id, sum(cost) AS total_cost
+      FROM trip_stops
+      GROUP BY trip_id;
+      ```
+
+      Picture it: all the stops for trip 1 go into one pile and trip 2's into another, then each pile gets summed. You get **one row per group**.
+
+      The rule: every column in `SELECT` must either be in `GROUP BY` or be inside an aggregate. Otherwise PostgreSQL wouldn't know *which* row's value to show for the whole group. (There's one exception, when you group by a table's primary key, which you'll meet in Module 11.)
+
+  - kind: try
+    title: Totals per trip
+    body: |
+      Stops, nights and cost for each trip. Trip 6 is missing. Why? (Hint: does it have any stops?)
+    sql: |
+      SELECT trip_id,
+             count(*)    AS stops,
+             sum(nights) AS nights,
+             sum(cost)   AS total_cost
+      FROM trip_stops
+      GROUP BY trip_id
+      ORDER BY trip_id;
+
+  - kind: try
+    title: Breaking the rule
+    body: |
+      `city_id` is neither grouped nor aggregated, and each trip has several cities. Run it and read the error. It's PostgreSQL asking *"which city did you mean?"*
+    sql: |
+      SELECT trip_id, city_id, sum(cost)
+      FROM trip_stops
+      GROUP BY trip_id;
+    expect_error: true
+
+  - kind: explain
+    title: Fixing "must appear in the GROUP BY clause"
+    body: |
+      The full error reads:
+
+      ```text
+      ERROR:  column "trip_stops.city_id" must appear in the GROUP BY
+              clause or be used in an aggregate function
+      ```
+
+      It names the column causing trouble. Two fixes, depending on what you meant:
+
+      1. **You wanted a row per trip *and* city**: add it to the grouping, `GROUP BY trip_id, city_id`.
+      2. **You wanted one row per trip**: wrap the column in an aggregate that says which value you want, like `count(city_id)` or `max(city_id)`, or remove it.
+
+  - kind: try
+    title: Fix the grouping
+    body: |
+      Same broken query. Fix it the second way: keep one row per trip, and replace `city_id` with `count(city_id)` labeled **cities**. Keep `sum(cost)` labeled **total_cost**.
+    sql: |
+      SELECT trip_id, city_id, sum(cost) AS total_cost
+      FROM trip_stops
+      GROUP BY trip_id;
+    broken_starter: true
+    expect: |
+      SELECT trip_id, count(city_id) AS cities, sum(cost) AS total_cost
+      FROM trip_stops
+      GROUP BY trip_id;
+
+  - kind: try
+    title: Your turn to group
+    body: |
+      How many attractions are in each **category**? Return `category` and the count labeled **attractions**.
+    sql: |
+      SELECT category, name
+      FROM attractions;
+    expect: |
+      SELECT category, count(*) AS attractions
+      FROM attractions
+      GROUP BY category;
+
+  - kind: explain
+    title: NULLs in aggregates
+    body: |
+      Aggregates **skip NULLs**, which usually makes sense, but has two surprises:
+
+      - `avg(cost)` averages only the **known** costs. A stop with no cost doesn't count as 0; it's left out.
+      - With **no** known values at all, `sum()` and `avg()` return **NULL**, not 0. (`count()` returns 0.)
+
+      When "nothing" should really read as zero, say so: `COALESCE(sum(cost), 0)`.
+
+  - kind: try
+    title: A sum of nothing
+    body: |
+      Trip 6 gets one stop with an unknown cost. Run it: 1 stop, 0 priced, and the sum and average are NULL. Then change `sum(cost)` to `COALESCE(sum(cost), 0)`.
+    sql: |
+      INSERT INTO trip_stops (trip_id, city_id, visit_order, nights, cost)
+      VALUES (6, 3, 1, 2, NULL);
+
+      SELECT count(*)    AS stops,
+             count(cost) AS priced,
+             sum(cost)   AS total,
+             avg(cost)   AS average
+      FROM trip_stops
+      WHERE trip_id = 6;
+
+  - kind: explain
+    title: HAVING filters groups
+    body: |
+      `WHERE` filters **rows before** they're grouped. `HAVING` filters **groups after** they're aggregated:
+
+      ```sql
+      SELECT trip_id, sum(cost) AS total_cost
+      FROM trip_stops
+      GROUP BY trip_id
+      HAVING sum(cost) > 900;
+      ```
+
+      You can't write `WHERE sum(cost) > 900`, because when WHERE runs, the sums don't exist yet. That follows from the **logical order** in which PostgreSQL processes a query, which is *not* the order you type it:
+
+      **FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT**
+
+      This order explains a lot. For example, an alias you create in SELECT can be used in ORDER BY (which runs after SELECT) but not in WHERE or HAVING (which run before it). That's why the HAVING above repeats `sum(cost)` instead of using `total_cost`.
+
+  - kind: try
+    title: Big-spending trips
+    body: |
+      Only trips whose stops cost more than 900 in total. Then add `WHERE nights > 2` before `GROUP BY` and predict what changes before you run it.
+    sql: |
+      SELECT trip_id, sum(cost) AS total_cost
+      FROM trip_stops
+      GROUP BY trip_id
+      HAVING sum(cost) > 900;
+
+  - kind: try
+    title: Your turn with HAVING
+    body: |
+      Which travelers have booked **more than one** trip? Return `traveler_id` and the number of trips labeled **trips**.
+    sql: |
+      SELECT traveler_id, trip_name
+      FROM trips;
+    expect: |
+      SELECT traveler_id, count(*) AS trips
+      FROM trips
+      GROUP BY traveler_id
+      HAVING count(*) > 1;
+
+  - kind: info
+    title: "🔹 string_agg and array_agg"
+    body: |
+      Some aggregates collect values instead of doing maths:
+
+      - `string_agg(name, ', ')` glues the group's text into one string: `Kyoto, Tokyo`.
+      - `array_agg(name)` collects them into an **array** (a list value): `{Kyoto,Tokyo}`.
+
+      Add `ORDER BY` inside the parentheses to control the order: `string_agg(name, ', ' ORDER BY name)`.
+
+  - kind: try
+    title: Cities per country, in one line
+    body: |
+      One row per country, with its cities listed. Run it, then swap `string_agg(name, ', ' ORDER BY name)` for `array_agg(name)`.
+    sql: |
+      SELECT country_id,
+             string_agg(name, ', ' ORDER BY name) AS cities
+      FROM cities
+      GROUP BY country_id
+      ORDER BY country_id;
+
+  - kind: why
+    body: |
+      "How many per…?", "total by…?", "which ones have more than…?" are the questions managers, auditors and dashboards ask all day. GROUP BY and HAVING answer them in a single query.
+
+  - kind: recap
+    body: |
+      - `count`, `sum`, `avg`, `min`, `max` collapse rows into one value (and ignore NULLs, except `count(*)`).
+      - With no known values, `sum`/`avg` give NULL. Use `COALESCE(sum(x), 0)` when that means zero.
+      - `count(*)` = rows, `count(col)` = non-NULL values, `count(DISTINCT col)` = different values.
+      - `GROUP BY` gives one result row per group. SELECT columns must be grouped or aggregated. Fix the "must appear in the GROUP BY clause" error by grouping or aggregating that column.
+      - `WHERE` filters rows **before** grouping, and `HAVING` filters groups **after**.
+      - Logical order: **FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT**.
+      - 🔹 `string_agg(col, ', ')` and `array_agg(col)` collect a group's values.

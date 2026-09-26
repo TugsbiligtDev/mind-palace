@@ -1,0 +1,4 @@
+title: Text & Pattern Matching
+module: 26
+summary: Go beyond LIKE with regular expressions, extract, replace and split text with the regexp functions, clean messy input, and know why pattern searches are slow.
+minutes: 35

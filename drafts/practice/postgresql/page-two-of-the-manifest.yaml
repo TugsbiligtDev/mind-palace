@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/04-order-by
+topic: postgresql/beginner/06-querying-one-table
 concepts: [ORDER BY, LIMIT, OFFSET, paging]
 title: Page Two of the Manifest
 briefing: |

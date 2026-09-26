@@ -1,0 +1,57 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "A column is declared `email text UNIQUE`. Can two rows both have a NULL email?"
+    options:
+      - No, UNIQUE forbids any repeats
+      - Yes, because two NULLs aren't considered equal
+      - Only if the table has no primary key
+      - Only one NULL, then an error
+    answer: 1
+    explanation: "NULL = NULL is unknown, not true, so NULLs don't clash under a normal UNIQUE rule. Use `UNIQUE NULLS NOT DISTINCT` to allow only one."
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      CREATE TABLE tickets (price numeric CHECK (price > 0));
+      INSERT INTO tickets VALUES (NULL);
+      SELECT count(*) FROM tickets;
+    options:
+      - "0"
+      - "1"
+      - "NULL"
+      - An error
+    answer: 1
+    explanation: "`NULL > 0` is unknown, and a CHECK only rejects rows where the condition is false. The NULL row goes in, so the count is 1."
+
+  - type: fill
+    prompt: Make the trip's end date come on or after its start date.
+    code: |
+      CREATE TABLE trip_plans (
+          start_date date NOT NULL,
+          end_date   date,
+          ____ (end_date >= start_date)
+      );
+    answer: CHECK
+    accept: ["check"]
+    explanation: A CHECK written on its own line can compare several columns.
+
+  - type: mcq
+    prompt: "Which constraint does this error come from? `DETAIL: Key (email)=(amina@example.com) already exists.`"
+    options:
+      - NOT NULL
+      - CHECK
+      - UNIQUE
+      - DEFAULT
+    answer: 2
+    explanation: "\"Key … already exists\" means a duplicate value, so it's a UNIQUE (or primary key) constraint."
+
+  - type: mcq
+    prompt: Why enforce rules with constraints in the database, rather than only in the app?
+    options:
+      - Constraints make queries faster
+      - Data arrives from many apps, scripts and people, and the database is the one place all of it passes through
+      - Apps can't check rules
+      - It's required by SQL
+    answer: 1
+    explanation: An app only protects the data it writes. A constraint protects the table from every source, forever.

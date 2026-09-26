@@ -1,0 +1,4 @@
+title: Transactions
+module: 30
+summary: Make several changes succeed or fail together with BEGIN, COMMIT and ROLLBACK, undo part of the work with SAVEPOINT, recover from an aborted transaction, and keep transactions short.
+minutes: 30

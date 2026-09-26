@@ -16,13 +16,53 @@ export type RunOutput = { blocks: Block[]; error?: RunError };
 // `types` is PGlite's table of type IDs (passed in so this file never loads PGlite itself).
 export function rawTextParsers(types: Record<string, unknown>): Record<number, (x: string) => string> {
   return Object.fromEntries(
-    Object.values(types)
-      .filter((v): v is number => typeof v === "number")
-      .map((oid) => [oid, (x: string) => x]),
+    [...Object.values(types).filter((v): v is number => typeof v === "number"), ...ARRAY_TYPE_OIDS].map((oid) => [
+      oid,
+      (x: string) => x,
+    ]),
   );
 }
 
-export type Piece = { kind: "sql"; text: string; startLine: number } | { kind: "meta"; text: string; line: number };
+// PGlite's `types` table lists only plain types, and PGlite installs its own array parsers
+// after startup, so arrays would print as ["a","b"]. These built-in array types are kept
+// as psql's {a,b} text, passed with every query (per-query parsers take priority).
+const ARRAY_TYPE_OIDS = [
+  1000, // bool[]
+  1005, // int2[]
+  1007, // int4[]
+  1016, // int8[]
+  1021, // float4[]
+  1022, // float8[]
+  1231, // numeric[]
+  1009, // text[]
+  1014, // char[]
+  1015, // varchar[]
+  1182, // date[]
+  1183, // time[]
+  1115, // timestamp[]
+  1185, // timestamptz[]
+  1187, // interval[]
+  199, // json[]
+  3807, // jsonb[]
+  2951, // uuid[]
+  1041, // inet[]
+];
+const RAW_ARRAYS = Object.fromEntries(ARRAY_TYPE_OIDS.map((oid) => [oid, (x: string) => x]));
+
+// A brand-new copy of `db` for one run. PGlite's own clone() drops the parsers above
+// (dates would print as 2026-03-01T00:00:00.000Z), so copy the data directory ourselves.
+// The time zone is pinned to UTC so every learner, and the content check, sees the same
+// timestamps whatever their computer's zone is.
+export async function freshCopy(
+  db: PGliteInterface & { dumpDataDir(compression?: "none"): Promise<File | Blob> },
+  pglite: { PGlite: { create(options: object): Promise<PGliteInterface> }; types: Record<string, unknown> },
+): Promise<PGliteInterface> {
+  const copy = await pglite.PGlite.create({ loadDataDir: await db.dumpDataDir("none"), parsers: rawTextParsers(pglite.types) });
+  await copy.exec("SET TimeZone = 'UTC'");
+  return copy;
+}
+
+export type Piece ={ kind: "sql"; text: string; startLine: number } | { kind: "meta"; text: string; line: number };
 
 function splitInput(input: string): Piece[] {
   const pieces: Piece[] = [];
@@ -43,8 +83,10 @@ function splitInput(input: string): Piece[] {
   return pieces;
 }
 
+const stripComments = (sql: string) => sql.replace(/--[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+
 function commandTag(sql: string, affected: number): string {
-  const word = sql.trim().split(/\s+/)[0]?.toUpperCase() ?? "";
+  const word = stripComments(sql).trim().split(/\s+/)[0]?.toUpperCase() ?? "";
   if (word === "INSERT") return `INSERT 0 ${affected}`;
   if (["UPDATE", "DELETE", "MERGE"].includes(word)) return `${word} ${affected}`;
   return word.replace(/;$/, "") || "OK";
@@ -59,13 +101,25 @@ function statements(text: string): { sql: string; offset: number }[] {
   const push = (end: number) => {
     const raw = text.slice(start, end);
     const lead = raw.length - raw.trimStart().length;
-    if (raw.replace(/--[^\n]*/g, "").trim()) out.push({ sql: raw.trim(), offset: start + lead });
+    if (stripComments(raw).trim()) out.push({ sql: raw.trim(), offset: start + lead });
   };
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (!quote && c === "-" && text[i + 1] === "-") {
       const nl = text.indexOf("\n", i);
       i = nl === -1 ? text.length : nl;
+      continue;
+    }
+    if (!quote && c === "/" && text[i + 1] === "*") {
+      const end = text.indexOf("*/", i + 2);
+      i = end === -1 ? text.length : end + 1;
+      continue;
+    }
+    // Dollar quoting ($$ … $$ or $tag$ … $tag$) wraps function bodies, which contain semicolons.
+    const dollar = !quote && c === "$" ? /^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/.exec(text.slice(i)) : null;
+    if (dollar) {
+      const end = text.indexOf(dollar[0], i + dollar[0].length);
+      i = end === -1 ? text.length : end + dollar[0].length - 1;
       continue;
     }
     if (quote) {
@@ -94,7 +148,7 @@ function locate(piece: Extract<Piece, { kind: "sql" }>, pos: number, message: st
 async function runSqlPiece(db: PGliteInterface, piece: Extract<Piece, { kind: "sql" }>, blocks: Block[]) {
   for (const stmt of statements(piece.text)) {
     try {
-      const [res] = await db.exec(stmt.sql);
+      const [res] = await db.exec(stmt.sql, { rowMode: "array", parsers: RAW_ARRAYS });
       if (!res) continue;
       if (res.fields.length > 0)
         blocks.push({ kind: "rows", columns: res.fields.map((f) => f.name), rows: toRows(res.fields, res.rows) });

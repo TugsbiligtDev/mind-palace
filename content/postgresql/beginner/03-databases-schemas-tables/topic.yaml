@@ -1,0 +1,4 @@
+title: Databases, Schemas & Tables
+module: 3
+summary: How PostgreSQL nests databases, schemas and tables, how to create and drop them, naming rules that save pain, comments, and .sql script files.
+minutes: 30

@@ -1,5 +1,5 @@
 difficulty: hard
-topic: postgresql/beginner/07-aggregation
+topic: postgresql/beginner/10-aggregation
 concepts: [date_trunc, GROUP BY, ORDER BY]
 title: The Monthly Ledger
 briefing: |

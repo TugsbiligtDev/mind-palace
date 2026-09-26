@@ -1,12 +1,12 @@
 difficulty: easy
-topic: postgresql/beginner/01-syntax
+topic: postgresql/beginner/03-databases-schemas-tables
 concepts: [syntax, quoting, commas]
 title: The Smudged Order
 briefing: |
   A café's new till system was set up by the owner's nephew, who also wrote the one query
   they use to look up a customer's orders. It hasn't worked since the day he left.
 
-  *You don't need `WHERE` from Module 3 to fix this. It filters rows; just fix the grammar.*
+  *You don't need `WHERE` from Module 6 to fix this. It filters rows; just fix the grammar.*
 evidence_setup: |
   CREATE SCHEMA evidence;
   CREATE TABLE evidence.orders (

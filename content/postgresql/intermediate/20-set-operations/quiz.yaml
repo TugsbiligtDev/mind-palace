@@ -1,0 +1,60 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT count(*) FROM (
+          SELECT 1 UNION SELECT 1 UNION ALL SELECT 1
+      ) AS t;
+    options:
+      - "1"
+      - "2"
+      - "3"
+      - An error
+    answer: 1
+    explanation: "They're applied left to right. `SELECT 1 UNION SELECT 1` removes the duplicate, leaving one row. `UNION ALL SELECT 1` then adds another, giving 2."
+
+  - type: mcq
+    prompt: Two queries return names from separate systems, and you want every row, including repeats. Which operator?
+    options:
+      - UNION
+      - UNION ALL
+      - INTERSECT
+      - EXCEPT
+    answer: 1
+    explanation: UNION ALL keeps every row, and it's faster because it doesn't search for duplicates.
+
+  - type: predict
+    prompt: The continents are Asia, Europe, Asia, South America, Europe. What does this return?
+    code: |
+      SELECT continent FROM countries
+      EXCEPT
+      SELECT 'Asia'
+      ORDER BY continent;
+    options:
+      - "Europe\nSouth America"
+      - "Europe\nEurope\nSouth America"
+      - "Asia"
+      - "Asia\nEurope\nSouth America"
+    answer: 0
+    explanation: EXCEPT removes Asia and also removes duplicates, leaving Europe and South America once each.
+
+  - type: mcq
+    prompt: "Why does `SELECT name, population FROM cities UNION SELECT name FROM countries;` fail?"
+    options:
+      - UNION needs ORDER BY
+      - The two queries have different numbers of columns
+      - Table names must match
+      - countries has no name column
+    answer: 1
+    explanation: Both sides of a set operation must have the same number of columns, with compatible types in each position.
+
+  - type: fill
+    prompt: List home cities that are **also** Wanderly destinations.
+    code: |
+      SELECT home_city FROM travelers
+      ____
+      SELECT name FROM cities;
+    answer: INTERSECT
+    accept: ["intersect"]
+    explanation: "`INTERSECT` keeps rows that appear in both results. Here, that's Ulaanbaatar."

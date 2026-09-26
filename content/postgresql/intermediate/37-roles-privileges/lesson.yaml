@@ -1,0 +1,179 @@
+steps:
+  - kind: explain
+    title: Who is allowed to do what?
+    body: |
+      So far you've been a **superuser**, allowed to do anything. Real databases have many users: the web app, a reporting tool, analysts, admins. Each should be able to do **only what it needs**.
+
+      PostgreSQL controls this with **roles**. A role can be:
+
+      - a **user**: a role with the **`LOGIN`** attribute, so it can connect
+      - a **group**: a role without LOGIN, holding privileges that other roles inherit
+
+      ```sql
+      CREATE ROLE readonly NOLOGIN;                    -- a group
+      CREATE ROLE alice LOGIN PASSWORD 'change-me';    -- a user
+      GRANT readonly TO alice;                         -- alice gets readonly's privileges
+      ```
+
+      `CREATE USER alice` is the same as `CREATE ROLE alice LOGIN`.
+
+  - kind: try
+    title: Make some roles
+    body: |
+      Run it. `\du` lists the roles: `alice` can log in, and `readonly` can't.
+    sql: |
+      CREATE ROLE readonly NOLOGIN;
+      CREATE ROLE alice LOGIN PASSWORD 'change-me';
+      GRANT readonly TO alice;
+      \du
+
+  - kind: explain
+    title: GRANT and REVOKE
+    body: |
+      Privileges are given with **GRANT** and taken back with **REVOKE**, at several levels. A role needs **every** level to reach the data:
+
+      | Level | Privileges | Example |
+      |---|---|---|
+      | Database | `CONNECT`, `CREATE` | `GRANT CONNECT ON DATABASE learn_sql TO readonly;` |
+      | Schema | `USAGE` (may look inside), `CREATE` (may add objects) | `GRANT USAGE ON SCHEMA public TO readonly;` |
+      | Table | `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`… | `GRANT SELECT ON trips TO readonly;` |
+      | Column | `SELECT (col, …)`, `UPDATE (col, …)` | `GRANT SELECT (full_name) ON travelers TO support;` |
+
+      Shortcuts: `GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly;` and `REVOKE INSERT ON trips FROM app;`.
+
+      The **owner** of a table (whoever created it) always has full rights on it.
+
+  - kind: try
+    title: Allowed here, denied there
+    body: |
+      `SET ROLE` lets a superuser act as another role, which is perfect for testing access. The reader may see countries but nothing else. Run it: the first query works, the second is denied.
+    sql: |
+      CREATE ROLE reader NOLOGIN;
+      GRANT SELECT ON countries TO reader;
+
+      SET ROLE reader;
+      SELECT name FROM countries;
+      SELECT trip_name FROM trips;
+    expect_error: true
+
+  - kind: explain
+    title: Least privilege, and three roles
+    body: |
+      **Least privilege**: give each role the smallest set of rights that lets it do its job. If the app is hacked, the attacker gets only what the app had.
+
+      A common setup:
+
+      | Role | Can | Used by |
+      |---|---|---|
+      | **owner / admin** | own the tables, run migrations (CREATE, ALTER, DROP) | deploy scripts, a DBA |
+      | **app** | SELECT, INSERT, UPDATE, DELETE on its tables. No DDL. | the web app |
+      | **readonly** | SELECT only | analysts, dashboards |
+
+      Grant privileges to **group roles**, then add people to groups. When Alice leaves, you drop one login role, not dozens of individual grants.
+
+  - kind: try
+    title: Your turn to set up an analyst role
+    body: |
+      Create a group role **analyst** (no login), give it **read access to every table in the public schema**, then switch to it with `SET ROLE` and count the payments.
+    sql: |
+      SELECT count(*) FROM payments;
+    expect: |
+      CREATE ROLE analyst NOLOGIN;
+      GRANT SELECT ON ALL TABLES IN SCHEMA public TO analyst;
+
+      SET ROLE analyst;
+      SELECT count(*) FROM payments;
+
+  - kind: explain
+    title: Default privileges for future tables
+    body: |
+      `GRANT … ON ALL TABLES IN SCHEMA public` covers the tables that exist **right now**. Create a new table tomorrow, and the analyst can't read it.
+
+      **`ALTER DEFAULT PRIVILEGES`** sets the grants for tables **created later**:
+
+      ```sql
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public
+          GRANT SELECT ON TABLES TO analyst;
+      ```
+
+      It applies to tables created afterwards **by the role that ran it** (add `FOR ROLE owner_name` to cover another creator). Most setups run both: a GRANT for existing tables, and default privileges for future ones.
+
+  - kind: try
+    title: Tomorrow's table
+    body: |
+      The analyst was granted SELECT on all tables, then a **new** table was created. Run it: denied. Then add `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO analyst;` **before** the CREATE TABLE and run again.
+    sql: |
+      CREATE ROLE analyst NOLOGIN;
+      GRANT SELECT ON ALL TABLES IN SCHEMA public TO analyst;
+
+      CREATE TABLE refunds_2027 (payment_id integer, reason text);
+
+      SET ROLE analyst;
+      SELECT count(*) FROM refunds_2027;
+    expect_error: true
+
+  - kind: explain
+    title: Column-level access and views
+    body: |
+      The support team needs travelers' names and home cities, but **not** their emails. Two ways:
+
+      - **Column privileges**: `GRANT SELECT (full_name, home_city) ON travelers TO support;`. Selecting any other column (or `*`) is denied.
+      - **A view** (Module 34) showing only the allowed columns or rows, with `GRANT SELECT` on the view instead of the table.
+
+      For hiding **rows** per user (each customer sees only their own), PostgreSQL has **Row-Level Security**, covered in Module 45.
+
+  - kind: try
+    title: Names yes, emails no
+    body: |
+      Run it: the allowed columns come back, then the email query is denied.
+    sql: |
+      CREATE ROLE support NOLOGIN;
+      GRANT SELECT (full_name, home_city) ON travelers TO support;
+
+      SET ROLE support;
+      SELECT full_name, home_city FROM travelers;
+      SELECT email FROM travelers;
+    expect_error: true
+
+  - kind: explain
+    title: The public schema (tightened in PostgreSQL 15)
+    body: |
+      Every database has a special role-like group called **`PUBLIC`**, meaning *everyone*.
+
+      - **Before PostgreSQL 15**, `PUBLIC` could **create** tables in the `public` schema. Any user who could connect could create objects there, which was a well-known security hole.
+      - **Since PostgreSQL 15**, only the database owner can create in `public`. Other roles can use it (read what they're granted), but not add to it.
+
+      On older servers you'll see this line in setup scripts, and it's still good practice:
+
+      ```sql
+      REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+      ```
+
+  - kind: mac
+    title: A real login role on your Mac
+    body: |
+      Create a read-only login role, then connect **as** it in a new psql session and test what it can and can't do. `-U` picks the user. The last command connects back as yourself to clean up.
+    commands: |
+      psql learn_sql
+      CREATE ROLE reporter LOGIN PASSWORD 'change-me';
+      GRANT SELECT ON ALL TABLES IN SCHEMA public TO reporter;
+      \q
+      psql -U reporter -d learn_sql
+      SELECT count(*) FROM trips;
+      DELETE FROM trips;
+      \q
+      psql learn_sql -c "DROP OWNED BY reporter; DROP ROLE reporter;"
+
+  - kind: why
+    body: |
+      Most data leaks and "someone deleted production" stories come down to an account with far more access than it needed. Roles, grants and least privilege are how you make sure a bug, a stolen password or a tired human can only do limited damage.
+
+  - kind: recap
+    body: |
+      - Users and groups are both **roles**. `LOGIN` makes a role a user. `GRANT group TO user` adds members.
+      - `GRANT` / `REVOKE` on databases (CONNECT), schemas (USAGE, CREATE), tables (SELECT, INSERT…) and columns.
+      - `SET ROLE name` lets you test access as another role.
+      - **Least privilege**: separate admin, app and read-only roles. Grant to groups, not individuals.
+      - `ON ALL TABLES IN SCHEMA` covers existing tables. `ALTER DEFAULT PRIVILEGES` covers future ones.
+      - Hide columns with column grants or views, and rows with Row-Level Security (Module 45).
+      - Since PG15, only the owner can CREATE in `public`. On older versions, `REVOKE CREATE ON SCHEMA public FROM PUBLIC`.

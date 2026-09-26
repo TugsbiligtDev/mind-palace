@@ -1,0 +1,260 @@
+steps:
+  - kind: explain
+    title: Split apart, joined back
+    body: |
+      In Module 13 you split data into tables linked by foreign keys: trips store a `traveler_id`, not a name. That keeps each fact in one place. But when you *ask a question*, you usually want the pieces side by side: the trip **and** the traveler's name.
+
+      A **join** does that. It matches rows from two tables using a condition, usually "this FK equals that PK", and glues each matching pair into one wider row.
+
+  - kind: explain
+    title: INNER JOIN
+    body: |
+      ```sql
+      SELECT t.trip_name, tr.full_name
+      FROM trips AS t
+      JOIN travelers AS tr ON tr.traveler_id = t.traveler_id;
+      ```
+
+      - **`JOIN … ON condition`** pairs up rows where the condition is true. `JOIN` on its own means **INNER JOIN**.
+      - `trips AS t` gives the table a short **alias**. Then `t.trip_name` means "trip_name from trips". (`AS` is optional for tables, and most people leave it out: `FROM trips t`.)
+      - An **inner** join keeps **only matched pairs**. A row with no partner in the other table disappears.
+
+      Once two tables are involved, write `alias.column` everywhere. `name` alone would be ambiguous if both tables had one.
+
+  - kind: try
+    title: Trips with their travelers
+    body: |
+      Run it. Each trip now shows the traveler's name instead of a number. Then add `t.status` as a third column.
+    sql: |
+      SELECT t.trip_name, tr.full_name
+      FROM trips t
+      JOIN travelers tr ON tr.traveler_id = t.traveler_id;
+
+  - kind: try
+    title: Your turn to join
+    body: |
+      List every city's name next to its country's name. Label them **city** and **country**.
+
+      Both tables have a `name` column, so aliases are essential here.
+    sql: |
+      SELECT name, country_id
+      FROM cities;
+    expect: |
+      SELECT ci.name AS city, co.name AS country
+      FROM cities ci
+      JOIN countries co ON co.country_id = ci.country_id;
+
+  - kind: explain
+    title: LEFT JOIN keeps everything on the left
+    body: |
+      Some attractions have no reviews. With an inner join they'd vanish. A **LEFT JOIN** keeps **every row from the left table** (the one after FROM), and fills the right side's columns with **NULL** when there's no match:
+
+      ```sql
+      SELECT a.name, r.rating
+      FROM attractions a
+      LEFT JOIN reviews r ON r.attraction_id = a.attraction_id;
+      ```
+
+      That makes LEFT JOIN the tool for "find things that **don't** have a match": keep everything, then look for the NULLs.
+
+  - kind: try
+    title: See the NULLs appear
+    body: |
+      Run it with `LEFT JOIN`, and count the rows. Then change it to plain `JOIN` and count again. Which attractions disappeared?
+    sql: |
+      SELECT a.name, r.rating
+      FROM attractions a
+      LEFT JOIN reviews r ON r.attraction_id = a.attraction_id
+      ORDER BY a.name;
+
+  - kind: try
+    title: Your turn to find the missing
+    body: |
+      Return the `name` of every attraction that has **no reviews at all**.
+
+      Hint: LEFT JOIN, then keep only rows where the review side is NULL. Test the review's **primary key**, `r.review_id IS NULL`, since that can only be NULL when there was no match.
+    sql: |
+      SELECT a.name
+      FROM attractions a
+      LEFT JOIN reviews r ON r.attraction_id = a.attraction_id;
+    expect: |
+      SELECT a.name
+      FROM attractions a
+      LEFT JOIN reviews r ON r.attraction_id = a.attraction_id
+      WHERE r.review_id IS NULL;
+
+  - kind: explain
+    title: FULL OUTER JOIN
+    body: |
+      **`FULL JOIN`** (short for FULL OUTER JOIN) keeps **every row from both sides**. Matched rows are paired up, and unmatched rows from either side get NULLs on the other side.
+
+      It's for comparing two lists: "what's in A only, what's in B only, and what's in both?"
+
+      (LEFT JOIN is also a kind of *outer* join. "Outer" just means unmatched rows are kept.)
+
+  - kind: try
+    title: Home cities vs. Wanderly cities
+    body: |
+      Travelers' home cities are stored as text. Which ones are also Wanderly destinations? Run it:
+
+      - rows with both columns filled: a match (Ulaanbaatar)
+      - `traveler` NULL: a destination nobody lives in
+      - `destination` NULL: a home city Wanderly doesn't serve
+    sql: |
+      SELECT tr.full_name AS traveler, tr.home_city, c.name AS destination
+      FROM travelers tr
+      FULL JOIN cities c ON c.name = tr.home_city
+      ORDER BY c.name, tr.full_name;
+
+  - kind: explain
+    title: Joining a table to itself
+    body: |
+      A **self join** joins a table to **another copy of itself**. You must give each copy its own alias:
+
+      ```sql
+      SELECT a.name AS city, b.name AS same_country_as
+      FROM cities a
+      JOIN cities b ON b.country_id = a.country_id
+                   AND b.city_id <> a.city_id;
+      ```
+
+      The classic use is the employee → manager link from Module 13: join `staff` to `staff` to put each person's name next to their manager's name.
+
+  - kind: try
+    title: Staff and their managers
+    body: |
+      `e` is the employee copy and `m` is the manager copy. Run it. Then change `JOIN` to `LEFT JOIN`. Who appears now, and why is their manager NULL?
+    sql: |
+      CREATE TABLE staff (
+          staff_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          full_name   text NOT NULL,
+          manager_id  integer REFERENCES staff (staff_id)
+      );
+      INSERT INTO staff (full_name, manager_id) VALUES
+        ('Odval Bold', NULL), ('Gerel Tsog', 1), ('Saruul Dash', 1), ('Temuulen Gan', 2);
+
+      SELECT e.full_name AS employee, m.full_name AS manager
+      FROM staff e
+      JOIN staff m ON m.staff_id = e.manager_id;
+
+  - kind: explain
+    title: Three or more tables
+    body: |
+      Joins chain. Each new `JOIN` adds another table to the growing result:
+
+      ```sql
+      SELECT t.trip_name, s.visit_order, c.name AS city
+      FROM trips t
+      JOIN trip_stops s ON s.trip_id = t.trip_id
+      JOIN cities c     ON c.city_id = s.city_id;
+      ```
+
+      This is how you walk through a **junction table**: `trips` → `trip_stops` → `cities`. Trips and cities are many-to-many, and trip_stops sits in the middle.
+
+  - kind: try
+    title: Your turn with three tables
+    body: |
+      List every stop of every trip: `trip_name`, `visit_order`, and the city name labeled **city**. Sort by trip name, then visit order.
+    sql: |
+      SELECT trip_id, visit_order, city_id
+      FROM trip_stops;
+    expect: |
+      SELECT t.trip_name, s.visit_order, c.name AS city
+      FROM trips t
+      JOIN trip_stops s ON s.trip_id = t.trip_id
+      JOIN cities c ON c.city_id = s.city_id
+      ORDER BY t.trip_name, s.visit_order;
+    ordered: true
+
+  - kind: explain
+    title: ON vs. USING
+    body: |
+      When the two columns have the **same name** in both tables, `USING` is a shortcut:
+
+      ```sql
+      FROM trips t
+      JOIN travelers tr USING (traveler_id)
+      ```
+
+      means the same as `ON tr.traveler_id = t.traveler_id`, and the result shows `traveler_id` only once. It's one reason to name FK columns exactly like the key they point at.
+
+      Use `ON` when the names differ or the condition is more than a simple equality (like the self join above).
+
+  - kind: explain
+    title: "The fan-out trap"
+    body: |
+      Joining to a "many" side **multiplies rows**. Amina has 2 trips, and each has 2 stops. Join travelers → trips → trip_stops and Amina appears on **4** rows.
+
+      That's correct for listing stops, but **wrong for counting trips**: `count(*)` would say Amina has 4 trips.
+
+      Before aggregating after a join, ask: *what does one row represent now?* Fixes:
+
+      - count the thing you mean, uniquely: `count(DISTINCT t.trip_id)`
+      - or don't join the extra table if the question doesn't need it
+
+  - kind: try
+    title: Watch the count inflate
+    body: |
+      Run it: `wrong_trips` says Amina has 4 trips. `trips` (with DISTINCT) gives the true answer, 2.
+    sql: |
+      SELECT tr.full_name,
+             count(*) AS wrong_trips,
+             count(DISTINCT t.trip_id) AS trips
+      FROM travelers tr
+      JOIN trips t      ON t.traveler_id = tr.traveler_id
+      JOIN trip_stops s ON s.trip_id = t.trip_id
+      GROUP BY tr.full_name
+      ORDER BY tr.full_name;
+
+  - kind: explain
+    title: Joins with GROUP BY
+    body: |
+      Join first, then group: "how many reviews does each attraction have?"
+
+      ```sql
+      SELECT a.name, count(r.review_id) AS reviews
+      FROM attractions a
+      LEFT JOIN reviews r ON r.attraction_id = a.attraction_id
+      GROUP BY a.attraction_id, a.name;
+      ```
+
+      Two details matter:
+
+      - **LEFT JOIN**, so attractions with zero reviews still appear.
+      - **`count(r.review_id)`, not `count(*)`**. For an unreviewed attraction, the LEFT JOIN makes one row with NULLs. `count(*)` counts that row as 1. `count(r.review_id)` skips the NULL and correctly says 0.
+
+  - kind: try
+    title: Your turn to count across a join
+    body: |
+      For **every traveler**, show `full_name` and how many reviews they wrote, labeled **reviews**, including travelers with **zero**.
+    sql: |
+      SELECT full_name
+      FROM travelers;
+    expect: |
+      SELECT tr.full_name, count(r.review_id) AS reviews
+      FROM travelers tr
+      LEFT JOIN reviews r ON r.traveler_id = tr.traveler_id
+      GROUP BY tr.traveler_id, tr.full_name;
+
+  - kind: info
+    title: "🔹 RIGHT JOIN and CROSS JOIN"
+    body: |
+      **`RIGHT JOIN`** is a LEFT JOIN facing the other way: it keeps every row from the **right** table. `A RIGHT JOIN B` gives the same rows as `B LEFT JOIN A`. Most people always write LEFT JOIN and put the "keep everything" table first, because it reads more naturally. Rewrite any RIGHT JOIN you meet that way.
+
+      **`CROSS JOIN`** pairs **every** row with **every** row: 5 countries × 7 cities = 35 rows, with no condition. It's occasionally useful (every size × every color), but usually a CROSS JOIN you didn't mean is a forgotten ON clause.
+
+  - kind: why
+    body: |
+      Almost every real question crosses tables: orders and customers, trips and cities, students and courses. Joins are the single most important SQL skill after SELECT itself, and the fan-out trap is the most common way reports end up quietly wrong.
+
+  - kind: recap
+    body: |
+      - `JOIN t2 ON condition` (INNER) keeps only matched pairs. Use table aliases and `alias.column`.
+      - `LEFT JOIN` keeps every left row, with NULLs for no match. `WHERE right.pk IS NULL` finds rows **without** a match.
+      - `FULL JOIN` keeps unmatched rows from both sides.
+      - A **self join** uses two aliases of one table (employee → manager).
+      - Chain JOINs to walk through junction tables.
+      - `USING (col)` is a shortcut when the column names match.
+      - **Fan-out**: joining to a many side multiplies rows. Count what you mean: `count(DISTINCT …)`.
+      - With LEFT JOIN + GROUP BY, count a right-side column, not `*`, to get true zeros.
+      - 🔹 Rewrite RIGHT JOIN as LEFT JOIN. 🔹 CROSS JOIN pairs every row with every row.

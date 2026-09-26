@@ -1,0 +1,230 @@
+steps:
+  - kind: explain
+    title: NULL means "unknown"
+    body: |
+      **NULL** is a marker for a **missing or unknown value**. It is *not*:
+
+      - zero (`0` is a known number)
+      - empty text (`''` is known text that happens to be empty)
+      - the word `'NULL'`
+
+      Dulguun's email is NULL: we simply don't know it. The "Weekend in Paris" trip has a NULL `end_date`: it hasn't been decided yet.
+
+      psql shows NULL as a blank. This page shows it as a faded **NULL** so you can spot it.
+
+  - kind: try
+    title: Spot the unknowns
+    body: |
+      Run it. Which traveler has no email? Then change it to `SELECT trip_name, end_date FROM trips;` and find the trip with no end date.
+    sql: |
+      SELECT full_name, email
+      FROM travelers;
+
+  - kind: explain
+    title: Three-valued logic
+    body: |
+      Most logic has two answers, **true** and **false**. SQL has a third: **unknown**.
+
+      Is Dulguun's email equal to `'x@example.com'`? We don't know Dulguun's email, so the honest answer is *unknown*. Any comparison with NULL gives unknown, **even `NULL = NULL`**: two unknown things might or might not be equal.
+
+      Unknown spreads through AND, OR and NOT in a sensible way:
+
+      | Expression | Result | Why |
+      |---|---|---|
+      | `unknown AND false` | false | false wins either way |
+      | `unknown AND true` | unknown | depends on the unknown |
+      | `unknown OR true` | true | true wins either way |
+      | `unknown OR false` | unknown | depends on the unknown |
+      | `NOT unknown` | unknown | still don't know |
+
+  - kind: try
+    title: Comparisons with NULL
+    body: |
+      Every column here compares something with NULL. Run it: most answers are NULL (unknown), not true or false.
+
+      Only `IS NULL` gives a real answer.
+    sql: |
+      SELECT NULL = NULL    AS equal,
+             NULL <> 1      AS not_equal,
+             NULL > 5       AS bigger,
+             NULL IS NULL   AS is_null;
+
+  - kind: explain
+    title: Why "= NULL" never matches
+    body: |
+      **WHERE keeps a row only when the condition is true.** Unknown isn't true, so the row is dropped.
+
+      That makes `WHERE email = NULL` match **nothing, ever**, and it doesn't raise an error. It's a silent wrong answer.
+
+      To test for missing values, use the dedicated operators:
+
+      - `email IS NULL`: the value is missing
+      - `email IS NOT NULL`: the value is present
+
+  - kind: try
+    title: Find the missing email
+    body: |
+      This query looks reasonable and returns **zero rows**. Run it to see. Then fix it so it finds the traveler whose email is missing.
+    sql: |
+      SELECT full_name, email
+      FROM travelers
+      WHERE email = NULL;
+    expect: |
+      SELECT full_name, email
+      FROM travelers
+      WHERE email IS NULL;
+
+  - kind: try
+    title: The row that vanishes
+    body: |
+      "Everyone except Amina" should be 5 of the 6 travelers. Run it and count: only 4.
+
+      Dulguun is missing. That email is NULL, so `NULL <> 'amina@example.com'` is unknown, and WHERE drops the row.
+    sql: |
+      SELECT full_name, email
+      FROM travelers
+      WHERE email <> 'amina@example.com';
+
+  - kind: explain
+    title: IS DISTINCT FROM
+    body: |
+      **`IS DISTINCT FROM`** is a "not equal" that treats NULL as an ordinary value you can compare:
+
+      | Expression | `<>` gives | `IS DISTINCT FROM` gives |
+      |---|---|---|
+      | `1` vs `2` | true | true |
+      | `1` vs `1` | false | false |
+      | `NULL` vs `1` | unknown | **true** |
+      | `NULL` vs `NULL` | unknown | **false** |
+
+      Its opposite, **`IS NOT DISTINCT FROM`**, is an "equals" where two NULLs count as equal.
+
+  - kind: try
+    title: Your turn with IS DISTINCT FROM
+    body: |
+      Fix the query so it returns all **5** travelers other than Amina, including the one with no email. Keep the same two columns.
+    sql: |
+      SELECT full_name, email
+      FROM travelers
+      WHERE email <> 'amina@example.com';
+    expect: |
+      SELECT full_name, email
+      FROM travelers
+      WHERE email IS DISTINCT FROM 'amina@example.com';
+
+  - kind: explain
+    title: NULL in maths and text
+    body: |
+      Almost any calculation that touches NULL **becomes NULL**:
+
+      - `NULL + 1` is NULL: unknown plus one is still unknown.
+      - `end_date - start_date` is NULL when there's no end date.
+      - `'Trip: ' || NULL` is NULL. (`||` glues text together; Module 9 has more.)
+
+      One missing value can blank out a whole calculated column, so watch for it.
+
+  - kind: try
+    title: A calculation goes blank
+    body: |
+      Trip length in days. Run it: *Weekend in Paris* has no end date, so its length is NULL too.
+    sql: |
+      SELECT trip_name,
+             end_date - start_date AS days
+      FROM trips;
+
+  - kind: explain
+    title: Where NULLs sort
+    body: |
+      When you sort, PostgreSQL treats NULL as **larger than everything**:
+
+      - `ORDER BY email` (ascending): NULLs come **last**
+      - `ORDER BY email DESC`: NULLs come **first**
+
+      Override it with **`NULLS FIRST`** or **`NULLS LAST`**:
+
+      ```sql
+      ORDER BY end_date DESC NULLS LAST
+      ```
+
+      This matters for "top N" questions. Sort descending on a column with missing values, and the NULLs quietly take the top spots.
+
+  - kind: try
+    title: Your turn with NULLS LAST
+    body: |
+      Show `trip_name` and `end_date` for every trip, **latest end date first**, with the trip that has no end date at the **bottom**.
+    sql: |
+      SELECT trip_name, end_date
+      FROM trips
+      ORDER BY end_date DESC;
+    expect: |
+      SELECT trip_name, end_date
+      FROM trips
+      ORDER BY end_date DESC NULLS LAST;
+    ordered: true
+
+  - kind: explain
+    title: COALESCE fills in a default
+    body: |
+      **`COALESCE(a, b, c, …)`** returns the **first value that isn't NULL**:
+
+      ```sql
+      SELECT full_name,
+             COALESCE(email, 'no email on file') AS contact
+      FROM travelers;
+      ```
+
+      Use it to show something friendly instead of a blank, or to treat missing numbers as 0 when that's truly what they mean: `COALESCE(cost, 0)`. Careful with that last one: sometimes "unknown" and "zero" really are different.
+
+  - kind: try
+    title: Your turn with COALESCE
+    body: |
+      Show each traveler's `full_name` and their email labeled **contact**, with **`unknown`** where the email is missing.
+    sql: |
+      SELECT full_name, email
+      FROM travelers;
+    expect: |
+      SELECT full_name, COALESCE(email, 'unknown') AS contact
+      FROM travelers;
+
+  - kind: explain
+    title: "A preview: the NOT IN trap"
+    body: |
+      `x NOT IN (1, 2, NULL)` means `x <> 1 AND x <> 2 AND x <> NULL`. That last part is always unknown, so the whole thing can **never be true**. A NULL anywhere in a NOT IN list makes it match **nothing**.
+
+      With a typed list you'd notice. But in Module 18 you'll build lists from other queries, where a NULL can sneak in unseen. That's the real trap, and you'll learn the fix there.
+
+  - kind: try
+    title: See NOT IN return nothing
+    body: |
+      "Countries other than 1 and 2" should give 3 rows. Run it: zero. Then remove the `, NULL` and run it again.
+    sql: |
+      SELECT name
+      FROM countries
+      WHERE country_id NOT IN (1, 2, NULL);
+
+  - kind: explain
+    title: Should this column allow NULL?
+    body: |
+      When you design a table (Module 12), you decide for each column whether NULL is allowed. Ask: **can this value genuinely be unknown or not apply?**
+
+      - A trip's `trip_name`: always known. Forbid NULL.
+      - A trip's `end_date`: may not be decided yet. NULL is honest.
+      - A traveler's `email`: some people don't give one. NULL is fine.
+
+      Avoid **"magic values"** that pretend to be data: an empty string for "no email", `0` for "unknown price", or `1900-01-01` for "no date". They sneak into sums and averages and give wrong answers. NULL is the honest way to say *we don't know*.
+
+  - kind: why
+    body: |
+      Real data is full of gaps. Most silently wrong SQL answers come from NULL: a row that vanished from a filter, a total that went blank, a NOT IN that returned nothing. Knowing three-valued logic is how you catch them before anyone else does.
+
+  - kind: recap
+    body: |
+      - NULL = **unknown**. Not 0, not `''`.
+      - Any comparison with NULL is **unknown**, even `NULL = NULL`. WHERE keeps only **true** rows.
+      - Test with `IS NULL` / `IS NOT NULL`. Never `= NULL`.
+      - `IS DISTINCT FROM` is a not-equal where NULL is comparable.
+      - Maths and `||` with NULL give NULL.
+      - NULLs sort last in ASC and first in DESC. Override with `NULLS FIRST/LAST`.
+      - `COALESCE(a, b, …)` returns the first non-NULL value.
+      - A NULL inside `NOT IN (…)` makes it match nothing.
+      - Allow NULL only when a value can truly be unknown. Avoid magic values.

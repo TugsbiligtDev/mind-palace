@@ -1,5 +1,5 @@
 difficulty: easy
-topic: postgresql/beginner/02-select
+topic: postgresql/beginner/06-querying-one-table
 concepts: [calculated columns, aliases]
 title: Tip Jar Arithmetic
 briefing: |
@@ -48,4 +48,4 @@ reveal: |
 
   Dmitri's single best tour earns the most, and Keiko's one big, cheap tour beats Dmitri's
   other one. Add each guide's tours together and it's Dmitri 400, Saruul 315, Keiko 170. (Adding
-  up *per guide* is what `GROUP BY` does in Module 7.) The argument continues, but now with numbers.
+  up *per guide* is what `GROUP BY` does in Module 10.) The argument continues, but now with numbers.

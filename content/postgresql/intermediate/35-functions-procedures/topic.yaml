@@ -1,0 +1,4 @@
+title: Functions & Procedures
+module: 35
+summary: Write your own SQL and PL/pgSQL functions with variables, IF, loops and errors, use procedures for batch jobs that commit as they go, label volatility correctly, and decide what logic belongs in the database.
+minutes: 40

@@ -1,0 +1,4 @@
+title: Migrations & Backup Basics
+module: 39
+summary: Change a schema in numbered, repeatable steps, meet the migration tools, back up and restore with pg_dump and pg_restore, test that restores work, and run PostgreSQL in Docker.
+minutes: 35

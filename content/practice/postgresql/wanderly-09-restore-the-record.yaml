@@ -1,5 +1,5 @@
 difficulty: hard
-topic: postgresql/beginner/08-writing-data
+topic: postgresql/beginner/08-updating-deleting
 concepts: [UPDATE, DELETE, INSERT]
 series: { name: The Wanderly Files, episode: 9 }
 title: "Finale: Restore the Record"

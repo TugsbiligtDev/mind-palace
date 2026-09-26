@@ -1,0 +1,297 @@
+steps:
+  - kind: explain
+    title: The shape of a question
+    body: |
+      Almost every question you ask a database starts like this:
+
+      ```sql
+      SELECT column_1, column_2
+      FROM some_table;
+      ```
+
+      - **`FROM`** says *which table* to look in.
+      - **`SELECT`** says *which columns* you want back, separated by commas.
+
+      The answer is always a new table, called a **result set**. A SELECT never changes the stored data. You're only reading.
+
+  - kind: try
+    title: Pick your columns
+    body: |
+      Run this to see each city's name and population. Then add `country_id` as a third column.
+    sql: |
+      SELECT name, population
+      FROM cities;
+
+  - kind: try
+    title: "The star: every column"
+    body: |
+      `*` means "all columns, in the table's order". It's great for a first look at a table you don't know.
+
+      In real queries, prefer naming the columns you need. It's clearer, it sends less data, and it won't silently change when someone adds a column later.
+    sql: |
+      SELECT * FROM attractions;
+
+  - kind: explain
+    title: WHERE keeps some rows
+    body: |
+      `SELECT` chooses **columns**. `WHERE` chooses **rows**.
+
+      | Operator | Meaning |
+      |---|---|
+      | `=` | equal to |
+      | `<>` or `!=` | not equal to |
+      | `<` `>` | less than, greater than |
+      | `<=` `>=` | less or equal, greater or equal |
+
+      ```sql
+      SELECT trip_name, status
+      FROM trips
+      WHERE status = 'completed';
+      ```
+
+      PostgreSQL checks the condition against **each row**. Rows where it's true are kept. Text and dates go in single quotes, and text comparisons are **exact**: `'Completed'` would not match `'completed'`.
+
+  - kind: try
+    title: Your turn to filter
+    body: |
+      Show the `name` and `population` of every city with **more than 2,000,000** people. (Write the number without commas: `2000000`.)
+    sql: |
+      SELECT name, population
+      FROM cities;
+    expect: |
+      SELECT name, population
+      FROM cities
+      WHERE population > 2000000;
+
+  - kind: explain
+    title: AND, OR, NOT, and who goes first
+    body: |
+      Combine conditions:
+
+      - `A AND B`: both must be true
+      - `A OR B`: at least one must be true
+      - `NOT A`: flips true and false
+
+      **`AND` is evaluated before `OR`**, the way × comes before + in maths. So
+
+      ```sql
+      WHERE category = 'museum' OR category = 'landmark' AND entry_fee > 22
+      ```
+
+      really means *museum* **or** *(landmark with a fee over 22)*. Probably not what you meant.
+
+      **Rule: when you mix AND and OR, add parentheses.** They cost nothing and remove all doubt.
+
+  - kind: try
+    title: See precedence change the answer
+    body: |
+      This query has no parentheses. Run it: you get 5 rows, including cheap museums.
+
+      Now wrap the two category checks in parentheses, `(category = 'museum' OR category = 'landmark') AND entry_fee > 22`, and run it again. Only 3 rows are left, every one over 22.
+    sql: |
+      SELECT name, category, entry_fee
+      FROM attractions
+      WHERE category = 'museum' OR category = 'landmark' AND entry_fee > 22;
+
+  - kind: try
+    title: Your turn to combine
+    body: |
+      Find the `name` and `entry_fee` of every **museum** that costs **less than 25**.
+    sql: |
+      SELECT name, entry_fee
+      FROM attractions;
+    expect: |
+      SELECT name, entry_fee
+      FROM attractions
+      WHERE category = 'museum' AND entry_fee < 25;
+
+  - kind: explain
+    title: IN, BETWEEN, LIKE and ILIKE
+    body: |
+      Shortcuts for common filters:
+
+      - **`IN (…)`**: matches any value in a list. `country_id IN (1, 5)` is short for `country_id = 1 OR country_id = 5`.
+      - **`BETWEEN a AND b`**: a range, **including both ends**. `nights BETWEEN 3 AND 5` means 3, 4 or 5.
+      - **`LIKE`**: text pattern matching. `%` means "any number of characters" and `_` means "exactly one character". `name LIKE 'P%'` = names starting with capital P.
+      - **`ILIKE`**: the same, but **ignores upper/lower case**. It's PostgreSQL's case-insensitive LIKE.
+
+      Put `NOT` in front of any of them: `NOT IN`, `NOT BETWEEN`, `NOT LIKE`.
+
+  - kind: try
+    title: A date range
+    body: |
+      Trips starting between March and June 2026, inclusive. Change the range and watch rows come and go.
+    sql: |
+      SELECT trip_name, start_date
+      FROM trips
+      WHERE start_date BETWEEN '2026-03-01' AND '2026-06-30';
+
+  - kind: try
+    title: Your turn with IN
+    body: |
+      Japan is `country_id` 1 and Italy is 5. Return the `name` of every city in **either** country, using `IN`.
+    sql: |
+      SELECT name
+      FROM cities;
+    expect: |
+      SELECT name
+      FROM cities
+      WHERE country_id IN (1, 5);
+
+  - kind: try
+    title: Your turn with ILIKE
+    body: |
+      Find the `name` of every attraction with **temple** anywhere in its name, whatever the capitalization.
+
+      Try `LIKE '%temple%'` first. Why does it find nothing?
+    sql: |
+      SELECT name
+      FROM attractions;
+    expect: |
+      SELECT name
+      FROM attractions
+      WHERE name ILIKE '%temple%';
+
+  - kind: explain
+    title: ORDER BY sorts the result
+    body: |
+      Without `ORDER BY`, PostgreSQL returns rows in whatever order is convenient, and that order can change between runs. When order matters, **say so**:
+
+      ```sql
+      SELECT name, population
+      FROM cities
+      ORDER BY population DESC;
+      ```
+
+      - `ASC` = ascending (smallest first, A→Z, oldest first). It's the default.
+      - `DESC` = descending (largest first, Z→A, newest first).
+      - Add more columns as **tiebreakers**: `ORDER BY entry_fee, name` sorts by fee, and among equal fees by name. Each column can have its own direction.
+
+  - kind: try
+    title: Your turn to sort
+    body: |
+      List every attraction's `name` and `entry_fee`, **cheapest first**. Several attractions are free, so break ties **alphabetically by name**.
+    sql: |
+      SELECT name, entry_fee
+      FROM attractions;
+    expect: |
+      SELECT name, entry_fee
+      FROM attractions
+      ORDER BY entry_fee, name;
+    ordered: true
+
+  - kind: explain
+    title: LIMIT and OFFSET
+    body: |
+      - **`LIMIT n`** returns at most *n* rows.
+      - **`OFFSET m`** skips the first *m* rows before returning any.
+
+      Together they **page** through results: page 1 is `LIMIT 10`, page 2 is `LIMIT 10 OFFSET 10`, and so on.
+
+      **Always pair them with `ORDER BY`.** "The first 3 rows" means nothing until you've said what order they're in.
+
+  - kind: try
+    title: Your turn for a top 3
+    body: |
+      Return the `name` and `entry_fee` of the **3 most expensive** attractions, most expensive first.
+    sql: |
+      SELECT name, entry_fee
+      FROM attractions;
+    expect: |
+      SELECT name, entry_fee
+      FROM attractions
+      ORDER BY entry_fee DESC
+      LIMIT 3;
+    ordered: true
+
+  - kind: explain
+    title: DISTINCT removes duplicates
+    body: |
+      `SELECT continent FROM countries;` returns 5 rows: *Asia, Europe, Asia, South America, Europe*. Some repeat.
+
+      `SELECT DISTINCT continent FROM countries;` returns each **different** value once.
+
+      DISTINCT applies to the **whole result row**, not just the first column. `SELECT DISTINCT city_id, category …` removes rows only where *both* the city *and* the category repeat.
+
+  - kind: try
+    title: Your turn with DISTINCT
+    body: |
+      Which **categories** of attraction does Wanderly list? Return each category once.
+    sql: |
+      SELECT category
+      FROM attractions;
+    expect: |
+      SELECT DISTINCT category
+      FROM attractions;
+
+  - kind: explain
+    title: Aliases and calculated columns
+    body: |
+      A column in SELECT can be a **calculation**, and **`AS`** gives any result column a new label:
+
+      ```sql
+      SELECT name AS attraction,
+             entry_fee * 2 AS fee_for_two
+      FROM attractions;
+      ```
+
+      - `+` `-` `*` `/` work as in maths. (Between two values `*` means multiply; right after SELECT it means "all columns".)
+      - The calculation exists **only in the result**. The stored data doesn't change.
+      - **Whole-number division drops the remainder**: `7 / 2` is `3`. If either side has decimals (`7.0 / 2`), you get `3.5`.
+      - `AS` is technically optional, which is why a **missing comma** silently turns the next column name into a label: `SELECT name continent` returns *one* column labeled continent. Always write `AS`.
+      - Need spaces or capitals in a label? Use double quotes: `AS "Entry Fee"`.
+
+  - kind: try
+    title: Your turn to calculate
+    body: |
+      Show each attraction's `name` and its entry fee in **cents** (the fee times 100), labeled **fee_cents**.
+    sql: |
+      SELECT name, entry_fee
+      FROM attractions;
+    expect: |
+      SELECT name, entry_fee * 100 AS fee_cents
+      FROM attractions;
+
+  - kind: explain
+    title: The order a query really runs in
+    body: |
+      You *write* a query in this order:
+
+      **SELECT → FROM → WHERE → ORDER BY → LIMIT**
+
+      But PostgreSQL *evaluates* it in this order:
+
+      **FROM → WHERE → SELECT → ORDER BY → LIMIT**
+
+      1. **FROM**: pick the table.
+      2. **WHERE**: keep matching rows.
+      3. **SELECT**: build the output columns, including calculations and aliases.
+      4. **ORDER BY**: sort.
+      5. **LIMIT / OFFSET**: cut.
+
+      This explains a classic puzzle: an alias made in SELECT **works in ORDER BY** (which runs after SELECT) but **not in WHERE** (which runs before it, when the alias doesn't exist yet).
+
+  - kind: try
+    title: Where aliases work
+    body: |
+      This sorts by the alias `fee_cents`, and it works. Run it.
+
+      Now add `WHERE fee_cents > 2000` after FROM and run again. The error, *column "fee_cents" does not exist*, is WHERE running before SELECT. Fix it by writing the calculation itself: `WHERE entry_fee * 100 > 2000`.
+    sql: |
+      SELECT name, entry_fee * 100 AS fee_cents
+      FROM attractions
+      ORDER BY fee_cents DESC;
+
+  - kind: why
+    body: |
+      Choosing columns, filtering rows, sorting and taking the top few is most of what everyday SQL *is*. "The 10 most expensive…", "every completed trip since March…", "which categories exist…": you can answer all of them now.
+
+  - kind: recap
+    body: |
+      - `SELECT cols FROM table` reads data. `*` = all columns. Prefer naming them.
+      - `WHERE` keeps rows where the condition is true: `= <> < > <= >=`, `AND` before `OR` (use parentheses), `NOT`.
+      - `IN (list)`, `BETWEEN a AND b` (inclusive), `LIKE` with `%` and `_`, `ILIKE` ignores case.
+      - `ORDER BY col [DESC], tiebreaker`. `LIMIT n OFFSET m`, always with ORDER BY.
+      - `DISTINCT` removes duplicate result rows.
+      - `expr AS label` makes calculated columns. Integer ÷ integer drops the remainder.
+      - Evaluation order: **FROM → WHERE → SELECT → ORDER BY → LIMIT**. That's why aliases work in ORDER BY but not WHERE.

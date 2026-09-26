@@ -1,6 +1,6 @@
 id: postgresql
 title: PostgreSQL
-tagline: Question real data with SQL, from your first SELECT to window functions.
+tagline: Question real data with SQL, from your first SELECT to production-grade PostgreSQL.
 color: "#2563eb"
 engine: postgres
 engine_version: "18"

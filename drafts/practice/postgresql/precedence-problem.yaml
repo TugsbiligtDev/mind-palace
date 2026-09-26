@@ -1,5 +1,5 @@
 difficulty: hard
-topic: postgresql/beginner/03-where
+topic: postgresql/beginner/07-null
 concepts: [AND, OR, parentheses, "NULL"]
 title: The Precedence Problem
 briefing: |

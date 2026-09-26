@@ -1,0 +1,52 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which order goes from the **biggest** container to the **smallest**?
+    options:
+      - database → cluster → table → schema
+      - cluster → database → schema → table
+      - cluster → schema → database → table
+      - table → schema → database → cluster
+    answer: 1
+    explanation: A cluster (one server) holds databases, each database holds schemas like `public`, and each schema holds tables.
+
+  - type: mcq
+    prompt: "You created a table with `CREATE TABLE \"GuestBook\" (entry text);`. Which query reads it?"
+    options:
+      - "`SELECT * FROM GuestBook;`"
+      - "`SELECT * FROM guestbook;`"
+      - "`SELECT * FROM \"GuestBook\";`"
+      - All three
+    answer: 2
+    explanation: The name was created in double quotes with capitals, so it must be quoted exactly. Unquoted `GuestBook` folds to `guestbook`, which doesn't exist.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      CREATE TABLE archive_notes (note text);
+      SELECT count(*) FROM archive_notes;
+    options:
+      - "0"
+      - "1"
+      - "NULL"
+      - An error, because the table is empty
+    answer: 0
+    explanation: A new table has columns but no rows. Counting its rows gives 0, not an error.
+
+  - type: fill
+    prompt: Delete the table `suspects`, but don't raise an error if it isn't there.
+    code: |
+      DROP TABLE ____ suspects;
+    answer: IF EXISTS
+    accept: ["if exists"]
+    explanation: "`DROP TABLE IF EXISTS` only drops the table if it exists, so a script can run safely more than once."
+
+  - type: mcq
+    prompt: Which table name follows PostgreSQL conventions best?
+    options:
+      - "`\"TripStops\"`"
+      - "`Trip Stops`"
+      - "`trip_stops`"
+      - "`TRIPSTOPS`"
+    answer: 2
+    explanation: Lowercase snake_case never needs quotes and reads clearly. Spaces aren't allowed without quotes, and quoted capitals must be quoted forever.

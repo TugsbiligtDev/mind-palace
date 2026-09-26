@@ -1,0 +1,54 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT date_trunc('month', '2026-02-20 23:40:00+00'::timestamptz)::date AS month;
+    options:
+      - "2026-02-20"
+      - "2026-02-01"
+      - "2026-03-01"
+      - "2026-01-01"
+    answer: 1
+    explanation: date_trunc('month', …) cuts the moment down to the first day of its month.
+
+  - type: mcq
+    prompt: Your monthly report skips months with no sales. What's the standard fix?
+    options:
+      - Add ORDER BY
+      - Generate every month with generate_series, LEFT JOIN the data onto it, and COALESCE empty totals to 0
+      - Use UNION ALL
+      - Use HAVING count(*) >= 0
+    answer: 1
+    explanation: Months with no rows can't appear from the data alone. A generated calendar on the left side of a LEFT JOIN keeps them.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT count(*) AS months
+      FROM generate_series('2026-01-01'::date, '2026-06-01'::date, interval '1 month');
+    options:
+      - "5"
+      - "6"
+      - "7"
+      - "1"
+    answer: 1
+    explanation: generate_series includes both ends, so January through June is 6 months.
+
+  - type: fill
+    prompt: Sum only the card payments in this column.
+    code: |
+      SELECT sum(amount) ____ (WHERE method = 'card') AS card FROM payments;
+    answer: FILTER
+    accept: ["filter"]
+    explanation: "`FILTER (WHERE …)` makes an aggregate include only the matching rows. It's the neat way to pivot categories into columns."
+
+  - type: mcq
+    prompt: "In the output of `GROUP BY ROLLUP (method)`, what does a row with `method` = NULL mean?"
+    options:
+      - Payments with no method recorded
+      - The grand total across all methods
+      - An error row
+      - The average
+    answer: 1
+    explanation: ROLLUP adds a total row, and the rolled-up column shows NULL, meaning "all methods".

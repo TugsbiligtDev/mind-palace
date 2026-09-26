@@ -1,0 +1,166 @@
+steps:
+  - kind: explain
+    title: Changing what's already there
+    body: |
+      - **`UPDATE`** changes values in rows that already exist.
+      - **`DELETE`** removes rows.
+
+      Both are **permanent the moment they run** on a real database. There's no undo button in psql. (Module 30 covers transactions, the safety net.) This module is as much about **habits** as syntax.
+
+      Here in the browser, every run starts from a fresh copy, so experiment freely.
+
+  - kind: explain
+    title: UPDATE … SET … WHERE
+    body: |
+      ```sql
+      UPDATE trips
+      SET status = 'cancelled'
+      WHERE trip_id = 6;
+      ```
+
+      - **`SET`** gives the new values. Change several columns at once with commas: `SET status = 'completed', end_date = '2026-09-03'`.
+      - **`WHERE`** picks **which rows** to change, exactly like in SELECT.
+      - A new value can use the old one: `SET nights = nights + 1` adds a night to every matching row.
+
+  - kind: try
+    title: Cancel one trip
+    body: |
+      Run it. RETURNING shows the changed row with its **new** values. One row back means one row changed.
+    sql: |
+      UPDATE trips
+      SET status = 'cancelled'
+      WHERE trip_id = 6
+      RETURNING trip_id, trip_name, status;
+
+  - kind: explain
+    title: The forgotten WHERE
+    body: |
+      **Forget the WHERE and every row changes.** This is the most famous mistake in SQL, and it has wrecked real companies' data. PostgreSQL won't ask "are you sure?"
+
+      Habits that prevent it:
+
+      1. **Write the WHERE first**, then go back and fill in the SET.
+      2. **Run it as a SELECT first**: `SELECT * FROM trips WHERE trip_id = 6;` shows exactly which rows you're about to touch.
+      3. **Check the count.** psql answers `UPDATE 1`. If you expected 1 and see `UPDATE 7`, something is wrong.
+
+  - kind: try
+    title: Watch the disaster (safely)
+    body: |
+      No WHERE. Run it and look at the SELECT underneath: **every** attraction is now free. On your Mac, that would be real.
+    sql: |
+      UPDATE attractions SET entry_fee = 0;
+      SELECT name, entry_fee FROM attractions;
+
+  - kind: try
+    title: Your turn to update
+    body: |
+      The Colosseum raised its fee. The starter is the "SELECT first" check. Turn it into an UPDATE that sets its `entry_fee` to **20.00**, changing **only that row**, and returns its `name` and `entry_fee`.
+    sql: |
+      SELECT name, entry_fee
+      FROM attractions
+      WHERE name = 'Colosseum';
+    expect: |
+      UPDATE attractions
+      SET entry_fee = 20.00
+      WHERE name = 'Colosseum'
+      RETURNING name, entry_fee;
+
+  - kind: try
+    title: Your turn with two columns
+    body: |
+      Erik's *Weekend in Paris* (trip 6) is over. In one UPDATE, set its `status` to **completed** and its `end_date` to **2026-09-03**. Return `trip_name`, `status` and `end_date`.
+    sql: |
+      UPDATE trips
+      SET status = 'completed'
+      WHERE trip_id = 6
+      RETURNING trip_name, status, end_date;
+    expect: |
+      UPDATE trips
+      SET status = 'completed', end_date = '2026-09-03'
+      WHERE trip_id = 6
+      RETURNING trip_name, status, end_date;
+
+  - kind: explain
+    title: DELETE … WHERE
+    body: |
+      ```sql
+      DELETE FROM reviews
+      WHERE rating < 4;
+      ```
+
+      Removes every row matching the WHERE. **Without WHERE it removes all of them**, with the same danger and the same habits: write the WHERE first, SELECT first, check the count.
+
+      `RETURNING` works here too and shows the rows that were removed, which makes a handy receipt.
+
+  - kind: try
+    title: A delete with a receipt
+    body: |
+      Delete the reviews that aren't 5 stars. RETURNING lists what's gone. Then change the SQL to `SELECT` first, the way you would on your Mac.
+    sql: |
+      DELETE FROM reviews
+      WHERE rating < 5
+      RETURNING review_id, rating;
+
+  - kind: try
+    title: Protected by a foreign key
+    body: |
+      Some deletes are refused. Amina (traveler 1) has trips, and each trip points at traveler 1. Deleting that row would leave those trips pointing at nobody.
+
+      Run it and read the error: it names the rule and the table that depends on traveler 1. (Module 13 explains these *foreign keys* properly.)
+    sql: |
+      DELETE FROM travelers WHERE traveler_id = 1;
+    expect_error: true
+
+  - kind: explain
+    title: TRUNCATE empties a table
+    body: |
+      ```sql
+      TRUNCATE reviews;
+      ```
+
+      **`TRUNCATE`** removes **every row** in one fast operation. It takes no WHERE: it's for "throw everything in this table away", like clearing out test data.
+
+      | | `DELETE FROM t` | `TRUNCATE t` |
+      |---|---|---|
+      | WHERE allowed | yes | no, always everything |
+      | RETURNING | yes | no |
+      | Speed on big tables | slower (row by row) | very fast |
+
+      Either way, the table itself still exists, just empty. `DROP TABLE` is what removes the table.
+
+  - kind: try
+    title: Empty the reviews
+    body: |
+      Run it. The count afterwards is 0, but the table is still there.
+    sql: |
+      TRUNCATE reviews;
+      SELECT count(*) FROM reviews;
+
+  - kind: info
+    title: "🔹 DELETE … USING"
+    body: |
+      Sometimes the rows to delete are decided by **another table**. PostgreSQL's `USING` lets you look at it:
+
+      ```sql
+      -- Delete reviews written by travelers from Ulaanbaatar
+      DELETE FROM reviews
+      USING travelers
+      WHERE reviews.traveler_id = travelers.traveler_id
+        AND travelers.home_city = 'Ulaanbaatar';
+      ```
+
+      It will make more sense after joins in Module 14. For now, just recognize it.
+
+  - kind: why
+    body: |
+      Reading data can't hurt anything. Changing it can. The skills here are really about **care**: see before you change, change exactly what you meant, and confirm what changed.
+
+  - kind: recap
+    body: |
+      - `UPDATE t SET col = value, … WHERE …`. A value can use the old one: `nights + 1`.
+      - `DELETE FROM t WHERE …`.
+      - **No WHERE = every row.** Write the WHERE first, SELECT first, check the count.
+      - `RETURNING` shows the changed or removed rows.
+      - Foreign keys refuse deletes that would leave orphans.
+      - `TRUNCATE t` empties the whole table fast. The table stays.
+      - 🔹 `DELETE … USING other_table` deletes based on another table.

@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/06-functions
+topic: postgresql/beginner/09-functions
 concepts: [COALESCE, "NULL"]
 title: Who's Reachable?
 briefing: |

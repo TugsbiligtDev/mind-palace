@@ -1,5 +1,5 @@
 difficulty: easy
-topic: postgresql/beginner/07-aggregation
+topic: postgresql/beginner/10-aggregation
 concepts: [COUNT, WHERE]
 title: Count the Keys
 briefing: |

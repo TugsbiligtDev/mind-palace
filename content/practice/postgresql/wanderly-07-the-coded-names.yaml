@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/06-functions
+topic: postgresql/beginner/09-functions
 concepts: [text functions, COALESCE, CASE]
 series: { name: The Wanderly Files, episode: 7 }
 title: The Coded Names

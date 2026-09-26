@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/08-writing-data
+topic: postgresql/beginner/05-inserting-data
 concepts: [INSERT, multi-row insert]
 title: Lost and Found
 briefing: |

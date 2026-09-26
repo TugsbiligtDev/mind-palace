@@ -1,0 +1,4 @@
+title: Normalization
+module: 17
+summary: Why one big table goes wrong, functional dependencies in plain English, 1NF, 2NF and 3NF with worked examples, and the classic design mistakes.
+minutes: 40

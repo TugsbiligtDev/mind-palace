@@ -1,4 +1,0 @@
-title: "Aggregation: GROUP BY and HAVING"
-module: 7
-summary: Count, sum and average across rows, summarize per group, filter groups with HAVING, and learn the order a query really runs in.
-minutes: 35

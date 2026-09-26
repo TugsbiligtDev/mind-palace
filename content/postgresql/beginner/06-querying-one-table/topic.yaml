@@ -1,0 +1,4 @@
+title: Querying One Table
+module: 6
+summary: Choose columns, filter rows with WHERE, sort, take the top few, remove duplicates, rename and calculate columns, and learn the order a query really runs in.
+minutes: 45

@@ -1,5 +1,5 @@
 difficulty: easy
-topic: postgresql/beginner/04-order-by
+topic: postgresql/beginner/06-querying-one-table
 concepts: [ORDER BY, LIMIT]
 title: The Three Cheapest Rooms
 briefing: |

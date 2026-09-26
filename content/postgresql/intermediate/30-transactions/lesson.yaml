@@ -1,0 +1,176 @@
+steps:
+  - kind: explain
+    title: Two changes that must happen together
+    body: |
+      A traveler moves 100 of credit from one trip to another. That's two UPDATEs: take 100 off trip A, add 100 to trip B.
+
+      What if the power fails **between** them? The 100 vanishes. What if someone reads the totals halfway through? They see money missing.
+
+      A **transaction** groups statements into **one unit of work**: either **all** of them happen, or **none** do. Nobody else ever sees the half-done state.
+
+  - kind: explain
+    title: ACID, in plain terms
+    body: |
+      Transactions give four guarantees, known as **ACID**:
+
+      | Letter | Name | Plain meaning |
+      |---|---|---|
+      | **A** | Atomicity | All or nothing. No half-finished changes. |
+      | **C** | Consistency | Every rule (constraints, foreign keys) holds when it's done. |
+      | **I** | Isolation | Transactions running at the same time don't see each other's half-done work (Module 31). |
+      | **D** | Durability | Once committed, it survives a crash or power cut. |
+
+  - kind: explain
+    title: BEGIN, COMMIT, ROLLBACK
+    body: |
+      ```sql
+      BEGIN;
+      UPDATE accounts SET balance = balance - 100 WHERE name = 'A';
+      UPDATE accounts SET balance = balance + 100 WHERE name = 'B';
+      COMMIT;
+      ```
+
+      - **`BEGIN`** starts a transaction.
+      - **`COMMIT`** makes all its changes permanent and visible to everyone.
+      - **`ROLLBACK`** throws all its changes away, as if they never happened.
+
+      **Autocommit:** without BEGIN, PostgreSQL wraps **each statement** in its own tiny transaction and commits it immediately. That's why, in Module 8, an UPDATE was permanent the moment it ran. BEGIN is how you get an undo button.
+
+  - kind: try
+    title: Your undo button
+    body: |
+      Inside the transaction, every attraction becomes free. The first SELECT shows it. Then ROLLBACK, and the second SELECT shows the fees are back.
+    sql: |
+      BEGIN;
+      UPDATE attractions SET entry_fee = 0;
+      SELECT count(*) AS free_inside FROM attractions WHERE entry_fee = 0;
+      ROLLBACK;
+
+      SELECT count(*) AS free_after FROM attractions WHERE entry_fee = 0;
+
+  - kind: try
+    title: Your turn to move money safely
+    body: |
+      Move **100** from account `A` to account `B` inside a transaction, commit it, then show both balances. Both should total 500 before and after.
+    sql: |
+      CREATE TABLE accounts (name text PRIMARY KEY, balance numeric(8,2) NOT NULL CHECK (balance >= 0));
+      INSERT INTO accounts VALUES ('A', 300), ('B', 200);
+
+      SELECT * FROM accounts ORDER BY name;
+    expect: |
+      CREATE TABLE accounts (name text PRIMARY KEY, balance numeric(8,2) NOT NULL CHECK (balance >= 0));
+      INSERT INTO accounts VALUES ('A', 300), ('B', 200);
+
+      BEGIN;
+      UPDATE accounts SET balance = balance - 100 WHERE name = 'A';
+      UPDATE accounts SET balance = balance + 100 WHERE name = 'B';
+      COMMIT;
+
+      SELECT * FROM accounts ORDER BY name;
+
+  - kind: explain
+    title: When something fails inside
+    body: |
+      If any statement inside a transaction fails, PostgreSQL marks the **whole transaction as failed**. Every command after that is refused:
+
+      ```text
+      ERROR:  current transaction is aborted, commands ignored until end of transaction block
+      ```
+
+      It isn't a new problem. It's PostgreSQL protecting you: part of your unit of work failed, so continuing would build on a broken state. The only way out is **`ROLLBACK`** (even typing COMMIT just rolls back). Then fix the cause and run the whole transaction again.
+
+      This page stops at the first error, so try this one on your Mac.
+
+  - kind: mac
+    title: See an aborted transaction
+    body: |
+      Run these one at a time in psql. After the division by zero, even `SELECT 1;` is refused, until ROLLBACK. Watch the prompt: `=*#` means you're in a transaction, and `=!#` means it has failed.
+    commands: |
+      psql learn_sql
+      BEGIN;
+      UPDATE trips SET status = 'cancelled' WHERE trip_id = 6;
+      SELECT 1 / 0;
+      SELECT 1;
+      ROLLBACK;
+      SELECT status FROM trips WHERE trip_id = 6;
+      \q
+
+  - kind: explain
+    title: SAVEPOINT
+    body: |
+      A **savepoint** is a bookmark inside a transaction. You can roll back **to** it, undoing only the work since, and carry on:
+
+      ```sql
+      BEGIN;
+      INSERT INTO …;               -- keep this
+      SAVEPOINT before_risky;
+      UPDATE …;                    -- maybe undo this
+      ROLLBACK TO SAVEPOINT before_risky;
+      COMMIT;                      -- the INSERT is kept
+      ```
+
+      Rolling back to a savepoint also **clears a failed state**, so it's how apps retry one step without losing the whole transaction.
+
+  - kind: try
+    title: Your turn with a savepoint
+    body: |
+      Inside one transaction: add the country **Chile** (South America), set a savepoint called **before_mistake**, run the bad UPDATE, roll back **to the savepoint**, then commit. The final count of South American countries should be 2 (Peru and Chile), and Asia should still have 2.
+    sql: |
+      BEGIN;
+      INSERT INTO countries (name, continent) VALUES ('Chile', 'South America');
+      UPDATE countries SET continent = 'South America';
+      COMMIT;
+
+      SELECT continent, count(*) FROM countries GROUP BY continent ORDER BY continent;
+    expect: |
+      BEGIN;
+      INSERT INTO countries (name, continent) VALUES ('Chile', 'South America');
+      SAVEPOINT before_mistake;
+      UPDATE countries SET continent = 'South America';
+      ROLLBACK TO SAVEPOINT before_mistake;
+      COMMIT;
+
+      SELECT continent, count(*) FROM countries GROUP BY continent ORDER BY continent;
+    ordered: true
+
+  - kind: explain
+    title: Even CREATE TABLE can be undone
+    body: |
+      In PostgreSQL, changes to **structure** are transactional too: CREATE TABLE, ALTER TABLE and DROP TABLE can be rolled back. Many other databases can't do this.
+
+      That makes risky changes safer: run the migration inside BEGIN, check the result, then COMMIT or ROLLBACK (Module 39).
+
+  - kind: try
+    title: Roll back a DROP
+    body: |
+      The reviews table is dropped inside a transaction, then the transaction is rolled back. Run it: the table and its 7 rows are still there.
+    sql: |
+      BEGIN;
+      DROP TABLE reviews;
+      ROLLBACK;
+
+      SELECT count(*) FROM reviews;
+
+  - kind: explain
+    title: Keep transactions short
+    body: |
+      While a transaction is open, it **holds locks** on the rows it changed (other sessions wanting them must wait, Module 31) and stops PostgreSQL from cleaning up old row versions (Module 43).
+
+      So:
+
+      - **Do the work, then commit.** Don't open a transaction and then wait for a person to click something.
+      - **Don't leave psql sitting in `BEGIN`** while you go to lunch. That session shows up as *idle in transaction*, a classic cause of slowdowns.
+      - **Do slow preparation (like reading files or calling other services) before BEGIN,** not inside it.
+
+  - kind: why
+    body: |
+      Money transfers, checkouts and bookings all change several rows that must agree. Transactions are what make those changes safe against crashes, errors and other users. And in psql, BEGIN is your undo button before any risky change.
+
+  - kind: recap
+    body: |
+      - A transaction is all-or-nothing: **ACID** (atomic, consistent, isolated, durable).
+      - `BEGIN` … `COMMIT` keeps the changes, `ROLLBACK` discards them. Without BEGIN, each statement autocommits.
+      - After an error inside a transaction, everything is refused ("current transaction is aborted") until `ROLLBACK`.
+      - `SAVEPOINT name` / `ROLLBACK TO SAVEPOINT name` undoes part of the work.
+      - In PostgreSQL, DDL (CREATE, ALTER, DROP) can be rolled back too.
+      - Keep transactions short. Never leave a session *idle in transaction*.

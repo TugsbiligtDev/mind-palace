@@ -2,13 +2,19 @@ id: advanced
 title: Advanced
 season: 3
 season_title: Coming soon
-season_pitch: Practical, real-world skills. Views, indexes, window functions, JSON, everyday operations, and a capstone.
+season_pitch: Senior-level design trade-offs, safe production changes, performance tuning, vacuum, and multi-tenant security, plus an optional operations track.
 status: coming_soon
 topics: []
 planned:
-  - "Module 16: Views"
-  - "Module 17: Indexes and Basic Performance"
-  - "Module 18: Window Functions"
-  - "Module 19: Working With JSON"
-  - "Module 20: Everyday Operational Skills"
-  - "Module 21: Capstone"
+  - "Module 40: Design Patterns & Trade-offs"
+  - "Module 41: Safe Schema Changes in Production"
+  - "Module 42: Query Optimization & Troubleshooting"
+  - "Module 43: Vacuum, Bloat & MVCC in Practice"
+  - "Module 44: Partitioning"
+  - "Module 45: Advanced Security"
+  - "Module 46: Extensions & Search"
+  - "Module 47 (optional): Configuration & Connection Management"
+  - "Module 48 (optional): Backup & Point-in-Time Recovery"
+  - "Module 49 (optional): Replication & High Availability"
+  - "Module 50 (optional): Monitoring"
+  - "Module 51 (optional): Upgrades & Managed Postgres"

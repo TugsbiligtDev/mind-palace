@@ -1,0 +1,4 @@
+title: Changing Table Structure
+module: 15
+summary: Add, drop and rename columns, change a column's type, add rules to tables that already hold data, and why DROP … CASCADE deserves respect.
+minutes: 30

@@ -1,0 +1,220 @@
+steps:
+  - kind: explain
+    title: Insert it, unless it's already there
+    body: |
+      Data often arrives without you knowing whether it's **new** or an **update**: a nightly price feed, a sign-up form submitted twice, stock counts from a warehouse.
+
+      Checking first ("SELECT, then INSERT or UPDATE") is slow and, with several users at once, unsafe: two sessions can both see "not there" and both insert (Module 31).
+
+      An **upsert** (update + insert) does it in **one** statement, safely:
+
+      ```sql
+      INSERT INTO countries (name, continent)
+      VALUES ('Japan', 'Asia')
+      ON CONFLICT (name) DO NOTHING;
+      ```
+
+      `ON CONFLICT (name)` names the column whose uniqueness decides "already there". It **must have a UNIQUE constraint or be the primary key** (Module 12). Without that rule, there's no way to detect a conflict.
+
+  - kind: try
+    title: DO NOTHING
+    body: |
+      Japan already exists, so the first insert is skipped quietly. RETURNING shows nothing for it. Chile is new, so it goes in. Run it.
+    sql: |
+      INSERT INTO countries (name, continent)
+      VALUES ('Japan', 'Asia'), ('Chile', 'South America')
+      ON CONFLICT (name) DO NOTHING
+      RETURNING *;
+
+  - kind: explain
+    title: DO UPDATE and EXCLUDED
+    body: |
+      To **update** the existing row instead:
+
+      ```sql
+      INSERT INTO countries (name, continent)
+      VALUES ('Peru', 'Americas')
+      ON CONFLICT (name) DO UPDATE
+        SET continent = EXCLUDED.continent;
+      ```
+
+      **`EXCLUDED`** is the row you *tried* to insert. The table's own name refers to the row already there. So you can combine them:
+
+      ```sql
+      ON CONFLICT (item) DO UPDATE
+        SET qty = stock.qty + EXCLUDED.qty     -- add to the existing count
+      ```
+
+      You can also add a WHERE to update only sometimes: `… DO UPDATE SET price = EXCLUDED.price WHERE EXCLUDED.price <> products.price`.
+
+  - kind: try
+    title: Update on conflict
+    body: |
+      Peru exists, so its continent is overwritten. Run it. Then change `'Peru'` to `'Bolivia'`: this time it's a plain insert.
+    sql: |
+      INSERT INTO countries (name, continent)
+      VALUES ('Peru', 'Americas')
+      ON CONFLICT (name) DO UPDATE SET continent = EXCLUDED.continent
+      RETURNING *;
+
+  - kind: try
+    title: No unique rule, no upsert
+    body: |
+      `continent` isn't unique, so PostgreSQL can't tell what a "conflict" would be. Run it and read the error.
+    sql: |
+      INSERT INTO countries (name, continent)
+      VALUES ('Egypt', 'Africa')
+      ON CONFLICT (continent) DO NOTHING;
+    expect_error: true
+
+  - kind: try
+    title: Your turn to upsert stock
+    body: |
+      The gift shop's stock table starts with 5 maps. A delivery brings **3 more maps** and **10 postcards** (a new item). Change the INSERT so an existing item's quantity is **increased** by the delivered amount, and new items are inserted.
+    sql: |
+      CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL);
+      INSERT INTO stock VALUES ('map', 5);
+
+      INSERT INTO stock (item, qty)
+      VALUES ('map', 3), ('postcard', 10);
+
+      SELECT * FROM stock ORDER BY item;
+    broken_starter: true
+    expect: |
+      CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL);
+      INSERT INTO stock VALUES ('map', 5);
+
+      INSERT INTO stock (item, qty)
+      VALUES ('map', 3), ('postcard', 10)
+      ON CONFLICT (item) DO UPDATE SET qty = stock.qty + EXCLUDED.qty;
+
+      SELECT * FROM stock ORDER BY item;
+
+  - kind: explain
+    title: MERGE
+    body: |
+      **`MERGE`** (SQL standard, PostgreSQL 15+) compares a **source** of rows with a **target** table and decides, per row, what to do:
+
+      ```sql
+      MERGE INTO attractions a
+      USING new_fees f ON a.name = f.name
+      WHEN MATCHED AND f.fee IS NULL THEN DELETE
+      WHEN MATCHED THEN UPDATE SET entry_fee = f.fee
+      WHEN NOT MATCHED THEN INSERT (name, city_id, category, entry_fee)
+                            VALUES (f.name, f.city_id, f.category, f.fee);
+      ```
+
+      Compared with ON CONFLICT:
+
+      - MERGE can **delete** as well as insert and update, with a separate rule for each case.
+      - Matching is on **any condition**. It doesn't need a unique constraint.
+      - But it's **not** protected against two sessions inserting the same new row at once. For "insert or update one row" from an app, ON CONFLICT is safer and simpler.
+
+      Since PostgreSQL 17, MERGE supports RETURNING, and `merge_action()` tells you what happened to each row.
+
+  - kind: try
+    title: Sync a fee list
+    body: |
+      A new fee list arrives: Colosseum goes up, Louvre keeps its current fee, and *Tokyo Tower* doesn't exist yet. Run it and read the `merge_action()` column.
+    sql: |
+      CREATE TABLE new_fees (name text, city_id integer, category text, fee numeric(6,2));
+      INSERT INTO new_fees VALUES
+        ('Colosseum', 6, 'landmark', 20.00),
+        ('Louvre Museum', 3, 'museum', 22.00),
+        ('Tokyo Tower', 1, 'landmark', 12.00);
+
+      MERGE INTO attractions a
+      USING new_fees f ON a.name = f.name
+      WHEN MATCHED THEN UPDATE SET entry_fee = f.fee
+      WHEN NOT MATCHED THEN INSERT (name, city_id, category, entry_fee)
+                            VALUES (f.name, f.city_id, f.category, f.fee)
+      RETURNING merge_action(), a.name, a.entry_fee;
+
+  - kind: explain
+    title: COPY and \copy
+    body: |
+      For thousands or millions of rows, INSERT is slow. **`COPY`** loads (or exports) a whole file in one fast stream:
+
+      ```sql
+      COPY travelers (full_name, email, home_city)
+      FROM '/path/on/the/server/travelers.csv'
+      WITH (FORMAT csv, HEADER true);
+      ```
+
+      The catch: `COPY … FROM 'file'` reads the file **on the database server's disk**, and needs special permission. When the server is in the cloud, your laptop's files aren't there.
+
+      psql's **`\copy`** looks the same but reads and writes files **on your computer** and streams them to the server. It's what you'll use almost always:
+
+      ```text
+      \copy travelers (full_name, email, home_city) FROM 'travelers.csv' WITH (FORMAT csv, HEADER true)
+      \copy (SELECT * FROM payments) TO 'payments.csv' WITH (FORMAT csv, HEADER true)
+      ```
+
+      `\copy` is a meta-command, so it must fit on **one line**, with no semicolon.
+
+  - kind: mac
+    title: Import and export a CSV
+    body: |
+      Make a tiny CSV file, load it into a new table, then export a query to a file. (`printf` just writes the file for you.)
+    commands: |
+      cd ~/Documents/sql
+      printf 'name,city\nAnu,Rome\nBat,Paris\n' > guests.csv
+      psql learn_sql
+      CREATE TABLE guests_import (name text, city text);
+      \copy guests_import FROM 'guests.csv' WITH (FORMAT csv, HEADER true)
+      SELECT * FROM guests_import;
+      \copy (SELECT * FROM payments ORDER BY paid_at) TO 'payments.csv' WITH (FORMAT csv, HEADER true)
+      \q
+      open payments.csv
+
+  - kind: explain
+    title: When imports go wrong
+    body: |
+      Real files are messy. COPY stops at the **first bad row** and loads **nothing**. The usual culprits:
+
+      | Problem | Symptom | Fix |
+      |---|---|---|
+      | **Encoding** | `invalid byte sequence for encoding "UTF8"` | The file isn't UTF-8 (often Excel's Latin-1). Add `ENCODING 'LATIN1'`, or re-save as UTF-8. |
+      | **Date formats** | `date/time field value out of range: "15/03/2026"` | Is it day/month or month/day? Load as text, then convert with `to_date(col, 'DD/MM/YYYY')`. |
+      | **Empty vs. NULL** | Empty strings where you expected NULL, or the reverse | In CSV, an unquoted empty field is NULL and `""` is empty text. `NULL 'N/A'` treats N/A as NULL. |
+      | **Stray text in numbers** | `invalid input syntax for type numeric: "$19.99"` | Load as text, then clean (Module 26). |
+
+      The professional pattern: **load into a staging table where every column is `text`** (it can't fail), then clean and convert with `INSERT … SELECT` into the real table. Bad rows can then be found with a query instead of stopping the load.
+
+  - kind: try
+    title: Your turn to convert a staging table
+    body: |
+      The raw rows are in `staging` as text. Dates are `DD/MM/YYYY`, and an **empty** price means unknown. Insert them into `clean` with real types, then run the SELECT.
+
+      You'll need `to_date(sold_on, 'DD/MM/YYYY')` and `NULLIF(price, '')::numeric`.
+    sql: |
+      CREATE TABLE staging (item text, sold_on text, price text);
+      INSERT INTO staging VALUES ('map', '15/03/2026', '4.50'), ('pin', '02/04/2026', '');
+
+      CREATE TABLE clean (item text, sold_on date, price numeric(8,2));
+      INSERT INTO clean
+      SELECT item, sold_on::date, price::numeric FROM staging;
+
+      SELECT * FROM clean ORDER BY item;
+    broken_starter: true
+    expect: |
+      CREATE TABLE staging (item text, sold_on text, price text);
+      INSERT INTO staging VALUES ('map', '15/03/2026', '4.50'), ('pin', '02/04/2026', '');
+
+      CREATE TABLE clean (item text, sold_on date, price numeric(8,2));
+      INSERT INTO clean
+      SELECT item, to_date(sold_on, 'DD/MM/YYYY'), NULLIF(price, '')::numeric FROM staging;
+
+      SELECT * FROM clean ORDER BY item;
+
+  - kind: why
+    body: |
+      Data rarely arrives one polite row at a time. Feeds, exports, spreadsheets from partners and nightly syncs all need bulk loading and "insert or update" logic, and the staging-table habit turns a failed 2 a.m. import into a query you can fix in the morning.
+
+  - kind: recap
+    body: |
+      - `INSERT … ON CONFLICT (col) DO NOTHING` / `DO UPDATE SET col = EXCLUDED.col`. The conflict column needs a UNIQUE or PK rule.
+      - `EXCLUDED` = the row you tried to insert. The table name = the existing row.
+      - `MERGE INTO target USING source ON … WHEN MATCHED … WHEN NOT MATCHED …` can also delete, and matches on any condition. ON CONFLICT is safer for single-row app upserts.
+      - `COPY` reads files on the **server**. `\copy` reads files on **your computer**, on one line.
+      - Watch for encodings, date formats, and empty vs. NULL. Load into an all-`text` staging table, then convert with `INSERT … SELECT`.

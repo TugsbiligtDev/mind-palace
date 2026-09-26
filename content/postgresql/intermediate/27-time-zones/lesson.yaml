@@ -1,0 +1,191 @@
+steps:
+  - kind: explain
+    title: One moment, many clocks
+    body: |
+      Amina's balance payment arrived at **23:40 on 20 February**, London time (which is UTC in winter). In Ulaanbaatar at that same instant, clocks read **07:40 on 21 February**. Same moment, different date.
+
+      That's the core problem of time zones, and it's why Module 4 said: **use `timestamptz` for anything that happened.**
+
+      - **`timestamptz`** stores **one exact moment**. Internally it's always UTC (universal time). When you look at it, PostgreSQL **displays** it in your session's time zone.
+      - **`timestamp`** (without time zone) stores only **wall-clock numbers**: "2026-02-20 23:40". It has no idea where. It's right only for things like "the shop opens at 09:00 local time, wherever the shop is".
+
+  - kind: explain
+    title: The TimeZone setting
+    body: |
+      Every session has a **`TimeZone`** setting. It controls two things:
+
+      1. how `timestamptz` values are **shown**
+      2. how text like `'2026-02-20 23:40'` (with no zone written) is **understood** when it's turned into a timestamptz
+
+      ```sql
+      SHOW TimeZone;
+      SET TimeZone = 'Asia/Ulaanbaatar';
+      ```
+
+      **The stored value never changes.** Only the display does. This page uses **UTC**. On your Mac, psql uses your Mac's zone unless you set it.
+
+  - kind: try
+    title: Same payment, two clocks
+    body: |
+      Run it: payment 6 shown in UTC. Then add `SET TimeZone = 'Asia/Ulaanbaatar';` as the first line and run again. The date and time change, and so does the `+08`. It's the same moment.
+    sql: |
+      SHOW TimeZone;
+      SELECT payment_id, paid_at FROM payments WHERE payment_id = 6;
+
+  - kind: explain
+    title: AT TIME ZONE
+    body: |
+      To see a moment in a specific zone **in a query** (without changing the session), use **`AT TIME ZONE`**. It converts in two directions, which trips people up:
+
+      | You start with | `… AT TIME ZONE 'Europe/Rome'` gives | Meaning |
+      |---|---|---|
+      | `timestamptz` (a moment) | `timestamp` (wall clock) | *What did clocks in Rome show at that moment?* |
+      | `timestamp` (wall clock) | `timestamptz` (a moment) | *This wall-clock time was in Rome, so which moment was it?* |
+
+      ```sql
+      SELECT paid_at AT TIME ZONE 'Asia/Ulaanbaatar' AS ub_time
+      FROM payments;
+      ```
+
+      The most common use: **reporting by local day**. `(paid_at AT TIME ZONE 'Asia/Ulaanbaatar')::date` is the date in Ulaanbaatar, whatever the session zone.
+
+  - kind: try
+    title: Local times for every payment
+    body: |
+      Run it and compare the two columns. Several payments land on a **different date** in Ulaanbaatar.
+    sql: |
+      SELECT payment_id,
+             paid_at,
+             paid_at AT TIME ZONE 'Asia/Ulaanbaatar' AS ub_wall_clock
+      FROM payments
+      ORDER BY paid_at;
+
+  - kind: try
+    title: Your turn to find the date shifts
+    body: |
+      Wanderly's office is in Ulaanbaatar, and its daily report must use **Ulaanbaatar dates**. Find the payments whose UTC date differs from their Ulaanbaatar date. Return `payment_id`, **utc_date** (`paid_at::date` in this UTC session) and **ub_date**.
+    sql: |
+      SELECT payment_id, paid_at
+      FROM payments;
+    expect: |
+      SELECT payment_id,
+             paid_at::date AS utc_date,
+             (paid_at AT TIME ZONE 'Asia/Ulaanbaatar')::date AS ub_date
+      FROM payments
+      WHERE paid_at::date <> (paid_at AT TIME ZONE 'Asia/Ulaanbaatar')::date;
+
+  - kind: explain
+    title: Named zones, not offsets
+    body: |
+      Write zones as **names** from the time zone database: `'Europe/Rome'`, `'America/New_York'`, `'Asia/Ulaanbaatar'`.
+
+      Avoid fixed offsets like `'+01'`:
+
+      - **An offset doesn't know about daylight saving.** Rome is `+01` in winter and `+02` in summer. The name `Europe/Rome` knows which applies on each date, and `+01` is simply wrong half the year.
+      - **Offset spellings are a trap.** `SET TimeZone = 'UTC+8'` means 8 hours **behind** UTC, not ahead (an old POSIX rule). Names never have this problem.
+
+      Full list: `SELECT name FROM pg_timezone_names;`
+
+  - kind: explain
+    title: Daylight-saving pitfalls
+    body: |
+      On the spring-forward day in New York (8 March 2026), clocks jump from 02:00 to 03:00. That day has **23 hours**.
+
+      - `+ interval '1 day'` means "same wall-clock time tomorrow". It adjusts for DST.
+      - `+ interval '24 hours'` means "exactly 24 hours later". Across the jump, that's 1 p.m., not noon.
+
+      Other traps:
+
+      - Local times like `02:30` **don't exist** on that day, and on the fall-back day `01:30` happens **twice**.
+      - Scheduling "every day at 09:00 local" needs the zone **name**, not an offset.
+
+      Rule of thumb: store moments as `timestamptz`, and convert to a named zone only when showing or grouping.
+
+  - kind: try
+    title: A day that isn't 24 hours
+    body: |
+      Noon on 7 March in New York, plus "1 day" vs. plus "24 hours". Run it: one lands at 12:00, the other at 13:00.
+    sql: |
+      SET TimeZone = 'America/New_York';
+
+      SELECT '2026-03-07 12:00'::timestamptz + interval '1 day'    AS plus_1_day,
+             '2026-03-07 12:00'::timestamptz + interval '24 hours' AS plus_24_hours;
+
+  - kind: explain
+    title: Month ends and "the last 7 days"
+    body: |
+      Date maths that people get wrong:
+
+      - **End of month:** months have 28–31 days, so don't hard-code it. Go to the start of the **next** month and step back one day:
+        `(date_trunc('month', d) + interval '1 month' - interval '1 day')::date`
+      - **Adding a month** to 31 January gives **28 February** (PostgreSQL clamps to the last valid day). Add another month and you get 28 March, not 31 March.
+      - **"Last 7 days"** has two meanings:
+        - `paid_at >= now() - interval '7 days'` = the last 168 hours, up to this second
+        - `paid_at >= current_date - 7` = since midnight 7 days ago (whole days)
+
+        Decide which one the question means.
+
+  - kind: explain
+    title: "Filtering by date: < next day, not BETWEEN"
+    body: |
+      *"Payments from 1 to 20 February"*:
+
+      ```sql
+      WHERE paid_at BETWEEN '2026-02-01' AND '2026-02-20'      -- WRONG
+      ```
+
+      `'2026-02-20'` becomes **midnight at the start** of the 20th. Anything later that day, like Amina's payment at 23:40, is **excluded**.
+
+      The safe pattern is a **half-open range**, from the start **up to but not including** the next day:
+
+      ```sql
+      WHERE paid_at >= '2026-02-01' AND paid_at < '2026-02-21'  -- RIGHT
+      ```
+
+      It works for any precision (seconds, microseconds), and ranges chain without overlap or gaps: February is `>= '2026-02-01' AND < '2026-03-01'`.
+
+  - kind: try
+    title: BETWEEN misses a payment
+    body: |
+      A payment was made on 20 February, yet this returns **nothing**. Run it. Then change it to the half-open pattern ending `< '2026-02-21'`.
+    sql: |
+      SELECT payment_id, paid_at
+      FROM payments
+      WHERE paid_at BETWEEN '2026-02-01' AND '2026-02-20';
+
+  - kind: try
+    title: Your turn for a whole month
+    body: |
+      Return the `payment_id` and `amount` of every payment made in **February 2026** (UTC), using a half-open range.
+    sql: |
+      SELECT payment_id, amount, paid_at
+      FROM payments;
+    expect: |
+      SELECT payment_id, amount
+      FROM payments
+      WHERE paid_at >= '2026-02-01' AND paid_at < '2026-03-01';
+
+  - kind: explain
+    title: Generating dates
+    body: |
+      `generate_series` (Module 23) works with dates and times:
+
+      ```sql
+      SELECT d::date
+      FROM generate_series('2026-02-01'::date, '2026-02-28'::date, interval '1 day') AS d;
+      ```
+
+      For a **local-day** report, generate the days, then compare against `(paid_at AT TIME ZONE 'Asia/Ulaanbaatar')::date`, so every payment lands in the right day for the office that reads the report.
+
+  - kind: why
+    body: |
+      Time bugs are the ones that show up at midnight, at month-end and twice a year when clocks change: a sale on the wrong day, a report missing the last evening, a reminder an hour late. `timestamptz`, named zones and half-open ranges prevent almost all of them.
+
+  - kind: recap
+    body: |
+      - `timestamptz` = one moment (stored as UTC, shown in the session's `TimeZone`). `timestamp` = wall-clock numbers only.
+      - `SET TimeZone = 'Zone/Name'` changes the display, never the stored value.
+      - `timestamptz AT TIME ZONE 'X'` → local wall time in X. `timestamp AT TIME ZONE 'X'` → the moment it was in X.
+      - Use **named zones**, not offsets. Beware DST: `interval '1 day'` ≠ `interval '24 hours'`.
+      - End of month: next month's start minus one day. Decide what "last 7 days" means.
+      - Filter with **half-open ranges**: `>= start AND < next_start`, never `BETWEEN` on timestamps.

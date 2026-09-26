@@ -1,0 +1,227 @@
+steps:
+  - kind: explain
+    title: Name a step with WITH
+    body: |
+      Derived tables (Module 18) work, but nesting them makes queries read inside-out. A **common table expression (CTE)** moves the subquery to the top and gives it a name:
+
+      ```sql
+      WITH trip_totals AS (
+          SELECT trip_id, sum(cost) AS total
+          FROM trip_stops
+          GROUP BY trip_id
+      )
+      SELECT round(avg(total), 2) AS avg_trip_cost
+      FROM trip_totals;
+      ```
+
+      Now it reads **top to bottom**, like a recipe: *first make trip_totals, then average them*. Inside the query, `trip_totals` behaves like a table. It exists only while this one statement runs.
+
+  - kind: try
+    title: Your first CTE
+    body: |
+      Run it. Then change the final SELECT to `SELECT * FROM trip_totals ORDER BY total DESC;` to look inside the step.
+    sql: |
+      WITH trip_totals AS (
+          SELECT trip_id, sum(cost) AS total
+          FROM trip_stops
+          GROUP BY trip_id
+      )
+      SELECT round(avg(total), 2) AS avg_trip_cost
+      FROM trip_totals;
+
+  - kind: explain
+    title: Chaining steps
+    body: |
+      One WITH can define **several** CTEs, separated by commas. Each can use the ones **before** it:
+
+      ```sql
+      WITH paid AS (
+          SELECT trip_id, sum(amount) AS paid FROM payments GROUP BY trip_id
+      ),
+      cost AS (
+          SELECT trip_id, sum(cost) AS cost FROM trip_stops GROUP BY trip_id
+      ),
+      compared AS (
+          SELECT trip_id, paid, cost, paid - cost AS gap
+          FROM paid JOIN cost USING (trip_id)
+      )
+      SELECT * FROM compared WHERE gap <> 0;
+      ```
+
+      Each step does one small job and has a name that says what it holds. That's how you break a hard question into easy pieces (Module 25 comes back to this).
+
+      A CTE can also be used **more than once** in the final query, which a derived table can't.
+
+  - kind: try
+    title: Your turn to chain CTEs
+    body: |
+      Rebuild the money check from Module 18 as a chain. The `paid` CTE is done. Add a `cost` CTE (total `cost` per trip from `trip_stops`), then select `trip_id`, `paid` and `cost` for trips where they **differ**.
+    sql: |
+      WITH paid AS (
+          SELECT trip_id, sum(amount) AS paid
+          FROM payments
+          GROUP BY trip_id
+      )
+      SELECT * FROM paid;
+    expect: |
+      WITH paid AS (
+          SELECT trip_id, sum(amount) AS paid
+          FROM payments
+          GROUP BY trip_id
+      ),
+      cost AS (
+          SELECT trip_id, sum(cost) AS cost
+          FROM trip_stops
+          GROUP BY trip_id
+      )
+      SELECT trip_id, paid, cost
+      FROM paid
+      JOIN cost USING (trip_id)
+      WHERE paid <> cost;
+
+  - kind: explain
+    title: Recursive CTEs
+    body: |
+      A **recursive** CTE refers to **itself**. It's how SQL walks chains of unknown length, like an org chart. It has two parts joined by `UNION ALL`:
+
+      ```sql
+      WITH RECURSIVE counter AS (
+          SELECT 1 AS n                -- 1. the anchor: the starting row(s)
+          UNION ALL
+          SELECT n + 1 FROM counter    -- 2. the recursive part: builds on the
+          WHERE n < 5                  --    rows from the previous round
+      )
+      SELECT n FROM counter;
+      ```
+
+      PostgreSQL runs the anchor once, then keeps running the recursive part on the **newest** rows, until a round produces **no** new rows. Here: 1, then 2, 3, 4, 5, then `n < 5` stops it.
+
+      The `WHERE` is essential. Without a stopping condition, it runs forever.
+
+  - kind: try
+    title: Count to five
+    body: |
+      Run it. Then change `n < 5` to `n < 10`.
+    sql: |
+      WITH RECURSIVE counter AS (
+          SELECT 1 AS n
+          UNION ALL
+          SELECT n + 1 FROM counter WHERE n < 5
+      )
+      SELECT n FROM counter;
+
+  - kind: explain
+    title: Walking down an org chart
+    body: |
+      `employees.manager_id` points at another employee (a self-referencing FK, Module 13). To list everyone **under** the director, level by level:
+
+      ```sql
+      WITH RECURSIVE chart AS (
+          SELECT employee_id, full_name, 0 AS depth
+          FROM employees
+          WHERE manager_id IS NULL                    -- anchor: the director
+          UNION ALL
+          SELECT e.employee_id, e.full_name, c.depth + 1
+          FROM employees e
+          JOIN chart c ON e.manager_id = c.employee_id  -- people whose manager is
+      )                                                 -- already in the chart
+      SELECT * FROM chart;
+      ```
+
+      Round 1 finds the director's direct reports, round 2 finds *their* reports, and so on, until nobody new is found. The stopping condition is built in: the chain simply runs out.
+
+  - kind: try
+    title: The whole chart
+    body: |
+      Run it. `depth` says how many levels below the director each person sits. Then add `ORDER BY depth, full_name`.
+    sql: |
+      WITH RECURSIVE chart AS (
+          SELECT employee_id, full_name, 0 AS depth
+          FROM employees
+          WHERE manager_id IS NULL
+          UNION ALL
+          SELECT e.employee_id, e.full_name, c.depth + 1
+          FROM employees e
+          JOIN chart c ON e.manager_id = c.employee_id
+      )
+      SELECT * FROM chart;
+
+  - kind: try
+    title: Your turn to walk up the chain
+    body: |
+      Walk the other way: from **Khongor Munkh** (employee 9) **up** to the director. Return the `full_name` of Khongor and every manager above Khongor.
+
+      Hint: the anchor is Khongor's row. In the recursive part, join each chain row to **its manager**: `e.employee_id = c.manager_id`. So carry `manager_id` along in both parts.
+    sql: |
+      SELECT full_name, manager_id
+      FROM employees
+      WHERE employee_id = 9;
+    expect: |
+      WITH RECURSIVE chain AS (
+          SELECT employee_id, full_name, manager_id
+          FROM employees
+          WHERE employee_id = 9
+          UNION ALL
+          SELECT e.employee_id, e.full_name, e.manager_id
+          FROM employees e
+          JOIN chain c ON e.employee_id = c.manager_id
+      )
+      SELECT full_name FROM chain;
+
+  - kind: explain
+    title: Guarding against loops
+    body: |
+      If the data ever contains a **cycle** (A manages B, B manages A), a recursive CTE never runs out of new rows and runs until it fails.
+
+      Two protections:
+
+      - **A depth limit**: carry a `depth` column and add `WHERE c.depth < 20` in the recursive part.
+      - 🔹 **The `CYCLE` clause** (PostgreSQL 14+): `CYCLE employee_id SET is_cycle USING path` after the CTE makes PostgreSQL detect and stop at repeats for you.
+
+  - kind: info
+    title: "🔹 Data-modifying CTEs"
+    body: |
+      A CTE can contain INSERT, UPDATE or DELETE with RETURNING, and the rest of the statement can use the returned rows. The classic use is **moving** rows in one step:
+
+      ```sql
+      WITH moved AS (
+          DELETE FROM reviews
+          WHERE rating < 5
+          RETURNING *
+      )
+      INSERT INTO old_reviews
+      SELECT * FROM moved;
+      ```
+
+      Both happen together, or not at all. Recognize the pattern. You'll rarely need it early on.
+
+  - kind: try
+    title: Archive in one statement
+    body: |
+      `old_reviews` is an empty copy of the reviews table's columns. Run it: the non-5-star reviews move across in one statement.
+    sql: |
+      CREATE TABLE old_reviews (LIKE reviews);
+
+      WITH moved AS (
+          DELETE FROM reviews
+          WHERE rating < 5
+          RETURNING *
+      )
+      INSERT INTO old_reviews
+      SELECT * FROM moved;
+
+      SELECT (SELECT count(*) FROM reviews)     AS still_in_reviews,
+             (SELECT count(*) FROM old_reviews) AS archived;
+
+  - kind: why
+    body: |
+      Real analysis questions have several steps. CTEs let you write them as a named, top-to-bottom pipeline that you (and whoever reads it next) can check one step at a time. And recursive CTEs answer questions nothing else in SQL can: every level of an org chart, a category tree or a chain of referrals.
+
+  - kind: recap
+    body: |
+      - `WITH name AS (SELECT …) SELECT … FROM name`: a named step that lasts for one statement.
+      - Chain several with commas. Later steps can use earlier ones, and a CTE can be used more than once.
+      - `WITH RECURSIVE`: **anchor** `UNION ALL` **recursive part**. It repeats on the newest rows until none are added.
+      - Walk down a hierarchy with `child.manager_id = chain.id`, up with `parent.id = chain.manager_id`.
+      - Always make sure it stops: a WHERE limit, or 🔹 the `CYCLE` clause.
+      - 🔹 Data-modifying CTEs: `WITH x AS (DELETE … RETURNING *) INSERT … SELECT * FROM x`.

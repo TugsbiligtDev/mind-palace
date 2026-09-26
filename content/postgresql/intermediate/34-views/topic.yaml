@@ -1,0 +1,4 @@
+title: Views & Materialized Views
+module: 34
+summary: Save a query under a name with CREATE VIEW, store its results for speed with a materialized view, keep it fresh with REFRESH (and CONCURRENTLY), and know which to use.
+minutes: 30

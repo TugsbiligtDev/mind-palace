@@ -1,0 +1,258 @@
+steps:
+  - kind: explain
+    title: Aggregates that keep every row
+    body: |
+      `GROUP BY` collapses rows: 9 employees in, one average out. Often you want the average **next to each row**, to compare: *"who earns more than average, and by how much?"*
+
+      A **window function** does exactly that. Add **`OVER (…)`** after an aggregate:
+
+      ```sql
+      SELECT full_name, salary,
+             avg(salary) OVER () AS company_avg
+      FROM employees;
+      ```
+
+      Every row stays, and each gets the value computed over its **window**: the set of rows it can "see". Empty parentheses `OVER ()` mean *all rows of the result*.
+
+  - kind: try
+    title: Salary next to the average
+    body: |
+      Run it. Then add a column `salary - avg(salary) OVER () AS vs_avg`.
+    sql: |
+      SELECT full_name, salary,
+             round(avg(salary) OVER (), 2) AS company_avg
+      FROM employees;
+
+  - kind: explain
+    title: PARTITION BY
+    body: |
+      **`PARTITION BY`** splits the rows into groups, and each row's window is **only its own group**:
+
+      ```sql
+      SELECT full_name, department, salary,
+             avg(salary) OVER (PARTITION BY department) AS dept_avg
+      FROM employees;
+      ```
+
+      It's like GROUP BY, except the rows **don't collapse**. This gives the same answer as the correlated subquery in Module 18, usually faster and always shorter.
+
+  - kind: try
+    title: Your turn with PARTITION BY
+    body: |
+      Show each employee's `full_name`, `department`, `salary`, and **how many people are in their department**, labeled **dept_size**.
+    sql: |
+      SELECT full_name, department, salary
+      FROM employees;
+    expect: |
+      SELECT full_name, department, salary,
+             count(*) OVER (PARTITION BY department) AS dept_size
+      FROM employees;
+
+  - kind: explain
+    title: Ranking with ORDER BY
+    body: |
+      Put **ORDER BY** inside OVER and you can **number** the rows. Three ranking functions differ only in how they treat **ties** (Temuulen and Nomin both earn 2400):
+
+      | Function | Ties get… | Sequence |
+      |---|---|---|
+      | `row_number()` | different numbers (ties broken arbitrarily) | …, 5, **6, 7**, 8 |
+      | `rank()` | the same number, then a **gap** | …, 5, **6, 6**, 8 |
+      | `dense_rank()` | the same number, **no gap** | …, 5, **6, 6**, 7 |
+
+      Olympic medals use `rank()`: two golds, then bronze, no silver.
+
+      This ORDER BY only orders the ranking. It doesn't sort the output. Add an ordinary ORDER BY at the end for that.
+
+  - kind: try
+    title: Three ways to rank
+    body: |
+      Run it and look at Temuulen, Nomin and the row after them in each column.
+    sql: |
+      SELECT full_name, salary,
+             row_number() OVER (ORDER BY salary DESC) AS row_num,
+             rank()       OVER (ORDER BY salary DESC) AS rnk,
+             dense_rank() OVER (ORDER BY salary DESC) AS dense
+      FROM employees
+      ORDER BY salary DESC;
+
+  - kind: try
+    title: Your turn to rank within groups
+    body: |
+      Rank employees **within their department**, highest salary first, **without gaps** for ties. Return `full_name`, `department`, `salary` and the rank labeled **dept_rank**.
+    sql: |
+      SELECT full_name, department, salary
+      FROM employees;
+    expect: |
+      SELECT full_name, department, salary,
+             dense_rank() OVER (PARTITION BY department ORDER BY salary DESC) AS dept_rank
+      FROM employees;
+
+  - kind: explain
+    title: Top N per group
+    body: |
+      You can't filter on a window function in WHERE: window functions run **after** WHERE (they're computed with SELECT). So rank in a CTE, then filter:
+
+      ```sql
+      WITH ranked AS (
+          SELECT full_name, department, salary,
+                 row_number() OVER (PARTITION BY department
+                                    ORDER BY salary DESC) AS rn
+          FROM employees
+      )
+      SELECT * FROM ranked WHERE rn <= 2;
+      ```
+
+      Choose the function by what "top 2" should mean with ties: `row_number` gives exactly 2 per group, `rank`/`dense_rank` include everyone tied.
+
+  - kind: try
+    title: Your turn for the top earner
+    body: |
+      Return the **single highest-paid employee in each department**: `department`, `full_name` and `salary`. Use `row_number()` in a CTE.
+    sql: |
+      SELECT department, full_name, salary
+      FROM employees;
+    expect: |
+      WITH ranked AS (
+          SELECT department, full_name, salary,
+                 row_number() OVER (PARTITION BY department ORDER BY salary DESC) AS rn
+          FROM employees
+      )
+      SELECT department, full_name, salary
+      FROM ranked
+      WHERE rn = 1;
+
+  - kind: explain
+    title: LAG and LEAD
+    body: |
+      **`lag(col)`** gives the value from the **previous** row in the window's order, and **`lead(col)`** from the **next** row:
+
+      ```sql
+      SELECT paid_at, amount,
+             paid_at - lag(paid_at) OVER (ORDER BY paid_at) AS since_previous
+      FROM payments
+      WHERE trip_id = 5;
+      ```
+
+      The first row has no previous row, so lag gives NULL. `lag(col, 2)` looks two rows back, and `lag(col, 1, 0)` uses 0 instead of NULL.
+
+      Perfect for "change since last time": growth month over month, time between visits, price changes.
+
+  - kind: try
+    title: Time between payments
+    body: |
+      Trip 5's three payments. Run it: the refund came 30 days after the balance. Then change `lag` to `lead` and see the column shift.
+    sql: |
+      SELECT paid_at, amount,
+             paid_at - lag(paid_at) OVER (ORDER BY paid_at) AS since_previous
+      FROM payments
+      WHERE trip_id = 5;
+
+  - kind: explain
+    title: Running totals
+    body: |
+      An aggregate with ORDER BY in its window becomes **cumulative**: each row sums everything from the start up to itself.
+
+      ```sql
+      SELECT paid_at, amount,
+             sum(amount) OVER (ORDER BY paid_at) AS running_total
+      FROM payments;
+      ```
+
+      Add PARTITION BY to restart the total for each group: `sum(amount) OVER (PARTITION BY trip_id ORDER BY paid_at)`.
+
+  - kind: try
+    title: Wanderly's cash, over time
+    body: |
+      Run it and watch the running total. Where does it go **down**?
+    sql: |
+      SELECT paid_at, amount,
+             sum(amount) OVER (ORDER BY paid_at) AS running_total
+      FROM payments
+      ORDER BY paid_at;
+
+  - kind: try
+    title: Your turn for a running total per trip
+    body: |
+      Show `trip_id`, `paid_at`, `amount`, and a running total **per trip** labeled **running_paid**, restarting for each trip.
+    sql: |
+      SELECT trip_id, paid_at, amount
+      FROM payments;
+    expect: |
+      SELECT trip_id, paid_at, amount,
+             sum(amount) OVER (PARTITION BY trip_id ORDER BY paid_at) AS running_paid
+      FROM payments;
+
+  - kind: explain
+    title: "Frames: ROWS BETWEEN"
+    body: |
+      The **frame** says exactly which rows around the current one count. A **moving average** of the last 3 payments:
+
+      ```sql
+      avg(amount) OVER (ORDER BY paid_at
+                        ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)
+      ```
+
+      Useful pieces: `UNBOUNDED PRECEDING` (from the start), `n PRECEDING`, `CURRENT ROW`, `n FOLLOWING`, `UNBOUNDED FOLLOWING`.
+
+      The default frame with ORDER BY is "from the start up to the current row, **including rows tied with it**" (that's `RANGE`). With exact ties in the ORDER BY column, a running total jumps by both at once. Writing `ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` counts strictly row by row.
+
+  - kind: try
+    title: A moving average
+    body: |
+      Each row averages itself and the two payments before it. Run it, then change `2 PRECEDING` to `1 PRECEDING`.
+    sql: |
+      SELECT paid_at, amount,
+             round(avg(amount) OVER (ORDER BY paid_at
+                                     ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) AS moving_avg_3
+      FROM payments
+      ORDER BY paid_at;
+
+  - kind: explain
+    title: FILTER on aggregates
+    body: |
+      **`FILTER (WHERE …)`** makes an aggregate count only some rows. It's cleaner than a CASE inside the aggregate:
+
+      ```sql
+      SELECT trip_id,
+             sum(amount) FILTER (WHERE method = 'card')     AS by_card,
+             sum(amount) FILTER (WHERE method = 'transfer') AS by_transfer
+      FROM payments
+      GROUP BY trip_id;
+      ```
+
+      It works with ordinary GROUP BY aggregates **and** with window aggregates. You'll use it again for pivot-style reports in Module 23.
+
+  - kind: try
+    title: Your turn with FILTER
+    body: |
+      For each `trip_id`, count its payments labeled **payments**, and count only its **refunds** (negative amounts) labeled **refunds**.
+    sql: |
+      SELECT trip_id, count(*) AS payments
+      FROM payments
+      GROUP BY trip_id;
+    expect: |
+      SELECT trip_id,
+             count(*) AS payments,
+             count(*) FILTER (WHERE amount < 0) AS refunds
+      FROM payments
+      GROUP BY trip_id;
+
+  - kind: info
+    title: "🔹 NTILE"
+    body: |
+      `ntile(n) OVER (ORDER BY …)` splits the rows into **n roughly equal buckets** and numbers them 1 to n. `ntile(4)` gives quartiles: top 25%, next 25%, and so on. Handy for "which salary band is each person in?"
+
+  - kind: why
+    body: |
+      Rankings, running totals, month-over-month change, top N per group: window functions answer the questions analysts get asked every day, in one query, without losing the detail rows. They're the single biggest jump in SQL power after joins.
+
+  - kind: recap
+    body: |
+      - `agg(...) OVER (…)` computes across a window and **keeps every row**.
+      - `PARTITION BY` = groups without collapsing. `ORDER BY` inside OVER = order within the window.
+      - `row_number` (unique), `rank` (ties + gaps), `dense_rank` (ties, no gaps).
+      - Window functions run after WHERE: rank in a CTE, then filter for top N.
+      - `lag` / `lead` read the previous / next row.
+      - `sum(x) OVER (ORDER BY t)` is a running total. `ROWS BETWEEN n PRECEDING AND CURRENT ROW` gives moving windows.
+      - `agg(x) FILTER (WHERE …)` aggregates only matching rows.
+      - 🔹 `ntile(n)` splits rows into n buckets.

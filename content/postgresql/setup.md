@@ -1,6 +1,6 @@
 # Take it to your Mac
 
-Everything in this course runs in your browser, so you never *need* to install anything. But real work happens in a real PostgreSQL on your own machine, and some steps (like Module 0's psql tour and Module 20's operations skills) are best practiced there.
+Everything in this course runs in your browser, so you never *need* to install anything. But real work happens in a real PostgreSQL on your own machine, and some steps (like Module 2's psql tour and the optional Operations lessons in Advanced) are best practiced there.
 
 This page records the setup you already have, so you can rebuild it if you ever need to.
 
@@ -41,13 +41,13 @@ Logs live in `/opt/homebrew/var/log/postgresql@18.log`, and data in `/opt/homebr
 
 ## Load (or reload) the course dataset
 
-The dataset in this site is identical to the one in your `learn_sql` database: 7 tables for a trip-planning app. To rebuild it from scratch, open the course's `dataset.sql` file and run it inside psql:
+The dataset in this site is identical to the one in your `learn_sql` database: 9 tables for a trip-planning app. To rebuild it from scratch, open the course's `dataset.sql` file and run it inside psql:
 
 ```bash
 psql learn_sql -f dataset.sql
 ```
 
-It starts with `DROP TABLE IF EXISTS …`, so it's safe to run again. It replaces the 7 course tables and touches nothing else.
+It starts with `DROP TABLE IF EXISTS …`, so it's safe to run again. It replaces the 9 course tables and touches nothing else.
 
 ## A psql tip learned the hard way
 

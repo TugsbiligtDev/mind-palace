@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/06-functions
+topic: postgresql/beginner/09-functions
 concepts: [substring, split_part, upper, "||"]
 title: Initials Only
 briefing: |

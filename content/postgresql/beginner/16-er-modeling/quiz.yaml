@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "\"Each **member** can **borrow** many **books**.\" In an ER model, what is *borrow*?"
+    options:
+      - An entity
+      - An attribute
+      - A relationship
+      - A primary key
+    answer: 2
+    explanation: Verbs connecting two things are usually relationships. Members and books are the entities.
+
+  - type: mcq
+    prompt: "\"Each order is placed by exactly one customer.\" What does that mean for `orders.customer_id`?"
+    options:
+      - It should allow NULL
+      - It should be NOT NULL and reference customers
+      - It should be UNIQUE
+      - It belongs in the customers table
+    answer: 1
+    explanation: "\"Exactly one\" is a required link, so the FK is NOT NULL. It isn't UNIQUE, because one customer can place many orders."
+
+  - type: mcq
+    prompt: In crow's-foot notation, what does `o<` next to a box mean?
+    options:
+      - exactly one
+      - zero or one
+      - one or more
+      - zero or more
+    answer: 3
+    explanation: The circle means "zero is allowed", and the crow's foot means "many". Together they read "zero or more".
+
+  - type: mcq
+    prompt: Travelers book tours, and each booking records the number of seats. Where does `seats` go?
+    options:
+      - travelers
+      - tours
+      - A junction table such as bookings, with traveler_id and tour_id
+      - A separate seats table with only a seats column
+    answer: 2
+    explanation: Seats describe one traveler + tour pair, so they belong on the junction table that represents the booking.
+
+  - type: mcq
+    prompt: A `flights` table points at `airports` twice, for where it leaves from and where it lands. What are good FK names?
+    options:
+      - "`airport_id` and `airport_id2`"
+      - "`departure_airport_id` and `arrival_airport_id`"
+      - "`a1` and `a2`"
+      - "`from` and `to`"
+    answer: 1
+    explanation: When two FKs point at the same table, name each by its role. (`from` and `to` are SQL keywords, which makes them awkward names too.)

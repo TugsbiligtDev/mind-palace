@@ -1,0 +1,59 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: The average entry fee is about 17.81. What does this return?
+    code: |
+      SELECT count(*)
+      FROM attractions
+      WHERE entry_fee < (SELECT avg(entry_fee) FROM attractions);
+    options:
+      - "6"
+      - "3"
+      - "9"
+      - "0"
+    answer: 1
+    explanation: "Six attractions cost more than the average. The other three (all free) cost less."
+
+  - type: mcq
+    prompt: "`WHERE x NOT IN (SELECT y FROM t)` returns zero rows, even though you're sure some should match. What's the most likely cause?"
+    options:
+      - The subquery is too slow
+      - Column y contains at least one NULL
+      - NOT IN only works with numbers
+      - x and y have different names
+    answer: 1
+    explanation: A NULL in the list makes `x <> NULL` unknown, so NOT IN is never true. Rewrite it with NOT EXISTS.
+
+  - type: fill
+    prompt: Find travelers with **no** trips at all.
+    code: |
+      SELECT full_name FROM travelers tr
+      WHERE ____ (SELECT 1 FROM trips t WHERE t.traveler_id = tr.traveler_id);
+    answer: NOT EXISTS
+    accept: ["not exists"]
+    explanation: "`NOT EXISTS` is true when the correlated subquery finds no rows for that traveler."
+
+  - type: mcq
+    prompt: What makes a subquery **correlated**?
+    options:
+      - It's in the FROM clause
+      - It uses a column from the outer query, so its result depends on each outer row
+      - It returns more than one row
+      - It uses GROUP BY
+    answer: 1
+    explanation: A correlated subquery refers to the outer query's row, like `t.traveler_id = tr.traveler_id`, so it's evaluated per row.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT max(total) AS biggest
+      FROM (SELECT trip_id, sum(nights) AS total
+            FROM trip_stops
+            GROUP BY trip_id) AS t;
+    options:
+      - "6"
+      - "7"
+      - "9"
+      - "8"
+    answer: 3
+    explanation: "Per-trip nights are 7, 8, 6, 3, 6 and 6. Trip 2 (Italian Escape) has 5 + 3 = 8, the biggest."

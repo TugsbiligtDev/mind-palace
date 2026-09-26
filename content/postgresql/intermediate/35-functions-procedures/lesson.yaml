@@ -1,0 +1,262 @@
+steps:
+  - kind: explain
+    title: Your own functions
+    body: |
+      You've used built-in functions like `round()` and `date_trunc()`. You can write your own, stored in the database and callable from any query:
+
+      ```sql
+      CREATE FUNCTION trip_cost(p_trip_id integer)
+      RETURNS numeric
+      LANGUAGE sql
+      STABLE
+      AS $$
+          SELECT sum(cost) FROM trip_stops WHERE trip_id = p_trip_id;
+      $$;
+
+      SELECT trip_name, trip_cost(trip_id) FROM trips;
+      ```
+
+      - The **parameters** go in parentheses with their types. A `p_` prefix keeps them from being confused with column names.
+      - **`RETURNS`** says what comes back.
+      - **`$$ … $$`** wraps the body. It's just a way of quoting text that contains its own quotes and semicolons.
+      - **`LANGUAGE sql`** means the body is a plain SQL query, and the last statement's result is returned.
+
+  - kind: try
+    title: Create and call a function
+    body: |
+      Run it. Then use the function in a WHERE: `WHERE trip_cost(trip_id) > 900`.
+    sql: |
+      CREATE FUNCTION trip_cost(p_trip_id integer)
+      RETURNS numeric
+      LANGUAGE sql
+      STABLE
+      AS $$
+          SELECT sum(cost) FROM trip_stops WHERE trip_id = p_trip_id;
+      $$;
+
+      SELECT trip_name, trip_cost(trip_id) AS cost
+      FROM trips;
+
+  - kind: try
+    title: Your turn to write a SQL function
+    body: |
+      Write a function **with_tax(p_fee numeric)** that returns the fee plus 10% tax, rounded to 2 decimals. Mark it `IMMUTABLE` (explained below). Then return each attraction's `name` and `with_tax(entry_fee)` labeled **fee_with_tax**.
+    sql: |
+      SELECT name, entry_fee
+      FROM attractions;
+    expect: |
+      CREATE FUNCTION with_tax(p_fee numeric)
+      RETURNS numeric
+      LANGUAGE sql
+      IMMUTABLE
+      AS $$
+          SELECT round(p_fee * 1.10, 2);
+      $$;
+
+      SELECT name, with_tax(entry_fee) AS fee_with_tax
+      FROM attractions;
+
+  - kind: explain
+    title: "PL/pgSQL: logic with steps"
+    body: |
+      For decisions and steps, use **PL/pgSQL**, PostgreSQL's built-in programming language:
+
+      ```sql
+      CREATE FUNCTION discount(p_amount numeric)
+      RETURNS numeric
+      LANGUAGE plpgsql
+      IMMUTABLE
+      AS $$
+      DECLARE
+          v_rate numeric := 0;            -- a variable, with a starting value
+      BEGIN
+          IF p_amount IS NULL OR p_amount < 0 THEN
+              RAISE EXCEPTION 'amount must be zero or more, got %', p_amount;
+          ELSIF p_amount >= 1000 THEN
+              v_rate := 0.10;
+          ELSIF p_amount >= 500 THEN
+              v_rate := 0.05;
+          END IF;
+          RETURN round(p_amount * (1 - v_rate), 2);
+      END;
+      $$;
+      ```
+
+      - **`DECLARE`** lists variables, and **`:=`** assigns them.
+      - **`IF … ELSIF … ELSE … END IF;`** makes decisions. Every statement ends with `;`.
+      - **`RAISE EXCEPTION`** stops with an error. `%` is replaced by the next value. (**`RAISE NOTICE`** just prints a message: psql shows it, this page doesn't.)
+      - **`RETURN`** gives back the result.
+
+  - kind: try
+    title: Run the discount function
+    body: |
+      Run it: 1200 gets 10% off, 600 gets 5%, 100 gets nothing. Then add `discount(-5)` and read your own error message.
+    sql: |
+      CREATE FUNCTION discount(p_amount numeric)
+      RETURNS numeric
+      LANGUAGE plpgsql
+      IMMUTABLE
+      AS $$
+      DECLARE
+          v_rate numeric := 0;
+      BEGIN
+          IF p_amount IS NULL OR p_amount < 0 THEN
+              RAISE EXCEPTION 'amount must be zero or more, got %', p_amount;
+          ELSIF p_amount >= 1000 THEN
+              v_rate := 0.10;
+          ELSIF p_amount >= 500 THEN
+              v_rate := 0.05;
+          END IF;
+          RETURN round(p_amount * (1 - v_rate), 2);
+      END;
+      $$;
+
+      SELECT discount(1200) AS big, discount(600) AS medium, discount(100) AS small;
+
+  - kind: try
+    title: Your turn with PL/pgSQL
+    body: |
+      Write a PL/pgSQL function **stay_label(p_nights integer)** that returns text:
+
+      - `'short'` for 1 or 2 nights
+      - `'week'` for 3 to 7 nights
+      - `'long'` for more than 7
+
+      Then return each stop's `trip_stop_id`, `nights` and `stay_label(nights)` labeled **label**.
+    sql: |
+      SELECT trip_stop_id, nights
+      FROM trip_stops;
+    expect: |
+      CREATE FUNCTION stay_label(p_nights integer)
+      RETURNS text
+      LANGUAGE plpgsql
+      IMMUTABLE
+      AS $$
+      BEGIN
+          IF p_nights <= 2 THEN
+              RETURN 'short';
+          ELSIF p_nights <= 7 THEN
+              RETURN 'week';
+          ELSE
+              RETURN 'long';
+          END IF;
+      END;
+      $$;
+
+      SELECT trip_stop_id, nights, stay_label(nights) AS label
+      FROM trip_stops;
+
+  - kind: explain
+    title: Loops
+    body: |
+      PL/pgSQL can loop over numbers or over query results:
+
+      ```sql
+      FOR i IN 1..5 LOOP
+          -- runs 5 times
+      END LOOP;
+
+      FOR r IN SELECT trip_id, trip_name FROM trips LOOP
+          -- r.trip_id, r.trip_name available here
+      END LOOP;
+      ```
+
+      But **think in sets first**. One `UPDATE … WHERE` is far faster than a loop that updates one row at a time. Loops are for step-by-step work that truly can't be one statement, like processing in batches.
+
+  - kind: explain
+    title: Procedures
+    body: |
+      A **procedure** is like a function, with two differences:
+
+      | | Function | Procedure |
+      |---|---|---|
+      | Called with | `SELECT f(…)`, inside any query | `CALL p(…)`, on its own |
+      | Returns a value | yes | no (it just does work) |
+      | Can `COMMIT` / `ROLLBACK` inside | **no** | **yes** |
+
+      The last point is why procedures exist. A nightly job that archives a million rows can **commit every 10,000**, so a failure halfway doesn't undo everything, and locks are released as it goes (Module 30).
+
+      ```sql
+      CREATE PROCEDURE archive_old_payments(p_cutoff timestamptz)
+      LANGUAGE plpgsql
+      AS $$ … COMMIT; … $$;
+
+      CALL archive_old_payments('2026-01-01');
+      ```
+
+  - kind: try
+    title: A batch job with CALL
+    body: |
+      This procedure copies payments older than the cutoff into an archive, committing after every 2 rows. Run it: the 2 payments from 2025 are archived.
+    sql: |
+      CREATE TABLE payments_archive (LIKE payments);
+
+      CREATE PROCEDURE archive_old_payments(p_cutoff timestamptz)
+      LANGUAGE plpgsql
+      AS $$
+      DECLARE
+          r       record;
+          v_count integer := 0;
+      BEGIN
+          FOR r IN SELECT payment_id FROM payments
+                   WHERE paid_at < p_cutoff ORDER BY payment_id LOOP
+              INSERT INTO payments_archive
+              SELECT * FROM payments WHERE payment_id = r.payment_id;
+              v_count := v_count + 1;
+              IF v_count % 2 = 0 THEN
+                  COMMIT;             -- a procedure may commit as it goes
+              END IF;
+          END LOOP;
+      END;
+      $$;
+
+      CALL archive_old_payments('2026-01-01');
+      SELECT payment_id, paid_at FROM payments_archive;
+
+  - kind: explain
+    title: "Volatility: IMMUTABLE, STABLE, VOLATILE"
+    body: |
+      Every function has a **volatility label** that tells the planner how predictable it is:
+
+      | Label | Promise | Examples |
+      |---|---|---|
+      | **IMMUTABLE** | same inputs → same output, **forever**. Reads no tables. | `with_tax`, `discount`, maths |
+      | **STABLE** | same output **within one statement**. May read tables or the time zone. | `trip_cost`, anything using `now()` |
+      | **VOLATILE** (the default) | may change every call, or changes data | `random()`, anything that INSERTs |
+
+      Why it matters:
+
+      - Only **IMMUTABLE** functions can be used in **expression indexes** and generated columns.
+      - The planner can call STABLE and IMMUTABLE functions fewer times, which is faster.
+      - **Lying is dangerous.** Label a function that reads a table IMMUTABLE, and an index built on it silently returns wrong answers when the table changes. When unsure, leave the default.
+
+  - kind: explain
+    title: Database logic or app logic?
+    body: |
+      There's no single right answer, but good rules of thumb:
+
+      **Put it in the database when:**
+
+      - it protects **data correctness** for every app (constraints first, then functions and triggers)
+      - it works on **lots of rows** and would be slow to ship to the app and back
+      - several apps or languages need **exactly the same** rule
+
+      **Keep it in the app when:**
+
+      - it's **business workflow** that changes often (emails, payments, user interfaces)
+      - it calls **other services**
+      - the team's tools (tests, reviews, deploys) mostly live in the app code
+
+      Too much logic hidden in the database is hard to test and easy to forget. Too little leaves every app re-inventing (and disagreeing on) the rules.
+
+  - kind: why
+    body: |
+      Functions let you name a calculation once and reuse it everywhere, and procedures run safe batch jobs right next to the data. Used with judgment, they keep rules consistent across every app that touches the database.
+
+  - kind: recap
+    body: |
+      - `CREATE FUNCTION name(p_arg type) RETURNS type LANGUAGE sql|plpgsql AS $$ … $$;`, then call it in any query.
+      - PL/pgSQL: `DECLARE` variables, `:=`, `IF/ELSIF/ELSE`, `FOR … LOOP`, `RAISE EXCEPTION`/`NOTICE`, `RETURN`. Think in sets before loops.
+      - `CREATE PROCEDURE` + `CALL`: returns nothing, but can `COMMIT` inside, which suits batch jobs.
+      - Volatility: IMMUTABLE (pure), STABLE (same within a statement), VOLATILE (default). Never over-promise.
+      - Put data-correctness and heavy set work in the database. Keep changeable workflow in the app.

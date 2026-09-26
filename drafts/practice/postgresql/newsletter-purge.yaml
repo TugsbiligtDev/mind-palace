@@ -1,5 +1,5 @@
 difficulty: hard
-topic: postgresql/beginner/08-writing-data
+topic: postgresql/beginner/08-updating-deleting
 concepts: [DELETE, OR, ILIKE, "NULL"]
 title: The Newsletter Purge
 briefing: |

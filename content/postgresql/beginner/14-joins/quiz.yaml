@@ -1,0 +1,61 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: You want **every** traveler, including those with no trips, next to their trips. Which join?
+    options:
+      - "`travelers JOIN trips`"
+      - "`travelers LEFT JOIN trips`"
+      - "`trips LEFT JOIN travelers`"
+      - "`travelers CROSS JOIN trips`"
+    answer: 1
+    explanation: LEFT JOIN keeps every row from the left table (travelers), and fills trip columns with NULL for travelers with no trips.
+
+  - type: predict
+    prompt: Trip 6 (Weekend in Paris) has no stops. What does this return?
+    code: |
+      SELECT t.trip_name
+      FROM trips t
+      LEFT JOIN trip_stops s ON s.trip_id = t.trip_id
+      WHERE s.trip_stop_id IS NULL;
+    options:
+      - No rows
+      - "Weekend in Paris"
+      - Every trip
+      - An error
+    answer: 1
+    explanation: The LEFT JOIN keeps trip 6 with NULLs for the stop columns, and the WHERE keeps only rows with no matching stop.
+
+  - type: predict
+    prompt: Amina's trips 1 and 2 each have 2 stops. What does this return?
+    code: |
+      SELECT count(*) AS n
+      FROM trips t
+      JOIN trip_stops s ON s.trip_id = t.trip_id
+      WHERE t.traveler_id = 1;
+    options:
+      - "1"
+      - "2"
+      - "4"
+      - "6"
+    answer: 2
+    explanation: Joining to trip_stops gives one row per stop. Amina has 2 trips × 2 stops = 4 rows. That's the fan-out effect.
+
+  - type: fill
+    prompt: Both tables have a `country_id` column. Join them with the shortcut.
+    code: |
+      SELECT ci.name, co.continent
+      FROM cities ci
+      JOIN countries co ____ (country_id);
+    answer: USING
+    accept: ["using"]
+    explanation: "`USING (country_id)` is short for `ON co.country_id = ci.country_id` when the column names match."
+
+  - type: mcq
+    prompt: After `attractions LEFT JOIN reviews`, why count `r.review_id` instead of `*` per attraction?
+    options:
+      - "`count(*)` is slower"
+      - An unreviewed attraction still has one row (with NULLs), so `count(*)` says 1 instead of 0
+      - "`count(*)` doesn't work with GROUP BY"
+      - There's no difference
+    answer: 1
+    explanation: The LEFT JOIN keeps one NULL-filled row for each unmatched attraction. `count(r.review_id)` skips the NULL and gives the true 0.

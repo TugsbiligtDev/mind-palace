@@ -1,0 +1,201 @@
+steps:
+  - kind: explain
+    title: Terminal and zsh
+    body: |
+      **Terminal** is the Mac app where you type commands instead of clicking. Inside it runs a **shell**, the program that reads what you type and runs it. On macOS the shell is **zsh**.
+
+      You'll use Terminal for one main thing in this course: starting **psql**, the command-line client for PostgreSQL. But a few basic commands make everything easier:
+
+      | Command | Means | Example |
+      |---|---|---|
+      | `pwd` | **p**rint **w**orking **d**irectory: "where am I?" | `/Users/tugsbiligt` |
+      | `ls` | **l**i**s**t the files here | `Desktop  Documents  Downloads` |
+      | `cd folder` | **c**hange **d**irectory: move into a folder | `cd Documents` |
+      | `cd ..` | go up one folder | |
+      | `cd ~` | go to your home folder | |
+
+  - kind: explain
+    title: File paths
+    body: |
+      A **path** is the address of a file or folder.
+
+      - **Absolute path**: starts at the very top, `/`. It works from anywhere: `/Users/tugsbiligt/Documents/sql/setup.sql`
+      - **Relative path**: starts from where you are now. If you're in `/Users/tugsbiligt/Documents`, then `sql/setup.sql` points at the same file.
+      - `~` is short for your home folder, so `~/Documents` = `/Users/tugsbiligt/Documents`.
+
+      Tip: dragging a file from Finder into the Terminal window types its full path for you.
+
+  - kind: mac
+    title: Find your way around
+    body: |
+      Open **Terminal** (⌘ + Space, type *Terminal*, press Enter). Run these one at a time and watch how `pwd` changes as you move.
+    commands: |
+      pwd
+      ls
+      cd Documents
+      pwd
+      cd ..
+      pwd
+
+  - kind: explain
+    title: Server, host, port, connection
+    body: |
+      To talk to a PostgreSQL server, a client needs to know:
+
+      - **Host**: *which computer* the server is on. `localhost` means "this same computer". A server elsewhere has an address like `db.example.com`.
+      - **Port**: *which door* on that computer. A computer runs many services, and each listens on a numbered port. PostgreSQL's standard port is **5432**.
+      - **User**: *who you are*. Yours is `tugsbiligt`.
+      - **Database**: *which database* to open, like `learn_sql`.
+
+      A **connection** is an open line between one client and the server, logged in as one user, to **one database**. To use a different database you open a new connection.
+
+  - kind: explain
+    title: Starting psql
+    body: |
+      **psql** is PostgreSQL's command-line client. On your Mac, the short way to connect is:
+
+      ```bash
+      psql learn_sql
+      ```
+
+      That fills in the defaults: host `localhost`, port `5432`, and your Mac username as the user. The long way spells them out:
+
+      ```bash
+      psql -h localhost -p 5432 -U tugsbiligt -d learn_sql
+      ```
+
+      Once connected, the prompt shows the database you're in:
+
+      ```text
+      learn_sql=#
+      ```
+
+      `=#` means you're a superuser, allowed to do anything. A regular user sees `=>`.
+
+  - kind: mac
+    title: Connect for real
+    body: |
+      In Terminal, connect to your course database. The prompt should change to `learn_sql=#`. Then type `\q` to quit and get back to zsh.
+    commands: |
+      psql learn_sql
+      \q
+
+  - kind: try
+    title: "Meta-commands: \\l lists databases"
+    body: |
+      Inside psql you can type SQL, or **meta-commands**: shortcuts that start with a backslash `\`. They aren't SQL. They're instructions to psql itself, usually "show me what's here". They end at the end of the line and don't need a semicolon.
+
+      `\l` (lowercase L) **l**ists databases. This page has a psql-style console, so run it here.
+
+      In this sandbox you'll only see the course database and PostgreSQL's built-in ones. Your Mac also shows `DB_week1`, `finance_db` and `school_db`.
+    sql: |
+      \l
+
+  - kind: try
+    title: "\\c connects, \\dt lists tables"
+    body: |
+      `\c dbname` **c**onnects to a different database. `\dt` lists the **t**ables in the one you're connected to.
+
+      Add a line with `\dt` below `\c learn_sql` and run both. You should see the 9 Wanderly tables.
+    sql: |
+      \c learn_sql
+    expect: |
+      \dt
+
+  - kind: try
+    title: "\\d describes one table"
+    body: |
+      `\d table_name` shows a table's columns, each column's type, and its rules.
+
+      Run it, then change `trips` to `travelers`. Which columns does a traveler have?
+    sql: |
+      \d trips
+
+  - kind: try
+    title: "\\dn schemas, \\du users"
+    body: |
+      - `\dn` lists **schemas**, the folders inside a database that hold tables (Module 3).
+      - `\du` lists **users** (PostgreSQL calls them *roles*).
+      - `\?` shows help for every meta-command.
+
+      Run them.
+    sql: |
+      \dn
+      \du
+      \?
+
+  - kind: explain
+    title: Meta-commands for your Mac
+    body: |
+      A few more that only work in real psql:
+
+      | Command | What it does |
+      |---|---|
+      | `\x` | Toggles **expanded** display: each column on its own line. Great for wide rows. |
+      | `\timing` | Shows how long each query took. |
+      | `\i file.sql` | Runs every statement in a **file**. Uses a file path, so `~/Documents/sql/setup.sql` works. |
+      | `\q` | **Q**uits psql. |
+
+  - kind: mac
+    title: Try them in Terminal
+    body: |
+      Connect, turn on expanded display and timing, run a query, then quit.
+    commands: |
+      psql learn_sql
+      \x
+      \timing
+      SELECT * FROM trips LIMIT 2;
+      \q
+
+  - kind: explain
+    title: GUI clients, and why psql too
+    body: |
+      **GUI clients** (apps with windows and menus) include **pgAdmin**, which you already have, plus **DBeaver**, **TablePlus** and **Postico**. They're great for browsing tables and seeing structure at a glance.
+
+      Learn **psql** too, because:
+
+      - it's on every server, even when there's no screen or mouse
+      - it's fast once you know a handful of commands
+      - it's what docs, tutorials and coworkers will assume you know
+      - it runs `.sql` files (`\i`), which is how real projects set up databases
+
+  - kind: explain
+    title: "Common mistake: the missing semicolon"
+    body: |
+      SQL statements end with a **semicolon** `;`. Meta-commands don't.
+
+      If you press Enter after SQL *without* a semicolon, psql assumes you're not done. The prompt changes:
+
+      ```text
+      learn_sql=# SELECT * FROM trips
+      learn_sql-#
+      ```
+
+      `=#` became `-#`: *"I'm waiting for the rest."* Nothing is broken. Type `;` and press Enter, and the query runs.
+
+      If you want to throw away what you typed instead, press **Ctrl + C**.
+
+  - kind: explain
+    title: "Common mistake: the wrong database"
+    body: |
+      If psql says
+
+      ```text
+      ERROR:  relation "trips" does not exist
+      ```
+
+      and you're *sure* the table exists, check the prompt. You're probably connected to the wrong database. `postgres=#` means you're in the default `postgres` database, not `learn_sql`.
+
+      Fix: `\c learn_sql`, then run the query again. The prompt always tells you where you are.
+
+  - kind: why
+    body: |
+      Every real database task starts with connecting and looking around. With `psql`, `\l`, `\c`, `\dt` and `\d`, you can open any PostgreSQL database and understand what's inside in under a minute.
+
+  - kind: recap
+    body: |
+      - Terminal runs **zsh**: `pwd` (where am I), `ls` (list), `cd` (move), `~` (home).
+      - A connection needs a **host** (`localhost`), **port** (`5432`), **user** and **database**.
+      - `psql learn_sql` connects. The prompt `learn_sql=#` shows where you are.
+      - Meta-commands: `\l` databases, `\c` connect, `\dt` tables, `\d name` describe, `\dn` schemas, `\du` users, `\x` expanded, `\timing`, `\i file.sql`, `\?` help, `\q` quit.
+      - A prompt of `-#` means psql is waiting for a `;`. "relation does not exist" often means the wrong database.

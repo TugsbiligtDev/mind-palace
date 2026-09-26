@@ -1,0 +1,174 @@
+steps:
+  - kind: explain
+    title: What a report is
+    body: |
+      Most business reports are the same shape: **time buckets down the side, numbers across the top**. *Revenue per month. Sign-ups per week. Payments per method per quarter.*
+
+      This module builds that shape step by step with Wanderly's `payments` table: bucket by time, fill in the missing buckets, spread categories into columns, and add totals.
+
+  - kind: explain
+    title: Buckets with date_trunc
+    body: |
+      `date_trunc('month', paid_at)` cuts every timestamp down to the **start of its month** (Module 9). All of March's payments become `2026-03-01 00:00`, so GROUP BY puts them in one bucket:
+
+      ```sql
+      SELECT date_trunc('month', paid_at)::date AS month,
+             count(*)    AS payments,
+             sum(amount) AS received
+      FROM payments
+      GROUP BY 1
+      ORDER BY 1;
+      ```
+
+      `GROUP BY 1` and `ORDER BY 1` mean "the first SELECT column". It's a handy shortcut in reports, where the expression is long.
+
+      Other bucket sizes: `'day'`, `'week'` (starts on Monday), `'quarter'`, `'year'`.
+
+      One warning: which **day** a moment falls on depends on the **time zone**. This page uses UTC. Module 27 shows how to report in a local zone.
+
+  - kind: try
+    title: Money per month
+    body: |
+      Run it. Then change `'month'` to `'quarter'`.
+    sql: |
+      SELECT date_trunc('month', paid_at)::date AS month,
+             count(*)    AS payments,
+             sum(amount) AS received
+      FROM payments
+      GROUP BY 1
+      ORDER BY 1;
+
+  - kind: explain
+    title: The missing months
+    body: |
+      Look at the result again: it jumps from October 2025 to January 2026, and from June to August 2026. Months with **no payments** have no rows, so they simply vanish.
+
+      On a chart, that's a lie: the line goes straight from October to January as if money kept coming in. A report should show those months with **0**.
+
+      The fix: generate every month yourself with **`generate_series`**, then LEFT JOIN the data onto it:
+
+      ```sql
+      SELECT m::date AS month,
+             COALESCE(sum(p.amount), 0) AS received
+      FROM generate_series('2025-09-01'::timestamptz,
+                           '2026-08-01'::timestamptz,
+                           interval '1 month') AS m
+      LEFT JOIN payments p ON date_trunc('month', p.paid_at) = m
+      GROUP BY m
+      ORDER BY m;
+      ```
+
+      - The calendar is on the **left**, so every month is kept (Module 14).
+      - `COALESCE(…, 0)` turns "no payments" (NULL) into 0 (Module 10).
+
+  - kind: try
+    title: Every month, even empty ones
+    body: |
+      Run it: 12 months, with November, December and July at 0.
+    sql: |
+      SELECT m::date AS month,
+             COALESCE(sum(p.amount), 0) AS received
+      FROM generate_series('2025-09-01'::timestamptz,
+                           '2026-08-01'::timestamptz,
+                           interval '1 month') AS m
+      LEFT JOIN payments p ON date_trunc('month', p.paid_at) = m
+      GROUP BY m
+      ORDER BY m;
+
+  - kind: try
+    title: Your turn to fill the gaps
+    body: |
+      Make the same calendar, but show the **number of payments** per month labeled **payments**, with **0** for empty months. Columns: `month` (as a date) and `payments`, ordered by month.
+
+      Careful: `count(*)` would count the empty month's single NULL-filled row as 1. Count a column from `p` instead.
+    sql: |
+      SELECT m::date AS month
+      FROM generate_series('2025-09-01'::timestamptz,
+                           '2026-08-01'::timestamptz,
+                           interval '1 month') AS m
+      ORDER BY m;
+    expect: |
+      SELECT m::date AS month, count(p.payment_id) AS payments
+      FROM generate_series('2025-09-01'::timestamptz,
+                           '2026-08-01'::timestamptz,
+                           interval '1 month') AS m
+      LEFT JOIN payments p ON date_trunc('month', p.paid_at) = m
+      GROUP BY m
+      ORDER BY m;
+    ordered: true
+
+  - kind: explain
+    title: "Pivot: categories become columns"
+    body: |
+      *"Money per month, split by payment method"* could be one row per month **and** method. But people read it more easily as one row per month with a **column per method**. Turning rows into columns is called a **pivot**.
+
+      `FILTER` (Module 22) makes it simple:
+
+      ```sql
+      SELECT date_trunc('quarter', paid_at)::date AS quarter,
+             sum(amount) FILTER (WHERE method = 'card')     AS card,
+             sum(amount) FILTER (WHERE method = 'transfer') AS transfer,
+             sum(amount) FILTER (WHERE method = 'cash')     AS cash
+      FROM payments
+      GROUP BY 1
+      ORDER BY 1;
+      ```
+
+      You'll also see the older spelling, which works in every database:
+
+      ```sql
+      sum(CASE WHEN method = 'card' THEN amount END) AS card
+      ```
+
+      The catch: you must **know the categories** in advance and write one column for each. SQL can't invent columns from the data.
+
+  - kind: try
+    title: Your turn to pivot
+    body: |
+      One row per **quarter** (as a date, labeled **quarter**), with the **number** of payments by `card` and by `transfer` as two columns, **card** and **transfer**. Order by quarter.
+    sql: |
+      SELECT date_trunc('quarter', paid_at)::date AS quarter, method, count(*)
+      FROM payments
+      GROUP BY 1, 2
+      ORDER BY 1, 2;
+    expect: |
+      SELECT date_trunc('quarter', paid_at)::date AS quarter,
+             count(*) FILTER (WHERE method = 'card')     AS card,
+             count(*) FILTER (WHERE method = 'transfer') AS transfer
+      FROM payments
+      GROUP BY 1
+      ORDER BY 1;
+    ordered: true
+
+  - kind: info
+    title: "🔹 GROUPING SETS, ROLLUP and CUBE"
+    body: |
+      These add **subtotal and total rows** to a GROUP BY in one query:
+
+      - `GROUP BY ROLLUP (a, b)`: groups by (a, b), then subtotals per a, then a grand total.
+      - `GROUP BY CUBE (a, b)`: every combination of subtotals: per a, per b, and overall.
+      - `GROUP BY GROUPING SETS ((a), (b), ())`: exactly the groupings you list.
+
+      In the extra rows, the rolled-up column shows **NULL**, meaning "all".
+
+  - kind: try
+    title: A grand total with ROLLUP
+    body: |
+      Run it: one row per method, plus a last row with `method` NULL, the total of everything.
+    sql: |
+      SELECT method, sum(amount) AS received
+      FROM payments
+      GROUP BY ROLLUP (method)
+      ORDER BY method;
+
+  - kind: why
+    body: |
+      Monthly revenue, weekly sign-ups, sales by region by quarter: these are the queries behind every dashboard. Getting the buckets right and **showing the empty periods** is what separates a trustworthy report from a misleading one.
+
+  - kind: recap
+    body: |
+      - Bucket time with `date_trunc('month' | 'week' | 'quarter' …, ts)` and GROUP BY it.
+      - Missing periods vanish. Generate a calendar with `generate_series(start, end, interval)`, LEFT JOIN the data, and COALESCE to 0.
+      - With a LEFT JOIN, count a column from the right side, not `*`.
+      - Pivot with `agg(…) FILTER (WHERE category = …)` (or `agg(CASE WHEN …)`), one column per known category.
+      - 🔹 `ROLLUP`, `CUBE` and `GROUPING SETS` add subtotal and total rows (shown with NULL).

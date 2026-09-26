@@ -1,0 +1,254 @@
+steps:
+  - kind: explain
+    title: Boxes inside boxes
+    body: |
+      PostgreSQL organizes everything in nested containers, from biggest to smallest:
+
+      1. **Cluster**: everything one PostgreSQL server manages. Your Mac runs one cluster.
+      2. **Database**: a separate collection of data, like `learn_sql` or `finance_db`. A connection opens exactly **one** database.
+      3. **Schema**: a folder *inside* a database that groups tables.
+      4. **Table**: a grid of rows and columns about one kind of thing.
+
+      So `countries` really lives at *cluster → learn_sql → public → countries*.
+
+  - kind: explain
+    title: The public schema
+    body: |
+      Every new database starts with one schema called **`public`**. When you don't name a schema, PostgreSQL uses `public`, which is why you can just write `countries`.
+
+      You can also write the full name, **schema.table**:
+
+      ```sql
+      SELECT * FROM public.countries;
+      ```
+
+      Schemas are useful for grouping: a company might keep `sales.orders` and `hr.employees` in one database, or keep evidence apart from normal data, the way this course's cases do with an `evidence` schema.
+
+  - kind: try
+    title: Full names and schemas
+    body: |
+      Both queries read the same table. Run it, then add a line with `\dn` to list the schemas.
+    sql: |
+      SELECT name FROM countries;
+      SELECT name FROM public.countries;
+
+  - kind: try
+    title: Make your own schema
+    body: |
+      `CREATE SCHEMA` makes a new folder. Tables created in it need the schema in their name.
+
+      Run it. `\dt archive.*` lists only the tables in `archive`.
+    sql: |
+      CREATE SCHEMA archive;
+      CREATE TABLE archive.old_notes (note text);
+      \dt archive.*
+
+  - kind: explain
+    title: Creating and dropping databases
+    body: |
+      ```sql
+      CREATE DATABASE scratch;
+      DROP DATABASE scratch;
+      ```
+
+      - `CREATE DATABASE` makes a new, empty database.
+      - `DROP DATABASE` **deletes it and everything inside, permanently.** There's no undo and no recycle bin.
+      - You can't drop the database you're connected to. Connect to another one first (`\c postgres`).
+
+      This page is a single-database sandbox, so practice these on your Mac.
+
+  - kind: mac
+    title: A throwaway database
+    body: |
+      Create a database, connect to it, look around, then go back and delete it. Watch the prompt change with each `\c`.
+    commands: |
+      psql postgres
+      CREATE DATABASE scratch;
+      \l
+      \c scratch
+      \dt
+      \c postgres
+      DROP DATABASE scratch;
+      \q
+
+  - kind: explain
+    title: CREATE TABLE
+    body: |
+      A table needs a name and a list of columns. Each column gets a **name** and a **data type** (the kind of value it holds; Module 4 covers them properly):
+
+      ```sql
+      CREATE TABLE suspects (
+          full_name   text,
+          age         integer,
+          last_seen   date
+      );
+      ```
+
+      - Columns are separated by **commas**, with **no comma** after the last one.
+      - The whole thing ends with `;`.
+      - The new table is empty: it has columns but no rows yet.
+
+  - kind: try
+    title: Build a table
+    body: |
+      Run it. `\d suspects` shows the columns you just made, and the SELECT shows the table is empty.
+    sql: |
+      CREATE TABLE suspects (
+          full_name   text,
+          age         integer,
+          last_seen   date
+      );
+      \d suspects
+      SELECT * FROM suspects;
+
+  - kind: try
+    title: Your turn to create a table
+    body: |
+      Above the `\d clues` line, create a table called **clues** with two columns: `found_on` of type `date`, and `description` of type `text`. Then run it.
+    sql: |
+      -- Write your CREATE TABLE here.
+
+      \d clues
+    expect: |
+      CREATE TABLE clues (
+          found_on    date,
+          description text
+      );
+      \d clues
+
+  - kind: explain
+    title: DROP TABLE
+    body: |
+      ```sql
+      DROP TABLE suspects;
+      DROP TABLE IF EXISTS suspects;
+      ```
+
+      `DROP TABLE` deletes the table: its structure **and every row in it**, permanently.
+
+      `IF EXISTS` means "only if it's there". Without it, dropping a missing table is an error. With it, you just get a notice. It's handy in scripts you run more than once.
+
+  - kind: try
+    title: Gone for good
+    body: |
+      Drop a table, then try to read it. Run it and read the error.
+
+      (This page starts from a fresh copy every run, so `reviews` comes back next time. A real database has no such safety net.)
+    sql: |
+      DROP TABLE reviews;
+      SELECT * FROM reviews;
+    expect_error: true
+
+  - kind: explain
+    title: Naming conventions
+    body: |
+      Names of tables and columns are called **identifiers**. The style almost everyone uses in PostgreSQL:
+
+      - **lowercase with underscores** (*snake_case*): `trip_stops`, `entry_fee`, `signup_date`
+      - **consistent table names**: pick plural (`trips`, `cities`) or singular (`trip`, `city`) and stick to it. This course uses plural.
+      - **no spaces, no accents, no SQL keywords** like `order` or `user` as names
+
+      Why lowercase? PostgreSQL quietly **folds unquoted names to lowercase**. `SELECT * FROM Trips` and `SELECT * FROM TRIPS` both read the table `trips`.
+
+  - kind: explain
+    title: "The trouble with \"CamelCase\""
+    body: |
+      **Double quotes** make a name exact, capitals and all. Some tools create tables like `"TravelNotes"` with quotes.
+
+      Once a name has capitals and was created in quotes, you must **quote it forever**:
+
+      ```sql
+      SELECT * FROM "TravelNotes";   -- works
+      SELECT * FROM TravelNotes;     -- error: folds to travelnotes
+      ```
+
+      Every query, by every person, for the life of the table. Avoid it: use lowercase snake_case and never quote names.
+
+      Quotes also matter for values: **single quotes** `'…'` are text values, and **double quotes** `"…"` are names. Mixing them up is a very common error.
+
+  - kind: try
+    title: See the quoted-name trap
+    body: |
+      The table was created with a quoted CamelCase name. Run it and read the error.
+
+      Then fix the SELECT by writing the name exactly as it was created, in double quotes.
+    sql: |
+      CREATE TABLE "TravelNotes" (note text);
+      SELECT * FROM TravelNotes;
+    broken_starter: true
+    expect: |
+      CREATE TABLE "TravelNotes" (note text);
+      SELECT * FROM "TravelNotes";
+
+  - kind: explain
+    title: Comments
+    body: |
+      A **comment** is a note for humans. PostgreSQL ignores it.
+
+      - `--` starts a comment that runs to the end of the line.
+      - `/* … */` wraps a comment that can span several lines.
+
+      ```sql
+      /* Wanderly: who's in the system?
+         One row per traveler. */
+      SELECT full_name,   -- the traveler
+             home_city    -- where they live
+      FROM travelers;
+      ```
+
+      Good comments explain **why** you did something, not what the code obviously says.
+
+  - kind: try
+    title: A commented query
+    body: |
+      Run it. The comments change nothing about the result. Then add a comment of your own.
+    sql: |
+      /* Wanderly: who's in the system?
+         One row per traveler. */
+      SELECT full_name,   -- the traveler
+             home_city    -- where they live
+      FROM travelers;
+
+  - kind: explain
+    title: Save your work in .sql files
+    body: |
+      Typing a long CREATE TABLE straight into psql is fragile: one typo and you retype it. Real projects keep SQL in **script files** ending in `.sql`, written in a text editor like VS Code:
+
+      ```sql
+      -- setup.sql: build the detective's notebook
+      DROP TABLE IF EXISTS suspects;
+      CREATE TABLE suspects (
+          full_name text,
+          age       integer
+      );
+      ```
+
+      Then run the whole file from psql with `\i`, or straight from Terminal with `psql -f`. Scripts can be saved, re-run, shared and kept in version control. `DROP TABLE IF EXISTS` at the top makes the script safe to run again.
+
+  - kind: mac
+    title: Run a script file
+    body: |
+      Create a file, paste the script above into it, save it, then run it. `open -e` opens the file in TextEdit.
+    commands: |
+      mkdir -p ~/Documents/sql
+      cd ~/Documents/sql
+      touch setup.sql
+      open -e setup.sql
+      psql learn_sql
+      \i setup.sql
+      \d suspects
+      \q
+
+  - kind: why
+    body: |
+      Every app's database starts with a handful of CREATE statements in a script. Knowing where tables live, naming them well, and keeping the SQL in files you can re-run is how professionals build databases they can trust.
+
+  - kind: recap
+    body: |
+      - Nesting: **cluster → database → schema → table**. New databases start with the `public` schema.
+      - `schema.table` is a table's full name. `CREATE SCHEMA name` makes a new folder.
+      - `CREATE DATABASE` / `DROP DATABASE`. You can't drop the one you're connected to.
+      - `CREATE TABLE name (col type, …);` and `DROP TABLE [IF EXISTS] name;`. Drops are permanent.
+      - Use lowercase **snake_case**. Unquoted names fold to lowercase. Quoted `"CamelCase"` must be quoted forever.
+      - `'single quotes'` = text value, `"double quotes"` = name.
+      - Comments: `--` and `/* */`. Keep SQL in `.sql` files and run them with `\i`.

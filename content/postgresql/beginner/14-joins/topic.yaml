@@ -1,0 +1,4 @@
+title: Joins
+module: 14
+summary: Put split-up data back together with INNER, LEFT and FULL joins, join a table to itself, walk through junction tables, and avoid the row-multiplication trap.
+minutes: 45

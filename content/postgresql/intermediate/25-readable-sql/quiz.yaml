@@ -1,0 +1,53 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "`FROM attractions a LEFT JOIN reviews r ON … WHERE r.rating >= 4` drops attractions with no reviews. Why?"
+    options:
+      - LEFT JOIN doesn't keep unmatched rows
+      - Unmatched rows have NULL rating, and `NULL >= 4` isn't true, so WHERE removes them
+      - rating is text
+      - WHERE runs before the join
+    answer: 1
+    explanation: The LEFT JOIN kept them, but the WHERE then discarded them. Move `r.rating >= 4` into the ON clause.
+
+  - type: mcq
+    prompt: You join trips (7 rows) to trip_stops and get 10 rows. What does that tell you?
+    options:
+      - The query is broken
+      - Some trips have several stops, so rows were multiplied. Aggregating trip-level values now would be wrong.
+      - Three trips were dropped
+      - Nothing
+    answer: 1
+    explanation: More rows after a join means fan-out. Know what one row represents before you sum or count.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT round(avg(cost), 2) AS avg_per_stop FROM trip_stops;
+    options:
+      - "527.00"
+      - "878.33"
+      - "5270.00"
+      - "910.00"
+    answer: 0
+    explanation: "It averages the 10 stops: 5,270 / 10 = 527. The average **trip** is about 878. Same data, different grain."
+
+  - type: mcq
+    prompt: Which comment is most useful?
+    options:
+      - "`-- select the amount`"
+      - "`-- join payments`"
+      - "`-- refunds are stored as negative amounts, so sum() already nets them out`"
+      - "`-- query`"
+    answer: 2
+    explanation: Good comments explain the why or a business rule the code can't say by itself.
+
+  - type: mcq
+    prompt: Your per-traveler payment totals are finished. What's a quick way to check them?
+    options:
+      - Run the query twice
+      - Check that they add up to `SELECT sum(amount) FROM payments`
+      - Add ORDER BY
+      - Use UNION instead of JOIN
+    answer: 1
+    explanation: Comparing against a simpler query is a fast sanity check. If the parts don't add up to the whole, rows were lost or duplicated.

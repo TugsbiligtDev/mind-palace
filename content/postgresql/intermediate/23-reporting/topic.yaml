@@ -1,0 +1,4 @@
+title: Reporting Queries
+module: 23
+summary: Group by month with date_trunc, fill the empty months with generate_series, turn rows into columns with FILTER, and add subtotals with ROLLUP.
+minutes: 35

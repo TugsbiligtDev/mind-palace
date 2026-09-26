@@ -1,0 +1,53 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT regexp_replace('A-12 / B-7', '\D', '', 'g') AS digits;
+    options:
+      - "127"
+      - "12 7"
+      - "A-12 / B-7"
+      - "12"
+    answer: 0
+    explanation: "`\\D` matches any non-digit, and the `'g'` flag replaces every match with nothing, leaving 127."
+
+  - type: mcq
+    prompt: "Which pattern matches text that is **exactly** three digits?"
+    options:
+      - "`\\d{3}`"
+      - "`^\\d{3}$`"
+      - "`%\\d\\d\\d%`"
+      - "`[0-9]*`"
+    answer: 1
+    explanation: Without anchors, a regex matches anywhere, so `\d{3}` also matches `12345`. `^` and `$` pin it to the whole text.
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT 'Louvre Museum' ~ 'museum' AS a,
+             'Louvre Museum' ~* 'museum' AS b;
+    options:
+      - "t | t"
+      - "f | t"
+      - "t | f"
+      - "f | f"
+    answer: 1
+    explanation: "`~` is case-sensitive, so lowercase museum doesn't match Museum. `~*` ignores case, so it does."
+
+  - type: fill
+    prompt: Replace **every** run of spaces with a single space, not just the first.
+    code: |
+      SELECT regexp_replace('a    b   c', '\s+', ' ', '____');
+    answer: g
+    explanation: "The `'g'` (global) flag makes regexp_replace replace every match. Without it, only the first run is replaced."
+
+  - type: mcq
+    prompt: "Why is `WHERE name ILIKE '%rome%'` slow on a huge table?"
+    options:
+      - ILIKE is deprecated
+      - A leading wildcard means a normal index can't help, so every row must be checked
+      - Text columns can't be indexed
+      - It isn't slow
+    answer: 1
+    explanation: A B-tree index is sorted from the start of the text, like a phone book. "Contains" searches need a trigram index (pg_trgm, Module 46).

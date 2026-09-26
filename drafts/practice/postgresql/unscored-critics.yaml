@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/04-order-by
+topic: postgresql/beginner/07-null
 concepts: [ORDER BY, NULLS LAST, multi-column sort]
 title: The Unscored Critics
 briefing: |

@@ -1,0 +1,62 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT name
+      FROM countries
+      WHERE continent = 'Asia' AND name <> 'Japan';
+    options:
+      - "Japan"
+      - "Mongolia"
+      - "Japan\nMongolia"
+      - No rows
+    answer: 1
+    explanation: Two countries are in Asia (Japan and Mongolia). `AND name <> 'Japan'` removes Japan, leaving Mongolia.
+
+  - type: predict
+    prompt: The countries sorted A→Z are France, Italy, Japan, Mongolia, Peru. What does this return?
+    code: |
+      SELECT name
+      FROM countries
+      ORDER BY name
+      LIMIT 2 OFFSET 1;
+    options:
+      - "France\nItaly"
+      - "Italy\nJapan"
+      - "Japan\nMongolia"
+      - "Italy"
+    answer: 1
+    explanation: "`OFFSET 1` skips France, then `LIMIT 2` returns the next two: Italy and Japan."
+
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT 7 / 2 AS result;
+    options:
+      - "3.5"
+      - "3"
+      - "4"
+      - An error
+    answer: 1
+    explanation: Both 7 and 2 are integers, so PostgreSQL does whole-number division and drops the remainder. Write `7.0 / 2` to get 3.5.
+
+  - type: mcq
+    prompt: "Why does `SELECT entry_fee * 100 AS cents FROM attractions WHERE cents > 2000;` fail?"
+    options:
+      - You can't multiply in SELECT
+      - WHERE runs before SELECT, so the alias `cents` doesn't exist yet
+      - Aliases must be in double quotes
+      - 2000 is too big
+    answer: 1
+    explanation: "PostgreSQL evaluates FROM → WHERE → SELECT → ORDER BY. Repeat the calculation in WHERE (`entry_fee * 100 > 2000`), or use the alias only in ORDER BY."
+
+  - type: mcq
+    prompt: "Which nights values does `WHERE nights BETWEEN 3 AND 5` keep?"
+    options:
+      - "4 only"
+      - "3 and 4"
+      - "3, 4 and 5"
+      - "4 and 5"
+    answer: 2
+    explanation: BETWEEN includes both ends of the range.

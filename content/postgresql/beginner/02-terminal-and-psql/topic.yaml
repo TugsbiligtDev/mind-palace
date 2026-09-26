@@ -1,0 +1,4 @@
+title: Terminal & Connection Basics
+module: 2
+summary: Terminal essentials, what a host, port and connection are, and the psql meta-commands you'll use every day.
+minutes: 30

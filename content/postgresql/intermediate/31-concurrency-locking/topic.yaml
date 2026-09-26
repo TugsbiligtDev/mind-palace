@@ -1,0 +1,4 @@
+title: Concurrency & Locking
+module: 31
+summary: How PostgreSQL lets many sessions work at once (MVCC), isolation levels, the lost-update bug and its fixes, row locks with FOR UPDATE, job queues with SKIP LOCKED, and deadlocks.
+minutes: 40

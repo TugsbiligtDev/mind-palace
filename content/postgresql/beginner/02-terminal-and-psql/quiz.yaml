@@ -1,0 +1,60 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What is PostgreSQL's standard **port**?
+    options:
+      - "80"
+      - "3306"
+      - "5432"
+      - "8080"
+    answer: 2
+    explanation: PostgreSQL listens on port 5432 by default. (3306 is MySQL's, and 80 and 8080 are for websites.)
+
+  - type: fill
+    prompt: You're connected to `learn_sql` in psql. Which meta-command lists its tables?
+    code: "____"
+    answer: \dt
+    explanation: "`\\dt` means *describe tables*. `\\l` would list databases instead."
+
+  - type: mcq
+    prompt: |
+      You type a query and press Enter, and the prompt changes like this:
+
+      ```text
+      learn_sql=# SELECT * FROM trips
+      learn_sql-#
+      ```
+
+      What happened?
+    options:
+      - The query failed
+      - psql is waiting for the rest of the statement, because there's no semicolon
+      - You were disconnected
+      - You switched to another database
+    answer: 1
+    explanation: "`-#` means psql is still collecting your statement. Type `;` and press Enter to run it."
+
+  - type: mcq
+    prompt: "Your prompt says `postgres=#` and `SELECT * FROM trips;` gives *relation \"trips\" does not exist*. What's the likely fix?"
+    options:
+      - Reinstall PostgreSQL
+      - "Run `\\c learn_sql`, because you're connected to the wrong database"
+      - Add double quotes around trips
+      - Restart the Mac
+    answer: 1
+    explanation: The prompt shows you're in the `postgres` database. The trips table lives in `learn_sql`, so connect there with `\c learn_sql`.
+
+  - type: mcq
+    prompt: |
+      You type this in psql and press Enter:
+
+      `\dt SELECT * FROM countries;`
+
+      What happens?
+    options:
+      - psql lists the tables, then shows the countries data
+      - An error, because meta-commands need a semicolon
+      - psql reads `SELECT * FROM countries;` as arguments to `\dt`, and the SQL never runs
+      - The SQL runs first, then the tables are listed
+    answer: 2
+    explanation: A meta-command ends at the **end of the line**. Everything after `\dt` on that line is read as its arguments. Put `\dt` and your SQL on separate lines.

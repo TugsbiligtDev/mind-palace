@@ -1,0 +1,55 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT (ARRAY['mn', 'en', 'fr'])[2] AS lang;
+    options:
+      - "mn"
+      - "en"
+      - "fr"
+      - "NULL"
+    answer: 1
+    explanation: PostgreSQL arrays count from 1, so item 2 is 'en'.
+
+  - type: mcq
+    prompt: Each guide speaks several languages, and each language needs a proficiency level and a certification date. What's the best design?
+    options:
+      - A text[] column of language codes on guides
+      - A junction table guide_languages (guide_id, language_id, level, certified_on)
+      - A jsonb column
+      - One column per language
+    answer: 1
+    explanation: Once each link has its own facts, and languages deserve foreign keys, a junction table is the right tool.
+
+  - type: predict
+    prompt: What does the last statement return?
+    code: |
+      CREATE TYPE size AS ENUM ('small', 'medium', 'large');
+      SELECT max(s) FROM unnest(ARRAY['large', 'small', 'medium']::size[]) AS s;
+    options:
+      - "small"
+      - "medium"
+      - "large"
+      - An error
+    answer: 2
+    explanation: Enums compare in declared order (small < medium < large), not alphabetically, so the max is large.
+
+  - type: mcq
+    prompt: In PostgreSQL 18, what does `total numeric GENERATED ALWAYS AS (qty * price)` create by default?
+    options:
+      - A STORED column saved on disk
+      - A VIRTUAL column, calculated when you read it
+      - A normal column you must fill in
+      - A view
+    answer: 1
+    explanation: Since PostgreSQL 18, generated columns are virtual unless you write STORED.
+
+  - type: fill
+    prompt: Find guides who speak French.
+    code: |
+      CREATE TABLE guides (name text, languages text[]);
+      SELECT name FROM guides WHERE 'fr' = ____(languages);
+    answer: ANY
+    accept: ["any"]
+    explanation: "`value = ANY(array)` is true when the value appears anywhere in the array."

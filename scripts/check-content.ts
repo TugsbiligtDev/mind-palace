@@ -4,7 +4,7 @@
 import { PGlite, types } from "@electric-sql/pglite";
 import { loadAllTracks, loadStory, loadTrack } from "../src/lib/content/load";
 import { loadPractice } from "../src/lib/content/practice";
-import { grade, lastRows, rawTextParsers, resultText, runInput } from "../src/lib/sql/core";
+import { freshCopy, grade, lastRows, rawTextParsers, resultText, runInput } from "../src/lib/sql/core";
 
 const problems: string[] = [];
 let checks = 0;
@@ -16,6 +16,7 @@ function fail(where: string, msg: string) {
 async function makeBase(setup: string) {
   const db = await PGlite.create({ parsers: rawTextParsers(types) });
   if (setup.trim()) await db.exec(setup);
+  await db.exec("CHECKPOINT"); // same as the browser worker: keeps ID sequences exact in copies
   return db;
 }
 
@@ -30,7 +31,7 @@ async function main() {
     const lessonBase = await makeBase(bundle.dataset);
     let copies: PGlite[] = [];
     const fresh = async () => {
-      const copy = (await lessonBase.clone()) as PGlite;
+      const copy = (await freshCopy(lessonBase, { PGlite, types })) as PGlite;
       copies.push(copy);
       return copy;
     };
@@ -142,7 +143,7 @@ async function checkPractice() {
     // Every grade opens fresh copies of the database; close them all afterwards or memory runs out.
     const copies: PGlite[] = [];
     const fresh = async () => {
-      const copy = (await base.clone()) as PGlite;
+      const copy = (await freshCopy(base, { PGlite, types })) as PGlite;
       copies.push(copy);
       return copy;
     };

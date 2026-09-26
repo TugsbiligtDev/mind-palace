@@ -1,5 +1,5 @@
 difficulty: easy
-topic: postgresql/beginner/02-select
+topic: postgresql/beginner/06-querying-one-table
 concepts: [SELECT, DISTINCT]
 title: The Porter's Ledger
 briefing: |

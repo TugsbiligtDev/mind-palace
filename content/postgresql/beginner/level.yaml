@@ -4,15 +4,24 @@ season: 1
 season_title: The Wanderly Files
 season_pitch: |
   Someone has been rewriting Wanderly's records and signing their work **~C**. Learn how a
-  database is organized, how to ask it questions, and how to fix it carefully, one case at a time.
+  database works, how to ask it questions, how to build tables that protect their data, and
+  how to design a database from scratch, one case at a time.
 status: open
 topics:
-  - 00-landscape
-  - 01-syntax
-  - 02-select
-  - 03-where
-  - 04-order-by
-  - 05-data-types
-  - 06-functions
-  - 07-aggregation
-  - 08-writing-data
+  - 01-what-is-a-database
+  - 02-terminal-and-psql
+  - 03-databases-schemas-tables
+  - 04-data-types
+  - 05-inserting-data
+  - 06-querying-one-table
+  - 07-null
+  - 08-updating-deleting
+  - 09-functions
+  - 10-aggregation
+  - 11-primary-keys
+  - 12-constraints
+  - 13-foreign-keys
+  - 14-joins
+  - 15-altering-tables
+  - 16-er-modeling
+  - 17-normalization

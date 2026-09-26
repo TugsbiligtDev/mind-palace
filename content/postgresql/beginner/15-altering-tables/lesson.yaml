@@ -1,0 +1,186 @@
+steps:
+  - kind: explain
+    title: Tables change over time
+    body: |
+      No design is final. Wanderly will want a phone number column next month, a rename the month after, a new rule after some bad data sneaks in.
+
+      **`ALTER TABLE`** changes an existing table's structure **without** losing its rows:
+
+      ```sql
+      ALTER TABLE table_name  <what to change>;
+      ```
+
+      Like everything that changes structure, it's permanent on a real database. Try it here first.
+
+  - kind: explain
+    title: Adding a column
+    body: |
+      ```sql
+      ALTER TABLE travelers ADD COLUMN phone text;
+      ```
+
+      Existing rows get **NULL** in the new column. Give it a **DEFAULT** and existing rows get that value instead:
+
+      ```sql
+      ALTER TABLE travelers
+        ADD COLUMN loyalty_points integer NOT NULL DEFAULT 0;
+      ```
+
+      Adding a `NOT NULL` column **without** a default fails if the table has rows, because what would the existing rows hold?
+
+  - kind: try
+    title: Points for everyone
+    body: |
+      Run it. Every existing traveler starts with 0 points.
+    sql: |
+      ALTER TABLE travelers
+        ADD COLUMN loyalty_points integer NOT NULL DEFAULT 0;
+
+      SELECT full_name, loyalty_points FROM travelers;
+
+  - kind: try
+    title: Your turn to add a column
+    body: |
+      The SELECT asks for a `nationality` column that doesn't exist yet. Add it above the SELECT as a `text` column, then run both.
+    sql: |
+      SELECT full_name, nationality FROM travelers;
+    broken_starter: true
+    expect: |
+      ALTER TABLE travelers ADD COLUMN nationality text;
+      SELECT full_name, nationality FROM travelers;
+
+  - kind: explain
+    title: Dropping and renaming
+    body: |
+      ```sql
+      ALTER TABLE travelers DROP COLUMN phone;                  -- column and its data, gone
+      ALTER TABLE travelers RENAME COLUMN home_city TO hometown;
+      ALTER TABLE trip_stops RENAME TO stops;                   -- renames the table
+      ```
+
+      - **DROP COLUMN** deletes every value in that column. There's no undo.
+      - **RENAME** is instant and keeps the data, but every query, report and app that used the old name **breaks**. Rename early in a project, rarely after.
+
+  - kind: try
+    title: Rename, then use the new name
+    body: |
+      Run it. Then change the SELECT to use the **old** name, `home_city`, and read the error.
+    sql: |
+      ALTER TABLE travelers RENAME COLUMN home_city TO hometown;
+      SELECT full_name, hometown FROM travelers;
+
+  - kind: explain
+    title: Changing a column's type
+    body: |
+      ```sql
+      ALTER TABLE cities ALTER COLUMN population TYPE bigint;
+      ```
+
+      PostgreSQL converts every existing value. If it can't convert one automatically (text → number, for example), add **`USING`** to say how:
+
+      ```sql
+      ALTER TABLE imports
+        ALTER COLUMN price TYPE numeric(8,2) USING price::numeric(8,2);
+      ```
+
+      If **any** row can't be converted, the whole change fails and nothing is changed. On big tables, most type changes rewrite the whole table, which can take a while (Module 41 covers doing this safely in production).
+
+  - kind: try
+    title: Prices stored as text
+    body: |
+      An import stored prices as text, so they can't be summed. Run it: the type change with `USING` converts them, and `sum` works.
+
+      Then add a row `('free')` to the INSERT and run it again. One bad value blocks the whole conversion.
+    sql: |
+      CREATE TABLE imports (item text, price text);
+      INSERT INTO imports VALUES ('map', '4.50'), ('guidebook', '19.99');
+
+      ALTER TABLE imports
+        ALTER COLUMN price TYPE numeric(8,2) USING price::numeric(8,2);
+
+      SELECT sum(price) FROM imports;
+
+  - kind: explain
+    title: Adding and dropping rules
+    body: |
+      Constraints (Module 12) can be added and removed later:
+
+      ```sql
+      ALTER TABLE cities ADD CONSTRAINT cities_population_positive CHECK (population > 0);
+      ALTER TABLE cities DROP CONSTRAINT cities_population_positive;
+
+      ALTER TABLE trips ALTER COLUMN end_date SET NOT NULL;
+      ALTER TABLE trips ALTER COLUMN end_date DROP NOT NULL;
+
+      ALTER TABLE trips ALTER COLUMN status SET DEFAULT 'draft';
+      ALTER TABLE trips ALTER COLUMN status DROP DEFAULT;
+
+      ALTER TABLE trips ADD CONSTRAINT trips_traveler_fk
+        FOREIGN KEY (traveler_id) REFERENCES travelers (traveler_id);
+      ```
+
+      This is where naming your constraints pays off: dropping one needs its name.
+
+  - kind: explain
+    title: Rules vs. data that's already there
+    body: |
+      When you add a rule to a table that **already has rows**, PostgreSQL checks **every existing row** first. If even one breaks the rule, the ALTER fails:
+
+      - `SET NOT NULL` fails if any row is NULL.
+      - `ADD CONSTRAINT … CHECK` fails if any row breaks the check.
+      - `ADD … FOREIGN KEY` fails if any row points at a parent that doesn't exist (an orphan).
+
+      The fix is always the same: **clean the data first, then add the rule.** Find the bad rows with a SELECT, fix them with UPDATE (or DELETE), then run the ALTER again.
+
+  - kind: try
+    title: Your turn to clean, then enforce
+    body: |
+      Wanderly wants every traveler to have an email. The ALTER fails because Dulguun (traveler 4) has none. Run it and read the error.
+
+      Dulguun's email is **dulguun@example.com**. Add an UPDATE **before** the ALTER to fix that row, then run it all.
+    sql: |
+      ALTER TABLE travelers ALTER COLUMN email SET NOT NULL;
+
+      SELECT full_name, email FROM travelers ORDER BY traveler_id;
+    broken_starter: true
+    expect: |
+      UPDATE travelers SET email = 'dulguun@example.com' WHERE traveler_id = 4;
+      ALTER TABLE travelers ALTER COLUMN email SET NOT NULL;
+
+      SELECT full_name, email FROM travelers ORDER BY traveler_id;
+
+  - kind: explain
+    title: The danger of DROP … CASCADE
+    body: |
+      `DROP TABLE travelers;` **fails**, because trips and reviews have foreign keys pointing at it. PostgreSQL is protecting you.
+
+      Adding **`CASCADE`** makes it drop **everything that depends on** the table too:
+
+      ```sql
+      DROP TABLE travelers CASCADE;
+      ```
+
+      Here that removes the foreign key rules on `trips` and `reviews` (their rows stay, but are no longer protected), plus any views built on travelers (Module 34). On a real database, CASCADE can remove far more than you expected, so read the error's dependency list first, and drop dependents on purpose.
+
+      Don't confuse it with `ON DELETE CASCADE` (Module 13), which deletes child **rows**. `DROP … CASCADE` removes dependent **objects**.
+
+  - kind: try
+    title: Protected from yourself
+    body: |
+      Run it and read the error: the DETAIL lists everything that depends on travelers.
+    sql: |
+      DROP TABLE travelers;
+    expect_error: true
+
+  - kind: why
+    body: |
+      Real databases live for years and change constantly. Knowing how to evolve a table without losing data, and how to add rules once the data is already messy, is what separates a toy database from one that keeps working.
+
+  - kind: recap
+    body: |
+      - `ALTER TABLE t ADD COLUMN c type [DEFAULT …]`. Existing rows get the default, or NULL.
+      - `DROP COLUMN` deletes the data. `RENAME COLUMN a TO b` / `RENAME TO` break old queries.
+      - `ALTER COLUMN c TYPE new_type [USING expression]`: every row must convert, or nothing changes.
+      - `ADD CONSTRAINT name …`, `DROP CONSTRAINT name`, `SET/DROP NOT NULL`, `SET/DROP DEFAULT`.
+      - New rules are checked against existing rows. **Clean the data first, then add the rule.**
+      - `DROP … CASCADE` also drops dependent objects. Read the dependency list before using it.

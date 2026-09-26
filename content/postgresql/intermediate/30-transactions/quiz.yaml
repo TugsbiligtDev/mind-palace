@@ -1,0 +1,62 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does the last statement return?
+    code: |
+      CREATE TABLE notes (body text);
+      BEGIN;
+      INSERT INTO notes VALUES ('a'), ('b');
+      ROLLBACK;
+      INSERT INTO notes VALUES ('c');
+      SELECT count(*) FROM notes;
+    options:
+      - "0"
+      - "1"
+      - "2"
+      - "3"
+    answer: 1
+    explanation: The two rows inside the rolled-back transaction are discarded. The third INSERT autocommits on its own, so 1 row remains.
+
+  - type: mcq
+    prompt: Inside a transaction, a statement fails. You then run `SELECT 1;` and get *current transaction is aborted*. What do you do?
+    options:
+      - Run the SELECT again
+      - "`COMMIT` to save what worked"
+      - "`ROLLBACK`, fix the problem, and run the transaction again"
+      - Restart PostgreSQL
+    answer: 2
+    explanation: A failed transaction can only be rolled back (even COMMIT just rolls back). Then retry the whole unit of work.
+
+  - type: fill
+    prompt: Undo only the work done since the bookmark.
+    code: |
+      CREATE TABLE t (x int);
+      BEGIN;
+      INSERT INTO t VALUES (1);
+      SAVEPOINT s1;
+      INSERT INTO t VALUES (2);
+      ____ TO SAVEPOINT s1;
+      COMMIT;
+    answer: ROLLBACK
+    accept: ["rollback"]
+    explanation: "`ROLLBACK TO SAVEPOINT s1` undoes the second insert and keeps the first."
+
+  - type: mcq
+    prompt: Which letter of ACID means "once committed, it survives a crash"?
+    options:
+      - Atomicity
+      - Consistency
+      - Isolation
+      - Durability
+    answer: 3
+    explanation: Durability means committed data is safely on disk and survives power cuts and crashes.
+
+  - type: mcq
+    prompt: Why shouldn't you open a transaction and then wait for a user to confirm?
+    options:
+      - Transactions time out after one second
+      - An open transaction holds locks and blocks cleanup, slowing everyone else down
+      - BEGIN deletes data if you wait
+      - It's not allowed
+    answer: 1
+    explanation: Long-open transactions block other sessions and stop vacuum from cleaning up. Keep them short.

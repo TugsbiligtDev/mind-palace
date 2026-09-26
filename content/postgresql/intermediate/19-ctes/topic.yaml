@@ -1,0 +1,4 @@
+title: Common Table Expressions (CTEs)
+module: 19
+summary: Name the steps of a query with WITH, chain them into a readable pipeline, walk hierarchies with recursive CTEs, and meet data-modifying CTEs.
+minutes: 40

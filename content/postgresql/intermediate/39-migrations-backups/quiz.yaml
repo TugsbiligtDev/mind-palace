@@ -1,0 +1,62 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Migration 007 has already run on production, and you spot a mistake in it. What do you do?
+    options:
+      - Edit 007 and rerun it everywhere
+      - Write a new migration (008) that fixes the mistake
+      - Delete 007 from Git
+      - Fix production by hand and leave the files alone
+    answer: 1
+    explanation: Applied migrations must never change, because other databases won't rerun them. A new migration carries the fix everywhere.
+
+  - type: mcq
+    prompt: Why use pg_dump's custom format (`-Fc`)?
+    options:
+      - It's the only format pg_dump supports
+      - It's compressed, and pg_restore can restore it in parallel or pick single tables
+      - It includes roles and passwords
+      - It's readable in a text editor
+    answer: 1
+    explanation: The custom format is compact and flexible. Roles aren't included in any pg_dump output (use pg_dumpall --globals-only).
+
+  - type: predict
+    prompt: What does the last statement return?
+    code: |
+      CREATE TABLE schema_migrations (version text PRIMARY KEY);
+      BEGIN;
+      INSERT INTO schema_migrations VALUES ('001');
+      ALTER TABLE trips ADD COLUMN notes text;
+      COMMIT;
+      BEGIN;
+      INSERT INTO schema_migrations VALUES ('002');
+      ALTER TABLE trips ADD COLUMN rating integer;
+      ROLLBACK;
+      SELECT count(*) FROM schema_migrations;
+    options:
+      - "0"
+      - "1"
+      - "2"
+      - An error
+    answer: 1
+    explanation: Migration 001 committed. Migration 002 was rolled back, so both its ALTER and its version record were undone together. One row remains.
+
+  - type: mcq
+    prompt: What is the only reliable way to know a backup works?
+    options:
+      - Check the file exists
+      - Check the file size
+      - Restore it somewhere and check the data
+      - Run pg_dump twice
+    answer: 2
+    explanation: Only a real restore proves the backup is complete and usable.
+
+  - type: mcq
+    prompt: "In `docker run … -v pg18data:/var/lib/postgresql … postgres:18`, what does `-v pg18data:…` do?"
+    options:
+      - Sets the PostgreSQL version
+      - Stores the data in a named volume, so it survives the container being removed
+      - Opens port 5432
+      - Sets the password
+    answer: 1
+    explanation: Without a volume, the data lives inside the container and is lost when the container is removed.

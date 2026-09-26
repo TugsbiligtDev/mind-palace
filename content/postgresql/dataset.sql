@@ -1,6 +1,6 @@
 -- learn_sql: the trip-planning course dataset (from the owner's course brief).
 -- Loaded into every lesson and case. Do not reintroduce the old bookstore tables.
-DROP TABLE IF EXISTS reviews, trip_stops, trips, travelers, attractions, cities, countries CASCADE;
+DROP TABLE IF EXISTS payments, employees, reviews, trip_stops, trips, travelers, attractions, cities, countries CASCADE;
 
 CREATE TABLE countries (
     country_id    INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -57,6 +57,26 @@ CREATE TABLE reviews (
     rating        INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
     review_text   TEXT,
     review_date   DATE NOT NULL DEFAULT CURRENT_DATE
+);
+
+-- Added for the Intermediate level: money received per trip (exact moments, so
+-- timestamptz), and Wanderly's own staff with their managers.
+CREATE TABLE payments (
+    payment_id    INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    trip_id       INTEGER NOT NULL REFERENCES trips(trip_id),
+    amount        NUMERIC(8,2) NOT NULL,   -- negative = refund
+    paid_at       TIMESTAMPTZ NOT NULL,
+    method        TEXT NOT NULL            -- card / cash / transfer
+);
+
+CREATE TABLE employees (
+    employee_id   INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    full_name     TEXT NOT NULL,
+    department    TEXT NOT NULL,
+    job_title     TEXT NOT NULL,
+    manager_id    INTEGER REFERENCES employees(employee_id),
+    hired_on      DATE NOT NULL,
+    salary        NUMERIC(8,2) NOT NULL
 );
 
 -- Sample data
@@ -121,3 +141,30 @@ INSERT INTO reviews (attraction_id, traveler_id, rating, review_text) VALUES
 (7, 2, 5, 'Bucket list, fully lived up to the hype.'),
 (8, 4, 4, 'Impressive scale, very touristy.'),
 (3, 1, 4, 'The gates go on forever.');
+
+INSERT INTO payments (trip_id, amount, paid_at, method) VALUES
+(7, 200.00, '2025-09-01 12:00:00+00', 'card'),
+(7, 730.00, '2025-10-15 20:20:00+00', 'card'),
+(5, 300.00, '2026-01-03 11:00:00+00', 'transfer'),
+(1, 300.00, '2026-01-15 10:20:00+00', 'card'),
+(5, 610.00, '2026-01-25 18:45:00+00', 'transfer'),
+(1, 730.00, '2026-02-20 23:40:00+00', 'card'),
+(5, -300.00, '2026-02-25 15:10:00+00', 'transfer'),
+(3, 250.00, '2026-03-10 14:00:00+00', 'card'),
+(4, 150.00, '2026-04-05 09:15:00+00', 'card'),
+(3, 650.00, '2026-04-28 16:30:00+00', 'cash'),
+(4, 550.00, '2026-05-30 22:50:00+00', 'card'),
+(2, 200.00, '2026-06-02 08:05:00+00', 'transfer'),
+(6, 100.00, '2026-08-20 07:30:00+00', 'card'),
+(2, 600.00, '2026-08-31 16:10:00+00', 'card');
+
+INSERT INTO employees (full_name, department, job_title, manager_id, hired_on, salary) VALUES
+('Odval Bold',      'Management', 'Director',            NULL, '2019-04-01', 5200.00),
+('Gerel Tsog',      'Operations', 'Operations Manager',  1,    '2020-02-15', 3900.00),
+('Saruul Dash',     'Sales',      'Sales Manager',       1,    '2020-06-01', 3800.00),
+('Solongo Tuya',    'Finance',    'Accountant',          1,    '2021-11-01', 3100.00),
+('Temuulen Gan',    'Operations', 'Booking Agent',       2,    '2022-03-10', 2400.00),
+('Nomin Bat',       'Operations', 'Booking Agent',       2,    '2023-01-09', 2400.00),
+('Bat-Erdene Sukh', 'Operations', 'Tour Guide',          2,    '2024-05-20', 2100.00),
+('Anu Batbold',     'Sales',      'Senior Sales Associate', 3, '2021-08-16', 2600.00),
+('Khongor Munkh',   'Sales',      'Sales Associate',     8,    '2025-02-03', 2200.00);

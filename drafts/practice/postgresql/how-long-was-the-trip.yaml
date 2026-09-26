@@ -1,5 +1,5 @@
 difficulty: medium
-topic: postgresql/beginner/05-data-types
+topic: postgresql/beginner/07-null
 concepts: [date arithmetic, IS NOT NULL]
 title: How Long Was the Trip?
 briefing: |

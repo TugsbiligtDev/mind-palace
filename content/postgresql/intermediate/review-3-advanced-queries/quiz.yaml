@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "\"For each customer, their single most recent order.\" Which tool is built for exactly this in PostgreSQL?"
+    options:
+      - "`DISTINCT ON (customer_id)` with `ORDER BY customer_id, ordered_at DESC`"
+      - "`GROUP BY customer_id` with `max(order_id)`"
+      - "`UNION`"
+      - "`HAVING count(*) = 1`"
+    answer: 0
+    explanation: DISTINCT ON keeps the first row per customer in the ORDER BY order. `max(order_id)` only works if ids always grow with time, which you'd have to prove.
+
+  - type: mcq
+    prompt: Why can't you write `WHERE row_number() OVER (…) <= 3`?
+    options:
+      - row_number() only works with GROUP BY
+      - Window functions are calculated after WHERE, so filter them in an outer query or CTE
+      - WHERE doesn't allow numbers
+      - It works fine
+    answer: 1
+    explanation: Evaluation order is FROM → WHERE → GROUP BY → window functions → SELECT → ORDER BY. The number doesn't exist yet when WHERE runs.
+
+  - type: mcq
+    prompt: Which condition covers exactly the year 2025 for a `timestamptz` column, including 31 December at 23:30?
+    options:
+      - "`paid_at BETWEEN '2025-01-01' AND '2025-12-31'`"
+      - "`paid_at >= '2025-01-01' AND paid_at < '2026-01-01'`"
+      - "`extract(year FROM paid_at) = 2025` is the only way"
+      - "`paid_at LIKE '2025%'`"
+    answer: 1
+    explanation: "`'2025-12-31'` means midnight at the start of 31 December, so BETWEEN misses that whole day. The half-open range is exact (Module 27)."
+
+  - type: mcq
+    prompt: "\"Customers who ordered in 2024 but not in 2025.\" Which is NOT a correct approach?"
+    options:
+      - 2024 customers EXCEPT 2025 customers
+      - 2024 customers WHERE NOT EXISTS a 2025 order
+      - 2024 customers WHERE customer_id NOT IN (2025 customers), when that list can contain NULL
+      - 2024 customers LEFT JOIN 2025 orders, keeping rows where the 2025 side is NULL
+    answer: 2
+    explanation: NOT IN returns no rows at all if the list contains a NULL (Module 18). Here `customer_id` is NOT NULL so it would work, but the other three are safe by design.
+
+  - type: mcq
+    prompt: A running total restarts every month when it shouldn't. What's the most likely cause?
+    options:
+      - The window has `PARTITION BY` month
+      - The window has no ORDER BY
+      - sum() can't be used as a window function
+      - The table needs an index
+    answer: 0
+    explanation: PARTITION BY starts a separate window per value. For one running total over the year, order by month without partitioning by it.

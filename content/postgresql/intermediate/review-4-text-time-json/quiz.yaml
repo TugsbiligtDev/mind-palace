@@ -1,0 +1,53 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this return?
+    code: |
+      SELECT regexp_replace('(203) 555-0147', '\D', '', 'g') AS digits;
+    options:
+      - "2035550147"
+      - "(203) 555-0147"
+      - "203"
+      - "0147"
+    answer: 0
+    explanation: "`\\D` matches every character that isn't a digit, and the `g` flag replaces all of them, not just the first."
+
+  - type: mcq
+    prompt: "`'03/04/2025'` arrives in a file. What date is it?"
+    options:
+      - 3 April 2025
+      - 4 March 2025
+      - You can't know without being told the file's format
+      - PostgreSQL always knows
+    answer: 2
+    explanation: Day-first and month-first both exist. Find out the source's format, then parse it explicitly with `to_date`.
+
+  - type: mcq
+    prompt: A book's `details` has no `dimensions_cm` key (it's an ebook). What does `details -> 'dimensions_cm' ->> 'height'` return for it?
+    options:
+      - An error
+      - An empty string
+      - "NULL"
+      - "0"
+    answer: 2
+    explanation: A missing key gives NULL, and NULL passes through the next `->>` and the cast. Comparisons with NULL are unknown, so the ebook is filtered out.
+
+  - type: mcq
+    prompt: "Which condition finds books tagged with **either** `bestseller` or `staff-pick`?"
+    options:
+      - "`tags @> ARRAY['bestseller','staff-pick']`"
+      - "`tags && ARRAY['bestseller','staff-pick']`"
+      - "`tags = ARRAY['bestseller','staff-pick']`"
+      - "`'bestseller' IN tags`"
+    answer: 1
+    explanation: "`&&` means \"overlaps\" (at least one in common). `@>` means \"contains all\"."
+
+  - type: mcq
+    prompt: A customer in Sydney ordered at `2025-12-31 14:30:00+00` (UTC). On which date was that in Sydney (UTC+11 in summer)?
+    options:
+      - 31 December 2025
+      - 1 January 2026
+      - 30 December 2025
+      - It depends on the server
+    answer: 1
+    explanation: 14:30 UTC plus 11 hours is 01:30 the next day in Sydney. That's why "per day" reports need the customer's zone.

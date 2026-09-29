@@ -1,0 +1,332 @@
+steps:
+  - kind: explain
+    title: Your first week as Inkwell's database person
+    body: |
+      This capstone is a week of real work, using everything from the Intermediate level:
+
+      1. **Access**: give the new reporting tool exactly the access it needs.
+      2. **A migration**: add a column, fill it for 5,000 customers, and record it, all or nothing.
+      3. **Four questions** from the owner that need CTEs, window functions and time zones.
+      4. **A broken report** with several bugs to find.
+      5. **On your Mac**: back up, restore and verify, and query from Python safely.
+
+      Steps 1 to 4 are checked. Step 5 runs on your own computer.
+
+  - kind: try
+    title: "1. Access for the reporting tool"
+    body: |
+      Create a role **reporting** for the new dashboard tool:
+
+      - it can't log in by itself (a group role: the tool's own login will be granted it later)
+      - it can **read every table** in the `public` schema
+      - it can't insert, update or delete anything
+      - on `customers`, it may read every column **except `email`**
+    sql: |
+      -- Write your statements here
+    expect: |
+      CREATE ROLE reporting NOLOGIN;
+      GRANT SELECT ON ALL TABLES IN SCHEMA public TO reporting;
+      REVOKE SELECT ON customers FROM reporting;
+      GRANT SELECT (customer_id, first_name, last_name, city, country, joined_at, time_zone)
+          ON customers TO reporting;
+    state_query: |
+      SELECT (SELECT rolcanlogin FROM pg_roles WHERE rolname = 'reporting') AS can_login,
+             has_table_privilege('reporting', 'orders', 'SELECT')      AS read_orders,
+             has_table_privilege('reporting', 'payments', 'SELECT')    AS read_payments,
+             has_table_privilege('reporting', 'orders', 'UPDATE')      AS update_orders,
+             has_table_privilege('reporting', 'books', 'DELETE')       AS delete_books,
+             has_column_privilege('reporting', 'customers', 'city', 'SELECT')  AS read_city,
+             has_column_privilege('reporting', 'customers', 'email', 'SELECT') AS read_email;
+    hint: "Grant SELECT on all tables, then take `customers` back and grant it again column by column (Module 37). Column privileges can't subtract one column from a table-wide grant."
+    reject:
+      - |
+        CREATE ROLE reporting NOLOGIN;
+        GRANT SELECT ON ALL TABLES IN SCHEMA public TO reporting;
+      - |
+        CREATE ROLE reporting NOLOGIN;
+        GRANT SELECT ON ALL TABLES IN SCHEMA public TO reporting;
+        REVOKE SELECT (email) ON customers FROM reporting;
+
+  - kind: try
+    title: "2. Migration 003: loyalty tiers"
+    body: |
+      Migrations 001 and 002 are already applied (the starter sets that up; keep it). Write migration **003_customer_loyalty_tier**, all in **one transaction**:
+
+      1. Add a column **loyalty_tier** (text) to `customers`, allowing only `bronze`, `silver` and `gold`.
+      2. Fill it for every existing customer: `gold` for net payments of **500 or more**, `silver` for **100 or more**, `bronze` for everyone else (including customers who never paid).
+      3. Make it **NOT NULL**, with **bronze** as the default for new customers.
+      4. Record the version in `schema_migrations`.
+    sql: |
+      CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+
+      -- Write migration 003 below
+    expect: |
+      CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+
+      BEGIN;
+      ALTER TABLE customers ADD COLUMN loyalty_tier text
+          CHECK (loyalty_tier IN ('bronze', 'silver', 'gold'));
+
+      UPDATE customers c
+      SET loyalty_tier = CASE WHEN coalesce(n.net, 0) >= 500 THEN 'gold'
+                              WHEN coalesce(n.net, 0) >= 100 THEN 'silver'
+                              ELSE 'bronze' END
+      FROM customers c2
+      LEFT JOIN (SELECT o.customer_id, sum(p.amount) AS net
+                 FROM payments p JOIN orders o ON o.order_id = p.order_id
+                 GROUP BY o.customer_id) AS n ON n.customer_id = c2.customer_id
+      WHERE c2.customer_id = c.customer_id;
+
+      ALTER TABLE customers ALTER COLUMN loyalty_tier SET DEFAULT 'bronze';
+      ALTER TABLE customers ALTER COLUMN loyalty_tier SET NOT NULL;
+      INSERT INTO schema_migrations (version) VALUES ('003_customer_loyalty_tier');
+      COMMIT;
+    state_query: |
+      CREATE FUNCTION pg_temp.try_tier(t text) RETURNS text LANGUAGE plpgsql AS $$
+      BEGIN
+        UPDATE customers SET loyalty_tier = t WHERE customer_id = 1;
+        RETURN 'accepted';
+      EXCEPTION WHEN OTHERS THEN
+        RETURN 'rejected';
+      END $$;
+      INSERT INTO customers (first_name, last_name, email) VALUES ('New', 'Customer', 'new.customer@example.com');
+      SELECT (SELECT string_agg(version, ', ' ORDER BY version) FROM schema_migrations) AS versions,
+             (SELECT is_nullable FROM information_schema.columns
+              WHERE table_name = 'customers' AND column_name = 'loyalty_tier') AS nullable,
+             (SELECT loyalty_tier FROM customers WHERE email = 'new.customer@example.com') AS new_customer,
+             (SELECT count(*) FROM customers WHERE loyalty_tier = 'gold') AS gold,
+             (SELECT count(*) FROM customers WHERE loyalty_tier = 'silver') AS silver,
+             (SELECT count(*) FROM customers WHERE loyalty_tier = 'bronze') AS bronze,
+             pg_temp.try_tier('platinum') AS platinum;
+    hint: "Add the column (with its CHECK) first, fill it with one UPDATE that joins each customer to their payment total (customers who never paid need a LEFT JOIN and coalesce), and only then SET NOT NULL, because the column is empty until it's filled."
+    reject:
+      - |
+        CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+        INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+        BEGIN;
+        ALTER TABLE customers ADD COLUMN loyalty_tier text NOT NULL DEFAULT 'bronze' CHECK (loyalty_tier IN ('bronze', 'silver', 'gold'));
+        UPDATE customers c SET loyalty_tier = CASE WHEN n.net >= 500 THEN 'gold' WHEN n.net >= 100 THEN 'silver' END
+        FROM (SELECT o.customer_id, sum(p.amount) AS net FROM payments p JOIN orders o ON o.order_id = p.order_id GROUP BY o.customer_id) n
+        WHERE n.customer_id = c.customer_id AND n.net >= 100;
+        COMMIT;
+
+  - kind: explain
+    title: "3. The owner's questions"
+    body: |
+      Four questions the owner asked this week. Each needs several steps, so build them as CTE chains and check each step on its own before combining (Module 25).
+
+  - kind: try
+    title: "3a. Do new customers come back quickly?"
+    body: |
+      For customers who **joined in 2025**, group them by the **month they joined** (labeled **cohort**, a timestamp at the start of the month). For each cohort show:
+
+      - **customers**: how many joined that month
+      - **ordered_30d**: how many placed at least one order within **30 days** of joining (`ordered_at < joined_at + interval '30 days'`)
+      - **pct**: that as a percentage of the cohort, rounded to 1 decimal
+
+      Oldest cohort first.
+    sql: |
+      -- Write your query here
+    expect: |
+      WITH cohort AS (
+          SELECT customer_id, joined_at, date_trunc('month', joined_at) AS cohort
+          FROM customers
+          WHERE joined_at >= '2025-01-01' AND joined_at < '2026-01-01'
+      ), quick AS (
+          SELECT c.customer_id
+          FROM cohort c
+          WHERE EXISTS (SELECT 1 FROM orders o
+                        WHERE o.customer_id = c.customer_id
+                          AND o.ordered_at < c.joined_at + interval '30 days')
+      )
+      SELECT c.cohort,
+             count(*) AS customers,
+             count(q.customer_id) AS ordered_30d,
+             round(100.0 * count(q.customer_id) / count(*), 1) AS pct
+      FROM cohort c
+      LEFT JOIN quick q ON q.customer_id = c.customer_id
+      GROUP BY c.cohort
+      ORDER BY c.cohort;
+    ordered: true
+    hint: "Step 1: the 2025 customers with their cohort month. Step 2: which of them have a quick order (EXISTS). Step 3: group by cohort and count both. Joining orders directly and counting would count orders, not customers."
+
+  - kind: try
+    title: "3b. A summer-time week in London"
+    body: |
+      UK clocks went forward on 29 March 2026, so in April London is **one hour ahead of UTC**. For customers whose `time_zone` is **Europe/London**, show the net payments per **London calendar date** (labeled **local_date**, a date) from **1 to 7 April 2026** inclusive, as **net**, in date order.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT (p.paid_at AT TIME ZONE 'Europe/London')::date AS local_date,
+             sum(p.amount) AS net
+      FROM payments p
+      JOIN orders o    ON o.order_id = p.order_id
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE c.time_zone = 'Europe/London'
+        AND p.paid_at >= timestamptz '2026-04-01 00:00 Europe/London'
+        AND p.paid_at <  timestamptz '2026-04-08 00:00 Europe/London'
+      GROUP BY 1
+      ORDER BY 1;
+    ordered: true
+    hint: "Convert each timestamp to London wall-clock time and take its date. Write the range boundaries with the zone too, so the edges are London midnights (Module 27)."
+    reject:
+      - |
+        SELECT p.paid_at::date AS local_date, sum(p.amount) AS net
+        FROM payments p JOIN orders o ON o.order_id = p.order_id JOIN customers c ON c.customer_id = o.customer_id
+        WHERE c.time_zone = 'Europe/London' AND p.paid_at >= '2026-04-01' AND p.paid_at < '2026-04-08'
+        GROUP BY 1 ORDER BY 1;
+
+  - kind: try
+    title: "3c. Partly refunded orders"
+    body: |
+      Some orders got **part** of their money back. Show `order_id`, **paid** (the sum of its payments), **refunded** (the sum of its refunds, as a positive number) and **pct_refunded** (refunded ÷ paid × 100, rounded to 1 decimal), for orders where the refund is **more than 0 but less than** the payment. Highest percentage first, then by order_id.
+    sql: |
+      -- Write your query here
+    expect: |
+      WITH per_order AS (
+          SELECT order_id,
+                 sum(amount) FILTER (WHERE kind = 'payment') AS paid,
+                 -sum(amount) FILTER (WHERE kind = 'refund') AS refunded
+          FROM payments
+          GROUP BY order_id
+      )
+      SELECT order_id, paid, refunded, round(100 * refunded / paid, 1) AS pct_refunded
+      FROM per_order
+      WHERE refunded > 0 AND refunded < paid
+      ORDER BY pct_refunded DESC, order_id;
+    ordered: true
+    hint: "One row per order with two filtered sums (FILTER, Module 22/23), then compare them. Refund amounts are stored negative."
+
+  - kind: try
+    title: "3d. The best customer in each big city"
+    body: |
+      For every city with **at least 100 customers** (ignore customers with no city), find the customer with the **highest net payments**. Show `city`, `customer_id`, `first_name`, `last_name` and **net**. If two customers tie, the lower customer_id wins.
+    sql: |
+      -- Write your query here
+    expect: |
+      WITH big_city AS (
+          SELECT city FROM customers
+          WHERE city IS NOT NULL
+          GROUP BY city
+          HAVING count(*) >= 100
+      ), net AS (
+          SELECT o.customer_id, sum(p.amount) AS net
+          FROM payments p JOIN orders o ON o.order_id = p.order_id
+          GROUP BY o.customer_id
+      ), ranked AS (
+          SELECT c.city, c.customer_id, c.first_name, c.last_name, n.net,
+                 row_number() OVER (PARTITION BY c.city ORDER BY n.net DESC, c.customer_id) AS rn
+          FROM customers c
+          JOIN big_city bc ON bc.city = c.city
+          JOIN net n ON n.customer_id = c.customer_id
+      )
+      SELECT city, customer_id, first_name, last_name, net
+      FROM ranked
+      WHERE rn = 1;
+    hint: "Three steps: which cities qualify, each customer's net, then number customers within each city by net and keep number 1."
+
+  - kind: try
+    title: "4. Fix the broken report"
+    body: |
+      A colleague's report is supposed to show **every genre** with its revenue (quantity × unit price) from **2025 orders that weren't cancelled**, showing **0** for genres with no such sales. It runs, but the numbers are wrong. There are **five** separate bugs. Find and fix them all.
+
+      Tip: check one genre by hand with a small, simple query, and compare.
+    sql: |
+      SELECT g.name, sum(oi.quantity * oi.unit_price) AS revenue
+      FROM genres g
+      LEFT JOIN books b        ON b.genre_id = g.genre_id
+      LEFT JOIN order_items oi ON oi.book_id = b.book_id
+      LEFT JOIN orders o       ON o.order_id = oi.order_id
+      LEFT JOIN reviews r      ON r.book_id = b.book_id
+      WHERE o.ordered_at BETWEEN '2025-01-01' AND '2025-12-31'
+      GROUP BY g.name;
+    expect: |
+      SELECT g.name, coalesce(sum(s.quantity * s.unit_price), 0) AS revenue
+      FROM genres g
+      LEFT JOIN (
+          SELECT b.genre_id, oi.quantity, oi.unit_price
+          FROM books b
+          JOIN order_items oi ON oi.book_id = b.book_id
+          JOIN orders o       ON o.order_id = oi.order_id
+          WHERE o.ordered_at >= '2025-01-01' AND o.ordered_at < '2026-01-01'
+            AND o.status <> 'cancelled'
+      ) AS s ON s.genre_id = g.genre_id
+      GROUP BY g.name;
+    hint: "Look for: a join that multiplies rows and isn't needed; a WHERE that undoes the LEFT JOINs; a date range that misses a day; a missing status filter; and NULL where 0 was asked for."
+    reject:
+      - |
+        SELECT g.name, coalesce(sum(s.quantity * s.unit_price), 0) AS revenue
+        FROM genres g
+        LEFT JOIN (SELECT b.genre_id, oi.quantity, oi.unit_price FROM books b JOIN order_items oi ON oi.book_id = b.book_id
+                   JOIN orders o ON o.order_id = oi.order_id
+                   WHERE o.ordered_at BETWEEN '2025-01-01' AND '2025-12-31' AND o.status <> 'cancelled') AS s ON s.genre_id = g.genre_id
+        GROUP BY g.name;
+      - |
+        SELECT g.name, coalesce(sum(s.quantity * s.unit_price), 0) AS revenue
+        FROM genres g
+        LEFT JOIN (SELECT b.genre_id, oi.quantity, oi.unit_price FROM books b JOIN order_items oi ON oi.book_id = b.book_id
+                   JOIN orders o ON o.order_id = oi.order_id
+                   WHERE o.ordered_at >= '2025-01-01' AND o.ordered_at < '2026-01-01') AS s ON s.genre_id = g.genre_id
+        GROUP BY g.name;
+
+  - kind: mac
+    title: "5a. Back up, break, restore"
+    body: |
+      On your Mac, prove you can recover from a disaster. Load the course files first if you haven't (Setup page). Then:
+
+      1. Back up `bookstore` in PostgreSQL's custom format.
+      2. **Simulate a disaster**: delete all 2026 payments.
+      3. Restore the backup into a **new** database and check that the 2026 payments are there, and match the count you wrote down before.
+
+      You've passed this step when the two counts match. If they don't, find out why before moving on.
+    commands: |
+      cd ~/Documents/sql
+      psql -d bookstore -c "SELECT count(*) FROM payments WHERE paid_at >= '2026-01-01';"
+      pg_dump -Fc -d bookstore -f bookstore_capstone.dump
+      psql -d bookstore -c "DELETE FROM payments WHERE paid_at >= '2026-01-01';"
+      createdb bookstore_restored
+      pg_restore -d bookstore_restored bookstore_capstone.dump
+      psql -d bookstore_restored -c "SELECT count(*) FROM payments WHERE paid_at >= '2026-01-01';"
+      dropdb bookstore_restored
+      psql -f 02_bookstore.sql && psql -f 03_bookstore_growth.sql
+
+  - kind: mac
+    title: "5b. A safe query from Python"
+    body: |
+      Write a tiny Python script that asks for a customer's email and prints their last three orders, using a **parameterized** query (Module 38), never string formatting. Then type this "email" and confirm it simply finds nothing, instead of returning every customer:
+
+      `' OR '1'='1`
+
+      Run it with `python3 last_orders.py`. It needs psycopg: `pip3 install "psycopg[binary]"`.
+    commands: |
+      cat > last_orders.py <<'PY'
+      import psycopg
+
+      email = input("Customer email: ")
+      with psycopg.connect("dbname=bookstore") as conn:
+          rows = conn.execute(
+              """SELECT o.order_id, o.ordered_at, o.status
+                 FROM orders o JOIN customers c ON c.customer_id = o.customer_id
+                 WHERE c.email = %s
+                 ORDER BY o.ordered_at DESC LIMIT 3""",
+              (email,),
+          ).fetchall()
+      for row in rows:
+          print(row)
+      print(f"{len(rows)} order(s) found")
+      PY
+      python3 last_orders.py
+
+  - kind: why
+    body: |
+      This is what an intermediate database person does in a normal week: give access carefully, change a live schema without breaking it, answer questions nobody has a ready-made query for, find out why a report is wrong, and know the backups really work.
+
+  - kind: recap
+    body: |
+      - Least privilege: grant what's needed, per table or per column.
+      - Migrations: one transaction, fill before NOT NULL, record the version.
+      - Hard questions: CTE steps you can check one by one.
+      - Debugging: check one case by hand, then look for fan-out, WHERE-after-LEFT-JOIN, date edges, missing filters and NULL totals.
+      - A backup only counts once you've restored it and checked it.

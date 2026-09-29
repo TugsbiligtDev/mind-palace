@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A materialized view was created yesterday. A payment was added today. What does selecting from it show?
+    options:
+      - Today's payment included
+      - Yesterday's result, until you run REFRESH MATERIALIZED VIEW
+      - An error
+      - An empty result
+    answer: 1
+    explanation: A materialized view stores the result from its last refresh. A plain view re-runs its query every time.
+
+  - type: mcq
+    prompt: A function reads the `payments` table. Which volatility label is correct?
+    options:
+      - IMMUTABLE
+      - STABLE
+      - It must be a procedure
+      - None, labels are optional decoration
+    answer: 1
+    explanation: IMMUTABLE promises the same result forever for the same input, which isn't true when a table can change. STABLE means "same result within one statement". Wrong labels can give wrong results.
+
+  - type: mcq
+    prompt: In a BEFORE INSERT row trigger, what happens if the function returns NULL?
+    options:
+      - The row is inserted with all columns NULL
+      - The row is silently skipped
+      - The insert fails with an error
+      - Nothing different
+    answer: 1
+    explanation: Returning NULL from a BEFORE row trigger cancels that row's operation without an error, which is a classic source of "missing rows" bugs. Return NEW to keep it.
+
+  - type: mcq
+    prompt: A trigger should fire only when `price` really changes. Which is the cleanest way?
+    options:
+      - "`AFTER UPDATE OF price … WHEN (OLD.price IS DISTINCT FROM NEW.price)`"
+      - "`AFTER UPDATE … WHEN (OLD.price <> NEW.price)` is always equivalent"
+      - "`AFTER INSERT`"
+      - Check it in the application instead
+    answer: 0
+    explanation: "`UPDATE OF price` skips updates that don't mention price, and the WHEN clause skips updates that set the same value. IS DISTINCT FROM also handles NULLs, where `<>` would give unknown."
+
+  - type: mcq
+    prompt: What can a procedure do that a function can't?
+    options:
+      - Return a value
+      - Take parameters
+      - COMMIT inside its body, e.g. between batches
+      - Use PL/pgSQL
+    answer: 2
+    explanation: Procedures (run with CALL) can control transactions, which suits long batch jobs. Functions run inside the caller's transaction.

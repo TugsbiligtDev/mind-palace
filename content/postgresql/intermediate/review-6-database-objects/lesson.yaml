@@ -1,0 +1,238 @@
+steps:
+  - kind: explain
+    title: Built to spec
+    body: |
+      In Part 9 the database started doing work on its own: views that remember a query, functions and procedures you can call, triggers that fire on every change.
+
+      Each question gives you a **specification**: the object's name, its inputs, and what it must do. After your code runs, the checker **uses** your object: it selects from your view, calls your function, or makes changes that should fire your trigger. So the names must match exactly. How you build it is up to you.
+
+      Same rules: empty editors, a hint after a miss, one answer after three.
+
+  - kind: try
+    title: "1. A sales view"
+    body: |
+      Create a view **book_sales** with one row per book: `book_id`, `title`, **copies_sold** and **revenue** (quantity × unit price), counting only orders that **weren't cancelled**. Books that never sold must appear with **0** in both columns. (Every current book has sold, so the check adds a new one first.)
+    sql: |
+      -- Write your statement here
+    expect: |
+      CREATE VIEW book_sales AS
+      SELECT b.book_id, b.title,
+             coalesce(sum(s.quantity), 0) AS copies_sold,
+             coalesce(sum(s.quantity * s.unit_price), 0) AS revenue
+      FROM books b
+      LEFT JOIN (
+          SELECT oi.book_id, oi.quantity, oi.unit_price
+          FROM order_items oi
+          JOIN orders o ON o.order_id = oi.order_id
+          WHERE o.status <> 'cancelled'
+      ) AS s ON s.book_id = b.book_id
+      GROUP BY b.book_id, b.title;
+    state_query: |
+      INSERT INTO books (title, genre_id, price) VALUES ('A Brand-New Book', 1, 9.99);
+      SELECT book_id, title, copies_sold, revenue FROM book_sales ORDER BY book_id;
+    hint: "Keep every book (LEFT JOIN), but only the lines of non-cancelled orders. If you filter on `status` in the WHERE after a LEFT JOIN, unsold books disappear (Module 25). Filter inside a subquery or in the ON clause, and use coalesce for the zeros."
+    reject:
+      - |
+        CREATE VIEW book_sales AS
+        SELECT b.book_id, b.title, coalesce(sum(oi.quantity), 0) AS copies_sold, coalesce(sum(oi.quantity * oi.unit_price), 0) AS revenue
+        FROM books b
+        LEFT JOIN order_items oi ON oi.book_id = b.book_id
+        LEFT JOIN orders o ON o.order_id = oi.order_id
+        WHERE o.status <> 'cancelled'
+        GROUP BY b.book_id, b.title;
+
+  - kind: try
+    title: "2. A stored monthly report"
+    body: |
+      The monthly revenue report is slow and only needs updating once a night. Create a **materialized view** named **monthly_net** with `month` (a timestamp at the start of each month, from `paid_at`) and `net` (the sum of all payment amounts that month, refunds included).
+    sql: |
+      -- Write your statement here
+    expect: |
+      CREATE MATERIALIZED VIEW monthly_net AS
+      SELECT date_trunc('month', paid_at) AS month, sum(amount) AS net
+      FROM payments
+      GROUP BY 1;
+    state_query: |
+      SELECT (SELECT relkind FROM pg_class WHERE relname = 'monthly_net') AS kind,
+             count(*) AS months, sum(net) AS total, min(month) AS first_month
+      FROM monthly_net;
+    hint: "CREATE MATERIALIZED VIEW … AS SELECT … (Module 34). `pg_class.relkind` is checked: `m` means materialized view, `v` a plain view."
+    reject:
+      - CREATE VIEW monthly_net AS SELECT date_trunc('month', paid_at) AS month, sum(amount) AS net FROM payments GROUP BY 1;
+
+  - kind: try
+    title: "3. An order-total function"
+    body: |
+      Write a function **order_total(p_order_id integer)** that returns the order's total (sum of quantity × unit price over its lines) as **numeric**. For an order id with no lines, it returns **0**, not NULL.
+    sql: |
+      -- Write your statement here
+    expect: |
+      CREATE FUNCTION order_total(p_order_id integer)
+      RETURNS numeric
+      LANGUAGE sql
+      STABLE
+      AS $$
+          SELECT coalesce(sum(quantity * unit_price), 0)
+          FROM order_items
+          WHERE order_id = p_order_id;
+      $$;
+    state_query: |
+      SELECT order_total(1) AS o1, order_total(500) AS o500, order_total(39419) AS o39419, order_total(-1) AS missing;
+    hint: A SQL function whose body is one SELECT with sum(). `sum` of no rows is NULL, which coalesce fixes. It reads a table, so mark it STABLE, not IMMUTABLE (Module 35).
+    reject:
+      - |
+        CREATE FUNCTION order_total(p_order_id integer) RETURNS numeric LANGUAGE sql STABLE
+        AS $$ SELECT sum(quantity * unit_price) FROM order_items WHERE order_id = p_order_id; $$;
+
+  - kind: try
+    title: "4. Loyalty tiers"
+    body: |
+      Write a **PL/pgSQL** function **loyalty_tier(p_customer_id integer)** returning text:
+
+      - `gold` when the customer's net payments (refunds included) are **500 or more**
+      - `silver` when they're **100 or more**
+      - `bronze` otherwise, including customers who never paid
+    sql: |
+      -- Write your statement here
+    expect: |
+      CREATE FUNCTION loyalty_tier(p_customer_id integer)
+      RETURNS text
+      LANGUAGE plpgsql
+      STABLE
+      AS $$
+      DECLARE
+          v_net numeric;
+      BEGIN
+          SELECT coalesce(sum(p.amount), 0) INTO v_net
+          FROM payments p
+          JOIN orders o ON o.order_id = p.order_id
+          WHERE o.customer_id = p_customer_id;
+
+          IF v_net >= 500 THEN
+              RETURN 'gold';
+          ELSIF v_net >= 100 THEN
+              RETURN 'silver';
+          END IF;
+          RETURN 'bronze';
+      END;
+      $$;
+    state_query: |
+      SELECT customer_id, loyalty_tier(customer_id) AS tier
+      FROM customers
+      WHERE customer_id <= 60
+      ORDER BY customer_id;
+    hint: "DECLARE a variable, `SELECT … INTO` it, then IF / ELSIF / END IF. A customer with no payments gives NULL unless you coalesce, and `NULL >= 100` isn't true."
+
+  - kind: try
+    title: "5. Cancel, but only if pending"
+    body: |
+      Write a **procedure** **cancel_order(p_order_id integer)** that sets the order's status to `cancelled` **only if** it's currently `pending`. Paid, shipped or delivered orders must not change.
+
+      Checked by calling it on a pending, a paid and a delivered order.
+    sql: |
+      -- Write your statement here
+    expect: |
+      CREATE PROCEDURE cancel_order(p_order_id integer)
+      LANGUAGE sql
+      AS $$
+          UPDATE orders SET status = 'cancelled'
+          WHERE order_id = p_order_id AND status = 'pending';
+      $$;
+    state_query: |
+      CALL cancel_order(36147);
+      CALL cancel_order(36146);
+      CALL cancel_order(36001);
+      SELECT order_id, status FROM orders WHERE order_id IN (36001, 36146, 36147) ORDER BY order_id;
+    hint: The "only if pending" rule can live in the UPDATE's WHERE. A procedure is created like a function but with no RETURNS, and run with CALL.
+    reject:
+      - |
+        CREATE PROCEDURE cancel_order(p_order_id integer) LANGUAGE sql
+        AS $$ UPDATE orders SET status = 'cancelled' WHERE order_id = p_order_id; $$;
+
+  - kind: try
+    title: "6. Price history"
+    body: |
+      Inkwell wants a record of every price change. Create:
+
+      - a table **price_history** with `book_id`, `old_price`, `new_price` and `changed_at` (defaulting to now)
+      - a trigger on `books` that adds a row to it **whenever a book's price actually changes**. An UPDATE that leaves the price the same, or changes other columns only, must **not** add a row.
+    sql: |
+      -- Write your statements here
+    expect: |
+      CREATE TABLE price_history (
+          book_id    integer NOT NULL REFERENCES books (book_id),
+          old_price  numeric(8,2) NOT NULL,
+          new_price  numeric(8,2) NOT NULL,
+          changed_at timestamptz NOT NULL DEFAULT now()
+      );
+
+      CREATE FUNCTION log_price_change() RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          INSERT INTO price_history (book_id, old_price, new_price)
+          VALUES (NEW.book_id, OLD.price, NEW.price);
+          RETURN NULL;
+      END;
+      $$;
+
+      CREATE TRIGGER books_price_history
+      AFTER UPDATE OF price ON books
+      FOR EACH ROW
+      WHEN (OLD.price IS DISTINCT FROM NEW.price)
+      EXECUTE FUNCTION log_price_change();
+    state_query: |
+      UPDATE books SET price = price + 1 WHERE book_id IN (1, 2);
+      UPDATE books SET price = price WHERE book_id = 3;
+      UPDATE books SET stock = stock + 5 WHERE book_id = 4;
+      UPDATE books SET price = 20 WHERE book_id = 1;
+      SELECT book_id, old_price, new_price FROM price_history ORDER BY book_id, new_price;
+    hint: "An AFTER UPDATE row trigger. Compare `OLD.price` and `NEW.price`, either in the trigger's WHEN clause or with an IF inside the function (Module 36)."
+    reject:
+      - |
+        CREATE TABLE price_history (book_id integer, old_price numeric(8,2), new_price numeric(8,2), changed_at timestamptz DEFAULT now());
+        CREATE FUNCTION log_price_change() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN INSERT INTO price_history (book_id, old_price, new_price) VALUES (NEW.book_id, OLD.price, NEW.price); RETURN NULL; END; $$;
+        CREATE TRIGGER books_price_history AFTER UPDATE ON books FOR EACH ROW EXECUTE FUNCTION log_price_change();
+
+  - kind: try
+    title: "7. Tidy review comments"
+    body: |
+      Review comments arrive with stray spaces, and sometimes as nothing but spaces. Create a trigger on `reviews` so that on **INSERT**, the comment is **trimmed**, and a comment that's empty after trimming is stored as **NULL**.
+    sql: |
+      -- Write your statements here
+    expect: |
+      CREATE FUNCTION tidy_review_comment() RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          NEW.comment := nullif(trim(NEW.comment), '');
+          RETURN NEW;
+      END;
+      $$;
+
+      CREATE TRIGGER reviews_tidy_comment
+      BEFORE INSERT ON reviews
+      FOR EACH ROW
+      EXECUTE FUNCTION tidy_review_comment();
+    state_query: |
+      INSERT INTO reviews (book_id, customer_id, rating, comment)
+      VALUES (1, 4671, 5, '  Loved it!  '), (2, 4671, 4, '    '), (3, 4671, 3, NULL);
+      SELECT book_id, comment FROM reviews WHERE customer_id = 4671 ORDER BY book_id;
+    hint: A BEFORE row trigger can change `NEW` before it's saved, and must `RETURN NEW`. `nullif(x, '')` turns an empty string into NULL.
+    reject:
+      - |
+        CREATE FUNCTION tidy_review_comment() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN NEW.comment := trim(NEW.comment); RETURN NEW; END; $$;
+        CREATE TRIGGER reviews_tidy_comment BEFORE INSERT ON reviews FOR EACH ROW EXECUTE FUNCTION tidy_review_comment();
+
+  - kind: why
+    body: |
+      Logic in the database runs for **every** app, script and person that touches the data, so it can't be skipped by accident. That's its strength and its risk: a slow trigger slows every write, and hidden logic surprises the next developer. Use it for rules and records that must never be bypassed.
+
+  - kind: recap
+    body: |
+      - View = a saved query, always current. Materialized view = a saved **result**, refreshed when you say.
+      - SQL functions for one query. PL/pgSQL when you need variables and IF.
+      - Procedures are CALLed and can control transactions.
+      - BEFORE triggers change the row being saved (`RETURN NEW`). AFTER triggers react to it, like writing history.

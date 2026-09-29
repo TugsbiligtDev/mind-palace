@@ -1,0 +1,226 @@
+steps:
+  - kind: explain
+    title: Pick the tool
+    body: |
+      Part 5 gave you a toolbox: subqueries, CTEs (including recursive ones), UNION / EXCEPT, LATERAL and DISTINCT ON, window functions, reporting with `date_trunc` and FILTER, and upserts.
+
+      Most of these questions can be answered **several** ways. Any query that returns the right rows passes. Break big questions into CTE steps (Module 25), and check your answer before you submit it: does the row count make sense? Does a single customer's number match a quick manual query?
+
+      Empty editors again. A hint after a wrong attempt, one working answer after three.
+
+  - kind: try
+    title: "1. Above-average spenders"
+    body: |
+      A customer's **net spend** is the sum of their payments, refunds included (refunds are negative). Show the `customer_id` and net spend (labeled **net**) of every customer whose net spend is **above the average** net spend of customers who have paid anything.
+    sql: |
+      -- Write your query here
+    expect: |
+      WITH per_customer AS (
+          SELECT o.customer_id, sum(p.amount) AS net
+          FROM payments p
+          JOIN orders o ON o.order_id = p.order_id
+          GROUP BY o.customer_id
+      )
+      SELECT customer_id, net
+      FROM per_customer
+      WHERE net > (SELECT avg(net) FROM per_customer);
+    hint: Compute one total per customer first (a CTE), then compare each total with the average of those totals.
+
+  - kind: try
+    title: "2. First orders in Berlin"
+    body: |
+      For every customer whose city is **Berlin** and who has ordered, show `customer_id`, the `order_id` of their **first** order and its `ordered_at`.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT DISTINCT ON (o.customer_id) o.customer_id, o.order_id, o.ordered_at
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE c.city = 'Berlin'
+      ORDER BY o.customer_id, o.ordered_at;
+    hint: One row per customer, the earliest one. Module 21 has a PostgreSQL shortcut for exactly this.
+
+  - kind: try
+    title: "3. Top three per genre"
+    body: |
+      For each genre, find the **three** books that sold the **most copies** (sum of `quantity`, all orders). Show the genre's `name` (labeled **genre**), the `title`, copies sold (labeled **sold**) and the position (labeled **pos**, 1 to 3). If two books sold the same, the one whose title comes first alphabetically gets the better position.
+    sql: |
+      -- Write your query here
+    expect: |
+      WITH sold AS (
+          SELECT g.name AS genre, b.title, sum(oi.quantity) AS sold,
+                 row_number() OVER (PARTITION BY g.genre_id ORDER BY sum(oi.quantity) DESC, b.title) AS pos
+          FROM order_items oi
+          JOIN books b  ON b.book_id = oi.book_id
+          JOIN genres g ON g.genre_id = b.genre_id
+          GROUP BY g.genre_id, g.name, b.book_id, b.title
+      )
+      SELECT genre, title, sold, pos
+      FROM sold
+      WHERE pos <= 3;
+    hint: Total per book first, then number the books within each genre (Module 22). A window function can't go in WHERE, so filter in an outer query.
+
+  - kind: try
+    title: "4. 2025, month by month"
+    body: |
+      For each month of **2025**, show the month (labeled **month**, a timestamp at the start of the month), the net money received that month (payments plus refunds, labeled **net**), and the **running total** for the year so far (labeled **running**). Use `paid_at` in UTC, the session's zone.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT date_trunc('month', paid_at) AS month,
+             sum(amount) AS net,
+             sum(sum(amount)) OVER (ORDER BY date_trunc('month', paid_at)) AS running
+      FROM payments
+      WHERE paid_at >= '2025-01-01' AND paid_at < '2026-01-01'
+      GROUP BY 1
+      ORDER BY 1;
+    ordered: true
+    hint: "Group by month for `net`. The running total is a window function over those monthly sums: `sum(sum(amount)) OVER (…)` is allowed, or use a CTE."
+    reject:
+      - |
+        SELECT date_trunc('month', paid_at) AS month, sum(amount) AS net,
+               sum(sum(amount)) OVER (ORDER BY date_trunc('month', paid_at)) AS running
+        FROM payments
+        WHERE paid_at BETWEEN '2025-01-01' AND '2025-12-31'
+        GROUP BY 1 ORDER BY 1;
+
+  - kind: try
+    title: "5. Lapsed customers"
+    body: |
+      How many customers placed an order in **2024** but **none** in **2025**? Return one number.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT count(*) FROM (
+          SELECT customer_id FROM orders WHERE ordered_at >= '2024-01-01' AND ordered_at < '2025-01-01'
+          EXCEPT
+          SELECT customer_id FROM orders WHERE ordered_at >= '2025-01-01' AND ordered_at < '2026-01-01'
+      ) AS lapsed;
+    hint: Customers in one list and not in another. Module 20 has a set operation for that (or use NOT EXISTS).
+
+  - kind: try
+    title: "6. Up or down?"
+    body: |
+      For each month of 2025, show the month (labeled **month**), the number of orders (labeled **orders**), and the change from the **previous month** (labeled **change**). January's change should be NULL.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT date_trunc('month', ordered_at) AS month,
+             count(*) AS orders,
+             count(*) - lag(count(*)) OVER (ORDER BY date_trunc('month', ordered_at)) AS change
+      FROM orders
+      WHERE ordered_at >= '2025-01-01' AND ordered_at < '2026-01-01'
+      GROUP BY 1
+      ORDER BY 1;
+    ordered: true
+    hint: A window function that reads the previous row (Module 22).
+
+  - kind: try
+    title: "7. Never disliked"
+    body: |
+      How many books have **at least one** review and **no review below 3 stars**? Return one number.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT count(*)
+      FROM books b
+      WHERE EXISTS (SELECT 1 FROM reviews r WHERE r.book_id = b.book_id)
+        AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.book_id = b.book_id AND r.rating < 3);
+    hint: "Two conditions about other rows: one that must exist and one that must not. (`min(rating) >= 3` per book works too.)"
+
+  - kind: try
+    title: "8. Latest two, per Tokyo customer"
+    body: |
+      For every customer in **Tokyo**, show `customer_id`, `order_id` and `ordered_at` of their **two most recent** orders. Customers with only one order show one row. Customers with none don't appear.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT c.customer_id, lo.order_id, lo.ordered_at
+      FROM customers c
+      CROSS JOIN LATERAL (
+          SELECT o.order_id, o.ordered_at
+          FROM orders o
+          WHERE o.customer_id = c.customer_id
+          ORDER BY o.ordered_at DESC
+          LIMIT 2
+      ) AS lo
+      WHERE c.city = 'Tokyo';
+    hint: '"The latest N per customer" is the classic LATERAL job (Module 21). A window function with row_number() works too.'
+
+  - kind: try
+    title: "9. Cancellations by year"
+    body: |
+      One row per year (labeled **year**, an integer): the number of **delivered** orders and the number of **cancelled** orders, labeled **delivered** and **cancelled**, oldest year first.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT extract(year FROM ordered_at)::int AS year,
+             count(*) FILTER (WHERE status = 'delivered') AS delivered,
+             count(*) FILTER (WHERE status = 'cancelled') AS cancelled
+      FROM orders
+      GROUP BY 1
+      ORDER BY 1;
+    ordered: true
+    hint: "Pivot-style counts: one aggregate per column, each with its own condition (Module 23)."
+
+  - kind: try
+    title: "10. The whole company under Helen"
+    body: |
+      Helen Carter (employee 1) runs Inkwell. Her managers manage people, who may manage people too. List the `full_name` of **everyone below Helen**, at any depth, with their level below her (labeled **depth**: 1 for her direct reports, 2 for theirs, and so on). Don't include Helen herself.
+    sql: |
+      -- Write your query here
+    expect: |
+      WITH RECURSIVE below AS (
+          SELECT employee_id, full_name, 1 AS depth
+          FROM employees
+          WHERE manager_id = 1
+          UNION ALL
+          SELECT e.employee_id, e.full_name, b.depth + 1
+          FROM employees e
+          JOIN below b ON e.manager_id = b.employee_id
+      )
+      SELECT full_name, depth FROM below;
+    hint: A recursive CTE (Module 19). The anchor is Helen's direct reports. The recursive part finds people whose manager is already in the list.
+
+  - kind: try
+    title: "11. Genres, safely"
+    body: |
+      Add the genres **Poetry** and **Graphic Novel** in **one** INSERT. Poetry already exists, and the statement must not fail because of it. Checked by looking at the `genres` table afterwards.
+    sql: |
+      -- Write your query here
+    expect: |
+      INSERT INTO genres (name) VALUES ('Poetry'), ('Graphic Novel')
+      ON CONFLICT (name) DO NOTHING;
+    state_query: |
+      SELECT name FROM genres ORDER BY name;
+    hint: "`genres.name` is UNIQUE. An upsert can skip rows that would break it (Module 24)."
+    reject:
+      - INSERT INTO genres (name) VALUES ('Poetry'), ('Graphic Novel');
+
+  - kind: try
+    title: "12. Duplicates in the import"
+    body: |
+      In `raw_customer_import`, the same email sometimes appears more than once, written differently (capitals, spaces). Clean each email (trim spaces and lowercase it), then show every cleaned email that appears **more than once**, with how many times (labeled **times**). Ignore rows with no email.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT lower(trim(email)) AS email, count(*) AS times
+      FROM raw_customer_import
+      WHERE email IS NOT NULL
+      GROUP BY lower(trim(email))
+      HAVING count(*) > 1;
+    hint: Group by the cleaned value, not the raw one.
+    reject:
+      - SELECT email, count(*) AS times FROM raw_customer_import WHERE email IS NOT NULL GROUP BY email HAVING count(*) > 1;
+
+  - kind: why
+    body: |
+      At intermediate level, the hard part is rarely the syntax. It's seeing that "the latest two per customer" is a LATERAL or window problem, or that "in 2024 but not 2025" is a set difference. You only build that recognition by meeting many unlabeled questions.
+
+  - kind: recap
+    body: |
+      - "Compared with an average/total of a group" → CTE or subquery.
+      - "First/latest per X" → DISTINCT ON, LATERAL, or `row_number()`.
+      - "Top N per X", "running total", "change from last month" → window functions.
+      - "In A but not B" → EXCEPT or NOT EXISTS.
+      - "Add, but skip what's already there" → `ON CONFLICT DO NOTHING`.

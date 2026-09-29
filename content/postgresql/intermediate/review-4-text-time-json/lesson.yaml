@@ -1,0 +1,197 @@
+steps:
+  - kind: explain
+    title: Messy data, real questions
+    body: |
+      Part 6 was about data that isn't neat numbers: text with patterns, timestamps in many zones, JSON documents and lists.
+
+      Several questions use `raw_customer_import`, the messy file from another system (Module 24). Look at it first: `SELECT * FROM raw_customer_import LIMIT 20;` Everything in it is text, and every column has problems.
+
+      Same rules: empty editors, hints after a miss, one answer after three.
+
+  - kind: try
+    title: "1. Crime in the descriptions"
+    body: |
+      List the `title` of every book whose `description` mentions **murder** or a **detective**, in any capitalization.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT title FROM books WHERE description ~* 'murder|detective';
+    hint: "A case-insensitive regular expression with `|` for \"or\" (Module 26). Two ILIKEs joined with OR work too."
+
+  - kind: try
+    title: "2. Phone numbers, digits only"
+    body: |
+      Phones in the import are written in many styles: `(203) 555-0147`, `203.555.0147`, `+1 203 555 0147`… Show `row_no` and each phone reduced to its **last 10 digits** (labeled **phone**). Leave out rows where the phone is missing or empty.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT row_no, right(regexp_replace(phone, '\D', '', 'g'), 10) AS phone
+      FROM raw_customer_import
+      WHERE phone <> '';
+    hint: "`regexp_replace` with the pattern `\\D` (anything that's not a digit) and the `'g'` flag removes every non-digit. Then keep the last 10 characters. `phone <> ''` is also false for NULL."
+
+  - kind: try
+    title: "3. Names, tidied"
+    body: |
+      Import names have extra spaces and random capitals (`  maya  KLEIN `). Show `row_no`, **first_name** and **last_name**, with extra spaces removed and each name capitalized normally (`Maya`, `Klein`). Every import name has exactly two parts.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT row_no,
+             initcap(split_part(regexp_replace(trim(full_name), '\s+', ' ', 'g'), ' ', 1)) AS first_name,
+             initcap(split_part(regexp_replace(trim(full_name), '\s+', ' ', 'g'), ' ', 2)) AS last_name
+      FROM raw_customer_import;
+    hint: Trim the ends, squeeze runs of spaces into one space with a regular expression, split on the space, then fix the capitals.
+    reject:
+      - SELECT row_no, initcap(split_part(trim(full_name), ' ', 1)) AS first_name, initcap(split_part(trim(full_name), ' ', 2)) AS last_name FROM raw_customer_import;
+
+  - kind: try
+    title: "4. Four date formats"
+    body: |
+      `signup_date` is text in four formats: `2025-07-22`, `2025/07/17`, `22/07/2025` (day first) and `July 10, 2025`, and sometimes it's empty. Show `row_no` and the real date (labeled **signup**), or NULL when it's empty.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT row_no,
+             CASE
+               WHEN signup_date ~ '^\d{4}-\d{2}-\d{2}$' THEN to_date(signup_date, 'YYYY-MM-DD')
+               WHEN signup_date ~ '^\d{4}/\d{2}/\d{2}$' THEN to_date(signup_date, 'YYYY/MM/DD')
+               WHEN signup_date ~ '^\d{2}/\d{2}/\d{4}$' THEN to_date(signup_date, 'DD/MM/YYYY')
+               WHEN signup_date ~ '^[A-Za-z]+ \d{1,2}, \d{4}$' THEN to_date(signup_date, 'FMMonth DD, YYYY')
+             END AS signup
+      FROM raw_customer_import;
+    hint: "CASE with one regular expression per format, and `to_date(text, pattern)` for each. A CASE with no ELSE gives NULL for anything left over."
+
+  - kind: try
+    title: "5. Night owls in Tokyo"
+    body: |
+      How many orders from customers whose `time_zone` is **Asia/Tokyo** were placed between **22:00 and 05:59 local time** (their clock, not UTC)? Return one number.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT count(*)
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE c.time_zone = 'Asia/Tokyo'
+        AND (extract(hour FROM o.ordered_at AT TIME ZONE c.time_zone) >= 22
+             OR extract(hour FROM o.ordered_at AT TIME ZONE c.time_zone) < 6);
+    hint: "`ordered_at AT TIME ZONE 'Asia/Tokyo'` gives the Tokyo wall-clock time. Take its hour (Module 27)."
+    reject:
+      - |
+        SELECT count(*) FROM orders o JOIN customers c ON c.customer_id = o.customer_id
+        WHERE c.time_zone = 'Asia/Tokyo' AND (extract(hour FROM o.ordered_at) >= 22 OR extract(hour FROM o.ordered_at) < 6);
+
+  - kind: try
+    title: "6. New Year's Eve in New York"
+    body: |
+      How many orders were placed on **31 December 2025, New York time** (`America/New_York`), whoever placed them? Return one number.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT count(*)
+      FROM orders
+      WHERE ordered_at >= timestamptz '2025-12-31 00:00 America/New_York'
+        AND ordered_at <  timestamptz '2026-01-01 00:00 America/New_York';
+    hint: "Either compare with the two midnights written with their zone, or convert: `(ordered_at AT TIME ZONE 'America/New_York')::date`."
+    reject:
+      - SELECT count(*) FROM orders WHERE ordered_at >= '2025-12-31' AND ordered_at < '2026-01-01';
+
+  - kind: try
+    title: "7. Books by format"
+    body: |
+      Each book's `details` JSON has a **format** (hardcover, paperback, ebook…). Show each format (labeled **format**) and how many books have it (labeled **books**).
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT details ->> 'format' AS format, count(*) AS books
+      FROM books
+      GROUP BY 1;
+    hint: "`->>` reads a key as text (Module 28)."
+
+  - kind: try
+    title: "8. Award winners"
+    body: |
+      List the `title` of every book with **at least one award** in `details -> 'awards'`, and its first award (labeled **award**).
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT title, details -> 'awards' ->> 0 AS award
+      FROM books
+      WHERE jsonb_array_length(details -> 'awards') > 0;
+    hint: "`awards` is a JSON array. Its length tells you whether it's empty, and `->> 0` reads the first element as text."
+
+  - kind: try
+    title: "9. Tall books"
+    body: |
+      Physical books have `details -> 'dimensions_cm' -> 'height'`. List the `title` and height (labeled **height**, as a number) of books **taller than 23 cm**. Ebooks have no dimensions and shouldn't appear.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT title, (details -> 'dimensions_cm' ->> 'height')::numeric AS height
+      FROM books
+      WHERE (details -> 'dimensions_cm' ->> 'height')::numeric > 23;
+    hint: Walk down two levels, read the last one as text, then cast it to a number before comparing.
+
+  - kind: try
+    title: "10. Tag counts"
+    body: |
+      `books.tags` is a list (array) of labels. Show each tag (labeled **tag**) and how many books carry it (labeled **books**), most common first, then alphabetically.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT tag, count(*) AS books
+      FROM books, unnest(tags) AS tag
+      GROUP BY tag
+      ORDER BY books DESC, tag;
+    ordered: true
+    hint: "`unnest(tags)` turns each list into rows, one per tag (Module 29)."
+
+  - kind: try
+    title: "11. Bestseller and staff pick"
+    body: |
+      List the `title` of every book tagged **both** `bestseller` and `staff-pick`.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT title FROM books WHERE tags @> ARRAY['bestseller', 'staff-pick'];
+    hint: "`@>` means \"contains all of\"."
+    reject:
+      - SELECT title FROM books WHERE tags && ARRAY['bestseller', 'staff-pick'];
+
+  - kind: try
+    title: "12. A price band that keeps itself up to date"
+    body: |
+      Add a column **price_band** to `books` that is **always** `budget` below 10, `standard` from 10 up to (not including) 20, and `premium` from 20. It must stay correct when a price changes later, with no UPDATE needed.
+
+      Checked by changing some prices after your statement runs.
+    sql: |
+      -- Write your query here
+    expect: |
+      ALTER TABLE books ADD COLUMN price_band text
+          GENERATED ALWAYS AS (
+              CASE WHEN price < 10 THEN 'budget'
+                   WHEN price < 20 THEN 'standard'
+                   ELSE 'premium' END
+          ) STORED;
+    state_query: |
+      UPDATE books SET price = 9.99  WHERE book_id = 1;
+      UPDATE books SET price = 10    WHERE book_id = 2;
+      UPDATE books SET price = 20    WHERE book_id = 3;
+      SELECT book_id, price_band FROM books ORDER BY book_id;
+    hint: A generated column (Module 29) computes itself from other columns in the same row.
+    reject:
+      - |
+        ALTER TABLE books ADD COLUMN price_band text;
+        UPDATE books SET price_band = CASE WHEN price < 10 THEN 'budget' WHEN price < 20 THEN 'standard' ELSE 'premium' END;
+
+  - kind: why
+    body: |
+      Real data arrives messy: free-text phone numbers, three date formats, names in capitals, timestamps from twenty time zones. Cleaning it inside the database, with a query you can re-run and check, beats fixing it by hand in a spreadsheet.
+
+  - kind: recap
+    body: |
+      - Regular expressions find, clean and classify text: `~*`, `regexp_replace(… 'g')`.
+      - Parse each text format explicitly with `to_date` and a pattern. Never guess.
+      - "Local time" means `AT TIME ZONE` with the right zone. Write day boundaries with their zone.
+      - JSONB: `->` walks, `->>` reads text, then cast. Arrays: `unnest`, `@>`, `&&`.
+      - A generated column can't go stale.

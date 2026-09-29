@@ -1,0 +1,282 @@
+steps:
+  - kind: explain
+    title: Changes that can't go half-wrong
+    body: |
+      This review covers Parts 7 and 8: transactions, locking and indexes.
+
+      Most answers here **change** the database, so they're checked by looking at the tables afterwards, not at what your query prints. Index questions are checked by asking PostgreSQL whether it would now use an index.
+
+      Everything runs in a fresh copy of the bookstore, so experiment freely. Same rules: empty editors, a hint after a miss, one answer after three.
+
+  - kind: try
+    title: "1. A sale in the shop"
+    body: |
+      Sara Lindqvist (employee 5) sells **one copy of book 7** to **customer 42** at `2026-06-30 15:00+00`, paid by **card**. Record all of it, all or nothing:
+
+      - an order with status **paid**
+      - its order line, at the book's **current** price
+      - a **payment** of that amount at the same time
+
+      You don't know the new order's id in advance. Module 19's data-modifying CTEs, or `RETURNING` plus `currval`, can carry it from one INSERT to the next.
+    sql: |
+      -- Write your statements here
+    expect: |
+      BEGIN;
+      WITH new_order AS (
+          INSERT INTO orders (customer_id, employee_id, ordered_at, status)
+          VALUES (42, 5, '2026-06-30 15:00+00', 'paid')
+          RETURNING order_id
+      ), line AS (
+          INSERT INTO order_items (order_id, book_id, quantity, unit_price)
+          SELECT order_id, 7, 1, (SELECT price FROM books WHERE book_id = 7)
+          FROM new_order
+          RETURNING order_id, unit_price
+      )
+      INSERT INTO payments (order_id, kind, amount, method, paid_at)
+      SELECT order_id, 'payment', unit_price, 'card', '2026-06-30 15:00+00'
+      FROM line;
+      COMMIT;
+    state_query: |
+      SELECT o.customer_id, o.employee_id, o.ordered_at, o.status,
+             oi.book_id, oi.quantity, oi.unit_price,
+             p.kind, p.amount, p.method, p.paid_at
+      FROM orders o
+      JOIN order_items oi ON oi.order_id = o.order_id
+      JOIN payments p     ON p.order_id = o.order_id
+      WHERE o.order_id > 39419;
+    hint: "Wrap the three INSERTs in BEGIN … COMMIT. To reuse the new order's id: `INSERT … RETURNING order_id`, or in a later statement `currval(pg_get_serial_sequence('orders', 'order_id'))`."
+
+  - kind: try
+    title: "2. Undo just the mistake"
+    body: |
+      In **one transaction**: raise every **Horror** book's price by **5%** (rounded to 2 decimals). Then a colleague's mistake: every Horror book's `stock` is set to 0. Undo **only the mistake**, keep the price rise, and commit.
+
+      Write the mistake too, exactly as described, so the undo has something to undo.
+    sql: |
+      -- Write your statements here
+    expect: |
+      BEGIN;
+      UPDATE books SET price = round(price * 1.05, 2)
+      WHERE genre_id = (SELECT genre_id FROM genres WHERE name = 'Horror');
+      SAVEPOINT before_mistake;
+      UPDATE books SET stock = 0
+      WHERE genre_id = (SELECT genre_id FROM genres WHERE name = 'Horror');
+      ROLLBACK TO SAVEPOINT before_mistake;
+      COMMIT;
+    state_query: |
+      SELECT book_id, price, stock FROM books ORDER BY book_id;
+    hint: A savepoint marks a point inside a transaction that you can roll back to (Module 30).
+    reject:
+      - |
+        BEGIN;
+        UPDATE books SET price = round(price * 1.05, 2) WHERE genre_id = (SELECT genre_id FROM genres WHERE name = 'Horror');
+        UPDATE books SET stock = 0 WHERE genre_id = (SELECT genre_id FROM genres WHERE name = 'Horror');
+        COMMIT;
+      - |
+        BEGIN;
+        UPDATE books SET price = round(price * 1.05, 2) WHERE genre_id = (SELECT genre_id FROM genres WHERE name = 'Horror');
+        UPDATE books SET stock = 0 WHERE genre_id = (SELECT genre_id FROM genres WHERE name = 'Horror');
+        ROLLBACK;
+
+  - kind: try
+    title: "3. Never oversell"
+    body: |
+      A school orders **3 copies of every book**. Take 3 from the stock of every book that **has at least 3**, in **one statement**, and leave books with fewer than 3 untouched (they'll be back-ordered).
+
+      Written this way, two cashiers running it at the same moment can't push stock below zero.
+    sql: |
+      -- Write your statement here
+    expect: |
+      UPDATE books SET stock = stock - 3 WHERE stock >= 3;
+    state_query: |
+      SELECT book_id, stock FROM books ORDER BY book_id;
+    hint: Put the "is there enough?" test in the UPDATE's own WHERE, and compute the new value from the current one (Module 31, the safe decrement).
+    reject:
+      - UPDATE books SET stock = greatest(stock - 3, 0);
+      - UPDATE books SET stock = stock - 3;
+
+  - kind: try
+    title: "4. Next job, please"
+    body: |
+      The starter creates a queue of print jobs. Write the statement a worker runs to **claim the oldest queued job**: set its status to **printing**. It must lock only that row and **skip rows another worker has already locked**, so ten workers never grab the same job.
+
+      Keep the starter's two statements, and add yours after them.
+    sql: |
+      CREATE TABLE print_jobs (job_id integer PRIMARY KEY, status text NOT NULL, doc text NOT NULL);
+      INSERT INTO print_jobs VALUES (1, 'done', 'invoice 1'), (2, 'queued', 'invoice 2'), (3, 'queued', 'label 7'), (4, 'queued', 'invoice 3');
+
+      -- Claim the oldest queued job here
+    expect: |
+      CREATE TABLE print_jobs (job_id integer PRIMARY KEY, status text NOT NULL, doc text NOT NULL);
+      INSERT INTO print_jobs VALUES (1, 'done', 'invoice 1'), (2, 'queued', 'invoice 2'), (3, 'queued', 'label 7'), (4, 'queued', 'invoice 3');
+
+      UPDATE print_jobs SET status = 'printing'
+      WHERE job_id = (
+          SELECT job_id FROM print_jobs
+          WHERE status = 'queued'
+          ORDER BY job_id
+          FOR UPDATE SKIP LOCKED
+          LIMIT 1
+      );
+    state_query: |
+      SELECT job_id, status FROM print_jobs ORDER BY job_id;
+    hint: "An UPDATE whose WHERE picks one id with a subquery: queued, oldest first, `FOR UPDATE SKIP LOCKED`, `LIMIT 1` (Module 31)."
+    reject:
+      - |
+        CREATE TABLE print_jobs (job_id integer PRIMARY KEY, status text NOT NULL, doc text NOT NULL);
+        INSERT INTO print_jobs VALUES (1, 'done', 'invoice 1'), (2, 'queued', 'invoice 2'), (3, 'queued', 'label 7'), (4, 'queued', 'invoice 3');
+        UPDATE print_jobs SET status = 'printing' WHERE status = 'queued';
+
+  - kind: try
+    title: "5. A stricter transaction"
+    body: |
+      Start a transaction at the **Repeatable Read** isolation level, and inside it show the current level with `SHOW transaction_isolation;`. End it with COMMIT **after** the SHOW. (The SHOW's output is what's checked, so make it the last thing that prints rows.)
+    sql: |
+      -- Write your statements here
+    expect: |
+      BEGIN ISOLATION LEVEL REPEATABLE READ;
+      SHOW transaction_isolation;
+      COMMIT;
+    hint: The level can be given right in BEGIN, or with SET TRANSACTION as the first statement inside it.
+
+  - kind: explain
+    title: Now make it fast
+    body: |
+      The next three questions ask for an **index**. After your statement, PostgreSQL is asked to plan a typical query. You pass when the plan uses an index (any index scan). Name your indexes however you like.
+
+      Tip: run `EXPLAIN` on the query in the question before and after your CREATE INDEX, and compare.
+
+  - kind: try
+    title: "6. Email lookups, any capitals"
+    body: |
+      The sign-in page looks customers up like this:
+
+      ```sql
+      SELECT * FROM customers WHERE lower(email) = 'emma.johnson@example.com';
+      ```
+
+      Create an index that this query can use.
+    sql: |
+      -- Write your statement here
+    expect: |
+      CREATE INDEX customers_email_lower_idx ON customers (lower(email));
+    state_query: |
+      CREATE FUNCTION pg_temp.uses_index(q text) RETURNS boolean LANGUAGE plpgsql AS $$
+      DECLARE line text;
+      BEGIN
+        FOR line IN EXECUTE 'EXPLAIN ' || q LOOP
+          IF line ~ 'Index' THEN RETURN true; END IF;
+        END LOOP;
+        RETURN false;
+      END $$;
+      SELECT pg_temp.uses_index($q$SELECT * FROM customers WHERE lower(email) = 'emma.johnson@example.com'$q$) AS uses_index;
+    hint: The email column is already UNIQUE, so it has an index, but the query searches `lower(email)`. An index on a plain column can't help a search on a function of it (Module 32).
+    reject:
+      - CREATE INDEX customers_email_idx ON customers (email);
+
+  - kind: try
+    title: "7. A customer's recent orders"
+    body: |
+      The account page runs this for whoever is signed in:
+
+      ```sql
+      SELECT * FROM orders WHERE customer_id = 42 ORDER BY ordered_at DESC LIMIT 5;
+      ```
+
+      Right now it reads all 39,000 orders. Create an index that lets PostgreSQL jump straight to customer 42's orders. (Checked by looking for `customer_id` in the plan's **Index Cond** line.)
+    sql: |
+      -- Write your statement here
+    expect: |
+      CREATE INDEX orders_customer_ordered_idx ON orders (customer_id, ordered_at);
+    state_query: |
+      CREATE FUNCTION pg_temp.uses_index(q text) RETURNS boolean LANGUAGE plpgsql AS $$
+      DECLARE line text;
+      BEGIN
+        FOR line IN EXECUTE 'EXPLAIN ' || q LOOP
+          IF line ~ 'Index Cond: .*customer_id' THEN RETURN true; END IF;
+        END LOOP;
+        RETURN false;
+      END $$;
+      SELECT pg_temp.uses_index($q$SELECT * FROM orders WHERE customer_id = 42 ORDER BY ordered_at DESC LIMIT 5$q$) AS index_finds_customer;
+    hint: Foreign-key columns aren't indexed automatically (Module 13). An index on the filter column, then the sort column, serves both.
+    reject:
+      - CREATE INDEX orders_ordered_idx ON orders (ordered_at);
+
+  - kind: try
+    title: "8. Unfinished orders"
+    body: |
+      The warehouse screen shows only **pending** orders, oldest first:
+
+      ```sql
+      SELECT * FROM orders WHERE status = 'pending' ORDER BY ordered_at;
+      ```
+
+      Pending orders are a tiny fraction of the table. Create an index that covers **only** those rows, so it stays small.
+    sql: |
+      -- Write your statement here
+    expect: |
+      CREATE INDEX orders_pending_idx ON orders (ordered_at) WHERE status = 'pending';
+    state_query: |
+      CREATE FUNCTION pg_temp.uses_index(q text) RETURNS boolean LANGUAGE plpgsql AS $$
+      DECLARE line text;
+      BEGIN
+        FOR line IN EXECUTE 'EXPLAIN ' || q LOOP
+          IF line ~ 'Index' THEN RETURN true; END IF;
+        END LOOP;
+        RETURN false;
+      END $$;
+      SELECT pg_temp.uses_index($q$SELECT * FROM orders WHERE status = 'pending' ORDER BY ordered_at$q$) AS uses_index,
+             (SELECT bool_or(indexdef ~* 'WHERE') FROM pg_indexes WHERE tablename = 'orders') AS partial;
+    hint: A partial index has its own WHERE clause (Module 32).
+    reject:
+      - CREATE INDEX orders_status_idx ON orders (status, ordered_at);
+
+  - kind: try
+    title: "9. Page 400 of the order history"
+    body: |
+      The admin screen pages through orders **20 at a time**, in `order_id` order. The previous page ended with order **8000**. Show the next page: `order_id`, `customer_id`, `ordered_at`, **without** using OFFSET, so page 400 is as fast as page 1.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT order_id, customer_id, ordered_at
+      FROM orders
+      WHERE order_id > 8000
+      ORDER BY order_id
+      LIMIT 20;
+    ordered: true
+    hint: Keyset pagination (Module 33) starts after the last key you saw.
+
+  - kind: try
+    title: "10. Refund rate per method"
+    body: |
+      Back to reporting. For each payment `method`, show the number of **payments** (labeled **payments**), the number of **refunds** (labeled **refunds**) and the refund rate as a **percentage rounded to 2 decimals** (refunds ÷ payments × 100, labeled **refund_pct**). Highest rate first.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT method,
+             count(*) FILTER (WHERE kind = 'payment') AS payments,
+             count(*) FILTER (WHERE kind = 'refund') AS refunds,
+             round(100.0 * count(*) FILTER (WHERE kind = 'refund')
+                         / count(*) FILTER (WHERE kind = 'payment'), 2) AS refund_pct
+      FROM payments
+      GROUP BY method
+      ORDER BY refund_pct DESC;
+    ordered: true
+    hint: "Two filtered counts, then divide. Watch out: integer ÷ integer drops the decimals in PostgreSQL, so make one side a decimal (`100.0 * …`)."
+    reject:
+      - |
+        SELECT method, count(*) FILTER (WHERE kind = 'payment') AS payments, count(*) FILTER (WHERE kind = 'refund') AS refunds,
+               round(100 * (count(*) FILTER (WHERE kind = 'refund') / count(*) FILTER (WHERE kind = 'payment')), 2) AS refund_pct
+        FROM payments GROUP BY method ORDER BY refund_pct DESC;
+
+  - kind: why
+    body: |
+      Applications break in two quiet ways: a change that half-happens, and a page that gets slower every month as the tables grow. Transactions, row locks and the right index prevent both, and none of them change what the query returns, which is why they're easy to forget.
+
+  - kind: recap
+    body: |
+      - Several changes that belong together → one transaction. A mistake inside it → SAVEPOINT and ROLLBACK TO.
+      - Check-and-change in one UPDATE (`WHERE stock >= 3`) can't be raced.
+      - Job queues: `FOR UPDATE SKIP LOCKED LIMIT 1`.
+      - Index what the query **filters and sorts by**, in that order. Functions need an expression index. A subset of rows → a partial index.
+      - Page with a key, not OFFSET.

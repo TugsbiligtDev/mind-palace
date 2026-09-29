@@ -17,17 +17,22 @@ topics:
   - 23-reporting
   - 24-upserts-bulk-data
   - 25-readable-sql
+  - review-3-advanced-queries
   - 26-text-patterns
   - 27-time-zones
   - 28-jsonb
   - 29-arrays-enums-types
+  - review-4-text-time-json
   - 30-transactions
   - 31-concurrency-locking
   - 32-indexes
   - 33-query-plans
+  - review-5-safe-and-fast
   - 34-views
   - 35-functions-procedures
   - 36-triggers
+  - review-6-database-objects
   - 37-roles-privileges
   - 38-connecting-from-code
   - 39-migrations-backups
+  - capstone-2-inkwell-operations

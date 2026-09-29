@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Inside a transaction, one statement fails with an error. You then run a correct UPDATE. What happens?
+    options:
+      - The UPDATE runs normally
+      - "It fails with \"current transaction is aborted\" until you ROLLBACK (or roll back to a savepoint)"
+      - The failed statement is retried
+      - The transaction commits automatically
+    answer: 1
+    explanation: After an error, PostgreSQL refuses everything in that transaction until you end it with ROLLBACK or roll back to a savepoint made before the error (Module 30).
+
+  - type: mcq
+    prompt: Two cashiers each run `SELECT stock …` (both see 1), then `UPDATE books SET stock = 0 …`. Two copies were sold, but stock only dropped by one. What is this called?
+    options:
+      - A deadlock
+      - A lost update
+      - A dirty read
+      - A phantom read
+    answer: 1
+    explanation: Both read the same old value and both wrote their result, so one sale was lost. `SET stock = stock - 1 WHERE stock >= 1` or `SELECT … FOR UPDATE` prevents it (Module 31).
+
+  - type: mcq
+    prompt: "An index on `(customer_id, ordered_at)` exists. Which query can use it best?"
+    options:
+      - "`WHERE ordered_at > '2026-01-01'`"
+      - "`WHERE customer_id = 42 ORDER BY ordered_at`"
+      - "`WHERE lower(email) = …`"
+      - "`ORDER BY customer_id DESC, ordered_at` with no WHERE, on a tiny table"
+    answer: 1
+    explanation: A multi-column index is sorted by the first column, then the second within it. Filtering on the first and sorting by the second matches that order exactly.
+
+  - type: mcq
+    prompt: "In an EXPLAIN ANALYZE, a step shows `rows=12` estimated and `rows=48210` actual. What does that suggest?"
+    options:
+      - The query is fast
+      - The planner's statistics are off, so it may have chosen a bad plan. Run ANALYZE and compare again
+      - The index is corrupt
+      - Nothing, estimates are never close
+    answer: 1
+    explanation: Big gaps between estimated and actual rows are the classic sign of stale or missing statistics (Module 33).
+
+  - type: mcq
+    prompt: Why does `OFFSET 8000 LIMIT 20` get slower the deeper you page?
+    options:
+      - OFFSET locks the table
+      - PostgreSQL still has to produce and throw away the first 8,000 rows
+      - LIMIT is ignored with OFFSET
+      - It doesn't get slower
+    answer: 1
+    explanation: OFFSET skips rows by reading them. Keyset pagination (`WHERE order_id > last_seen`) jumps straight there with an index.

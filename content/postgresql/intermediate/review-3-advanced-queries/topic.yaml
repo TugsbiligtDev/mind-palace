@@ -1,4 +1,4 @@
-title: "Case review: advanced queries"
+title: "Advanced queries"
 module: 25
 kind: review
 summary: Twelve business questions on 2½ years of Inkwell data. Choose between subqueries, CTEs, set operations, LATERAL, window functions and upserts yourself.

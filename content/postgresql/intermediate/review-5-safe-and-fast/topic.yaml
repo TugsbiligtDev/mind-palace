@@ -1,4 +1,4 @@
-title: "Case review: safe and fast"
+title: "Safe and fast"
 module: 33
 kind: review
 summary: Change data safely with transactions, savepoints and locking, then make slow lookups fast with the right index. Eleven questions.

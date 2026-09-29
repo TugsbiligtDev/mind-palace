@@ -1,4 +1,4 @@
-title: "Case review: text, time and JSON"
+title: "Text, time and JSON"
 module: 29
 kind: review
 summary: Twelve questions that need regular expressions, time zones, JSONB, arrays and a generated column, including cleaning Inkwell's messy customer import.

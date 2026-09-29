@@ -31,6 +31,7 @@ export function TopicList({ level }: { level: LevelSummary }) {
             <span className="w-8 font-mono text-sm text-muted">{t.kind === "module" ? String(t.module).padStart(2, "0") : "✦"}</span>
             <div className="min-w-0 flex-1 basis-56">
               <Link href={href} className="font-medium hover:text-brand">
+                {t.kind === "review" ? "Case review: " : t.kind === "capstone" ? "Capstone: " : ""}
                 {t.title}
               </Link>
               <p className="mt-0.5 text-sm text-muted">{t.summary}</p>

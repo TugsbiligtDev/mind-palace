@@ -1,4 +1,4 @@
-title: "Case review: logic in the database"
+title: "Logic in the database"
 module: 36
 kind: review
 summary: Build views, a materialized view, functions, a procedure and triggers to spec. Each one is tested by using it, the way the shop's app would.

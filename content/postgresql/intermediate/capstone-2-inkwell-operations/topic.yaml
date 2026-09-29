@@ -1,4 +1,4 @@
-title: "Capstone: running Inkwell's database"
+title: "Running Inkwell's database"
 module: 39
 kind: capstone
 summary: Set up safe access, ship a migration, answer four hard business questions, debug a broken report, and back it all up on your Mac.

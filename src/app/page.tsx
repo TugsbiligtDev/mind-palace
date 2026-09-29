@@ -73,7 +73,7 @@ export default function Landing() {
             <h2 className="mt-4 font-serif text-2xl leading-tight">{sample?.title ?? "New cases are on the way"}</h2>
             <p className="mt-3 font-serif text-[15px] leading-relaxed text-muted">
               The case files are being rewritten for the bookstore data. Until then, every lesson runs on it: 39,419
-              orders, 660 refunds and thousands of customers, waiting for your questions&hellip;
+              orders, 997 refunds and thousands of customers, waiting for your questions&hellip;
             </p>
           </article>
           <div className="relative mt-[-0.75rem] ml-6 rotate-[0.8deg] overflow-hidden rounded-2xl border border-border bg-card shadow-lg sm:ml-12">

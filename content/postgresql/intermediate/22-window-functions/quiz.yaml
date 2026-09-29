@@ -51,9 +51,9 @@ questions:
              count(*) AS all_rows
       FROM payments;
     options:
-      - "37274 | 37274"
-      - "15968 | 37274"
-      - "15968 | 15968"
-      - "4 | 37274"
+      - "37611 | 37611"
+      - "16106 | 37611"
+      - "16106 | 16106"
+      - "4 | 37611"
     answer: 1
-    explanation: FILTER applies only to the aggregate it's attached to. `card_rows` counts the 15,968 card rows (payments and refunds), while the plain `count(*)` still counts all 37,274.
+    explanation: FILTER applies only to the aggregate it's attached to. `card_rows` counts the 16,106 card rows (payments and refunds), while the plain `count(*)` still counts all 37,611.

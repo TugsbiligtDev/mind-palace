@@ -11,7 +11,7 @@
 --   customers    +5,000   (5,020 total) — now with a time_zone column
 --   orders       ~39,000  — busier in November/December
 --   order_items  ~70,000
---   payments     ~37,000  — new table, includes some refunds
+--   payments     ~37,000  — new table, includes full and partial refunds
 --   reviews      ~7,000
 --
 -- New columns / tables for Intermediate topics:
@@ -59,7 +59,9 @@ CREATE TABLE payments (
     kind        text    NOT NULL CHECK (kind IN ('payment', 'refund')),
     amount      numeric(10,2) NOT NULL,          -- refunds are negative
     method      text    NOT NULL CHECK (method IN ('card','paypal','bank_transfer','gift_card')),
-    paid_at     timestamptz NOT NULL
+    paid_at     timestamptz NOT NULL,
+    CONSTRAINT payments_amount_sign CHECK (
+        (kind = 'payment' AND amount > 0) OR (kind = 'refund' AND amount < 0))
 );
 
 -- Everything here is plain text on purpose: it's what a messy CSV
@@ -413,6 +415,31 @@ SELECT 300 + row_number() OVER (ORDER BY row_no),
        phone, signup_date, city, notes
 FROM raw_customer_import
 WHERE row_no % 29 = 0;
+
+-- ---------------------------------------------------------------------
+-- 11. Partial refunds (a damaged copy, a late delivery): about 1% of
+--     delivered orders that weren't fully refunded get part of their money back.
+--     Kept near the end so the random rows above stay exactly the same.
+-- ---------------------------------------------------------------------
+INSERT INTO payments (order_id, kind, amount, method, paid_at)
+SELECT p.order_id, 'refund', -round(p.amount * (0.2 + random() * 0.5)::numeric, 2), p.method,
+       p.paid_at + interval '5 days' + random() * interval '20 days'
+FROM payments p
+JOIN orders o ON o.order_id = p.order_id
+WHERE o.status = 'delivered' AND p.kind = 'payment'
+  AND NOT EXISTS (SELECT 1 FROM payments r WHERE r.order_id = p.order_id AND r.kind = 'refund')
+  AND random() < 0.01
+ORDER BY p.paid_at;
+
+-- ---------------------------------------------------------------------
+-- 12. Random word pairs sometimes repeat. Real shops do sell series, so a
+--     repeated title becomes the next book in that series: "The Iron Crown, Book 2".
+-- ---------------------------------------------------------------------
+UPDATE books b
+SET title = b.title || ', Book ' || d.n
+FROM (SELECT book_id, row_number() OVER (PARTITION BY title ORDER BY book_id) AS n
+      FROM books) AS d
+WHERE d.book_id = b.book_id AND d.n > 1;
 
 COMMIT;
 

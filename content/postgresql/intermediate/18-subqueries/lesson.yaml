@@ -10,7 +10,7 @@ steps:
       | customers | 5,020 |
       | orders | 39,419 |
       | order_items | 69,881 |
-      | payments (new) | 37,274, including 660 refunds |
+      | payments (new) | 37,611, including 997 refunds (full and partial) |
       | reviews | 7,360 |
       | raw_customer_import (new) | 310 messy rows to clean up |
 
@@ -237,7 +237,7 @@ steps:
     body: |
       What customers paid should match what they bought. The starter totals the **payments** per order (refunds are negative). Add a second derived table that totals **quantity × unit_price** per order from `order_items`, join them on `order_id`, and return only orders where the two **don't match**.
 
-      Return `order_id`, `paid` and `bought`. You should get 660 orders: every one of them was refunded.
+      Return `order_id`, `paid` and `bought`. You should get 997 orders: every one of them was refunded, some fully and some partly.
     sql: |
       SELECT p.order_id, p.paid
       FROM (SELECT order_id, sum(amount) AS paid

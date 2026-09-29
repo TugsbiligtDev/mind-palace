@@ -157,7 +157,7 @@ steps:
   - kind: try
     title: BETWEEN misses a payment
     body: |
-      Payments from 1 to 20 February 2026. Run it: 1,155. Then change it to the half-open pattern ending `< '2026-02-21'` and run again: 1,211. BETWEEN silently lost the 56 payments made during 20 February.
+      Payments from 1 to 20 February 2026. Run it: 1,164. Then change it to the half-open pattern ending `< '2026-02-21'` and run again: 1,219. BETWEEN silently lost the 55 payments made during 20 February.
     sql: |
       SELECT count(*) AS payments
       FROM payments

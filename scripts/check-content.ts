@@ -5,6 +5,7 @@
 import { PGlite, types } from "@electric-sql/pglite";
 import { loadAllTracks, loadStory, loadTrack } from "../src/lib/content/load";
 import { loadPractice } from "../src/lib/content/practice";
+import { tryStepCheck } from "../src/lib/content/step-check";
 import { freshCopy, grade, lastRows, rawTextParsers, resultText, runInput } from "../src/lib/sql/core";
 
 const only = process.argv[2];
@@ -55,11 +56,19 @@ async function main() {
           const shouldError = step.expect_error || step.broken_starter;
           if (shouldError && !out.error) fail(where, "expected the starter SQL to error, but it ran fine");
           if (!shouldError && out.error) fail(where, `starter SQL errors: ${out.error.message}`);
-          if (step.expect) {
-            const exp = await runInput(await fresh(), step.expect);
+          const check = tryStepCheck(step);
+          if (check) {
+            const exp = await runInput(await fresh(), check.solution);
             checks++;
             if (exp.error) fail(where, `expected-answer SQL errors: ${exp.error.message}`);
-            else if (!lastRows(exp)) fail(where, "expected-answer SQL returns no rows to compare");
+            else if (check.mode === "result" && !lastRows(exp)) fail(where, "expected-answer SQL returns no rows to compare");
+            else {
+              if (!(await grade(fresh, check.solution, check)).correct) fail(where, "the expected answer doesn't pass its own check");
+              for (const [j, wrong] of step.reject.entries()) {
+                checks++;
+                if ((await grade(fresh, wrong, check)).correct) fail(where, `wrong answer ${j + 1} is accepted by the grader`);
+              }
+            }
           }
         }
 

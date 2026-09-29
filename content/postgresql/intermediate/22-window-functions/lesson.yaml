@@ -51,7 +51,7 @@ steps:
   - kind: explain
     title: Ranking with ORDER BY
     body: |
-      Put **ORDER BY** inside OVER and you can **number** the rows. Three ranking functions differ only in how they treat **ties** (in Self-Help, *The Bright Library* and *The Bright Promise* both cost 29.99):
+      Put **ORDER BY** inside OVER and you can **number** the rows. Three ranking functions differ only in how they treat **ties** (in Self-Help, *The Bright Library, Book 2* and *The Bright Promise, Book 2* both cost 29.99):
 
       | Function | Ties get… | Sequence |
       |---|---|---|

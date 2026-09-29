@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Markdown } from "@/components/markdown";
 import { SqlRunner, type Engine } from "@/components/sql/sql-runner";
 import type { Step } from "@/lib/content/schema";
+import { tryStepCheck } from "@/lib/content/step-check";
 import { completeLesson, completeStep, setLast, setLessonStep, useProgress } from "@/lib/progress";
 import type { RunOutput } from "@/lib/sql/core";
 import { gradeSql } from "@/lib/sql/client";
@@ -161,6 +162,7 @@ function TryPanel({
   const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
   const [misses, setMisses] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   const onRan = useCallback(
     async (input: string, out: RunOutput) => {
@@ -175,12 +177,13 @@ function TryPanel({
         setFeedback({ ok: false, text: "An error. Read the message, fix the query, and run it again." });
         return;
       }
-      if (!step.expect) {
+      const check = tryStepCheck(step);
+      if (!check) {
         onDone();
         setFeedback(null);
         return;
       }
-      const v = await gradeSql(engine.key, engine.setup, input, { mode: "result", solution: step.expect, ordered: step.ordered });
+      const v = await gradeSql(engine.key, engine.setup, input, check);
       if (v.correct) {
         setFeedback({ ok: true, text: "Correct! That's exactly the result we were after." });
         onDone();
@@ -209,7 +212,20 @@ function TryPanel({
         </p>
       )}
       {done && !feedback && <p className="text-sm text-success">✓ Step complete</p>}
-      {step.expect && misses >= 2 && !done && (
+      {step.hint && misses >= 1 && !done && (
+        <div className="text-sm">
+          {showHint ? (
+            <div className="rounded-lg border border-border px-3 py-2">
+              <Markdown>{step.hint}</Markdown>
+            </div>
+          ) : (
+            <button onClick={() => setShowHint(true)} className="text-muted underline underline-offset-4 hover:text-text">
+              Need a hint?
+            </button>
+          )}
+        </div>
+      )}
+      {step.expect && misses >= 3 && !done && (
         <div className="text-sm">
           {showAnswer ? (
             <pre className="overflow-x-auto rounded-lg border border-border bg-code p-3 font-mono text-xs">{step.expect}</pre>

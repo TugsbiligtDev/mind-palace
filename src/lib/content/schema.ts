@@ -51,6 +51,13 @@ const step = z.discriminatedUnion("kind", [
     // When set, the step only counts as done once the learner's result matches this query's result.
     expect: z.string().optional(),
     ordered: z.boolean().default(false),
+    // Grade the database afterwards instead of the result: after both the learner's SQL and
+    // `expect` run, this query's rows must match (for UPDATE/DELETE/DDL tasks).
+    state_query: z.string().optional(),
+    // Shown on request after the first wrong attempt, before the full answer is offered.
+    hint: md.optional(),
+    // Known wrong answers. The content check proves each one is rejected by the grader.
+    reject: z.array(z.string()).default([]),
     expect_error: z.boolean().default(false),
     // A "fix this" exercise: the starter SQL is deliberately broken.
     broken_starter: z.boolean().default(false),

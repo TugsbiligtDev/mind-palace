@@ -46,7 +46,7 @@ export default function Landing() {
             {[
               [lessons, "lessons"],
               [lessons, "quizzes"],
-              [cases.length, "case files"],
+              ...(cases.length ? [[cases.length, "case files"]] : []),
             ].map(([n, label]) => (
               <div key={label}>
                 <dt className="sr-only">{label}</dt>
@@ -63,13 +63,17 @@ export default function Landing() {
           <div aria-hidden className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-brand/15 via-transparent to-xp/10 blur-2xl" />
           <article className="rotate-[-1.2deg] rounded-2xl border border-paper-border bg-paper p-6 shadow-lg sm:p-7">
             <div className="flex items-baseline justify-between border-b border-dashed border-paper-border pb-3">
-              <p className="font-mono text-xs tracking-widest text-muted uppercase">Case file · Episode 4</p>
-              <span className="rotate-[-4deg] rounded border-2 border-clue px-2 py-0.5 font-mono text-[11px] font-bold text-clue">OPEN</span>
+              <p className="font-mono text-xs tracking-widest text-muted uppercase">
+                {sample ? `Case file · Episode ${sample.series?.episode ?? 1}` : "Case files"}
+              </p>
+              <span className="rotate-[-4deg] rounded border-2 border-clue px-2 py-0.5 font-mono text-[11px] font-bold text-clue">
+                {sample ? "OPEN" : "SOON"}
+              </span>
             </div>
-            <h2 className="mt-4 font-serif text-2xl leading-tight">{sample?.title ?? "The Refund Nobody Asked For"}</h2>
+            <h2 className="mt-4 font-serif text-2xl leading-tight">{sample?.title ?? "New cases are on the way"}</h2>
             <p className="mt-3 font-serif text-[15px] leading-relaxed text-muted">
-              Order 7 reached its customer safely. Nine days later, someone refunded every cent of it. Nobody at
-              Inkwell remembers approving it, and the note on file is signed ~E&hellip;
+              The case files are being rewritten for the bookstore data. Until then, every lesson runs on it: 39,419
+              orders, 660 refunds and thousands of customers, waiting for your questions&hellip;
             </p>
           </article>
           <div className="relative mt-[-0.75rem] ml-6 rotate-[0.8deg] overflow-hidden rounded-2xl border border-border bg-card shadow-lg sm:ml-12">
@@ -80,14 +84,13 @@ export default function Landing() {
               <span className="ml-2 font-mono text-xs text-muted">bookstore</span>
             </div>
             <pre className="overflow-x-auto bg-code px-4 py-4 font-mono text-[13px] leading-relaxed">
-              <span className="text-brand">SELECT</span> *{"\n"}
+              <span className="text-brand">SELECT</span> method, <span className="text-brand">count</span>(*){"\n"}
               <span className="text-brand">FROM</span> payments{"\n"}
               <span className="text-brand">WHERE</span> kind = <span className="text-success">&apos;refund&apos;</span>{"\n"}
-              {"  "}<span className="text-brand">AND</span> order_id <span className="text-brand">IN</span> (
-              <span className="text-success">7</span>, <span className="text-success">16</span>);
+              <span className="text-brand">GROUP BY</span> method;
             </pre>
             <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-sm">
-              <span className="text-success">✓ The evidence checks out.</span>
+              <span className="text-success">✓ 4 rows</span>
               <span className="font-medium text-xp">+100 XP</span>
             </div>
           </div>

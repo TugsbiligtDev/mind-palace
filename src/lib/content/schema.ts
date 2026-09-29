@@ -39,7 +39,15 @@ export const topicSchema = z.object({
   summary: z.string(),
   minutes: z.number().int(),
   dataset: z.string().optional(),
+  // "review" and "capstone" lessons sit between modules without taking a module number
+  // (`module` is then the module they follow, and isn't shown).
+  kind: z.enum(["module", "review", "capstone"]).default("module"),
 });
+
+// "Module 14", "Case review" or "Capstone", wherever a lesson is named.
+export function topicLabel(t: { module: number; kind: Topic["kind"] }) {
+  return t.kind === "review" ? "Case review" : t.kind === "capstone" ? "Capstone" : `Module ${t.module}`;
+}
 
 const step = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("explain"), title: z.string(), body: md }),

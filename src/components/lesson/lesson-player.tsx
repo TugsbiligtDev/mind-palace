@@ -22,7 +22,7 @@ const KIND_LABEL: Record<Step["kind"], string> = {
 export function LessonPlayer({
   topicKey,
   title,
-  module,
+  label,
   steps,
   engine,
   href,
@@ -30,7 +30,7 @@ export function LessonPlayer({
 }: {
   topicKey: string;
   title: string;
-  module: number;
+  label: string;
   steps: Step[];
   engine: Engine;
   href: string;
@@ -46,9 +46,9 @@ export function LessonPlayer({
   useEffect(() => {
     if (index !== null) {
       setLessonStep(topicKey, index);
-      setLast(href, `Module ${module}: ${title} · step ${index + 1}`);
+      setLast(href, `${label}: ${title} · step ${index + 1}`);
     }
-  }, [index, topicKey, href, module, title]);
+  }, [index, topicKey, href, label, title]);
 
   if (!p || index === null) return <div className="h-96" />;
 
@@ -74,7 +74,7 @@ export function LessonPlayer({
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
       <div className="mb-6 flex items-center gap-4">
         <p className="text-sm text-muted">
-          Module {module} · <span className="text-text">{title}</span>
+          {label} · <span className="text-text">{title}</span>
         </p>
         <div className="flex flex-1 gap-1" aria-label={`Step ${index + 1} of ${steps.length}`}>
           {steps.map((_, i) => (

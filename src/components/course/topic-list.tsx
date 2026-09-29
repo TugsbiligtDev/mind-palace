@@ -28,7 +28,7 @@ export function TopicList({ level }: { level: LevelSummary }) {
         const action = quiz?.passed ? "Review" : lesson?.done ? "Take quiz" : lesson ? "Continue" : "Start";
         return (
           <li key={t.key} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
-            <span className="w-8 font-mono text-sm text-muted">{String(t.module).padStart(2, "0")}</span>
+            <span className="w-8 font-mono text-sm text-muted">{t.kind === "module" ? String(t.module).padStart(2, "0") : "✦"}</span>
             <div className="min-w-0 flex-1 basis-56">
               <Link href={href} className="font-medium hover:text-brand">
                 {t.title}

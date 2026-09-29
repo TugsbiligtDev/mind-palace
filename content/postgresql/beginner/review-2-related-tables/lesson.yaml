@@ -1,0 +1,216 @@
+steps:
+  - kind: explain
+    title: Many tables, your choice
+    body: |
+      Same rules as the first review: empty editors, no named technique, a hint after a wrong attempt, and one working answer after three.
+
+      You're in the **bookstore** database now: `books`, `authors`, `book_authors`, `publishers`, `genres`, `customers`, `customer_profiles`, `employees`, `orders`, `order_items` and `reviews`. Use `\dt` and `\d table_name` whenever you need to see what's where.
+
+      Before each join, ask two questions:
+
+      1. **Which tables** hold the pieces, and which columns link them?
+      2. Should rows **without a match** stay (LEFT JOIN) or go (JOIN)?
+
+  - kind: try
+    title: "1. Books, publishers and genres"
+    body: |
+      List every book's `title`, its publisher's name (labeled **publisher**) and its genre's name (labeled **genre**).
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT b.title, p.name AS publisher, g.name AS genre
+      FROM books b
+      JOIN publishers p ON p.publisher_id = b.publisher_id
+      JOIN genres g ON g.genre_id = b.genre_id;
+    hint: Two joins, each following one foreign key out of `books`.
+
+  - kind: try
+    title: "2. Customers who never ordered"
+    body: |
+      Show the `first_name` and `last_name` of every customer who has **never placed an order**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT c.first_name, c.last_name
+      FROM customers c
+      LEFT JOIN orders o ON o.customer_id = c.customer_id
+      WHERE o.order_id IS NULL;
+    hint: Keep every customer, then keep only the ones where the order side came back empty (Module 14).
+    reject:
+      - SELECT c.first_name, c.last_name FROM customers c JOIN orders o ON o.customer_id = c.customer_id WHERE o.order_id IS NULL;
+
+  - kind: try
+    title: "3. Every genre, even the empty ones"
+    body: |
+      Show each genre's `name` and how many books it has, labeled **books**. Genres with **no** books must show **0**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT g.name, count(b.book_id) AS books
+      FROM genres g
+      LEFT JOIN books b ON b.genre_id = g.genre_id
+      GROUP BY g.genre_id, g.name;
+    hint: After a LEFT JOIN, `count(*)` counts the empty row as 1. Count a column from the books side instead.
+    reject:
+      - SELECT g.name, count(*) AS books FROM genres g LEFT JOIN books b ON b.genre_id = g.genre_id GROUP BY g.genre_id, g.name;
+
+  - kind: try
+    title: "4. Co-written books"
+    body: |
+      Which books have **more than one author**? Show the `title` and the number of authors, labeled **authors**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT b.title, count(*) AS authors
+      FROM books b
+      JOIN book_authors ba ON ba.book_id = b.book_id
+      GROUP BY b.book_id, b.title
+      HAVING count(*) > 1;
+    hint: The junction table has one row per book–author pair.
+
+  - kind: try
+    title: "5. Everything by Stephen King"
+    body: |
+      List the `title` of every book **Stephen King** wrote or co-wrote, in title order.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT b.title
+      FROM authors a
+      JOIN book_authors ba ON ba.author_id = a.author_id
+      JOIN books b ON b.book_id = ba.book_id
+      WHERE a.first_name = 'Stephen' AND a.last_name = 'King'
+      ORDER BY b.title;
+    ordered: true
+    hint: authors → book_authors → books.
+
+  - kind: try
+    title: "6. Authors without books"
+    body: |
+      Show the `first_name` and `last_name` of every author who has **no books** in the shop.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT a.first_name, a.last_name
+      FROM authors a
+      LEFT JOIN book_authors ba ON ba.author_id = a.author_id
+      WHERE ba.book_id IS NULL;
+
+  - kind: try
+    title: "7. Who reports to whom"
+    body: |
+      List every employee's `full_name` (labeled **employee**) and their manager's full name (labeled **manager**). The person at the top has no manager and must **still appear**, with NULL.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT e.full_name AS employee, m.full_name AS manager
+      FROM employees e
+      LEFT JOIN employees m ON m.employee_id = e.manager_id;
+    hint: Join `employees` to a second copy of itself, and think about which join keeps the boss.
+    reject:
+      - SELECT e.full_name AS employee, m.full_name AS manager FROM employees e JOIN employees m ON m.employee_id = e.manager_id;
+
+  - kind: try
+    title: "8. Orders and books per customer"
+    body: |
+      For each customer who has ordered, show `first_name`, the number of **orders** (labeled **orders**) and the number of **books** bought across them (sum of quantity, labeled **books**).
+
+      Careful: one of these numbers is easy to get wrong.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT c.first_name,
+             count(DISTINCT o.order_id) AS orders,
+             sum(oi.quantity) AS books
+      FROM customers c
+      JOIN orders o       ON o.customer_id = c.customer_id
+      JOIN order_items oi ON oi.order_id = o.order_id
+      GROUP BY c.customer_id, c.first_name;
+    hint: After joining order lines, each order appears once per line. Count each order only once.
+    reject:
+      - |
+        SELECT c.first_name, count(*) AS orders, sum(oi.quantity) AS books
+        FROM customers c
+        JOIN orders o ON o.customer_id = c.customer_id
+        JOIN order_items oi ON oi.order_id = o.order_id
+        GROUP BY c.customer_id, c.first_name;
+
+  - kind: try
+    title: "9. Money that actually came in"
+    body: |
+      For each customer, show `first_name` and the total they spent (quantity × unit price), labeled **spent**, **ignoring cancelled orders**. Biggest spender first, and by first name when two spent the same.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT c.first_name, sum(oi.quantity * oi.unit_price) AS spent
+      FROM customers c
+      JOIN orders o       ON o.customer_id = c.customer_id
+      JOIN order_items oi ON oi.order_id = o.order_id
+      WHERE o.status <> 'cancelled'
+      GROUP BY c.customer_id, c.first_name
+      ORDER BY spent DESC, c.first_name;
+    ordered: true
+    hint: Filter the orders before grouping, then sort by the total.
+
+  - kind: try
+    title: "10. Well-reviewed books"
+    body: |
+      For books with **at least 2 reviews**, show the `title` and the average rating rounded to **1** decimal, labeled **avg_rating**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT b.title, round(avg(r.rating), 1) AS avg_rating
+      FROM books b
+      JOIN reviews r ON r.book_id = b.book_id
+      GROUP BY b.book_id, b.title
+      HAVING count(*) >= 2;
+
+  - kind: try
+    title: "11. A new rule for prices"
+    body: |
+      Inkwell never charges more than **500** for a book. Add a rule to `books` so the database **rejects** any price above 500, while 500 itself is still allowed.
+
+      This is checked by trying some prices on your changed table.
+    sql: |
+      -- Write your query here
+    expect: |
+      ALTER TABLE books ADD CONSTRAINT books_price_max CHECK (price <= 500);
+    state_query: |
+      CREATE FUNCTION pg_temp.try_price(p numeric) RETURNS text LANGUAGE plpgsql AS $$
+      BEGIN
+        UPDATE books SET price = p WHERE book_id = 1;
+        RETURN 'accepted';
+      EXCEPTION WHEN check_violation THEN
+        RETURN 'rejected';
+      END $$;
+      SELECT pg_temp.try_price(500.01) AS above, pg_temp.try_price(500) AS at_limit, pg_temp.try_price(20) AS normal;
+    hint: A CHECK constraint, added to an existing table with ALTER TABLE (Modules 12 and 15).
+    reject:
+      - ALTER TABLE books ADD CONSTRAINT books_price_max CHECK (price < 500);
+
+  - kind: try
+    title: "12. A new column"
+    body: |
+      Books now come in formats. Add a column **format** to `books`: text, **never empty (NOT NULL)**, and **paperback** for every existing book and for new books that don't say otherwise.
+    sql: |
+      -- Write your query here
+    expect: |
+      ALTER TABLE books ADD COLUMN format text NOT NULL DEFAULT 'paperback';
+    state_query: |
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_name = 'books' AND column_name = 'format';
+    hint: One ALTER TABLE … ADD COLUMN can include both NOT NULL and a DEFAULT, and the default fills in the existing rows.
+    reject:
+      - ALTER TABLE books ADD COLUMN format text DEFAULT 'paperback';
+
+  - kind: why
+    body: |
+      Almost every real question crosses tables, and the two classic ways to get it wrong, dropping rows with the wrong join and counting duplicates after a join, don't cause errors. They just give a wrong number. Choosing the join yourself, many times, is how you learn to spot them.
+
+  - kind: recap
+    body: |
+      - Follow the foreign keys: they tell you which columns link two tables.
+      - "Including those with none" or "never" → LEFT JOIN, and count a column from the right side.
+      - After joining a "many" table, ask what one row means before you count.
+      - Rules belong in the table: CHECK, NOT NULL and DEFAULT, added with ALTER TABLE.

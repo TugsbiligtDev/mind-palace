@@ -252,8 +252,20 @@ export async function grade(fresh: () => Promise<PGliteInterface>, input: string
   return {
     correct: ok,
     output,
-    message: ok ? "The records are restored exactly." : "The database doesn't look right yet. Check which rows you changed.",
+    message: ok ? "The records are restored exactly." : wrongStateMessage(myState, refState),
   };
+}
+
+// Point at the first row that differs, so the learner knows where to look.
+function wrongStateMessage(mine: Extract<Block, { kind: "rows" }> | undefined, ref: Extract<Block, { kind: "rows" }> | undefined) {
+  const base = "The database doesn't look right yet.";
+  if (!mine || !ref) return `${base} Check which rows you changed.`;
+  const line = (r: (string | null)[] | undefined) => (r ? r.map((v) => v ?? "NULL").join(" | ") : "nothing");
+  for (let i = 0; i < Math.max(mine.rows.length, ref.rows.length); i++) {
+    const [a, b] = [line(mine.rows[i]), line(ref.rows[i])];
+    if (a !== b) return `${base} First difference: expected "${b}", but found "${a}".`;
+  }
+  return `${base} Check which rows you changed.`;
 }
 
 function wrongRowsMessage(mine: Extract<Block, { kind: "rows" }> | undefined, ref: Extract<Block, { kind: "rows" }> | undefined) {

@@ -8,6 +8,7 @@ import {
   levelSchema,
   quizSchema,
   storySchema,
+  topicLabel,
   topicSchema,
   trackSchema,
   type Lesson,
@@ -147,7 +148,7 @@ export type LevelSummary = {
   season: number;
   seasonTitle: string;
   status: Level["status"];
-  topics: { id: string; key: string; title: string; summary: string; module: number; minutes: number; steps: number }[];
+  topics: { id: string; key: string; title: string; summary: string; module: number; kind: Topic["kind"]; minutes: number; steps: number }[];
 };
 
 export function summarize(bundle: TrackBundle): LevelSummary[] {
@@ -166,6 +167,7 @@ export function summarize(bundle: TrackBundle): LevelSummary[] {
       title: t.topic.title,
       summary: t.topic.summary,
       module: t.topic.module,
+      kind: t.topic.kind,
       minutes: t.topic.minutes,
       steps: t.lesson.steps.length,
     })),
@@ -192,7 +194,7 @@ export function topicContext(trackId: string, levelId: string, topicId: string) 
     levelHref: `/courses/${trackId}/${levelId}`,
     quizHref: `${base}/quiz`,
     nextHref: next ? topicHref(trackId, levelId, next.id) : `/courses/${trackId}/${levelId}`,
-    nextLabel: next ? `Next: Module ${next.topic.module}, ${next.topic.title} →` : "Level complete, back to the level →",
+    nextLabel: next ? `Next: ${topicLabel(next.topic)}, ${next.topic.title} →` : "Level complete, back to the level →",
     lessonEngine: topic.engine,
   };
 }

@@ -1,0 +1,52 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "\"How many customers are in each country, but only countries with more than 2\". Which clauses do you need?"
+    options:
+      - WHERE and ORDER BY
+      - GROUP BY and HAVING
+      - GROUP BY and WHERE count(*) > 2
+      - DISTINCT and LIMIT
+    answer: 1
+    explanation: Counting per country needs GROUP BY. The filter is on the count, which only exists after grouping, so it goes in HAVING.
+
+  - type: predict
+    prompt: There are 30 books. 6 are Classic, and one has no genre (NULL). What does this return?
+    code: |
+      SELECT count(*) FROM books WHERE genre <> 'Classic';
+    options:
+      - "23"
+      - "24"
+      - "30"
+      - "6"
+    answer: 0
+    explanation: "6 of the 30 books are Classic, which leaves 24. But one book's genre is NULL, and `NULL <> 'Classic'` is unknown, not true, so that book isn't counted either: 23."
+
+  - type: mcq
+    prompt: A result looks right but has **30 rows** when you expected one row per genre. What's the most likely cause?
+    options:
+      - You forgot GROUP BY, so every book is its own row
+      - LIMIT is missing
+      - The table has duplicate genres
+      - ORDER BY is wrong
+    answer: 0
+    explanation: One row per book (30) instead of one per genre means nothing collapsed the rows. Grouping by genre does that.
+
+  - type: mcq
+    prompt: Before running `UPDATE books SET stock = 0 WHERE genre = 'Horror';`, what's the safest first step?
+    options:
+      - Run it and check afterwards
+      - "Run `SELECT * FROM books WHERE genre = 'Horror';` to see exactly which rows will change"
+      - Run TRUNCATE first
+      - Remove the WHERE to be sure it works
+    answer: 1
+    explanation: The same WHERE in a SELECT shows exactly the rows the UPDATE will touch, before anything changes.
+
+  - type: fill
+    prompt: Complete the query so books with no price show 0 instead of NULL.
+    code: |
+      SELECT title, ____(price, 0) AS price FROM books;
+    answer: coalesce
+    accept: ["COALESCE"]
+    runnable: true
+    explanation: "`coalesce` returns its first argument that isn't NULL."

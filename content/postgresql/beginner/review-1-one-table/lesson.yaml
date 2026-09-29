@@ -1,0 +1,193 @@
+steps:
+  - kind: explain
+    title: No more hand-holding
+    body: |
+      So far, every "Your turn" told you which table to open and which tool to use. Real questions don't come with that.
+
+      This review has **twelve questions** about the practice tables: `books`, `customers` and `sales`. Each editor starts empty. For each one:
+
+      1. Decide which table holds the answer. `\d books` (or `\dt`) shows what's there.
+      2. Decide which tools you need: WHERE, ORDER BY, a function, GROUP BY, CASE…
+      3. Write it, run it, and **look at the result**. Does it make sense?
+
+      After a wrong attempt you can ask for a hint. After three, you can see one working answer. Try hard before you look: the struggle is what makes it stick.
+
+  - kind: try
+    title: "1. Not priced yet"
+    body: |
+      Some books have no price yet. List their **titles**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT title FROM books WHERE price IS NULL;
+    hint: A missing value is NULL, and NULL is never *equal* to anything (Module 7).
+    reject:
+      - SELECT title FROM books WHERE price = NULL;
+
+  - kind: try
+    title: "2. The five longest books"
+    body: |
+      Show the `title` and `pages` of the **five** books with the most pages, longest first. When two books have the same number of pages, put them in title order.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT title, pages FROM books ORDER BY pages DESC, title LIMIT 5;
+    ordered: true
+    hint: Sort by two columns (the second one breaks ties), then keep only the first rows.
+    reject:
+      - SELECT title, pages FROM books ORDER BY pages LIMIT 5;
+
+  - kind: try
+    title: "3. Reachable by email in the UK or Canada"
+    body: |
+      Marketing wants to email customers in the **UK** or **Canada**. List the `first_name` and `last_name` of those customers who **have an email address**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT first_name, last_name
+      FROM customers
+      WHERE country IN ('UK', 'Canada') AND email IS NOT NULL;
+    hint: Two conditions must both be true. If you use OR for the countries, wrap it in parentheses (Module 6, precedence).
+    reject:
+      - SELECT first_name, last_name FROM customers WHERE country IN ('UK', 'Canada');
+
+  - kind: try
+    title: "4. How many titles mention \"the\"?"
+    body: |
+      Count the books whose title contains the letters **the** anywhere, in **any** capitalization ("The Hobbit" counts, and so does "The Name of the Wind"). Return one number.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT count(*) FROM books WHERE title ILIKE '%the%';
+    hint: There's a version of LIKE that ignores upper and lower case.
+    reject:
+      - SELECT count(*) FROM books WHERE title LIKE '%the%';
+
+  - kind: try
+    title: "5. Nineteenth-century books"
+    body: |
+      List the `title` and `published_year` of every book published in the **1800s** (1800 to 1899), oldest first, and by title when the year is the same.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT title, published_year
+      FROM books
+      WHERE published_year BETWEEN 1800 AND 1899
+      ORDER BY published_year, title;
+    ordered: true
+    hint: A range with both ends included, then a sort on two columns.
+
+  - kind: try
+    title: "6. Messy titles"
+    body: |
+      Some titles were typed with extra spaces at the start or end. Show the `book_id` and the **cleaned-up** title (labeled **clean_title**) for **only** those books.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT book_id, trim(title) AS clean_title
+      FROM books
+      WHERE title <> trim(title);
+    hint: A title needs cleaning when it's different from its own trimmed version (Module 9).
+    reject:
+      - SELECT book_id, trim(title) AS clean_title FROM books;
+
+  - kind: try
+    title: "7. Genre summary"
+    body: |
+      For each genre, show the genre, the **number of books**, and the **average price rounded to 2 decimals**. A book with no genre should be counted under **Unknown**, not as a blank row.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT coalesce(genre, 'Unknown') AS genre,
+             count(*) AS books,
+             round(avg(price), 2) AS avg_price
+      FROM books
+      GROUP BY coalesce(genre, 'Unknown');
+    hint: GROUP BY for the summary, and a function that swaps NULL for a value you choose (Module 7).
+    reject:
+      - SELECT genre, count(*), round(avg(price), 2) FROM books GROUP BY genre;
+
+  - kind: try
+    title: "8. Well-stocked genres"
+    body: |
+      Which genres have **more than 50 copies in stock in total**? Show the genre and its total stock, labeled **total_stock**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT genre, sum(stock) AS total_stock
+      FROM books
+      GROUP BY genre
+      HAVING sum(stock) > 50;
+    hint: The condition is about a *total*, so it can't go in WHERE (Module 10).
+
+  - kind: try
+    title: "9. Money by payment method"
+    body: |
+      Using `sales`, show each `payment_method` and the **money taken** with it (quantity × unit price), labeled **revenue**. Biggest first.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT payment_method, sum(quantity * unit_price) AS revenue
+      FROM sales
+      GROUP BY payment_method
+      ORDER BY revenue DESC;
+    ordered: true
+    hint: Multiply inside the SUM, then group.
+    reject:
+      - SELECT payment_method, sum(unit_price) AS revenue FROM sales GROUP BY payment_method ORDER BY revenue DESC;
+
+  - kind: try
+    title: "10. Age groups"
+    body: |
+      For each customer, show `first_name` and an **age_group**: **under 30**, **30 and over**, or **unknown** when there's no birth date. Work out ages **on 1 January 2025**, so everyone gets the same answer whatever today's date is.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT first_name,
+             CASE
+               WHEN birth_date IS NULL THEN 'unknown'
+               WHEN age(date '2025-01-01', birth_date) < interval '30 years' THEN 'under 30'
+               ELSE '30 and over'
+             END AS age_group
+      FROM customers;
+    hint: "CASE picks a label per row. `age(later_date, earlier_date)` gives an interval you can compare with `interval '30 years'`. Handle the NULL case first."
+
+  - kind: try
+    title: "11. Sales per month"
+    body: |
+      How many **sales rows** were there in each month? Show the month (as a timestamp at the start of the month, labeled **month**) and the count, labeled **sales**, in time order.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT date_trunc('month', sold_at) AS month, count(*) AS sales
+      FROM sales
+      GROUP BY date_trunc('month', sold_at)
+      ORDER BY month;
+    ordered: true
+    hint: Cut each timestamp down to its month (Module 9), then group by that.
+
+  - kind: try
+    title: "12. A careful price rise"
+    body: |
+      Fantasy books go up by **10%**, rounded to 2 decimals. **Only** Fantasy books may change. This one is checked by looking at the whole `books` table afterwards, so a mistake anywhere will show.
+
+      Good habit from Module 8: run the SELECT version of your WHERE first.
+    sql: |
+      -- Write your query here
+    expect: |
+      UPDATE books SET price = round(price * 1.10, 2) WHERE genre = 'Fantasy';
+    state_query: |
+      SELECT book_id, price FROM books ORDER BY book_id;
+    hint: UPDATE … SET … WHERE. Without the WHERE, every book gets the rise.
+    reject:
+      - UPDATE books SET price = round(price * 1.10, 2);
+
+  - kind: why
+    body: |
+      Knowing a tool and choosing it are two different skills. In a job, nobody tells you "use HAVING here". You get a question in plain English and have to translate it. That translation is what this review trains.
+
+  - kind: recap
+    body: |
+      - Start from the question: **which table**, **which rows** (WHERE), **which columns** (SELECT), **grouped?** (GROUP BY / HAVING), **in what order?**
+      - NULL needs `IS NULL` and often `coalesce`.
+      - Check every result: does the number of rows make sense?

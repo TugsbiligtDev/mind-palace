@@ -1,0 +1,262 @@
+steps:
+  - kind: explain
+    title: The brief
+    body: |
+      Inkwell wants to run **book clubs**, and you're building the database side. Here's what the owner told you:
+
+      > "Each club has a **name**, and no two clubs can share one. Every club is **hosted by one of our employees**. We note the **date the club started**, which is today unless we say otherwise.
+      >
+      > Customers **join** clubs. A customer can be in several clubs, but can't join the same club twice. We note **when they joined**, today by default.
+      >
+      > Clubs hold **meetings**. Each meeting is about **one book** and happens at a **date and time**. Afterwards we sometimes record **how many people came**. That can't be negative, of course.
+      >
+      > If we close a club, its memberships and meetings should disappear with it."
+
+      Part 1 is the design. Part 2 is nine questions on the shop's data, using everything from Modules 4 to 17.
+
+  - kind: explain
+    title: The tables to build
+    body: |
+      So that your design can be tested automatically, use exactly these table and column names. **You** decide the types, keys and rules.
+
+      | Table | Columns |
+      |---|---|
+      | `clubs` | `club_id`, `name`, `host_employee_id`, `started_on` |
+      | `club_members` | `club_id`, `customer_id`, `joined_on` |
+      | `meetings` | `meeting_id`, `club_id`, `book_id`, `meets_at`, `attendees` |
+
+      Before you type, sketch it the Module 16 way: which relationships are one-to-many, which is many-to-many, and which table is the junction table?
+
+  - kind: try
+    title: "Part 1: build the tables"
+    body: |
+      Write the three `CREATE TABLE` statements. Your design is checked by trying valid and invalid rows on it:
+
+      - a club with a duplicate name, no name, or a host who doesn't exist must be **rejected**
+      - a customer joining the same club twice, or a missing customer or club, must be **rejected**
+      - a meeting without a book, with a book that doesn't exist, or with negative attendees must be **rejected**
+      - the dates must default to today, and deleting a club must remove its members and meetings
+
+      If the check says the database doesn't look right, test your own tables with a few INSERTs and see which rule is missing.
+    sql: |
+      -- Write your CREATE TABLE statements here
+    expect: |
+      CREATE TABLE clubs (
+          club_id          integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          name             text NOT NULL UNIQUE,
+          host_employee_id integer NOT NULL REFERENCES employees (employee_id),
+          started_on       date NOT NULL DEFAULT current_date
+      );
+
+      CREATE TABLE club_members (
+          club_id     integer NOT NULL REFERENCES clubs (club_id) ON DELETE CASCADE,
+          customer_id integer NOT NULL REFERENCES customers (customer_id),
+          joined_on   date NOT NULL DEFAULT current_date,
+          PRIMARY KEY (club_id, customer_id)
+      );
+
+      CREATE TABLE meetings (
+          meeting_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          club_id     integer NOT NULL REFERENCES clubs (club_id) ON DELETE CASCADE,
+          book_id     integer NOT NULL REFERENCES books (book_id),
+          meets_at    timestamptz NOT NULL,
+          attendees   integer CHECK (attendees >= 0)
+      );
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE
+        t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1,  'a new club',                     $q$INSERT INTO clubs (name, host_employee_id) VALUES ('Mystery Mondays', 2)$q$),
+          (2,  'a second club with the same name', $q$INSERT INTO clubs (name, host_employee_id) VALUES ('Mystery Mondays', 3)$q$),
+          (3,  'a club with no name',            $q$INSERT INTO clubs (name, host_employee_id) VALUES (NULL, 3)$q$),
+          (4,  'a club with no host',            $q$INSERT INTO clubs (name) VALUES ('Nobody Hosts This')$q$),
+          (5,  'a club with a missing employee', $q$INSERT INTO clubs (name, host_employee_id) VALUES ('Ghost Club', 999)$q$),
+          (6,  'the start date defaults to today', $q$SELECT 1 / (started_on = current_date)::int FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (7,  'a customer joins',               $q$INSERT INTO club_members (club_id, customer_id) SELECT club_id, 1 FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (8,  'the same customer joins again',  $q$INSERT INTO club_members (club_id, customer_id) SELECT club_id, 1 FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (9,  'a missing customer joins',       $q$INSERT INTO club_members (club_id, customer_id) SELECT club_id, 999 FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (10, 'someone joins a missing club',   $q$INSERT INTO club_members (club_id, customer_id) VALUES (999, 2)$q$),
+          (11, 'the join date defaults to today', $q$SELECT 1 / (joined_on = current_date)::int FROM club_members WHERE customer_id = 1$q$),
+          (12, 'a meeting',                      $q$INSERT INTO meetings (club_id, book_id, meets_at, attendees) SELECT club_id, 10, '2026-10-05 18:00+00', 12 FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (13, 'a meeting with no attendance yet', $q$INSERT INTO meetings (club_id, book_id, meets_at) SELECT club_id, 11, '2026-11-02 18:00+00' FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (14, 'a meeting with -1 attendees',    $q$INSERT INTO meetings (club_id, book_id, meets_at, attendees) SELECT club_id, 10, '2026-12-07 18:00+00', -1 FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (15, 'a meeting with no book',         $q$INSERT INTO meetings (club_id, meets_at) SELECT club_id, '2026-12-07 18:00+00' FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (16, 'a meeting about a missing book', $q$INSERT INTO meetings (club_id, book_id, meets_at) SELECT club_id, 999, '2026-12-07 18:00+00' FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (17, 'a meeting with no time',         $q$INSERT INTO meetings (club_id, book_id) SELECT club_id, 10 FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (18, 'closing the club',               $q$DELETE FROM clubs WHERE name = 'Mystery Mondays'$q$),
+          (19, 'its members and meetings are gone', $q$SELECT 1 / ((SELECT count(*) FROM club_members) + (SELECT count(*) FROM meetings) = 0)::int$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := 'rejected (' || SQLERRM || ')';
+            IF SQLSTATE IN ('42P01', '42703') THEN result := 'missing table or column: ' || SQLERRM; END IF;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, split_part(result, ' (', 1) AS result FROM pg_temp.run_tests();
+    hint: |
+      Three kinds of rule are involved: **NOT NULL** and **UNIQUE** (Module 12), **REFERENCES** with the right **ON DELETE** action (Module 13), and a **CHECK**. The junction table's key is the pair of columns (Module 11). Test your design by inserting a bad row and seeing whether it's refused.
+    reject:
+      - |
+        CREATE TABLE clubs (club_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name text NOT NULL UNIQUE,
+          host_employee_id integer NOT NULL REFERENCES employees (employee_id), started_on date NOT NULL DEFAULT current_date);
+        CREATE TABLE club_members (club_id integer NOT NULL REFERENCES clubs (club_id), customer_id integer NOT NULL REFERENCES customers (customer_id),
+          joined_on date NOT NULL DEFAULT current_date, PRIMARY KEY (club_id, customer_id));
+        CREATE TABLE meetings (meeting_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, club_id integer NOT NULL REFERENCES clubs (club_id),
+          book_id integer NOT NULL REFERENCES books (book_id), meets_at timestamptz NOT NULL, attendees integer CHECK (attendees >= 0));
+      - |
+        CREATE TABLE clubs (club_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name text, host_employee_id integer, started_on date DEFAULT current_date);
+        CREATE TABLE club_members (club_id integer REFERENCES clubs ON DELETE CASCADE, customer_id integer REFERENCES customers, joined_on date DEFAULT current_date);
+        CREATE TABLE meetings (meeting_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, club_id integer REFERENCES clubs ON DELETE CASCADE,
+          book_id integer REFERENCES books, meets_at timestamptz, attendees integer);
+
+  - kind: explain
+    title: "Part 2: the shop's questions"
+    body: |
+      Nine questions from Inkwell's staff, on the existing bookstore tables. No starter code, no named technique.
+
+  - kind: try
+    title: "1. Never sold"
+    body: |
+      Which books have **never appeared on any order**? Show their `title`.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT b.title
+      FROM books b
+      LEFT JOIN order_items oi ON oi.book_id = b.book_id
+      WHERE oi.order_id IS NULL;
+
+  - kind: try
+    title: "2. The newsletter list"
+    body: |
+      List the `email` of every customer who has signed up for the **newsletter**, in email order.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT c.email
+      FROM customers c
+      JOIN customer_profiles cp ON cp.customer_id = c.customer_id
+      WHERE cp.newsletter
+      ORDER BY c.email;
+    ordered: true
+    hint: The newsletter setting isn't in `customers`. `\d customer_profiles`.
+
+  - kind: try
+    title: "3. Online or in the shop?"
+    body: |
+      Orders with no employee were placed **online**. The rest were sold **in store**. Show each channel (labeled **channel**, with the values `online` and `in store`) and its number of orders, labeled **orders**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT CASE WHEN employee_id IS NULL THEN 'online' ELSE 'in store' END AS channel,
+             count(*) AS orders
+      FROM orders
+      GROUP BY 1;
+    hint: Make the label with CASE, then group by it.
+
+  - kind: try
+    title: "4. Sales by employee"
+    body: |
+      Show every employee's `full_name` and how many orders they rang up, labeled **orders**. Employees who sold nothing must show **0**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT e.full_name, count(o.order_id) AS orders
+      FROM employees e
+      LEFT JOIN orders o ON o.employee_id = e.employee_id
+      GROUP BY e.employee_id, e.full_name;
+
+  - kind: try
+    title: "5. Last seen"
+    body: |
+      For each customer who has ordered, show `first_name`, `last_name` and the **date** (not the time) of their most recent order, labeled **last_order**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT c.first_name, c.last_name, max(o.ordered_at)::date AS last_order
+      FROM customers c
+      JOIN orders o ON o.customer_id = c.customer_id
+      GROUP BY c.customer_id, c.first_name, c.last_name;
+    hint: The latest of several values is an aggregate. Cast the result to a date.
+
+  - kind: try
+    title: "6. Reorder soon"
+    body: |
+      Which books have **fewer than 5 copies in stock** but have **sold at least one copy**? Show `title` and `stock`.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT b.title, b.stock
+      FROM books b
+      WHERE b.stock < 5
+        AND EXISTS (SELECT 1 FROM order_items oi WHERE oi.book_id = b.book_id);
+    hint: An inner join to order lines would repeat a book once per sale. DISTINCT, or grouping, fixes that.
+    reject:
+      - SELECT b.title, b.stock FROM books b JOIN order_items oi ON oi.book_id = b.book_id WHERE b.stock < 5;
+
+  - kind: try
+    title: "7. Revenue per genre"
+    body: |
+      Show each genre's `name` and its revenue (quantity × unit price) from orders that **weren't cancelled**, labeled **revenue**, biggest first. Genres with no sales can be left out.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT g.name, sum(oi.quantity * oi.unit_price) AS revenue
+      FROM genres g
+      JOIN books b        ON b.genre_id = g.genre_id
+      JOIN order_items oi ON oi.book_id = b.book_id
+      JOIN orders o       ON o.order_id = oi.order_id
+      WHERE o.status <> 'cancelled'
+      GROUP BY g.genre_id, g.name
+      ORDER BY revenue DESC;
+    ordered: true
+    hint: "Four tables in a chain: genres → books → order_items → orders."
+
+  - kind: try
+    title: "8. Price check"
+    body: |
+      `order_items.unit_price` is the price **at the time of sale**. Find order lines where it's **different** from the book's **current** price. Show `order_id`, the book's `title`, `unit_price` and the current price labeled **price_now**.
+    sql: |
+      -- Write your query here
+    expect: |
+      SELECT oi.order_id, b.title, oi.unit_price, b.price AS price_now
+      FROM order_items oi
+      JOIN books b ON b.book_id = oi.book_id
+      WHERE oi.unit_price <> b.price;
+    hint: Join the lines to their books and compare two columns. An empty result can be a correct answer, if you're sure of your query.
+
+  - kind: try
+    title: "9. Clean up stale orders"
+    body: |
+      Orders still **pending** that were placed **before 10 January 2025** will never be paid. Change their status to **cancelled**. Nothing else may change: this is checked against the whole `orders` table.
+    sql: |
+      -- Write your query here
+    expect: |
+      UPDATE orders SET status = 'cancelled'
+      WHERE status = 'pending' AND ordered_at < '2025-01-10';
+    state_query: |
+      SELECT order_id, status FROM orders ORDER BY order_id;
+    hint: Two conditions in the WHERE. Run them as a SELECT first to see which orders you'll change.
+    reject:
+      - UPDATE orders SET status = 'cancelled' WHERE status = 'pending';
+      - UPDATE orders SET status = 'cancelled' WHERE ordered_at < '2025-01-10';
+
+  - kind: why
+    body: |
+      This is the whole Beginner job in one lesson: turn a conversation into tables that protect their own data, then answer real questions from them. If you got through it, you can build and query a small database on your own.
+
+  - kind: recap
+    body: |
+      - Design starts from the nouns (club, member, meeting) and the rules the owner states. Every rule becomes a constraint.
+      - A many-to-many relationship needs a junction table whose key is the pair.
+      - ON DELETE CASCADE belongs where the child can't exist without the parent.
+      - For every question, decide the tables, the joins, the filter, and whether rows need grouping, before typing.

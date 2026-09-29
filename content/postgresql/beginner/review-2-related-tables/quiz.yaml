@@ -1,0 +1,57 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "\"List every publisher and how many books it has, including publishers with none.\" Which FROM clause fits?"
+    options:
+      - "`FROM books b JOIN publishers p ON p.publisher_id = b.publisher_id`"
+      - "`FROM publishers p LEFT JOIN books b ON b.publisher_id = p.publisher_id`"
+      - "`FROM publishers p CROSS JOIN books b`"
+      - "`FROM books b LEFT JOIN publishers p ON p.publisher_id = b.publisher_id`"
+    answer: 1
+    explanation: The table whose rows must all stay (publishers) goes on the left of the LEFT JOIN.
+
+  - type: predict
+    prompt: Blue Owl Press has no books. What does this return for it?
+    code: |
+      SELECT p.name, count(*) AS books
+      FROM publishers p
+      LEFT JOIN books b ON b.publisher_id = p.publisher_id
+      WHERE p.name = 'Blue Owl Press'
+      GROUP BY p.name;
+    options:
+      - "Blue Owl Press | 0"
+      - "Blue Owl Press | 1"
+      - No rows
+      - "Blue Owl Press | NULL"
+    answer: 1
+    explanation: The LEFT JOIN keeps one row for Blue Owl Press with NULLs on the books side, and `count(*)` counts that row. `count(b.book_id)` would give 0.
+
+  - type: mcq
+    prompt: A report of "orders per customer" says Emma has 6 orders, but she really has 4. What's the most likely cause?
+    options:
+      - The join to `order_items` repeated each order once per line, and the query used `count(*)`
+      - Emma has duplicate customer rows
+      - A LEFT JOIN should have been an INNER JOIN
+      - ORDER BY changed the count
+    answer: 0
+    explanation: Joining order lines multiplies rows. `count(DISTINCT o.order_id)` counts each order once.
+
+  - type: mcq
+    prompt: "You run `ALTER TABLE books ADD CONSTRAINT price_max CHECK (price <= 500);` but one book already costs 650. What happens?"
+    options:
+      - The constraint is added, and the 650 book is deleted
+      - The constraint is added and only applies to new rows
+      - The ALTER TABLE fails, because an existing row breaks the rule
+      - The 650 price is changed to 500
+    answer: 2
+    explanation: PostgreSQL checks existing rows when you add a CHECK constraint. Fix the data first (or learn NOT VALID later, in Advanced).
+
+  - type: fill
+    prompt: Complete the self join so each employee appears next to their manager.
+    code: |
+      SELECT e.full_name, m.full_name AS manager
+      FROM employees e
+      LEFT JOIN employees m ON m.employee_id = e.____;
+    answer: manager_id
+    runnable: true
+    explanation: "Each employee row stores its manager's id in `manager_id`, which matches the manager copy's `employee_id`."

@@ -19,10 +19,13 @@ topics:
   - 08-updating-deleting
   - 09-functions
   - 10-aggregation
+  - review-1-one-table
   - 11-primary-keys
   - 12-constraints
   - 13-foreign-keys
   - 14-joins
   - 15-altering-tables
+  - review-2-related-tables
   - 16-er-modeling
   - 17-normalization
+  - capstone-1-book-club

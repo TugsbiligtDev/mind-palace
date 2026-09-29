@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Customers and clubs are many-to-many. Where does `joined_on` belong?
+    options:
+      - In `customers`
+      - In `clubs`
+      - In the junction table `club_members`
+      - In a separate `dates` table
+    answer: 2
+    explanation: The join date describes one customer in one club, so it belongs to the pair, which is exactly what a row of the junction table is.
+
+  - type: mcq
+    prompt: Which key stops a customer from joining the same club twice?
+    options:
+      - "`PRIMARY KEY (club_id, customer_id)` on `club_members`"
+      - "`UNIQUE (customer_id)` on `club_members`"
+      - "`PRIMARY KEY (club_id)` on `club_members`"
+      - "`REFERENCES customers` on `customer_id`"
+    answer: 0
+    explanation: A key on the pair allows many clubs per customer and many customers per club, but never the same pair twice. UNIQUE on customer_id alone would limit each customer to one club.
+
+  - type: mcq
+    prompt: A meeting's `attendees` is empty until after the meeting. Which definition fits?
+    options:
+      - "`attendees integer NOT NULL DEFAULT 0`"
+      - "`attendees integer CHECK (attendees >= 0)`"
+      - "`attendees text`"
+      - "`attendees integer NOT NULL CHECK (attendees > 0)`"
+    answer: 1
+    explanation: NULL honestly means "not recorded yet". A default of 0 would claim nobody came. The CHECK still stops negative numbers, and a CHECK lets NULL through.
+
+  - type: mcq
+    prompt: Should deleting an **employee** who hosts a club also delete the club?
+    options:
+      - Yes, always use ON DELETE CASCADE
+      - No. Block it (the default) or set the host to NULL, so a club isn't lost by accident
+      - It doesn't matter
+      - Foreign keys can't point at employees
+    answer: 1
+    explanation: CASCADE fits when the child can't exist without the parent (a membership without its club). A club can outlive its host, so blocking the delete makes someone choose a new host first.
+
+  - type: mcq
+    prompt: The owner says "we note the date the club started, which is today unless we say otherwise". Which part of the table does that become?
+    options:
+      - A CHECK constraint
+      - "`DEFAULT current_date`"
+      - A UNIQUE constraint
+      - A trigger
+    answer: 1
+    explanation: A DEFAULT fills in the value when an INSERT doesn't give one, and an INSERT can still give a different date.

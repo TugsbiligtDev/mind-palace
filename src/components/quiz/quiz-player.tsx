@@ -26,7 +26,7 @@ function shuffled<T>(items: T[]) {
 export function QuizPlayer({
   topicKey,
   title,
-  module,
+  label,
   questions,
   pass,
   href,
@@ -37,7 +37,7 @@ export function QuizPlayer({
 }: {
   topicKey: string;
   title: string;
-  module: number;
+  label: string;
   questions: Question[];
   pass: number;
   href: string;
@@ -58,7 +58,7 @@ export function QuizPlayer({
   const [score, setScore] = useState(0);
   const [result, setResult] = useState<{ score: number; earned: number } | null>(null);
 
-  useEffect(() => setLast(href, `Module ${module}: ${title} · quiz`), [href, module, title]);
+  useEffect(() => setLast(href, `${label}: ${title} · quiz`), [href, label, title]);
 
   const q = questions[order[pos]];
   const correct = checked && isCorrect(q, choice, text);
@@ -136,7 +136,7 @@ export function QuizPlayer({
     <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6">
       <div className="mb-6 flex items-center justify-between text-sm text-muted">
         <span>
-          Module {module} · Knowledge check
+          {label} · Knowledge check
         </span>
         <span className="tabular-nums">
           Question {pos + 1} of {questions.length}

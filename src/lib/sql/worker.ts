@@ -2,7 +2,7 @@
 // or dataset + a case's evidence) is loaded once; every run gets a fresh clone, so a
 // learner's DELETE or DROP never leaks into the next attempt.
 import type { PGlite } from "@electric-sql/pglite";
-import { freshCopy, grade, rawTextParsers, runInput, type CaseCheck } from "./core";
+import { freshCopy, grade, prepareCopies, rawTextParsers, runInput, type CaseCheck } from "./core";
 
 type Request =
   | { id: number; type: "run"; key: string; setup: string; input: string }
@@ -22,6 +22,13 @@ function loadEngine() {
 }
 
 const bases = new Map<string, Promise<PGlite>>();
+// How many runs are using each database right now. A database that's replaced while a run
+// still uses it is closed when that run finishes, not in the middle of it.
+const busy = new Map<string, number>();
+
+function closeIfIdle(key: string, db: Promise<PGlite>) {
+  if (!busy.get(key)) db.then((pg) => pg.close()).catch(() => {});
+}
 
 function base(key: string, setup: string) {
   let db = bases.get(key);
@@ -29,13 +36,14 @@ function base(key: string, setup: string) {
     // Keep only one database in memory: the Intermediate one alone is tens of megabytes.
     for (const [k, old] of bases) {
       bases.delete(k);
-      old.then((pg) => pg.close()).catch(() => {});
+      closeIfIdle(k, old);
     }
     db = loadEngine().then(async ({ PGlite, types }) => {
       const pg = await PGlite.create({ parsers: rawTextParsers(types) });
       if (setup.trim()) await pg.exec(setup);
       // Flush to disk so copies don't restart ID sequences 32 numbers ahead.
       await pg.exec("CHECKPOINT");
+      await prepareCopies(pg);
       return pg;
     });
     bases.set(key, db);
@@ -45,10 +53,12 @@ function base(key: string, setup: string) {
 }
 
 async function withClones<T>(key: string, setup: string, fn: (fresh: () => Promise<PGlite>) => Promise<T>) {
-  const origin = await base(key, setup);
-  const pglite = await loadEngine();
+  busy.set(key, (busy.get(key) ?? 0) + 1);
+  const originPromise = base(key, setup);
   const clones: PGlite[] = [];
   try {
+    const origin = await originPromise;
+    const pglite = await loadEngine();
     return await fn(async () => {
       const c = (await freshCopy(origin, pglite)) as PGlite;
       clones.push(c);
@@ -56,6 +66,9 @@ async function withClones<T>(key: string, setup: string, fn: (fresh: () => Promi
     });
   } finally {
     await Promise.all(clones.map((c) => c.close()));
+    busy.set(key, busy.get(key)! - 1);
+    // Replaced by another dataset while this run was using it: close it now.
+    if (bases.get(key) !== originPromise) closeIfIdle(key, originPromise);
   }
 }
 

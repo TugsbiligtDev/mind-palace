@@ -58,6 +58,14 @@ const RAW_ARRAYS = Object.fromEntries(ARRAY_TYPE_OIDS.map((oid) => [oid, (x: str
 type Dumpable = PGliteInterface & { dumpDataDir(compression?: "gzip" | "none"): Promise<File | Blob> };
 const dumps = new WeakMap<Dumpable, Promise<File | Blob>>();
 
+// Export the data directory now (once), so later copies are quick. The browser worker calls
+// this while warming up, which has a long timeout; the first Run then doesn't pay for it.
+export function prepareCopies(db: Dumpable, compression: "gzip" | "none" = "gzip") {
+  let dump = dumps.get(db);
+  if (!dump) dumps.set(db, (dump = db.dumpDataDir(compression)));
+  return dump;
+}
+
 export async function freshCopy(
   db: Dumpable,
   pglite: { PGlite: { create(options: object): Promise<PGliteInterface> }; types: Record<string, unknown> },
@@ -65,9 +73,7 @@ export async function freshCopy(
   // fine for the content check on a computer, too much for a browser tab.
   compression: "gzip" | "none" = "gzip",
 ): Promise<PGliteInterface> {
-  let dump = dumps.get(db);
-  if (!dump) dumps.set(db, (dump = db.dumpDataDir(compression)));
-  const copy = await pglite.PGlite.create({ loadDataDir: await dump, parsers: rawTextParsers(pglite.types) });
+  const copy = await pglite.PGlite.create({ loadDataDir: await prepareCopies(db, compression), parsers: rawTextParsers(pglite.types) });
   await copy.exec("SET TimeZone = 'UTC'");
   return copy;
 }

@@ -190,6 +190,8 @@ steps:
     title: A Python script with psycopg
     body: |
       This makes a small project folder, installs psycopg 3 in a private environment, writes a script that uses a **parameterized** query and reads the connection string from an environment variable, and runs it. It prints the orders of the customer whose email you pass in.
+
+      **Checkpoint:** paste the output of the two `python` commands into the box below. The attack should print an empty list, `[]`.
     commands: |
       mkdir -p ~/Documents/sql/pyapp && cd ~/Documents/sql/pyapp
       python3 -m venv .venv
@@ -199,6 +201,57 @@ steps:
       export DATABASE_URL="postgresql://localhost:5432/bookstore"
       python orders.py liam.smith@example.com
       python orders.py "nobody@example.com' OR '1'='1"
+    expect_output:
+      - "[]"
+
+  - kind: try
+    title: "Find the bug: the login that lets anyone in"
+    body: |
+      The starter is the SQL a careless app built from a login form, and it leaks every customer. Rewrite it the safe way: **prepare** a statement **find_customer(text)** that selects `first_name` and `email` by email, then **execute** it with the attacker's input, exactly as typed: `nobody@example.com' OR '1'='1`.
+    sql: |
+      SELECT first_name, email
+      FROM customers
+      WHERE email = 'nobody@example.com' OR '1'='1';
+    expect: |
+      PREPARE find_customer(text) AS
+          SELECT first_name, email FROM customers WHERE email = $1;
+
+      EXECUTE find_customer('nobody@example.com'' OR ''1''=''1');
+    hint: |
+      The attacker's text becomes one value, `$1`. Inside the EXECUTE's quotes, each `'` of the input is written `''`.
+
+  - kind: try
+    title: "Your turn to parameterize an INSERT"
+    body: |
+      Reviews come in from a web form. Prepare a statement **add_review(integer, integer, smallint, text)** that inserts a review (`book_id`, `customer_id`, `rating`, `comment`), then execute it for book **1**, customer **4671**, rating **5**, comment `Lovely, couldn't stop reading`.
+    sql: |
+      -- Write your PREPARE and EXECUTE here
+    expect: |
+      PREPARE add_review(integer, integer, smallint, text) AS
+          INSERT INTO reviews (book_id, customer_id, rating, comment)
+          VALUES ($1, $2, $3, $4);
+
+      EXECUTE add_review(1, 4671, 5, 'Lovely, couldn''t stop reading');
+    state_query: |
+      SELECT book_id, rating, comment FROM reviews WHERE customer_id = 4671;
+    hint: |
+      Four placeholders, `$1` to `$4`, in the order of the types. The apostrophe in the comment is written twice inside quotes.
+
+  - kind: try
+    title: "Your turn to remove an ORM's N+1"
+    body: |
+      An ORM loaded 20 orders, then ran **one extra query per order** to fetch its customer's email. Write the **single** query it should have run: `order_id` and the customer's `email` for orders **100 to 119**.
+    sql: |
+      SELECT email FROM customers WHERE customer_id = (SELECT customer_id FROM orders WHERE order_id = 100);
+      SELECT email FROM customers WHERE customer_id = (SELECT customer_id FROM orders WHERE order_id = 101);
+      -- … and 18 more
+    expect: |
+      SELECT o.order_id, c.email
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE o.order_id BETWEEN 100 AND 119;
+    hint: |
+      One JOIN brings each order's customer along. In an ORM this is usually called eager loading.
 
   - kind: why
     body: |

@@ -156,6 +156,21 @@ steps:
 
       It's rarely used. Recognize it, and reach for `~` instead.
 
+  - kind: try
+    title: "Find the bug: the domain that came out as a name"
+    body: |
+      *"How many customers use each email **domain** (the part after `@`)?"* Return the domain labeled **domain** and the count labeled **customers**. This query groups by the part **before** the `@`. Fix it.
+    sql: |
+      SELECT split_part(email, '@', 1) AS domain, count(*) AS customers
+      FROM customers
+      GROUP BY 1;
+    expect: |
+      SELECT split_part(email, '@', 2) AS domain, count(*) AS customers
+      FROM customers
+      GROUP BY 1;
+    hint: |
+      `split_part(text, delimiter, n)` returns the n-th piece, counting from 1.
+
   - kind: why
     body: |
       Real text is never clean: phone numbers in five formats, names in random capitals, codes buried inside sentences. Regex and the cleaning functions turn that mess into data you can match, group and join on.

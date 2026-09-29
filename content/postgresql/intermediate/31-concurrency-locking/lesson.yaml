@@ -202,6 +202,73 @@ steps:
 
       PostgreSQL doesn't attach any meaning to them. Your code agrees on what 42 stands for.
 
+  - kind: try
+    title: "Find the bug: one worker takes every job"
+    body: |
+      The queue below has three pending jobs. A worker should claim **one**, the oldest, and skip rows other workers have locked. This UPDATE claims them **all**. Fix it. Keep the first two lines.
+    sql: |
+      CREATE TABLE jobs (job_id integer PRIMARY KEY, task text, status text DEFAULT 'pending');
+      INSERT INTO jobs (job_id, task) VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report');
+
+      UPDATE jobs SET status = 'running' WHERE status = 'pending';
+    expect: |
+      CREATE TABLE jobs (job_id integer PRIMARY KEY, task text, status text DEFAULT 'pending');
+      INSERT INTO jobs (job_id, task) VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report');
+
+      UPDATE jobs SET status = 'running'
+      WHERE job_id = (
+          SELECT job_id FROM jobs
+          WHERE status = 'pending'
+          ORDER BY job_id
+          FOR UPDATE SKIP LOCKED
+          LIMIT 1
+      );
+    state_query: |
+      SELECT job_id, status FROM jobs ORDER BY job_id;
+    hint: |
+      Pick one id in a subquery (oldest first, `FOR UPDATE SKIP LOCKED`, `LIMIT 1`) and update only that row.
+
+  - kind: try
+    title: "Your turn for the strictest level"
+    body: |
+      Start a transaction at the **Serializable** isolation level, show the level with `SHOW transaction_isolation;`, and commit.
+    sql: |
+      BEGIN;
+      SHOW transaction_isolation;
+      COMMIT;
+    expect: |
+      BEGIN ISOLATION LEVEL SERIALIZABLE;
+      SHOW transaction_isolation;
+      COMMIT;
+    hint: |
+      The level can be written right after BEGIN, or set with `SET TRANSACTION ISOLATION LEVEL …` as the first statement.
+
+  - kind: try
+    title: "Your turn for a batch of jobs"
+    body: |
+      A faster worker claims **two** jobs at a time: the two oldest pending ones, skipping locked rows. Set their status to **running**. Keep the first two lines.
+    sql: |
+      CREATE TABLE jobs (job_id integer PRIMARY KEY, task text, status text DEFAULT 'pending');
+      INSERT INTO jobs (job_id, task) VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report'), (4, 'backup');
+      UPDATE jobs SET status = 'done' WHERE job_id = 1;
+    expect: |
+      CREATE TABLE jobs (job_id integer PRIMARY KEY, task text, status text DEFAULT 'pending');
+      INSERT INTO jobs (job_id, task) VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report'), (4, 'backup');
+      UPDATE jobs SET status = 'done' WHERE job_id = 1;
+
+      UPDATE jobs SET status = 'running'
+      WHERE job_id IN (
+          SELECT job_id FROM jobs
+          WHERE status = 'pending'
+          ORDER BY job_id
+          FOR UPDATE SKIP LOCKED
+          LIMIT 2
+      );
+    state_query: |
+      SELECT job_id, status FROM jobs ORDER BY job_id;
+    hint: |
+      Same pattern as one job, with `LIMIT 2` and `IN` instead of `=`.
+
   - kind: why
     body: |
       Bugs from concurrency (double-sold seats, stock that drifts, two workers doing the same job) only show up under real traffic, and they're miserable to track down afterwards. Knowing the patterns (atomic updates, FOR UPDATE, SKIP LOCKED, consistent lock order, retry on serialization errors) prevents them from the start.

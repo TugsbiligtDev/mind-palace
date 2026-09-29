@@ -25,9 +25,16 @@ steps:
       Run it: 21 countries. The UK has 617 customers and several authors, but appears once.
 
       Then change `UNION` to `UNION ALL` and look at the row count: 5,097, one per customer plus one per author.
+
+      (The step is checked once your changed version has run.)
     sql: |
       SELECT country FROM customers
       UNION
+      SELECT country FROM authors
+      ORDER BY country;
+    expect: |
+      SELECT country FROM customers
+      UNION ALL
       SELECT country FROM authors
       ORDER BY country;
 
@@ -125,6 +132,25 @@ steps:
       SELECT publisher_id FROM publishers
       EXCEPT
       SELECT publisher_id FROM books;
+
+  - kind: try
+    title: "Find the bug: loyal customers"
+    body: |
+      *"Customers who ordered in **both** 2024 and 2025."* This returns everyone who ordered in **either** year. Fix the set operation. Return `customer_id`.
+    sql: |
+      SELECT customer_id FROM orders
+      WHERE ordered_at >= '2024-01-01' AND ordered_at < '2025-01-01'
+      UNION
+      SELECT customer_id FROM orders
+      WHERE ordered_at >= '2025-01-01' AND ordered_at < '2026-01-01';
+    expect: |
+      SELECT customer_id FROM orders
+      WHERE ordered_at >= '2024-01-01' AND ordered_at < '2025-01-01'
+      INTERSECT
+      SELECT customer_id FROM orders
+      WHERE ordered_at >= '2025-01-01' AND ordered_at < '2026-01-01';
+    hint: |
+      UNION = in either list. Which operation keeps only what's in both?
 
   - kind: why
     body: |

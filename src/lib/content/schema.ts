@@ -71,7 +71,14 @@ const step = z.discriminatedUnion("kind", [
     broken_starter: z.boolean().default(false),
   }),
   z.object({ kind: z.literal("info"), title: z.string(), body: md }),
-  z.object({ kind: z.literal("mac"), title: z.string(), body: md, commands: z.string() }),
+  z.object({
+    kind: z.literal("mac"),
+    title: z.string(),
+    body: md,
+    commands: z.string(),
+    // A Mac checkpoint: the learner pastes what Terminal printed, and it must contain each of these.
+    expect_output: z.array(z.string()).optional(),
+  }),
   z.object({ kind: z.literal("why"), body: md }),
   z.object({ kind: z.literal("recap"), body: md }),
 ]);

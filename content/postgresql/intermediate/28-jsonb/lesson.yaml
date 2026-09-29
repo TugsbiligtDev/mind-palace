@@ -45,11 +45,21 @@ steps:
     title: Read the details
     body: |
       The first 25 books. Run it: ebooks have no dimensions, so their height is NULL. Then add a column `details -> 'format' AS format_json` and notice the quotes: it's JSON, not text.
+
+      (The step is checked once your changed version has run.)
     sql: |
       SELECT title,
              details ->> 'format' AS format,
              (details ->> 'edition')::int AS edition,
              details #>> '{dimensions_cm,height}' AS height_cm
+      FROM books
+      WHERE book_id <= 25;
+    expect: |
+      SELECT title,
+             details ->> 'format' AS format,
+             (details ->> 'edition')::int AS edition,
+             details #>> '{dimensions_cm,height}' AS height_cm,
+             details -> 'format' AS format_json
       FROM books
       WHERE book_id <= 25;
 
@@ -169,6 +179,21 @@ steps:
       - Keys are **retyped in every row**, which wastes space.
 
       A good rule: **columns for what every row has, JSONB for what varies.** If you find yourself writing `->>` in every query, it's time for a column.
+
+  - kind: try
+    title: "Find the bug: books without dimensions"
+    body: |
+      *"How many books have **no** `dimensions_cm` in their details?"* This returns 0, but every ebook lacks dimensions. Fix it. Return one number.
+    sql: |
+      SELECT count(*)
+      FROM books
+      WHERE details -> 'dimensions_cm' = 'null'::jsonb;
+    expect: |
+      SELECT count(*)
+      FROM books
+      WHERE NOT details ? 'dimensions_cm';
+    hint: |
+      A key that isn't there doesn't hold JSON `null`: `->` gives SQL NULL, and `= anything` with NULL isn't true. Test whether the key exists (`?`), or use IS NULL.
 
   - kind: why
     body: |

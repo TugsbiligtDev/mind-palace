@@ -179,6 +179,60 @@ steps:
       - **BRIN**: tiny indexes for **huge** tables where values follow the physical order, like an append-only log sorted by time. It stores just "this block of pages holds dates from X to Y".
       - **Hash**: equality (`=`) only. Rarely better than a B-tree.
 
+  - kind: try
+    title: "Find the bug: the index that never gets used"
+    body: |
+      The warehouse screen runs `SELECT * FROM orders WHERE status = 'pending' ORDER BY ordered_at;`. Someone created the small partial index below for it, but the plan still reads the whole table. Find the mistake and fix the index. Checked by planning that query.
+    sql: |
+      CREATE INDEX orders_pending_idx ON orders (ordered_at) WHERE status = 'Pending';
+    expect: |
+      CREATE INDEX orders_pending_idx ON orders (ordered_at) WHERE status = 'pending';
+    state_query: |
+      CREATE FUNCTION pg_temp.uses_index(q text) RETURNS boolean LANGUAGE plpgsql AS $$
+      DECLARE line text;
+      BEGIN
+        FOR line IN EXECUTE 'EXPLAIN ' || q LOOP
+          IF line ~ 'Index' THEN RETURN true; END IF;
+        END LOOP;
+        RETURN false;
+      END $$;
+      SELECT pg_temp.uses_index($q$SELECT * FROM orders WHERE status = 'pending' ORDER BY ordered_at$q$) AS uses_index;
+    hint: |
+      A partial index is only usable when the query's WHERE matches the index's WHERE. Compare the two conditions letter by letter.
+
+  - kind: try
+    title: "Your turn: an index that enforces a rule"
+    body: |
+      `customers.email` is UNIQUE, but `EMMA.JOHNSON@example.com` would still get in, because the capitals differ. Create a **unique index** that makes emails unique **ignoring capitals**. Checked by trying some emails.
+    sql: |
+      -- Write your CREATE INDEX here
+    expect: |
+      CREATE UNIQUE INDEX customers_email_lower_key ON customers (lower(email));
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1, $l$Emma's email in capitals$l$, $q$INSERT INTO customers (first_name, last_name, email) VALUES ('Emma', 'Again', 'EMMA.JOHNSON@example.com')$q$),
+          (2, $l$a brand-new email$l$, $q$INSERT INTO customers (first_name, last_name, email) VALUES ('New', 'Person', 'New.Person@example.com')$q$),
+          (3, $l$the new email in lower case$l$, $q$INSERT INTO customers (first_name, last_name, email) VALUES ('New', 'Person', 'new.person@example.com')$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := CASE WHEN SQLSTATE IN ('42P01', '42703') THEN 'missing table or column' ELSE 'rejected' END;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, result FROM pg_temp.run_tests();
+    hint: |
+      A UNIQUE index can be built on an expression, such as `lower(email)`.
+
   - kind: why
     body: |
       The difference between a 3-second page and a 3-millisecond page is very often one missing index. And the difference between fast writes and slow ones is often ten indexes nobody needed. Knowing which to build is one of the most valuable practical database skills.

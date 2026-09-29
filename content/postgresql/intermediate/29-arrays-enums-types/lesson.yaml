@@ -26,11 +26,18 @@ steps:
     title: Play with an array
     body: |
       Books tagged as award winners. Run it. Then change the WHERE to find the signed copies (`'signed-copy'`), or books with **both** `staff-pick` and `book-club` using `@>`.
+
+      Change it to find the **signed copies** (`'signed-copy'`). (The step is checked once your changed version has run.)
     sql: |
       SELECT title, tags, tags[1] AS first_tag,
              array_length(tags, 1) AS how_many
       FROM books
       WHERE 'award-winner' = ANY(tags);
+    expect: |
+      SELECT title, tags, tags[1] AS first_tag,
+             array_length(tags, 1) AS how_many
+      FROM books
+      WHERE 'signed-copy' = ANY(tags);
 
   - kind: try
     title: Your turn with arrays
@@ -155,6 +162,21 @@ steps:
         `CREATE DOMAIN email_address AS text CHECK (VALUE ~ '^[^@]+@[^@]+$');`
       - **`inet` / `cidr`**: IP addresses and networks, with operators like "is this address inside this network?": `'192.168.1.5'::inet << '192.168.1.0/24'`.
       - **`citext`**: case-insensitive text from an extension (`CREATE EXTENSION citext;`). `'Emma@Example.com' = 'emma@example.com'` is true. Handy for emails and usernames. (This browser sandbox doesn't include it. Try it on your Mac.)
+
+  - kind: try
+    title: "Find the bug: the first tag is missing"
+    body: |
+      For books 1 to 25, show `title` and each book's **first** tag, labeled **first_tag**. Every value comes back empty. Fix it.
+    sql: |
+      SELECT title, tags[0] AS first_tag
+      FROM books
+      WHERE book_id <= 25;
+    expect: |
+      SELECT title, tags[1] AS first_tag
+      FROM books
+      WHERE book_id <= 25;
+    hint: |
+      Where do PostgreSQL arrays start counting? Asking for a position that doesn't exist gives NULL, not an error.
 
   - kind: why
     body: |

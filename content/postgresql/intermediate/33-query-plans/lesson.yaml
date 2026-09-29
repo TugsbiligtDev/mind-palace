@@ -169,6 +169,79 @@ steps:
       LIMIT 5;
     ordered: true
 
+  - kind: try
+    title: "Find the bug: a filter the index can't use"
+    body: |
+      The view below lists the orders from **1 March 2025** (UTC). There's an index on `ordered_at`, but the view's WHERE wraps the column in a cast, so the index can't be used. Rewrite the view's WHERE as a **range** on `ordered_at` (same rows). Checked by planning `SELECT * FROM orders_march_first`, and by its row count.
+    sql: |
+      CREATE INDEX orders_ordered_at_idx ON orders (ordered_at);
+
+      CREATE VIEW orders_march_first AS
+      SELECT order_id, customer_id, ordered_at
+      FROM orders
+      WHERE ordered_at::date = '2025-03-01';
+    expect: |
+      CREATE INDEX orders_ordered_at_idx ON orders (ordered_at);
+
+      CREATE VIEW orders_march_first AS
+      SELECT order_id, customer_id, ordered_at
+      FROM orders
+      WHERE ordered_at >= '2025-03-01' AND ordered_at < '2025-03-02';
+    state_query: |
+      CREATE FUNCTION pg_temp.uses_index(q text) RETURNS boolean LANGUAGE plpgsql AS $$
+      DECLARE line text;
+      BEGIN
+        FOR line IN EXECUTE 'EXPLAIN ' || q LOOP
+          IF line ~ 'Index' THEN RETURN true; END IF;
+        END LOOP;
+        RETURN false;
+      END $$;
+      SELECT (SELECT count(*) FROM orders_march_first) AS orders, pg_temp.uses_index($q$SELECT * FROM orders_march_first$q$) AS uses_index;
+    hint: |
+      `>=` the start of the day and `<` the start of the next day (Module 27). The column must stand alone on one side of the comparison.
+
+  - kind: try
+    title: "Your turn to remove N+1"
+    body: |
+      An app asks for the order counts of three customers with **three** queries (the N+1 pattern). Replace them with **one** query that returns `customer_id` and **orders** for customers 40, 41 and 42.
+    sql: |
+      SELECT count(*) FROM orders WHERE customer_id = 40;
+      SELECT count(*) FROM orders WHERE customer_id = 41;
+      SELECT count(*) FROM orders WHERE customer_id = 42;
+    expect: |
+      SELECT customer_id, count(*) AS orders
+      FROM orders
+      WHERE customer_id IN (40, 41, 42)
+      GROUP BY customer_id;
+    hint: |
+      IN for the list of customers, GROUP BY to get one count each.
+
+  - kind: try
+    title: "Your turn to pick the index"
+    body: |
+      The finance screen runs `SELECT * FROM payments WHERE method = 'gift_card' AND paid_at >= '2026-06-01';`. Create **one** index that lets PostgreSQL use **both** conditions to find the rows. Checked by looking for both columns in the plan's Index Cond.
+    sql: |
+      -- Write your CREATE INDEX here
+    expect: |
+      CREATE INDEX payments_method_paid_idx ON payments (method, paid_at);
+    state_query: |
+      CREATE FUNCTION pg_temp.uses_index(q text) RETURNS boolean LANGUAGE plpgsql AS $$
+      DECLARE line text;
+      BEGIN
+        FOR line IN EXECUTE 'EXPLAIN ' || q LOOP
+          IF line ~ 'Index Cond: .*method.*paid_at' THEN RETURN true; END IF;
+        END LOOP;
+        RETURN false;
+      END $$;
+      SELECT pg_temp.uses_index($q$SELECT * FROM payments WHERE method = 'gift_card' AND paid_at >= '2026-06-01'$q$) AS uses_index;
+    hint: |
+      Equality column first, range column second.
+    reject:
+      - |
+        CREATE INDEX payments_method_idx ON payments (method);
+      - |
+        CREATE INDEX payments_paid_idx ON payments (paid_at);
+
   - kind: why
     body: |
       "It's slow" is the most common database complaint. EXPLAIN turns guessing into looking: you can see exactly where the time goes, whether an index is used, and whether the planner's picture of your data is wrong. Nearly every performance fix starts here.

@@ -281,6 +281,8 @@ steps:
       3. Restore the backup into a **new** database and check that the 2026 payments are there, and match the count you wrote down before.
 
       You've passed this step when the two counts match. If they don't, find out why before moving on.
+
+      **Checkpoint:** paste the output of the last `SELECT count(*)` on `bookstore_restored` into the box below.
     commands: |
       cd ~/Documents/sql
       psql -d bookstore -c "SELECT count(*) FROM payments WHERE paid_at >= '2026-01-01';"
@@ -291,6 +293,8 @@ steps:
       psql -d bookstore_restored -c "SELECT count(*) FROM payments WHERE paid_at >= '2026-01-01';"
       dropdb bookstore_restored
       psql -f 02_bookstore.sql && psql -f 03_bookstore_growth.sql
+    expect_output:
+      - "13069"
 
   - kind: mac
     title: "5b. A safe query from Python"
@@ -300,6 +304,8 @@ steps:
       `' OR '1'='1`
 
       Run it with `python3 last_orders.py`. It needs psycopg: `pip3 install "psycopg[binary]"`.
+
+      **Checkpoint:** paste what the script printed for the attack into the box below.
     commands: |
       cat > last_orders.py <<'PY'
       import psycopg
@@ -318,6 +324,8 @@ steps:
       print(f"{len(rows)} order(s) found")
       PY
       python3 last_orders.py
+    expect_output:
+      - "0 order(s) found"
 
   - kind: why
     body: |

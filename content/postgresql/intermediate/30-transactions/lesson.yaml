@@ -166,6 +166,42 @@ steps:
       - **Don't leave psql sitting in `BEGIN`** while you go to lunch. That session shows up as *idle in transaction*, a classic cause of slowdowns.
       - **Do slow preparation (like reading files or calling other services) before BEGIN,** not inside it.
 
+  - kind: try
+    title: "Find the bug: nothing was saved"
+    body: |
+      Inkwell raises the price of every **Fantasy** book (genre 3) by 1. This script shows the new prices, but afterwards they're gone. Fix it so the change is **kept**. Checked by looking at the `books` table.
+    sql: |
+      BEGIN;
+      UPDATE books SET price = price + 1 WHERE genre_id = 3;
+      SELECT title, price FROM books WHERE genre_id = 3;
+      ROLLBACK;
+    expect: |
+      BEGIN;
+      UPDATE books SET price = price + 1 WHERE genre_id = 3;
+      SELECT title, price FROM books WHERE genre_id = 3;
+      COMMIT;
+    state_query: |
+      SELECT book_id, price FROM books ORDER BY book_id;
+    hint: |
+      How does a transaction end when you want to keep its changes?
+
+  - kind: try
+    title: "Your turn for a rehearsal"
+    body: |
+      Before deleting all **1-star** reviews for real, rehearse it: inside a transaction, delete them, show how many reviews are left with `SELECT count(*) FROM reviews;`, then **undo** everything. Checked by making sure the reviews table is untouched afterwards.
+    sql: |
+      DELETE FROM reviews WHERE rating = 1;
+      SELECT count(*) FROM reviews;
+    expect: |
+      BEGIN;
+      DELETE FROM reviews WHERE rating = 1;
+      SELECT count(*) FROM reviews;
+      ROLLBACK;
+    state_query: |
+      SELECT count(*) AS reviews, count(*) FILTER (WHERE rating = 1) AS one_star FROM reviews;
+    hint: |
+      BEGIN before the DELETE, and end with the command that throws the changes away.
+
   - kind: why
     body: |
       Money transfers, checkouts and bookings all change several rows that must agree. Transactions are what make those changes safe against crashes, errors and other users. And in psql, BEGIN is your undo button before any risky change.

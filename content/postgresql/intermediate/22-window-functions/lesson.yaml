@@ -252,6 +252,23 @@ steps:
     body: |
       `ntile(n) OVER (ORDER BY …)` splits the rows into **n roughly equal buckets** and numbers them 1 to n. `ntile(4)` gives quartiles: top 25%, next 25%, and so on. Handy for "which price band is each book in?"
 
+  - kind: try
+    title: "Find the bug: gaps between whose orders?"
+    body: |
+      *"For customers 40 and 41, the time since **that customer's** previous order."* Return `customer_id`, `ordered_at` and the gap labeled **gap**. This query mixes the two customers: one customer's first order gets a gap measured from the other customer's order. Fix it.
+    sql: |
+      SELECT customer_id, ordered_at,
+             ordered_at - lag(ordered_at) OVER (ORDER BY ordered_at) AS gap
+      FROM orders
+      WHERE customer_id IN (40, 41);
+    expect: |
+      SELECT customer_id, ordered_at,
+             ordered_at - lag(ordered_at) OVER (PARTITION BY customer_id ORDER BY ordered_at) AS gap
+      FROM orders
+      WHERE customer_id IN (40, 41);
+    hint: |
+      The window should restart for each customer. Which clause inside OVER does that?
+
   - kind: why
     body: |
       Rankings, running totals, month-over-month change, top N per group: window functions answer the questions analysts get asked every day, in one query, without losing the detail rows. They're the single biggest jump in SQL power after joins.

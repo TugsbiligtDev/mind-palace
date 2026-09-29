@@ -154,11 +154,17 @@ steps:
     title: Every anniversary
     body: |
       Run it: Kenji Mori (employee 6) was hired in January 2024, so there are 3 rows: the hiring day and two anniversaries. Remove the WHERE to see everyone. Who has the most rows, and why?
+
+      (The step is checked once your changed version has run.)
     sql: |
       SELECT e.full_name, anniversary::date AS anniversary
       FROM employees e
       CROSS JOIN LATERAL generate_series(e.hired_on, date '2026-06-30', interval '1 year') AS anniversary
       WHERE e.employee_id = 6;
+    expect: |
+      SELECT e.full_name, anniversary::date AS anniversary
+      FROM employees e
+      CROSS JOIN LATERAL generate_series(e.hired_on, date '2026-06-30', interval '1 year') AS anniversary;
 
   - kind: explain
     title: Which tool when?
@@ -171,6 +177,23 @@ steps:
       | Rankings with **ties**, numbering, comparing to the row before, or keeping **every** row with a rank next to it | **Window functions**, the next module |
 
       All three can often answer the same question. Pick the one that reads most naturally, then check speed with EXPLAIN (Module 33) if it matters.
+
+  - kind: try
+    title: "Find the bug: the latest order"
+    body: |
+      *"For customers 1 to 20, each one's **most recent** order: `customer_id`, `order_id`, `ordered_at`."* This returns their **first** order instead. Fix it.
+    sql: |
+      SELECT DISTINCT ON (customer_id) customer_id, order_id, ordered_at
+      FROM orders
+      WHERE customer_id <= 20
+      ORDER BY customer_id, ordered_at;
+    expect: |
+      SELECT DISTINCT ON (customer_id) customer_id, order_id, ordered_at
+      FROM orders
+      WHERE customer_id <= 20
+      ORDER BY customer_id, ordered_at DESC;
+    hint: |
+      DISTINCT ON keeps the **first** row of each group in the ORDER BY order. Which way should the dates be sorted?
 
   - kind: why
     body: |

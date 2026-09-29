@@ -51,9 +51,16 @@ steps:
     title: Update on conflict
     body: |
       Bloomsbury exists, so its country is overwritten. Run it. Then change `'Bloomsbury'` to `'Faber & Faber'`: this time it's a plain insert.
+
+      (The step is checked once your changed version has run.)
     sql: |
       INSERT INTO publishers (name, country)
       VALUES ('Bloomsbury', 'Ireland')
+      ON CONFLICT (name) DO UPDATE SET country = EXCLUDED.country
+      RETURNING *;
+    expect: |
+      INSERT INTO publishers (name, country)
+      VALUES ('Faber & Faber', 'Ireland')
       ON CONFLICT (name) DO UPDATE SET country = EXCLUDED.country
       RETURNING *;
 
@@ -218,6 +225,23 @@ steps:
       SELECT item, to_date(sold_on, 'DD/MM/YYYY'), NULLIF(price, '')::numeric FROM staging;
 
       SELECT * FROM clean ORDER BY item;
+
+  - kind: try
+    title: "Find the bug: the upsert that changes nothing"
+    body: |
+      A publisher list arrives: Bloomsbury has moved to **Ireland**, and **Faber & Faber** (UK) is new. The upsert runs without errors, but Bloomsbury keeps its old country. Fix it. Checked by looking at the `publishers` table.
+    sql: |
+      INSERT INTO publishers (name, country)
+      VALUES ('Bloomsbury', 'Ireland'), ('Faber & Faber', 'UK')
+      ON CONFLICT (name) DO UPDATE SET country = publishers.country;
+    expect: |
+      INSERT INTO publishers (name, country)
+      VALUES ('Bloomsbury', 'Ireland'), ('Faber & Faber', 'UK')
+      ON CONFLICT (name) DO UPDATE SET country = EXCLUDED.country;
+    state_query: |
+      SELECT name, country FROM publishers ORDER BY name;
+    hint: |
+      In DO UPDATE, `publishers.country` is the value already stored. The incoming row is called EXCLUDED.
 
   - kind: why
     body: |

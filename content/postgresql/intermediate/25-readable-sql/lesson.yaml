@@ -193,6 +193,23 @@ steps:
 
       Useful once you're working on a shared codebase.
 
+  - kind: try
+    title: "Find the bug: the average order that isn't"
+    body: |
+      *"What's our average **order** value?"* (quantity × unit price summed per order, then averaged over orders, rounded to 2 decimals.) This query answers a different question. Fix it so it returns one number labeled **avg_order**.
+    sql: |
+      SELECT round(avg(quantity * unit_price), 2) AS avg_order
+      FROM order_items;
+    expect: |
+      SELECT round(avg(total), 2) AS avg_order
+      FROM (
+          SELECT order_id, sum(quantity * unit_price) AS total
+          FROM order_items
+          GROUP BY order_id
+      ) AS per_order;
+    hint: |
+      Each row of `order_items` is one line, not one order. Total each order first, then average those totals.
+
   - kind: why
     body: |
       Wrong numbers that look right are how bad decisions get made. The habits here (named steps, row-count checks, edge-case tests, comments that explain why) are what make people trust your queries. And readable SQL is what lets someone else fix them when you're not around.

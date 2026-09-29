@@ -30,6 +30,8 @@ steps:
     title: Money per month
     body: |
       Run it: 43 months of Inkwell's takings. Can you spot the Christmas rush? Then change `'month'` to `'quarter'`.
+
+      (The step is checked once your changed version has run.)
     sql: |
       SELECT date_trunc('month', paid_at)::date AS month,
              count(*)    AS payments,
@@ -37,6 +39,14 @@ steps:
       FROM payments
       GROUP BY 1
       ORDER BY 1;
+    expect: |
+      SELECT date_trunc('quarter', paid_at)::date AS month,
+             count(*)    AS payments,
+             sum(amount) AS received
+      FROM payments
+      GROUP BY 1
+      ORDER BY 1;
+    ordered: true
 
   - kind: explain
     title: The missing months
@@ -193,6 +203,34 @@ steps:
       FROM payments
       GROUP BY ROLLUP (method)
       ORDER BY method;
+
+  - kind: try
+    title: "Find the bug: empty months that aren't empty"
+    body: |
+      Diego's (customer 40) number of payments per month of 2025, with **0** for months without any. The calendar is right, but the empty months show **1**. Fix it.
+    sql: |
+      SELECT m.month::date AS month, count(*) AS payments
+      FROM generate_series(date '2025-01-01', date '2025-12-01', interval '1 month') AS m(month)
+      LEFT JOIN (
+          SELECT p.payment_id, p.paid_at
+          FROM payments p JOIN orders o ON o.order_id = p.order_id
+          WHERE o.customer_id = 40
+      ) AS d ON date_trunc('month', d.paid_at) = m.month
+      GROUP BY m.month
+      ORDER BY m.month;
+    expect: |
+      SELECT m.month::date AS month, count(d.payment_id) AS payments
+      FROM generate_series(date '2025-01-01', date '2025-12-01', interval '1 month') AS m(month)
+      LEFT JOIN (
+          SELECT p.payment_id, p.paid_at
+          FROM payments p JOIN orders o ON o.order_id = p.order_id
+          WHERE o.customer_id = 40
+      ) AS d ON date_trunc('month', d.paid_at) = m.month
+      GROUP BY m.month
+      ORDER BY m.month;
+    ordered: true
+    hint: |
+      After a LEFT JOIN, an empty month is still one row, with NULLs on the right. `count(*)` counts rows. What should you count instead?
 
   - kind: why
     body: |

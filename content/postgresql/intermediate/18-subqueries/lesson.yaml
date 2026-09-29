@@ -253,6 +253,23 @@ steps:
             GROUP BY order_id) AS t ON t.order_id = p.order_id
       WHERE p.paid <> t.bought;
 
+  - kind: try
+    title: "Find the bug: above the wrong average"
+    body: |
+      *"Books that cost more than the average price **of their own genre**."* This query compares every book with the average of **all** books instead. Fix it so each book is compared with its own genre's average. Return `title`, `genre_id` and `price`.
+    sql: |
+      SELECT b.title, b.genre_id, b.price
+      FROM books b
+      WHERE b.price > (SELECT avg(price) FROM books);
+    expect: |
+      SELECT b.title, b.genre_id, b.price
+      FROM books b
+      WHERE b.price > (SELECT avg(b2.price)
+                       FROM books b2
+                       WHERE b2.genre_id = b.genre_id);
+    hint: |
+      The subquery needs to know which book it's working for: give the inner table its own alias and link it to the outer row (a correlated subquery).
+
   - kind: why
     body: |
       Subqueries let you ask a question *about* the answer to another question: above the average, in this list, with no matching rows. And knowing why NOT EXISTS beats NOT IN will save you from one of SQL's sneakiest silent bugs.

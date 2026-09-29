@@ -25,6 +25,8 @@ steps:
     title: Create and call a function
     body: |
       Diego's orders with their totals. Run it. Then use the function in the WHERE too: add `AND order_total(order_id) > 40`.
+
+      (The step is checked once your changed version has run.)
     sql: |
       CREATE FUNCTION order_total(p_order_id integer)
       RETURNS numeric
@@ -37,6 +39,19 @@ steps:
       SELECT order_id, order_total(order_id) AS total
       FROM orders
       WHERE customer_id = 40;
+    expect: |
+      CREATE FUNCTION order_total(p_order_id integer)
+      RETURNS numeric
+      LANGUAGE sql
+      STABLE
+      AS $$
+          SELECT sum(quantity * unit_price) FROM order_items WHERE order_id = p_order_id;
+      $$;
+
+      SELECT order_id, order_total(order_id) AS total
+      FROM orders
+      WHERE customer_id = 40
+        AND order_total(order_id) > 40;
 
   - kind: try
     title: Your turn to write a SQL function
@@ -249,6 +264,47 @@ steps:
       - the team's tools (tests, reviews, deploys) mostly live in the app code
 
       Too much logic hidden in the database is hard to test and easy to forget. Too little leaves every app re-inventing (and disagreeing on) the rules.
+
+  - kind: try
+    title: "Find the bug: nothing is ever long"
+    body: |
+      This `length_label` function should say `short` (250 pages or fewer), `medium` (251 to 500) or `long` (more than 500). But no book is ever labeled `long`. Fix the function. Keep the final SELECT.
+    sql: |
+      CREATE FUNCTION length_label(p_pages integer)
+      RETURNS text
+      LANGUAGE plpgsql
+      IMMUTABLE
+      AS $$
+      BEGIN
+          IF p_pages > 250 THEN
+              RETURN 'medium';
+          ELSIF p_pages > 500 THEN
+              RETURN 'long';
+          END IF;
+          RETURN 'short';
+      END;
+      $$;
+
+      SELECT title, pages, length_label(pages) AS label FROM books;
+    expect: |
+      CREATE FUNCTION length_label(p_pages integer)
+      RETURNS text
+      LANGUAGE plpgsql
+      IMMUTABLE
+      AS $$
+      BEGIN
+          IF p_pages > 500 THEN
+              RETURN 'long';
+          ELSIF p_pages > 250 THEN
+              RETURN 'medium';
+          END IF;
+          RETURN 'short';
+      END;
+      $$;
+
+      SELECT title, pages, length_label(pages) AS label FROM books;
+    hint: |
+      IF / ELSIF stops at the first true condition. A 600-page book is also more than 250.
 
   - kind: why
     body: |

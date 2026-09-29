@@ -28,7 +28,13 @@ steps:
     title: Same payment, two clocks
     body: |
       Run it: Mia's payment 3365 shown in UTC. Then add `SET TimeZone = 'Asia/Tokyo';` as the first line and run again. The date and time change, and so does the `+09`. It's the same moment.
+
+      (The step is checked once your changed version has run.)
     sql: |
+      SHOW TimeZone;
+      SELECT payment_id, paid_at FROM payments WHERE payment_id = 3365;
+    expect: |
+      SET TimeZone = 'Asia/Tokyo';
       SHOW TimeZone;
       SELECT payment_id, paid_at FROM payments WHERE payment_id = 3365;
 
@@ -158,10 +164,16 @@ steps:
     title: BETWEEN misses a payment
     body: |
       Payments from 1 to 20 February 2026. Run it: 1,164. Then change it to the half-open pattern ending `< '2026-02-21'` and run again: 1,219. BETWEEN silently lost the 55 payments made during 20 February.
+
+      (The step is checked once your changed version has run.)
     sql: |
       SELECT count(*) AS payments
       FROM payments
       WHERE paid_at BETWEEN '2026-02-01' AND '2026-02-20';
+    expect: |
+      SELECT count(*) AS payments
+      FROM payments
+      WHERE paid_at >= '2026-02-01' AND paid_at < '2026-02-21';
 
   - kind: try
     title: Your turn for a whole month
@@ -186,6 +198,27 @@ steps:
       ```
 
       For a **local-day** report, generate the days, then compare against `(paid_at AT TIME ZONE 'Asia/Tokyo')::date`, so every payment lands in the right day for the person who reads the report.
+
+  - kind: try
+    title: "Find the bug: New Year in Tokyo"
+    body: |
+      *"How many payments did customers in the **Asia/Tokyo** time zone make on **1 January 2026, their local date**?"* This query uses the UTC date. Fix it so it counts by Tokyo's calendar. Return one number.
+    sql: |
+      SELECT count(*)
+      FROM payments p
+      JOIN orders o    ON o.order_id = p.order_id
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE c.time_zone = 'Asia/Tokyo'
+        AND p.paid_at::date = '2026-01-01';
+    expect: |
+      SELECT count(*)
+      FROM payments p
+      JOIN orders o    ON o.order_id = p.order_id
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE c.time_zone = 'Asia/Tokyo'
+        AND (p.paid_at AT TIME ZONE c.time_zone)::date = '2026-01-01';
+    hint: |
+      `::date` takes the date in the session's zone (UTC here). Convert to the customer's wall clock first, with AT TIME ZONE.
 
   - kind: why
     body: |

@@ -102,11 +102,20 @@ steps:
     title: Count to five
     body: |
       Run it. Then change `n < 5` to `n < 10`.
+
+      (The step is checked once your changed version has run.)
     sql: |
       WITH RECURSIVE counter AS (
           SELECT 1 AS n
           UNION ALL
           SELECT n + 1 FROM counter WHERE n < 5
+      )
+      SELECT n FROM counter;
+    expect: |
+      WITH RECURSIVE counter AS (
+          SELECT 1 AS n
+          UNION ALL
+          SELECT n + 1 FROM counter WHERE n < 10
       )
       SELECT n FROM counter;
 
@@ -134,6 +143,8 @@ steps:
     title: The whole chart
     body: |
       Run it. `depth` says how many levels below the CEO each person sits. Then add `ORDER BY depth, full_name`.
+
+      (The step is checked once your changed version has run.)
     sql: |
       WITH RECURSIVE chart AS (
           SELECT employee_id, full_name, 0 AS depth
@@ -145,6 +156,19 @@ steps:
           JOIN chart c ON e.manager_id = c.employee_id
       )
       SELECT * FROM chart;
+    expect: |
+      WITH RECURSIVE chart AS (
+          SELECT employee_id, full_name, 0 AS depth
+          FROM employees
+          WHERE manager_id IS NULL
+          UNION ALL
+          SELECT e.employee_id, e.full_name, c.depth + 1
+          FROM employees e
+          JOIN chart c ON e.manager_id = c.employee_id
+      )
+      SELECT * FROM chart
+      ORDER BY depth, full_name;
+    ordered: true
 
   - kind: try
     title: Your turn to walk up the chain
@@ -212,6 +236,33 @@ steps:
 
       SELECT (SELECT count(*) FROM reviews)     AS still_in_reviews,
              (SELECT count(*) FROM old_reviews) AS archived;
+
+  - kind: try
+    title: "Find the bug: the join that matched the wrong thing"
+    body: |
+      *"Orders worth more than 150, with their customer."* The CTE is right, but the final query returns nonsense. Find the mistake and fix it. Return `order_id`, `customer_id` and `total`.
+    sql: |
+      WITH totals AS (
+          SELECT order_id, sum(quantity * unit_price) AS total
+          FROM order_items
+          GROUP BY order_id
+      )
+      SELECT o.order_id, o.customer_id, t.total
+      FROM orders o
+      JOIN totals t ON t.order_id = o.customer_id
+      WHERE t.total > 150;
+    expect: |
+      WITH totals AS (
+          SELECT order_id, sum(quantity * unit_price) AS total
+          FROM order_items
+          GROUP BY order_id
+      )
+      SELECT o.order_id, o.customer_id, t.total
+      FROM orders o
+      JOIN totals t ON t.order_id = o.order_id
+      WHERE t.total > 150;
+    hint: |
+      Read the ON clause aloud. Which column of `orders` should an order id be matched with?
 
   - kind: why
     body: |

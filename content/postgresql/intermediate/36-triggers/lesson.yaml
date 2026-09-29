@@ -233,6 +233,98 @@ steps:
     body: |
       Normal triggers fire on **data** changes. **Event triggers** fire on **structure** changes, like `CREATE TABLE`, `ALTER TABLE` and `DROP`, for the whole database. They're used for things like logging every schema change or blocking drops in production. They require superuser rights, and you'll rarely write one.
 
+  - kind: try
+    title: "Find the bug: the customers who were never saved"
+    body: |
+      This trigger should clean emails on the way in. The INSERT reports success, yet the new customer isn't in the table. Fix the trigger function. Checked by looking for the new customer.
+    sql: |
+      CREATE FUNCTION clean_email() RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          NEW.email := lower(trim(NEW.email));
+          RETURN NULL;
+      END;
+      $$;
+
+      CREATE TRIGGER customers_clean_email
+      BEFORE INSERT ON customers
+      FOR EACH ROW
+      EXECUTE FUNCTION clean_email();
+
+      INSERT INTO customers (first_name, last_name, email)
+      VALUES ('Nina', 'Park', '  Nina.Park@Example.com ');
+      SELECT first_name, email FROM customers WHERE last_name = 'Park' AND first_name = 'Nina';
+    expect: |
+      CREATE FUNCTION clean_email() RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          NEW.email := lower(trim(NEW.email));
+          RETURN NEW;
+      END;
+      $$;
+
+      CREATE TRIGGER customers_clean_email
+      BEFORE INSERT ON customers
+      FOR EACH ROW
+      EXECUTE FUNCTION clean_email();
+
+      INSERT INTO customers (first_name, last_name, email)
+      VALUES ('Nina', 'Park', '  Nina.Park@Example.com ');
+      SELECT first_name, email FROM customers WHERE last_name = 'Park' AND first_name = 'Nina';
+    state_query: |
+      SELECT first_name, email FROM customers WHERE email = 'nina.park@example.com';
+    hint: |
+      What a BEFORE row trigger returns is the row that gets saved. Returning NULL silently skips it.
+
+  - kind: try
+    title: "Your turn to protect delivered orders"
+    body: |
+      Delivered orders are part of the accounts and must never be deleted. Write a trigger on `orders` that **refuses** to delete an order whose status is `delivered` (raise an error), while other orders can still be deleted. Checked by trying some deletes.
+    sql: |
+      -- Write your function and trigger here
+    expect: |
+      CREATE FUNCTION protect_delivered() RETURNS trigger
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          IF OLD.status = 'delivered' THEN
+              RAISE EXCEPTION 'order % is delivered and cannot be deleted', OLD.order_id;
+          END IF;
+          RETURN OLD;
+      END;
+      $$;
+
+      CREATE TRIGGER orders_protect_delivered
+      BEFORE DELETE ON orders
+      FOR EACH ROW
+      EXECUTE FUNCTION protect_delivered();
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1, $l$delete a delivered order (36001)$l$, $q$DELETE FROM orders WHERE order_id = 36001$q$),
+          (2, $l$delete a pending order (36147)$l$, $q$DELETE FROM orders WHERE order_id = 36147$q$),
+          (3, $l$delete a cancelled order (36009)$l$, $q$DELETE FROM orders WHERE order_id = 36009$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := CASE WHEN SQLSTATE IN ('42P01', '42703') THEN 'missing table or column' ELSE 'rejected' END;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, result FROM pg_temp.run_tests();
+    hint: |
+      A BEFORE DELETE row trigger sees the row as OLD. RAISE EXCEPTION stops the statement. To let a delete go ahead, return OLD (not NULL).
+
   - kind: why
     body: |
       Some things must happen every single time, no matter which app changed the data: stamping `updated_at`, cleaning inputs, recording who changed a payment. Triggers guarantee that. Used sparingly, they're the database's safety cameras.

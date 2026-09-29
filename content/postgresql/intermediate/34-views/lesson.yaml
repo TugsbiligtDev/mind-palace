@@ -23,6 +23,8 @@ steps:
     title: Create and use a view
     body: |
       Run it: the 514 pending orders, each with its customer's name and total. Then add a second query below: `SELECT customer, sum(total) FROM order_summary GROUP BY customer ORDER BY 2 DESC LIMIT 5;`. You can filter, join and group a view like any table.
+
+      (The step is checked once your changed version has run.)
     sql: |
       CREATE VIEW order_summary AS
       SELECT o.order_id, o.ordered_at, o.status,
@@ -34,6 +36,20 @@ steps:
       GROUP BY o.order_id, c.customer_id;
 
       SELECT * FROM order_summary WHERE status = 'pending';
+    expect: |
+      CREATE VIEW order_summary AS
+      SELECT o.order_id, o.ordered_at, o.status,
+             c.first_name || ' ' || c.last_name AS customer,
+             sum(oi.quantity * oi.unit_price) AS total
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      LEFT JOIN order_items oi ON oi.order_id = o.order_id
+      GROUP BY o.order_id, c.customer_id;
+
+      SELECT * FROM order_summary WHERE status = 'pending';
+
+      SELECT customer, sum(total) FROM order_summary GROUP BY customer ORDER BY 2 DESC LIMIT 5;
+    ordered: true
 
   - kind: try
     title: Your turn to create a view
@@ -156,6 +172,32 @@ steps:
       | Good for | reuse, simplicity, security | slow, heavy summaries read often (dashboards, reports) |
 
       Start with a plain view. Switch to a materialized view only when the query is too slow **and** slightly old data is acceptable.
+
+  - kind: try
+    title: "Find the bug: a view that doubles the money"
+    body: |
+      The view **order_money** should show, per order, what was **bought** (lines) and what was **paid** (payments). For orders with several lines or several payments, both numbers come out too big. Fix the view. Checked by reading orders 170 to 180 from it.
+    sql: |
+      CREATE VIEW order_money AS
+      SELECT o.order_id,
+             sum(oi.quantity * oi.unit_price) AS bought,
+             sum(p.amount) AS paid
+      FROM orders o
+      JOIN order_items oi ON oi.order_id = o.order_id
+      JOIN payments p     ON p.order_id = o.order_id
+      GROUP BY o.order_id;
+    expect: |
+      CREATE VIEW order_money AS
+      SELECT o.order_id, b.bought, p.paid
+      FROM orders o
+      JOIN (SELECT order_id, sum(quantity * unit_price) AS bought
+            FROM order_items GROUP BY order_id) AS b ON b.order_id = o.order_id
+      JOIN (SELECT order_id, sum(amount) AS paid
+            FROM payments GROUP BY order_id) AS p ON p.order_id = o.order_id;
+    state_query: |
+      SELECT order_id, bought, paid FROM order_money WHERE order_id BETWEEN 170 AND 180 ORDER BY order_id;
+    hint: |
+      Joining two "many" tables to the same order pairs every line with every payment (fan-out). Total each one separately first (subqueries or CTEs), then join the totals.
 
   - kind: why
     body: |

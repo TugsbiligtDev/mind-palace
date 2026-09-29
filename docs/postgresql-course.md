@@ -161,10 +161,29 @@ Lessons run on a real PostgreSQL 18 inside the browser (PGlite), on the owner's 
 
 ---
 
+## Practice built into the lessons
+
+Every module has at least 4 **checked** exercises, and every module from 6 on has a **"Find the bug"** task (a query that runs but gives a wrong answer). Checked exercises offer a hint after the first wrong attempt and one working answer after three. Exercises that change data are checked by looking at the tables afterwards (`state_query`), and design exercises by trying good and bad rows. `pnpm check:content` proves every reference answer passes, every listed wrong answer (`reject`) fails, and no starter passes by just pressing Run.
+
+**Case reviews** (no starter code, no named technique, 10–12 questions each) and **capstones** sit between modules without taking a module number (`kind: review` / `kind: capstone` in topic.yaml):
+
+| After | Lesson | Folder |
+|---|---|---|
+| Module 10 | Case review: one table | `beginner/review-1-one-table` |
+| Module 15 | Case review: related tables | `beginner/review-2-related-tables` |
+| Module 17 | Capstone: Inkwell's book club (design 3 tables from a brief, then 9 questions) | `beginner/capstone-1-book-club` |
+| Module 25 | Case review: advanced queries | `intermediate/review-3-advanced-queries` |
+| Module 29 | Case review: text, time and JSON | `intermediate/review-4-text-time-json` |
+| Module 33 | Case review: safe and fast (Parts 7 and 8) | `intermediate/review-5-safe-and-fast` |
+| Module 36 | Case review: logic in the database | `intermediate/review-6-database-objects` |
+| Module 39 | Capstone: running Inkwell's database (role, migration, 4 questions, a 5-bug report, Mac backup and Python) | `intermediate/capstone-2-inkwell-operations` |
+
+Mac steps in Modules 2, 37, 38, 39 and the Intermediate capstone have a **checkpoint**: the learner pastes what Terminal printed, and it must contain the expected values (`expect_output`).
+
 ## Capstone projects
 
-- **Beginner:** a library system with books, authors (many-to-many), members and loans. Draw the ER diagram, normalize to 3NF, build every table with PKs, FKs and constraints, load sample data, and write 20+ queries using joins, filtering, NULL handling and aggregates.
-- **Intermediate:** an e-commerce database with customers, products, orders, order items, payments and reviews. Includes a checkout transaction, inventory upserts, window-function and LATERAL sales reports, time-zone-correct daily revenue, JSONB product attributes, indexes verified with EXPLAIN ANALYZE, separate roles, versioned migrations, a Python script with parameterized queries, and a tested backup and restore.
+- **Beginner (built):** Inkwell's book club, see above. Still planned as an optional bigger project: a library system with books, authors (many-to-many), members and loans, from ER diagram to 20+ queries.
+- **Intermediate (built):** running Inkwell's database, see above. Still planned as an optional bigger project: an e-commerce database with a checkout transaction, inventory upserts, JSONB product attributes and indexes verified with EXPLAIN ANALYZE.
 - **Advanced:** a multi-tenant SaaS database with RLS tenant isolation, trigger-based audit history, and a partitioned event log with retention. Work with millions of generated rows, tune the top queries with pg_stat_statements, perform a zero-downtime schema change, and build full-text and fuzzy search. Optional track: add a streaming replica and PITR with pgBackRest in Docker.
 
 ## Final skills

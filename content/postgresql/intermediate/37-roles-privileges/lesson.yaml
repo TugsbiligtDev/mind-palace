@@ -107,6 +107,8 @@ steps:
     title: Tomorrow's table
     body: |
       The analyst was granted SELECT on all tables, then a **new** table was created. Run it: denied. Then add `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO analyst;` **before** the CREATE TABLE and run again.
+
+      (The step is checked once your changed version runs without the error.)
     sql: |
       CREATE ROLE analyst NOLOGIN;
       GRANT SELECT ON ALL TABLES IN SCHEMA public TO analyst;
@@ -116,6 +118,16 @@ steps:
       SET ROLE analyst;
       SELECT count(*) FROM refunds_2027;
     expect_error: true
+    broken_starter: true
+    expect: |
+      CREATE ROLE analyst NOLOGIN;
+      GRANT SELECT ON ALL TABLES IN SCHEMA public TO analyst;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO analyst;
+
+      CREATE TABLE refunds_2027 (payment_id integer, reason text);
+
+      SET ROLE analyst;
+      SELECT count(*) FROM refunds_2027;
 
   - kind: explain
     title: Column-level access and views
@@ -158,6 +170,8 @@ steps:
     title: A real login role on your Mac
     body: |
       Create a read-only login role, then connect **as** it in a new psql session and test what it can and can't do. `-U` picks the user. The last command connects back as yourself to clean up.
+
+      **Checkpoint:** paste the output of the `reporter` session (the count, and the DELETE's error) into the box below.
     commands: |
       psql bookstore
       CREATE ROLE reporter LOGIN PASSWORD 'change-me';
@@ -168,6 +182,59 @@ steps:
       DELETE FROM orders;
       \q
       psql bookstore -c "DROP OWNED BY reporter; DROP ROLE reporter;"
+    expect_output:
+      - "permission denied for table orders"
+
+  - kind: try
+    title: "Find the bug: permission denied, again"
+    body: |
+      The reports team keeps its tables in a separate **reports** schema. The role `report_reader` was granted SELECT on the table, but reading it is still denied. Run it, read the error, and fix the grants.
+    sql: |
+      CREATE SCHEMA reports;
+      CREATE TABLE reports.daily (day date, revenue numeric);
+      INSERT INTO reports.daily VALUES ('2026-06-30', 1234.50);
+
+      CREATE ROLE report_reader NOLOGIN;
+      GRANT SELECT ON reports.daily TO report_reader;
+
+      SET ROLE report_reader;
+      SELECT * FROM reports.daily;
+    broken_starter: true
+    expect: |
+      CREATE SCHEMA reports;
+      CREATE TABLE reports.daily (day date, revenue numeric);
+      INSERT INTO reports.daily VALUES ('2026-06-30', 1234.50);
+
+      CREATE ROLE report_reader NOLOGIN;
+      GRANT USAGE ON SCHEMA reports TO report_reader;
+      GRANT SELECT ON reports.daily TO report_reader;
+
+      SET ROLE report_reader;
+      SELECT * FROM reports.daily;
+    hint: |
+      A role needs a privilege at **every** level on the way to the data. Before a table, there's its schema.
+
+  - kind: try
+    title: "Your turn for a support role"
+    body: |
+      Create a role **support** (no login) that may read **only** `customer_id`, `first_name` and `city` from `customers`, and nothing else anywhere.
+    sql: |
+      -- Write your statements here
+    expect: |
+      CREATE ROLE support NOLOGIN;
+      GRANT SELECT (customer_id, first_name, city) ON customers TO support;
+    state_query: |
+      SELECT has_column_privilege('support', 'customers', 'first_name', 'SELECT') AS first_name,
+             has_column_privilege('support', 'customers', 'city', 'SELECT') AS city,
+             has_column_privilege('support', 'customers', 'email', 'SELECT') AS email,
+             has_table_privilege('support', 'orders', 'SELECT') AS orders,
+             (SELECT rolcanlogin FROM pg_roles WHERE rolname = 'support') AS can_login;
+    hint: |
+      GRANT SELECT (col1, col2, …) ON table TO role grants only those columns.
+    reject:
+      - |
+        CREATE ROLE support NOLOGIN;
+        GRANT SELECT ON customers TO support;
 
   - kind: why
     body: |

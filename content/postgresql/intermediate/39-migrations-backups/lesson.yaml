@@ -114,6 +114,8 @@ steps:
     title: Back up, restore, verify
     body: |
       Dump your course database, restore it into a brand-new database, check a row count matches, then clean up. (`createdb` and `dropdb` are small Terminal tools that come with PostgreSQL.)
+
+      **Checkpoint:** paste the two `count` results into the box below. Both should say 39419 (with the Intermediate files loaded).
     commands: |
       cd ~/Documents/sql
       pg_dump -Fc -d bookstore -f bookstore.dump
@@ -123,6 +125,8 @@ steps:
       psql -d bookstore -c "SELECT count(*) FROM orders;"
       dropdb restore_test
       pg_dumpall --globals-only -f roles.sql
+    expect_output:
+      - "39419"
 
   - kind: explain
     title: PostgreSQL in Docker
@@ -153,6 +157,85 @@ steps:
       PGPASSWORD=devpass pg_restore -h localhost -p 5433 -U postgres -d bookstore --no-owner ~/Documents/sql/bookstore.dump
       PGPASSWORD=devpass psql -h localhost -p 5433 -U postgres -d bookstore -c "SELECT count(*) FROM orders;"
       docker stop pg18 && docker rm pg18
+
+  - kind: try
+    title: "Find the bug: the migration that will run twice"
+    body: |
+      Migration **003_add_order_gift_flag** adds a `is_gift` boolean (default false) to `orders`. It runs fine, but tomorrow the migration tool will run it **again** and fail. Find what's missing and fix it. Keep the first two lines.
+    sql: |
+      CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+
+      BEGIN;
+      ALTER TABLE orders ADD COLUMN is_gift boolean NOT NULL DEFAULT false;
+      COMMIT;
+    expect: |
+      CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+
+      BEGIN;
+      ALTER TABLE orders ADD COLUMN is_gift boolean NOT NULL DEFAULT false;
+      INSERT INTO schema_migrations (version) VALUES ('003_add_order_gift_flag');
+      COMMIT;
+    state_query: |
+      SELECT (SELECT string_agg(version, ', ' ORDER BY version) FROM schema_migrations) AS versions,
+             (SELECT count(*) FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'is_gift') AS has_column;
+    hint: |
+      How does the tool know a migration has already been applied?
+
+  - kind: try
+    title: "Your turn: a migration with a backfill"
+    body: |
+      Write migration **003_customer_vip** in one transaction: add `is_vip` (boolean, NOT NULL, default false) to `customers`, set it to **true** for customers with **20 or more orders**, and record the version. Keep the first two lines.
+    sql: |
+      CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+    expect: |
+      CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+
+      BEGIN;
+      ALTER TABLE customers ADD COLUMN is_vip boolean NOT NULL DEFAULT false;
+      UPDATE customers SET is_vip = true
+      WHERE customer_id IN (SELECT customer_id FROM orders GROUP BY customer_id HAVING count(*) >= 20);
+      INSERT INTO schema_migrations (version) VALUES ('003_customer_vip');
+      COMMIT;
+    state_query: |
+      SELECT (SELECT string_agg(version, ', ' ORDER BY version) FROM schema_migrations) AS versions,
+             count(*) FILTER (WHERE is_vip) AS vips,
+             count(*) AS customers
+      FROM customers;
+    hint: |
+      ADD COLUMN with its default, then one UPDATE using a subquery that finds customers with at least 20 orders (GROUP BY + HAVING), then the version row.
+
+  - kind: try
+    title: "Your turn to roll forward"
+    body: |
+      Migration 003 (the starter applies it) turned out to be a mistake. Teams that only move forward undo it with a **new** migration. Write **004_drop_customer_vip**: in one transaction, drop the `is_vip` column and record the version.
+    sql: |
+      CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+      BEGIN;
+      ALTER TABLE customers ADD COLUMN is_vip boolean NOT NULL DEFAULT false;
+      INSERT INTO schema_migrations (version) VALUES ('003_customer_vip');
+      COMMIT;
+    expect: |
+      CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+      BEGIN;
+      ALTER TABLE customers ADD COLUMN is_vip boolean NOT NULL DEFAULT false;
+      INSERT INTO schema_migrations (version) VALUES ('003_customer_vip');
+      COMMIT;
+
+      BEGIN;
+      ALTER TABLE customers DROP COLUMN is_vip;
+      INSERT INTO schema_migrations (version) VALUES ('004_drop_customer_vip');
+      COMMIT;
+    state_query: |
+      SELECT (SELECT string_agg(version, ', ' ORDER BY version) FROM schema_migrations) AS versions,
+             (SELECT count(*) FROM information_schema.columns WHERE table_name = 'customers' AND column_name = 'is_vip') AS has_column;
+    hint: |
+      Don't delete migration 003's record: history stays. Add 004, which drops the column.
 
   - kind: why
     body: |

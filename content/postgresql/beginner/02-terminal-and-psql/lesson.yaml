@@ -78,11 +78,15 @@ steps:
       The `practice` database doesn't exist on your Mac until you create it. First download `01_practice_basics.sql` (the same file this page uses) from the course's *Take it to your Mac* page into your Downloads folder. The first two commands run it, which builds `practice` with its three tables.
 
       Then connect. The prompt should change to `practice=#`. Type `\q` to quit and get back to zsh.
+
+      **Checkpoint:** paste what Terminal showed, including the `practice=#` prompt, into the box below.
     commands: |
       cd ~/Downloads
       psql -d postgres -f 01_practice_basics.sql
       psql practice
       \q
+    expect_output:
+      - "practice=#"
 
   - kind: try
     title: "Meta-commands: \\l lists databases"
@@ -148,12 +152,17 @@ steps:
     title: Try them in Terminal
     body: |
       Connect, turn on expanded display and timing, run a query, then quit.
+
+      **Checkpoint:** paste the output into the box below. It should show the expanded records and the timing.
     commands: |
       psql practice
       \x
       \timing
       SELECT * FROM sales LIMIT 2;
       \q
+    expect_output:
+      - "RECORD 1"
+      - "Timing is on"
 
   - kind: explain
     title: GUI clients, and why psql too

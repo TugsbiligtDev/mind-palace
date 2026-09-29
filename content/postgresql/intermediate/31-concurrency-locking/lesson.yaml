@@ -107,15 +107,19 @@ steps:
   - kind: try
     title: Your turn for the safe decrement
     body: |
-      Sell **2** bookmarks using an update that's safe from lost updates: let the database subtract from the current value. Return the new `qty`.
+      You read the stock (5) and a customer wants **2** bookmarks. Before your UPDATE runs, another cashier sells one (the starter plays that part). The starter's UPDATE writes the 3 you worked out from your old reading, and loses their sale. Fix it so the database subtracts 2 from whatever the value is **now**. Return the new `qty`.
     sql: |
       CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL CHECK (qty >= 0));
       INSERT INTO stock VALUES ('bookmark', 5);
+      SELECT qty FROM stock WHERE item = 'bookmark';          -- you read 5
+      UPDATE stock SET qty = qty - 1 WHERE item = 'bookmark';  -- meanwhile, another cashier sells 1
 
       UPDATE stock SET qty = 3 WHERE item = 'bookmark' RETURNING qty;
     expect: |
       CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL CHECK (qty >= 0));
       INSERT INTO stock VALUES ('bookmark', 5);
+      SELECT qty FROM stock WHERE item = 'bookmark';          -- you read 5
+      UPDATE stock SET qty = qty - 1 WHERE item = 'bookmark';  -- meanwhile, another cashier sells 1
 
       UPDATE stock SET qty = qty - 2 WHERE item = 'bookmark' RETURNING qty;
 

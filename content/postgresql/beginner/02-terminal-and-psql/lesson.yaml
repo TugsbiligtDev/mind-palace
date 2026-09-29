@@ -112,8 +112,12 @@ steps:
       `\d table_name` shows a table's columns, each column's type, and its rules.
 
       Run it, then change `sales` to `customers`. Which columns does a customer have?
+
+      (The step is checked once your changed version has run.)
     sql: |
       \d sales
+    expect: |
+      \d customers
 
   - kind: try
     title: "\\dn schemas, \\du users"
@@ -191,6 +195,34 @@ steps:
       and you're *sure* the table exists, check the prompt. You're probably connected to the wrong database. `postgres=#` means you're in the default `postgres` database, not `practice`.
 
       Fix: `\c practice`, then run the query again. The prompt always tells you where you are.
+
+  - kind: try
+    title: "Your first line of SQL"
+    body: |
+      Type this exactly, semicolon included, and run it:
+
+      ```sql
+      SELECT count(*) FROM customers;
+      ```
+
+      It asks: *how many rows does the `customers` table have?* You'll learn what every word means in the next modules.
+    sql: |
+      -- Type the query here
+    expect: |
+      SELECT count(*) FROM customers;
+    hint: |
+      Copy it letter for letter. The semicolon at the end tells PostgreSQL the command is finished.
+
+  - kind: try
+    title: "Your turn to explore"
+    body: |
+      One of the practice tables has a column called **payment_method**. Use meta-commands to find out which table (`\dt`, then `\d` on each table), then show that column with `SELECT payment_method FROM that_table;` (put the real table name in). Only that last query is checked.
+    sql: |
+      -- Explore with \dt and \d, then show the column
+    expect: |
+      SELECT payment_method FROM sales;
+    hint: |
+      `\d sales`, `\d books` and `\d customers` each list their columns. When you've found it, `SELECT payment_method FROM that_table;`
 
   - kind: why
     body: |

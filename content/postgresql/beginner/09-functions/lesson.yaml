@@ -193,6 +193,19 @@ steps:
 
       They skip NULLs, and return NULL only when every argument is NULL.
 
+  - kind: try
+    title: "Find the bug: points into money"
+    body: |
+      Every **100 loyalty points** are worth **1** euro. Show each customer's `first_name` and their points in euros, labeled **euros**, with cents (120 points → 1.20). This query drops the cents: 120 points shows as 1. Fix it.
+    sql: |
+      SELECT first_name, loyalty_points / 100 AS euros
+      FROM customers;
+    expect: |
+      SELECT first_name, round(loyalty_points / 100.0, 2) AS euros
+      FROM customers;
+    hint: |
+      In PostgreSQL, an integer divided by an integer gives an integer: the decimals are thrown away. Make one side a decimal number.
+
   - kind: why
     body: |
       Real data is messy: stray spaces, inconsistent capitals, missing values, dates you need to bucket. Functions are how you clean it and shape it into answers inside the query, without changing the stored data.

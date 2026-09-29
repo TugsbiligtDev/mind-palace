@@ -64,6 +64,7 @@ async function main() {
             else if (check.mode === "result" && !lastRows(exp)) fail(where, "expected-answer SQL returns no rows to compare");
             else {
               if (!(await grade(fresh, check.solution, check)).correct) fail(where, "the expected answer doesn't pass its own check");
+              if (!out.error && (await grade(fresh, step.sql, check)).correct) fail(where, "the starter SQL already passes, so pressing Run completes it");
               for (const [j, wrong] of step.reject.entries()) {
                 checks++;
                 if ((await grade(fresh, wrong, check)).correct) fail(where, `wrong answer ${j + 1} is accepted by the grader`);

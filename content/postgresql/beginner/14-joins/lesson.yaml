@@ -238,6 +238,25 @@ steps:
 
       **`CROSS JOIN`** pairs **every** row with **every** row: 9 genres × 6 publishers = 54 rows, with no condition. It's occasionally useful (every size × every color), but usually a CROSS JOIN you didn't mean is a forgotten ON clause.
 
+  - kind: try
+    title: "Find the bug: the customers who vanished"
+    body: |
+      *"Every customer, with how many **5-star** reviews they wrote, including 0."* This query drops everyone without a 5-star review. Fix it so every customer appears.
+    sql: |
+      SELECT c.first_name, c.last_name, count(r.review_id) AS five_stars
+      FROM customers c
+      LEFT JOIN reviews r ON r.customer_id = c.customer_id
+      WHERE r.rating = 5
+      GROUP BY c.customer_id, c.first_name, c.last_name;
+    expect: |
+      SELECT c.first_name, c.last_name, count(r.review_id) AS five_stars
+      FROM customers c
+      LEFT JOIN reviews r ON r.customer_id = c.customer_id
+                        AND r.rating = 5
+      GROUP BY c.customer_id, c.first_name, c.last_name;
+    hint: |
+      The WHERE runs after the LEFT JOIN and throws away the rows where `r.rating` is NULL, which are exactly the customers the LEFT JOIN kept. Move the rating condition into the ON clause.
+
   - kind: why
     body: |
       Almost every real question crosses tables: orders and customers, books and authors, students and courses. Joins are the single most important SQL skill after SELECT itself, and the fan-out trap is the most common way reports end up quietly wrong.

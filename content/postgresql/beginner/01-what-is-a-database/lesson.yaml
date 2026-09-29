@@ -14,8 +14,12 @@ steps:
       This is Inkwell Books' sales log, exactly as stored in its first, simple database, `practice`. Press **Run** (or **⌘ + Enter**).
 
       It's all facts, no answers yet. You don't need to understand the SQL yet; you'll learn it in the next modules.
+
+      Then change `sales` to `books` and run it again, to see Inkwell's book list. (The step is checked once your changed version has run.)
     sql: |
       SELECT * FROM sales;
+    expect: |
+      SELECT * FROM books;
 
   - kind: try
     title: Turning it into information
@@ -23,10 +27,18 @@ steps:
       Same data, but now we ask a question: *how many sales were paid each way?* Run it.
 
       Thirty rows of facts became four lines that actually tell you something.
+
+      Now change `payment_method` to `genre` in **both** places, and run it: how many sales were there per genre? (The step is checked once your changed version has run.)
     sql: |
       SELECT payment_method, count(*) AS sales
       FROM sales
       GROUP BY payment_method;
+    expect: |
+      SELECT genre, count(*) AS sales
+      FROM sales
+      GROUP BY genre;
+    hint: |
+      `payment_method` appears twice, once after SELECT and once after GROUP BY. Change both to `genre`.
 
   - kind: explain
     title: Why not just use a spreadsheet?
@@ -91,10 +103,16 @@ steps:
     title: The same facts, copied
     body: |
       Run this. *Atomic Habits* was sold 3 times, and its title, author and genre were copied onto every sale. Now change the title to `'Sapiens'` and run it again.
+
+      (The step is checked once your changed version has run.)
     sql: |
       SELECT sale_id, book_title, author_name, genre
       FROM sales
       WHERE book_title = 'Atomic Habits';
+    expect: |
+      SELECT sale_id, book_title, author_name, genre
+      FROM sales
+      WHERE book_title = 'Sapiens';
 
   - kind: explain
     title: "SQL: the language"
@@ -140,6 +158,28 @@ steps:
       - **MySQL**: another popular free relational database, common behind websites.
       - **SQLite**: a tiny relational database that lives in a single file. It runs inside phone apps and browsers, with no separate server.
       - **NoSQL databases** such as **MongoDB**: they store data as flexible documents instead of tables. They're useful for some jobs, but they don't use SQL and are built around different rules.
+
+  - kind: try
+    title: "Your turn to follow the rule"
+    body: |
+      The same table with its rule. Change the price **−5.00** to **5.00** so the database accepts the row, and run it. The last line shows what was stored.
+    sql: |
+      CREATE TABLE price_list (
+          title  text,
+          price  numeric CHECK (price >= 0)
+      );
+      INSERT INTO price_list VALUES ('Oops', -5.00);
+      SELECT * FROM price_list;
+    broken_starter: true
+    expect: |
+      CREATE TABLE price_list (
+          title  text,
+          price  numeric CHECK (price >= 0)
+      );
+      INSERT INTO price_list VALUES ('Oops', 5.00);
+      SELECT * FROM price_list;
+    hint: |
+      Only the number in the INSERT line needs to change: remove the minus sign.
 
   - kind: why
     body: |

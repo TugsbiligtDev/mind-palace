@@ -102,10 +102,18 @@ steps:
       Comparisons produce booleans. Run it: `t` means true and `f` means false.
 
       Look at the `under_8` column: which books cost less than 8?
+
+      Then add a fourth column, **long_read**, that is true when a book has **more than 400** pages. (The step is checked once your changed version has run.)
     sql: |
       SELECT title,
              stock = 0  AS sold_out,
              price < 8  AS under_8
+      FROM books;
+    expect: |
+      SELECT title,
+             stock = 0  AS sold_out,
+             price < 8  AS under_8,
+             pages > 400 AS long_read
       FROM books;
 
   - kind: try
@@ -124,9 +132,15 @@ steps:
       A parcel from the moment it was ordered to the moment it arrived. The `+01` is the time zone offset: Berlin in February is one hour ahead of UTC (universal time).
 
       Subtracting two moments gives an **interval**. Try adding `+ interval '1 day'` to the arrival time.
+
+      (The step is checked once your changed version has run.)
     sql: |
       SELECT '2026-02-06 11:00+01'::timestamptz
            - '2026-02-01 14:00+01'::timestamptz AS delivery_time;
+    expect: |
+      SELECT '2026-02-06 11:00+01'::timestamptz
+           - '2026-02-01 14:00+01'::timestamptz
+           + interval '1 day' AS delivery_time;
 
   - kind: explain
     title: "Casting: converting between types"
@@ -163,6 +177,22 @@ steps:
     title: "🔹 The money type"
     body: |
       PostgreSQL has a type literally called `money`. **Avoid it.** Its output depends on a server setting (the currency locale), so the same value can print as `$19.99` on one machine and `19,99 €` on another. Use `numeric(12,2)` and keep the currency in its own column if you need one.
+
+  - kind: try
+    title: "Your turn with a boolean column"
+    body: |
+      Show each book's `title` and a column **affordable** that is **true** when the price is **10 or less**. (The book with no price will show an empty value: you'll see why in Module 7.)
+    sql: |
+      SELECT title, price
+      FROM books;
+    expect: |
+      SELECT title, price <= 10 AS affordable
+      FROM books;
+    hint: |
+      A comparison like `price <= 10` produces true or false. Give it a name with AS.
+    reject:
+      - |
+        SELECT title, price < 10 AS affordable FROM books;
 
   - kind: why
     body: |

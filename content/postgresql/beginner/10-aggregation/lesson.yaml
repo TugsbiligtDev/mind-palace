@@ -207,6 +207,24 @@ steps:
       GROUP BY genre
       ORDER BY genre;
 
+  - kind: try
+    title: "Find the bug: busy cities"
+    body: |
+      *"Which customer cities have more than 2 sales?"* Run it and read the error. Then fix the query so it answers the question: `customer_city` and the number of sales labeled **sales**.
+    sql: |
+      SELECT customer_city, count(*) AS sales
+      FROM sales
+      WHERE count(*) > 2
+      GROUP BY customer_city;
+    broken_starter: true
+    expect: |
+      SELECT customer_city, count(*) AS sales
+      FROM sales
+      GROUP BY customer_city
+      HAVING count(*) > 2;
+    hint: |
+      WHERE runs before the rows are grouped, so there's no count yet. Which clause filters groups?
+
   - kind: why
     body: |
       "How many per…?", "total by…?", "which ones have more than…?" are the questions managers, auditors and dashboards ask all day. GROUP BY and HAVING answer them in a single query.

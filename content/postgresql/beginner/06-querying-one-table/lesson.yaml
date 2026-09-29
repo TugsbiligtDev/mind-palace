@@ -282,6 +282,21 @@ steps:
       FROM books
       ORDER BY price_cents DESC;
 
+  - kind: try
+    title: "Find the bug: authors starting with J"
+    body: |
+      *"Which authors' names start with J?"* This query was supposed to answer that, each author once, but it returns nothing. Find the mistake and fix it.
+    sql: |
+      SELECT DISTINCT author_name
+      FROM books
+      WHERE author_name LIKE '%J';
+    expect: |
+      SELECT DISTINCT author_name
+      FROM books
+      WHERE author_name LIKE 'J%';
+    hint: |
+      Where does `%` go if the J must come first and anything may follow?
+
   - kind: why
     body: |
       Choosing columns, filtering rows, sorting and taking the top few is most of what everyday SQL *is*. "The 10 most expensive…", "every card payment since March…", "which categories exist…": you can answer all of them now.

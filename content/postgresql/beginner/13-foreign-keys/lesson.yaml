@@ -295,6 +295,72 @@ steps:
     body: |
       Normally a foreign key is checked **immediately**, statement by statement. A key declared `DEFERRABLE INITIALLY DEFERRED` is checked only when the whole transaction finishes (Module 30). It's useful for rare cases like two rows that point at each other, where neither can go first. Just recognize the words.
 
+  - kind: try
+    title: "Find the bug: the order line with no order"
+    body: |
+      A new order (it gets `order_id` **31**) with one line. Run it and read the error, then fix the script so both rows are saved. Checked by looking at order 31 and its line.
+    sql: |
+      INSERT INTO order_items (order_id, book_id, quantity, unit_price) VALUES (31, 1, 1, 9.99);
+      INSERT INTO orders (customer_id, ordered_at, status) VALUES (1, '2025-02-01 10:00+00', 'paid');
+    broken_starter: true
+    expect: |
+      INSERT INTO orders (customer_id, ordered_at, status) VALUES (1, '2025-02-01 10:00+00', 'paid');
+      INSERT INTO order_items (order_id, book_id, quantity, unit_price) VALUES (31, 1, 1, 9.99);
+    state_query: |
+      SELECT o.order_id, o.customer_id, o.status, oi.book_id, oi.quantity
+      FROM orders o JOIN order_items oi ON oi.order_id = o.order_id
+      WHERE o.order_id = 31;
+    hint: |
+      A child row can only point at a parent that already exists. Which row must come first?
+
+  - kind: try
+    title: "Your turn with a one-to-one table"
+    body: |
+      Some orders are gift-wrapped, with a message. Create **gift_wraps** with `order_id` and `message` (text), where:
+
+      - each order has **at most one** gift wrap, and it must be a real order
+      - deleting an order deletes its gift wrap
+
+      Checked by trying some rows.
+    sql: |
+      -- Write your CREATE TABLE here
+    expect: |
+      CREATE TABLE gift_wraps (
+          order_id  integer PRIMARY KEY REFERENCES orders (order_id) ON DELETE CASCADE,
+          message   text
+      );
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1, $l$a wrap for order 1$l$, $q$INSERT INTO gift_wraps (order_id, message) VALUES (1, 'Happy birthday!')$q$),
+          (2, $l$a second wrap for order 1$l$, $q$INSERT INTO gift_wraps (order_id, message) VALUES (1, 'Again')$q$),
+          (3, $l$a wrap for order 999$l$, $q$INSERT INTO gift_wraps (order_id, message) VALUES (999, 'Nobody')$q$),
+          (4, $l$deleting order 1$l$, $q$DELETE FROM orders WHERE order_id = 1$q$),
+          (5, $l$its wrap is gone$l$, $q$SELECT 1 / ((SELECT count(*) FROM gift_wraps) = 0)::int$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := CASE WHEN SQLSTATE IN ('42P01', '42703') THEN 'missing table or column' ELSE 'rejected' END;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, result FROM pg_temp.run_tests();
+    hint: |
+      One-to-one: the foreign key column is also the primary key (or UNIQUE). Choose the ON DELETE action that removes the child.
+    reject:
+      - |
+        CREATE TABLE gift_wraps (order_id integer REFERENCES orders (order_id) ON DELETE CASCADE, message text);
+      - |
+        CREATE TABLE gift_wraps (order_id integer PRIMARY KEY REFERENCES orders (order_id), message text);
+
   - kind: why
     body: |
       Foreign keys are what make a relational database *relational*. They let you split data into clean tables without ever losing track of what belongs to what, and they make orphaned, contradictory data impossible.

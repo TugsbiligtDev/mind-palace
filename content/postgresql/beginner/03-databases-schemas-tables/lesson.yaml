@@ -38,9 +38,16 @@ steps:
       `CREATE SCHEMA` makes a new folder. Tables created in it need the schema in their name.
 
       Run it. `\dt archive.*` lists only the tables in `archive`.
+
+      Then add a second table, **archive.old_orders**, with one column `order_id` of type `integer`, before the `\dt` line. (The step is checked once your changed version has run.)
     sql: |
       CREATE SCHEMA archive;
       CREATE TABLE archive.old_notes (note text);
+      \dt archive.*
+    expect: |
+      CREATE SCHEMA archive;
+      CREATE TABLE archive.old_notes (note text);
+      CREATE TABLE archive.old_orders (order_id integer);
       \dt archive.*
 
   - kind: explain
@@ -92,6 +99,8 @@ steps:
     title: Build a table
     body: |
       Run it. `\d suspects` shows the columns you just made, and the SELECT shows the table is empty.
+
+      Then add a fourth column, **alibi**, of type `text`. Remember the comma after the line before it. (The step is checked once your changed version has run.)
     sql: |
       CREATE TABLE suspects (
           full_name   text,
@@ -100,6 +109,17 @@ steps:
       );
       \d suspects
       SELECT * FROM suspects;
+    expect: |
+      CREATE TABLE suspects (
+          full_name   text,
+          age         integer,
+          last_seen   date,
+          alibi       text
+      );
+      \d suspects
+      SELECT * FROM suspects;
+    hint: |
+      Each column except the last ends with a comma. Add `alibi text` as the last line inside the parentheses.
 
   - kind: try
     title: Your turn to create a table

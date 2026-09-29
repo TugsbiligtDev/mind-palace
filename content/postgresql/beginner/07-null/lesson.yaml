@@ -213,6 +213,21 @@ steps:
 
       Avoid **"magic values"** that pretend to be data: an empty string for "no email", `0` for "unknown price", or `1900-01-01` for "no date". They sneak into sums and averages and give wrong answers. NULL is the honest way to say *we don't know*.
 
+  - kind: try
+    title: "Find the bug: everything but Classics"
+    body: |
+      *"List the title of every book that isn't a Classic."* There are 30 books and 6 Classics, so the answer should have **24** rows. This query returns 23. Which book is missing, and why? Fix it.
+    sql: |
+      SELECT title
+      FROM books
+      WHERE genre <> 'Classic';
+    expect: |
+      SELECT title
+      FROM books
+      WHERE genre IS DISTINCT FROM 'Classic';
+    hint: |
+      One book has no genre. What is `NULL <> 'Classic'`?
+
   - kind: why
     body: |
       Real data is full of gaps. Most silently wrong SQL answers come from NULL: a row that vanished from a filter, a total that went blank, a NOT IN that returned nothing. Knowing three-valued logic is how you catch them before anyone else does.

@@ -83,6 +83,11 @@ steps:
 
       SET ROLE analyst;
       SELECT count(*) FROM payments;
+    state_query: |
+      SELECT (SELECT rolcanlogin FROM pg_roles WHERE rolname = 'analyst') AS can_login,
+             has_table_privilege('analyst', 'payments', 'SELECT') AS reads_payments,
+             has_table_privilege('analyst', 'books', 'SELECT') AS reads_books,
+             has_table_privilege('analyst', 'books', 'UPDATE') AS updates_books;
 
   - kind: explain
     title: Default privileges for future tables

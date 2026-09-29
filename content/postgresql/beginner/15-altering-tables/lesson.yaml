@@ -172,6 +172,57 @@ steps:
       DROP TABLE customers;
     expect_error: true
 
+  - kind: try
+    title: "Find the bug: a required column on a full table"
+    body: |
+      Every book needs a **language**, and all current books are in English. Run it and read the error. Fix the ALTER so the column is added, required, and **en** for every existing book.
+    sql: |
+      ALTER TABLE books ADD COLUMN language text NOT NULL;
+    broken_starter: true
+    expect: |
+      ALTER TABLE books ADD COLUMN language text NOT NULL DEFAULT 'en';
+    state_query: |
+      SELECT (SELECT is_nullable FROM information_schema.columns
+              WHERE table_name = 'books' AND column_name = 'language') AS nullable,
+             language, count(*) AS books
+      FROM books GROUP BY language;
+    hint: |
+      The existing rows would get NULL in the new column, which NOT NULL forbids. Give the column a DEFAULT in the same statement.
+
+  - kind: try
+    title: "Your turn to add a named rule"
+    body: |
+      Add a named constraint **customers_email_has_at** to `customers`, so every email must contain an `@`. All current emails already do. Checked by trying some emails.
+    sql: |
+      -- Write your ALTER TABLE here
+    expect: |
+      ALTER TABLE customers
+          ADD CONSTRAINT customers_email_has_at CHECK (email LIKE '%@%');
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1, $l$the rule exists$l$, $q$SELECT 1 / (count(*) = 1)::int FROM pg_constraint WHERE conname = 'customers_email_has_at'$q$),
+          (2, $l$an email without @$l$, $q$INSERT INTO customers (first_name, last_name, email) VALUES ('No', 'At', 'no.at.example.com')$q$),
+          (3, $l$a normal email$l$, $q$INSERT INTO customers (first_name, last_name, email) VALUES ('Has', 'At', 'has@example.com')$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := CASE WHEN SQLSTATE IN ('42P01', '42703') THEN 'missing table or column' ELSE 'rejected' END;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, result FROM pg_temp.run_tests();
+    hint: |
+      ALTER TABLE … ADD CONSTRAINT name CHECK (…). LIKE with `%` on both sides finds the `@` anywhere.
+
   - kind: why
     body: |
       Real databases live for years and change constantly. Knowing how to evolve a table without losing data, and how to add rules once the data is already messy, is what separates a toy database from one that keeps working.

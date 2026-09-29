@@ -39,7 +39,7 @@ steps:
   - kind: try
     title: Your turn to tidy up
     body: |
-      This query works but is hard to read. Reformat it using the conventions above, and give the count a label, **books**. The result will be checked, so keep the logic the same.
+      This query works but is hard to read. Reformat it using the conventions above, give the count a label, **books**, and sort the genres **most books first**, then by name. The result is checked, so keep the rest of the logic the same.
     sql: |
       select g.name,count(b.book_id) from genres g join books b on b.genre_id=g.genre_id group by g.name
     expect: |
@@ -47,7 +47,9 @@ steps:
              count(b.book_id) AS books
       FROM genres g
       JOIN books b ON b.genre_id = g.genre_id
-      GROUP BY g.name;
+      GROUP BY g.name
+      ORDER BY books DESC, g.name;
+    ordered: true
 
   - kind: explain
     title: Aliases that mean something

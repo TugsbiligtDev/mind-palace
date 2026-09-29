@@ -217,6 +217,90 @@ steps:
       VALUES (20, 3, 5, 'Excellent.')
       RETURNING book_id, rating;
 
+  - kind: try
+    title: "Find the bug: the rule that lets everything through"
+    body: |
+      Discounts must be **between 1 and 90** percent. This table was given a rule, yet a 150% discount went in. Find the mistake in the CHECK and fix it. Checked by trying some discounts.
+    sql: |
+      CREATE TABLE coupons (
+          code          text PRIMARY KEY,
+          discount_pct  integer CHECK (discount_pct >= 1 OR discount_pct <= 90)
+      );
+      INSERT INTO coupons VALUES ('HUGE', 150);
+      SELECT * FROM coupons;
+    expect: |
+      CREATE TABLE coupons (
+          code          text PRIMARY KEY,
+          discount_pct  integer CHECK (discount_pct >= 1 AND discount_pct <= 90)
+      );
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1, $l$150%$l$, $q$INSERT INTO coupons VALUES ('T150', 150)$q$),
+          (2, $l$0%$l$, $q$INSERT INTO coupons VALUES ('T0', 0)$q$),
+          (3, $l$1%$l$, $q$INSERT INTO coupons VALUES ('T1', 1)$q$),
+          (4, $l$90%$l$, $q$INSERT INTO coupons VALUES ('T90', 90)$q$),
+          (5, $l$91%$l$, $q$INSERT INTO coupons VALUES ('T91', 91)$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := CASE WHEN SQLSTATE IN ('42P01', '42703') THEN 'missing table or column' ELSE 'rejected' END;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, result FROM pg_temp.run_tests();
+    hint: |
+      Every number is either at least 1 **or** at most 90. Both conditions must hold. (Remove the INSERT of the bad row too, once the rule works.)
+
+  - kind: try
+    title: "Your turn with a two-column UNIQUE"
+    body: |
+      Create **shelf_books** with `shelf` (text) and `book_id` (integer). A book may sit on **several** shelves, but never **twice on the same** shelf. Checked by trying some rows.
+    sql: |
+      -- Write your CREATE TABLE here
+    expect: |
+      CREATE TABLE shelf_books (
+          shelf    text,
+          book_id  integer,
+          UNIQUE (shelf, book_id)
+      );
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1, $l$Dune on Staff picks$l$, $q$INSERT INTO shelf_books VALUES ('Staff picks', 7)$q$),
+          (2, $l$Dune on Summer reads$l$, $q$INSERT INTO shelf_books VALUES ('Summer reads', 7)$q$),
+          (3, $l$Dune on Staff picks again$l$, $q$INSERT INTO shelf_books VALUES ('Staff picks', 7)$q$),
+          (4, $l$Emma on Staff picks$l$, $q$INSERT INTO shelf_books VALUES ('Staff picks', 2)$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := CASE WHEN SQLSTATE IN ('42P01', '42703') THEN 'missing table or column' ELSE 'rejected' END;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, result FROM pg_temp.run_tests();
+    hint: |
+      A UNIQUE constraint can cover a **combination** of columns, written as its own line: `UNIQUE (col1, col2)`.
+    reject:
+      - |
+        CREATE TABLE shelf_books (shelf text, book_id integer UNIQUE);
+
   - kind: why
     body: |
       Bad data is expensive: a negative price in a bill, a sale that ends before it starts, two accounts with one email. Constraints stop these at the door, for every app and every person, forever, with a few words in CREATE TABLE.

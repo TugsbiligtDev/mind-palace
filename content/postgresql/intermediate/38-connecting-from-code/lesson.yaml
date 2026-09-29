@@ -120,6 +120,8 @@ steps:
           SELECT order_id, status FROM orders WHERE customer_id = $1;
 
       EXECUTE orders_for(40);
+    state_query: |
+      SELECT name, parameter_types::text FROM pg_prepared_statements;
 
   - kind: explain
     title: Keep passwords out of your code

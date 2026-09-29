@@ -191,6 +191,8 @@ steps:
     title: A total that went stale
     body: |
       Emma's order line was changed to 4 copies, but `line_total` still says 3 copies' worth. Run it and compare the two totals.
+
+      Then fix the design: after the UPDATE, **drop** the `line_total` column, and change the SELECT to show `customer` and the total **calculated** from copies and price, labeled **line_total**. (The step is checked once your changed version has run.)
     sql: |
       CREATE TABLE sale_lines (
           customer    text,
@@ -204,11 +206,98 @@ steps:
       SELECT customer, line_total AS stored_total,
              copies * unit_price AS true_total
       FROM sale_lines;
+    expect: |
+      CREATE TABLE sale_lines (
+          customer    text,
+          copies      integer,
+          unit_price  numeric(8,2),
+          line_total  numeric(8,2)
+      );
+      INSERT INTO sale_lines VALUES ('Emma', 3, 12.50, 37.50);
+      UPDATE sale_lines SET copies = 4 WHERE customer = 'Emma';
+
+      ALTER TABLE sale_lines DROP COLUMN line_total;
+      SELECT customer, copies * unit_price AS line_total
+      FROM sale_lines;
+    hint: |
+      ALTER TABLE … DROP COLUMN line_total; then SELECT customer, copies * unit_price AS line_total …
 
   - kind: info
     title: "🔹 BCNF"
     body: |
       **Boyce-Codd normal form** is a slightly stricter 3NF: *every* column that determines another must be a candidate key. The tables where 3NF and BCNF differ are rare (usually ones with several overlapping composite keys). If your tables are in 3NF, you're in good shape. Just recognize the name.
+
+  - kind: try
+    title: "Find the bug: half an update"
+    body: |
+      Same sheet as before. Tor Books' number changes to **555-0000**. This UPDATE changes it on one sale only, so the sheet now disagrees with itself. Fix the UPDATE so **every** Tor Books row gets the new number. (The real fix is the normalized design. This is the best you can do inside the sheet.)
+    sql: |
+      CREATE TABLE sales_sheet (
+          sale_no          integer PRIMARY KEY,
+          customer         text,
+          book             text,
+          published        integer,
+          publisher        text,
+          publisher_phone  text,
+          copies           integer
+      );
+      INSERT INTO sales_sheet VALUES
+        (1, 'Emma', 'Dune',    1965, 'Tor Books',     '555-0110', 1),
+        (2, 'Liam', 'Dune',    1965, 'Tor Books',     '555-0110', 2),
+        (3, 'Noah', 'Sapiens', 2011, 'HarperCollins', '555-0199', 3);
+
+      UPDATE sales_sheet SET publisher_phone = '555-0000' WHERE sale_no = 1;
+
+      SELECT DISTINCT publisher, publisher_phone FROM sales_sheet ORDER BY publisher;
+    expect: |
+      CREATE TABLE sales_sheet (
+          sale_no          integer PRIMARY KEY,
+          customer         text,
+          book             text,
+          published        integer,
+          publisher        text,
+          publisher_phone  text,
+          copies           integer
+      );
+      INSERT INTO sales_sheet VALUES
+        (1, 'Emma', 'Dune',    1965, 'Tor Books',     '555-0110', 1),
+        (2, 'Liam', 'Dune',    1965, 'Tor Books',     '555-0110', 2),
+        (3, 'Noah', 'Sapiens', 2011, 'HarperCollins', '555-0199', 3);
+
+      UPDATE sales_sheet SET publisher_phone = '555-0000' WHERE publisher = 'Tor Books';
+
+      SELECT DISTINCT publisher, publisher_phone FROM sales_sheet ORDER BY publisher;
+    ordered: true
+    hint: |
+      The WHERE picks one sale. Which column identifies every row that repeats this fact?
+
+  - kind: try
+    title: "Your turn to fix a comma list"
+    body: |
+      `book_authors_flat` breaks 1NF: *Good Omens* has two authors packed into one text value. Create **book_authors_1nf** with columns `book` and `author` (both text), fill it with **one row per book–author pair** for the two books, and finish with `SELECT * FROM book_authors_1nf ORDER BY book, author;`
+    sql: |
+      CREATE TABLE book_authors_flat (book text, authors text);
+      INSERT INTO book_authors_flat VALUES
+        ('Good Omens', 'Terry Pratchett, Neil Gaiman'),
+        ('Dune', 'Frank Herbert');
+
+      SELECT * FROM book_authors_flat;
+    expect: |
+      CREATE TABLE book_authors_flat (book text, authors text);
+      INSERT INTO book_authors_flat VALUES
+        ('Good Omens', 'Terry Pratchett, Neil Gaiman'),
+        ('Dune', 'Frank Herbert');
+
+      CREATE TABLE book_authors_1nf (book text, author text);
+      INSERT INTO book_authors_1nf VALUES
+        ('Good Omens', 'Terry Pratchett'),
+        ('Good Omens', 'Neil Gaiman'),
+        ('Dune', 'Frank Herbert');
+
+      SELECT * FROM book_authors_1nf ORDER BY book, author;
+    ordered: true
+    hint: |
+      Three rows in total: one for Dune, two for Good Omens. Each cell holds one value.
 
   - kind: why
     body: |

@@ -199,6 +199,139 @@ steps:
       \d orders
       \q
 
+  - kind: try
+    title: "Your turn: one book, many editions"
+    body: |
+      Requirement: *"A book can come out in several **editions**. Each edition belongs to exactly one book, has a **format** (always given), may have its own **isbn** (never shared by two editions), and a **published_on** date."*
+
+      Create **editions** with `edition_id`, `book_id`, `format`, `isbn` and `published_on`. Checked by trying some rows.
+    sql: |
+      -- Write your CREATE TABLE here
+    expect: |
+      CREATE TABLE editions (
+          edition_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          book_id       integer NOT NULL REFERENCES books (book_id),
+          format        text NOT NULL,
+          isbn          text UNIQUE,
+          published_on  date
+      );
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1, $l$a paperback of book 7$l$, $q$INSERT INTO editions (book_id, format, isbn) VALUES (7, 'paperback', '111')$q$),
+          (2, $l$an ebook of book 7, no isbn$l$, $q$INSERT INTO editions (book_id, format) VALUES (7, 'ebook')$q$),
+          (3, $l$another edition with isbn 111$l$, $q$INSERT INTO editions (book_id, format, isbn) VALUES (8, 'hardcover', '111')$q$),
+          (4, $l$an edition with no format$l$, $q$INSERT INTO editions (book_id) VALUES (8)$q$),
+          (5, $l$an edition with no book$l$, $q$INSERT INTO editions (format) VALUES ('audio')$q$),
+          (6, $l$an edition of book 999$l$, $q$INSERT INTO editions (book_id, format) VALUES (999, 'audio')$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := CASE WHEN SQLSTATE IN ('42P01', '42703') THEN 'missing table or column' ELSE 'rejected' END;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, result FROM pg_temp.run_tests();
+    hint: |
+      The "many" side (editions) holds the foreign key. "Exactly one book" means the FK is NOT NULL. "Never shared" is UNIQUE, which still allows several NULLs.
+
+  - kind: try
+    title: "Your turn: a wishlist"
+    body: |
+      Requirement: *"Customers keep **wishlists** of books. A book can be on many customers' wishlists, and a customer can wish for many books, but the same book appears on one customer's list at most once. We record **when** it was added, now by default."*
+
+      Create **wishlist_items** with `customer_id`, `book_id` and `added_at`. Checked by trying some rows.
+    sql: |
+      -- Write your CREATE TABLE here
+    expect: |
+      CREATE TABLE wishlist_items (
+          customer_id  integer REFERENCES customers (customer_id),
+          book_id      integer REFERENCES books (book_id),
+          added_at     timestamptz NOT NULL DEFAULT now(),
+          PRIMARY KEY (customer_id, book_id)
+      );
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1, $l$customer 1 wishes for book 7$l$, $q$INSERT INTO wishlist_items (customer_id, book_id) VALUES (1, 7)$q$),
+          (2, $l$customer 1 wishes for book 8$l$, $q$INSERT INTO wishlist_items (customer_id, book_id) VALUES (1, 8)$q$),
+          (3, $l$customer 2 wishes for book 7$l$, $q$INSERT INTO wishlist_items (customer_id, book_id) VALUES (2, 7)$q$),
+          (4, $l$customer 1 wishes for book 7 again$l$, $q$INSERT INTO wishlist_items (customer_id, book_id) VALUES (1, 7)$q$),
+          (5, $l$a missing customer$l$, $q$INSERT INTO wishlist_items (customer_id, book_id) VALUES (999, 7)$q$),
+          (6, $l$a missing book$l$, $q$INSERT INTO wishlist_items (customer_id, book_id) VALUES (1, 999)$q$),
+          (7, $l$added_at fills itself$l$, $q$SELECT 1 / (count(*) = 3)::int FROM wishlist_items WHERE added_at IS NOT NULL$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := CASE WHEN SQLSTATE IN ('42P01', '42703') THEN 'missing table or column' ELSE 'rejected' END;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, result FROM pg_temp.run_tests();
+    hint: |
+      Many-to-many → a junction table with two foreign keys, and its primary key is the pair.
+
+  - kind: try
+    title: "Find the bug: two ratings from one person"
+    body: |
+      This design for star **ratings** lets the same customer rate the same book twice, which breaks every average. Fix the table so each customer can rate each book **once**, and ratings stay between **1 and 5**. Checked by trying some rows.
+    sql: |
+      CREATE TABLE ratings (
+          rating_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          customer_id  integer NOT NULL REFERENCES customers (customer_id),
+          book_id      integer NOT NULL REFERENCES books (book_id),
+          stars        integer NOT NULL CHECK (stars BETWEEN 1 AND 5)
+      );
+    expect: |
+      CREATE TABLE ratings (
+          rating_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          customer_id  integer NOT NULL REFERENCES customers (customer_id),
+          book_id      integer NOT NULL REFERENCES books (book_id),
+          stars        integer NOT NULL CHECK (stars BETWEEN 1 AND 5),
+          UNIQUE (customer_id, book_id)
+      );
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1, $l$Emma rates Dune 5$l$, $q$INSERT INTO ratings (customer_id, book_id, stars) VALUES (1, 7, 5)$q$),
+          (2, $l$Emma rates Dune again$l$, $q$INSERT INTO ratings (customer_id, book_id, stars) VALUES (1, 7, 4)$q$),
+          (3, $l$Liam rates Dune$l$, $q$INSERT INTO ratings (customer_id, book_id, stars) VALUES (2, 7, 4)$q$),
+          (4, $l$a 6-star rating$l$, $q$INSERT INTO ratings (customer_id, book_id, stars) VALUES (3, 7, 6)$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := CASE WHEN SQLSTATE IN ('42P01', '42703') THEN 'missing table or column' ELSE 'rejected' END;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, result FROM pg_temp.run_tests();
+    hint: |
+      The surrogate key `rating_id` is unique, but nothing stops the same (customer, book) pair from repeating. Add a rule for the pair.
+
   - kind: why
     body: |
       A good model makes every later query simple, and a bad one makes every query a fight. Ten minutes turning requirements into entities, relationships and crow's feet saves months of workarounds.

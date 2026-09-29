@@ -154,6 +154,40 @@ steps:
 
       It will make more sense after joins in Module 14. For now, just recognize it.
 
+  - kind: try
+    title: "Find the bug: UPDATE 0"
+    body: |
+      A delivery of 5 copies of *The Fellowship of the Ring* arrived. This UPDATE runs without an error, but reports **UPDATE 0**: nothing changed. Find out why (look at the title as it's stored) and fix it so that book's stock goes up by 5. Checked by looking at the `books` table afterwards.
+    sql: |
+      UPDATE books
+      SET stock = stock + 5
+      WHERE title = 'The Fellowship of the Ring';
+    expect: |
+      UPDATE books
+      SET stock = stock + 5
+      WHERE book_id = 6;
+    state_query: |
+      SELECT book_id, stock FROM books ORDER BY book_id;
+    hint: |
+      Run `SELECT book_id, '[' || title || ']' FROM books WHERE title ILIKE '%fellowship%';` The brackets show extra spaces. Matching on the book's ID is the safest fix.
+
+  - kind: try
+    title: "Your turn to delete"
+    body: |
+      Inkwell stopped accepting **upi** payments and wants those test sales gone. Delete every sale paid by `upi`, and return the deleted `sale_id`s.
+    sql: |
+      SELECT sale_id, payment_method
+      FROM sales
+      WHERE payment_method = 'upi';
+    expect: |
+      DELETE FROM sales
+      WHERE payment_method = 'upi'
+      RETURNING sale_id;
+    state_query: |
+      SELECT sale_id FROM sales ORDER BY sale_id;
+    hint: |
+      The starter is the "SELECT first" check. Keep its WHERE, and turn the query into a DELETE.
+
   - kind: why
     body: |
       Reading data can't hurt anything. Changing it can. The skills here are really about **care**: see before you change, change exactly what you meant, and confirm what changed.

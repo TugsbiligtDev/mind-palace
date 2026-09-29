@@ -227,6 +227,95 @@ steps:
 
       It becomes handy with joins in Module 14.
 
+  - kind: try
+    title: "Find the bug: the ID that was refused"
+    body: |
+      A new case file goes into `cases`, whose `case_id` is `GENERATED ALWAYS AS IDENTITY`. Run it and read the error. Fix the INSERT so PostgreSQL chooses the ID, and keep the SELECT.
+    sql: |
+      CREATE TABLE cases (
+          case_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          title    text NOT NULL
+      );
+      INSERT INTO cases (case_id, title) VALUES (1, 'The missing invoice');
+      SELECT * FROM cases;
+    broken_starter: true
+    expect: |
+      CREATE TABLE cases (
+          case_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          title    text NOT NULL
+      );
+      INSERT INTO cases (title) VALUES ('The missing invoice');
+      SELECT * FROM cases;
+    hint: |
+      GENERATED ALWAYS means the database always picks the value. Leave `case_id` out of the column list and the VALUES.
+
+  - kind: try
+    title: "Your turn with a composite key"
+    body: |
+      Inkwell's shelves have numbered positions. Create **shelf_positions** with `shelf_id` (integer), `position` (integer) and `book_id` (integer). Each **position on a shelf** holds one book, but position 1 exists on every shelf. Neither `shelf_id` nor `position` may be empty.
+
+      Checked by trying some rows.
+    sql: |
+      -- Write your CREATE TABLE here
+    expect: |
+      CREATE TABLE shelf_positions (
+          shelf_id  integer,
+          position  integer,
+          book_id   integer,
+          PRIMARY KEY (shelf_id, position)
+      );
+    state_query: |
+      CREATE FUNCTION pg_temp.run_tests() RETURNS TABLE (test text, result text) LANGUAGE plpgsql AS $$
+      DECLARE t record;
+      BEGIN
+        FOR t IN SELECT * FROM (VALUES
+          (1, $l$shelf 1, position 1$l$, $q$INSERT INTO shelf_positions VALUES (1, 1, 10)$q$),
+          (2, $l$shelf 2, position 1$l$, $q$INSERT INTO shelf_positions VALUES (2, 1, 11)$q$),
+          (3, $l$shelf 1, position 1 again$l$, $q$INSERT INTO shelf_positions VALUES (1, 1, 12)$q$),
+          (4, $l$a position with no shelf$l$, $q$INSERT INTO shelf_positions VALUES (NULL, 3, 12)$q$),
+          (5, $l$a shelf with no position$l$, $q$INSERT INTO shelf_positions VALUES (3, NULL, 12)$q$)
+        ) AS v(n, label, sql) ORDER BY n LOOP
+          test := t.label;
+          BEGIN
+            EXECUTE t.sql;
+            result := 'accepted';
+          EXCEPTION WHEN division_by_zero THEN
+            result := 'wrong';
+          WHEN OTHERS THEN
+            result := CASE WHEN SQLSTATE IN ('42P01', '42703') THEN 'missing table or column' ELSE 'rejected' END;
+          END;
+          RETURN NEXT;
+        END LOOP;
+      END $$;
+      SELECT test, result FROM pg_temp.run_tests();
+    hint: |
+      A primary key over **two** columns: the pair must be unique, and both parts are NOT NULL automatically.
+    reject:
+      - |
+        CREATE TABLE shelf_positions (shelf_id integer PRIMARY KEY, position integer, book_id integer);
+      - |
+        CREATE TABLE shelf_positions (shelf_id integer, position integer, book_id integer);
+
+  - kind: try
+    title: "Your turn with a UUID key"
+    body: |
+      Gift cards get unguessable IDs. Create **gift_cards** with `card_id` as a **uuid** primary key that fills itself (`gen_random_uuid()`), and `amount` as `numeric(8,2)`. Then insert two cards, worth **20** and **50**, giving only the amount.
+    sql: |
+      -- Write your statements here
+    expect: |
+      CREATE TABLE gift_cards (
+          card_id  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          amount   numeric(8,2)
+      );
+      INSERT INTO gift_cards (amount) VALUES (20), (50);
+    state_query: |
+      SELECT amount, card_id IS NOT NULL AS has_id,
+             (SELECT data_type FROM information_schema.columns
+              WHERE table_name = 'gift_cards' AND column_name = 'card_id') AS id_type
+      FROM gift_cards ORDER BY amount;
+    hint: |
+      A column can have a DEFAULT that calls a function. `uuid` is the type.
+
   - kind: why
     body: |
       Every update, delete and link between tables depends on being able to point at exactly one row. A good primary key is the first thing you decide when you design a table, and the hardest thing to change later.

@@ -51,6 +51,8 @@ steps:
       This small wishlist table has a generated ID and a default status. The INSERT gives only the title. Run it and look at the new row's `wish_id` and `status`.
 
       Then change the INSERT to fill in the status column too, with `'bought'`, and run it again.
+
+      Then add a second INSERT, before the SELECT, for **Circe** with the status **bought**. Which columns do you need to list this time? (The step is checked once your changed version has run.)
     sql: |
       CREATE TABLE wishlist (
           wish_id  integer GENERATED ALWAYS AS IDENTITY,
@@ -62,6 +64,22 @@ steps:
       VALUES ('Dune');
 
       SELECT * FROM wishlist;
+    expect: |
+      CREATE TABLE wishlist (
+          wish_id  integer GENERATED ALWAYS AS IDENTITY,
+          title    text,
+          status   text DEFAULT 'wanted'
+      );
+
+      INSERT INTO wishlist (title)
+      VALUES ('Dune');
+
+      INSERT INTO wishlist (title, status)
+      VALUES ('Circe', 'bought');
+
+      SELECT * FROM wishlist;
+    hint: |
+      List both `title` and `status` in the column list, and give two values. `wish_id` still fills itself.
 
   - kind: explain
     title: See what you wrote with RETURNING

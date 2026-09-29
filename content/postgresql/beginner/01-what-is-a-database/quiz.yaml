@@ -3,12 +3,12 @@ questions:
   - type: mcq
     prompt: Which of these is **information** rather than raw data?
     options:
-      - "`2026-03-01`"
-      - "`Japan Highlights`"
-      - Four of Wanderly's seven trips are completed
-      - "`completed`"
+      - "`2024-02-03`"
+      - "`The Hobbit`"
+      - Twenty-one of Inkwell's thirty sales were paid by card
+      - "`card`"
     answer: 2
-    explanation: The first, second and fourth are single stored facts. "Four of seven trips are completed" answers a question, so it's information.
+    explanation: The first, second and fourth are single stored facts. "Twenty-one of thirty sales were paid by card" answers a question, so it's information.
 
   - type: mcq
     prompt: A customer's address is copied into every one of their order rows in a spreadsheet. They move house. What's the risk?
@@ -41,11 +41,11 @@ questions:
     explanation: psql is a client. It carries your SQL to the server and brings back the results. pgAdmin, apps and this page are clients too.
 
   - type: mcq
-    prompt: How does the `cities` table record that Tokyo is in Japan?
+    prompt: In a well-designed relational database, how does a sale record which book was sold?
     options:
-      - It stores the word "Japan" in every Japanese city row
-      - It stores `country_id` 1, which points at Japan's row in `countries`
-      - Tokyo and Japan are in the same row of one big table
+      - It copies the book's title, author and genre onto the sale
+      - It stores the book's ID, which points at the book's row in `books`
+      - Sales and books are kept in the same row of one big table
       - It doesn't; you have to remember it
     answer: 1
-    explanation: That's the "relational" idea. Tables link by IDs instead of copying the same facts over and over.
+    explanation: That's the "relational" idea. Tables link by IDs instead of copying the same facts over and over. The `practice` tables still copy them, which Module 17 fixes.

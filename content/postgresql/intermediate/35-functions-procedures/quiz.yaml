@@ -25,7 +25,7 @@ questions:
     explanation: Procedures can control transactions (COMMIT and ROLLBACK inside). Functions always run inside the caller's transaction.
 
   - type: mcq
-    prompt: A function reads the `trips` table. Which volatility label is correct?
+    prompt: A function reads the `orders` table. Which volatility label is correct?
     options:
       - IMMUTABLE
       - STABLE (or VOLATILE)
@@ -50,10 +50,10 @@ questions:
     explanation: "`RAISE EXCEPTION` aborts with an error message. `%` is replaced by the next argument."
 
   - type: mcq
-    prompt: You need to add 1 night to every stop of trip 5. What's the better approach?
+    prompt: You need to add 1 copy to every line of order 8. What's the better approach?
     options:
-      - A PL/pgSQL loop that updates one stop at a time
-      - "A single `UPDATE trip_stops SET nights = nights + 1 WHERE trip_id = 5;`"
+      - A PL/pgSQL loop that updates one line at a time
+      - "A single `UPDATE order_items SET quantity = quantity + 1 WHERE order_id = 8;`"
       - A procedure that commits after each row
       - A materialized view
     answer: 1

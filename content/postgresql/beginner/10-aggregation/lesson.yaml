@@ -14,35 +14,35 @@ steps:
       `sum`, `avg`, `min` and `max` **ignore NULLs**. They work with the values that exist.
 
   - kind: try
-    title: Summarize every trip stop
+    title: Summarize every sale
     body: |
-      One query, one row, five answers about all 10 trip stops.
+      One query, one row, five answers about all 30 sales.
     sql: |
-      SELECT count(*)   AS stops,
-             sum(cost)  AS total_cost,
-             avg(cost)  AS avg_cost,
-             min(nights) AS fewest_nights,
-             max(nights) AS most_nights
-      FROM trip_stops;
+      SELECT count(*)        AS sales,
+             sum(quantity)   AS copies_sold,
+             avg(unit_price) AS avg_price,
+             min(unit_price) AS cheapest,
+             max(quantity)   AS most_copies
+      FROM sales;
 
   - kind: explain
     title: Three ways to count
     body: |
       - **`count(*)`** counts **rows**, all of them.
       - **`count(email)`** counts rows where `email` **is not NULL**.
-      - **`count(DISTINCT home_city)`** counts **different** non-NULL values.
+      - **`count(DISTINCT country)`** counts **different** non-NULL values.
 
       The gap between the first two is a quick way to measure missing data.
 
   - kind: try
     title: See the difference
     body: |
-      6 travelers, but not 6 emails, and fewer than 6 different home cities. Which city appears twice?
+      20 customers, but only 18 emails, and 16 different countries. Look at the customers' countries (Module 6): why is the USA counted twice?
     sql: |
-      SELECT count(*)                  AS travelers,
-             count(email)              AS with_email,
-             count(DISTINCT home_city) AS home_cities
-      FROM travelers;
+      SELECT count(*)                AS customers,
+             count(email)            AS with_email,
+             count(DISTINCT country) AS countries
+      FROM customers;
 
   - kind: explain
     title: "GROUP BY: one answer per group"
@@ -50,36 +50,36 @@ steps:
       `GROUP BY` puts rows into **buckets** that share a value, then runs the aggregates **once per bucket**. (It doesn't sort the output. Add ORDER BY for that.)
 
       ```sql
-      SELECT trip_id, sum(cost) AS total_cost
-      FROM trip_stops
-      GROUP BY trip_id;
+      SELECT customer_email, sum(quantity) AS copies
+      FROM sales
+      GROUP BY customer_email;
       ```
 
-      Picture it: all the stops for trip 1 go into one pile and trip 2's into another, then each pile gets summed. You get **one row per group**.
+      Picture it: all of Emma's sales go into one pile and Liam's into another, then each pile gets summed. You get **one row per group**.
 
       The rule: every column in `SELECT` must either be in `GROUP BY` or be inside an aggregate. Otherwise PostgreSQL wouldn't know *which* row's value to show for the whole group. (There's one exception, when you group by a table's primary key, which you'll meet in Module 11.)
 
   - kind: try
-    title: Totals per trip
+    title: Sales per customer
     body: |
-      Stops, nights and cost for each trip. Trip 6 is missing. Why? (Hint: does it have any stops?)
+      How many times each customer bought, and when the first and last sales were. Inkwell has 20 customers, but only 13 appear. Why? (Hint: which table is this query reading?)
     sql: |
-      SELECT trip_id,
-             count(*)    AS stops,
-             sum(nights) AS nights,
-             sum(cost)   AS total_cost
-      FROM trip_stops
-      GROUP BY trip_id
-      ORDER BY trip_id;
+      SELECT customer_email,
+             count(*)     AS sales,
+             min(sold_at) AS first_sale,
+             max(sold_at) AS last_sale
+      FROM sales
+      GROUP BY customer_email
+      ORDER BY customer_email;
 
   - kind: try
     title: Breaking the rule
     body: |
-      `city_id` is neither grouped nor aggregated, and each trip has several cities. Run it and read the error. It's PostgreSQL asking *"which city did you mean?"*
+      `book_title` is neither grouped nor aggregated, and most customers bought several books. Run it and read the error. It's PostgreSQL asking *"which book did you mean?"*
     sql: |
-      SELECT trip_id, city_id, sum(cost)
-      FROM trip_stops
-      GROUP BY trip_id;
+      SELECT customer_email, book_title, sum(quantity)
+      FROM sales
+      GROUP BY customer_email;
     expect_error: true
 
   - kind: explain
@@ -88,65 +88,62 @@ steps:
       The full error reads:
 
       ```text
-      ERROR:  column "trip_stops.city_id" must appear in the GROUP BY
+      ERROR:  column "sales.book_title" must appear in the GROUP BY
               clause or be used in an aggregate function
       ```
 
       It names the column causing trouble. Two fixes, depending on what you meant:
 
-      1. **You wanted a row per trip *and* city**: add it to the grouping, `GROUP BY trip_id, city_id`.
-      2. **You wanted one row per trip**: wrap the column in an aggregate that says which value you want, like `count(city_id)` or `max(city_id)`, or remove it.
+      1. **You wanted a row per customer *and* book**: add it to the grouping, `GROUP BY customer_email, book_title`.
+      2. **You wanted one row per customer**: wrap the column in an aggregate that says which value you want, like `count(book_title)` or `max(book_title)`, or remove it.
 
   - kind: try
     title: Fix the grouping
     body: |
-      Same broken query. Fix it the second way: keep one row per trip, and replace `city_id` with `count(city_id)` labeled **cities**. Keep `sum(cost)` labeled **total_cost**.
+      Same broken query. Fix it the second way: keep one row per customer, and replace `book_title` with `count(book_title)` labeled **books**. Keep `sum(quantity)` labeled **copies**.
     sql: |
-      SELECT trip_id, city_id, sum(cost) AS total_cost
-      FROM trip_stops
-      GROUP BY trip_id;
+      SELECT customer_email, book_title, sum(quantity) AS copies
+      FROM sales
+      GROUP BY customer_email;
     broken_starter: true
     expect: |
-      SELECT trip_id, count(city_id) AS cities, sum(cost) AS total_cost
-      FROM trip_stops
-      GROUP BY trip_id;
+      SELECT customer_email, count(book_title) AS books, sum(quantity) AS copies
+      FROM sales
+      GROUP BY customer_email;
 
   - kind: try
     title: Your turn to group
     body: |
-      How many attractions are in each **category**? Return `category` and the count labeled **attractions**.
+      How many books are in each **genre**? Return `genre` and the count labeled **books**. (Notice the book with no genre: NULLs form a group of their own.)
     sql: |
-      SELECT category, name
-      FROM attractions;
+      SELECT genre, title
+      FROM books;
     expect: |
-      SELECT category, count(*) AS attractions
-      FROM attractions
-      GROUP BY category;
+      SELECT genre, count(*) AS books
+      FROM books
+      GROUP BY genre;
 
   - kind: explain
     title: NULLs in aggregates
     body: |
       Aggregates **skip NULLs**, which usually makes sense, but has two surprises:
 
-      - `avg(cost)` averages only the **known** costs. A stop with no cost doesn't count as 0; it's left out.
+      - `avg(price)` averages only the **known** prices. A book with no price doesn't count as 0; it's left out.
       - With **no** known values at all, `sum()` and `avg()` return **NULL**, not 0. (`count()` returns 0.)
 
-      When "nothing" should really read as zero, say so: `COALESCE(sum(cost), 0)`.
+      When "nothing" should really read as zero, say so: `COALESCE(sum(price), 0)`.
 
   - kind: try
     title: A sum of nothing
     body: |
-      Trip 6 gets one stop with an unknown cost. Run it: 1 stop, 0 priced, and the sum and average are NULL. Then change `sum(cost)` to `COALESCE(sum(cost), 0)`.
+      Only one book has no genre yet: the upcoming *The Silent Garden*, which has no price either. Run it: 1 book, 0 priced, and the sum and average are NULL. Then change `sum(price)` to `COALESCE(sum(price), 0)`.
     sql: |
-      INSERT INTO trip_stops (trip_id, city_id, visit_order, nights, cost)
-      VALUES (6, 3, 1, 2, NULL);
-
-      SELECT count(*)    AS stops,
-             count(cost) AS priced,
-             sum(cost)   AS total,
-             avg(cost)   AS average
-      FROM trip_stops
-      WHERE trip_id = 6;
+      SELECT count(*)     AS books,
+             count(price) AS priced,
+             sum(price)   AS total,
+             avg(price)   AS average
+      FROM books
+      WHERE genre IS NULL;
 
   - kind: explain
     title: HAVING filters groups
@@ -154,39 +151,39 @@ steps:
       `WHERE` filters **rows before** they're grouped. `HAVING` filters **groups after** they're aggregated:
 
       ```sql
-      SELECT trip_id, sum(cost) AS total_cost
-      FROM trip_stops
-      GROUP BY trip_id
-      HAVING sum(cost) > 900;
+      SELECT customer_email, sum(quantity * unit_price) AS spent
+      FROM sales
+      GROUP BY customer_email
+      HAVING sum(quantity * unit_price) > 40;
       ```
 
-      You can't write `WHERE sum(cost) > 900`, because when WHERE runs, the sums don't exist yet. That follows from the **logical order** in which PostgreSQL processes a query, which is *not* the order you type it:
+      You can't write `WHERE sum(quantity * unit_price) > 40`, because when WHERE runs, the sums don't exist yet. That follows from the **logical order** in which PostgreSQL processes a query, which is *not* the order you type it:
 
       **FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT**
 
-      This order explains a lot. For example, an alias you create in SELECT can be used in ORDER BY (which runs after SELECT) but not in WHERE or HAVING (which run before it). That's why the HAVING above repeats `sum(cost)` instead of using `total_cost`.
+      This order explains a lot. For example, an alias you create in SELECT can be used in ORDER BY (which runs after SELECT) but not in WHERE or HAVING (which run before it). That's why the HAVING above repeats `sum(quantity * unit_price)` instead of using `spent`.
 
   - kind: try
-    title: Big-spending trips
+    title: Big spenders
     body: |
-      Only trips whose stops cost more than 900 in total. Then add `WHERE nights > 2` before `GROUP BY` and predict what changes before you run it.
+      Only customers who spent more than 40 in total. Then add `WHERE quantity > 1` before `GROUP BY` and predict what changes before you run it.
     sql: |
-      SELECT trip_id, sum(cost) AS total_cost
-      FROM trip_stops
-      GROUP BY trip_id
-      HAVING sum(cost) > 900;
+      SELECT customer_email, sum(quantity * unit_price) AS spent
+      FROM sales
+      GROUP BY customer_email
+      HAVING sum(quantity * unit_price) > 40;
 
   - kind: try
     title: Your turn with HAVING
     body: |
-      Which travelers have booked **more than one** trip? Return `traveler_id` and the number of trips labeled **trips**.
+      Which customers have bought **more than once**? Return `customer_email` and the number of sales labeled **sales**.
     sql: |
-      SELECT traveler_id, trip_name
-      FROM trips;
+      SELECT customer_email, sale_id
+      FROM sales;
     expect: |
-      SELECT traveler_id, count(*) AS trips
-      FROM trips
-      GROUP BY traveler_id
+      SELECT customer_email, count(*) AS sales
+      FROM sales
+      GROUP BY customer_email
       HAVING count(*) > 1;
 
   - kind: info
@@ -194,21 +191,21 @@ steps:
     body: |
       Some aggregates collect values instead of doing maths:
 
-      - `string_agg(name, ', ')` glues the group's text into one string: `Kyoto, Tokyo`.
-      - `array_agg(name)` collects them into an **array** (a list value): `{Kyoto,Tokyo}`.
+      - `string_agg(title, ', ')` glues the group's text into one string: `Emma, Pride and Prejudice`.
+      - `array_agg(title)` collects them into an **array** (a list value): `{Emma,"Pride and Prejudice"}`.
 
-      Add `ORDER BY` inside the parentheses to control the order: `string_agg(name, ', ' ORDER BY name)`.
+      Add `ORDER BY` inside the parentheses to control the order: `string_agg(title, ', ' ORDER BY title)`.
 
   - kind: try
-    title: Cities per country, in one line
+    title: Books per genre, in one line
     body: |
-      One row per country, with its cities listed. Run it, then swap `string_agg(name, ', ' ORDER BY name)` for `array_agg(name)`.
+      One row per genre, with its books listed. Run it, then swap `string_agg(title, ', ' ORDER BY title)` for `array_agg(title)`.
     sql: |
-      SELECT country_id,
-             string_agg(name, ', ' ORDER BY name) AS cities
-      FROM cities
-      GROUP BY country_id
-      ORDER BY country_id;
+      SELECT genre,
+             string_agg(title, ', ' ORDER BY title) AS titles
+      FROM books
+      GROUP BY genre
+      ORDER BY genre;
 
   - kind: why
     body: |

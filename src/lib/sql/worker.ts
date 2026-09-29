@@ -26,6 +26,11 @@ const bases = new Map<string, Promise<PGlite>>();
 function base(key: string, setup: string) {
   let db = bases.get(key);
   if (!db) {
+    // Keep only one database in memory: the Intermediate one alone is tens of megabytes.
+    for (const [k, old] of bases) {
+      bases.delete(k);
+      old.then((pg) => pg.close()).catch(() => {});
+    }
     db = loadEngine().then(async ({ PGlite, types }) => {
       const pg = await PGlite.create({ parsers: rawTextParsers(types) });
       if (setup.trim()) await pg.exec(setup);

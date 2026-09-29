@@ -2,7 +2,7 @@ steps:
   - kind: explain
     title: Aggregates that keep every row
     body: |
-      `GROUP BY` collapses rows: 9 employees in, one average out. Often you want the average **next to each row**, to compare: *"who earns more than average, and by how much?"*
+      `GROUP BY` collapses rows: 8 employees in, one average out. Often you want the average **next to each row**, to compare: *"who earns more than average, and by how much?"*
 
       A **window function** does exactly that. Add **`OVER (…)`** after an aggregate:
 
@@ -29,35 +29,35 @@ steps:
       **`PARTITION BY`** splits the rows into groups, and each row's window is **only its own group**:
 
       ```sql
-      SELECT full_name, department, salary,
-             avg(salary) OVER (PARTITION BY department) AS dept_avg
-      FROM employees;
+      SELECT title, genre_id, price,
+             round(avg(price) OVER (PARTITION BY genre_id), 2) AS genre_avg
+      FROM books;
       ```
 
-      It's like GROUP BY, except the rows **don't collapse**. This gives the same answer as the correlated subquery in Module 18, usually faster and always shorter.
+      It's like GROUP BY, except the rows **don't collapse**: all 300 books stay, each next to its own genre's average price. It's the same kind of answer as the correlated subquery in Module 18, usually faster and always shorter.
 
   - kind: try
     title: Your turn with PARTITION BY
     body: |
-      Show each employee's `full_name`, `department`, `salary`, and **how many people are in their department**, labeled **dept_size**.
+      Show each book's `title`, `genre_id`, `price`, and **how many books are in its genre**, labeled **genre_size**.
     sql: |
-      SELECT full_name, department, salary
-      FROM employees;
+      SELECT title, genre_id, price
+      FROM books;
     expect: |
-      SELECT full_name, department, salary,
-             count(*) OVER (PARTITION BY department) AS dept_size
-      FROM employees;
+      SELECT title, genre_id, price,
+             count(*) OVER (PARTITION BY genre_id) AS genre_size
+      FROM books;
 
   - kind: explain
     title: Ranking with ORDER BY
     body: |
-      Put **ORDER BY** inside OVER and you can **number** the rows. Three ranking functions differ only in how they treat **ties** (Temuulen and Nomin both earn 2400):
+      Put **ORDER BY** inside OVER and you can **number** the rows. Three ranking functions differ only in how they treat **ties** (in Self-Help, *The Bright Library* and *The Bright Promise* both cost 29.99):
 
       | Function | Ties get… | Sequence |
       |---|---|---|
-      | `row_number()` | different numbers (ties broken arbitrarily) | …, 5, **6, 7**, 8 |
-      | `rank()` | the same number, then a **gap** | …, 5, **6, 6**, 8 |
-      | `dense_rank()` | the same number, **no gap** | …, 5, **6, 6**, 7 |
+      | `row_number()` | different numbers (ties broken arbitrarily) | **1, 2**, 3, 4 |
+      | `rank()` | the same number, then a **gap** | **1, 1**, 3, 4 |
+      | `dense_rank()` | the same number, **no gap** | **1, 1**, 2, 3 |
 
       Olympic medals use `rank()`: two golds, then bronze, no silver.
 
@@ -66,26 +66,27 @@ steps:
   - kind: try
     title: Three ways to rank
     body: |
-      Run it and look at Temuulen, Nomin and the row after them in each column.
+      The Self-Help books (genre 7), most expensive first. Run it and compare the first three rows in each column. Further down, four books tie at 23.99: watch the gaps `rank` leaves after them.
     sql: |
-      SELECT full_name, salary,
-             row_number() OVER (ORDER BY salary DESC) AS row_num,
-             rank()       OVER (ORDER BY salary DESC) AS rnk,
-             dense_rank() OVER (ORDER BY salary DESC) AS dense
-      FROM employees
-      ORDER BY salary DESC;
+      SELECT title, price,
+             row_number() OVER (ORDER BY price DESC) AS row_num,
+             rank()       OVER (ORDER BY price DESC) AS rnk,
+             dense_rank() OVER (ORDER BY price DESC) AS dense
+      FROM books
+      WHERE genre_id = 7
+      ORDER BY price DESC, title;
 
   - kind: try
     title: Your turn to rank within groups
     body: |
-      Rank employees **within their department**, highest salary first, **without gaps** for ties. Return `full_name`, `department`, `salary` and the rank labeled **dept_rank**.
+      Rank books **within their genre**, most expensive first, **without gaps** for ties. Return `title`, `genre_id`, `price` and the rank labeled **genre_rank**.
     sql: |
-      SELECT full_name, department, salary
-      FROM employees;
+      SELECT title, genre_id, price
+      FROM books;
     expect: |
-      SELECT full_name, department, salary,
-             dense_rank() OVER (PARTITION BY department ORDER BY salary DESC) AS dept_rank
-      FROM employees;
+      SELECT title, genre_id, price,
+             dense_rank() OVER (PARTITION BY genre_id ORDER BY price DESC) AS genre_rank
+      FROM books;
 
   - kind: explain
     title: Top N per group
@@ -94,30 +95,30 @@ steps:
 
       ```sql
       WITH ranked AS (
-          SELECT full_name, department, salary,
-                 row_number() OVER (PARTITION BY department
-                                    ORDER BY salary DESC) AS rn
-          FROM employees
+          SELECT title, genre_id, price,
+                 row_number() OVER (PARTITION BY genre_id
+                                    ORDER BY price DESC, title) AS rn
+          FROM books
       )
       SELECT * FROM ranked WHERE rn <= 2;
       ```
 
-      Choose the function by what "top 2" should mean with ties: `row_number` gives exactly 2 per group, `rank`/`dense_rank` include everyone tied.
+      Choose the function by what "top 2" should mean with ties: `row_number` gives exactly 2 per group, `rank`/`dense_rank` include everyone tied. With `row_number`, add a tiebreaker (here `title`) so the same books win every time.
 
   - kind: try
-    title: Your turn for the top earner
+    title: Your turn for the priciest book
     body: |
-      Return the **single highest-paid employee in each department**: `department`, `full_name` and `salary`. Use `row_number()` in a CTE.
+      Return the **single most expensive book in each genre**: `genre_id`, `title` and `price`. Use `row_number()` in a CTE. If two books in a genre cost the same, pick the one whose title comes first alphabetically.
     sql: |
-      SELECT department, full_name, salary
-      FROM employees;
+      SELECT genre_id, title, price
+      FROM books;
     expect: |
       WITH ranked AS (
-          SELECT department, full_name, salary,
-                 row_number() OVER (PARTITION BY department ORDER BY salary DESC) AS rn
-          FROM employees
+          SELECT genre_id, title, price,
+                 row_number() OVER (PARTITION BY genre_id ORDER BY price DESC, title) AS rn
+          FROM books
       )
-      SELECT department, full_name, salary
+      SELECT genre_id, title, price
       FROM ranked
       WHERE rn = 1;
 
@@ -127,10 +128,10 @@ steps:
       **`lag(col)`** gives the value from the **previous** row in the window's order, and **`lead(col)`** from the **next** row:
 
       ```sql
-      SELECT paid_at, amount,
-             paid_at - lag(paid_at) OVER (ORDER BY paid_at) AS since_previous
-      FROM payments
-      WHERE trip_id = 5;
+      SELECT order_id, ordered_at,
+             ordered_at - lag(ordered_at) OVER (ORDER BY ordered_at) AS since_previous
+      FROM orders
+      WHERE customer_id = 40;
       ```
 
       The first row has no previous row, so lag gives NULL. `lag(col, 2)` looks two rows back, and `lag(col, 1, 0)` uses 0 instead of NULL.
@@ -138,14 +139,15 @@ steps:
       Perfect for "change since last time": growth month over month, time between visits, price changes.
 
   - kind: try
-    title: Time between payments
+    title: Time between orders
     body: |
-      Trip 5's three payments. Run it: the refund came 30 days after the balance. Then change `lag` to `lead` and see the column shift.
+      Diego Patel (customer 40) has 20 orders. Run it: the gap between the second and third order is over 9 months. Then change `lag` to `lead` and see the column shift.
     sql: |
-      SELECT paid_at, amount,
-             paid_at - lag(paid_at) OVER (ORDER BY paid_at) AS since_previous
-      FROM payments
-      WHERE trip_id = 5;
+      SELECT order_id, ordered_at,
+             ordered_at - lag(ordered_at) OVER (ORDER BY ordered_at) AS since_previous
+      FROM orders
+      WHERE customer_id = 40
+      ORDER BY ordered_at;
 
   - kind: explain
     title: Running totals
@@ -153,34 +155,40 @@ steps:
       An aggregate with ORDER BY in its window becomes **cumulative**: each row sums everything from the start up to itself.
 
       ```sql
-      SELECT paid_at, amount,
-             sum(amount) OVER (ORDER BY paid_at) AS running_total
-      FROM payments;
+      SELECT p.paid_at, p.amount,
+             sum(p.amount) OVER (ORDER BY p.paid_at) AS running_total
+      FROM payments p
+      JOIN orders o USING (order_id)
+      WHERE o.customer_id = 40;
       ```
 
-      Add PARTITION BY to restart the total for each group: `sum(amount) OVER (PARTITION BY trip_id ORDER BY paid_at)`.
+      Add PARTITION BY to restart the total for each group: `sum(amount) OVER (PARTITION BY order_id ORDER BY paid_at)`.
 
   - kind: try
-    title: Wanderly's cash, over time
+    title: Diego's spending, over time
     body: |
-      Run it and watch the running total. Where does it go **down**?
+      Run it and watch the running total. Where does it go **down**, and why?
     sql: |
-      SELECT paid_at, amount,
-             sum(amount) OVER (ORDER BY paid_at) AS running_total
+      SELECT p.paid_at, p.amount,
+             sum(p.amount) OVER (ORDER BY p.paid_at) AS running_total
+      FROM payments p
+      JOIN orders o USING (order_id)
+      WHERE o.customer_id = 40
+      ORDER BY p.paid_at;
+
+  - kind: try
+    title: Your turn for a running total per order
+    body: |
+      For orders 170 to 180, show `order_id`, `paid_at`, `amount`, and a running total **per order** labeled **running_paid**, restarting for each order.
+    sql: |
+      SELECT order_id, paid_at, amount
       FROM payments
-      ORDER BY paid_at;
-
-  - kind: try
-    title: Your turn for a running total per trip
-    body: |
-      Show `trip_id`, `paid_at`, `amount`, and a running total **per trip** labeled **running_paid**, restarting for each trip.
-    sql: |
-      SELECT trip_id, paid_at, amount
-      FROM payments;
+      WHERE order_id BETWEEN 170 AND 180;
     expect: |
-      SELECT trip_id, paid_at, amount,
-             sum(amount) OVER (PARTITION BY trip_id ORDER BY paid_at) AS running_paid
-      FROM payments;
+      SELECT order_id, paid_at, amount,
+             sum(amount) OVER (PARTITION BY order_id ORDER BY paid_at) AS running_paid
+      FROM payments
+      WHERE order_id BETWEEN 170 AND 180;
 
   - kind: explain
     title: "Frames: ROWS BETWEEN"
@@ -199,13 +207,15 @@ steps:
   - kind: try
     title: A moving average
     body: |
-      Each row averages itself and the two payments before it. Run it, then change `2 PRECEDING` to `1 PRECEDING`.
+      Each of Diego's payments is averaged with the two before it. Run it, then change `2 PRECEDING` to `1 PRECEDING`.
     sql: |
-      SELECT paid_at, amount,
-             round(avg(amount) OVER (ORDER BY paid_at
-                                     ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) AS moving_avg_3
-      FROM payments
-      ORDER BY paid_at;
+      SELECT p.paid_at, p.amount,
+             round(avg(p.amount) OVER (ORDER BY p.paid_at
+                                       ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) AS moving_avg_3
+      FROM payments p
+      JOIN orders o USING (order_id)
+      WHERE o.customer_id = 40
+      ORDER BY p.paid_at;
 
   - kind: explain
     title: FILTER on aggregates
@@ -213,11 +223,11 @@ steps:
       **`FILTER (WHERE …)`** makes an aggregate count only some rows. It's cleaner than a CASE inside the aggregate:
 
       ```sql
-      SELECT trip_id,
-             sum(amount) FILTER (WHERE method = 'card')     AS by_card,
-             sum(amount) FILTER (WHERE method = 'transfer') AS by_transfer
+      SELECT method,
+             sum(amount) FILTER (WHERE kind = 'payment') AS paid_in,
+             sum(amount) FILTER (WHERE kind = 'refund')  AS paid_back
       FROM payments
-      GROUP BY trip_id;
+      GROUP BY method;
       ```
 
       It works with ordinary GROUP BY aggregates **and** with window aggregates. You'll use it again for pivot-style reports in Module 23.
@@ -225,22 +235,22 @@ steps:
   - kind: try
     title: Your turn with FILTER
     body: |
-      For each `trip_id`, count its payments labeled **payments**, and count only its **refunds** (negative amounts) labeled **refunds**.
+      For each payment `method`, count all its rows labeled **payments**, and count only its **refunds** (negative amounts) labeled **refunds**.
     sql: |
-      SELECT trip_id, count(*) AS payments
+      SELECT method, count(*) AS payments
       FROM payments
-      GROUP BY trip_id;
+      GROUP BY method;
     expect: |
-      SELECT trip_id,
+      SELECT method,
              count(*) AS payments,
              count(*) FILTER (WHERE amount < 0) AS refunds
       FROM payments
-      GROUP BY trip_id;
+      GROUP BY method;
 
   - kind: info
     title: "🔹 NTILE"
     body: |
-      `ntile(n) OVER (ORDER BY …)` splits the rows into **n roughly equal buckets** and numbers them 1 to n. `ntile(4)` gives quartiles: top 25%, next 25%, and so on. Handy for "which salary band is each person in?"
+      `ntile(n) OVER (ORDER BY …)` splits the rows into **n roughly equal buckets** and numbers them 1 to n. `ntile(4)` gives quartiles: top 25%, next 25%, and so on. Handy for "which price band is each book in?"
 
   - kind: why
     body: |

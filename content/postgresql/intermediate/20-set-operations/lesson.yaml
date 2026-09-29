@@ -5,12 +5,12 @@ steps:
       A **join** puts tables *side by side*: more columns. A **set operation** stacks two query results *on top of each other*: more rows.
 
       ```sql
-      SELECT home_city FROM travelers
+      SELECT country FROM customers
       UNION
-      SELECT name FROM cities;
+      SELECT country FROM authors;
       ```
 
-      This gives one list of every place Wanderly knows about, whether someone lives there or visits it.
+      This gives one list of every country Inkwell has a connection with, whether a customer lives there or an author comes from there.
 
       | Operator | Keeps |
       |---|---|
@@ -20,15 +20,16 @@ steps:
       | `EXCEPT` | rows in the **first** result but **not** the second |
 
   - kind: try
-    title: Every known place
+    title: Every connected country
     body: |
-      Run it: 11 places. Ulaanbaatar is both a home city and a destination, but appears once.
+      Run it: 21 countries. The UK has 617 customers and several authors, but appears once.
 
-      Then change `UNION` to `UNION ALL` and count again.
+      Then change `UNION` to `UNION ALL` and look at the row count: 5,097, one per customer plus one per author.
     sql: |
-      SELECT home_city FROM travelers
+      SELECT country FROM customers
       UNION
-      SELECT name FROM cities;
+      SELECT country FROM authors
+      ORDER BY country;
 
   - kind: explain
     title: The matching rules
@@ -45,11 +46,11 @@ steps:
   - kind: try
     title: Mismatched columns
     body: |
-      The first query has 2 columns and the second has 1. Run it and read the error. Then add `country_id` to the second query so both have 2... and read the *next* error: text and integer don't mix in the second column. Fix it by selecting `continent` in the first query instead of `population`.
+      The first query has 2 columns and the second has 1. Run it and read the error. Then add `genre_id` to the second query so both have 2... and read the *next* error: text and integer don't mix in the second column. Fix it by selecting `published_year` in the first query instead of `isbn`.
     sql: |
-      SELECT name, population FROM cities
+      SELECT title, isbn FROM books
       UNION
-      SELECT name FROM countries;
+      SELECT name FROM genres;
     expect_error: true
 
   - kind: explain
@@ -62,7 +63,7 @@ steps:
       A handy trick is a **label column** saying where each row came from:
 
       ```sql
-      SELECT full_name, 'traveler' AS kind FROM travelers
+      SELECT first_name || ' ' || last_name AS name, 'author' AS kind FROM authors
       UNION ALL
       SELECT full_name, 'staff' FROM employees;
       ```
@@ -70,29 +71,29 @@ steps:
   - kind: try
     title: Your turn to build a people list
     body: |
-      Build one list of **everyone** Wanderly knows: every traveler's `full_name` with the label `'traveler'` in a column called **kind**, stacked with every employee's `full_name` labeled `'staff'`. Sort it by `full_name`.
+      Build one list of the people who make Inkwell's books happen: every author's first and last name joined with a space, in a column called **name**, with the label `'author'` in a column called **kind**, stacked with every employee's `full_name` labeled `'staff'`. Sort it by `name`.
     sql: |
-      SELECT full_name FROM travelers;
+      SELECT first_name, last_name FROM authors;
     expect: |
-      SELECT full_name, 'traveler' AS kind FROM travelers
+      SELECT first_name || ' ' || last_name AS name, 'author' AS kind FROM authors
       UNION ALL
       SELECT full_name, 'staff' FROM employees
-      ORDER BY full_name;
+      ORDER BY name;
     ordered: true
 
   - kind: explain
     title: INTERSECT and EXCEPT
     body: |
       ```sql
-      -- home cities that are also destinations
-      SELECT home_city FROM travelers
+      -- countries with both customers and authors
+      SELECT country FROM customers
       INTERSECT
-      SELECT name FROM cities;
+      SELECT country FROM authors;
 
-      -- destinations where no traveler lives
-      SELECT name FROM cities
+      -- countries authors come from, where no customer lives
+      SELECT country FROM authors
       EXCEPT
-      SELECT home_city FROM travelers;
+      SELECT country FROM customers;
       ```
 
       Both remove duplicates, like UNION. (`INTERSECT ALL` and `EXCEPT ALL` keep them.)
@@ -104,24 +105,26 @@ steps:
   - kind: try
     title: Your turn with EXCEPT
     body: |
-      Which travelers have **never written a review**? Return their `traveler_id`s: all IDs from `travelers`, except the ones that appear in `reviews`.
+      Which employees have **never rung up an order** in the shop? Return their `employee_id`s: all IDs from `employees`, except the ones that appear in `orders`.
     sql: |
-      SELECT traveler_id FROM travelers;
+      SELECT employee_id FROM employees;
     expect: |
-      SELECT traveler_id FROM travelers
+      SELECT employee_id FROM employees
       EXCEPT
-      SELECT traveler_id FROM reviews;
+      SELECT employee_id FROM orders;
 
   - kind: try
     title: EXCEPT ignores the NULL trap
     body: |
-      The same traveler with an unknown home city from Module 18 is back. NOT IN returned nothing. Run this EXCEPT version: all 6 destinations still appear.
-    sql: |
-      INSERT INTO travelers (full_name) VALUES ('Nara Nomad');
+      The book with an unknown publisher from Module 18 is back. NOT IN returned nothing. Run this EXCEPT version: publisher 6 (Blue Owl Press) still appears.
 
-      SELECT name FROM cities
+      (`orders.employee_id` in the step before is full of NULLs, from online orders. EXCEPT didn't mind those either.)
+    sql: |
+      INSERT INTO books (title, genre_id, price) VALUES ('Untitled Manuscript', 4, 9.99);
+
+      SELECT publisher_id FROM publishers
       EXCEPT
-      SELECT home_city FROM travelers;
+      SELECT publisher_id FROM books;
 
   - kind: why
     body: |

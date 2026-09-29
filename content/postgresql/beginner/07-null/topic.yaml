@@ -2,3 +2,4 @@ title: NULL & Three-Valued Logic
 module: 7
 summary: What NULL really means, why = NULL never matches, IS DISTINCT FROM, NULLs in maths and sorting, COALESCE, and the NOT IN trap.
 minutes: 30
+dataset: practice

@@ -4,9 +4,9 @@ steps:
     body: |
       Some of the most common questions have this shape:
 
-      - *the most recent payment for each trip*
-      - *each traveler's first trip*
-      - *the two best-paid people in each department*
+      - *the most recent payment for each order*
+      - *each customer's first order*
+      - *the two best-selling books in each genre*
 
       "Per group, but keep the **whole row**, not just a max value." `GROUP BY` can't do it directly: `max(paid_at)` gives you the latest time, but not the amount and method that go with it.
 
@@ -18,53 +18,57 @@ steps:
       **`DISTINCT ON (columns)`** keeps **the first row of each group**, where "first" is decided by ORDER BY:
 
       ```sql
-      SELECT DISTINCT ON (trip_id)
-             trip_id, amount, paid_at
+      SELECT DISTINCT ON (order_id)
+             order_id, amount, paid_at
       FROM payments
-      ORDER BY trip_id, paid_at DESC;
+      ORDER BY order_id, paid_at DESC;
       ```
 
-      Read it as: *group by trip_id, sort each group newest first, keep the top row.*
+      Read it as: *group by order_id, sort each group newest first, keep the top row.*
 
       **The rule:** ORDER BY must **start with the DISTINCT ON columns**, in the same order. The columns after them decide which row wins. Forget the tiebreaker part and you get an arbitrary row from each group.
 
       DISTINCT ON is PostgreSQL-specific. Other databases don't have it.
 
   - kind: try
-    title: Latest payment per trip
+    title: Latest payment per order
     body: |
-      Run it: one row per trip, the newest payment. Trip 5's latest is a **refund** of −300. Interesting.
+      Orders 170 to 180. Run it: one row per paid order, its newest payment. Order 174's latest is a **refund** of −52.97. Interesting.
 
-      Then change `paid_at DESC` to `paid_at` to get the **first** payment per trip instead.
+      Then change `paid_at DESC` to `paid_at` to get the **first** payment per order instead.
     sql: |
-      SELECT DISTINCT ON (trip_id)
-             trip_id, amount, paid_at, method
+      SELECT DISTINCT ON (order_id)
+             order_id, kind, amount, paid_at, method
       FROM payments
-      ORDER BY trip_id, paid_at DESC;
+      WHERE order_id BETWEEN 170 AND 180
+      ORDER BY order_id, paid_at DESC;
 
   - kind: try
     title: Break the rule
     body: |
-      ORDER BY here doesn't start with `trip_id`. Run it and read the error: *SELECT DISTINCT ON expressions must match initial ORDER BY expressions*.
+      ORDER BY here doesn't start with `order_id`. Run it and read the error: *SELECT DISTINCT ON expressions must match initial ORDER BY expressions*.
     sql: |
-      SELECT DISTINCT ON (trip_id)
-             trip_id, amount, paid_at
+      SELECT DISTINCT ON (order_id)
+             order_id, amount, paid_at
       FROM payments
+      WHERE order_id BETWEEN 170 AND 180
       ORDER BY paid_at DESC;
     expect_error: true
 
   - kind: try
     title: Your turn with DISTINCT ON
     body: |
-      Show each traveler's **first** trip (the earliest `start_date`): `traveler_id`, `trip_name` and `start_date`.
+      For Inkwell's first 20 customers (`customer_id` 20 or less), show each one's **first** order (the earliest `ordered_at`): `customer_id`, `order_id` and `ordered_at`.
     sql: |
-      SELECT traveler_id, trip_name, start_date
-      FROM trips;
+      SELECT customer_id, order_id, ordered_at
+      FROM orders
+      WHERE customer_id <= 20;
     expect: |
-      SELECT DISTINCT ON (traveler_id)
-             traveler_id, trip_name, start_date
-      FROM trips
-      ORDER BY traveler_id, start_date;
+      SELECT DISTINCT ON (customer_id)
+             customer_id, order_id, ordered_at
+      FROM orders
+      WHERE customer_id <= 20
+      ORDER BY customer_id, ordered_at;
 
   - kind: explain
     title: LATERAL
@@ -72,59 +76,63 @@ steps:
       Normally a subquery in FROM can't see the other tables in the same FROM. **`LATERAL`** lifts that rule: a LATERAL subquery can use columns from the tables **to its left**, so it runs **once per row** of them, like a correlated subquery (Module 18) that returns a whole table:
 
       ```sql
-      SELECT d.department, top.full_name, top.salary
-      FROM (SELECT DISTINCT department FROM employees) AS d
+      SELECT g.name AS genre, top.title, top.copies
+      FROM genres g
       CROSS JOIN LATERAL (
-          SELECT full_name, salary
-          FROM employees e
-          WHERE e.department = d.department   -- uses d, from the left
-          ORDER BY salary DESC, full_name
+          SELECT b.title, sum(oi.quantity) AS copies
+          FROM books b
+          JOIN order_items oi USING (book_id)
+          WHERE b.genre_id = g.genre_id        -- uses g, from the left
+          GROUP BY b.book_id, b.title
+          ORDER BY copies DESC, b.title
           LIMIT 2
       ) AS top;
       ```
 
-      For each department, the inner query finds its top 2 earners. This is the go-to pattern for **"top N per group"** when N is more than 1.
+      For each genre, the inner query finds its 2 best-selling books. This is the go-to pattern for **"top N per group"** when N is more than 1.
 
       - `CROSS JOIN LATERAL`: rows on the left with **no** result on the right disappear (like an inner join).
       - `LEFT JOIN LATERAL (…) ON true`: keeps them, with NULLs (like a left join).
 
   - kind: try
-    title: Top two per department
+    title: Top two per genre
     body: |
-      Run it. Notice Temuulen and Nomin both earn 2400 in Operations. The tiebreaker `full_name` decides who makes the top 2, so the answer is the same every time.
+      Run it. The tiebreaker `b.title` makes sure the answer is the same every time, even if two books sold the same number of copies.
 
-      Change `LIMIT 2` to `LIMIT 1`.
+      Poetry is missing: it has no books, so the lateral query returns nothing for it. Change `CROSS JOIN LATERAL` to `LEFT JOIN LATERAL` and add `ON true` after `AS top` to bring it back. Then try `LIMIT 1`.
     sql: |
-      SELECT d.department, top.full_name, top.salary
-      FROM (SELECT DISTINCT department FROM employees) AS d
+      SELECT g.name AS genre, top.title, top.copies
+      FROM genres g
       CROSS JOIN LATERAL (
-          SELECT full_name, salary
-          FROM employees e
-          WHERE e.department = d.department
-          ORDER BY salary DESC, full_name
+          SELECT b.title, sum(oi.quantity) AS copies
+          FROM books b
+          JOIN order_items oi USING (book_id)
+          WHERE b.genre_id = g.genre_id
+          GROUP BY b.book_id, b.title
+          ORDER BY copies DESC, b.title
           LIMIT 2
       ) AS top
-      ORDER BY d.department, top.salary DESC;
+      ORDER BY g.name, top.copies DESC;
 
   - kind: try
     title: Your turn with LATERAL
     body: |
-      For **every trip**, show `trip_name` and its **single most expensive stop's** `cost`, labeled **top_cost**. Keep trips that have **no stops**, with NULL.
+      For **every genre**, show its `name` and the price of its **single most expensive book**, labeled **top_price**. Keep genres that have **no books**, with NULL.
 
-      Hint: `LEFT JOIN LATERAL ( … ORDER BY cost DESC LIMIT 1 ) AS s ON true`.
+      Hint: `LEFT JOIN LATERAL ( … ORDER BY price DESC LIMIT 1 ) AS b ON true`.
     sql: |
-      SELECT t.trip_name
-      FROM trips t;
+      SELECT g.name
+      FROM genres g;
     expect: |
-      SELECT t.trip_name, s.cost AS top_cost
-      FROM trips t
+      SELECT g.name, b.price AS top_price
+      FROM genres g
       LEFT JOIN LATERAL (
-          SELECT cost
-          FROM trip_stops ts
-          WHERE ts.trip_id = t.trip_id
-          ORDER BY cost DESC
+          SELECT price
+          FROM books bk
+          WHERE bk.genre_id = g.genre_id
+          ORDER BY price DESC
           LIMIT 1
-      ) AS s ON true;
+      ) AS b ON true;
 
   - kind: explain
     title: A function per row
@@ -134,30 +142,30 @@ steps:
       With LATERAL, you can call it **once per row**, using that row's values:
 
       ```sql
-      SELECT t.trip_name, day::date
-      FROM trips t
-      CROSS JOIN LATERAL generate_series(t.start_date, t.end_date, interval '1 day') AS day
-      WHERE t.trip_id = 4;
+      SELECT e.full_name, anniversary::date
+      FROM employees e
+      CROSS JOIN LATERAL generate_series(e.hired_on, date '2026-06-30', interval '1 year') AS anniversary
+      WHERE e.employee_id = 6;
       ```
 
-      One row per **day** of each trip, great for calendars and "who was traveling on date X?". (For a function in FROM, the word `LATERAL` is actually optional, because PostgreSQL assumes it. Many people write it anyway for clarity.)
+      One row per **work anniversary** of each employee, up to the end of June 2026, great for calendars and "who was working here on date X?". (For a function in FROM, the word `LATERAL` is actually optional, because PostgreSQL assumes it. Many people write it anyway for clarity.)
 
   - kind: try
-    title: Every day of a trip
+    title: Every anniversary
     body: |
-      Run it: the 7 days of Chen's Paris trip. Remove the WHERE to see every day of every trip. Which trip is missing, and why? (Hint: `end_date`.)
+      Run it: Kenji Mori (employee 6) was hired in January 2024, so there are 3 rows: the hiring day and two anniversaries. Remove the WHERE to see everyone. Who has the most rows, and why?
     sql: |
-      SELECT t.trip_name, day::date AS day
-      FROM trips t
-      CROSS JOIN LATERAL generate_series(t.start_date, t.end_date, interval '1 day') AS day
-      WHERE t.trip_id = 4;
+      SELECT e.full_name, anniversary::date AS anniversary
+      FROM employees e
+      CROSS JOIN LATERAL generate_series(e.hired_on, date '2026-06-30', interval '1 year') AS anniversary
+      WHERE e.employee_id = 6;
 
   - kind: explain
     title: Which tool when?
     body: |
       | Question | Reach for |
       |---|---|
-      | Exactly **one row per group** ("latest per trip") | **DISTINCT ON**: shortest and clearest |
+      | Exactly **one row per group** ("latest per order") | **DISTINCT ON**: shortest and clearest |
       | **N rows per group**, or a per-row query with its own filters | **LATERAL** + ORDER BY + LIMIT |
       | Running a **set-returning function** per row | **LATERAL** |
       | Rankings with **ties**, numbering, comparing to the row before, or keeping **every** row with a rank next to it | **Window functions**, the next module |

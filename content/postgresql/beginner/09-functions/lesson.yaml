@@ -5,58 +5,58 @@ steps:
       A **function** takes some input values (its *arguments*, in parentheses) and returns a value:
 
       ```sql
-      upper('rome')          -- 'ROME'
+      upper('dune')          -- 'DUNE'
       round(136.6667, 2)     -- 136.67
       ```
 
-      Used in a SELECT, a function runs **once per row**, just like the calculated columns in Module 6. Functions can be nested, with the inner one running first: `upper(trim('  rome '))` gives `'ROME'`.
+      Used in a SELECT, a function runs **once per row**, just like the calculated columns in Module 6. Functions can be nested, with the inner one running first: `upper(trim('  dune '))` gives `'DUNE'`.
 
   - kind: explain
     title: Text functions
     body: |
       | Function | Does | Example → result |
       |---|---|---|
-      | `a \|\| b` | joins text | `'Hotel' \|\| ' ' \|\| 'Aurelia'` → `Hotel Aurelia` |
+      | `a \|\| b` | joins text | `'Good' \|\| ' ' \|\| 'Omens'` → `Good Omens` |
       | `concat(a, b, …)` | joins text, **skipping NULLs** | `concat('A', NULL, 'B')` → `AB` |
-      | `upper(t)` / `lower(t)` | changes case | `upper('rome')` → `ROME` |
-      | `length(t)` | number of characters | `length('Rome')` → `4` |
+      | `upper(t)` / `lower(t)` | changes case | `upper('dune')` → `DUNE` |
+      | `length(t)` | number of characters | `length('Dune')` → `4` |
       | `trim(t)` | removes spaces at both ends | `trim('  hi ')` → `hi` |
       | `replace(t, from, to)` | swaps every `from` for `to` | `replace('a-b-c', '-', '/')` → `a/b/c` |
       | `split_part(t, sep, n)` | the *n*-th piece of `t`, split on `sep` | `split_part('a-b-c', '-', 2)` → `b` |
-      | `substring(t, start, len)` | part of the text | `substring('Wanderly', 1, 6)` → `Wander` |
+      | `substring(t, start, len)` | part of the text | `substring('Inkwell', 1, 3)` → `Ink` |
 
       Remember from Module 7: **`||` with a NULL gives NULL.** `concat()` treats NULL as empty text instead.
 
   - kind: try
     title: Slice and dice names
     body: |
-      Run it. Then add `lower(full_name)` as another column.
+      Run it. Then add `lower(author_name)` as another column.
     sql: |
-      SELECT full_name,
-             upper(full_name) AS shouted,
-             split_part(full_name, ' ', 1) AS first_name,
-             substring(full_name, 1, 3) AS first_three
-      FROM travelers;
+      SELECT author_name,
+             upper(author_name) AS shouted,
+             split_part(author_name, ' ', 1) AS first_name,
+             substring(author_name, 1, 3) AS first_three
+      FROM books;
 
   - kind: try
     title: "|| vs concat() with a NULL"
     body: |
-      One traveler has no email. Look at their row in each column.
+      Ava and Benjamin have no email. Look at their rows in each column.
     sql: |
-      SELECT full_name || ' <' || email || '>' AS with_pipes,
-             concat(full_name, ' <', email, '>') AS with_concat
-      FROM travelers;
+      SELECT first_name || ' <' || email || '>' AS with_pipes,
+             concat(first_name, ' <', email, '>') AS with_concat
+      FROM customers;
 
   - kind: try
     title: Your turn to build text
     body: |
-      For every country, build a single column labeled **label** that looks like `JAPAN - Asia`: the name in **uppercase**, then ` - `, then the continent as stored.
+      For every customer, build a single column labeled **label** that looks like `NEW YORK - USA`: the city in **uppercase**, then ` - `, then the country as stored.
     sql: |
-      SELECT name, continent
-      FROM countries;
+      SELECT city, country
+      FROM customers;
     expect: |
-      SELECT upper(name) || ' - ' || continent AS label
-      FROM countries;
+      SELECT upper(city) || ' - ' || country AS label
+      FROM customers;
 
   - kind: explain
     title: Number functions
@@ -73,13 +73,13 @@ steps:
   - kind: try
     title: Your turn to round
     body: |
-      Return each stop's `trip_stop_id` and its cost per night **rounded to 2 decimal places**, labeled **per_night**. (Without rounding, `numeric` division shows a long tail of decimals.)
+      Return each book's `title` and its price per 100 pages (`price * 100 / pages`) **rounded to 2 decimal places**, labeled **per_100_pages**. (Without rounding, `numeric` division shows a long tail of decimals.)
     sql: |
-      SELECT trip_stop_id, cost / nights AS per_night
-      FROM trip_stops;
+      SELECT title, price * 100 / pages AS per_100_pages
+      FROM books;
     expect: |
-      SELECT trip_stop_id, round(cost / nights, 2) AS per_night
-      FROM trip_stops;
+      SELECT title, round(price * 100 / pages, 2) AS per_100_pages
+      FROM books;
 
   - kind: explain
     title: Date and time functions
@@ -92,47 +92,47 @@ steps:
       | `date_trunc('month', x)` | cuts a timestamp down to the start of its month (or `'year'`, `'day'`, `'hour'`…) |
       | `EXTRACT(field FROM x)` | pulls out one part as a number: `YEAR`, `MONTH`, `DAY`, `DOW` (day of week)… |
 
-      **Interval arithmetic** moves dates around: `start_date + interval '1 month'`, `now() - interval '7 days'`.
+      **Interval arithmetic** moves dates around: `sold_at + interval '1 month'`, `now() - interval '7 days'`.
 
       `date_trunc` is how you group things "per month" (Module 10). `EXTRACT` is how you ask "which year?" or "which weekday?".
 
   - kind: try
     title: Take dates apart
     body: |
-      `date_trunc` returns a timestamp (with time zone), so `::date` casts it back to a plain date for readability.
+      `birth_date` is a `date`. `date_trunc` returns a timestamp (with time zone), so `::date` casts it back to a plain date for readability.
     sql: |
-      SELECT trip_name, start_date,
-             EXTRACT(MONTH FROM start_date) AS month_no,
-             date_trunc('month', start_date)::date AS month_start,
-             age(end_date, start_date) AS trip_length
-      FROM trips;
+      SELECT first_name, birth_date,
+             EXTRACT(MONTH FROM birth_date) AS month_no,
+             date_trunc('month', birth_date)::date AS month_start,
+             age(date '2025-01-01', birth_date) AS age_on_new_year
+      FROM customers;
 
   - kind: try
     title: Your turn with EXTRACT
     body: |
-      Return the `trip_name` of every trip that **started in 2025**. Use `EXTRACT`.
+      Inkwell sends birthday coupons at the start of each month. Return the `first_name` of every customer **born in May** (month 5). Use `EXTRACT`.
     sql: |
-      SELECT trip_name, start_date
-      FROM trips;
+      SELECT first_name, birth_date
+      FROM customers;
     expect: |
-      SELECT trip_name
-      FROM trips
-      WHERE EXTRACT(YEAR FROM start_date) = 2025;
+      SELECT first_name
+      FROM customers
+      WHERE EXTRACT(MONTH FROM birth_date) = 5;
 
   - kind: explain
     title: COALESCE, NULLIF and CASE
     body: |
       **`COALESCE(a, b, …)`** (Module 7) returns the first argument that **isn't NULL**: `COALESCE(email, 'no email')`.
 
-      **`NULLIF(a, b)`** returns NULL if `a` equals `b`, and otherwise returns `a`. Its classic use is avoiding division by zero: `total / NULLIF(nights, 0)` gives NULL instead of an error.
+      **`NULLIF(a, b)`** returns NULL if `a` equals `b`, and otherwise returns `a`. Its classic use is avoiding division by zero: `total / NULLIF(quantity, 0)` gives NULL instead of an error.
 
       **`CASE`** is SQL's if/else:
 
       ```sql
       CASE
-        WHEN entry_fee = 0  THEN 'free'
-        WHEN entry_fee < 25 THEN 'budget'
-        ELSE 'premium'
+        WHEN stock = 0  THEN 'sold out'
+        WHEN stock < 10 THEN 'low'
+        ELSE 'in stock'
       END
       ```
 
@@ -141,44 +141,44 @@ steps:
   - kind: try
     title: A default for missing values
     body: |
-      Run it, then try `NULLIF(email, 'erik@example.com')` as another column and see what happens to Erik.
+      Run it, then try `NULLIF(email, 'emma.johnson@example.com')` as another column and see what happens to Emma's row.
     sql: |
-      SELECT full_name,
+      SELECT first_name,
              COALESCE(email, 'no email on file') AS contact
-      FROM travelers;
+      FROM customers;
 
   - kind: try
     title: Your turn with CASE
     body: |
-      Return each attraction's `name` and a **price_band**:
+      Return each book's `title` and a **price_band**:
 
-      - `'free'` when the fee is 0
-      - `'budget'` when it's under 25
+      - `'bargain'` when the price is under 10
+      - `'standard'` when it's under 16
       - `'premium'` otherwise
     sql: |
-      SELECT name, entry_fee
-      FROM attractions;
+      SELECT title, price
+      FROM books;
     expect: |
-      SELECT name,
+      SELECT title,
              CASE
-               WHEN entry_fee = 0 THEN 'free'
-               WHEN entry_fee < 25 THEN 'budget'
+               WHEN price < 10 THEN 'bargain'
+               WHEN price < 16 THEN 'standard'
                ELSE 'premium'
              END AS price_band
-      FROM attractions;
+      FROM books;
 
   - kind: try
     title: Your turn with interval arithmetic
     body: |
-      Wanderly sends a reminder **2 weeks before** each trip starts. Return each `trip_name` and the reminder date labeled **remind_on**, as a plain date.
+      Inkwell emails a "how are you enjoying it?" note **30 days after** each sale. Return each `sale_id` and the email date labeled **follow_up_on**, as a plain date.
 
-      Hint: `date - interval '...'` gives a timestamp, so finish with `::date`.
+      Hint: `sold_at + interval '...'` gives a timestamp, so finish with `::date`.
     sql: |
-      SELECT trip_name, start_date
-      FROM trips;
+      SELECT sale_id, sold_at
+      FROM sales;
     expect: |
-      SELECT trip_name, (start_date - interval '2 weeks')::date AS remind_on
-      FROM trips;
+      SELECT sale_id, (sold_at + interval '30 days')::date AS follow_up_on
+      FROM sales;
 
   - kind: info
     title: "🔹 greatest and least"
@@ -187,8 +187,8 @@ steps:
 
       ```sql
       SELECT greatest(3, 9, 4);          -- 9
-      SELECT least(entry_fee, 20.00)     -- cap each fee at 20
-      FROM attractions;
+      SELECT least(price, 15.00)         -- cap each price at 15
+      FROM books;
       ```
 
       They skip NULLs, and return NULL only when every argument is NULL.

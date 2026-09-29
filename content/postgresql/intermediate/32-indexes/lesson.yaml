@@ -2,12 +2,12 @@ steps:
   - kind: explain
     title: The index at the back of the book
     body: |
-      To find every page that mentions "Kyoto" in a 500-page book, you could read all 500 pages. Or you could turn to the **index** at the back, which lists "Kyoto: 12, 88, 301", and go straight there.
+      To find every page that mentions "Arrakis" in a 700-page copy of *Dune*, you could read all 700 pages. Or you could turn to the **index** at the back, which lists "Arrakis: 12, 88, 301", and go straight there.
 
-      A database **index** is the same idea. Without one, `WHERE traveler_id = 42` makes PostgreSQL read **every row** of the table (a *sequential scan*). With an index on `traveler_id`, it looks up 42 in a sorted structure and jumps straight to the matching rows.
+      A database **index** is the same idea. Without one, `WHERE customer_id = 42` makes PostgreSQL read **every row** of the orders table (a *sequential scan*). With an index on `customer_id`, it looks up 42 in a sorted structure and jumps straight to the matching rows.
 
       ```sql
-      CREATE INDEX bookings_traveler_idx ON bookings (traveler_id);
+      CREATE INDEX orders_customer_id_idx ON orders (customer_id);
       ```
 
       Queries don't change at all. PostgreSQL decides by itself whether an index helps (Module 33 shows how to see its decision).
@@ -20,30 +20,22 @@ steps:
       - equality: `=`, `IN`
       - ranges: `<`, `>`, `BETWEEN`, `>= … AND <`
       - sorting: `ORDER BY` the indexed column (the rows come out already sorted)
-      - prefix matches: `LIKE 'Rom%'` (with the right setup)
+      - prefix matches: `LIKE 'The Si%'` (with the right setup)
 
-      It **doesn't** help with `LIKE '%ome'`, most regexes (Module 26), or searching inside jsonb (GIN below).
+      It **doesn't** help with `LIKE '%River'`, most regexes (Module 26), or searching inside jsonb (GIN below).
 
       Primary keys and UNIQUE constraints get a B-tree **automatically** (Module 11).
 
   - kind: try
     title: Feel the difference
     body: |
-      This builds a 200,000-row table, then runs the same query before and after creating an index. Run it and compare the **Execution Time** of the two plans: the first reads every row (*Seq Scan*), the second jumps straight to the 40 matches (*Index Scan*). You'll learn to read plans properly in Module 33.
+      The same query on the 39,419 orders, before and after creating an index. Run it and compare the **Execution Time** of the two plans. The first reads every row (*Seq Scan*: "Rows Removed by Filter: 39400") to find customer 42's 19 orders. The second jumps straight to them through the index (*Bitmap Index Scan*), and is many times faster. You'll learn to read plans properly in Module 33.
     sql: |
-      CREATE TABLE bookings_big AS
-      SELECT g AS booking_id,
-             (g % 5000) + 1 AS traveler_id,
-             date '2020-01-01' + (g % 2000) AS booked_on,
-             round((g % 997)::numeric, 2) AS amount
-      FROM generate_series(1, 200000) AS g;
-      ANALYZE bookings_big;
+      EXPLAIN ANALYZE SELECT * FROM orders WHERE customer_id = 42;
 
-      EXPLAIN ANALYZE SELECT * FROM bookings_big WHERE traveler_id = 42;
+      CREATE INDEX orders_customer_id_idx ON orders (customer_id);
 
-      CREATE INDEX bookings_big_traveler_idx ON bookings_big (traveler_id);
-
-      EXPLAIN ANALYZE SELECT * FROM bookings_big WHERE traveler_id = 42;
+      EXPLAIN ANALYZE SELECT * FROM orders WHERE customer_id = 42;
 
   - kind: explain
     title: Indexes aren't free
@@ -61,14 +53,14 @@ steps:
     title: Multi-column indexes, and why order matters
     body: |
       ```sql
-      CREATE INDEX payments_trip_paid_idx ON payments (trip_id, paid_at);
+      CREATE INDEX payments_order_paid_idx ON payments (order_id, paid_at);
       ```
 
-      This is sorted by `trip_id` first, and **within each trip** by `paid_at`, exactly like a phone book sorted by last name, then first name. So it helps:
+      This is sorted by `order_id` first, and **within each order** by `paid_at`, exactly like a phone book sorted by last name, then first name. So it helps:
 
-      - `WHERE trip_id = 5` ✓ (like finding all the "Smith"s)
-      - `WHERE trip_id = 5 AND paid_at >= '2026-02-01'` ✓ (Smiths named after "M")
-      - `WHERE trip_id = 5 ORDER BY paid_at` ✓ (already in order)
+      - `WHERE order_id = 174` ✓ (like finding all the "Smith"s)
+      - `WHERE order_id = 174 AND paid_at >= '2023-05-01'` ✓ (Smiths named after "M")
+      - `WHERE order_id = 174 ORDER BY paid_at` ✓ (already in order)
       - `WHERE paid_at >= '2026-02-01'` alone ✗, mostly (like finding every "John" in a phone book sorted by last name)
 
       **Rule of thumb:** put columns you test with **`=`** first, and the one you use for **ranges or sorting** last.
@@ -76,14 +68,14 @@ steps:
   - kind: try
     title: Your turn to create an index
     body: |
-      Reports often ask for one trip's payments in time order. Create an index named **payments_trip_paid_idx** on `payments`, on `trip_id` then `paid_at`. The query below lists the table's indexes so you can check.
+      Support pages often ask for one order's payments in time order. Create an index named **payments_order_paid_idx** on `payments`, on `order_id` then `paid_at`. The query below lists the table's indexes so you can check.
     sql: |
       SELECT indexname, indexdef
       FROM pg_indexes
       WHERE tablename = 'payments'
       ORDER BY indexname;
     expect: |
-      CREATE INDEX payments_trip_paid_idx ON payments (trip_id, paid_at);
+      CREATE INDEX payments_order_paid_idx ON payments (order_id, paid_at);
 
       SELECT indexname, indexdef
       FROM pg_indexes
@@ -96,58 +88,57 @@ steps:
       **Unique index**: also enforces uniqueness. (A UNIQUE constraint is really a unique index underneath.)
 
       ```sql
-      CREATE UNIQUE INDEX travelers_email_idx ON travelers (email);
+      CREATE UNIQUE INDEX books_isbn_idx ON books (isbn);
       ```
 
       **Partial index**: indexes only rows matching a WHERE. Smaller and faster when you only ever search a slice:
 
       ```sql
-      CREATE INDEX jobs_pending_idx ON jobs (created_at) WHERE status = 'pending';
+      CREATE INDEX orders_pending_idx ON orders (ordered_at) WHERE status = 'pending';
       ```
 
-      A partial **unique** index is a neat trick: `CREATE UNIQUE INDEX ON trips (traveler_id) WHERE status = 'planned'` means "at most one *planned* trip per traveler".
+      A partial **unique** index is a neat trick: `CREATE UNIQUE INDEX ON orders (customer_id) WHERE status = 'pending'` would mean "at most one *pending* order per customer".
 
       **Expression index**: indexes the result of a calculation. The query must use the **same expression**:
 
       ```sql
-      CREATE INDEX travelers_lower_email_idx ON travelers (lower(email));
-      SELECT … WHERE lower(email) = 'amina@example.com';    -- can use it
-      SELECT … WHERE email = 'amina@example.com';           -- can't
+      CREATE INDEX customers_lower_city_idx ON customers (lower(city));
+      SELECT … WHERE lower(city) = 'tokyo';    -- can use it
+      SELECT … WHERE city = 'Tokyo';           -- can't
       ```
 
   - kind: try
     title: An expression index in use
     body: |
-      With only 6 travelers, PostgreSQL would rather just read the table. `SET enable_seqscan = off` discourages that **for this demo only** (never in real work), so you can see the plan use the expression index. Run it, then change the WHERE to `email = 'amina@example.com'` and see the index go unused.
+      Messy data has cities in random capitals, so searches use `lower(city)`. Run it: the plan uses the expression index (*Bitmap Index Scan on customers_lower_city_idx*). Then change the WHERE to `city = 'Tokyo'` and see the index go unused: back to a *Seq Scan* over all 5,020 customers.
     sql: |
-      SET enable_seqscan = off;
-      CREATE INDEX travelers_lower_email_idx ON travelers (lower(email));
+      CREATE INDEX customers_lower_city_idx ON customers (lower(city));
 
-      EXPLAIN SELECT full_name FROM travelers WHERE lower(email) = 'amina@example.com';
+      EXPLAIN SELECT first_name FROM customers WHERE lower(city) = 'tokyo';
 
   - kind: explain
     title: Index your foreign keys
     body: |
       Module 13 warned: PostgreSQL indexes primary keys automatically, but **not foreign key columns**. Joins and parent deletes then scan the whole child table.
 
-      Wanderly's foreign keys (`trips.traveler_id`, `trip_stops.trip_id`, `payments.trip_id`…) have no indexes yet. On real data, you'd add one for each FK you join on or delete through.
+      Inkwell's foreign keys (`orders.customer_id`, `order_items.book_id`, `payments.order_id`…) have no indexes yet, on purpose. On real data like this, you'd add one for each FK you join on or delete through.
 
   - kind: try
     title: Your turn to index a foreign key
     body: |
-      Add an index named **trips_traveler_id_idx** on the foreign key `trips.traveler_id`, and a **partial** index named **trips_planned_start_idx** on `trips (start_date)` covering only rows where `status = 'planned'`.
+      Add an index named **orders_customer_id_idx** on the foreign key `orders.customer_id`, and a **partial** index named **orders_pending_idx** on `orders (ordered_at)` covering only rows where `status = 'pending'`.
     sql: |
       SELECT indexname, indexdef
       FROM pg_indexes
-      WHERE tablename = 'trips'
+      WHERE tablename = 'orders'
       ORDER BY indexname;
     expect: |
-      CREATE INDEX trips_traveler_id_idx ON trips (traveler_id);
-      CREATE INDEX trips_planned_start_idx ON trips (start_date) WHERE status = 'planned';
+      CREATE INDEX orders_customer_id_idx ON orders (customer_id);
+      CREATE INDEX orders_pending_idx ON orders (ordered_at) WHERE status = 'pending';
 
       SELECT indexname, indexdef
       FROM pg_indexes
-      WHERE tablename = 'trips'
+      WHERE tablename = 'orders'
       ORDER BY indexname;
 
   - kind: explain
@@ -156,8 +147,8 @@ steps:
       A B-tree indexes **whole values**. To search **inside** values (a key in a jsonb document, an item in an array), use a **GIN** index (Generalized Inverted Index). It's like a book index listing every word:
 
       ```sql
-      CREATE INDEX attractions_details_idx ON attractions USING gin (details);
-      CREATE INDEX guides_languages_idx    ON guides      USING gin (languages);
+      CREATE INDEX books_details_idx ON books USING gin (details);
+      CREATE INDEX books_tags_idx    ON books USING gin (tags);
       ```
 
       These speed up `@>`, `?`, `?|`, `?&` on jsonb (Module 28) and `@>`, `&&` on arrays (Module 29). GIN indexes are slower to update than B-trees, so again: only where you search.
@@ -168,7 +159,7 @@ steps:
       A plain `CREATE INDEX` **blocks all writes** to the table until it finishes. On a big, busy table, that can mean minutes of failed checkouts.
 
       ```sql
-      CREATE INDEX CONCURRENTLY bookings_traveler_idx ON bookings (traveler_id);
+      CREATE INDEX CONCURRENTLY order_items_book_id_idx ON order_items (book_id);
       ```
 
       `CONCURRENTLY` builds the index while inserts, updates and deletes keep working. The trade-offs:

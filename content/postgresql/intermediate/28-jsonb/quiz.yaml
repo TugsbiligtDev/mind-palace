@@ -13,9 +13,9 @@ questions:
     explanation: "`#>>` follows the path a → b and returns the value as text: 5."
 
   - type: mcq
-    prompt: "`details ->> 'duration_hours' > 2` gives odd results. What's wrong?"
+    prompt: "`details ->> 'edition' > '2'` gives odd results once some books reach a 10th edition. What's wrong?"
     options:
-      - "`->>` returns text, so it's compared as text. Cast it: `(details ->> 'duration_hours')::numeric > 2`."
+      - "`->>` returns text, so it's compared as text. Cast it: `(details ->> 'edition')::int > 2`."
       - You must use `->` instead
       - JSON can't hold numbers
       - Nothing
@@ -23,9 +23,9 @@ questions:
     explanation: "`->>` always returns text. Comparing text sorts character by character ('10' < '9'), so cast before numeric comparisons."
 
   - type: fill
-    prompt: 'Find attractions whose details **contain** `"indoor": true`.'
+    prompt: 'Find books whose details **contain** `"format": "ebook"`.'
     code: |
-      SELECT name FROM attractions WHERE details ____ '{"indoor": true}';
+      SELECT title FROM books WHERE details ____ '{"format": "ebook"}';
     answer: "@>"
     explanation: "`@>` checks whether the left document contains the right one, and it can use a GIN index."
 
@@ -33,13 +33,13 @@ questions:
     prompt: What does this return?
     code: |
       SELECT jsonb_agg(name ORDER BY name) AS names
-      FROM countries
-      WHERE continent = 'Europe';
+      FROM publishers
+      WHERE country = 'UK';
     options:
-      - "[\"France\", \"Italy\"]"
-      - "{France,Italy}"
-      - "France, Italy"
-      - "[\"Italy\", \"France\"]"
+      - "[\"Bloomsbury\", \"Penguin Classics\"]"
+      - "{Bloomsbury,\"Penguin Classics\"}"
+      - "Bloomsbury, Penguin Classics"
+      - "[\"Penguin Classics\", \"Bloomsbury\"]"
     answer: 0
     explanation: jsonb_agg collects the values into a JSON array, here sorted by name.
 

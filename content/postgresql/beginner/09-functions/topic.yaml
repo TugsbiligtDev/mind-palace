@@ -2,3 +2,4 @@ title: Built-in Functions & Expressions
 module: 9
 summary: Clean and combine text, round numbers, work with dates and intervals, and make decisions with CASE and NULLIF.
 minutes: 35
+dataset: practice

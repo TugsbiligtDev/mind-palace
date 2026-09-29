@@ -1,7 +1,7 @@
 pass: 3
 questions:
   - type: mcq
-    prompt: "A column is declared `email text UNIQUE`. Can two rows both have a NULL email?"
+    prompt: "A column is declared `isbn text UNIQUE`. Can two rows both have a NULL isbn?"
     options:
       - No, UNIQUE forbids any repeats
       - Yes, because two NULLs aren't considered equal
@@ -25,19 +25,19 @@ questions:
     explanation: "`NULL > 0` is unknown, and a CHECK only rejects rows where the condition is false. The NULL row goes in, so the count is 1."
 
   - type: fill
-    prompt: Make the trip's end date come on or after its start date.
+    prompt: Make a promotion's end date come on or after its start date.
     code: |
-      CREATE TABLE trip_plans (
-          start_date date NOT NULL,
-          end_date   date,
-          ____ (end_date >= start_date)
+      CREATE TABLE sale_plans (
+          starts_on date NOT NULL,
+          ends_on   date,
+          ____ (ends_on >= starts_on)
       );
     answer: CHECK
     accept: ["check"]
     explanation: A CHECK written on its own line can compare several columns.
 
   - type: mcq
-    prompt: "Which constraint does this error come from? `DETAIL: Key (email)=(amina@example.com) already exists.`"
+    prompt: "Which constraint does this error come from? `DETAIL: Key (email)=(emma.johnson@example.com) already exists.`"
     options:
       - NOT NULL
       - CHECK

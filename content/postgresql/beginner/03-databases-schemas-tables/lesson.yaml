@@ -5,21 +5,21 @@ steps:
       PostgreSQL organizes everything in nested containers, from biggest to smallest:
 
       1. **Cluster**: everything one PostgreSQL server manages. Your Mac runs one cluster.
-      2. **Database**: a separate collection of data, like `learn_sql` or `finance_db`. A connection opens exactly **one** database.
+      2. **Database**: a separate collection of data, like `practice` or `finance_db`. A connection opens exactly **one** database.
       3. **Schema**: a folder *inside* a database that groups tables.
       4. **Table**: a grid of rows and columns about one kind of thing.
 
-      So `countries` really lives at *cluster → learn_sql → public → countries*.
+      So `books` really lives at *cluster → practice → public → books*.
 
   - kind: explain
     title: The public schema
     body: |
-      Every new database starts with one schema called **`public`**. When you don't name a schema, PostgreSQL uses `public`, which is why you can just write `countries`.
+      Every new database starts with one schema called **`public`**. When you don't name a schema, PostgreSQL uses `public`, which is why you can just write `books`.
 
       You can also write the full name, **schema.table**:
 
       ```sql
-      SELECT * FROM public.countries;
+      SELECT * FROM public.books;
       ```
 
       Schemas are useful for grouping: a company might keep `sales.orders` and `hr.employees` in one database, or keep evidence apart from normal data, the way this course's cases do with an `evidence` schema.
@@ -29,8 +29,8 @@ steps:
     body: |
       Both queries read the same table. Run it, then add a line with `\dn` to list the schemas.
     sql: |
-      SELECT name FROM countries;
-      SELECT name FROM public.countries;
+      SELECT title FROM books;
+      SELECT title FROM public.books;
 
   - kind: try
     title: Make your own schema
@@ -133,10 +133,10 @@ steps:
     body: |
       Drop a table, then try to read it. Run it and read the error.
 
-      (This page starts from a fresh copy every run, so `reviews` comes back next time. A real database has no such safety net.)
+      (This page starts from a fresh copy every run, so `sales` comes back next time. A real database has no such safety net.)
     sql: |
-      DROP TABLE reviews;
-      SELECT * FROM reviews;
+      DROP TABLE sales;
+      SELECT * FROM sales;
     expect_error: true
 
   - kind: explain
@@ -144,22 +144,22 @@ steps:
     body: |
       Names of tables and columns are called **identifiers**. The style almost everyone uses in PostgreSQL:
 
-      - **lowercase with underscores** (*snake_case*): `trip_stops`, `entry_fee`, `signup_date`
-      - **consistent table names**: pick plural (`trips`, `cities`) or singular (`trip`, `city`) and stick to it. This course uses plural.
+      - **lowercase with underscores** (*snake_case*): `book_title`, `unit_price`, `sold_at`
+      - **consistent table names**: pick plural (`books`, `sales`) or singular (`book`, `sale`) and stick to it. This course uses plural.
       - **no spaces, no accents, no SQL keywords** like `order` or `user` as names
 
-      Why lowercase? PostgreSQL quietly **folds unquoted names to lowercase**. `SELECT * FROM Trips` and `SELECT * FROM TRIPS` both read the table `trips`.
+      Why lowercase? PostgreSQL quietly **folds unquoted names to lowercase**. `SELECT * FROM Books` and `SELECT * FROM BOOKS` both read the table `books`.
 
   - kind: explain
     title: "The trouble with \"CamelCase\""
     body: |
-      **Double quotes** make a name exact, capitals and all. Some tools create tables like `"TravelNotes"` with quotes.
+      **Double quotes** make a name exact, capitals and all. Some tools create tables like `"ReadingNotes"` with quotes.
 
       Once a name has capitals and was created in quotes, you must **quote it forever**:
 
       ```sql
-      SELECT * FROM "TravelNotes";   -- works
-      SELECT * FROM TravelNotes;     -- error: folds to travelnotes
+      SELECT * FROM "ReadingNotes";   -- works
+      SELECT * FROM ReadingNotes;     -- error: folds to readingnotes
       ```
 
       Every query, by every person, for the life of the table. Avoid it: use lowercase snake_case and never quote names.
@@ -173,12 +173,12 @@ steps:
 
       Then fix the SELECT by writing the name exactly as it was created, in double quotes.
     sql: |
-      CREATE TABLE "TravelNotes" (note text);
-      SELECT * FROM TravelNotes;
+      CREATE TABLE "ReadingNotes" (note text);
+      SELECT * FROM ReadingNotes;
     broken_starter: true
     expect: |
-      CREATE TABLE "TravelNotes" (note text);
-      SELECT * FROM "TravelNotes";
+      CREATE TABLE "ReadingNotes" (note text);
+      SELECT * FROM "ReadingNotes";
 
   - kind: explain
     title: Comments
@@ -189,11 +189,11 @@ steps:
       - `/* … */` wraps a comment that can span several lines.
 
       ```sql
-      /* Wanderly: who's in the system?
-         One row per traveler. */
-      SELECT full_name,   -- the traveler
-             home_city    -- where they live
-      FROM travelers;
+      /* Inkwell Books: who's in the system?
+         One row per customer. */
+      SELECT first_name,  -- the customer
+             city         -- where they live
+      FROM customers;
       ```
 
       Good comments explain **why** you did something, not what the code obviously says.
@@ -203,11 +203,11 @@ steps:
     body: |
       Run it. The comments change nothing about the result. Then add a comment of your own.
     sql: |
-      /* Wanderly: who's in the system?
-         One row per traveler. */
-      SELECT full_name,   -- the traveler
-             home_city    -- where they live
-      FROM travelers;
+      /* Inkwell Books: who's in the system?
+         One row per customer. */
+      SELECT first_name,  -- the customer
+             city         -- where they live
+      FROM customers;
 
   - kind: explain
     title: Save your work in .sql files
@@ -234,7 +234,7 @@ steps:
       cd ~/Documents/sql
       touch setup.sql
       open -e setup.sql
-      psql learn_sql
+      psql practice
       \i setup.sql
       \d suspects
       \q

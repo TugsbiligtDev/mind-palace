@@ -2,7 +2,7 @@ steps:
   - kind: explain
     title: Two changes that must happen together
     body: |
-      A traveler moves 100 of credit from one trip to another. That's two UPDATEs: take 100 off trip A, add 100 to trip B.
+      A customer gives 100 of gift-card credit to a friend. That's two UPDATEs: take 100 off account A, add 100 to account B.
 
       What if the power fails **between** them? The 100 vanishes. What if someone reads the totals halfway through? They see money missing.
 
@@ -39,14 +39,14 @@ steps:
   - kind: try
     title: Your undo button
     body: |
-      Inside the transaction, every attraction becomes free. The first SELECT shows it. Then ROLLBACK, and the second SELECT shows the fees are back.
+      Inside the transaction, all 300 books become free. The first SELECT shows it. Then ROLLBACK, and the second SELECT shows the prices are back.
     sql: |
       BEGIN;
-      UPDATE attractions SET entry_fee = 0;
-      SELECT count(*) AS free_inside FROM attractions WHERE entry_fee = 0;
+      UPDATE books SET price = 0;
+      SELECT count(*) AS free_inside FROM books WHERE price = 0;
       ROLLBACK;
 
-      SELECT count(*) AS free_after FROM attractions WHERE entry_fee = 0;
+      SELECT count(*) AS free_after FROM books WHERE price = 0;
 
   - kind: try
     title: Your turn to move money safely
@@ -86,13 +86,13 @@ steps:
     body: |
       Run these one at a time in psql. After the division by zero, even `SELECT 1;` is refused, until ROLLBACK. Watch the prompt: `=*#` means you're in a transaction, and `=!#` means it has failed.
     commands: |
-      psql learn_sql
+      psql bookstore
       BEGIN;
-      UPDATE trips SET status = 'cancelled' WHERE trip_id = 6;
+      UPDATE orders SET status = 'cancelled' WHERE order_id = 28;
       SELECT 1 / 0;
       SELECT 1;
       ROLLBACK;
-      SELECT status FROM trips WHERE trip_id = 6;
+      SELECT status FROM orders WHERE order_id = 28;
       \q
 
   - kind: explain
@@ -114,23 +114,27 @@ steps:
   - kind: try
     title: Your turn with a savepoint
     body: |
-      Inside one transaction: add the country **Chile** (South America), set a savepoint called **before_mistake**, run the bad UPDATE, roll back **to the savepoint**, then commit. The final count of South American countries should be 2 (Peru and Chile), and Asia should still have 2.
+      Inside one transaction: add the genre **Graphic Novel** (it gets `genre_id` 10), set a savepoint called **before_mistake**, run the bad UPDATE (it forgot its WHERE and moves **every** book into the new genre), roll back **to the savepoint**, then commit. In the final count, Graphic Novel should exist with 0 books, and every other genre should keep its books.
     sql: |
       BEGIN;
-      INSERT INTO countries (name, continent) VALUES ('Chile', 'South America');
-      UPDATE countries SET continent = 'South America';
+      INSERT INTO genres (name) VALUES ('Graphic Novel');
+      UPDATE books SET genre_id = 10;
       COMMIT;
 
-      SELECT continent, count(*) FROM countries GROUP BY continent ORDER BY continent;
+      SELECT g.name, count(b.book_id) AS books
+      FROM genres g LEFT JOIN books b ON b.genre_id = g.genre_id
+      GROUP BY g.name ORDER BY g.name;
     expect: |
       BEGIN;
-      INSERT INTO countries (name, continent) VALUES ('Chile', 'South America');
+      INSERT INTO genres (name) VALUES ('Graphic Novel');
       SAVEPOINT before_mistake;
-      UPDATE countries SET continent = 'South America';
+      UPDATE books SET genre_id = 10;
       ROLLBACK TO SAVEPOINT before_mistake;
       COMMIT;
 
-      SELECT continent, count(*) FROM countries GROUP BY continent ORDER BY continent;
+      SELECT g.name, count(b.book_id) AS books
+      FROM genres g LEFT JOIN books b ON b.genre_id = g.genre_id
+      GROUP BY g.name ORDER BY g.name;
     ordered: true
 
   - kind: explain

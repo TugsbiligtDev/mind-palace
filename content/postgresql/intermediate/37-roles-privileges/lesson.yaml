@@ -34,26 +34,26 @@ steps:
 
       | Level | Privileges | Example |
       |---|---|---|
-      | Database | `CONNECT`, `CREATE` | `GRANT CONNECT ON DATABASE learn_sql TO readonly;` |
+      | Database | `CONNECT`, `CREATE` | `GRANT CONNECT ON DATABASE bookstore TO readonly;` |
       | Schema | `USAGE` (may look inside), `CREATE` (may add objects) | `GRANT USAGE ON SCHEMA public TO readonly;` |
-      | Table | `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`… | `GRANT SELECT ON trips TO readonly;` |
-      | Column | `SELECT (col, …)`, `UPDATE (col, …)` | `GRANT SELECT (full_name) ON travelers TO support;` |
+      | Table | `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`… | `GRANT SELECT ON orders TO readonly;` |
+      | Column | `SELECT (col, …)`, `UPDATE (col, …)` | `GRANT SELECT (first_name, last_name) ON customers TO support;` |
 
-      Shortcuts: `GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly;` and `REVOKE INSERT ON trips FROM app;`.
+      Shortcuts: `GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly;` and `REVOKE INSERT ON orders FROM app;`.
 
       The **owner** of a table (whoever created it) always has full rights on it.
 
   - kind: try
     title: Allowed here, denied there
     body: |
-      `SET ROLE` lets a superuser act as another role, which is perfect for testing access. The reader may see countries but nothing else. Run it: the first query works, the second is denied.
+      `SET ROLE` lets a superuser act as another role, which is perfect for testing access. The reader may see genres but nothing else. Run it: the first query works, the second is denied.
     sql: |
       CREATE ROLE reader NOLOGIN;
-      GRANT SELECT ON countries TO reader;
+      GRANT SELECT ON genres TO reader;
 
       SET ROLE reader;
-      SELECT name FROM countries;
-      SELECT trip_name FROM trips;
+      SELECT name FROM genres;
+      SELECT order_id FROM orders;
     expect_error: true
 
   - kind: explain
@@ -115,9 +115,9 @@ steps:
   - kind: explain
     title: Column-level access and views
     body: |
-      The support team needs travelers' names and home cities, but **not** their emails. Two ways:
+      The support team needs customers' names and cities, but **not** their emails. Two ways:
 
-      - **Column privileges**: `GRANT SELECT (full_name, home_city) ON travelers TO support;`. Selecting any other column (or `*`) is denied.
+      - **Column privileges**: `GRANT SELECT (first_name, last_name, city) ON customers TO support;`. Selecting any other column (or `*`) is denied.
       - **A view** (Module 34) showing only the allowed columns or rows, with `GRANT SELECT` on the view instead of the table.
 
       For hiding **rows** per user (each customer sees only their own), PostgreSQL has **Row-Level Security**, covered in Module 45.
@@ -128,11 +128,11 @@ steps:
       Run it: the allowed columns come back, then the email query is denied.
     sql: |
       CREATE ROLE support NOLOGIN;
-      GRANT SELECT (full_name, home_city) ON travelers TO support;
+      GRANT SELECT (first_name, last_name, city) ON customers TO support;
 
       SET ROLE support;
-      SELECT full_name, home_city FROM travelers;
-      SELECT email FROM travelers;
+      SELECT first_name, last_name, city FROM customers LIMIT 5;
+      SELECT email FROM customers;
     expect_error: true
 
   - kind: explain
@@ -154,15 +154,15 @@ steps:
     body: |
       Create a read-only login role, then connect **as** it in a new psql session and test what it can and can't do. `-U` picks the user. The last command connects back as yourself to clean up.
     commands: |
-      psql learn_sql
+      psql bookstore
       CREATE ROLE reporter LOGIN PASSWORD 'change-me';
       GRANT SELECT ON ALL TABLES IN SCHEMA public TO reporter;
       \q
-      psql -U reporter -d learn_sql
-      SELECT count(*) FROM trips;
-      DELETE FROM trips;
+      psql -U reporter -d bookstore
+      SELECT count(*) FROM orders;
+      DELETE FROM orders;
       \q
-      psql learn_sql -c "DROP OWNED BY reporter; DROP ROLE reporter;"
+      psql bookstore -c "DROP OWNED BY reporter; DROP ROLE reporter;"
 
   - kind: why
     body: |

@@ -25,36 +25,36 @@ questions:
     explanation: UNION ALL keeps every row, and it's faster because it doesn't search for duplicates.
 
   - type: predict
-    prompt: The continents are Asia, Europe, Asia, South America, Europe. What does this return?
+    prompt: The six publishers are in the UK, USA, USA, USA, UK and Canada. What does this return?
     code: |
-      SELECT continent FROM countries
+      SELECT country FROM publishers
       EXCEPT
-      SELECT 'Asia'
-      ORDER BY continent;
+      SELECT 'USA'
+      ORDER BY country;
     options:
-      - "Europe\nSouth America"
-      - "Europe\nEurope\nSouth America"
-      - "Asia"
-      - "Asia\nEurope\nSouth America"
+      - "Canada\nUK"
+      - "Canada\nUK\nUK"
+      - "USA"
+      - "Canada\nUK\nUSA"
     answer: 0
-    explanation: EXCEPT removes Asia and also removes duplicates, leaving Europe and South America once each.
+    explanation: EXCEPT removes the USA and also removes duplicates, leaving Canada and the UK once each.
 
   - type: mcq
-    prompt: "Why does `SELECT name, population FROM cities UNION SELECT name FROM countries;` fail?"
+    prompt: "Why does `SELECT title, price FROM books UNION SELECT name FROM genres;` fail?"
     options:
       - UNION needs ORDER BY
       - The two queries have different numbers of columns
       - Table names must match
-      - countries has no name column
+      - genres has no name column
     answer: 1
     explanation: Both sides of a set operation must have the same number of columns, with compatible types in each position.
 
   - type: fill
-    prompt: List home cities that are **also** Wanderly destinations.
+    prompt: List the countries where Inkwell has customers **and** authors.
     code: |
-      SELECT home_city FROM travelers
+      SELECT country FROM customers
       ____
-      SELECT name FROM cities;
+      SELECT country FROM authors;
     answer: INTERSECT
     accept: ["intersect"]
-    explanation: "`INTERSECT` keeps rows that appear in both results. Here, that's Ulaanbaatar."
+    explanation: "`INTERSECT` keeps rows that appear in both results. Here, that's 10 countries, from Australia to the USA."

@@ -9,8 +9,8 @@ steps:
       An **upsert** (update + insert) does it in **one** statement, safely:
 
       ```sql
-      INSERT INTO countries (name, continent)
-      VALUES ('Japan', 'Asia')
+      INSERT INTO genres (name)
+      VALUES ('Fantasy')
       ON CONFLICT (name) DO NOTHING;
       ```
 
@@ -19,10 +19,10 @@ steps:
   - kind: try
     title: DO NOTHING
     body: |
-      Japan already exists, so the first insert is skipped quietly. RETURNING shows nothing for it. Chile is new, so it goes in. Run it.
+      Fantasy already exists, so the first insert is skipped quietly. RETURNING shows nothing for it. Graphic Novel is new, so it goes in. Run it.
     sql: |
-      INSERT INTO countries (name, continent)
-      VALUES ('Japan', 'Asia'), ('Chile', 'South America')
+      INSERT INTO genres (name)
+      VALUES ('Fantasy'), ('Graphic Novel')
       ON CONFLICT (name) DO NOTHING
       RETURNING *;
 
@@ -32,10 +32,10 @@ steps:
       To **update** the existing row instead:
 
       ```sql
-      INSERT INTO countries (name, continent)
-      VALUES ('Peru', 'Americas')
+      INSERT INTO publishers (name, country)
+      VALUES ('Bloomsbury', 'Ireland')
       ON CONFLICT (name) DO UPDATE
-        SET continent = EXCLUDED.continent;
+        SET country = EXCLUDED.country;
       ```
 
       **`EXCLUDED`** is the row you *tried* to insert. The table's own name refers to the row already there. So you can combine them:
@@ -45,47 +45,47 @@ steps:
         SET qty = stock.qty + EXCLUDED.qty     -- add to the existing count
       ```
 
-      You can also add a WHERE to update only sometimes: `… DO UPDATE SET price = EXCLUDED.price WHERE EXCLUDED.price <> products.price`.
+      You can also add a WHERE to update only sometimes: `… DO UPDATE SET price = EXCLUDED.price WHERE EXCLUDED.price <> books.price`.
 
   - kind: try
     title: Update on conflict
     body: |
-      Peru exists, so its continent is overwritten. Run it. Then change `'Peru'` to `'Bolivia'`: this time it's a plain insert.
+      Bloomsbury exists, so its country is overwritten. Run it. Then change `'Bloomsbury'` to `'Faber & Faber'`: this time it's a plain insert.
     sql: |
-      INSERT INTO countries (name, continent)
-      VALUES ('Peru', 'Americas')
-      ON CONFLICT (name) DO UPDATE SET continent = EXCLUDED.continent
+      INSERT INTO publishers (name, country)
+      VALUES ('Bloomsbury', 'Ireland')
+      ON CONFLICT (name) DO UPDATE SET country = EXCLUDED.country
       RETURNING *;
 
   - kind: try
     title: No unique rule, no upsert
     body: |
-      `continent` isn't unique, so PostgreSQL can't tell what a "conflict" would be. Run it and read the error.
+      A publisher's `country` isn't unique, so PostgreSQL can't tell what a "conflict" would be. Run it and read the error.
     sql: |
-      INSERT INTO countries (name, continent)
-      VALUES ('Egypt', 'Africa')
-      ON CONFLICT (continent) DO NOTHING;
+      INSERT INTO publishers (name, country)
+      VALUES ('Faber & Faber', 'UK')
+      ON CONFLICT (country) DO NOTHING;
     expect_error: true
 
   - kind: try
     title: Your turn to upsert stock
     body: |
-      The gift shop's stock table starts with 5 maps. A delivery brings **3 more maps** and **10 postcards** (a new item). Change the INSERT so an existing item's quantity is **increased** by the delivered amount, and new items are inserted.
+      Inkwell's gift-shelf stock table starts with 5 bookmarks. A delivery brings **3 more bookmarks** and **10 tote bags** (a new item). Change the INSERT so an existing item's quantity is **increased** by the delivered amount, and new items are inserted.
     sql: |
       CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL);
-      INSERT INTO stock VALUES ('map', 5);
+      INSERT INTO stock VALUES ('bookmark', 5);
 
       INSERT INTO stock (item, qty)
-      VALUES ('map', 3), ('postcard', 10);
+      VALUES ('bookmark', 3), ('tote bag', 10);
 
       SELECT * FROM stock ORDER BY item;
     broken_starter: true
     expect: |
       CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL);
-      INSERT INTO stock VALUES ('map', 5);
+      INSERT INTO stock VALUES ('bookmark', 5);
 
       INSERT INTO stock (item, qty)
-      VALUES ('map', 3), ('postcard', 10)
+      VALUES ('bookmark', 3), ('tote bag', 10)
       ON CONFLICT (item) DO UPDATE SET qty = stock.qty + EXCLUDED.qty;
 
       SELECT * FROM stock ORDER BY item;
@@ -96,12 +96,12 @@ steps:
       **`MERGE`** (SQL standard, PostgreSQL 15+) compares a **source** of rows with a **target** table and decides, per row, what to do:
 
       ```sql
-      MERGE INTO attractions a
-      USING new_fees f ON a.name = f.name
-      WHEN MATCHED AND f.fee IS NULL THEN DELETE
-      WHEN MATCHED THEN UPDATE SET entry_fee = f.fee
-      WHEN NOT MATCHED THEN INSERT (name, city_id, category, entry_fee)
-                            VALUES (f.name, f.city_id, f.category, f.fee);
+      MERGE INTO books b
+      USING new_prices n ON b.isbn = n.isbn
+      WHEN MATCHED AND n.price IS NULL THEN DELETE
+      WHEN MATCHED THEN UPDATE SET price = n.price
+      WHEN NOT MATCHED THEN INSERT (title, isbn, genre_id, price)
+                            VALUES (n.title, n.isbn, n.genre_id, n.price);
       ```
 
       Compared with ON CONFLICT:
@@ -113,22 +113,22 @@ steps:
       Since PostgreSQL 17, MERGE supports RETURNING, and `merge_action()` tells you what happened to each row.
 
   - kind: try
-    title: Sync a fee list
+    title: Sync a price list
     body: |
-      A new fee list arrives: Colosseum goes up, Louvre keeps its current fee, and *Tokyo Tower* doesn't exist yet. Run it and read the `merge_action()` column.
+      A publisher sends a new price list: *Dune* goes up, *Emma* keeps its current price, and *Piranesi* isn't in the shop yet. Run it and read the `merge_action()` column.
     sql: |
-      CREATE TABLE new_fees (name text, city_id integer, category text, fee numeric(6,2));
-      INSERT INTO new_fees VALUES
-        ('Colosseum', 6, 'landmark', 20.00),
-        ('Louvre Museum', 3, 'museum', 22.00),
-        ('Tokyo Tower', 1, 'landmark', 12.00);
+      CREATE TABLE new_prices (title text, isbn text, genre_id integer, price numeric(8,2));
+      INSERT INTO new_prices VALUES
+        ('Dune',     '978-0441172719', 2, 19.50),
+        ('Emma',     '978-0141439587', 1,  8.99),
+        ('Piranesi', '978-1635575637', 3, 17.00);
 
-      MERGE INTO attractions a
-      USING new_fees f ON a.name = f.name
-      WHEN MATCHED THEN UPDATE SET entry_fee = f.fee
-      WHEN NOT MATCHED THEN INSERT (name, city_id, category, entry_fee)
-                            VALUES (f.name, f.city_id, f.category, f.fee)
-      RETURNING merge_action(), a.name, a.entry_fee;
+      MERGE INTO books b
+      USING new_prices n ON b.isbn = n.isbn
+      WHEN MATCHED THEN UPDATE SET price = n.price
+      WHEN NOT MATCHED THEN INSERT (title, isbn, genre_id, price)
+                            VALUES (n.title, n.isbn, n.genre_id, n.price)
+      RETURNING merge_action(), b.title, b.price;
 
   - kind: explain
     title: COPY and \copy
@@ -136,8 +136,8 @@ steps:
       For thousands or millions of rows, INSERT is slow. **`COPY`** loads (or exports) a whole file in one fast stream:
 
       ```sql
-      COPY travelers (full_name, email, home_city)
-      FROM '/path/on/the/server/travelers.csv'
+      COPY customers (first_name, last_name, email)
+      FROM '/path/on/the/server/customers.csv'
       WITH (FORMAT csv, HEADER true);
       ```
 
@@ -146,7 +146,7 @@ steps:
       psql's **`\copy`** looks the same but reads and writes files **on your computer** and streams them to the server. It's what you'll use almost always:
 
       ```text
-      \copy travelers (full_name, email, home_city) FROM 'travelers.csv' WITH (FORMAT csv, HEADER true)
+      \copy customers (first_name, last_name, email) FROM 'customers.csv' WITH (FORMAT csv, HEADER true)
       \copy (SELECT * FROM payments) TO 'payments.csv' WITH (FORMAT csv, HEADER true)
       ```
 
@@ -158,8 +158,8 @@ steps:
       Make a tiny CSV file, load it into a new table, then export a query to a file. (`printf` just writes the file for you.)
     commands: |
       cd ~/Documents/sql
-      printf 'name,city\nAnu,Rome\nBat,Paris\n' > guests.csv
-      psql learn_sql
+      printf 'name,city\nNina,Seoul\nOmar,Cairo\n' > guests.csv
+      psql bookstore
       CREATE TABLE guests_import (name text, city text);
       \copy guests_import FROM 'guests.csv' WITH (FORMAT csv, HEADER true)
       SELECT * FROM guests_import;
@@ -182,6 +182,18 @@ steps:
       The professional pattern: **load into a staging table where every column is `text`** (it can't fail), then clean and convert with `INSERT … SELECT` into the real table. Bad rows can then be found with a query instead of stopping the load.
 
   - kind: try
+    title: A real staging table
+    body: |
+      Inkwell's `raw_customer_import` is exactly that: 310 customers exported from another system, every column plain `text`. Run it and look at the mess: shouting names, extra spaces, five phone formats, four date formats, empty strings next to NULLs. About 1 row in 6 is a customer Inkwell already has.
+
+      Module 26 cleans it up. For now, just notice that it loaded at all, because text accepts anything.
+    sql: |
+      SELECT *
+      FROM raw_customer_import
+      ORDER BY row_no
+      LIMIT 15;
+
+  - kind: try
     title: Your turn to convert a staging table
     body: |
       The raw rows are in `staging` as text. Dates are `DD/MM/YYYY`, and an **empty** price means unknown. Insert them into `clean` with real types, then run the SELECT.
@@ -189,7 +201,7 @@ steps:
       You'll need `to_date(sold_on, 'DD/MM/YYYY')` and `NULLIF(price, '')::numeric`.
     sql: |
       CREATE TABLE staging (item text, sold_on text, price text);
-      INSERT INTO staging VALUES ('map', '15/03/2026', '4.50'), ('pin', '02/04/2026', '');
+      INSERT INTO staging VALUES ('bookmark', '15/03/2026', '4.50'), ('tote bag', '02/04/2026', '');
 
       CREATE TABLE clean (item text, sold_on date, price numeric(8,2));
       INSERT INTO clean
@@ -199,7 +211,7 @@ steps:
     broken_starter: true
     expect: |
       CREATE TABLE staging (item text, sold_on text, price text);
-      INSERT INTO staging VALUES ('map', '15/03/2026', '4.50'), ('pin', '02/04/2026', '');
+      INSERT INTO staging VALUES ('bookmark', '15/03/2026', '4.50'), ('tote bag', '02/04/2026', '');
 
       CREATE TABLE clean (item text, sold_on date, price numeric(8,2));
       INSERT INTO clean

@@ -1,10 +1,10 @@
 pass: 3
 questions:
   - type: mcq
-    prompt: "In `SELECT DISTINCT ON (trip_id) … ORDER BY trip_id, paid_at DESC`, what decides which row is kept for each trip?"
+    prompt: "In `SELECT DISTINCT ON (order_id) … ORDER BY order_id, paid_at DESC`, what decides which row is kept for each order?"
     options:
       - The first row inserted
-      - The ORDER BY after trip_id, here the newest paid_at
+      - The ORDER BY after order_id, here the newest paid_at
       - A random row
       - The largest amount
     answer: 1
@@ -13,17 +13,17 @@ questions:
   - type: predict
     prompt: What does this return?
     code: |
-      SELECT DISTINCT ON (department) department, full_name
+      SELECT DISTINCT ON (job_title) job_title, full_name
       FROM employees
-      WHERE department = 'Sales'
-      ORDER BY department, hired_on;
+      WHERE job_title = 'Sales Associate'
+      ORDER BY job_title, hired_on;
     options:
-      - "Sales | Saruul Dash"
-      - "Sales | Anu Batbold"
-      - "Sales | Khongor Munkh"
-      - "Sales | Saruul Dash\nSales | Anu Batbold\nSales | Khongor Munkh"
+      - "Sales Associate | Tom Becker"
+      - "Sales Associate | Sara Lindqvist"
+      - "Sales Associate | Kenji Mori"
+      - "Sales Associate | Tom Becker\nSales Associate | Sara Lindqvist\nSales Associate | Kenji Mori"
     answer: 0
-    explanation: "It keeps the earliest-hired Sales employee. Saruul Dash was hired in 2020, before Anu (2021) and Khongor (2025)."
+    explanation: "It keeps the earliest-hired sales associate. Tom Becker was hired in 2022, before Sara (2023) and Kenji (2024)."
 
   - type: mcq
     prompt: What does LATERAL allow a subquery in FROM to do?
@@ -36,17 +36,17 @@ questions:
     explanation: A LATERAL subquery can refer to earlier FROM items, like a correlated subquery that returns a whole table.
 
   - type: fill
-    prompt: Keep trips even when the lateral subquery finds nothing for them.
+    prompt: Keep genres even when the lateral subquery finds nothing for them.
     code: |
-      SELECT t.trip_name, s.cost
-      FROM trips t
-      LEFT JOIN LATERAL (SELECT cost FROM trip_stops ts WHERE ts.trip_id = t.trip_id LIMIT 1) s ON ____;
+      SELECT g.name, b.title
+      FROM genres g
+      LEFT JOIN LATERAL (SELECT title FROM books bk WHERE bk.genre_id = g.genre_id LIMIT 1) b ON ____;
     answer: "true"
     accept: ["TRUE"]
     explanation: "`LEFT JOIN LATERAL … ON true` keeps every left row. The matching already happens inside the subquery."
 
   - type: mcq
-    prompt: You need the **3 most recent** reviews for each attraction. What's the most natural tool?
+    prompt: You need the **3 most recent** reviews for each book. What's the most natural tool?
     options:
       - DISTINCT ON
       - LATERAL with ORDER BY and LIMIT 3

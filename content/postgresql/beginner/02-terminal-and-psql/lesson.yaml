@@ -45,7 +45,7 @@ steps:
       - **Host**: *which computer* the server is on. `localhost` means "this same computer". A server elsewhere has an address like `db.example.com`.
       - **Port**: *which door* on that computer. A computer runs many services, and each listens on a numbered port. PostgreSQL's standard port is **5432**.
       - **User**: *who you are*. Yours is `tugsbiligt`.
-      - **Database**: *which database* to open, like `learn_sql`.
+      - **Database**: *which database* to open, like `practice`.
 
       A **connection** is an open line between one client and the server, logged in as one user, to **one database**. To use a different database you open a new connection.
 
@@ -55,19 +55,19 @@ steps:
       **psql** is PostgreSQL's command-line client. On your Mac, the short way to connect is:
 
       ```bash
-      psql learn_sql
+      psql practice
       ```
 
       That fills in the defaults: host `localhost`, port `5432`, and your Mac username as the user. The long way spells them out:
 
       ```bash
-      psql -h localhost -p 5432 -U tugsbiligt -d learn_sql
+      psql -h localhost -p 5432 -U tugsbiligt -d practice
       ```
 
       Once connected, the prompt shows the database you're in:
 
       ```text
-      learn_sql=#
+      practice=#
       ```
 
       `=#` means you're a superuser, allowed to do anything. A regular user sees `=>`.
@@ -75,9 +75,13 @@ steps:
   - kind: mac
     title: Connect for real
     body: |
-      In Terminal, connect to your course database. The prompt should change to `learn_sql=#`. Then type `\q` to quit and get back to zsh.
+      The `practice` database doesn't exist on your Mac until you create it. First download `01_practice_basics.sql` (the same file this page uses) from the course's *Take it to your Mac* page into your Downloads folder. The first two commands run it, which builds `practice` with its three tables.
+
+      Then connect. The prompt should change to `practice=#`. Type `\q` to quit and get back to zsh.
     commands: |
-      psql learn_sql
+      cd ~/Downloads
+      psql -d postgres -f 01_practice_basics.sql
+      psql practice
       \q
 
   - kind: try
@@ -96,9 +100,9 @@ steps:
     body: |
       `\c dbname` **c**onnects to a different database. `\dt` lists the **t**ables in the one you're connected to.
 
-      Add a line with `\dt` below `\c learn_sql` and run both. You should see the 9 Wanderly tables.
+      Add a line with `\dt` below `\c practice` and run both. You should see the 3 practice tables: books, customers and sales.
     sql: |
-      \c learn_sql
+      \c practice
     expect: |
       \dt
 
@@ -107,9 +111,9 @@ steps:
     body: |
       `\d table_name` shows a table's columns, each column's type, and its rules.
 
-      Run it, then change `trips` to `travelers`. Which columns does a traveler have?
+      Run it, then change `sales` to `customers`. Which columns does a customer have?
     sql: |
-      \d trips
+      \d sales
 
   - kind: try
     title: "\\dn schemas, \\du users"
@@ -141,10 +145,10 @@ steps:
     body: |
       Connect, turn on expanded display and timing, run a query, then quit.
     commands: |
-      psql learn_sql
+      psql practice
       \x
       \timing
-      SELECT * FROM trips LIMIT 2;
+      SELECT * FROM sales LIMIT 2;
       \q
 
   - kind: explain
@@ -167,8 +171,8 @@ steps:
       If you press Enter after SQL *without* a semicolon, psql assumes you're not done. The prompt changes:
 
       ```text
-      learn_sql=# SELECT * FROM trips
-      learn_sql-#
+      practice=# SELECT * FROM sales
+      practice-#
       ```
 
       `=#` became `-#`: *"I'm waiting for the rest."* Nothing is broken. Type `;` and press Enter, and the query runs.
@@ -181,12 +185,12 @@ steps:
       If psql says
 
       ```text
-      ERROR:  relation "trips" does not exist
+      ERROR:  relation "sales" does not exist
       ```
 
-      and you're *sure* the table exists, check the prompt. You're probably connected to the wrong database. `postgres=#` means you're in the default `postgres` database, not `learn_sql`.
+      and you're *sure* the table exists, check the prompt. You're probably connected to the wrong database. `postgres=#` means you're in the default `postgres` database, not `practice`.
 
-      Fix: `\c learn_sql`, then run the query again. The prompt always tells you where you are.
+      Fix: `\c practice`, then run the query again. The prompt always tells you where you are.
 
   - kind: why
     body: |
@@ -196,6 +200,6 @@ steps:
     body: |
       - Terminal runs **zsh**: `pwd` (where am I), `ls` (list), `cd` (move), `~` (home).
       - A connection needs a **host** (`localhost`), **port** (`5432`), **user** and **database**.
-      - `psql learn_sql` connects. The prompt `learn_sql=#` shows where you are.
+      - `psql practice` connects. The prompt `practice=#` shows where you are.
       - Meta-commands: `\l` databases, `\c` connect, `\dt` tables, `\d name` describe, `\dn` schemas, `\du` users, `\x` expanded, `\timing`, `\i file.sql`, `\?` help, `\q` quit.
       - A prompt of `-#` means psql is waiting for a `;`. "relation does not exist" often means the wrong database.

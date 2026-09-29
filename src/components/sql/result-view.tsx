@@ -1,5 +1,9 @@
 import type { Block, RunOutput } from "@/lib/sql/core";
 
+// Drawing tens of thousands of rows freezes the page (the Intermediate dataset has 39,000
+// orders), so only the first rows are shown. Grading always uses the full result.
+const SHOWN_ROWS = 200;
+
 function RowsTable({ block }: { block: Extract<Block, { kind: "rows" }> }) {
   return (
     <div>
@@ -16,7 +20,7 @@ function RowsTable({ block }: { block: Extract<Block, { kind: "rows" }> }) {
             </tr>
           </thead>
           <tbody>
-            {block.rows.map((r, i) => (
+            {block.rows.slice(0, SHOWN_ROWS).map((r, i) => (
               <tr key={i} className="border-b border-border/60 last:border-0">
                 {r.map((v, j) => (
                   <td key={j} className="px-3 py-1 whitespace-pre">
@@ -30,7 +34,8 @@ function RowsTable({ block }: { block: Extract<Block, { kind: "rows" }> }) {
       </div>
       {!block.title?.startsWith("Table ") && (
         <p className="mt-1 font-mono text-xs text-muted">
-          ({block.rows.length} row{block.rows.length === 1 ? "" : "s"})
+          ({block.rows.length} row{block.rows.length === 1 ? "" : "s"}
+          {block.rows.length > SHOWN_ROWS && `, showing the first ${SHOWN_ROWS}. Add LIMIT, WHERE or GROUP BY to see less`})
         </p>
       )}
     </div>

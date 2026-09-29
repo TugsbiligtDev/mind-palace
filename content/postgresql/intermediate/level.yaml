@@ -3,10 +3,11 @@ title: Intermediate
 season: 2
 season_title: The Night Ledger
 season_pitch: |
-  Wanderly's payments don't balance, and the timestamps can't agree on what day it is. Write
+  Inkwell's payments don't balance, and the timestamps can't agree on what day it is. Write
   complex queries you can prove are right, master time zones, JSON and transactions, make slow
   queries fast, and connect a real app safely.
 status: open
+dataset: bookstore_growth
 topics:
   - 18-subqueries
   - 19-ctes

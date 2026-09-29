@@ -17,10 +17,10 @@ steps:
   - kind: try
     title: Pick your columns
     body: |
-      Run this to see each city's name and population. Then add `country_id` as a third column.
+      Run this to see each book's title and price. Then add `genre` as a third column.
     sql: |
-      SELECT name, population
-      FROM cities;
+      SELECT title, price
+      FROM books;
 
   - kind: try
     title: "The star: every column"
@@ -29,7 +29,7 @@ steps:
 
       In real queries, prefer naming the columns you need. It's clearer, it sends less data, and it won't silently change when someone adds a column later.
     sql: |
-      SELECT * FROM attractions;
+      SELECT * FROM customers;
 
   - kind: explain
     title: WHERE keeps some rows
@@ -44,24 +44,24 @@ steps:
       | `<=` `>=` | less or equal, greater or equal |
 
       ```sql
-      SELECT trip_name, status
-      FROM trips
-      WHERE status = 'completed';
+      SELECT sale_id, payment_method
+      FROM sales
+      WHERE payment_method = 'card';
       ```
 
-      PostgreSQL checks the condition against **each row**. Rows where it's true are kept. Text and dates go in single quotes, and text comparisons are **exact**: `'Completed'` would not match `'completed'`.
+      PostgreSQL checks the condition against **each row**. Rows where it's true are kept. Text and dates go in single quotes, and text comparisons are **exact**: `'Card'` would not match `'card'`.
 
   - kind: try
     title: Your turn to filter
     body: |
-      Show the `name` and `population` of every city with **more than 2,000,000** people. (Write the number without commas: `2000000`.)
+      Show the `title` and `price` of every book that costs **more than 18**.
     sql: |
-      SELECT name, population
-      FROM cities;
+      SELECT title, price
+      FROM books;
     expect: |
-      SELECT name, population
-      FROM cities
-      WHERE population > 2000000;
+      SELECT title, price
+      FROM books
+      WHERE price > 18;
 
   - kind: explain
     title: AND, OR, NOT, and who goes first
@@ -75,82 +75,82 @@ steps:
       **`AND` is evaluated before `OR`**, the way × comes before + in maths. So
 
       ```sql
-      WHERE category = 'museum' OR category = 'landmark' AND entry_fee > 22
+      WHERE genre = 'Mystery' OR genre = 'Horror' AND price > 12
       ```
 
-      really means *museum* **or** *(landmark with a fee over 22)*. Probably not what you meant.
+      really means *mystery* **or** *(horror costing over 12)*. Probably not what you meant.
 
       **Rule: when you mix AND and OR, add parentheses.** They cost nothing and remove all doubt.
 
   - kind: try
     title: See precedence change the answer
     body: |
-      This query has no parentheses. Run it: you get 5 rows, including cheap museums.
+      This query has no parentheses. Run it: you get 6 rows, including four mysteries that all cost under 12.
 
-      Now wrap the two category checks in parentheses, `(category = 'museum' OR category = 'landmark') AND entry_fee > 22`, and run it again. Only 3 rows are left, every one over 22.
+      Now wrap the two genre checks in parentheses, `(genre = 'Mystery' OR genre = 'Horror') AND price > 12`, and run it again. Only 2 rows are left, both over 12.
     sql: |
-      SELECT name, category, entry_fee
-      FROM attractions
-      WHERE category = 'museum' OR category = 'landmark' AND entry_fee > 22;
+      SELECT title, genre, price
+      FROM books
+      WHERE genre = 'Mystery' OR genre = 'Horror' AND price > 12;
 
   - kind: try
     title: Your turn to combine
     body: |
-      Find the `name` and `entry_fee` of every **museum** that costs **less than 25**.
+      Find the `title` and `price` of every **Fantasy** book that costs **less than 13**.
     sql: |
-      SELECT name, entry_fee
-      FROM attractions;
+      SELECT title, price
+      FROM books;
     expect: |
-      SELECT name, entry_fee
-      FROM attractions
-      WHERE category = 'museum' AND entry_fee < 25;
+      SELECT title, price
+      FROM books
+      WHERE genre = 'Fantasy' AND price < 13;
 
   - kind: explain
     title: IN, BETWEEN, LIKE and ILIKE
     body: |
       Shortcuts for common filters:
 
-      - **`IN (…)`**: matches any value in a list. `country_id IN (1, 5)` is short for `country_id = 1 OR country_id = 5`.
-      - **`BETWEEN a AND b`**: a range, **including both ends**. `nights BETWEEN 3 AND 5` means 3, 4 or 5.
-      - **`LIKE`**: text pattern matching. `%` means "any number of characters" and `_` means "exactly one character". `name LIKE 'P%'` = names starting with capital P.
+      - **`IN (…)`**: matches any value in a list. `genre IN ('Classic', 'Horror')` is short for `genre = 'Classic' OR genre = 'Horror'`.
+      - **`BETWEEN a AND b`**: a range, **including both ends**. `stock BETWEEN 10 AND 12` means 10, 11 or 12.
+      - **`LIKE`**: text pattern matching. `%` means "any number of characters" and `_` means "exactly one character". `title LIKE 'P%'` = titles starting with capital P.
       - **`ILIKE`**: the same, but **ignores upper/lower case**. It's PostgreSQL's case-insensitive LIKE.
 
       Put `NOT` in front of any of them: `NOT IN`, `NOT BETWEEN`, `NOT LIKE`.
 
   - kind: try
-    title: A date range
+    title: A range of years
     body: |
-      Trips starting between March and June 2026, inclusive. Change the range and watch rows come and go.
+      Books first published between 1900 and 1950, inclusive. Change the range and watch rows come and go.
     sql: |
-      SELECT trip_name, start_date
-      FROM trips
-      WHERE start_date BETWEEN '2026-03-01' AND '2026-06-30';
+      SELECT title, published_year
+      FROM books
+      WHERE published_year BETWEEN 1900 AND 1950;
 
   - kind: try
     title: Your turn with IN
     body: |
-      Japan is `country_id` 1 and Italy is 5. Return the `name` of every city in **either** country, using `IN`.
+      Return the `title` of every book in **either** the Classic or the Horror genre, using `IN`.
     sql: |
-      SELECT name
-      FROM cities;
+      SELECT title
+      FROM books;
     expect: |
-      SELECT name
-      FROM cities
-      WHERE country_id IN (1, 5);
+      SELECT title
+      FROM books
+      WHERE genre IN ('Classic', 'Horror');
 
   - kind: try
     title: Your turn with ILIKE
     body: |
-      Find the `name` of every attraction with **temple** anywhere in its name, whatever the capitalization.
+      Find the `title` and `author_name` of every book whose author's name contains **king**, whatever the capitalization.
 
-      Try `LIKE '%temple%'` first. Why does it find nothing?
+      Try `LIKE '%king%'` first. Why does it find nothing?
     sql: |
-      SELECT name
-      FROM attractions;
+      SELECT title, author_name
+      FROM books;
     expect: |
-      SELECT name
-      FROM attractions
-      WHERE name ILIKE '%temple%';
+      SELECT title, author_name
+      FROM books
+      WHERE author_name ILIKE '%king%';
 
   - kind: explain
     title: ORDER BY sorts the result
@@ -158,26 +158,26 @@ steps:
       Without `ORDER BY`, PostgreSQL returns rows in whatever order is convenient, and that order can change between runs. When order matters, **say so**:
 
       ```sql
-      SELECT name, population
-      FROM cities
-      ORDER BY population DESC;
+      SELECT title, price
+      FROM books
+      ORDER BY price DESC;
       ```
 
       - `ASC` = ascending (smallest first, A→Z, oldest first). It's the default.
       - `DESC` = descending (largest first, Z→A, newest first).
-      - Add more columns as **tiebreakers**: `ORDER BY entry_fee, name` sorts by fee, and among equal fees by name. Each column can have its own direction.
+      - Add more columns as **tiebreakers**: `ORDER BY price, title` sorts by price, and among equal prices by title. Each column can have its own direction.
 
   - kind: try
     title: Your turn to sort
     body: |
-      List every attraction's `name` and `entry_fee`, **cheapest first**. Several attractions are free, so break ties **alphabetically by name**.
+      List every book's `title` and `price`, **cheapest first**. Some books cost the same, so break ties **alphabetically by title**. (One book has no price yet. Notice where it ends up; Module 7 explains why.)
     sql: |
-      SELECT name, entry_fee
-      FROM attractions;
+      SELECT title, price
+      FROM books;
     expect: |
-      SELECT name, entry_fee
-      FROM attractions
-      ORDER BY entry_fee, name;
+      SELECT title, price
+      FROM books
+      ORDER BY price, title;
     ordered: true
 
   - kind: explain
@@ -193,36 +193,36 @@ steps:
   - kind: try
     title: Your turn for a top 3
     body: |
-      Return the `name` and `entry_fee` of the **3 most expensive** attractions, most expensive first.
+      Return the `title` and `stock` of the **3 books with the most copies in stock**, most copies first.
     sql: |
-      SELECT name, entry_fee
-      FROM attractions;
+      SELECT title, stock
+      FROM books;
     expect: |
-      SELECT name, entry_fee
-      FROM attractions
-      ORDER BY entry_fee DESC
+      SELECT title, stock
+      FROM books
+      ORDER BY stock DESC
       LIMIT 3;
     ordered: true
 
   - kind: explain
     title: DISTINCT removes duplicates
     body: |
-      `SELECT continent FROM countries;` returns 5 rows: *Asia, Europe, Asia, South America, Europe*. Some repeat.
+      `SELECT country FROM customers;` returns 20 rows: *USA, UK, UK, Spain, Mexico…*. Some repeat.
 
-      `SELECT DISTINCT continent FROM countries;` returns each **different** value once.
+      `SELECT DISTINCT country FROM customers;` returns each **different** value once. Look closely and you'll see both `USA` and `usa`: DISTINCT compares values exactly, capitals included. (Module 9 shows how to clean that up.)
 
-      DISTINCT applies to the **whole result row**, not just the first column. `SELECT DISTINCT city_id, category …` removes rows only where *both* the city *and* the category repeat.
+      DISTINCT applies to the **whole result row**, not just the first column. `SELECT DISTINCT genre, author_name …` removes rows only where *both* the genre *and* the author repeat.
 
   - kind: try
     title: Your turn with DISTINCT
     body: |
-      Which **categories** of attraction does Wanderly list? Return each category once.
+      Which **genres** does Inkwell stock? Return each genre once.
     sql: |
-      SELECT category
-      FROM attractions;
+      SELECT genre
+      FROM books;
     expect: |
-      SELECT DISTINCT category
-      FROM attractions;
+      SELECT DISTINCT genre
+      FROM books;
 
   - kind: explain
     title: Aliases and calculated columns
@@ -230,27 +230,27 @@ steps:
       A column in SELECT can be a **calculation**, and **`AS`** gives any result column a new label:
 
       ```sql
-      SELECT name AS attraction,
-             entry_fee * 2 AS fee_for_two
-      FROM attractions;
+      SELECT title AS book,
+             price * 2 AS price_for_two
+      FROM books;
       ```
 
       - `+` `-` `*` `/` work as in maths. (Between two values `*` means multiply; right after SELECT it means "all columns".)
       - The calculation exists **only in the result**. The stored data doesn't change.
       - **Whole-number division drops the remainder**: `7 / 2` is `3`. If either side has decimals (`7.0 / 2`), you get `3.5`.
-      - `AS` is technically optional, which is why a **missing comma** silently turns the next column name into a label: `SELECT name continent` returns *one* column labeled continent. Always write `AS`.
-      - Need spaces or capitals in a label? Use double quotes: `AS "Entry Fee"`.
+      - `AS` is technically optional, which is why a **missing comma** silently turns the next column name into a label: `SELECT title price` returns *one* column labeled price. Always write `AS`.
+      - Need spaces or capitals in a label? Use double quotes: `AS "Unit Price"`.
 
   - kind: try
     title: Your turn to calculate
     body: |
-      Show each attraction's `name` and its entry fee in **cents** (the fee times 100), labeled **fee_cents**.
+      Show each book's `title` and its price in **cents** (the price times 100), labeled **price_cents**.
     sql: |
-      SELECT name, entry_fee
-      FROM attractions;
+      SELECT title, price
+      FROM books;
     expect: |
-      SELECT name, entry_fee * 100 AS fee_cents
-      FROM attractions;
+      SELECT title, price * 100 AS price_cents
+      FROM books;
 
   - kind: explain
     title: The order a query really runs in
@@ -274,17 +274,17 @@ steps:
   - kind: try
     title: Where aliases work
     body: |
-      This sorts by the alias `fee_cents`, and it works. Run it.
+      This sorts by the alias `price_cents`, and it works. Run it.
 
-      Now add `WHERE fee_cents > 2000` after FROM and run again. The error, *column "fee_cents" does not exist*, is WHERE running before SELECT. Fix it by writing the calculation itself: `WHERE entry_fee * 100 > 2000`.
+      Now add `WHERE price_cents > 2000` after FROM and run again. The error, *column "price_cents" does not exist*, is WHERE running before SELECT. Fix it by writing the calculation itself: `WHERE price * 100 > 2000`.
     sql: |
-      SELECT name, entry_fee * 100 AS fee_cents
-      FROM attractions
-      ORDER BY fee_cents DESC;
+      SELECT title, price * 100 AS price_cents
+      FROM books
+      ORDER BY price_cents DESC;
 
   - kind: why
     body: |
-      Choosing columns, filtering rows, sorting and taking the top few is most of what everyday SQL *is*. "The 10 most expensive…", "every completed trip since March…", "which categories exist…": you can answer all of them now.
+      Choosing columns, filtering rows, sorting and taking the top few is most of what everyday SQL *is*. "The 10 most expensive…", "every card payment since March…", "which categories exist…": you can answer all of them now.
 
   - kind: recap
     body: |

@@ -13,24 +13,24 @@ steps:
     title: UPDATE … SET … WHERE
     body: |
       ```sql
-      UPDATE trips
-      SET status = 'cancelled'
-      WHERE trip_id = 6;
+      UPDATE sales
+      SET payment_method = 'card'
+      WHERE sale_id = 7;
       ```
 
-      - **`SET`** gives the new values. Change several columns at once with commas: `SET status = 'completed', end_date = '2026-09-03'`.
+      - **`SET`** gives the new values. Change several columns at once with commas: `SET price = 9.99, stock = 10`.
       - **`WHERE`** picks **which rows** to change, exactly like in SELECT.
-      - A new value can use the old one: `SET nights = nights + 1` adds a night to every matching row.
+      - A new value can use the old one: `SET stock = stock + 1` adds one copy to every matching row.
 
   - kind: try
-    title: Cancel one trip
+    title: Fix one sale
     body: |
-      Run it. RETURNING shows the changed row with its **new** values. One row back means one row changed.
+      Sale 7 was recorded as a bank transfer, but Lucas actually paid by card. Run it. RETURNING shows the changed row with its **new** values. One row back means one row changed.
     sql: |
-      UPDATE trips
-      SET status = 'cancelled'
-      WHERE trip_id = 6
-      RETURNING trip_id, trip_name, status;
+      UPDATE sales
+      SET payment_method = 'card'
+      WHERE sale_id = 7
+      RETURNING sale_id, book_title, payment_method;
 
   - kind: explain
     title: The forgotten WHERE
@@ -40,52 +40,52 @@ steps:
       Habits that prevent it:
 
       1. **Write the WHERE first**, then go back and fill in the SET.
-      2. **Run it as a SELECT first**: `SELECT * FROM trips WHERE trip_id = 6;` shows exactly which rows you're about to touch.
-      3. **Check the count.** psql answers `UPDATE 1`. If you expected 1 and see `UPDATE 7`, something is wrong.
+      2. **Run it as a SELECT first**: `SELECT * FROM sales WHERE sale_id = 7;` shows exactly which rows you're about to touch.
+      3. **Check the count.** psql answers `UPDATE 1`. If you expected 1 and see `UPDATE 30`, something is wrong.
 
   - kind: try
     title: Watch the disaster (safely)
     body: |
-      No WHERE. Run it and look at the SELECT underneath: **every** attraction is now free. On your Mac, that would be real.
+      No WHERE. Run it and look at the SELECT underneath: **every** book is now free. On your Mac, that would be real.
     sql: |
-      UPDATE attractions SET entry_fee = 0;
-      SELECT name, entry_fee FROM attractions;
+      UPDATE books SET price = 0;
+      SELECT title, price FROM books;
 
   - kind: try
     title: Your turn to update
     body: |
-      The Colosseum raised its fee. The starter is the "SELECT first" check. Turn it into an UPDATE that sets its `entry_fee` to **20.00**, changing **only that row**, and returns its `name` and `entry_fee`.
+      The publisher raised the price of *Dune*. The starter is the "SELECT first" check. Turn it into an UPDATE that sets its `price` to **19.50**, changing **only that row**, and returns its `title` and `price`.
     sql: |
-      SELECT name, entry_fee
-      FROM attractions
-      WHERE name = 'Colosseum';
+      SELECT title, price
+      FROM books
+      WHERE title = 'Dune';
     expect: |
-      UPDATE attractions
-      SET entry_fee = 20.00
-      WHERE name = 'Colosseum'
-      RETURNING name, entry_fee;
+      UPDATE books
+      SET price = 19.50
+      WHERE title = 'Dune'
+      RETURNING title, price;
 
   - kind: try
     title: Your turn with two columns
     body: |
-      Erik's *Weekend in Paris* (trip 6) is over. In one UPDATE, set its `status` to **completed** and its `end_date` to **2026-09-03**. Return `trip_name`, `status` and `end_date`.
+      *Foundation* (book 8) is sold out, and a delivery of new copies has arrived. In one UPDATE, set its `stock` to **10** and its `price` to **9.99**. Return `title`, `stock` and `price`.
     sql: |
-      UPDATE trips
-      SET status = 'completed'
-      WHERE trip_id = 6
-      RETURNING trip_name, status, end_date;
+      UPDATE books
+      SET stock = 10
+      WHERE book_id = 8
+      RETURNING title, stock, price;
     expect: |
-      UPDATE trips
-      SET status = 'completed', end_date = '2026-09-03'
-      WHERE trip_id = 6
-      RETURNING trip_name, status, end_date;
+      UPDATE books
+      SET stock = 10, price = 9.99
+      WHERE book_id = 8
+      RETURNING title, stock, price;
 
   - kind: explain
     title: DELETE … WHERE
     body: |
       ```sql
-      DELETE FROM reviews
-      WHERE rating < 4;
+      DELETE FROM sales
+      WHERE quantity > 2;
       ```
 
       Removes every row matching the WHERE. **Without WHERE it removes all of them**, with the same danger and the same habits: write the WHERE first, SELECT first, check the count.
@@ -95,27 +95,30 @@ steps:
   - kind: try
     title: A delete with a receipt
     body: |
-      Delete the reviews that aren't 5 stars. RETURNING lists what's gone. Then change the SQL to `SELECT` first, the way you would on your Mac.
+      Delete the sales paid by PayPal. RETURNING lists what's gone. Then change the SQL to `SELECT` first, the way you would on your Mac.
     sql: |
-      DELETE FROM reviews
-      WHERE rating < 5
-      RETURNING review_id, rating;
+      DELETE FROM sales
+      WHERE payment_method = 'paypal'
+      RETURNING sale_id, book_title, payment_method;
 
   - kind: try
-    title: Protected by a foreign key
+    title: Left behind
     body: |
-      Some deletes are refused. Amina (traveler 1) has trips, and each trip points at traveler 1. Deleting that row would leave those trips pointing at nobody.
+      Emma (customer 1) has 5 sales, each one holding Emma's email. Delete Emma, and those sales now belong to a customer who doesn't exist. Run it: the delete works, and the sales are left behind, pointing at nobody.
 
-      Run it and read the error: it names the rule and the table that depends on traveler 1. (Module 13 explains these *foreign keys* properly.)
+      The `practice` tables have no rule to stop this. In Module 13 you'll meet *foreign keys*, which refuse deletes like this one.
     sql: |
-      DELETE FROM travelers WHERE traveler_id = 1;
-    expect_error: true
+      DELETE FROM customers WHERE customer_id = 1;
+
+      SELECT sale_id, customer_email, book_title
+      FROM sales
+      WHERE customer_email = 'emma.johnson@example.com';
 
   - kind: explain
     title: TRUNCATE empties a table
     body: |
       ```sql
-      TRUNCATE reviews;
+      TRUNCATE sales;
       ```
 
       **`TRUNCATE`** removes **every row** in one fast operation. It takes no WHERE: it's for "throw everything in this table away", like clearing out test data.
@@ -129,12 +132,12 @@ steps:
       Either way, the table itself still exists, just empty. `DROP TABLE` is what removes the table.
 
   - kind: try
-    title: Empty the reviews
+    title: Empty the sales log
     body: |
       Run it. The count afterwards is 0, but the table is still there.
     sql: |
-      TRUNCATE reviews;
-      SELECT count(*) FROM reviews;
+      TRUNCATE sales;
+      SELECT count(*) FROM sales;
 
   - kind: info
     title: "🔹 DELETE … USING"
@@ -142,11 +145,11 @@ steps:
       Sometimes the rows to delete are decided by **another table**. PostgreSQL's `USING` lets you look at it:
 
       ```sql
-      -- Delete reviews written by travelers from Ulaanbaatar
-      DELETE FROM reviews
-      USING travelers
-      WHERE reviews.traveler_id = travelers.traveler_id
-        AND travelers.home_city = 'Ulaanbaatar';
+      -- Delete sales made to customers from London
+      DELETE FROM sales
+      USING customers
+      WHERE sales.customer_email = customers.email
+        AND customers.city = 'London';
       ```
 
       It will make more sense after joins in Module 14. For now, just recognize it.
@@ -157,10 +160,10 @@ steps:
 
   - kind: recap
     body: |
-      - `UPDATE t SET col = value, … WHERE …`. A value can use the old one: `nights + 1`.
+      - `UPDATE t SET col = value, … WHERE …`. A value can use the old one: `stock + 1`.
       - `DELETE FROM t WHERE …`.
       - **No WHERE = every row.** Write the WHERE first, SELECT first, check the count.
       - `RETURNING` shows the changed or removed rows.
-      - Foreign keys refuse deletes that would leave orphans.
+      - Without foreign keys, a delete can leave rows pointing at nothing. Module 13's foreign keys refuse such deletes.
       - `TRUNCATE t` empties the whole table fast. The table stays.
       - 🔹 `DELETE … USING other_table` deletes based on another table.

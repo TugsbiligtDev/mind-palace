@@ -1,31 +1,31 @@
 pass: 3
 questions:
   - type: predict
-    prompt: There are 6 travelers, and one has no email. What does this return?
+    prompt: There are 20 customers, and 2 of them have no email. What does this return?
     code: |
-      SELECT count(email) AS with_email FROM travelers;
+      SELECT count(email) AS with_email FROM customers;
     options:
-      - "6"
-      - "5"
-      - "1"
+      - "20"
+      - "18"
+      - "2"
       - "NULL"
     answer: 1
-    explanation: "`count(column)` skips NULLs, so the traveler with no email isn't counted. `count(*)` would give 6."
+    explanation: "`count(column)` skips NULLs, so the 2 customers with no email aren't counted. `count(*)` would give 20."
 
   - type: predict
-    prompt: What does this return?
+    prompt: The 30 books cover 7 genres, and one book has no genre (NULL). What does this return?
     code: |
-      SELECT count(DISTINCT continent) AS continents FROM countries;
+      SELECT count(DISTINCT genre) AS genres FROM books;
     options:
-      - "5"
-      - "3"
-      - "2"
-      - "4"
-    answer: 1
-    explanation: The five countries are in Asia, Europe, Asia, South America and Europe. That's 3 different continents.
+      - "30"
+      - "8"
+      - "7"
+      - "NULL"
+    answer: 2
+    explanation: "`count(DISTINCT genre)` counts the different values that exist. The NULL isn't a value, so it isn't counted: 7."
 
   - type: mcq
-    prompt: You want only the categories that have **more than 2** attractions. Which clause filters on `count(*)`?
+    prompt: You want only the genres that have **more than 2** books. Which clause filters on `count(*)`?
     options:
       - "WHERE count(*) > 2"
       - "HAVING count(*) > 2"
@@ -35,12 +35,12 @@ questions:
     explanation: HAVING filters groups after they've been aggregated. WHERE runs before grouping, when there are no counts yet.
 
   - type: fill
-    prompt: Count the attractions in each category.
+    prompt: Count the books in each genre.
     code: |
-      SELECT category, count(*) FROM attractions ____ category;
+      SELECT genre, count(*) FROM books ____ genre;
     answer: GROUP BY
     accept: ["group by"]
-    explanation: "`GROUP BY category` puts rows with the same category in one bucket, and `count(*)` then counts each bucket."
+    explanation: "`GROUP BY genre` puts rows with the same genre in one bucket, and `count(*)` then counts each bucket."
 
   - type: mcq
     prompt: In what order does PostgreSQL *logically* process these clauses?

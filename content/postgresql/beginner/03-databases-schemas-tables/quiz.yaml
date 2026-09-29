@@ -44,9 +44,9 @@ questions:
   - type: mcq
     prompt: Which table name follows PostgreSQL conventions best?
     options:
-      - "`\"TripStops\"`"
-      - "`Trip Stops`"
-      - "`trip_stops`"
-      - "`TRIPSTOPS`"
+      - "`\"OrderItems\"`"
+      - "`Order Items`"
+      - "`order_items`"
+      - "`ORDERITEMS`"
     answer: 2
     explanation: Lowercase snake_case never needs quotes and reads clearly. Spaces aren't allowed without quotes, and quoted capitals must be quoted forever.

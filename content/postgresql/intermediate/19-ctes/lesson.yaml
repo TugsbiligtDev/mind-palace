@@ -5,29 +5,29 @@ steps:
       Derived tables (Module 18) work, but nesting them makes queries read inside-out. A **common table expression (CTE)** moves the subquery to the top and gives it a name:
 
       ```sql
-      WITH trip_totals AS (
-          SELECT trip_id, sum(cost) AS total
-          FROM trip_stops
-          GROUP BY trip_id
+      WITH order_totals AS (
+          SELECT order_id, sum(quantity * unit_price) AS total
+          FROM order_items
+          GROUP BY order_id
       )
-      SELECT round(avg(total), 2) AS avg_trip_cost
-      FROM trip_totals;
+      SELECT round(avg(total), 2) AS avg_order_value
+      FROM order_totals;
       ```
 
-      Now it reads **top to bottom**, like a recipe: *first make trip_totals, then average them*. Inside the query, `trip_totals` behaves like a table. It exists only while this one statement runs.
+      Now it reads **top to bottom**, like a recipe: *first make order_totals, then average them*. Inside the query, `order_totals` behaves like a table. It exists only while this one statement runs.
 
   - kind: try
     title: Your first CTE
     body: |
-      Run it. Then change the final SELECT to `SELECT * FROM trip_totals ORDER BY total DESC;` to look inside the step.
+      Run it. Then change the final SELECT to `SELECT * FROM order_totals ORDER BY total DESC LIMIT 10;` to look inside the step.
     sql: |
-      WITH trip_totals AS (
-          SELECT trip_id, sum(cost) AS total
-          FROM trip_stops
-          GROUP BY trip_id
+      WITH order_totals AS (
+          SELECT order_id, sum(quantity * unit_price) AS total
+          FROM order_items
+          GROUP BY order_id
       )
-      SELECT round(avg(total), 2) AS avg_trip_cost
-      FROM trip_totals;
+      SELECT round(avg(total), 2) AS avg_order_value
+      FROM order_totals;
 
   - kind: explain
     title: Chaining steps
@@ -36,14 +36,14 @@ steps:
 
       ```sql
       WITH paid AS (
-          SELECT trip_id, sum(amount) AS paid FROM payments GROUP BY trip_id
+          SELECT order_id, sum(amount) AS paid FROM payments GROUP BY order_id
       ),
-      cost AS (
-          SELECT trip_id, sum(cost) AS cost FROM trip_stops GROUP BY trip_id
+      bought AS (
+          SELECT order_id, sum(quantity * unit_price) AS bought FROM order_items GROUP BY order_id
       ),
       compared AS (
-          SELECT trip_id, paid, cost, paid - cost AS gap
-          FROM paid JOIN cost USING (trip_id)
+          SELECT order_id, paid, bought, paid - bought AS gap
+          FROM paid JOIN bought USING (order_id)
       )
       SELECT * FROM compared WHERE gap <> 0;
       ```
@@ -55,29 +55,29 @@ steps:
   - kind: try
     title: Your turn to chain CTEs
     body: |
-      Rebuild the money check from Module 18 as a chain. The `paid` CTE is done. Add a `cost` CTE (total `cost` per trip from `trip_stops`), then select `trip_id`, `paid` and `cost` for trips where they **differ**.
+      Rebuild the money check from Module 18 as a chain. The `paid` CTE is done. Add a `bought` CTE (total `quantity * unit_price` per order from `order_items`), then select `order_id`, `paid` and `bought` for orders where they **differ**.
     sql: |
       WITH paid AS (
-          SELECT trip_id, sum(amount) AS paid
+          SELECT order_id, sum(amount) AS paid
           FROM payments
-          GROUP BY trip_id
+          GROUP BY order_id
       )
       SELECT * FROM paid;
     expect: |
       WITH paid AS (
-          SELECT trip_id, sum(amount) AS paid
+          SELECT order_id, sum(amount) AS paid
           FROM payments
-          GROUP BY trip_id
+          GROUP BY order_id
       ),
-      cost AS (
-          SELECT trip_id, sum(cost) AS cost
-          FROM trip_stops
-          GROUP BY trip_id
+      bought AS (
+          SELECT order_id, sum(quantity * unit_price) AS bought
+          FROM order_items
+          GROUP BY order_id
       )
-      SELECT trip_id, paid, cost
+      SELECT order_id, paid, bought
       FROM paid
-      JOIN cost USING (trip_id)
-      WHERE paid <> cost;
+      JOIN bought USING (order_id)
+      WHERE paid <> bought;
 
   - kind: explain
     title: Recursive CTEs
@@ -113,13 +113,13 @@ steps:
   - kind: explain
     title: Walking down an org chart
     body: |
-      `employees.manager_id` points at another employee (a self-referencing FK, Module 13). To list everyone **under** the director, level by level:
+      `employees.manager_id` points at another employee (a self-referencing FK, Module 13). To list everyone **under** the CEO, level by level:
 
       ```sql
       WITH RECURSIVE chart AS (
           SELECT employee_id, full_name, 0 AS depth
           FROM employees
-          WHERE manager_id IS NULL                    -- anchor: the director
+          WHERE manager_id IS NULL                    -- anchor: the CEO
           UNION ALL
           SELECT e.employee_id, e.full_name, c.depth + 1
           FROM employees e
@@ -128,12 +128,12 @@ steps:
       SELECT * FROM chart;
       ```
 
-      Round 1 finds the director's direct reports, round 2 finds *their* reports, and so on, until nobody new is found. The stopping condition is built in: the chain simply runs out.
+      Round 1 finds the CEO's direct reports, round 2 finds *their* reports, and so on, until nobody new is found. The stopping condition is built in: the chain simply runs out.
 
   - kind: try
     title: The whole chart
     body: |
-      Run it. `depth` says how many levels below the director each person sits. Then add `ORDER BY depth, full_name`.
+      Run it. `depth` says how many levels below the CEO each person sits. Then add `ORDER BY depth, full_name`.
     sql: |
       WITH RECURSIVE chart AS (
           SELECT employee_id, full_name, 0 AS depth
@@ -149,18 +149,18 @@ steps:
   - kind: try
     title: Your turn to walk up the chain
     body: |
-      Walk the other way: from **Khongor Munkh** (employee 9) **up** to the director. Return the `full_name` of Khongor and every manager above Khongor.
+      Walk the other way: from **Omar Haddad** (employee 8) **up** to the CEO. Return the `full_name` of Omar and every manager above Omar.
 
-      Hint: the anchor is Khongor's row. In the recursive part, join each chain row to **its manager**: `e.employee_id = c.manager_id`. So carry `manager_id` along in both parts.
+      Hint: the anchor is Omar's row. In the recursive part, join each chain row to **its manager**: `e.employee_id = c.manager_id`. So carry `manager_id` along in both parts.
     sql: |
       SELECT full_name, manager_id
       FROM employees
-      WHERE employee_id = 9;
+      WHERE employee_id = 8;
     expect: |
       WITH RECURSIVE chain AS (
           SELECT employee_id, full_name, manager_id
           FROM employees
-          WHERE employee_id = 9
+          WHERE employee_id = 8
           UNION ALL
           SELECT e.employee_id, e.full_name, e.manager_id
           FROM employees e

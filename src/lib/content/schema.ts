@@ -12,6 +12,11 @@ export const trackSchema = z.object({
   engine: z.enum(["postgres", "python", "javascript"]),
   engine_version: z.string(),
   last_reviewed: z.string(),
+  // Named practice databases. Each is a list of SQL files in public/downloads/<track>/, run in
+  // order, so learners can download the exact files the lessons use. `database` is the name
+  // the in-browser psql pretends to be connected to (the files create it on a real server).
+  datasets: z.record(z.string(), z.object({ database: z.string(), files: z.array(z.string()).min(1) })).default({}),
+  // The dataset used when a level, topic or case doesn't name one.
   dataset: z.string().optional(),
   levels: z.array(z.string()).length(3),
 });
@@ -25,6 +30,7 @@ export const levelSchema = z.object({
   status: z.enum(["open", "coming_soon"]),
   topics: z.array(z.string()),
   planned: z.array(z.string()).default([]),
+  dataset: z.string().optional(),
 });
 
 export const topicSchema = z.object({
@@ -32,6 +38,7 @@ export const topicSchema = z.object({
   module: z.number().int(),
   summary: z.string(),
   minutes: z.number().int(),
+  dataset: z.string().optional(),
 });
 
 const step = z.discriminatedUnion("kind", [
@@ -99,6 +106,8 @@ export const caseSchema = z.object({
   concepts: z.array(z.string()).min(1),
   // Story cases belong to a season and are numbered; standalone cases leave this out.
   series: z.object({ name: z.string(), episode: z.number().int() }).optional(),
+  // Which of the course's datasets the case runs on (defaults to the course's default).
+  dataset: z.string().optional(),
   title: z.string(),
   briefing: md,
   evidence_setup: z.string().default(""),

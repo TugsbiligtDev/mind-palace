@@ -2,6 +2,7 @@
 
 Finished content that isn't on the site. The site only reads `content/`, so nothing here is shown.
 
-`practice/postgresql/` holds 29 extra SQL case files (written and checked on 2026-09-25) that were
-set aside when the owner chose **10 practice cases per course**. To swap one in, move it into
-`content/practice/postgresql/` and move another one out, then run `pnpm check:content`.
+`practice/postgresql-wanderly/` holds 39 SQL case files written for the old Wanderly trip-planning
+data: the 10 that were live, plus 29 spares (written and checked on 2026-09-25). They were set aside
+on 2026-09-29 when the course switched to the Inkwell Books bookstore data, so they no longer run
+against the course dataset. They're kept for their story ideas and exercise shapes.

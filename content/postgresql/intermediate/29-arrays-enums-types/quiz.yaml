@@ -13,10 +13,10 @@ questions:
     explanation: PostgreSQL arrays count from 1, so item 2 is 'en'.
 
   - type: mcq
-    prompt: Each guide speaks several languages, and each language needs a proficiency level and a certification date. What's the best design?
+    prompt: Each employee speaks several languages, and each language needs a proficiency level and a certification date. What's the best design?
     options:
-      - A text[] column of language codes on guides
-      - A junction table guide_languages (guide_id, language_id, level, certified_on)
+      - A text[] column of language codes on employees
+      - A junction table employee_languages (employee_id, language_id, level, certified_on)
       - A jsonb column
       - One column per language
     answer: 1
@@ -46,10 +46,9 @@ questions:
     explanation: Since PostgreSQL 18, generated columns are virtual unless you write STORED.
 
   - type: fill
-    prompt: Find guides who speak French.
+    prompt: Find the books tagged as bestsellers.
     code: |
-      CREATE TABLE guides (name text, languages text[]);
-      SELECT name FROM guides WHERE 'fr' = ____(languages);
+      SELECT title FROM books WHERE 'bestseller' = ____(tags);
     answer: ANY
     accept: ["any"]
     explanation: "`value = ANY(array)` is true when the value appears anywhere in the array."

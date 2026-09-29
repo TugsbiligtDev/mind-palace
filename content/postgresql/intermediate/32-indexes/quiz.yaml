@@ -41,7 +41,7 @@ questions:
 
   - type: mcq
     prompt: |
-      You often search `WHERE details @> '{"indoor": true}'` on a big jsonb column. Which index type helps?
+      You often search `WHERE details @> '{"format": "ebook"}'` on a big jsonb column. Which index type helps?
     options:
       - B-tree
       - GIN

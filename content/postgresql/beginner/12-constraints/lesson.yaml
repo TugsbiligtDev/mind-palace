@@ -12,20 +12,20 @@ steps:
     title: NOT NULL
     body: |
       ```sql
-      full_name  text NOT NULL
+      last_name  text NOT NULL
       ```
 
-      **`NOT NULL`** means the column must always have a value. Use it for anything that must be known for the row to make sense: a trip's name, a review's rating.
+      **`NOT NULL`** means the column must always have a value. Use it for anything that must be known for the row to make sense: a book's title, a review's rating.
 
       Columns **allow NULL by default**, so you have to ask for NOT NULL. A good habit: start every column as NOT NULL, and allow NULL only when a value can truly be unknown (Module 7).
 
   - kind: try
-    title: A traveler with no name
+    title: A customer with no last name
     body: |
-      `travelers.full_name` is NOT NULL. This INSERT leaves it out. Run it and read the error.
+      `customers.last_name` is NOT NULL. This INSERT leaves it out. Run it and read the error.
     sql: |
-      INSERT INTO travelers (email, home_city)
-      VALUES ('ghost@example.com', 'Oslo');
+      INSERT INTO customers (first_name, email, city)
+      VALUES ('Ghost', 'ghost@example.com', 'Oslo');
     expect_error: true
 
   - kind: explain
@@ -40,16 +40,16 @@ steps:
       A UNIQUE rule can cover **several columns together**, written on its own line:
 
       ```sql
-      UNIQUE (trip_id, visit_order)   -- each trip has one stop #1, one stop #2…
+      UNIQUE (book_id, customer_id)   -- one review per customer per book
       ```
 
   - kind: try
-    title: Two Aminas, one email
+    title: Two Emmas, one email
     body: |
-      `amina@example.com` is already taken. Run it and read the error. The `DETAIL` line shows exactly which value clashed.
+      `emma.johnson@example.com` is already taken. Run it and read the error. The `DETAIL` line shows exactly which value clashed.
     sql: |
-      INSERT INTO travelers (full_name, email)
-      VALUES ('Amina Y.', 'amina@example.com');
+      INSERT INTO customers (first_name, last_name, email)
+      VALUES ('Emma', 'J.', 'emma.johnson@example.com');
     expect_error: true
 
   - kind: explain
@@ -57,19 +57,20 @@ steps:
     body: |
       Here's a surprise: a UNIQUE column can hold **many NULLs**.
 
-      Remember that `NULL = NULL` is *unknown*, not true (Module 7). Two unknown emails aren't known to be the same, so they don't clash. That's usually what you want: many travelers can have *no* email, but no two can have the *same* email.
+      Remember that `NULL = NULL` is *unknown*, not true (Module 7). Two unknown ISBNs aren't known to be the same, so they don't clash. That's usually what you want: `books.isbn` is UNIQUE, and many books can have *no* ISBN (a staff-made booklet, say), but no two can have the *same* ISBN.
 
   - kind: try
-    title: Many missing emails
+    title: Many missing ISBNs
     body: |
-      Dulguun already has a NULL email. Two more travelers without email go in fine. Run it.
+      Every book has an ISBN so far. Two new booklets without one go in fine. Run it.
     sql: |
-      INSERT INTO travelers (full_name, email)
-      VALUES ('Nomin Bat', NULL), ('Tomas Ruiz', NULL);
+      INSERT INTO books (title, genre_id, price, isbn)
+      VALUES ('Staff Picks 2025', 6, 0, NULL),
+             ('Local Poets',      9, 4.50, NULL);
 
-      SELECT full_name, email
-      FROM travelers
-      WHERE email IS NULL;
+      SELECT title, isbn
+      FROM books
+      WHERE isbn IS NULL;
 
   - kind: info
     title: "🔹 UNIQUE NULLS NOT DISTINCT"
@@ -88,14 +89,14 @@ steps:
       **`CHECK`** is a custom rule, any true/false condition:
 
       ```sql
-      rating     integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
-      entry_fee  numeric(6,2) CHECK (entry_fee >= 0)
+      rating  integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      price   numeric(8,2) CHECK (price >= 0)
       ```
 
       A CHECK can compare **several columns** too. Written on its own line, it's a *table* constraint:
 
       ```sql
-      CHECK (end_date >= start_date)
+      CHECK (ends_on >= starts_on)
       ```
 
       One catch: a CHECK **passes when the result is unknown**. `CHECK (price > 0)` lets NULL through, because `NULL > 0` isn't false. If the value is required, add NOT NULL as well.
@@ -105,11 +106,11 @@ steps:
     body: |
       Run it. The NULL price was accepted even though the rule says `price > 0`. Then change NULL to `-5` and run it again.
     sql: |
-      CREATE TABLE tours (
-          name   text NOT NULL,
+      CREATE TABLE gift_cards (
+          code   text NOT NULL,
           price  numeric(8,2) CHECK (price > 0)
       );
-      INSERT INTO tours VALUES ('Gobi Sunset', NULL)
+      INSERT INTO gift_cards VALUES ('GC-001', NULL)
       RETURNING *;
 
   - kind: explain
@@ -118,7 +119,7 @@ steps:
       **`DEFAULT`** gives a column a value to use when an INSERT leaves it out (Module 5):
 
       ```sql
-      status      text NOT NULL DEFAULT 'planned',
+      status      text NOT NULL DEFAULT 'pending',
       created_at  timestamptz NOT NULL DEFAULT now(),
       is_active   boolean NOT NULL DEFAULT true
       ```
@@ -128,16 +129,16 @@ steps:
   - kind: explain
     title: Name your constraints
     body: |
-      If you don't name a constraint, PostgreSQL invents a name like `reviews_rating_check` or `travelers_email_key`. That's OK, but your own names make errors clearer and are easier to refer to later (dropping a rule needs its name, Module 15):
+      If you don't name a constraint, PostgreSQL invents a name like `reviews_rating_check` or `customers_email_key`. That's OK, but your own names make errors clearer and are easier to refer to later (dropping a rule needs its name, Module 15):
 
       ```sql
-      CREATE TABLE stays (
-          stay_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          nights     integer NOT NULL,
-          check_in   date NOT NULL,
-          check_out  date NOT NULL,
-          CONSTRAINT stays_nights_positive CHECK (nights > 0),
-          CONSTRAINT stays_dates_in_order  CHECK (check_out > check_in)
+      CREATE TABLE promotions (
+          promo_id     integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          percent_off  integer NOT NULL,
+          starts_on    date NOT NULL,
+          ends_on      date NOT NULL,
+          CONSTRAINT promotions_percent_positive CHECK (percent_off > 0),
+          CONSTRAINT promotions_dates_in_order    CHECK (ends_on > starts_on)
       );
       ```
 
@@ -146,37 +147,37 @@ steps:
   - kind: try
     title: Your turn to add named rules
     body: |
-      Add two named constraints to `stays`, each on its own line after the columns:
+      Add two named constraints to `promotions`, each on its own line after the columns:
 
-      - **`stays_nights_positive`**: nights must be greater than 0
-      - **`stays_dates_in_order`**: check_out must be after check_in
+      - **`promotions_percent_positive`**: percent_off must be greater than 0
+      - **`promotions_dates_in_order`**: ends_on must be after starts_on
 
       The last line lists the table's constraints so you can check your work: `c` = check, `p` = primary key, `n` = not null. (Since PostgreSQL 18, NOT NULL rules get names too.)
     sql: |
-      CREATE TABLE stays (
-          stay_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          nights     integer NOT NULL,
-          check_in   date NOT NULL,
-          check_out  date NOT NULL
+      CREATE TABLE promotions (
+          promo_id     integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          percent_off  integer NOT NULL,
+          starts_on    date NOT NULL,
+          ends_on      date NOT NULL
       );
 
       SELECT conname, contype
       FROM pg_constraint
-      WHERE conrelid = 'stays'::regclass
+      WHERE conrelid = 'promotions'::regclass
       ORDER BY conname;
     expect: |
-      CREATE TABLE stays (
-          stay_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          nights     integer NOT NULL,
-          check_in   date NOT NULL,
-          check_out  date NOT NULL,
-          CONSTRAINT stays_nights_positive CHECK (nights > 0),
-          CONSTRAINT stays_dates_in_order  CHECK (check_out > check_in)
+      CREATE TABLE promotions (
+          promo_id     integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          percent_off  integer NOT NULL,
+          starts_on    date NOT NULL,
+          ends_on      date NOT NULL,
+          CONSTRAINT promotions_percent_positive CHECK (percent_off > 0),
+          CONSTRAINT promotions_dates_in_order    CHECK (ends_on > starts_on)
       );
 
       SELECT conname, contype
       FROM pg_constraint
-      WHERE conrelid = 'stays'::regclass
+      WHERE conrelid = 'promotions'::regclass
       ORDER BY conname;
 
   - kind: explain
@@ -185,19 +186,19 @@ steps:
       Constraint errors tell you exactly what went wrong. The three you'll meet most:
 
       ```text
-      ERROR:  null value in column "full_name" of relation "travelers"
+      ERROR:  null value in column "last_name" of relation "customers"
               violates not-null constraint
       ```
 
       ```text
-      ERROR:  duplicate key value violates unique constraint "travelers_email_key"
-      DETAIL:  Key (email)=(amina@example.com) already exists.
+      ERROR:  duplicate key value violates unique constraint "customers_email_key"
+      DETAIL:  Key (email)=(emma.johnson@example.com) already exists.
       ```
 
       ```text
       ERROR:  new row for relation "reviews" violates check constraint
               "reviews_rating_check"
-      DETAIL:  Failing row contains (8, 1, 1, 6, null, 2026-09-26).
+      DETAIL:  Failing row contains (27, 2, 1, 6, null, 2026-09-26 10:00:00+00).
       ```
 
       Read them in this order: **which table**, **which constraint** (its name hints at the rule), then the **DETAIL** line with the offending value.
@@ -205,20 +206,20 @@ steps:
   - kind: try
     title: Fix the data
     body: |
-      This INSERT breaks a rule. Run it, read which constraint fails, and fix the **value** (not the rule!) so the review is saved. Chen meant "the best possible", so use the highest rating the rule allows.
+      This INSERT breaks a rule. Run it, read which constraint fails, and fix the **value** (not the rule!) so the review is saved. Olivia (customer 3) meant "the best possible", so use the highest rating the rule allows.
     sql: |
-      INSERT INTO reviews (attraction_id, traveler_id, rating, review_text)
-      VALUES (9, 3, 10, 'Excellent.')
-      RETURNING attraction_id, rating;
+      INSERT INTO reviews (book_id, customer_id, rating, comment)
+      VALUES (20, 3, 10, 'Excellent.')
+      RETURNING book_id, rating;
     broken_starter: true
     expect: |
-      INSERT INTO reviews (attraction_id, traveler_id, rating, review_text)
-      VALUES (9, 3, 5, 'Excellent.')
-      RETURNING attraction_id, rating;
+      INSERT INTO reviews (book_id, customer_id, rating, comment)
+      VALUES (20, 3, 5, 'Excellent.')
+      RETURNING book_id, rating;
 
   - kind: why
     body: |
-      Bad data is expensive: a negative price in a bill, a trip that ends before it starts, two accounts with one email. Constraints stop these at the door, for every app and every person, forever, with a few words in CREATE TABLE.
+      Bad data is expensive: a negative price in a bill, a sale that ends before it starts, two accounts with one email. Constraints stop these at the door, for every app and every person, forever, with a few words in CREATE TABLE.
 
   - kind: recap
     body: |

@@ -2,15 +2,15 @@ steps:
   - kind: explain
     title: The one-big-table temptation
     body: |
-      Wanderly's tour desk kept bookings in a single sheet, one row per booking:
+      Before Inkwell had a real database, its first shop assistant kept sales in a single sheet, one row per sale:
 
-      | booking | traveler | tour | tour_date | guide | guide_phone | seats |
+      | sale | customer | book | published | publisher | publisher_phone | copies |
       |---|---|---|---|---|---|---|
-      | 1 | Amina | Gobi Sunset | 2026-07-01 | Bat | 9911-2233 | 2 |
-      | 2 | Erik | Gobi Sunset | 2026-07-01 | Bat | 9911-2233 | 1 |
-      | 3 | Chen | City Walk | 2026-07-03 | Saruul | 8800-4455 | 3 |
+      | 1 | Emma | Dune | 1965 | Tor Books | 555-0110 | 1 |
+      | 2 | Liam | Dune | 1965 | Tor Books | 555-0110 | 2 |
+      | 3 | Noah | Sapiens | 2011 | HarperCollins | 555-0199 | 3 |
 
-      It's easy to read. But the guide's phone is written on **every** booking, the tour's date too. Repeated facts are where the trouble starts.
+      It's easy to read. But the publisher's phone is written on **every** sale, the book's year too. Repeated facts are where the trouble starts.
 
       **Normalization** is a step-by-step method for splitting a table like this so that **each fact is stored exactly once**.
 
@@ -19,43 +19,43 @@ steps:
     body: |
       Repeating facts causes three kinds of **anomaly** (a way data goes wrong):
 
-      - **Update anomaly:** Bat gets a new phone. You update booking 1 but miss booking 2. Now Bat has two phone numbers, and nobody knows which is right.
-      - **Insert anomaly:** a new guide joins. You can't record them until they have a booking, because every row *is* a booking.
-      - **Delete anomaly:** Chen cancels, so you delete booking 3. Saruul's phone number disappears with it: it was only stored there.
+      - **Update anomaly:** Tor Books gets a new phone. You update sale 1 but miss sale 2. Now Tor Books has two phone numbers, and nobody knows which is right.
+      - **Insert anomaly:** Inkwell starts working with a new publisher. You can't record it until someone buys one of its books, because every row *is* a sale.
+      - **Delete anomaly:** Noah returns the books, so you delete sale 3. HarperCollins' phone number disappears with it: it was only stored there.
 
   - kind: try
     title: See an update anomaly
     body: |
-      Bat's phone is updated on one booking only. Run it: the last query now shows **two** phone numbers for one guide.
+      Tor Books' phone is updated on one sale only. Run it: the last query now shows **two** phone numbers for one publisher.
     sql: |
-      CREATE TABLE tour_sheet (
-          booking_no   integer PRIMARY KEY,
-          traveler     text,
-          tour         text,
-          tour_date    date,
-          guide        text,
-          guide_phone  text,
-          seats        integer
+      CREATE TABLE sales_sheet (
+          sale_no          integer PRIMARY KEY,
+          customer         text,
+          book             text,
+          published        integer,
+          publisher        text,
+          publisher_phone  text,
+          copies           integer
       );
-      INSERT INTO tour_sheet VALUES
-        (1, 'Amina', 'Gobi Sunset', '2026-07-01', 'Bat',    '9911-2233', 2),
-        (2, 'Erik',  'Gobi Sunset', '2026-07-01', 'Bat',    '9911-2233', 1),
-        (3, 'Chen',  'City Walk',   '2026-07-03', 'Saruul', '8800-4455', 3);
+      INSERT INTO sales_sheet VALUES
+        (1, 'Emma', 'Dune',    1965, 'Tor Books',     '555-0110', 1),
+        (2, 'Liam', 'Dune',    1965, 'Tor Books',     '555-0110', 2),
+        (3, 'Noah', 'Sapiens', 2011, 'HarperCollins', '555-0199', 3);
 
-      UPDATE tour_sheet SET guide_phone = '9900-0000' WHERE booking_no = 1;
+      UPDATE sales_sheet SET publisher_phone = '555-0000' WHERE sale_no = 1;
 
-      SELECT DISTINCT guide, guide_phone FROM tour_sheet ORDER BY guide;
+      SELECT DISTINCT publisher, publisher_phone FROM sales_sheet ORDER BY publisher;
 
   - kind: explain
     title: "Functional dependency, in plain English"
     body: |
       **A → B** ("A determines B") means: *if you know A, there's exactly one possible B.*
 
-      - `guide → guide_phone`: know the guide, and you know their phone.
-      - `tour → tour_date, guide`: know the tour, and you know its date and guide.
-      - `booking → traveler, tour, seats`: the booking number determines everything about the booking.
+      - `publisher → publisher_phone`: know the publisher, and you know its phone.
+      - `book → published, publisher`: know the book, and you know its year and publisher.
+      - `sale → customer, book, copies`: the sale number determines everything about the sale.
 
-      Normalization boils down to one idea: **every fact should be stored in the table whose key determines it.** The guide's phone is determined by the guide, not by the booking, so it belongs in a `guides` table.
+      Normalization boils down to one idea: **every fact should be stored in the table whose key determines it.** The publisher's phone is determined by the publisher, not by the sale, so it belongs in a `publishers` table.
 
   - kind: explain
     title: "First normal form (1NF): one value per cell"
@@ -63,34 +63,34 @@ steps:
       A table is in **1NF** when:
 
       1. Every cell holds **one** value, not a list.
-      2. There are no **repeating columns** like `phone1`, `phone2`, `phone3`.
+      2. There are no **repeating columns** like `author1`, `author2`, `author3`.
       3. Rows can be told apart: there's a primary key.
 
       These break 1NF:
 
-      | guide | languages | phone1 | phone2 |
+      | book | shelves | author1 | author2 |
       |---|---|---|---|
-      | Bat | English, French | 9911-2233 | 9911-5566 |
+      | Good Omens | Staff picks, Comedy | Terry Pratchett | Neil Gaiman |
 
-      A list in a cell can't be joined, indexed or constrained, and editing one item means string surgery. Repeating columns give you a fixed maximum (what about a 3rd phone?) and make "find the guide with this phone" check every column.
+      A list in a cell can't be joined, indexed or constrained, and editing one item means string surgery. Repeating columns give you a fixed maximum (what about a book with 3 authors?) and make "find every book by Neil Gaiman" check every column.
 
-      **The fix:** one row per value, in its own table: `guide_languages (guide_id, language)`, `guide_phones (guide_id, phone)`.
+      **The fix:** one row per value, in its own table: `shelf_books (shelf_id, book_id)` and `book_authors (book_id, author_id)`. That's exactly how Inkwell stores authors (Module 13).
 
   - kind: try
     title: The comma-list trap
     body: |
-      Bat no longer speaks French. The "obvious" fix removes `'French, '` from the text. Run it: nothing changes, because French is **last** in the list, with no comma after it.
+      *Good Omens* is taken off the Comedy shelf. The "obvious" fix removes `'Comedy, '` from the text. Run it: nothing changes, because Comedy is **last** in the list, with no comma after it.
 
-      In a `guide_languages` table this would simply be `DELETE … WHERE language = 'French'`.
+      In a `shelf_books` table this would simply be a `DELETE` of one row.
     sql: |
-      CREATE TABLE guides_flat (guide text, languages text);
-      INSERT INTO guides_flat VALUES ('Bat', 'English, French');
+      CREATE TABLE books_flat (book text, shelves text);
+      INSERT INTO books_flat VALUES ('Good Omens', 'Staff picks, Comedy');
 
-      UPDATE guides_flat
-      SET languages = replace(languages, 'French, ', '')
-      WHERE guide = 'Bat';
+      UPDATE books_flat
+      SET shelves = replace(shelves, 'Comedy, ', '')
+      WHERE book = 'Good Omens';
 
-      SELECT * FROM guides_flat;
+      SELECT * FROM books_flat;
 
   - kind: explain
     title: "Second normal form (2NF): the whole key"
@@ -98,14 +98,14 @@ steps:
       2NF only matters for tables with a **composite key** (Module 11). A table is in **2NF** when it's in 1NF and every non-key column depends on the **whole** key, not just part of it.
 
       ```text
-      bookings (traveler_id, tour_id, seats, tour_title)
-                └──── primary key ────┘
+      order_items (order_id, book_id, quantity, book_title)
+                   └─── primary key ──┘
       ```
 
-      - `seats` depends on **both**: how many seats *this traveler* booked on *this tour*. ✓
-      - `tour_title` depends on `tour_id` **alone**. ✗ It repeats on every booking for that tour.
+      - `quantity` depends on **both**: how many copies of *this book* are in *this order*. ✓
+      - `book_title` depends on `book_id` **alone**. ✗ It repeats on every order line for that book.
 
-      **The fix:** move `tour_title` to the `tours` table, where `tour_id` is the whole key.
+      **The fix:** keep `book_title` only in the `books` table, where `book_id` is the whole key. That's why Inkwell's real `order_items` has no title column.
 
   - kind: explain
     title: "Third normal form (3NF): nothing but the key"
@@ -113,97 +113,97 @@ steps:
       A table is in **3NF** when it's in 2NF and no non-key column depends on **another non-key column**.
 
       ```text
-      tours (tour_id, title, guide_id, guide_phone)
+      books (book_id, title, publisher_id, publisher_phone)
       ```
 
-      `guide_phone` depends on `guide_id`, which isn't the key. That's a chain, `tour_id → guide_id → guide_phone`, and chains mean repeats: every tour Bat leads repeats Bat's phone.
+      `publisher_phone` depends on `publisher_id`, which isn't the key. That's a chain, `book_id → publisher_id → publisher_phone`, and chains mean repeats: every book from Tor repeats Tor's phone.
 
-      **The fix:** `guide_phone` moves to `guides`.
+      **The fix:** `publisher_phone` moves to `publishers`.
 
       The classic summary of all three: *every non-key column must depend on **the key** (1NF), **the whole key** (2NF), and **nothing but the key** (3NF).*
 
   - kind: explain
-    title: The tour sheet, normalized
+    title: The sales sheet, normalized
     body: |
       Apply all three and the single sheet becomes four tables, each fact stored once:
 
       ```text
-      travelers (traveler_id PK, full_name)
-      guides    (guide_id PK, full_name, phone)
-      tours     (tour_id PK, title, tour_date, guide_id FK → guides)
-      bookings  (traveler_id FK, tour_id FK, seats, PK (traveler_id, tour_id))
+      customers   (customer_id PK, first_name)
+      publishers  (publisher_id PK, name, phone)
+      books       (book_id PK, title, published_year, publisher_id FK → publishers)
+      sales       (sale_id PK, customer_id FK, book_id FK, copies)
       ```
 
-      - Bat's phone lives in **one** row. Update anomaly: gone.
-      - A new guide is just a new `guides` row. Insert anomaly: gone.
-      - Deleting a booking leaves the guide and tour intact. Delete anomaly: gone.
+      - Tor's phone lives in **one** row. Update anomaly: gone.
+      - A new publisher is just a new `publishers` row. Insert anomaly: gone.
+      - Deleting a sale leaves the book and publisher intact. Delete anomaly: gone.
 
       Nothing is lost, either: a join (Module 14) rebuilds the original sheet whenever you want it.
 
   - kind: try
     title: Your turn to rebuild the sheet
     body: |
-      The normalized tables are built and filled. Write a query that rebuilds the original sheet with these columns, in this order: **traveler**, **tour**, `tour_date`, **guide**, **guide_phone**, `seats`. Sort by traveler.
+      The normalized tables are built and filled (with a `2` on their names, so they don't clash with Inkwell's real tables). Write a query that rebuilds the original sheet with these columns, in this order: **customer**, **book**, `published_year`, **publisher**, **publisher_phone**, `copies`. Sort by customer.
     sql: |
-      CREATE TABLE travelers2 (traveler_id integer PRIMARY KEY, full_name text NOT NULL);
-      CREATE TABLE guides    (guide_id integer PRIMARY KEY, full_name text NOT NULL, phone text);
-      CREATE TABLE tours     (tour_id integer PRIMARY KEY, title text NOT NULL, tour_date date NOT NULL,
-                              guide_id integer NOT NULL REFERENCES guides);
-      CREATE TABLE bookings  (traveler_id integer REFERENCES travelers2, tour_id integer REFERENCES tours,
-                              seats integer NOT NULL, PRIMARY KEY (traveler_id, tour_id));
-      INSERT INTO travelers2 VALUES (1, 'Amina'), (2, 'Erik'), (3, 'Chen');
-      INSERT INTO guides VALUES (1, 'Bat', '9911-2233'), (2, 'Saruul', '8800-4455');
-      INSERT INTO tours VALUES (1, 'Gobi Sunset', '2026-07-01', 1), (2, 'City Walk', '2026-07-03', 2);
-      INSERT INTO bookings VALUES (1, 1, 2), (2, 1, 1), (3, 2, 3);
+      CREATE TABLE customers2  (customer_id integer PRIMARY KEY, first_name text NOT NULL);
+      CREATE TABLE publishers2 (publisher_id integer PRIMARY KEY, name text NOT NULL, phone text);
+      CREATE TABLE books2      (book_id integer PRIMARY KEY, title text NOT NULL, published_year integer,
+                                publisher_id integer NOT NULL REFERENCES publishers2);
+      CREATE TABLE sales       (sale_id integer PRIMARY KEY, customer_id integer REFERENCES customers2,
+                                book_id integer REFERENCES books2, copies integer NOT NULL);
+      INSERT INTO customers2 VALUES (1, 'Emma'), (2, 'Liam'), (3, 'Noah');
+      INSERT INTO publishers2 VALUES (1, 'Tor Books', '555-0110'), (2, 'HarperCollins', '555-0199');
+      INSERT INTO books2 VALUES (1, 'Dune', 1965, 1), (2, 'Sapiens', 2011, 2);
+      INSERT INTO sales VALUES (1, 1, 1, 1), (2, 2, 1, 2), (3, 3, 2, 3);
 
-      SELECT * FROM bookings;
+      SELECT * FROM sales;
     expect: |
-      CREATE TABLE travelers2 (traveler_id integer PRIMARY KEY, full_name text NOT NULL);
-      CREATE TABLE guides    (guide_id integer PRIMARY KEY, full_name text NOT NULL, phone text);
-      CREATE TABLE tours     (tour_id integer PRIMARY KEY, title text NOT NULL, tour_date date NOT NULL,
-                              guide_id integer NOT NULL REFERENCES guides);
-      CREATE TABLE bookings  (traveler_id integer REFERENCES travelers2, tour_id integer REFERENCES tours,
-                              seats integer NOT NULL, PRIMARY KEY (traveler_id, tour_id));
-      INSERT INTO travelers2 VALUES (1, 'Amina'), (2, 'Erik'), (3, 'Chen');
-      INSERT INTO guides VALUES (1, 'Bat', '9911-2233'), (2, 'Saruul', '8800-4455');
-      INSERT INTO tours VALUES (1, 'Gobi Sunset', '2026-07-01', 1), (2, 'City Walk', '2026-07-03', 2);
-      INSERT INTO bookings VALUES (1, 1, 2), (2, 1, 1), (3, 2, 3);
+      CREATE TABLE customers2  (customer_id integer PRIMARY KEY, first_name text NOT NULL);
+      CREATE TABLE publishers2 (publisher_id integer PRIMARY KEY, name text NOT NULL, phone text);
+      CREATE TABLE books2      (book_id integer PRIMARY KEY, title text NOT NULL, published_year integer,
+                                publisher_id integer NOT NULL REFERENCES publishers2);
+      CREATE TABLE sales       (sale_id integer PRIMARY KEY, customer_id integer REFERENCES customers2,
+                                book_id integer REFERENCES books2, copies integer NOT NULL);
+      INSERT INTO customers2 VALUES (1, 'Emma'), (2, 'Liam'), (3, 'Noah');
+      INSERT INTO publishers2 VALUES (1, 'Tor Books', '555-0110'), (2, 'HarperCollins', '555-0199');
+      INSERT INTO books2 VALUES (1, 'Dune', 1965, 1), (2, 'Sapiens', 2011, 2);
+      INSERT INTO sales VALUES (1, 1, 1, 1), (2, 2, 1, 2), (3, 3, 2, 3);
 
-      SELECT tr.full_name AS traveler, t.title AS tour, t.tour_date,
-             g.full_name AS guide, g.phone AS guide_phone, b.seats
-      FROM bookings b
-      JOIN travelers2 tr ON tr.traveler_id = b.traveler_id
-      JOIN tours t       ON t.tour_id = b.tour_id
-      JOIN guides g      ON g.guide_id = t.guide_id
-      ORDER BY tr.full_name;
+      SELECT c.first_name AS customer, b.title AS book, b.published_year,
+             p.name AS publisher, p.phone AS publisher_phone, s.copies
+      FROM sales s
+      JOIN customers2 c  ON c.customer_id = s.customer_id
+      JOIN books2 b      ON b.book_id = s.book_id
+      JOIN publishers2 p ON p.publisher_id = b.publisher_id
+      ORDER BY c.first_name;
     ordered: true
 
   - kind: explain
     title: "Mistake: storing what you can calculate"
     body: |
-      A column like `total_price` next to `nights` and `price_per_night` looks convenient. But it's a copy of a fact you can already work out, and copies drift: change `nights` and forget `total_price`, and the row contradicts itself.
+      A column like `line_total` next to `copies` and `unit_price` looks convenient. But it's a copy of a fact you can already work out, and copies drift: change `copies` and forget `line_total`, and the row contradicts itself.
 
-      Calculate it in the query instead: `nights * price_per_night AS total_price`. Same goes for ages (store the birth date, not the age) and counts (count the rows, don't store "number_of_trips").
+      Calculate it in the query instead: `copies * unit_price AS line_total`. Same goes for ages (store the birth date, not the age) and counts (count the rows, don't store "number_of_orders").
 
       There are good reasons to store a calculated value sometimes, for speed on huge tables. That's **deliberate denormalization**, covered in Module 40, and it's a choice you make on purpose, never by accident. (Module 29's *generated columns* also let PostgreSQL keep one in sync for you.)
 
   - kind: try
     title: A total that went stale
     body: |
-      The stay was extended to 4 nights, but `total_price` still says 3 nights' worth. Run it and compare the two totals.
+      Emma's order line was changed to 4 copies, but `line_total` still says 3 copies' worth. Run it and compare the two totals.
     sql: |
-      CREATE TABLE hotel_stays (
-          guest            text,
-          nights           integer,
-          price_per_night  numeric(8,2),
-          total_price      numeric(8,2)
+      CREATE TABLE sale_lines (
+          customer    text,
+          copies      integer,
+          unit_price  numeric(8,2),
+          line_total  numeric(8,2)
       );
-      INSERT INTO hotel_stays VALUES ('Amina', 3, 120.00, 360.00);
-      UPDATE hotel_stays SET nights = 4 WHERE guest = 'Amina';
+      INSERT INTO sale_lines VALUES ('Emma', 3, 12.50, 37.50);
+      UPDATE sale_lines SET copies = 4 WHERE customer = 'Emma';
 
-      SELECT guest, total_price AS stored_total,
-             nights * price_per_night AS true_total
-      FROM hotel_stays;
+      SELECT customer, line_total AS stored_total,
+             copies * unit_price AS true_total
+      FROM sale_lines;
 
   - kind: info
     title: "🔹 BCNF"

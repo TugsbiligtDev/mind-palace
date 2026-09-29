@@ -2,3 +2,4 @@ title: Aggregation
 module: 10
 summary: Count, sum and average across rows, summarize per group with GROUP BY, filter groups with HAVING, and see how NULLs behave in totals.
 minutes: 35
+dataset: practice

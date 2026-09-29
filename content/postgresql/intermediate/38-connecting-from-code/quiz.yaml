@@ -3,22 +3,22 @@ questions:
   - type: mcq
     prompt: Which Python line is safe from SQL injection?
     options:
-      - "`conn.execute(f\"SELECT * FROM travelers WHERE email = '{email}'\")`"
-      - "`conn.execute(\"SELECT * FROM travelers WHERE email = '\" + email + \"'\")`"
-      - "`conn.execute(\"SELECT * FROM travelers WHERE email = %s\", (email,))`"
-      - "`conn.execute(\"SELECT * FROM travelers WHERE email = '%s'\" % email)`"
+      - "`conn.execute(f\"SELECT * FROM customers WHERE email = '{email}'\")`"
+      - "`conn.execute(\"SELECT * FROM customers WHERE email = '\" + email + \"'\")`"
+      - "`conn.execute(\"SELECT * FROM customers WHERE email = %s\", (email,))`"
+      - "`conn.execute(\"SELECT * FROM customers WHERE email = '%s'\" % email)`"
     answer: 2
     explanation: Only the third passes the value separately as a parameter. The others paste user input into the SQL text.
 
   - type: predict
     prompt: What does this return?
     code: |
-      PREPARE by_email(text) AS SELECT count(*) FROM travelers WHERE email = $1;
+      PREPARE by_email(text) AS SELECT count(*) FROM customers WHERE email = $1;
       EXECUTE by_email('x'' OR ''1''=''1');
     options:
       - "0"
-      - "6"
-      - "5"
+      - "5020"
+      - "1"
       - An error
     answer: 0
     explanation: The parameter is treated as one plain text value. No email equals that odd string, so the count is 0. The injection attempt does nothing.
@@ -44,11 +44,11 @@ questions:
     explanation: Each connection costs server memory and there's a limit. A pool shares a small number of connections across all requests.
 
   - type: mcq
-    prompt: "An ORM loop prints `trip.traveler.full_name` for 500 trips and the page is slow. What's the likely cause and fix?"
+    prompt: "An ORM loop prints `order.customer.first_name` for 500 orders and the page is slow. What's the likely cause and fix?"
     options:
       - Missing primary key. Add one.
-      - N+1 queries. Load travelers up front (select_related, joinedload, include).
+      - N+1 queries. Load customers up front (select_related, joinedload, include).
       - Too many columns. Use SELECT *.
       - The ORM is broken. Rewrite in raw SQL.
     answer: 1
-    explanation: Each access to trip.traveler runs another query. Eager loading fetches them all in one go.
+    explanation: Each access to order.customer runs another query. Eager loading fetches them all in one go.

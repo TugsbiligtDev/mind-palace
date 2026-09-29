@@ -2,7 +2,7 @@ steps:
   - kind: explain
     title: Tables change over time
     body: |
-      No design is final. Wanderly will want a phone number column next month, a rename the month after, a new rule after some bad data sneaks in.
+      No design is final. Inkwell will want a phone number column next month, a rename the month after, a new rule after some bad data sneaks in.
 
       **`ALTER TABLE`** changes an existing table's structure **without** losing its rows:
 
@@ -16,13 +16,13 @@ steps:
     title: Adding a column
     body: |
       ```sql
-      ALTER TABLE travelers ADD COLUMN phone text;
+      ALTER TABLE customers ADD COLUMN birth_date date;
       ```
 
       Existing rows get **NULL** in the new column. Give it a **DEFAULT** and existing rows get that value instead:
 
       ```sql
-      ALTER TABLE travelers
+      ALTER TABLE customers
         ADD COLUMN loyalty_points integer NOT NULL DEFAULT 0;
       ```
 
@@ -31,31 +31,31 @@ steps:
   - kind: try
     title: Points for everyone
     body: |
-      Run it. Every existing traveler starts with 0 points.
+      Run it. Every existing customer starts with 0 points.
     sql: |
-      ALTER TABLE travelers
+      ALTER TABLE customers
         ADD COLUMN loyalty_points integer NOT NULL DEFAULT 0;
 
-      SELECT full_name, loyalty_points FROM travelers;
+      SELECT first_name, loyalty_points FROM customers;
 
   - kind: try
     title: Your turn to add a column
     body: |
-      The SELECT asks for a `nationality` column that doesn't exist yet. Add it above the SELECT as a `text` column, then run both.
+      The SELECT asks for a `phone` column that doesn't exist yet. Add it above the SELECT as a `text` column, then run both.
     sql: |
-      SELECT full_name, nationality FROM travelers;
+      SELECT first_name, phone FROM customers;
     broken_starter: true
     expect: |
-      ALTER TABLE travelers ADD COLUMN nationality text;
-      SELECT full_name, nationality FROM travelers;
+      ALTER TABLE customers ADD COLUMN phone text;
+      SELECT first_name, phone FROM customers;
 
   - kind: explain
     title: Dropping and renaming
     body: |
       ```sql
-      ALTER TABLE travelers DROP COLUMN phone;                  -- column and its data, gone
-      ALTER TABLE travelers RENAME COLUMN home_city TO hometown;
-      ALTER TABLE trip_stops RENAME TO stops;                   -- renames the table
+      ALTER TABLE customers DROP COLUMN phone;                  -- column and its data, gone
+      ALTER TABLE customers RENAME COLUMN city TO home_city;
+      ALTER TABLE order_items RENAME TO order_lines;            -- renames the table
       ```
 
       - **DROP COLUMN** deletes every value in that column. There's no undo.
@@ -64,16 +64,16 @@ steps:
   - kind: try
     title: Rename, then use the new name
     body: |
-      Run it. Then change the SELECT to use the **old** name, `home_city`, and read the error.
+      Run it. Then change the SELECT to use the **old** name, `city`, and read the error.
     sql: |
-      ALTER TABLE travelers RENAME COLUMN home_city TO hometown;
-      SELECT full_name, hometown FROM travelers;
+      ALTER TABLE customers RENAME COLUMN city TO hometown;
+      SELECT first_name, hometown FROM customers;
 
   - kind: explain
     title: Changing a column's type
     body: |
       ```sql
-      ALTER TABLE cities ALTER COLUMN population TYPE bigint;
+      ALTER TABLE books ALTER COLUMN pages TYPE bigint;
       ```
 
       PostgreSQL converts every existing value. If it can't convert one automatically (text → number, for example), add **`USING`** to say how:
@@ -93,7 +93,7 @@ steps:
       Then add a row `('free')` to the INSERT and run it again. One bad value blocks the whole conversion.
     sql: |
       CREATE TABLE imports (item text, price text);
-      INSERT INTO imports VALUES ('map', '4.50'), ('guidebook', '19.99');
+      INSERT INTO imports VALUES ('bookmark', '4.50'), ('tote bag', '19.99');
 
       ALTER TABLE imports
         ALTER COLUMN price TYPE numeric(8,2) USING price::numeric(8,2);
@@ -106,17 +106,17 @@ steps:
       Constraints (Module 12) can be added and removed later:
 
       ```sql
-      ALTER TABLE cities ADD CONSTRAINT cities_population_positive CHECK (population > 0);
-      ALTER TABLE cities DROP CONSTRAINT cities_population_positive;
+      ALTER TABLE books ADD CONSTRAINT books_stock_limit CHECK (stock <= 1000);
+      ALTER TABLE books DROP CONSTRAINT books_stock_limit;
 
-      ALTER TABLE trips ALTER COLUMN end_date SET NOT NULL;
-      ALTER TABLE trips ALTER COLUMN end_date DROP NOT NULL;
+      ALTER TABLE customers ALTER COLUMN city SET NOT NULL;
+      ALTER TABLE customers ALTER COLUMN city DROP NOT NULL;
 
-      ALTER TABLE trips ALTER COLUMN status SET DEFAULT 'draft';
-      ALTER TABLE trips ALTER COLUMN status DROP DEFAULT;
+      ALTER TABLE orders ALTER COLUMN status SET DEFAULT 'paid';
+      ALTER TABLE orders ALTER COLUMN status DROP DEFAULT;
 
-      ALTER TABLE trips ADD CONSTRAINT trips_traveler_fk
-        FOREIGN KEY (traveler_id) REFERENCES travelers (traveler_id);
+      ALTER TABLE reviews ADD CONSTRAINT reviews_book_fk
+        FOREIGN KEY (book_id) REFERENCES books (book_id);
       ```
 
       This is where naming your constraints pays off: dropping one needs its name.
@@ -135,41 +135,41 @@ steps:
   - kind: try
     title: Your turn to clean, then enforce
     body: |
-      Wanderly wants every traveler to have an email. The ALTER fails because Dulguun (traveler 4) has none. Run it and read the error.
+      Inkwell wants every customer profile to have a bio. The ALTER fails because two profiles (customers 4 and 18) have none. Run it and read the error.
 
-      Dulguun's email is **dulguun@example.com**. Add an UPDATE **before** the ALTER to fix that row, then run it all.
+      Add an UPDATE **before** the ALTER that sets every missing bio to **No bio yet.**, then run it all.
     sql: |
-      ALTER TABLE travelers ALTER COLUMN email SET NOT NULL;
+      ALTER TABLE customer_profiles ALTER COLUMN bio SET NOT NULL;
 
-      SELECT full_name, email FROM travelers ORDER BY traveler_id;
+      SELECT customer_id, bio FROM customer_profiles ORDER BY customer_id;
     broken_starter: true
     expect: |
-      UPDATE travelers SET email = 'dulguun@example.com' WHERE traveler_id = 4;
-      ALTER TABLE travelers ALTER COLUMN email SET NOT NULL;
+      UPDATE customer_profiles SET bio = 'No bio yet.' WHERE bio IS NULL;
+      ALTER TABLE customer_profiles ALTER COLUMN bio SET NOT NULL;
 
-      SELECT full_name, email FROM travelers ORDER BY traveler_id;
+      SELECT customer_id, bio FROM customer_profiles ORDER BY customer_id;
 
   - kind: explain
     title: The danger of DROP … CASCADE
     body: |
-      `DROP TABLE travelers;` **fails**, because trips and reviews have foreign keys pointing at it. PostgreSQL is protecting you.
+      `DROP TABLE customers;` **fails**, because orders, reviews and customer_profiles have foreign keys pointing at it. PostgreSQL is protecting you.
 
       Adding **`CASCADE`** makes it drop **everything that depends on** the table too:
 
       ```sql
-      DROP TABLE travelers CASCADE;
+      DROP TABLE customers CASCADE;
       ```
 
-      Here that removes the foreign key rules on `trips` and `reviews` (their rows stay, but are no longer protected), plus any views built on travelers (Module 34). On a real database, CASCADE can remove far more than you expected, so read the error's dependency list first, and drop dependents on purpose.
+      Here that removes the foreign key rules on `orders`, `reviews` and `customer_profiles` (their rows stay, but are no longer protected), plus any views built on customers (Module 34). On a real database, CASCADE can remove far more than you expected, so read the error's dependency list first, and drop dependents on purpose.
 
       Don't confuse it with `ON DELETE CASCADE` (Module 13), which deletes child **rows**. `DROP … CASCADE` removes dependent **objects**.
 
   - kind: try
     title: Protected from yourself
     body: |
-      Run it and read the error: the DETAIL lists everything that depends on travelers.
+      Run it and read the error: the DETAIL lists everything that depends on customers.
     sql: |
-      DROP TABLE travelers;
+      DROP TABLE customers;
     expect_error: true
 
   - kind: why

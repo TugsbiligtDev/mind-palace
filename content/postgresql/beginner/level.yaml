@@ -1,12 +1,13 @@
 id: beginner
 title: Beginner
 season: 1
-season_title: The Wanderly Files
+season_title: The Inkwell Files
 season_pitch: |
-  Someone has been rewriting Wanderly's records and signing their work **~C**. Learn how a
+  Someone has been rewriting Inkwell Books' records and signing their work **~E**. Learn how a
   database works, how to ask it questions, how to build tables that protect their data, and
   how to design a database from scratch, one case at a time.
 status: open
+dataset: bookstore
 topics:
   - 01-what-is-a-database
   - 02-terminal-and-psql

@@ -2,76 +2,61 @@ steps:
   - kind: explain
     title: Arrays
     body: |
-      Any type can be an **array**, a list in one column: `text[]`, `integer[]`, `date[]`.
+      Any type can be an **array**, a list in one column: `text[]`, `integer[]`, `date[]`. Inkwell's `books.tags` is one: `{staff-pick,book-club}`.
 
       ```sql
-      CREATE TABLE guides (
-          name       text PRIMARY KEY,
-          languages  text[] NOT NULL DEFAULT '{}'
+      CREATE TABLE books (
+          …
+          tags  text[] NOT NULL DEFAULT '{}'
       );
-      INSERT INTO guides VALUES ('Bat', '{en,fr,mn}'), ('Saruul', ARRAY['mn','ru']);
       ```
 
-      Working with them:
+      You write an array as `'{a,b,c}'` or `ARRAY['a','b','c']`. Working with them:
 
       | Expression | Means |
       |---|---|
-      | `languages[1]` | the first item (arrays count from **1**) |
-      | `'fr' = ANY(languages)` | is 'fr' in the list? |
-      | `languages @> '{fr,en}'` | contains all of these? |
-      | `languages && '{fr,ru}'` | shares any item with this list? |
-      | `array_length(languages, 1)` | how many items |
-      | `unnest(languages)` | one row per item |
+      | `tags[1]` | the first item (arrays count from **1**) |
+      | `'bestseller' = ANY(tags)` | is 'bestseller' in the list? |
+      | `tags @> '{staff-pick,book-club}'` | contains all of these? |
+      | `tags && '{signed-copy,new-release}'` | shares any item with this list? |
+      | `array_length(tags, 1)` | how many items |
+      | `unnest(tags)` | one row per item |
 
   - kind: try
     title: Play with an array
     body: |
-      Run it. Then change the WHERE to find guides who speak Russian (`'ru'`).
+      Books tagged as award winners. Run it. Then change the WHERE to find the signed copies (`'signed-copy'`), or books with **both** `staff-pick` and `book-club` using `@>`.
     sql: |
-      CREATE TABLE guides (
-          name       text PRIMARY KEY,
-          languages  text[] NOT NULL DEFAULT '{}'
-      );
-      INSERT INTO guides VALUES ('Bat', '{en,fr,mn}'), ('Saruul', ARRAY['mn','ru']);
-
-      SELECT name, languages, languages[1] AS first_language,
-             array_length(languages, 1) AS how_many
-      FROM guides
-      WHERE 'fr' = ANY(languages);
+      SELECT title, tags, tags[1] AS first_tag,
+             array_length(tags, 1) AS how_many
+      FROM books
+      WHERE 'award-winner' = ANY(tags);
 
   - kind: try
     title: Your turn with arrays
     body: |
-      Return one row per guide **per language**: columns `name` and **language**, using `unnest`.
+      For the first 25 books (`book_id` 25 or less), return one row per book **per tag**: columns `title` and **tag**, using `unnest`. Books with no tags simply produce no rows.
     sql: |
-      CREATE TABLE guides (
-          name       text PRIMARY KEY,
-          languages  text[] NOT NULL DEFAULT '{}'
-      );
-      INSERT INTO guides VALUES ('Bat', '{en,fr,mn}'), ('Saruul', ARRAY['mn','ru']);
-
-      SELECT name, languages FROM guides;
+      SELECT title, tags
+      FROM books
+      WHERE book_id <= 25;
     expect: |
-      CREATE TABLE guides (
-          name       text PRIMARY KEY,
-          languages  text[] NOT NULL DEFAULT '{}'
-      );
-      INSERT INTO guides VALUES ('Bat', '{en,fr,mn}'), ('Saruul', ARRAY['mn','ru']);
-
-      SELECT name, unnest(languages) AS language FROM guides;
+      SELECT title, unnest(tags) AS tag
+      FROM books
+      WHERE book_id <= 25;
 
   - kind: explain
     title: Array or junction table?
     body: |
       Module 17 said "one value per cell". An array is a deliberate, **typed** exception, and it's fine in some cases:
 
-      **An array is fine when** the items are simple values (tags, labels, language codes), you mostly read the whole list together, and the items don't need their own facts or foreign keys.
+      **An array is fine when** the items are simple values (tags, labels, language codes), you mostly read the whole list together, and the items don't need their own facts or foreign keys. Inkwell's tags are exactly that.
 
       **Use a junction table (Module 13) when:**
 
-      - the items are **real entities** that should exist in their own table (a language with a name and a flag, a product)
+      - the items are **real entities** that should exist in their own table. A book's authors are people with names and birth years, so Inkwell links them through the `book_authors` junction table instead of an array.
       - you need a **foreign key** so every item is valid (arrays can't have FKs)
-      - each link has its **own facts** (level of fluency, date certified)
+      - each link has its **own facts** (like `author_order`: main author or co-author)
       - you often ask "who has X?" across many rows and need it fast (arrays can be indexed with GIN, but a junction table is usually simpler to query and maintain)
 
       When in doubt, use a junction table. It never gets in your way later.
@@ -79,13 +64,13 @@ steps:
   - kind: explain
     title: "Fixed lists of values: three options"
     body: |
-      A trip's `status` should only ever be `planned`, `completed` or `cancelled`. Three ways to enforce that:
+      An order's `status` should only ever be `pending`, `paid`, `shipped`, `delivered` or `cancelled`. Inkwell uses a CHECK for that. There are three ways to enforce it:
 
       | Option | Looks like | Good | Watch out |
       |---|---|---|---|
-      | **CHECK** | `CHECK (status IN ('planned','completed','cancelled'))` | simple, easy to change | the list lives in one table's rule |
-      | **ENUM type** | `CREATE TYPE trip_status AS ENUM ('planned','completed','cancelled')` | compact, sorts in the listed order, reusable in many tables | **adding** values is easy, **removing or renaming** them is hard |
-      | **Lookup table** | `trip_statuses (status PRIMARY KEY, label, sort_order)` + a foreign key | values are data: editable, can carry extra columns (a label, a color) | one more table and join |
+      | **CHECK** | `CHECK (status IN ('pending','paid','shipped','delivered','cancelled'))` | simple, easy to change | the list lives in one table's rule |
+      | **ENUM type** | `CREATE TYPE order_status AS ENUM ('pending','paid','shipped','delivered','cancelled')` | compact, sorts in the listed order, reusable in many tables | **adding** values is easy, **removing or renaming** them is hard |
+      | **Lookup table** | `order_statuses (status PRIMARY KEY, label, sort_order)` + a foreign key | values are data: editable, can carry extra columns (a label, a color) | one more table and join |
 
       Rough guide: **CHECK** for short lists local to one table; **ENUM** for stable lists that will only grow; a **lookup table** when the list changes often, has extra info, or is managed by non-developers.
 
@@ -96,7 +81,7 @@ steps:
     sql: |
       CREATE TYPE priority AS ENUM ('low', 'medium', 'high');
       CREATE TABLE tasks (title text, level priority NOT NULL);
-      INSERT INTO tasks VALUES ('Book hotel', 'high'), ('Pack', 'low'), ('Buy map', 'medium');
+      INSERT INTO tasks VALUES ('Restock Dune', 'high'), ('Dust the shelves', 'low'), ('Plan book club', 'medium');
 
       SELECT title, level FROM tasks ORDER BY level;
 
@@ -106,15 +91,15 @@ steps:
       Module 17 warned against storing values you can calculate, because copies go stale. A **generated column** is calculated **by PostgreSQL** from other columns in the same row, so it can never disagree with them:
 
       ```sql
-      CREATE TABLE hotel_stays (
-          guest            text,
-          nights           integer,
-          price_per_night  numeric(8,2),
-          total_price      numeric(10,2) GENERATED ALWAYS AS (nights * price_per_night)
+      CREATE TABLE sale_lines (
+          customer    text,
+          copies      integer,
+          unit_price  numeric(8,2),
+          line_total  numeric(10,2) GENERATED ALWAYS AS (copies * unit_price)
       );
       ```
 
-      You can't write to it. It updates itself when `nights` or `price_per_night` change.
+      You can't write to it. It updates itself when `copies` or `unit_price` change.
 
       Two kinds:
 
@@ -126,29 +111,29 @@ steps:
   - kind: try
     title: Your turn to make it self-updating
     body: |
-      This is the stale-total table from Module 17. Change `total_price` into a **generated column** (`nights * price_per_night`), and remove it from the INSERT (you can't write to it). Then run it: after the UPDATE, the total should be 480.
+      This is the stale-total table from Module 17. Change `line_total` into a **generated column** (`copies * unit_price`), and remove it from the INSERT (you can't write to it). Then run it: after the UPDATE, the total should be 50.00.
     sql: |
-      CREATE TABLE hotel_stays (
-          guest            text,
-          nights           integer,
-          price_per_night  numeric(8,2),
-          total_price      numeric(10,2)
+      CREATE TABLE sale_lines (
+          customer    text,
+          copies      integer,
+          unit_price  numeric(8,2),
+          line_total  numeric(10,2)
       );
-      INSERT INTO hotel_stays VALUES ('Amina', 3, 120.00, 360.00);
-      UPDATE hotel_stays SET nights = 4 WHERE guest = 'Amina';
+      INSERT INTO sale_lines VALUES ('Emma', 3, 12.50, 37.50);
+      UPDATE sale_lines SET copies = 4 WHERE customer = 'Emma';
 
-      SELECT guest, nights, total_price FROM hotel_stays;
+      SELECT customer, copies, line_total FROM sale_lines;
     expect: |
-      CREATE TABLE hotel_stays (
-          guest            text,
-          nights           integer,
-          price_per_night  numeric(8,2),
-          total_price      numeric(10,2) GENERATED ALWAYS AS (nights * price_per_night)
+      CREATE TABLE sale_lines (
+          customer    text,
+          copies      integer,
+          unit_price  numeric(8,2),
+          line_total  numeric(10,2) GENERATED ALWAYS AS (copies * unit_price)
       );
-      INSERT INTO hotel_stays (guest, nights, price_per_night) VALUES ('Amina', 3, 120.00);
-      UPDATE hotel_stays SET nights = 4 WHERE guest = 'Amina';
+      INSERT INTO sale_lines (customer, copies, unit_price) VALUES ('Emma', 3, 12.50);
+      UPDATE sale_lines SET copies = 4 WHERE customer = 'Emma';
 
-      SELECT guest, nights, total_price FROM hotel_stays;
+      SELECT customer, copies, line_total FROM sale_lines;
 
   - kind: info
     title: "🔹 Range types"
@@ -161,7 +146,7 @@ steps:
           && daterange('2026-03-09', '2026-03-12');                         -- overlap? true
       ```
 
-      By default the start is **included** and the end **excluded**, written `[2026-03-01,2026-03-10)`, the same half-open idea as Module 27. Ranges shine for bookings and "no two stays may overlap" rules, which you'll build in Module 40.
+      By default the start is **included** and the end **excluded**, written `[2026-03-01,2026-03-10)`, the same half-open idea as Module 27. Ranges shine for bookings and "no two promotions may overlap" rules, which you'll build in Module 40.
 
   - kind: info
     title: "🔹 Domains, inet and citext"
@@ -169,7 +154,7 @@ steps:
       - **Domain**: your own named type with a rule built in, reusable across tables:
         `CREATE DOMAIN email_address AS text CHECK (VALUE ~ '^[^@]+@[^@]+$');`
       - **`inet` / `cidr`**: IP addresses and networks, with operators like "is this address inside this network?": `'192.168.1.5'::inet << '192.168.1.0/24'`.
-      - **`citext`**: case-insensitive text from an extension (`CREATE EXTENSION citext;`). `'Amina@Example.com' = 'amina@example.com'` is true. Handy for emails and usernames. (This browser sandbox doesn't include it. Try it on your Mac.)
+      - **`citext`**: case-insensitive text from an extension (`CREATE EXTENSION citext;`). `'Emma@Example.com' = 'emma@example.com'` is true. Handy for emails and usernames. (This browser sandbox doesn't include it. Try it on your Mac.)
 
   - kind: why
     body: |

@@ -3,31 +3,31 @@ questions:
   - type: predict
     prompt: What does this return?
     code: |
-      SELECT 'Dulguun' || NULL AS joined;
+      SELECT 'Emma' || NULL AS joined;
     options:
-      - "Dulguun"
+      - "Emma"
       - "NULL"
-      - "DulguunNULL"
+      - "EmmaNULL"
       - An error
     answer: 1
-    explanation: "Joining anything to NULL with `||` gives NULL. `concat('Dulguun', NULL)` would give `Dulguun`."
+    explanation: "Joining anything to NULL with `||` gives NULL. `concat('Emma', NULL)` would give `Emma`."
 
   - type: predict
     prompt: What does this return?
     code: |
-      SELECT split_part('Erdene, Dulguun', ', ', 2) AS first_name;
+      SELECT split_part('Johnson, Emma', ', ', 2) AS first_name;
     options:
-      - "Erdene"
-      - "Dulguun"
-      - "Erdene, Dulguun"
+      - "Johnson"
+      - "Emma"
+      - "Johnson, Emma"
       - "NULL"
     answer: 1
-    explanation: The text is split on `', '` (comma plus space), giving the pieces Erdene and Dulguun. Piece 2 is Dulguun, with no leading space because the space was part of the separator.
+    explanation: The text is split on `', '` (comma plus space), giving the pieces Johnson and Emma. Piece 2 is Emma, with no leading space because the space was part of the separator.
 
   - type: predict
     prompt: What does this return?
     code: |
-      SELECT round(136.666666, 2) AS per_night;
+      SELECT round(136.666666, 2) AS per_page;
     options:
       - "136.66"
       - "136.67"
@@ -37,28 +37,28 @@ questions:
     explanation: "`round(x, 2)` rounds to two decimal places, and 136.666… rounds up to 136.67."
 
   - type: fill
-    prompt: Divide safely, so a stop with 0 nights gives NULL instead of a division-by-zero error.
+    prompt: Work out price ÷ stock, but so a sold-out book (stock 0) gives NULL instead of a division-by-zero error.
     code: |
-      SELECT cost / ____(nights, 0) FROM trip_stops;
+      SELECT price / ____(stock, 0) FROM books;
     answer: NULLIF
     accept: ["nullif"]
-    explanation: "`NULLIF(nights, 0)` turns a 0 into NULL, and dividing by NULL gives NULL instead of an error."
+    explanation: "`NULLIF(stock, 0)` turns a 0 into NULL, and dividing by NULL gives NULL instead of an error."
 
   - type: mcq
     prompt: |
-      An attraction costs 0. Which label does it get?
+      A book has a stock of 0. Which label does it get?
 
       ```sql
       CASE
-        WHEN entry_fee < 25 THEN 'budget'
-        WHEN entry_fee = 0  THEN 'free'
-        ELSE 'premium'
+        WHEN stock < 10 THEN 'low'
+        WHEN stock = 0  THEN 'sold out'
+        ELSE 'in stock'
       END
       ```
     options:
-      - "free"
-      - "budget"
-      - "premium"
-      - Both free and budget
+      - "sold out"
+      - "low"
+      - "in stock"
+      - Both sold out and low
     answer: 1
-    explanation: CASE uses the **first** WHEN that's true. 0 < 25 is true, so it's 'budget' and the 'free' branch is never reached. Put the most specific conditions first.
+    explanation: CASE uses the **first** WHEN that's true. 0 < 10 is true, so it's 'low' and the 'sold out' branch is never reached. Put the most specific conditions first.

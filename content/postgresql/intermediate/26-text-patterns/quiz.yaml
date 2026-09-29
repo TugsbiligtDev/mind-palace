@@ -25,15 +25,15 @@ questions:
   - type: predict
     prompt: What does this return?
     code: |
-      SELECT 'Louvre Museum' ~ 'museum' AS a,
-             'Louvre Museum' ~* 'museum' AS b;
+      SELECT 'Murder on the Orient Express' ~ 'murder' AS a,
+             'Murder on the Orient Express' ~* 'murder' AS b;
     options:
       - "t | t"
       - "f | t"
       - "t | f"
       - "f | f"
     answer: 1
-    explanation: "`~` is case-sensitive, so lowercase museum doesn't match Museum. `~*` ignores case, so it does."
+    explanation: "`~` is case-sensitive, so lowercase murder doesn't match Murder. `~*` ignores case, so it does."
 
   - type: fill
     prompt: Replace **every** run of spaces with a single space, not just the first.
@@ -43,7 +43,7 @@ questions:
     explanation: "The `'g'` (global) flag makes regexp_replace replace every match. Without it, only the first run is replaced."
 
   - type: mcq
-    prompt: "Why is `WHERE name ILIKE '%rome%'` slow on a huge table?"
+    prompt: "Why is `WHERE title ILIKE '%river%'` slow on a huge table?"
     options:
       - ILIKE is deprecated
       - A leading wildcard means a normal index can't help, so every row must be checked

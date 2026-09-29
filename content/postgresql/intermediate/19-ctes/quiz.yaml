@@ -47,19 +47,19 @@ questions:
     explanation: CTEs are about readability and reuse. They last only for the one statement, and they aren't automatically faster.
 
   - type: predict
-    prompt: Using the Wanderly `employees` table, what does this return?
+    prompt: Using Inkwell's `employees` table, what does this return?
     code: |
-      WITH RECURSIVE under_gerel AS (
-          SELECT employee_id FROM employees WHERE full_name = 'Gerel Tsog'
+      WITH RECURSIVE under_marcus AS (
+          SELECT employee_id FROM employees WHERE full_name = 'Marcus Reed'
           UNION ALL
           SELECT e.employee_id FROM employees e
-          JOIN under_gerel u ON e.manager_id = u.employee_id
+          JOIN under_marcus u ON e.manager_id = u.employee_id
       )
-      SELECT count(*) FROM under_gerel;
+      SELECT count(*) FROM under_marcus;
     options:
       - "1"
       - "3"
       - "4"
       - "9"
     answer: 2
-    explanation: Gerel (the anchor) plus Gerel's three direct reports (Temuulen, Nomin, Bat-Erdene), who have no reports of their own. That's 4.
+    explanation: Marcus (the anchor) plus Marcus's three direct reports (Tom, Sara and Kenji), who have no reports of their own. That's 4.

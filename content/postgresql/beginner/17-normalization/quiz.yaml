@@ -1,14 +1,14 @@
 pass: 3
 questions:
   - type: mcq
-    prompt: A guide's phone is stored on every booking. Deleting a guide's only booking loses their phone number. Which anomaly is that?
+    prompt: A publisher's phone is stored on every sale. Deleting a publisher's only sale loses its phone number. Which anomaly is that?
     options:
       - Update anomaly
       - Insert anomaly
       - Delete anomaly
       - Join anomaly
     answer: 2
-    explanation: A delete anomaly is when removing one fact (the booking) also removes an unrelated fact (the phone) that was only stored there.
+    explanation: A delete anomaly is when removing one fact (the sale) also removes an unrelated fact (the phone) that was only stored there.
 
   - type: mcq
     prompt: "A `students` table has a column `courses` holding `'Math, Art, Music'`. Which normal form does it break?"
@@ -21,14 +21,14 @@ questions:
     explanation: 1NF requires one value per cell. The fix is a junction table with one row per student-course pair.
 
   - type: mcq
-    prompt: "`order_items (order_id, product_id, quantity, product_name)`, primary key `(order_id, product_id)`. What's wrong?"
+    prompt: "`enrollments (student_id, course_id, grade, course_name)`, primary key `(student_id, course_id)`. What's wrong?"
     options:
-      - quantity should move to orders
-      - product_name depends on product_id alone, part of the key, so it breaks 2NF
+      - grade should move to students
+      - course_name depends on course_id alone, part of the key, so it breaks 2NF
       - Nothing, it's in 3NF
-      - The key should be quantity
+      - The key should be grade
     answer: 1
-    explanation: product_name depends on only part of the composite key. Move it to a products table.
+    explanation: course_name depends on only part of the composite key. Move it to a courses table.
 
   - type: mcq
     prompt: "`employees (employee_id, department_id, department_name)`. Why isn't it in 3NF?"
@@ -43,10 +43,10 @@ questions:
   - type: predict
     prompt: What does the last statement return?
     code: |
-      CREATE TABLE stays (nights integer, price numeric, total numeric);
-      INSERT INTO stays VALUES (2, 50, 100);
-      UPDATE stays SET nights = 3;
-      SELECT total, nights * price AS real_total FROM stays;
+      CREATE TABLE lines (copies integer, price numeric, total numeric);
+      INSERT INTO lines VALUES (2, 50, 100);
+      UPDATE lines SET copies = 3;
+      SELECT total, copies * price AS real_total FROM lines;
     options:
       - "100 | 150"
       - "150 | 150"

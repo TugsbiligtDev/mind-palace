@@ -1,14 +1,14 @@
 pass: 3
 questions:
   - type: mcq
-    prompt: One country has many cities. Which table should hold the foreign key?
+    prompt: One publisher has many books. Which table should hold the foreign key?
     options:
-      - "`countries`, as a `city_id` column"
-      - "`cities`, as a `country_id` column"
+      - "`publishers`, as a `book_id` column"
+      - "`books`, as a `publisher_id` column"
       - Both tables
       - A junction table
     answer: 1
-    explanation: In a one-to-many relationship, the FK goes on the "many" side. Each city stores the one country it belongs to.
+    explanation: In a one-to-many relationship, the FK goes on the "many" side. Each book stores the one publisher it belongs to.
 
   - type: mcq
     prompt: Students take many courses, and each course has many students. How do you model it?
@@ -52,11 +52,11 @@ questions:
     explanation: "`ON DELETE SET NULL` keeps the child row and sets its foreign key to NULL."
 
   - type: mcq
-    prompt: You add a foreign key `trips.traveler_id`. What does PostgreSQL **not** do for you automatically?
+    prompt: You add a foreign key `orders.customer_id`. What does PostgreSQL **not** do for you automatically?
     options:
-      - Check that each traveler_id exists in travelers
-      - Refuse to delete a traveler who has trips
-      - Create an index on `trips.traveler_id`
-      - Reject a traveler_id of 99 when there's no traveler 99
+      - Check that each customer_id exists in customers
+      - Refuse to delete a customer who has orders
+      - Create an index on `orders.customer_id`
+      - Reject a customer_id of 99 when there's no customer 99
     answer: 2
     explanation: PostgreSQL indexes primary keys automatically, but not foreign key columns. Add the index yourself to keep lookups and parent deletes fast.

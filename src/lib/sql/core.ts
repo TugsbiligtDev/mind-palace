@@ -51,13 +51,23 @@ const RAW_ARRAYS = Object.fromEntries(ARRAY_TYPE_OIDS.map((oid) => [oid, (x: str
 
 // A brand-new copy of `db` for one run. PGlite's own clone() drops the parsers above
 // (dates would print as 2026-03-01T00:00:00.000Z), so copy the data directory ourselves.
+// The base database never changes (runs happen on copies), so its data directory is
+// exported once, compressed, and reused: the big Intermediate dataset is ~90 MB unpacked.
 // The time zone is pinned to UTC so every learner, and the content check, sees the same
 // timestamps whatever their computer's zone is.
+type Dumpable = PGliteInterface & { dumpDataDir(compression?: "gzip" | "none"): Promise<File | Blob> };
+const dumps = new WeakMap<Dumpable, Promise<File | Blob>>();
+
 export async function freshCopy(
-  db: PGliteInterface & { dumpDataDir(compression?: "none"): Promise<File | Blob> },
+  db: Dumpable,
   pglite: { PGlite: { create(options: object): Promise<PGliteInterface> }; types: Record<string, unknown> },
+  // "none" copies about twice as fast but keeps the whole unpacked database in memory:
+  // fine for the content check on a computer, too much for a browser tab.
+  compression: "gzip" | "none" = "gzip",
 ): Promise<PGliteInterface> {
-  const copy = await pglite.PGlite.create({ loadDataDir: await db.dumpDataDir("none"), parsers: rawTextParsers(pglite.types) });
+  let dump = dumps.get(db);
+  if (!dump) dumps.set(db, (dump = db.dumpDataDir(compression)));
+  const copy = await pglite.PGlite.create({ loadDataDir: await dump, parsers: rawTextParsers(pglite.types) });
   await copy.exec("SET TimeZone = 'UTC'");
   return copy;
 }

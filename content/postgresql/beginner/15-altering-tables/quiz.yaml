@@ -16,14 +16,14 @@ questions:
     explanation: A new column with a DEFAULT fills existing rows with that value. Two rows × 10 = 20.
 
   - type: mcq
-    prompt: "`ALTER TABLE trips ALTER COLUMN end_date SET NOT NULL;` fails. Why?"
+    prompt: "`ALTER TABLE orders ALTER COLUMN employee_id SET NOT NULL;` fails. Why?"
     options:
       - You can't change NOT NULL after creating a table
-      - At least one trip already has a NULL end_date
-      - end_date is a date, not text
-      - trips has a primary key
+      - At least one order already has a NULL employee_id
+      - employee_id is a number, not text
+      - orders has a primary key
     answer: 1
-    explanation: New rules are checked against every existing row. Trip 6 has no end date, so the rule can't be added until that row is fixed.
+    explanation: New rules are checked against every existing row. Online orders have no employee, so the rule can't be added while those rows hold NULL.
 
   - type: fill
     prompt: Convert a text column of numbers into `numeric`, telling PostgreSQL how.
@@ -35,14 +35,14 @@ questions:
     explanation: "`USING expression` tells ALTER COLUMN … TYPE how to convert each existing value."
 
   - type: mcq
-    prompt: What does `DROP TABLE travelers CASCADE;` do to the rows in `trips`?
+    prompt: What does `DROP TABLE customers CASCADE;` do to the rows in `orders`?
     options:
       - Deletes them all
-      - Nothing to the rows, but the foreign key rule linking them to travelers is dropped
-      - Sets every traveler_id to NULL
+      - Nothing to the rows, but the foreign key rule linking them to customers is dropped
+      - Sets every customer_id to NULL
       - It's refused
     answer: 1
-    explanation: "`DROP … CASCADE` removes dependent **objects**, like the foreign key constraint. The trip rows stay, now unprotected. (`ON DELETE CASCADE` is the one that deletes rows.)"
+    explanation: "`DROP … CASCADE` removes dependent **objects**, like the foreign key constraint. The order rows stay, now unprotected. (`ON DELETE CASCADE` is the one that deletes rows.)"
 
   - type: mcq
     prompt: You want to add a CHECK rule, but some existing rows break it. What's the right approach?

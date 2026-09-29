@@ -1,25 +1,52 @@
 steps:
   - kind: explain
+    title: "New data: the bookstore grows up"
+    body: |
+      Inkwell has been busy. For the Intermediate level, the `bookstore` database holds two and a half years of real trading (January 2023 to June 2026):
+
+      | Table | Rows |
+      |---|---|
+      | books | 300 |
+      | customers | 5,020 |
+      | orders | 39,419 |
+      | order_items | 69,881 |
+      | payments (new) | 37,274, including 660 refunds |
+      | reviews | 7,360 |
+      | raw_customer_import (new) | 310 messy rows to clean up |
+
+      Books also gained `description`, `details` (JSON) and `tags` (a list), and customers gained a `time_zone`. On your Mac, it's built by `02_bookstore.sql` followed by `03_bookstore_growth.sql`.
+
+      With this much data, `SELECT *` on a big table shows only the first 200 rows. Real answers come from WHERE, GROUP BY and LIMIT.
+
+  - kind: try
+    title: How big is it?
+    body: |
+      Run it. Then change `orders` to `order_items` or `reviews`.
+    sql: |
+      SELECT count(*) FROM orders;
+
+  - kind: explain
     title: A query inside a query
     body: |
-      *"Which attractions cost more than average?"* You'd need two steps: work out the average, then compare. A **subquery** does both in one statement: a complete SELECT in parentheses, used inside another query.
+      *"Which books cost more than average?"* You'd need two steps: work out the average, then compare. A **subquery** does both in one statement: a complete SELECT in parentheses, used inside another query.
 
       ```sql
-      SELECT name, entry_fee
-      FROM attractions
-      WHERE entry_fee > (SELECT avg(entry_fee) FROM attractions);
+      SELECT title, price
+      FROM books
+      WHERE price > (SELECT avg(price) FROM books);
       ```
 
-      PostgreSQL runs the inner query, gets 17.81, and uses that value in the outer WHERE. Subqueries can go in three places: **WHERE** (to filter), **SELECT** (to add a column), and **FROM** (as a temporary table).
+      PostgreSQL runs the inner query, gets 18.06, and uses that value in the outer WHERE. Subqueries can go in three places: **WHERE** (to filter), **SELECT** (to add a column), and **FROM** (as a temporary table).
 
   - kind: try
     title: More than average
     body: |
-      Run it. Six attractions beat the average fee. Then run just the part in parentheses on its own, to see the value it produces.
+      Run it: 141 of the 300 books beat the average price. Then run just the part in parentheses on its own, to see the value it produces.
     sql: |
-      SELECT name, entry_fee
-      FROM attractions
-      WHERE entry_fee > (SELECT avg(entry_fee) FROM attractions);
+      SELECT title, price
+      FROM books
+      WHERE price > (SELECT avg(price) FROM books)
+      ORDER BY price DESC;
 
   - kind: explain
     title: Scalar subqueries
@@ -38,7 +65,7 @@ steps:
   - kind: try
     title: Your turn with a scalar subquery
     body: |
-      Wanderly now has an `employees` table. Return the `full_name` and `salary` of every employee who earns **more than the average salary**.
+      Inkwell has 8 employees. Return the `full_name` and `salary` of every employee who earns **more than the average salary**.
     sql: |
       SELECT full_name, salary
       FROM employees;
@@ -50,11 +77,11 @@ steps:
   - kind: try
     title: Too many rows for one value
     body: |
-      The inner query returns 5 continents, but `=` needs one value. Run it and read the error.
+      The inner query returns 9 genres, but `=` needs one value. Run it and read the error.
     sql: |
-      SELECT name
-      FROM cities
-      WHERE country_id = (SELECT country_id FROM countries);
+      SELECT title
+      FROM books
+      WHERE genre_id = (SELECT genre_id FROM genres);
     expect_error: true
 
   - kind: explain
@@ -63,26 +90,26 @@ steps:
       When the inner query returns a **list**, use `IN`:
 
       ```sql
-      SELECT full_name
-      FROM travelers
-      WHERE traveler_id IN (SELECT traveler_id FROM trips WHERE status = 'completed');
+      SELECT first_name, last_name
+      FROM customers
+      WHERE customer_id IN (SELECT customer_id FROM orders WHERE status = 'cancelled');
       ```
 
-      Read it as: *travelers whose ID is in the list of IDs with a completed trip.* The subquery must return **one column**. Duplicates in the list don't matter: Amina appears once even with several completed trips.
+      Read it as: *customers whose ID is in the list of IDs with a cancelled order.* The subquery must return **one column**. Duplicates in the list don't matter: a customer with three cancelled orders still appears once.
 
       Compared with a join, IN never multiplies rows (no fan-out, Module 14). It only asks "is this in the list?"
 
   - kind: try
     title: Your turn with IN
     body: |
-      Return the `full_name` of every traveler who has written **at least one review**. Use `IN` with a subquery on `reviews`.
+      Return the `full_name` of every employee who has rung up **at least one order** in the shop. Use `IN` with a subquery on `orders`.
     sql: |
       SELECT full_name
-      FROM travelers;
+      FROM employees;
     expect: |
       SELECT full_name
-      FROM travelers
-      WHERE traveler_id IN (SELECT traveler_id FROM reviews);
+      FROM employees
+      WHERE employee_id IN (SELECT employee_id FROM orders);
 
   - kind: explain
     title: EXISTS and NOT EXISTS
@@ -90,28 +117,28 @@ steps:
       **`EXISTS (subquery)`** is true if the subquery returns **at least one row**. What it returns doesn't matter, so people write `SELECT 1`:
 
       ```sql
-      SELECT a.name
-      FROM attractions a
+      SELECT p.name
+      FROM publishers p
       WHERE NOT EXISTS (
-          SELECT 1 FROM reviews r
-          WHERE r.attraction_id = a.attraction_id
+          SELECT 1 FROM books b
+          WHERE b.publisher_id = p.publisher_id
       );
       ```
 
-      Notice the inner query mentions **`a`**, the outer table. For each attraction, it asks "is there a review for *this* one?" That's a **correlated** subquery (more below).
+      Notice the inner query mentions **`p`**, the outer table. For each publisher, it asks "is there a book for *this* one?" That's a **correlated** subquery (more below).
 
       `NOT EXISTS` is the clearest, safest way to say **"has none"**. It gives the same answer as the LEFT JOIN … IS NULL pattern from Module 14.
 
   - kind: try
-    title: Attractions nobody reviewed
+    title: A publisher with no books
     body: |
-      Run it: the two unreviewed attractions. Then remove `NOT` to list the reviewed ones instead.
+      Run it: Blue Owl Press, which hasn't published anything yet. Then remove `NOT` to list the five publishers that have.
     sql: |
-      SELECT a.name
-      FROM attractions a
+      SELECT p.name
+      FROM publishers p
       WHERE NOT EXISTS (
-          SELECT 1 FROM reviews r
-          WHERE r.attraction_id = a.attraction_id
+          SELECT 1 FROM books b
+          WHERE b.publisher_id = p.publisher_id
       );
 
   - kind: explain
@@ -126,34 +153,34 @@ steps:
   - kind: try
     title: One NULL breaks NOT IN
     body: |
-      *"Which destinations does no traveler call home?"* A new traveler with an **unknown** home city is added, then NOT IN is asked. Run it: zero rows.
+      *"Which publishers have no books?"* A new book with an **unknown** publisher is added, then NOT IN is asked. Run it: zero rows.
 
-      Delete the INSERT and run again: 6 cities appear. One NULL made them all vanish.
+      Delete the INSERT and run again: Blue Owl Press appears. One NULL made it vanish.
     sql: |
-      INSERT INTO travelers (full_name) VALUES ('Nara Nomad');
+      INSERT INTO books (title, genre_id, price) VALUES ('Untitled Manuscript', 4, 9.99);
 
       SELECT name
-      FROM cities
-      WHERE name NOT IN (SELECT home_city FROM travelers);
+      FROM publishers
+      WHERE publisher_id NOT IN (SELECT publisher_id FROM books);
 
   - kind: try
     title: Your turn to fix it with NOT EXISTS
     body: |
-      Keep the INSERT. Rewrite the query with **NOT EXISTS**, so it returns the 6 cities even with the NULL present.
+      Keep the INSERT. Rewrite the query with **NOT EXISTS**, so it returns Blue Owl Press even with the NULL present.
     sql: |
-      INSERT INTO travelers (full_name) VALUES ('Nara Nomad');
+      INSERT INTO books (title, genre_id, price) VALUES ('Untitled Manuscript', 4, 9.99);
 
       SELECT name
-      FROM cities
-      WHERE name NOT IN (SELECT home_city FROM travelers);
+      FROM publishers
+      WHERE publisher_id NOT IN (SELECT publisher_id FROM books);
     expect: |
-      INSERT INTO travelers (full_name) VALUES ('Nara Nomad');
+      INSERT INTO books (title, genre_id, price) VALUES ('Untitled Manuscript', 4, 9.99);
 
-      SELECT c.name
-      FROM cities c
+      SELECT p.name
+      FROM publishers p
       WHERE NOT EXISTS (
-          SELECT 1 FROM travelers t
-          WHERE t.home_city = c.name
+          SELECT 1 FROM books b
+          WHERE b.publisher_id = p.publisher_id
       );
 
   - kind: explain
@@ -162,31 +189,31 @@ steps:
       A **correlated** subquery refers to a column of the **outer** query, so its answer is different for each outer row. Think of it as re-running once per row:
 
       ```sql
-      SELECT tr.full_name,
+      SELECT e.full_name,
              (SELECT count(*)
-              FROM trips t
-              WHERE t.traveler_id = tr.traveler_id) AS trips
-      FROM travelers tr;
+              FROM orders o
+              WHERE o.employee_id = e.employee_id) AS orders_rung_up
+      FROM employees e;
       ```
 
-      For Amina it counts Amina's trips, for Baatar, Baatar's, and so on. Unlike a plain subquery (which runs once), this one depends on `tr`.
+      For Tom it counts Tom's orders, for Sara, Sara's, and so on. Unlike a plain subquery (which runs once), this one depends on `e`.
 
       They're very readable. On big tables they can be slow, and a join with GROUP BY often does the same job faster (Module 33 shows how to tell).
 
   - kind: try
     title: Your turn with a correlated subquery
     body: |
-      Show each employee's `full_name`, `department`, `salary`, and the **average salary of their own department**, rounded to 2 decimals and labeled **dept_avg**.
+      Show each employee's `full_name`, `job_title`, `salary`, and the **average salary of everyone with the same job title**, rounded to 2 decimals and labeled **title_avg**.
 
-      Hint: give the outer table an alias like `e`, and give the inner one a different alias like `d`, then match `d.department = e.department`.
+      Hint: give the outer table an alias like `e`, and give the inner one a different alias like `x`, then match `x.job_title = e.job_title`.
     sql: |
-      SELECT full_name, department, salary
+      SELECT full_name, job_title, salary
       FROM employees;
     expect: |
-      SELECT e.full_name, e.department, e.salary,
-             (SELECT round(avg(d.salary), 2)
-              FROM employees d
-              WHERE d.department = e.department) AS dept_avg
+      SELECT e.full_name, e.job_title, e.salary,
+             (SELECT round(avg(x.salary), 2)
+              FROM employees x
+              WHERE x.job_title = e.job_title) AS title_avg
       FROM employees e;
 
   - kind: explain
@@ -195,36 +222,36 @@ steps:
       A subquery in **FROM** acts like a temporary table, called a **derived table**. It **must have an alias**:
 
       ```sql
-      SELECT round(avg(total), 2) AS avg_trip_cost
+      SELECT round(avg(total), 2) AS avg_order_value
       FROM (
-          SELECT trip_id, sum(cost) AS total
-          FROM trip_stops
-          GROUP BY trip_id
-      ) AS trip_totals;
+          SELECT order_id, sum(quantity * unit_price) AS total
+          FROM order_items
+          GROUP BY order_id
+      ) AS order_totals;
       ```
 
-      This answers a two-level question: first total each trip, then average those totals. A plain `avg(cost)` would average the **stops**, which is a different number.
+      This answers a two-level question: first total each order, then average those totals (35.68). A plain `avg(unit_price)` would average the **order lines**, which is a different number.
 
   - kind: try
     title: Your turn to follow the money
     body: |
-      The payments ledger should match what each trip cost. The starter totals **paid** per trip. Add a second derived table that totals **cost** per trip from `trip_stops`, join them on `trip_id`, and return only trips where the two **don't match**.
+      What customers paid should match what they bought. The starter totals the **payments** per order (refunds are negative). Add a second derived table that totals **quantity × unit_price** per order from `order_items`, join them on `order_id`, and return only orders where the two **don't match**.
 
-      Return `trip_id`, `paid` and `cost`. One trip should stand out.
+      Return `order_id`, `paid` and `bought`. You should get 660 orders: every one of them was refunded.
     sql: |
-      SELECT p.trip_id, p.paid
-      FROM (SELECT trip_id, sum(amount) AS paid
+      SELECT p.order_id, p.paid
+      FROM (SELECT order_id, sum(amount) AS paid
             FROM payments
-            GROUP BY trip_id) AS p;
+            GROUP BY order_id) AS p;
     expect: |
-      SELECT p.trip_id, p.paid, c.cost
-      FROM (SELECT trip_id, sum(amount) AS paid
+      SELECT p.order_id, p.paid, t.bought
+      FROM (SELECT order_id, sum(amount) AS paid
             FROM payments
-            GROUP BY trip_id) AS p
-      JOIN (SELECT trip_id, sum(cost) AS cost
-            FROM trip_stops
-            GROUP BY trip_id) AS c ON c.trip_id = p.trip_id
-      WHERE p.paid <> c.cost;
+            GROUP BY order_id) AS p
+      JOIN (SELECT order_id, sum(quantity * unit_price) AS bought
+            FROM order_items
+            GROUP BY order_id) AS t ON t.order_id = p.order_id
+      WHERE p.paid <> t.bought;
 
   - kind: why
     body: |

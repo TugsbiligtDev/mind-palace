@@ -5,15 +5,15 @@ steps:
       You've used built-in functions like `round()` and `date_trunc()`. You can write your own, stored in the database and callable from any query:
 
       ```sql
-      CREATE FUNCTION trip_cost(p_trip_id integer)
+      CREATE FUNCTION order_total(p_order_id integer)
       RETURNS numeric
       LANGUAGE sql
       STABLE
       AS $$
-          SELECT sum(cost) FROM trip_stops WHERE trip_id = p_trip_id;
+          SELECT sum(quantity * unit_price) FROM order_items WHERE order_id = p_order_id;
       $$;
 
-      SELECT trip_name, trip_cost(trip_id) FROM trips;
+      SELECT order_id, order_total(order_id) FROM orders WHERE customer_id = 40;
       ```
 
       - The **parameters** go in parentheses with their types. A `p_` prefix keeps them from being confused with column names.
@@ -24,37 +24,38 @@ steps:
   - kind: try
     title: Create and call a function
     body: |
-      Run it. Then use the function in a WHERE: `WHERE trip_cost(trip_id) > 900`.
+      Diego's orders with their totals. Run it. Then use the function in the WHERE too: add `AND order_total(order_id) > 40`.
     sql: |
-      CREATE FUNCTION trip_cost(p_trip_id integer)
+      CREATE FUNCTION order_total(p_order_id integer)
       RETURNS numeric
       LANGUAGE sql
       STABLE
       AS $$
-          SELECT sum(cost) FROM trip_stops WHERE trip_id = p_trip_id;
+          SELECT sum(quantity * unit_price) FROM order_items WHERE order_id = p_order_id;
       $$;
 
-      SELECT trip_name, trip_cost(trip_id) AS cost
-      FROM trips;
+      SELECT order_id, order_total(order_id) AS total
+      FROM orders
+      WHERE customer_id = 40;
 
   - kind: try
     title: Your turn to write a SQL function
     body: |
-      Write a function **with_tax(p_fee numeric)** that returns the fee plus 10% tax, rounded to 2 decimals. Mark it `IMMUTABLE` (explained below). Then return each attraction's `name` and `with_tax(entry_fee)` labeled **fee_with_tax**.
+      Write a function **with_tax(p_price numeric)** that returns the price plus 10% tax, rounded to 2 decimals. Mark it `IMMUTABLE` (explained below). Then return each book's `title` and `with_tax(price)` labeled **price_with_tax**.
     sql: |
-      SELECT name, entry_fee
-      FROM attractions;
+      SELECT title, price
+      FROM books;
     expect: |
-      CREATE FUNCTION with_tax(p_fee numeric)
+      CREATE FUNCTION with_tax(p_price numeric)
       RETURNS numeric
       LANGUAGE sql
       IMMUTABLE
       AS $$
-          SELECT round(p_fee * 1.10, 2);
+          SELECT round(p_price * 1.10, 2);
       $$;
 
-      SELECT name, with_tax(entry_fee) AS fee_with_tax
-      FROM attractions;
+      SELECT title, with_tax(price) AS price_with_tax
+      FROM books;
 
   - kind: explain
     title: "PL/pgSQL: logic with steps"
@@ -116,35 +117,35 @@ steps:
   - kind: try
     title: Your turn with PL/pgSQL
     body: |
-      Write a PL/pgSQL function **stay_label(p_nights integer)** that returns text:
+      Write a PL/pgSQL function **length_label(p_pages integer)** that returns text:
 
-      - `'short'` for 1 or 2 nights
-      - `'week'` for 3 to 7 nights
-      - `'long'` for more than 7
+      - `'short'` for 250 pages or fewer
+      - `'medium'` for 251 to 500 pages
+      - `'long'` for more than 500
 
-      Then return each stop's `trip_stop_id`, `nights` and `stay_label(nights)` labeled **label**.
+      Then return each book's `title`, `pages` and `length_label(pages)` labeled **label**.
     sql: |
-      SELECT trip_stop_id, nights
-      FROM trip_stops;
+      SELECT title, pages
+      FROM books;
     expect: |
-      CREATE FUNCTION stay_label(p_nights integer)
+      CREATE FUNCTION length_label(p_pages integer)
       RETURNS text
       LANGUAGE plpgsql
       IMMUTABLE
       AS $$
       BEGIN
-          IF p_nights <= 2 THEN
+          IF p_pages <= 250 THEN
               RETURN 'short';
-          ELSIF p_nights <= 7 THEN
-              RETURN 'week';
+          ELSIF p_pages <= 500 THEN
+              RETURN 'medium';
           ELSE
               RETURN 'long';
           END IF;
       END;
       $$;
 
-      SELECT trip_stop_id, nights, stay_label(nights) AS label
-      FROM trip_stops;
+      SELECT title, pages, length_label(pages) AS label
+      FROM books;
 
   - kind: explain
     title: Loops
@@ -156,8 +157,8 @@ steps:
           -- runs 5 times
       END LOOP;
 
-      FOR r IN SELECT trip_id, trip_name FROM trips LOOP
-          -- r.trip_id, r.trip_name available here
+      FOR r IN SELECT order_id, status FROM orders LOOP
+          -- r.order_id, r.status available here
       END LOOP;
       ```
 
@@ -187,7 +188,7 @@ steps:
   - kind: try
     title: A batch job with CALL
     body: |
-      This procedure copies payments older than the cutoff into an archive, committing after every 2 rows. Run it: the 2 payments from 2025 are archived.
+      This procedure copies payments older than the cutoff into an archive, committing after every 2 rows. Run it: the 9 payments from January 2023, Inkwell's first month, are archived.
     sql: |
       CREATE TABLE payments_archive (LIKE payments);
 
@@ -210,7 +211,7 @@ steps:
       END;
       $$;
 
-      CALL archive_old_payments('2026-01-01');
+      CALL archive_old_payments('2023-02-01');
       SELECT payment_id, paid_at FROM payments_archive;
 
   - kind: explain
@@ -221,7 +222,7 @@ steps:
       | Label | Promise | Examples |
       |---|---|---|
       | **IMMUTABLE** | same inputs → same output, **forever**. Reads no tables. | `with_tax`, `discount`, maths |
-      | **STABLE** | same output **within one statement**. May read tables or the time zone. | `trip_cost`, anything using `now()` |
+      | **STABLE** | same output **within one statement**. May read tables or the time zone. | `order_total`, anything using `now()` |
       | **VOLATILE** (the default) | may change every call, or changes data | `random()`, anything that INSERTs |
 
       Why it matters:

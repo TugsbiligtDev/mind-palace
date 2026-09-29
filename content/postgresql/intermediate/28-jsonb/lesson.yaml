@@ -2,9 +2,9 @@ steps:
   - kind: explain
     title: Documents inside a column
     body: |
-      **JSON** is the text format apps use to send data around: `{"indoor": true, "duration_hours": 2}`. Curly braces hold **keys** and values, and square brackets hold **lists** (arrays).
+      **JSON** is the text format apps use to send data around: `{"format": "ebook", "edition": 2}`. Curly braces hold **keys** and values, and square brackets hold **lists** (arrays).
 
-      PostgreSQL can store JSON in a column. Wanderly's `attractions.details` does, for facts that vary from attraction to attraction.
+      PostgreSQL can store JSON in a column. Inkwell's `books.details` does, for facts that vary from book to book: a paperback has dimensions, an ebook doesn't, and only some books have won awards.
 
       Two types:
 
@@ -21,7 +21,7 @@ steps:
   - kind: try
     title: json vs. jsonb
     body: |
-      The same text, stored both ways. Run it: `jsonb` dropped the duplicate key and reordered the keys.
+      The same text, stored both ways. Run it: `jsonb` dropped the duplicate key and reordered the keys. Then look at some real documents: `SELECT title, details FROM books LIMIT 5;`
     sql: |
       SELECT '{"b": 1, "a": 1, "a": 2}'::json  AS as_json,
              '{"b": 1, "a": 1, "a": 2}'::jsonb AS as_jsonb;
@@ -31,103 +31,106 @@ steps:
     body: |
       | Operator | Returns | Example |
       |---|---|---|
-      | `->  'key'` | the value **as jsonb** | `details -> 'indoor'` → `true` |
-      | `->> 'key'` | the value **as text** | `details ->> 'duration_hours'` → `'2'` |
-      | `#>  '{a,b}'` | a nested value by path, as jsonb | `doc #> '{hours,open}'` |
+      | `->  'key'` | the value **as jsonb** | `details -> 'format'` → `"hardcover"` |
+      | `->> 'key'` | the value **as text** | `details ->> 'edition'` → `'3'` |
+      | `#>  '{a,b}'` | a nested value by path, as jsonb | `details #> '{dimensions_cm,height}'` |
       | `#>> '{a,b}'` | a nested value by path, as text | |
-      | `-> 0` | the first element of an array | `doc -> 'tags' -> 0` |
+      | `-> 0` | the first element of an array | `details -> 'awards' -> 0` |
 
-      The rule of thumb: **`->` to keep digging, `->>` to finish.** `->>` gives text, so cast it for maths or comparisons: `(details ->> 'duration_hours')::numeric > 2`.
+      The rule of thumb: **`->` to keep digging, `->>` to finish.** `->>` gives text, so cast it for maths or comparisons: `(details ->> 'edition')::int > 2`.
 
       A missing key gives NULL, not an error.
 
   - kind: try
     title: Read the details
     body: |
-      Run it. Then add a column `details -> 'indoor' AS indoor_json` and notice it's JSON `true`, not text.
+      The first 25 books. Run it: ebooks have no dimensions, so their height is NULL. Then add a column `details -> 'format' AS format_json` and notice the quotes: it's JSON, not text.
     sql: |
-      SELECT name,
-             details ->> 'duration_hours' AS hours_text,
-             (details ->> 'duration_hours')::numeric * 60 AS minutes
-      FROM attractions;
+      SELECT title,
+             details ->> 'format' AS format,
+             (details ->> 'edition')::int AS edition,
+             details #>> '{dimensions_cm,height}' AS height_cm
+      FROM books
+      WHERE book_id <= 25;
 
   - kind: try
     title: Your turn to filter on a JSON value
     body: |
-      Return the `name` and the duration as a number, labeled **hours**, of every attraction that takes **3 hours or more**.
+      Return the `title` and the height as a number, labeled **height_cm**, of every book that's **at least 23.5 cm tall**. The height is nested: `details → dimensions_cm → height`.
     sql: |
-      SELECT name, details
-      FROM attractions;
+      SELECT title, details
+      FROM books;
     expect: |
-      SELECT name, (details ->> 'duration_hours')::numeric AS hours
-      FROM attractions
-      WHERE (details ->> 'duration_hours')::numeric >= 3;
+      SELECT title, (details #>> '{dimensions_cm,height}')::numeric AS height_cm
+      FROM books
+      WHERE (details #>> '{dimensions_cm,height}')::numeric >= 23.5;
 
   - kind: explain
     title: Containment and key checks
     body: |
       Two operators search documents, and both can use a GIN index:
 
-      - **`@>`** "contains": `details @> '{"indoor": true}'` is true when details has `indoor` set to `true`. It works with nested objects and arrays too: `doc @> '{"tags": ["family"]}'`.
-      - **`?`** "has this key (or array element)": `details ? 'duration_hours'`. Also `?|` (any of these keys) and `?&` (all of them).
+      - **`@>`** "contains": `details @> '{"format": "ebook"}'` is true when details has `format` set to `"ebook"`. It works with nested objects and arrays too: `details @> '{"awards": ["Hugo Award"]}'`.
+      - **`?`** "has this key (or array element)": `details ? 'dimensions_cm'`. Also `?|` (any of these keys) and `?&` (all of them).
 
-      Prefer `@>` over `details ->> 'indoor' = 'true'`: it's shorter, handles types properly, and is index-friendly.
+      Prefer `@>` over `details ->> 'format' = 'ebook'`: it's shorter, handles types properly, and is index-friendly.
 
   - kind: try
-    title: Indoor, and nested documents
+    title: Award winners, and missing keys
     body: |
-      The first query uses `@>`. The second works on a nested document with a list inside. Run both, then change `'family'` to `'night'`.
+      The first query finds the 8 books that won a Hugo Award, wherever it sits in their awards list. The second counts ebooks two ways: by format, and by the missing `dimensions_cm` key. Run both, then try `"Booker Prize"`.
     sql: |
-      SELECT name FROM attractions
-      WHERE details @> '{"indoor": true}';
+      SELECT title, details -> 'awards' AS awards
+      FROM books
+      WHERE details @> '{"awards": ["Hugo Award"]}';
 
-      SELECT doc #>> '{hours,open}'   AS opens,
-             doc -> 'tags' -> 0        AS first_tag,
-             doc -> 'tags' ? 'family'  AS family_friendly
-      FROM (SELECT '{"hours": {"open": "09:00", "close": "17:00"},
-                     "tags": ["family", "outdoor"]}'::jsonb AS doc) AS d;
+      SELECT count(*) FILTER (WHERE details @> '{"format": "ebook"}') AS ebooks,
+             count(*) FILTER (WHERE NOT details ? 'dimensions_cm')    AS no_dimensions
+      FROM books;
 
   - kind: explain
     title: Building JSON from rows
     body: |
       Apps often want JSON back. PostgreSQL can build it:
 
-      - `jsonb_build_object('name', name, 'fee', entry_fee)` builds an object from key/value pairs.
+      - `jsonb_build_object('title', title, 'price', price)` builds an object from key/value pairs.
       - `jsonb_agg(expr ORDER BY …)` is an aggregate that collects values into a JSON **array**.
       - `to_jsonb(t)` turns a whole row into an object.
 
       ```sql
-      SELECT c.name AS city,
-             jsonb_agg(a.name ORDER BY a.name) AS attractions
-      FROM cities c
-      JOIN attractions a ON a.city_id = c.city_id
-      GROUP BY c.name;
+      SELECT g.name AS genre,
+             jsonb_agg(b.title ORDER BY b.title) AS books
+      FROM genres g
+      JOIN books b ON b.genre_id = g.genre_id
+      GROUP BY g.name;
       ```
 
-      Changing a document: `doc || '{"indoor": true}'` merges keys in, `doc - 'key'` removes one, and `jsonb_set(doc, '{hours,open}', '"10:00"')` replaces a nested value.
+      Changing a document: `details || '{"signed": true}'` merges keys in, `details - 'awards'` removes one, and `jsonb_set(details, '{dimensions_cm,height}', '21.5')` replaces a nested value.
 
   - kind: try
     title: Your turn to build JSON
     body: |
-      For each attraction, return its `name` and one jsonb object labeled **card** with two keys: `"city_id"` and `"fee"` (the entry fee).
+      For each of the first 25 books (`book_id` 25 or less), return its `title` and one jsonb object labeled **card** with two keys: `"format"` (from details, as text) and `"price"`.
     sql: |
-      SELECT name, city_id, entry_fee
-      FROM attractions;
+      SELECT title, details, price
+      FROM books
+      WHERE book_id <= 25;
     expect: |
-      SELECT name,
-             jsonb_build_object('city_id', city_id, 'fee', entry_fee) AS card
-      FROM attractions;
+      SELECT title,
+             jsonb_build_object('format', details ->> 'format', 'price', price) AS card
+      FROM books
+      WHERE book_id <= 25;
 
   - kind: explain
     title: The SQL/JSON functions
     body: |
-      PostgreSQL 17 added the **SQL-standard** JSON functions. They use **JSON paths** like `'$.duration_hours'` (`$` means "the document"):
+      PostgreSQL 17 added the **SQL-standard** JSON functions. They use **JSON paths** like `'$.edition'` (`$` means "the document"):
 
       | Function | Does |
       |---|---|
-      | `JSON_VALUE(doc, '$.a' RETURNING numeric)` | one plain value, already converted to a type |
-      | `JSON_QUERY(doc, '$.tags')` | a piece of JSON (an object or array) |
-      | `JSON_EXISTS(doc, '$.tags')` | true or false: is this path there? |
+      | `JSON_VALUE(doc, '$.edition' RETURNING int)` | one plain value, already converted to a type |
+      | `JSON_QUERY(doc, '$.awards')` | a piece of JSON (an object or array) |
+      | `JSON_EXISTS(doc, '$.dimensions_cm')` | true or false: is this path there? |
       | `JSON_TABLE(doc, '$.items[*]' COLUMNS (…))` | turns a JSON array into **rows and columns** |
 
       `JSON_TABLE` is the star: it turns a nested document, like an order from an app, into an ordinary table you can join and aggregate.
@@ -135,16 +138,16 @@ steps:
   - kind: try
     title: JSON_TABLE
     body: |
-      An order arrives from the gift shop app as one JSON document. JSON_TABLE turns its items into rows. Run it, then add `sum(qty * price)` in an outer query to total the order.
+      An order arrives from Inkwell's mobile app as one JSON document. JSON_TABLE turns its items into rows. Run it, then add `sum(qty * price)` in an outer query to total the order.
     sql: |
       SELECT items.*
       FROM JSON_TABLE(
         '{"order": 17,
-          "items": [{"sku": "MAP-1", "qty": 2, "price": 4.50},
-                    {"sku": "PIN-3", "qty": 1, "price": 2.00}]}'::jsonb,
+          "items": [{"isbn": "978-0441172719", "qty": 2, "price": 18.00},
+                    {"isbn": "978-0547928227", "qty": 1, "price": 14.99}]}'::jsonb,
         '$.items[*]'
         COLUMNS (
-          sku   text    PATH '$.sku',
+          isbn  text    PATH '$.isbn',
           qty   integer PATH '$.qty',
           price numeric PATH '$.price'
         )
@@ -155,14 +158,14 @@ steps:
     body: |
       JSONB is great for:
 
-      - data whose shape **varies**: product attributes (a shirt has sizes, a book has pages)
+      - data whose shape **varies**: product attributes (a shirt has sizes, a book has pages, an ebook has no dimensions)
       - storing a payload **as received** (API responses, webhooks) to process later
       - optional, rarely queried extras
 
       It's the **wrong** choice when it hides data that belongs in columns:
 
-      - Values you **filter, join or sum** all the time should be real columns, with real types.
-      - JSON has **no constraints**: nothing stops `"price": "cheap"` or a missing key. Columns get NOT NULL, CHECK and foreign keys (Modules 12–13).
+      - Values you **filter, join or sum** all the time should be real columns, with real types. That's why `price` is a column, not a key in `details`.
+      - JSON has **no constraints**: nothing stops `"edition": "first-ish"` or a missing key. Columns get NOT NULL, CHECK and foreign keys (Modules 12–13).
       - Keys are **retyped in every row**, which wastes space.
 
       A good rule: **columns for what every row has, JSONB for what varies.** If you find yourself writing `->>` in every query, it's time for a column.

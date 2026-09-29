@@ -4,7 +4,7 @@ steps:
     body: |
       So far you've created empty tables. **`INSERT`** puts rows into them.
 
-      **Here, in the browser,** every run starts from a fresh copy of Wanderly's data, so experiment freely.
+      **Here, in the browser,** every run starts from a fresh copy of the `practice` data, so experiment freely.
 
       **On your Mac,** a change is **permanent the moment it runs**. psql has no undo button. (Module 30 covers transactions, the safety net.)
 
@@ -12,8 +12,8 @@ steps:
     title: INSERT … VALUES
     body: |
       ```sql
-      INSERT INTO countries (name, continent)
-      VALUES ('Egypt', 'Africa');
+      INSERT INTO customers (customer_id, first_name, last_name, city)
+      VALUES (21, 'Nina', 'Park', 'Seoul');
       ```
 
       - After the table name, list the **columns** you're filling.
@@ -23,49 +23,55 @@ steps:
       psql replies `INSERT 0 1`, meaning one row was added. (The `0` is a leftover from old versions and can be ignored.)
 
   - kind: try
-    title: Insert a country
+    title: Insert a customer
     body: |
-      Run it. The SELECT underneath shows Egypt at the end of the table, with a `country_id` you never typed.
+      Run it. The SELECT underneath shows Nina's new row. Look at the columns you didn't fill in, like `email` and `joined_at`: they're all NULL (empty/unknown).
     sql: |
-      INSERT INTO countries (name, continent)
-      VALUES ('Egypt', 'Africa');
+      INSERT INTO customers (customer_id, first_name, last_name, city)
+      VALUES (21, 'Nina', 'Park', 'Seoul');
 
-      SELECT * FROM countries;
+      SELECT * FROM customers WHERE customer_id = 21;
 
   - kind: explain
     title: Columns that fill themselves
     body: |
-      You can leave a column out of the list when it fills itself:
+      The `practice` tables are as simple as tables get. Any column you leave out of an INSERT becomes **NULL**, and nothing picks an ID for you: you typed `21` yourself. (Nothing stops two customers from both being number 21, either. Module 11 fixes that.)
 
-      - **Generated IDs.** `country_id` is *generated always as identity*: PostgreSQL assigns the next number (Module 11 explains how). You're not even allowed to type one.
-      - **Defaults.** A column can have a **default value** used when you leave it out. In `trips`, `status` defaults to `'planned'`. In `travelers`, `signup_date` defaults to today.
-      - **Anything else** you leave out becomes **NULL** (empty/unknown), unless the column forbids it.
+      Better-designed tables can fill columns in for you:
+
+      - **Generated IDs.** A column declared *generated always as identity* gets the next number automatically (Module 11 explains how). You're not even allowed to type one.
+      - **Defaults.** A column can have a **default value** used when you leave it out, like `DEFAULT 'wanted'` or `DEFAULT current_date` (today).
+      - **Anything else** you leave out becomes **NULL**, unless the column forbids it.
 
       You can also ask for the default explicitly with the keyword **`DEFAULT`** in the values list.
 
   - kind: try
     title: Let the defaults work
     body: |
-      This new trip gives no `status`. Run it and look at the new row's status.
+      This small wishlist table has a generated ID and a default status. The INSERT gives only the title. Run it and look at the new row's `wish_id` and `status`.
 
-      Then change the INSERT to say `'completed'` for the status column and run it again.
+      Then change the INSERT to fill in the status column too, with `'bought'`, and run it again.
     sql: |
-      INSERT INTO trips (traveler_id, trip_name, start_date)
-      VALUES (3, 'Kyoto Weekend', '2026-10-02');
+      CREATE TABLE wishlist (
+          wish_id  integer GENERATED ALWAYS AS IDENTITY,
+          title    text,
+          status   text DEFAULT 'wanted'
+      );
 
-      SELECT trip_name, start_date, status
-      FROM trips
-      WHERE trip_name = 'Kyoto Weekend';
+      INSERT INTO wishlist (title)
+      VALUES ('Dune');
+
+      SELECT * FROM wishlist;
 
   - kind: explain
     title: See what you wrote with RETURNING
     body: |
-      Add **`RETURNING`** to the end of an INSERT to get the new rows back, including the values PostgreSQL filled in for you:
+      Add **`RETURNING`** to the end of an INSERT to get the new rows back, including any values PostgreSQL filled in for you:
 
       ```sql
-      INSERT INTO countries (name, continent)
-      VALUES ('Egypt', 'Africa')
-      RETURNING country_id, name;
+      INSERT INTO books (book_id, title, price)
+      VALUES (31, 'Circe', 14.99)
+      RETURNING book_id, title;
       ```
 
       This is how apps find out the ID of something they just created. `RETURNING *` returns every column.
@@ -73,14 +79,14 @@ steps:
   - kind: try
     title: Your turn with RETURNING
     body: |
-      Add the country **Chile** in **South America**, and return its `country_id` and `name`.
+      Add book **31**, **Circe** by **Madeline Miller** (fill in `book_id`, `title` and `author_name`), and return its `book_id` and `title`.
     sql: |
-      INSERT INTO countries (name, continent)
-      VALUES ('Chile', 'South America');
+      INSERT INTO books (book_id, title, author_name)
+      VALUES (31, 'Circe', 'Madeline Miller');
     expect: |
-      INSERT INTO countries (name, continent)
-      VALUES ('Chile', 'South America')
-      RETURNING country_id, name;
+      INSERT INTO books (book_id, title, author_name)
+      VALUES (31, 'Circe', 'Madeline Miller')
+      RETURNING book_id, title;
 
   - kind: explain
     title: Many rows at once
@@ -88,10 +94,10 @@ steps:
       One INSERT can add several rows. Separate the value lists with commas:
 
       ```sql
-      INSERT INTO cities (name, country_id, population)
-      VALUES ('Venice', 5, 250000),
-             ('Milan',  5, 1370000),
-             ('Osaka',  1, 2750000);
+      INSERT INTO books (book_id, title, author_name)
+      VALUES (31, 'Circe',     'Madeline Miller'),
+             (32, 'Piranesi',  'Susanna Clarke'),
+             (33, 'Beloved',   'Toni Morrison');
       ```
 
       It's faster than one INSERT per row, and it's all-or-nothing: if one row is bad, **none** are added.
@@ -99,24 +105,24 @@ steps:
   - kind: try
     title: Your turn for a multi-row insert
     body: |
-      Italy is `country_id` **5**. In **one** INSERT, add two Italian cities, **Venice** (population 250000) and **Milan** (population 1370000), and return their `city_id` and `name`.
+      In **one** INSERT, add two customers: number **21**, **Nina Park**, and number **22**, **Omar Reyes** (fill in `customer_id`, `first_name` and `last_name`). Return their `customer_id` and `first_name`.
     sql: |
-      INSERT INTO cities (name, country_id, population)
-      VALUES ('Venice', 5, 250000)
-      RETURNING city_id, name;
+      INSERT INTO customers (customer_id, first_name, last_name)
+      VALUES (21, 'Nina', 'Park')
+      RETURNING customer_id, first_name;
     expect: |
-      INSERT INTO cities (name, country_id, population)
-      VALUES ('Venice', 5, 250000), ('Milan', 5, 1370000)
-      RETURNING city_id, name;
+      INSERT INTO customers (customer_id, first_name, last_name)
+      VALUES (21, 'Nina', 'Park'), (22, 'Omar', 'Reyes')
+      RETURNING customer_id, first_name;
 
   - kind: try
     title: All or nothing
     body: |
-      The second row breaks a rule (a rating must be 1 to 5). Run it and read the error. The whole statement failed, so the first row, which was fine, wasn't saved either.
+      The second row's price isn't a number. Run it and read the error. The whole statement failed, so the first row, which was fine, wasn't saved either.
     sql: |
-      INSERT INTO reviews (attraction_id, traveler_id, rating)
-      VALUES (9, 5, 4),
-             (9, 6, 9);
+      INSERT INTO books (book_id, title, price)
+      VALUES (31, 'Circe',    14.99),
+             (32, 'Piranesi', 'free');
     expect_error: true
 
   - kind: explain
@@ -125,16 +131,17 @@ steps:
       You *can* skip the column list and give a value for every column in table order:
 
       ```sql
-      INSERT INTO countries VALUES (DEFAULT, 'Egypt', 'Africa');
+      INSERT INTO customers
+      VALUES (21, 'Nina', 'Park', NULL, NULL, 'Seoul', 'South Korea', NULL, NULL, 0);
       ```
 
-      Don't. It breaks silently when someone adds or reorders columns, and nobody reading it can tell which value goes where. **Always name the columns.**
+      Don't. You have to know all ten columns and their order, it breaks silently when someone adds or reorders columns, and nobody reading it can tell which value goes where. **Always name the columns.**
 
   - kind: explain
     title: Quotes, and a quote inside a quote
     body: |
-      - **Single quotes** `'…'` are **values**: `'Egypt'`, `'2026-10-02'`.
-      - **Double quotes** `"…"` are **names** of tables and columns. `VALUES ("Egypt")` is an error: *column "Egypt" does not exist*.
+      - **Single quotes** `'…'` are **values**: `'Circe'`, `'2026-10-02'`.
+      - **Double quotes** `"…"` are **names** of tables and columns. `VALUES ("Circe")` is an error: *column "Circe" does not exist*.
 
       What if the text itself contains an apostrophe, like **O'Brien**? The quote would end the text early. Write the apostrophe **twice**:
 
@@ -149,14 +156,14 @@ steps:
     body: |
       This INSERT breaks because the apostrophe in *O'Brien* ends the text. Run it, read the error, then fix it by doubling the apostrophe.
     sql: |
-      INSERT INTO travelers (full_name, email)
-      VALUES ('Liam O'Brien', 'liam@example.com')
-      RETURNING full_name;
+      INSERT INTO customers (customer_id, first_name, last_name, email)
+      VALUES (21, 'Liam', 'O'Brien', 'liam.obrien@example.com')
+      RETURNING first_name, last_name;
     broken_starter: true
     expect: |
-      INSERT INTO travelers (full_name, email)
-      VALUES ('Liam O''Brien', 'liam@example.com')
-      RETURNING full_name;
+      INSERT INTO customers (customer_id, first_name, last_name, email)
+      VALUES (21, 'Liam', 'O''Brien', 'liam.obrien@example.com')
+      RETURNING first_name, last_name;
 
   - kind: why
     body: |

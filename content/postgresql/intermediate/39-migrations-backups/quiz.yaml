@@ -26,11 +26,11 @@ questions:
       CREATE TABLE schema_migrations (version text PRIMARY KEY);
       BEGIN;
       INSERT INTO schema_migrations VALUES ('001');
-      ALTER TABLE trips ADD COLUMN notes text;
+      ALTER TABLE orders ADD COLUMN notes text;
       COMMIT;
       BEGIN;
       INSERT INTO schema_migrations VALUES ('002');
-      ALTER TABLE trips ADD COLUMN rating integer;
+      ALTER TABLE orders ADD COLUMN rating integer;
       ROLLBACK;
       SELECT count(*) FROM schema_migrations;
     options:

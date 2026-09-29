@@ -1,10 +1,10 @@
 pass: 3
 questions:
   - type: mcq
-    prompt: "What does `SELECT full_name FROM travelers WHERE email = NULL;` return?"
+    prompt: "What does `SELECT first_name FROM customers WHERE email = NULL;` return?"
     options:
-      - The traveler with no email
-      - Every traveler
+      - The customers with no email
+      - Every customer
       - No rows, because comparing to NULL is never true
       - An error
     answer: 2
@@ -26,20 +26,20 @@ questions:
     prompt: What does this return?
     code: |
       SELECT count(*) AS rows
-      FROM countries
-      WHERE country_id NOT IN (1, NULL);
+      FROM books
+      WHERE book_id NOT IN (1, NULL);
     options:
       - "0"
-      - "4"
-      - "5"
+      - "29"
+      - "30"
       - An error
     answer: 0
-    explanation: "`country_id NOT IN (1, NULL)` includes `country_id <> NULL`, which is always unknown. The condition is never true, so no rows are counted."
+    explanation: "`book_id NOT IN (1, NULL)` includes `book_id <> NULL`, which is always unknown. The condition is never true, so no rows are counted."
 
   - type: fill
-    prompt: Sort trips by end date, newest first, but put trips **without** an end date at the bottom.
+    prompt: Sort books by price, most expensive first, but put books **without** a price at the bottom.
     code: |
-      SELECT trip_name FROM trips ORDER BY end_date DESC NULLS ____;
+      SELECT title FROM books ORDER BY price DESC NULLS ____;
     answer: LAST
     accept: ["last"]
     explanation: "In DESC order NULLs come first by default. `NULLS LAST` moves them to the end."

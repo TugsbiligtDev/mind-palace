@@ -1,36 +1,37 @@
 pass: 3
 questions:
   - type: fill
-    prompt: Insert Chile and get back the ID PostgreSQL generated.
+    prompt: Insert a book and get back the row you just wrote.
     code: |
-      INSERT INTO countries (name, continent) VALUES ('Chile', 'South America') ____ country_id;
+      INSERT INTO books (book_id, title) VALUES (31, 'Circe') ____ book_id, title;
     answer: RETURNING
     accept: ["returning"]
-    explanation: "`RETURNING` shows the rows you just inserted, including generated values like the identity ID."
+    explanation: "`RETURNING` shows the rows you just inserted, including any values PostgreSQL filled in, like a generated ID."
 
   - type: predict
-    prompt: The `status` column of `trips` defaults to `'planned'`. What does this return?
+    prompt: What does the INSERT return?
     code: |
-      INSERT INTO trips (traveler_id, trip_name, start_date)
-      VALUES (2, 'Gobi Loop', '2026-07-01')
+      CREATE TABLE wishlist (title text, status text DEFAULT 'wanted');
+      INSERT INTO wishlist (title)
+      VALUES ('Dune')
       RETURNING status;
     options:
       - "NULL"
-      - "planned"
-      - "completed"
+      - "wanted"
+      - "Dune"
       - An error, because status is missing
     answer: 1
-    explanation: A column left out of the INSERT gets its default value. For `status` that's `'planned'`.
+    explanation: A column left out of the INSERT gets its default value. For `status` that's `'wanted'`.
 
   - type: mcq
-    prompt: "What's wrong with `INSERT INTO countries (name, continent) VALUES (\"Chile\", \"South America\");`?"
+    prompt: "What's wrong with `INSERT INTO books (title) VALUES (\"Circe\");`?"
     options:
       - Nothing
-      - Double quotes mean names, so PostgreSQL looks for a column called Chile. Values need single quotes.
+      - Double quotes mean names, so PostgreSQL looks for a column called Circe. Values need single quotes.
       - The column list is in the wrong order
       - INSERT can't add text
     answer: 1
-    explanation: "Double quotes make identifiers (names). Text values need single quotes: `'Chile'`."
+    explanation: "Double quotes make identifiers (names). Text values need single quotes: `'Circe'`."
 
   - type: fill
     prompt: Complete the text so the stored name is **D'Arcy**.

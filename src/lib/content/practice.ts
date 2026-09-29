@@ -44,7 +44,7 @@ export function findPractice(track: string, slug: string) {
   const c = loadPractice().find((p) => p.track === track && p.slug === slug);
   if (!c) return undefined;
   const bundle = loadTrack(c.track);
-  const setup = [bundle.dataset, c.evidence_setup].filter(Boolean).join("\n");
+  const setup = [bundle.engine(c.dataset).setup, c.evidence_setup].filter(Boolean).join("\n");
   return { case: c, bundle, engine: { key: `practice/${c.id}`, setup } };
 }
 

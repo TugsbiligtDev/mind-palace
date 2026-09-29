@@ -66,10 +66,10 @@ export default function Landing() {
               <p className="font-mono text-xs tracking-widest text-muted uppercase">Case file · Episode 4</p>
               <span className="rotate-[-4deg] rounded border-2 border-clue px-2 py-0.5 font-mono text-[11px] font-bold text-clue">OPEN</span>
             </div>
-            <h2 className="mt-4 font-serif text-2xl leading-tight">{sample.title}</h2>
+            <h2 className="mt-4 font-serif text-2xl leading-tight">{sample?.title ?? "The Refund Nobody Asked For"}</h2>
             <p className="mt-3 font-serif text-[15px] leading-relaxed text-muted">
-              Trip 5 belongs to a traveler Wanderly can&apos;t reach. No email on file, and a stack of sightings spelled a
-              dozen different ways&hellip;
+              Order 7 reached its customer safely. Nine days later, someone refunded every cent of it. Nobody at
+              Inkwell remembers approving it, and the note on file is signed ~E&hellip;
             </p>
           </article>
           <div className="relative mt-[-0.75rem] ml-6 rotate-[0.8deg] overflow-hidden rounded-2xl border border-border bg-card shadow-lg sm:ml-12">
@@ -77,15 +77,14 @@ export default function Landing() {
               <span className="size-2.5 rounded-full bg-clue/60" />
               <span className="size-2.5 rounded-full bg-xp/60" />
               <span className="size-2.5 rounded-full bg-success/60" />
-              <span className="ml-2 font-mono text-xs text-muted">learn_sql</span>
+              <span className="ml-2 font-mono text-xs text-muted">bookstore</span>
             </div>
             <pre className="overflow-x-auto bg-code px-4 py-4 font-mono text-[13px] leading-relaxed">
               <span className="text-brand">SELECT</span> *{"\n"}
-              <span className="text-brand">FROM</span> evidence.sightings{"\n"}
-              <span className="text-brand">WHERE</span> traveler_name <span className="text-brand">ILIKE</span>{" "}
-              <span className="text-success">&apos;%dulguun%&apos;</span>{"\n"}
-              {"  "}<span className="text-brand">AND</span> city <span className="text-brand">IN</span> (
-              <span className="text-success">&apos;Rome&apos;</span>, <span className="text-success">&apos;Paris&apos;</span>);
+              <span className="text-brand">FROM</span> payments{"\n"}
+              <span className="text-brand">WHERE</span> kind = <span className="text-success">&apos;refund&apos;</span>{"\n"}
+              {"  "}<span className="text-brand">AND</span> order_id <span className="text-brand">IN</span> (
+              <span className="text-success">7</span>, <span className="text-success">16</span>);
             </pre>
             <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-sm">
               <span className="text-success">✓ The evidence checks out.</span>

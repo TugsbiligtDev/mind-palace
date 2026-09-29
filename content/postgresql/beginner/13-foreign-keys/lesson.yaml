@@ -2,24 +2,24 @@ steps:
   - kind: explain
     title: A column that points at another table
     body: |
-      Each trip belongs to a traveler. The `trips` table doesn't copy the traveler's name. It stores `traveler_id`, which **points at** a row in `travelers`:
+      Each order belongs to a customer. The `orders` table doesn't copy the customer's name. It stores `customer_id`, which **points at** a row in `customers`:
 
       ```sql
-      traveler_id  integer NOT NULL REFERENCES travelers (traveler_id)
+      customer_id  integer NOT NULL REFERENCES customers (customer_id)
       ```
 
       That's a **foreign key** (FK): a column whose values must match a **primary key** in another table.
 
-      - The table being pointed at (`travelers`) is the **parent**.
-      - The table doing the pointing (`trips`) is the **child**.
+      - The table being pointed at (`customers`) is the **parent**.
+      - The table doing the pointing (`orders`) is the **child**.
 
   - kind: try
     title: Follow the pointer
     body: |
-      Trip *Peru Adventure* has `traveler_id` 2. Run both queries and find traveler 2 by eye. (Module 14 teaches the query that does this matching for you.)
+      Order 3 has `customer_id` 4. Run both queries and find customer 4 by eye. (Module 14 teaches the query that does this matching for you.)
     sql: |
-      SELECT trip_name, traveler_id FROM trips;
-      SELECT traveler_id, full_name FROM travelers;
+      SELECT order_id, customer_id FROM orders;
+      SELECT customer_id, first_name, last_name FROM customers;
 
   - kind: explain
     title: "Referential integrity: no orphans"
@@ -29,15 +29,15 @@ steps:
       - You can't **insert or update** a child to point at a parent that doesn't exist.
       - You can't **delete** a parent that children still point at (unless you say what should happen, below).
 
-      A child row whose parent is missing is called an **orphan**. Without FKs, orphans pile up quietly: trips for travelers who no longer exist, reviews of deleted attractions. With FKs, they can't happen.
+      A child row whose parent is missing is called an **orphan**. Without FKs, orphans pile up quietly: orders for customers who no longer exist, reviews of deleted books. With FKs, they can't happen.
 
   - kind: try
-    title: A trip for nobody
+    title: An order for nobody
     body: |
-      There's no traveler 99. Run it and read the error. It names the foreign key and the missing value.
+      There's no customer 99. Run it and read the error. It names the foreign key and the missing value.
     sql: |
-      INSERT INTO trips (traveler_id, trip_name, start_date)
-      VALUES (99, 'Mystery Tour', '2026-12-01');
+      INSERT INTO orders (customer_id)
+      VALUES (99);
     expect_error: true
 
   - kind: explain
@@ -46,151 +46,152 @@ steps:
       Two spellings, same result:
 
       ```sql
-      CREATE TABLE trips (
-          trip_id      integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      CREATE TABLE orders (
+          order_id     integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           -- 1. on the column itself
-          traveler_id  integer NOT NULL REFERENCES travelers (traveler_id),
+          customer_id  integer NOT NULL REFERENCES customers (customer_id),
           -- 2. on its own line, with a name
-          guide_id     integer,
-          CONSTRAINT trips_guide_fk FOREIGN KEY (guide_id) REFERENCES guides (guide_id)
+          employee_id  integer,
+          CONSTRAINT orders_employee_fk FOREIGN KEY (employee_id) REFERENCES employees (employee_id)
       );
       ```
 
       - The FK column's **type must match** the parent key's type (`integer` → `integer`).
-      - Name the FK column after what it points at: `traveler_id`, `city_id`. Anyone can then guess the link.
-      - An FK column **may be NULL** unless you add NOT NULL. NULL means "not linked to anything", like a trip with no guide yet.
+      - Name the FK column after what it points at: `customer_id`, `book_id`. Anyone can then guess the link.
+      - An FK column **may be NULL** unless you add NOT NULL. NULL means "not linked to anything", like an online order with no employee.
 
   - kind: explain
     title: One-to-many
     body: |
-      **One** traveler has **many** trips. Each trip has **one** traveler. That's a **one-to-many** relationship, the most common kind by far.
+      **One** customer has **many** orders. Each order has **one** customer. That's a **one-to-many** relationship, the most common kind by far.
 
-      The rule: **the foreign key goes on the "many" side.** `trips` holds `traveler_id`. You can't do it the other way round, because a traveler row can't hold a list of trip IDs in one column.
+      The rule: **the foreign key goes on the "many" side.** `orders` holds `customer_id`. You can't do it the other way round, because a customer row can't hold a list of order IDs in one column.
 
-      Other Wanderly examples: one country → many cities, one city → many attractions.
+      Other Inkwell examples: one publisher → many books, one genre → many books, one order → many order lines.
 
   - kind: explain
     title: One-to-one
     body: |
-      Sometimes each parent has **at most one** child: one traveler, one passport record.
+      Sometimes each parent has **at most one** child: one customer, one loyalty card.
 
       Make it a foreign key that's also **UNIQUE**:
 
       ```sql
-      CREATE TABLE passports (
-          passport_no  text PRIMARY KEY,
-          traveler_id  integer NOT NULL UNIQUE REFERENCES travelers (traveler_id),
-          expires_on   date NOT NULL
+      CREATE TABLE loyalty_cards (
+          card_no      text PRIMARY KEY,
+          customer_id  integer NOT NULL UNIQUE REFERENCES customers (customer_id),
+          points       integer NOT NULL DEFAULT 0
       );
       ```
 
-      The UNIQUE stops a second passport row for the same traveler. One-to-one tables are handy for optional or sensitive details that you want to keep apart from the main table.
+      The UNIQUE stops a second card for the same customer. Inkwell's `customer_profiles` table does the same thing a shorter way: its `customer_id` is both the **primary key** and the foreign key, and a primary key is always unique. One-to-one tables are handy for optional or sensitive details that you want to keep apart from the main table.
 
   - kind: try
-    title: One passport each
+    title: One card each
     body: |
-      Amina's first passport goes in. The second is refused, because `traveler_id` must be unique. Run it and read the error.
+      Emma's first loyalty card goes in. The second is refused, because `customer_id` must be unique. Run it and read the error.
     sql: |
-      CREATE TABLE passports (
-          passport_no  text PRIMARY KEY,
-          traveler_id  integer NOT NULL UNIQUE REFERENCES travelers (traveler_id),
-          expires_on   date NOT NULL
+      CREATE TABLE loyalty_cards (
+          card_no      text PRIMARY KEY,
+          customer_id  integer NOT NULL UNIQUE REFERENCES customers (customer_id),
+          points       integer NOT NULL DEFAULT 0
       );
-      INSERT INTO passports VALUES ('E1234567', 1, '2030-01-31');
-      INSERT INTO passports VALUES ('E7654321', 1, '2031-06-30');
+      INSERT INTO loyalty_cards (card_no, customer_id) VALUES ('LC-0001', 1);
+      INSERT INTO loyalty_cards (card_no, customer_id) VALUES ('LC-0002', 1);
     expect_error: true
 
   - kind: explain
     title: Many-to-many and junction tables
     body: |
-      An attraction can have **many tags** (*family*, *outdoor*, *free*), and a tag applies to **many attractions**. Neither side can hold the FK, since both are "many".
+      A book can have **many authors** (*Good Omens* has two), and an author writes **many books**. Neither side can hold the FK, since both are "many".
 
-      The answer is a third table in the middle, a **junction table**, with one FK to each side:
+      The answer is a third table in the middle, a **junction table**, with one FK to each side. Inkwell has one:
 
       ```sql
-      CREATE TABLE attraction_tags (
-          attraction_id  integer REFERENCES attractions (attraction_id),
-          tag_id         integer REFERENCES tags (tag_id),
-          PRIMARY KEY (attraction_id, tag_id)
+      CREATE TABLE book_authors (
+          book_id       integer NOT NULL REFERENCES books (book_id),
+          author_id     integer NOT NULL REFERENCES authors (author_id),
+          author_order  smallint NOT NULL DEFAULT 1,
+          PRIMARY KEY (book_id, author_id)
       );
       ```
 
-      Each row is one link: "attraction 3 has tag 2". The **composite primary key** (Module 11) stops the same link being added twice.
+      Each row is one link: "book 18 was written by author 12". The **composite primary key** (Module 11) stops the same link being added twice. A junction table can also hold facts about the link itself, like `author_order` (1 = main author, 2 = co-author).
 
-      `trip_stops` is a junction table too: it links trips and cities, with extra facts (nights, cost) about each link.
+      `order_items` is a junction table too: it links orders and books, with extra facts (quantity, unit price) about each link.
+
+  - kind: try
+    title: Two authors, one book
+    body: |
+      *Good Omens* is book 18. Run it: two rows, one per author. Then change 18 to 15 to see the other co-written book.
+    sql: |
+      SELECT book_id, author_id, author_order
+      FROM book_authors
+      WHERE book_id = 18;
 
   - kind: try
     title: Your turn to build a junction table
     body: |
-      The `tags` table is ready. Create **attraction_tags** with two columns, `attraction_id` and `tag_id`, each a foreign key to its table, and a composite primary key on both. (Don't name the constraints; let PostgreSQL do it.)
+      Inkwell wants themed **shelves** on its website (*Staff picks*, *Summer reads*…), and a book can sit on many shelves. The `shelves` table is ready. Create **shelf_books** with two columns, `shelf_id` and `book_id`, each a foreign key to its table, and a composite primary key on both. (Don't name the constraints; let PostgreSQL do it.)
 
       The last query counts the table's key constraints: `f` = foreign key, `p` = primary key.
     sql: |
-      CREATE TABLE tags (
-          tag_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          label   text NOT NULL UNIQUE
+      CREATE TABLE shelves (
+          shelf_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          label     text NOT NULL UNIQUE
       );
 
-      CREATE TABLE attraction_tags (
-          attraction_id  integer,
-          tag_id         integer
+      CREATE TABLE shelf_books (
+          shelf_id  integer,
+          book_id   integer
       );
 
       SELECT contype, count(*)
       FROM pg_constraint
-      WHERE conrelid = 'attraction_tags'::regclass AND contype IN ('f', 'p')
+      WHERE conrelid = 'shelf_books'::regclass AND contype IN ('f', 'p')
       GROUP BY contype
       ORDER BY contype;
     expect: |
-      CREATE TABLE tags (
-          tag_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          label   text NOT NULL UNIQUE
+      CREATE TABLE shelves (
+          shelf_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          label     text NOT NULL UNIQUE
       );
 
-      CREATE TABLE attraction_tags (
-          attraction_id  integer REFERENCES attractions (attraction_id),
-          tag_id         integer REFERENCES tags (tag_id),
-          PRIMARY KEY (attraction_id, tag_id)
+      CREATE TABLE shelf_books (
+          shelf_id  integer REFERENCES shelves (shelf_id),
+          book_id   integer REFERENCES books (book_id),
+          PRIMARY KEY (shelf_id, book_id)
       );
 
       SELECT contype, count(*)
       FROM pg_constraint
-      WHERE conrelid = 'attraction_tags'::regclass AND contype IN ('f', 'p')
+      WHERE conrelid = 'shelf_books'::regclass AND contype IN ('f', 'p')
       GROUP BY contype
       ORDER BY contype;
 
   - kind: explain
     title: A table that points at itself
     body: |
-      Wanderly's staff have managers, and managers are staff too. A **self-referencing** foreign key points at the same table:
+      Inkwell's employees have managers, and managers are employees too. A **self-referencing** foreign key points at the same table:
 
       ```sql
-      CREATE TABLE staff (
-          staff_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          full_name   text NOT NULL,
-          manager_id  integer REFERENCES staff (staff_id)
+      CREATE TABLE employees (
+          employee_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          full_name    text NOT NULL,
+          manager_id   integer REFERENCES employees (employee_id)
       );
       ```
 
-      The boss has `manager_id` NULL: nobody above them. Everyone else points at their manager's `staff_id`. You'll walk whole chains of these ("who's above whom?") with recursive queries in Module 19.
+      The boss has `manager_id` NULL: nobody above them. Everyone else points at their manager's `employee_id`. You'll walk whole chains of these ("who's above whom?") with recursive queries in Module 19.
 
   - kind: try
-    title: Build an org chart
+    title: Inkwell's org chart
     body: |
-      The boss goes in first (manager NULL), then two people who report to staff 1, then one who reports to staff 2. Run it.
+      Run it. Helen Carter (employee 1) has no manager. Who reports to Marcus Reed (employee 2)? And who is the only person reporting to employee 7?
     sql: |
-      CREATE TABLE staff (
-          staff_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          full_name   text NOT NULL,
-          manager_id  integer REFERENCES staff (staff_id)
-      );
-      INSERT INTO staff (full_name, manager_id) VALUES
-        ('Odval Bold', NULL),
-        ('Gerel Tsog', 1),
-        ('Saruul Dash', 1),
-        ('Temuulen Gan', 2);
-
-      SELECT * FROM staff;
+      SELECT employee_id, full_name, job_title, manager_id
+      FROM employees
+      ORDER BY employee_id;
 
   - kind: explain
     title: What happens when a parent is deleted?
@@ -199,14 +200,16 @@ steps:
 
       | Action | Effect | Use it for |
       |---|---|---|
-      | `NO ACTION` / `RESTRICT` | **Refuse** the delete while children exist. This is the default. | Important history: don't delete a customer who has invoices. |
-      | `CASCADE` | Delete the children **too**. | Parts that can't exist alone: delete a trip, delete its stops. |
-      | `SET NULL` | Keep the children, set their FK to NULL. | Optional links: a manager leaves, their staff stay. |
+      | `NO ACTION` / `RESTRICT` | **Refuse** the delete while children exist. This is the default. | Important history: don't delete a customer who has orders. |
+      | `CASCADE` | Delete the children **too**. | Parts that can't exist alone: delete an order, delete its lines. |
+      | `SET NULL` | Keep the children, set their FK to NULL. | Optional links: a manager leaves, their team stays. |
       | `SET DEFAULT` | Set the FK to its default value. | Rare. |
 
       ```sql
-      trip_id  integer NOT NULL REFERENCES trips (trip_id) ON DELETE CASCADE
+      order_id  integer NOT NULL REFERENCES orders (order_id) ON DELETE CASCADE
       ```
+
+      Inkwell uses all three main actions: `orders.customer_id` is RESTRICT, `order_items.order_id` is CASCADE, and `employees.manager_id` is SET NULL.
 
       `ON UPDATE` works the same way for when a parent's key changes, but with identity keys that never change, you'll rarely need it.
 
@@ -215,25 +218,25 @@ steps:
   - kind: try
     title: CASCADE in action
     body: |
-      A new trip (it gets `trip_id` 8) with two notes. Deleting the trip takes its notes with it. Run it: the count is 0.
+      A new order (it gets `order_id` 31) with two notes for the warehouse. Deleting the order takes its notes with it. Run it: the count is 0.
 
       Then remove `ON DELETE CASCADE` and run again. With the default action, the delete is refused.
     sql: |
-      CREATE TABLE trip_notes (
-          note_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          trip_id  integer NOT NULL REFERENCES trips (trip_id) ON DELETE CASCADE,
-          note     text NOT NULL
+      CREATE TABLE order_notes (
+          note_id   integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          order_id  integer NOT NULL REFERENCES orders (order_id) ON DELETE CASCADE,
+          note      text NOT NULL
       );
-      INSERT INTO trips (traveler_id, trip_name, start_date) VALUES (5, 'Day in Kyoto', '2026-11-01');
-      INSERT INTO trip_notes (trip_id, note) VALUES (8, 'Book tea ceremony'), (8, 'Pack umbrella');
+      INSERT INTO orders (customer_id) VALUES (17);
+      INSERT INTO order_notes (order_id, note) VALUES (31, 'Gift wrap'), (31, 'Leave with neighbor');
 
-      DELETE FROM trips WHERE trip_id = 8;
-      SELECT count(*) AS notes_left FROM trip_notes;
+      DELETE FROM orders WHERE order_id = 31;
+      SELECT count(*) AS notes_left FROM order_notes;
 
   - kind: try
     title: Your turn with SET NULL
     body: |
-      Gerel (staff 2) is leaving. Deleting them fails, because Temuulen reports to them. Change the foreign key so Temuulen **stays** but their `manager_id` becomes NULL, then run it.
+      A small copy of the org chart. Marcus (staff 2) is leaving. Deleting that row fails, because Tom reports to Marcus. Change the foreign key so Tom **stays** but Tom's `manager_id` becomes NULL, then run it.
     sql: |
       CREATE TABLE staff (
           staff_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -241,7 +244,7 @@ steps:
           manager_id  integer REFERENCES staff (staff_id)
       );
       INSERT INTO staff (full_name, manager_id) VALUES
-        ('Odval Bold', NULL), ('Gerel Tsog', 1), ('Temuulen Gan', 2);
+        ('Helen Carter', NULL), ('Marcus Reed', 1), ('Tom Becker', 2);
 
       DELETE FROM staff WHERE staff_id = 2;
       SELECT * FROM staff ORDER BY staff_id;
@@ -253,7 +256,7 @@ steps:
           manager_id  integer REFERENCES staff (staff_id) ON DELETE SET NULL
       );
       INSERT INTO staff (full_name, manager_id) VALUES
-        ('Odval Bold', NULL), ('Gerel Tsog', 1), ('Temuulen Gan', 2);
+        ('Helen Carter', NULL), ('Marcus Reed', 1), ('Tom Becker', 2);
 
       DELETE FROM staff WHERE staff_id = 2;
       SELECT * FROM staff ORDER BY staff_id;
@@ -263,27 +266,29 @@ steps:
     body: |
       Because a child must point at an existing parent, order matters:
 
-      - **Creating tables:** parents first. `countries` before `cities`, `cities` before `attractions`.
-      - **Inserting rows:** parents first. Add the traveler, *then* their trip.
-      - **Deleting:** children first (unless you use CASCADE). Remove the trips, *then* the traveler.
+      - **Creating tables:** parents first. `publishers` and `genres` before `books`, `books` before `order_items`.
+      - **Inserting rows:** parents first. Add the customer, *then* their order.
+      - **Deleting:** children first (unless you use CASCADE). Remove the orders, *then* the customer.
 
-      The Wanderly dataset script follows exactly this order.
+      The Inkwell dataset script follows exactly this order.
 
   - kind: explain
     title: "Common mistake: FK columns aren't indexed"
     body: |
       PostgreSQL automatically indexes every **primary key**, but **not** foreign key columns. An index is like the index at the back of a book: it lets PostgreSQL find rows without reading the whole table (Module 32).
 
-      Without one on `trips.traveler_id`:
+      Without one on `orders.customer_id`:
 
-      - "all trips for traveler 4" has to scan every trip
-      - deleting a traveler has to scan every trip to check for children
+      - "all orders for customer 4" has to scan every order
+      - deleting a customer has to scan every order to check for children
 
       On small tables you won't notice. On millions of rows it's painfully slow. So when you add a foreign key, add its index too:
 
       ```sql
-      CREATE INDEX trips_traveler_id_idx ON trips (traveler_id);
+      CREATE INDEX orders_customer_id_idx ON orders (customer_id);
       ```
+
+      Inkwell's foreign key columns have **no** indexes yet, on purpose. Adding them is one of your later exercises.
 
   - kind: info
     title: "🔹 DEFERRABLE constraints"
@@ -298,7 +303,7 @@ steps:
     body: |
       - A **foreign key** column references a parent's primary key: `REFERENCES parent (id)`.
       - It guarantees **no orphans**: no pointing at missing parents, no deleting parents with children (by default).
-      - **One-to-many**: FK on the "many" side. **One-to-one**: FK + UNIQUE. **Many-to-many**: a **junction table** with two FKs and a composite PK.
+      - **One-to-many**: FK on the "many" side. **One-to-one**: FK + UNIQUE (or FK as the primary key). **Many-to-many**: a **junction table** with two FKs and a composite PK.
       - **Self-referencing** FKs model hierarchies like employee → manager.
       - `ON DELETE`: `NO ACTION`/`RESTRICT` (refuse, default), `CASCADE` (delete children), `SET NULL`, `SET DEFAULT`.
       - Insert parents first, delete children first.

@@ -6,7 +6,7 @@ steps:
 
       ```sql
       WHERE email LIKE '%@example.com'   -- ends with @example.com
-      WHERE name ILIKE 'e%'              -- starts with e or E
+      WHERE title ILIKE 'the%'           -- starts with the, The or THE
       ```
 
       Two things to know:
@@ -29,51 +29,38 @@ steps:
 
       | Piece | Matches | Example |
       |---|---|---|
-      | `^` / `$` | start / end of the text | `^Rome$` = exactly Rome |
-      | `.` | any one character | `R.me` |
+      | `^` / `$` | start / end of the text | `^Dune$` = exactly Dune |
+      | `.` | any one character | `D.ne` |
       | `\d` / `\D` | a digit / a non-digit | `\d\d\d\d` |
       | `\s` | a space, tab or newline | |
       | `[abc]`, `[a-z]` | one of these characters | `[A-Z]` = a capital |
       | `*` `+` `?` | 0 or more, 1 or more, 0 or 1 of the thing before | `\d+` |
       | `{n}` | exactly n times | `\d{4}` |
-      | `a\|b` | a or b | `museum\|gallery` |
+      | `a\|b` | a or b | `murder\|mystery` |
       | `\.` | a real dot (plain `.` means any character) | |
 
   - kind: try
     title: Match with a regex
     body: |
-      Attractions with *museum* or *gallery* in the name, any capitalization. Run it. Then change `~*` to `~` and see what disappears.
+      Books whose description mentions *Poirot* or *dragons*, any capitalization. Run it. Then change `~*` to `~` and see which book disappears, and why.
     sql: |
-      SELECT name
-      FROM attractions
-      WHERE name ~* 'museum|gallery';
+      SELECT title, description
+      FROM books
+      WHERE description ~* 'poirot|dragons';
 
   - kind: try
     title: Your turn to validate a format
     body: |
-      Wanderly's phone list is a mess. Return the `phone` values in **exactly** the format `4 digits, a dash, 4 digits` (like `9911-2233`) and nothing else before or after.
+      The phone numbers in `raw_customer_import` come in five formats. Return the `row_no` and `phone` of the rows written **exactly** as `3 digits, dash, 3 digits, dash, 4 digits` (like `336-555-4152`), with nothing else before or after.
 
-      Hint: anchor both ends, `^…$`, and use `\d{4}`.
+      Hint: anchor both ends, `^…$`, and use `\d{3}` and `\d{4}`.
     sql: |
-      CREATE TABLE contacts (name text, phone text);
-      INSERT INTO contacts VALUES
-        ('Anu',    '9911-2233'),
-        ('Bat',    '(976) 9911-5566'),
-        ('Saruul', '8800 4455'),
-        ('Temka',  '7700-1122'),
-        ('Nomin',  '99112233x');
-
-      SELECT phone FROM contacts;
+      SELECT row_no, phone
+      FROM raw_customer_import;
     expect: |
-      CREATE TABLE contacts (name text, phone text);
-      INSERT INTO contacts VALUES
-        ('Anu',    '9911-2233'),
-        ('Bat',    '(976) 9911-5566'),
-        ('Saruul', '8800 4455'),
-        ('Temka',  '7700-1122'),
-        ('Nomin',  '99112233x');
-
-      SELECT phone FROM contacts WHERE phone ~ '^\d{4}-\d{4}$';
+      SELECT row_no, phone
+      FROM raw_customer_import
+      WHERE phone ~ '^\d{3}-\d{3}-\d{4}$';
 
   - kind: explain
     title: The regexp functions
@@ -90,28 +77,22 @@ steps:
   - kind: try
     title: Split reviews into words
     body: |
-      One row per word of every review. Run it. Then wrap it: `SELECT lower(word), count(*) FROM (…) AS w GROUP BY 1 ORDER BY 2 DESC` to find the most common words.
+      One row per word of every review comment. Run it. Then wrap it: `SELECT lower(word), count(*) FROM (…) AS w GROUP BY 1 ORDER BY 2 DESC` to find the most common words. Why do `it` and `it!` count separately?
     sql: |
       SELECT review_id,
-             regexp_split_to_table(review_text, '\s+') AS word
+             regexp_split_to_table(comment, '\s+') AS word
       FROM reviews;
 
   - kind: try
     title: Your turn to extract digits
     body: |
-      Using the same messy contacts, return each `name` and the phone with **every non-digit removed**, labeled **digits**.
+      Using the same messy import, return each `row_no` and the phone with **every non-digit removed**, labeled **digits**. Five formats become one.
     sql: |
-      CREATE TABLE contacts (name text, phone text);
-      INSERT INTO contacts VALUES
-        ('Anu', '9911-2233'), ('Bat', '(976) 9911-5566'), ('Saruul', '8800 4455');
-
-      SELECT name, phone FROM contacts;
+      SELECT row_no, phone
+      FROM raw_customer_import;
     expect: |
-      CREATE TABLE contacts (name text, phone text);
-      INSERT INTO contacts VALUES
-        ('Anu', '9911-2233'), ('Bat', '(976) 9911-5566'), ('Saruul', '8800 4455');
-
-      SELECT name, regexp_replace(phone, '\D', '', 'g') AS digits FROM contacts;
+      SELECT row_no, regexp_replace(phone, '\D', '', 'g') AS digits
+      FROM raw_customer_import;
 
   - kind: explain
     title: Cleaning messy text
@@ -134,25 +115,33 @@ steps:
   - kind: try
     title: Your turn to tidy names
     body: |
-      Return each sign-up's name cleaned: no spaces at the ends, single spaces between words, and each word capitalized. Label it **clean_name**.
+      Return each imported row's `row_no` and its `full_name` cleaned: no spaces at the ends, single spaces between words, and each word capitalized. Label it **clean_name**.
     sql: |
-      CREATE TABLE signups (raw_name text);
-      INSERT INTO signups VALUES ('  aMINA   yusuf '), ('ERIK larsen'), ('chen    wei  ');
-
-      SELECT raw_name FROM signups;
+      SELECT row_no, full_name
+      FROM raw_customer_import;
     expect: |
-      CREATE TABLE signups (raw_name text);
-      INSERT INTO signups VALUES ('  aMINA   yusuf '), ('ERIK larsen'), ('chen    wei  ');
+      SELECT row_no,
+             initcap(regexp_replace(trim(full_name), '\s+', ' ', 'g')) AS clean_name
+      FROM raw_customer_import;
 
-      SELECT initcap(regexp_replace(trim(raw_name), '\s+', ' ', 'g')) AS clean_name FROM signups;
+  - kind: try
+    title: Clean before you compare
+    body: |
+      About 1 imported row in 6 is someone who's already an Inkwell customer. Matching the emails exactly finds only 19 of them, because of capitals and stray spaces. Run it.
+
+      Then change `c.email = r.email` to `c.email = lower(trim(r.email))` and run it again: 42 matches. Cleaning turned "new customer" into "we already know you", which is exactly what an upsert (Module 24) needs.
+    sql: |
+      SELECT count(*) AS already_customers
+      FROM raw_customer_import r
+      JOIN customers c ON c.email = r.email;
 
   - kind: explain
     title: "Performance warning: patterns are slow"
     body: |
       A normal index (Module 32) works like a phone book: great for "names starting with Sm…", useless for "names containing …ith". So:
 
-      - `LIKE 'Rom%'` (fixed start) **can** use an index, with the right setup.
-      - `LIKE '%ome'`, `ILIKE '%rome%'` and most regexes **can't**. PostgreSQL has to read and test **every row**.
+      - `LIKE 'The Si%'` (fixed start) **can** use an index, with the right setup.
+      - `LIKE '%River'`, `ILIKE '%river%'` and most regexes **can't**. PostgreSQL has to read and test **every row**.
 
       On 10 rows you won't notice. On 10 million, it's seconds per search. The fix is a *trigram* index from the `pg_trgm` extension, covered in Module 46.
 
@@ -162,7 +151,7 @@ steps:
       `SIMILAR TO` is the SQL standard's halfway house between LIKE and regex: it uses `%` and `_` like LIKE, plus `|` and `( )` like regex, and must match the **whole** text:
 
       ```sql
-      WHERE category SIMILAR TO '(museum|gallery)'
+      WHERE city SIMILAR TO '(London|Paris)'
       ```
 
       It's rarely used. Recognize it, and reach for `~` instead.

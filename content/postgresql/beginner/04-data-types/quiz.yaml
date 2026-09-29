@@ -23,7 +23,7 @@ questions:
     explanation: "`numeric` is exact, so 0.1 + 0.2 is exactly 0.3. With `double precision` you'd get 0.30000000000000004."
 
   - type: predict
-    prompt: The Europe Grand Tour ran from 2026-02-01 to 2026-02-20. What does this return?
+    prompt: A book club read *Dune* from 2026-02-01 to 2026-02-20. What does this return?
     code: |
       SELECT '2026-02-20'::date - '2026-02-01'::date AS days;
     options:

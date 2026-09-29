@@ -2,31 +2,31 @@ steps:
   - kind: explain
     title: Data vs. information
     body: |
-      **Data** is raw facts: `Japan Highlights`, `2026-03-01`, `completed`. On its own, a fact like that doesn't tell you much.
+      **Data** is raw facts: `The Hobbit`, `14.99`, `card`. On its own, a fact like that doesn't tell you much.
 
-      **Information** is data that answers a question: *"How many trips were completed this year?"* or *"Which traveler spends the most?"*
+      **Information** is data that answers a question: *"How many sales were paid by card?"* or *"Which customer spends the most?"*
 
       A **database** is an organized place to keep data so you can turn it into information quickly and reliably, today and years from now.
 
   - kind: try
     title: Raw data
     body: |
-      This is Wanderly's list of trips, exactly as stored. Press **Run** (or **⌘ + Enter**).
+      This is Inkwell Books' sales log, exactly as stored in its first, simple database, `practice`. Press **Run** (or **⌘ + Enter**).
 
       It's all facts, no answers yet. You don't need to understand the SQL yet; you'll learn it in the next modules.
     sql: |
-      SELECT * FROM trips;
+      SELECT * FROM sales;
 
   - kind: try
     title: Turning it into information
     body: |
-      Same data, but now we ask a question: *how many trips are there of each status?* Run it.
+      Same data, but now we ask a question: *how many sales were paid each way?* Run it.
 
-      Seven rows of facts became three lines that actually tell you something.
+      Thirty rows of facts became four lines that actually tell you something.
     sql: |
-      SELECT status, count(*) AS trips
-      FROM trips
-      GROUP BY status;
+      SELECT payment_method, count(*) AS sales
+      FROM sales
+      GROUP BY payment_method;
 
   - kind: explain
     title: Why not just use a spreadsheet?
@@ -42,14 +42,24 @@ steps:
       Databases also handle millions of rows without slowing to a crawl.
 
   - kind: try
+    title: No rules yet
+    body: |
+      The `practice` tables are deliberately simple: they have **no rules yet**, a bit like a spreadsheet. Run it: a book with a price of **−5** is saved without complaint.
+    sql: |
+      INSERT INTO books (book_id, title, price)
+      VALUES (31, 'Oops', -5.00)
+      RETURNING title, price;
+
+  - kind: try
     title: A rule in action
     body: |
-      Wanderly's `reviews` table has a rule: ratings must be between 1 and 5. This tries to save a rating of **7**.
-
-      Run it and read the error. The database refused to store bad data. A spreadsheet would have happily accepted it.
+      This small table has a rule: a price can't be negative. Run it and read the error. The database refused to store bad data. You'll add rules like this yourself in Module 12.
     sql: |
-      INSERT INTO reviews (attraction_id, traveler_id, rating)
-      VALUES (1, 1, 7);
+      CREATE TABLE price_list (
+          title  text,
+          price  numeric CHECK (price >= 0)
+      );
+      INSERT INTO price_list VALUES ('Oops', -5.00);
     expect_error: true
 
   - kind: explain
@@ -69,20 +79,22 @@ steps:
     body: |
       PostgreSQL is a **relational** database. It keeps data in **tables**, like grids:
 
-      - A **table** holds one kind of thing: `countries`, `cities`, `trips`.
-      - A **row** is one thing: the country *Japan*. It's also called a *record*.
-      - A **column** is one piece of information every row has: `continent`. It's also called a *field*.
+      - A **table** holds one kind of thing: `books`, `customers`, `sales`.
+      - A **row** is one thing: the book *The Hobbit*. It's also called a *record*.
+      - A **column** is one piece of information every row has: `price`. It's also called a *field*.
 
-      The "relational" part is that tables **link** to each other. Each city row stores a `country_id`, the ID of the country it belongs to. So "Tokyo is in Japan" is stored as a number that points at Japan's row, not as a copy of the word *Japan*.
+      The "relational" part is that tables **link** to each other. In a well-designed database, a sale doesn't copy the book's title and author. It stores the book's **ID**, a number that points at the book's row.
+
+      The `practice` tables don't link yet. Every sale **copies** the book's title, author and genre. That's on purpose: from Module 11 you'll work with Inkwell's proper `bookstore` database, and in Module 17 you'll see exactly why the copies cause trouble.
 
   - kind: try
-    title: Tables that point at each other
+    title: The same facts, copied
     body: |
-      Run this. Every city has a `country_id`. Tokyo and Kyoto both have `1`.
-
-      Now change `cities` to `countries` and run it again. Which country has `country_id` 1?
+      Run this. *Atomic Habits* was sold 3 times, and its title, author and genre were copied onto every sale. Now change the title to `'Sapiens'` and run it again.
     sql: |
-      SELECT * FROM cities;
+      SELECT sale_id, book_title, author_name, genre
+      FROM sales
+      WHERE book_title = 'Atomic Habits';
 
   - kind: explain
     title: "SQL: the language"
@@ -92,10 +104,10 @@ steps:
       SQL is **declarative**: you describe *what* you want, not *how* to find it.
 
       ```sql
-      SELECT name FROM cities WHERE population > 2000000;
+      SELECT title FROM books WHERE price > 18;
       ```
 
-      reads almost like English: *"give me the names of cities with more than two million people."* You never tell PostgreSQL which rows to look at first or how to search. It works that out for you.
+      reads almost like English: *"give me the titles of books that cost more than 18."* You never tell PostgreSQL which rows to look at first or how to search. It works that out for you.
 
   - kind: explain
     title: Client and server
@@ -107,7 +119,7 @@ steps:
 
       Think of a restaurant: the server is the kitchen, the client is the waiter, and SQL is the language you order in. One kitchen serves many waiters at once.
 
-      This page runs a real PostgreSQL 18 server **inside your browser tab**, with Wanderly's data loaded. Every time you press Run you get a fresh copy, so you can't break anything.
+      This page runs a real PostgreSQL 18 server **inside your browser tab**, with Inkwell Books' data loaded. Every time you press Run you get a fresh copy, so you can't break anything.
 
   - kind: explain
     title: Where PostgreSQL fits

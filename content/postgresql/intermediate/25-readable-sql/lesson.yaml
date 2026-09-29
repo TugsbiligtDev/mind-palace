@@ -12,18 +12,18 @@ steps:
       Compare:
 
       ```sql
-      select t.trip_name,tr.full_name,sum(s.cost) from trips t join travelers tr on tr.traveler_id=t.traveler_id join trip_stops s on s.trip_id=t.trip_id group by t.trip_name,tr.full_name order by 3 desc
+      select b.title,g.name,sum(oi.quantity) from books b join genres g on g.genre_id=b.genre_id join order_items oi on oi.book_id=b.book_id group by b.title,g.name order by 3 desc
       ```
 
       ```sql
-      SELECT t.trip_name,
-             tr.full_name,
-             sum(s.cost) AS total_cost
-      FROM trips t
-      JOIN travelers  tr ON tr.traveler_id = t.traveler_id
-      JOIN trip_stops s  ON s.trip_id      = t.trip_id
-      GROUP BY t.trip_name, tr.full_name
-      ORDER BY total_cost DESC;
+      SELECT b.title,
+             g.name AS genre,
+             sum(oi.quantity) AS copies_sold
+      FROM books b
+      JOIN genres g       ON g.genre_id = b.genre_id
+      JOIN order_items oi ON oi.book_id = b.book_id
+      GROUP BY b.title, g.name
+      ORDER BY copies_sold DESC;
       ```
 
       The conventions most teams use:
@@ -34,77 +34,78 @@ steps:
       - **Label every calculated column** with AS.
       - Spaces around `=` and after commas.
 
-      **The comma debate:** some teams put commas at the **start** of lines (`, tr.full_name`) so you can comment out any column except the first without breaking the query. Others find trailing commas more natural. Either is fine. **Consistency within a project matters more than which you pick.**
+      **The comma debate:** some teams put commas at the **start** of lines (`, g.name`) so you can comment out any column except the first without breaking the query. Others find trailing commas more natural. Either is fine. **Consistency within a project matters more than which you pick.**
 
   - kind: try
     title: Your turn to tidy up
     body: |
-      This query works but is hard to read. Reformat it using the conventions above, and give the sum a label, **total_cost**. The result will be checked, so keep the logic the same.
+      This query works but is hard to read. Reformat it using the conventions above, and give the count a label, **books**. The result will be checked, so keep the logic the same.
     sql: |
-      select t.trip_name,sum(s.cost) from trips t join trip_stops s on s.trip_id=t.trip_id group by t.trip_name
+      select g.name,count(b.book_id) from genres g join books b on b.genre_id=g.genre_id group by g.name
     expect: |
-      SELECT t.trip_name,
-             sum(s.cost) AS total_cost
-      FROM trips t
-      JOIN trip_stops s ON s.trip_id = t.trip_id
-      GROUP BY t.trip_name;
+      SELECT g.name,
+             count(b.book_id) AS books
+      FROM genres g
+      JOIN books b ON b.genre_id = g.genre_id
+      GROUP BY g.name;
 
   - kind: explain
     title: Aliases that mean something
     body: |
-      `FROM trips a JOIN travelers b JOIN trip_stops c` forces every reader to keep a decoder ring in their head. By the fifth join, nobody knows what `c.cost` is.
+      `FROM orders a JOIN customers b JOIN order_items c` forces every reader to keep a decoder ring in their head. By the fifth join, nobody knows what `c.quantity` is.
 
       Use **short but meaningful** aliases: the table's initials or a clear abbreviation.
 
       | Table | Weak | Better |
       |---|---|---|
-      | trips | `a` | `t` |
-      | travelers | `b` | `tr` |
-      | trip_stops | `c` | `ts` or `s` |
+      | orders | `a` | `o` |
+      | customers | `b` | `c` |
+      | order_items | `c` | `oi` |
       | employees (as manager) | `e2` | `mgr` |
 
-      The same goes for CTE names: `per_traveler`, `monthly_totals`, `latest_payment` say what they hold. `x`, `temp` and `cte1` don't.
+      The same goes for CTE names: `per_city`, `monthly_totals`, `latest_payment` say what they hold. `x`, `temp` and `cte1` don't.
 
   - kind: explain
     title: Break the problem into steps
     body: |
-      Hard question: *"Which traveler has paid Wanderly the most, and what share of all money received is that?"*
+      Hard question: *"Customers in which city have paid Inkwell the most, and what share of all money received is that?"*
 
       Don't write it in one go. Write the **steps in plain English** first, then make each one a CTE (Module 19):
 
-      1. **per_traveler**: total paid per traveler (payments → trips → traveler).
+      1. **per_city**: total paid per city (payments → orders → customers).
       2. **grand_total**: the total of all payments.
-      3. **Final**: each traveler's total, their share as a percentage, biggest first.
+      3. **Final**: each city's total, its share as a percentage, biggest first.
 
       Run each step on its own before adding the next. When something looks wrong, you'll know exactly which step to look at.
 
   - kind: try
     title: Your turn, step by step
     body: |
-      Step 1 is done. Add the remaining steps so the final result shows `full_name`, **paid**, and **pct**: the share of all payments, as a percentage rounded to 1 decimal. Sort biggest first.
+      Step 1 is done. Add the remaining steps so the final result shows `city`, **paid**, and **pct**: the share of all payments, as a percentage rounded to 1 decimal. Sort biggest first. (A few customers have no city on file. They show up as one NULL row, which is honest.)
 
       Hint: `round(100 * paid / grand_total, 1)`. The grand total can be a scalar subquery `(SELECT sum(amount) FROM payments)` or its own CTE.
     sql: |
-      WITH per_traveler AS (
-          SELECT t.traveler_id, sum(p.amount) AS paid
+      WITH per_city AS (
+          SELECT c.city, sum(p.amount) AS paid
           FROM payments p
-          JOIN trips t ON t.trip_id = p.trip_id
-          GROUP BY t.traveler_id
+          JOIN orders o    ON o.order_id = p.order_id
+          JOIN customers c ON c.customer_id = o.customer_id
+          GROUP BY c.city
       )
-      SELECT * FROM per_traveler;
+      SELECT * FROM per_city;
     expect: |
-      WITH per_traveler AS (
-          SELECT t.traveler_id, sum(p.amount) AS paid
+      WITH per_city AS (
+          SELECT c.city, sum(p.amount) AS paid
           FROM payments p
-          JOIN trips t ON t.trip_id = p.trip_id
-          GROUP BY t.traveler_id
+          JOIN orders o    ON o.order_id = p.order_id
+          JOIN customers c ON c.customer_id = o.customer_id
+          GROUP BY c.city
       )
-      SELECT tr.full_name,
-             pt.paid,
-             round(100 * pt.paid / (SELECT sum(amount) FROM payments), 1) AS pct
-      FROM per_traveler pt
-      JOIN travelers tr ON tr.traveler_id = pt.traveler_id
-      ORDER BY pt.paid DESC;
+      SELECT city,
+             paid,
+             round(100 * paid / (SELECT sum(amount) FROM payments), 1) AS pct
+      FROM per_city
+      ORDER BY paid DESC;
     ordered: true
 
   - kind: explain
@@ -112,58 +113,58 @@ steps:
     body: |
       A result that *looks* plausible isn't proof. Quick checks that catch most mistakes:
 
-      - **Count rows before and after each join.** If `trips` has 7 rows and your joined result has 10, rows were multiplied (fan-out). If it has 6, rows were dropped.
-      - **Test the edge cases.** Does it handle NULLs? A group with no rows? Duplicates? A trip with no stops? A refund (negative amount)?
-      - **Compare with a simpler query.** If per-traveler totals are right, they should add up to `SELECT sum(amount) FROM payments`. Percentages should add up to about 100.
-      - **Spot-check one row by hand.** Pick one traveler and add up their payments yourself.
+      - **Count rows before and after each join.** If `customers` has 5,020 rows and your joined result has 39,419, rows were multiplied (fan-out). If fewer customers appear than you started with, rows were dropped.
+      - **Test the edge cases.** Does it handle NULLs? A group with no rows? Duplicates? A customer with no orders? A refund (negative amount)?
+      - **Compare with a simpler query.** If per-city totals are right, they should add up to `SELECT sum(amount) FROM payments`. Percentages should add up to about 100.
+      - **Spot-check one row by hand.** Pick one customer and add up their payments yourself.
 
   - kind: try
     title: Count before and after
     body: |
-      Run it: 7 trips, but 10 rows after joining stops, and only 6 different trips. The join both **multiplied** rows (trips with 2 stops) and **dropped** one (trip 6 has no stops).
+      Run it: 5,020 customers, but 39,419 rows after joining orders, and only 5,007 different customers. The join both **multiplied** rows (customers with several orders) and **dropped** 13 (customers who never ordered).
     sql: |
-      SELECT (SELECT count(*) FROM trips) AS trips,
+      SELECT (SELECT count(*) FROM customers) AS customers,
              (SELECT count(*)
-              FROM trips t JOIN trip_stops s ON s.trip_id = t.trip_id) AS joined_rows,
-             (SELECT count(DISTINCT t.trip_id)
-              FROM trips t JOIN trip_stops s ON s.trip_id = t.trip_id) AS trips_after_join;
+              FROM customers c JOIN orders o ON o.customer_id = c.customer_id) AS joined_rows,
+             (SELECT count(DISTINCT c.customer_id)
+              FROM customers c JOIN orders o ON o.customer_id = c.customer_id) AS customers_after_join;
 
   - kind: explain
     title: Logic mistakes that don't raise errors
     body: |
       The usual suspects:
 
-      - **An inner join silently drops rows.** Trips without stops, travelers without trips: gone. Use LEFT JOIN when "none" is a valid answer.
-      - **A WHERE on the right side of a LEFT JOIN turns it back into an inner join.** `LEFT JOIN reviews r … WHERE r.rating = 5` removes every unmatched row, because their `r.rating` is NULL. Put conditions about the right-hand table in the **ON** clause instead.
-      - **Averages over the wrong grain.** `avg(cost)` from trip_stops is the average **stop**, not the average **trip**. Decide what one row represents first (Module 18).
+      - **An inner join silently drops rows.** Customers without orders, genres without books: gone. Use LEFT JOIN when "none" is a valid answer.
+      - **A WHERE on the right side of a LEFT JOIN turns it back into an inner join.** `LEFT JOIN books b … WHERE b.price > 29` removes every unmatched row, because their `b.price` is NULL. Put conditions about the right-hand table in the **ON** clause instead.
+      - **Averages over the wrong grain.** `avg(quantity * unit_price)` from order_items is the average **order line**, not the average **order**. Decide what one row represents first (Module 18).
       - **Fan-out inflates sums and counts** (Module 14).
       - **`count(*)` vs. `count(col)`** after a LEFT JOIN (Module 14).
 
   - kind: try
     title: Your turn to fix a LEFT JOIN
     body: |
-      *"List every attraction, with its 5-star rating if it has one."* This returns only 4 attractions, because the WHERE throws away the unmatched ones. Move the rating condition into the ON clause so all 9 attractions appear.
+      *"List every genre, with its books that cost more than 29, if it has any."* This returns only 7 genres, because the WHERE throws away the unmatched ones: Poetry (no books at all) and Romance (none that expensive). Move the price condition into the ON clause so all 9 genres appear.
     sql: |
-      SELECT a.name, r.rating
-      FROM attractions a
-      LEFT JOIN reviews r ON r.attraction_id = a.attraction_id
-      WHERE r.rating = 5;
+      SELECT g.name, b.title, b.price
+      FROM genres g
+      LEFT JOIN books b ON b.genre_id = g.genre_id
+      WHERE b.price > 29;
     expect: |
-      SELECT a.name, r.rating
-      FROM attractions a
-      LEFT JOIN reviews r ON r.attraction_id = a.attraction_id
-                         AND r.rating = 5;
+      SELECT g.name, b.title, b.price
+      FROM genres g
+      LEFT JOIN books b ON b.genre_id = g.genre_id
+                       AND b.price > 29;
 
   - kind: try
     title: The wrong grain
     body: |
-      Two "average costs", two different questions. Run it: the average **stop** costs 527, and the average **trip** costs about 878. Both are correct. Only one answers "how much does a trip cost?"
+      Two "average order values", two different questions. Run it: the average **order line** is worth 20.13, and the average **order** 35.68. Both are correct. Only one answers "how much does a typical order bring in?"
     sql: |
-      SELECT round(avg(cost), 2) AS avg_per_stop,
+      SELECT round(avg(quantity * unit_price), 2) AS avg_per_line,
              (SELECT round(avg(total), 2)
-              FROM (SELECT trip_id, sum(cost) AS total
-                    FROM trip_stops GROUP BY trip_id) AS per_trip) AS avg_per_trip
-      FROM trip_stops;
+              FROM (SELECT order_id, sum(quantity * unit_price) AS total
+                    FROM order_items GROUP BY order_id) AS per_order) AS avg_per_order
+      FROM order_items;
 
   - kind: explain
     title: Comment the why
@@ -174,11 +175,11 @@ steps:
       -- Weak: filter status
       WHERE status <> 'cancelled'
 
-      -- Useful: cancelled trips were refunded in full, so they'd count twice
+      -- Useful: cancelled orders were never paid for, so they'd inflate sales
       WHERE status <> 'cancelled'
       ```
 
-      Good places for a comment: a business rule ("refunds are negative amounts"), a surprising choice ("LEFT JOIN: trips without stops must still appear"), or a known limitation ("assumes one currency").
+      Good places for a comment: a business rule ("refunds are negative amounts"), a surprising choice ("LEFT JOIN: customers without orders must still appear"), or a known limitation ("assumes one currency").
 
   - kind: info
     title: "🔹 Formatters and linters"

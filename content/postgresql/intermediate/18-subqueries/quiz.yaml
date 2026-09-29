@@ -1,18 +1,18 @@
 pass: 3
 questions:
   - type: predict
-    prompt: The average entry fee is about 17.81. What does this return?
+    prompt: The 300 books have an average price of about 18.06, and 141 of them cost more than that. What does this return?
     code: |
       SELECT count(*)
-      FROM attractions
-      WHERE entry_fee < (SELECT avg(entry_fee) FROM attractions);
+      FROM books
+      WHERE price < (SELECT avg(price) FROM books);
     options:
-      - "6"
-      - "3"
-      - "9"
+      - "141"
+      - "159"
+      - "300"
       - "0"
     answer: 1
-    explanation: "Six attractions cost more than the average. The other three (all free) cost less."
+    explanation: "141 books cost more than the average, so the other 159 cost less. (No book costs exactly 18.06.)"
 
   - type: mcq
     prompt: "`WHERE x NOT IN (SELECT y FROM t)` returns zero rows, even though you're sure some should match. What's the most likely cause?"
@@ -25,13 +25,13 @@ questions:
     explanation: A NULL in the list makes `x <> NULL` unknown, so NOT IN is never true. Rewrite it with NOT EXISTS.
 
   - type: fill
-    prompt: Find travelers with **no** trips at all.
+    prompt: Find customers with **no** orders at all.
     code: |
-      SELECT full_name FROM travelers tr
-      WHERE ____ (SELECT 1 FROM trips t WHERE t.traveler_id = tr.traveler_id);
+      SELECT first_name FROM customers c
+      WHERE ____ (SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id);
     answer: NOT EXISTS
     accept: ["not exists"]
-    explanation: "`NOT EXISTS` is true when the correlated subquery finds no rows for that traveler."
+    explanation: "`NOT EXISTS` is true when the correlated subquery finds no rows for that customer."
 
   - type: mcq
     prompt: What makes a subquery **correlated**?
@@ -41,19 +41,19 @@ questions:
       - It returns more than one row
       - It uses GROUP BY
     answer: 1
-    explanation: A correlated subquery refers to the outer query's row, like `t.traveler_id = tr.traveler_id`, so it's evaluated per row.
+    explanation: A correlated subquery refers to the outer query's row, like `o.customer_id = c.customer_id`, so it's evaluated per row.
 
   - type: predict
     prompt: What does this return?
     code: |
-      SELECT max(total) AS biggest
-      FROM (SELECT trip_id, sum(nights) AS total
-            FROM trip_stops
-            GROUP BY trip_id) AS t;
+      SELECT max(n) AS biggest
+      FROM (SELECT genre_id, count(*) AS n
+            FROM books
+            GROUP BY genre_id) AS g;
     options:
-      - "6"
-      - "7"
+      - "300"
       - "9"
-      - "8"
-    answer: 3
-    explanation: "Per-trip nights are 7, 8, 6, 3, 6 and 6. Trip 2 (Italian Escape) has 5 + 3 = 8, the biggest."
+      - "46"
+      - "30"
+    answer: 2
+    explanation: "The derived table counts books per genre (Science Fiction has the most, 46), and the outer query picks the biggest count."

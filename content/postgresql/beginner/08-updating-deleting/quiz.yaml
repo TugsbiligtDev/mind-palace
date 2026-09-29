@@ -1,40 +1,40 @@
 pass: 3
 questions:
   - type: mcq
-    prompt: "What does `UPDATE trips SET status = 'cancelled';` do?"
+    prompt: "What does `UPDATE sales SET payment_method = 'cash';` do?"
     options:
       - Nothing, because UPDATE needs a WHERE
-      - Cancels the most recent trip
-      - Cancels **every** trip
+      - Changes only the most recent sale
+      - Changes **every** sale
       - An error
     answer: 2
     explanation: Without WHERE, UPDATE applies to every row in the table, and PostgreSQL won't ask whether you're sure. Write the WHERE first.
 
   - type: predict
-    prompt: Trip 1 has two stops, with 4 and 3 nights. What does this return?
+    prompt: Sale 10 sold 2 copies and sale 11 sold 1. What does this return?
     code: |
-      UPDATE trip_stops
-      SET nights = nights + 1
-      WHERE trip_id = 1
-      RETURNING nights;
+      UPDATE sales
+      SET quantity = quantity + 1
+      WHERE sale_id IN (10, 11)
+      RETURNING quantity;
     options:
-      - "4\n3"
-      - "5\n4"
-      - "5"
+      - "2\n1"
+      - "3\n2"
+      - "3"
       - "UPDATE 2"
     answer: 1
-    explanation: Both of trip 1's stops get one more night, and RETURNING shows the **new** values, 5 and 4.
+    explanation: Both sales get one more copy, and RETURNING shows the **new** values, 3 and 2.
 
   - type: fill
-    prompt: Remove only the reviews with a rating below 3.
+    prompt: Remove only the sales of more than 2 copies.
     code: |
-      DELETE FROM reviews ____ rating < 3;
+      DELETE FROM sales ____ quantity > 2;
     answer: WHERE
     accept: ["where"]
-    explanation: WHERE limits the DELETE to matching rows. Without it, every review would be removed.
+    explanation: WHERE limits the DELETE to matching rows. Without it, every sale would be removed.
 
   - type: mcq
-    prompt: What's the difference between `DELETE FROM reviews;` and `TRUNCATE reviews;`?
+    prompt: What's the difference between `DELETE FROM sales;` and `TRUNCATE sales;`?
     options:
       - DELETE removes the table, and TRUNCATE removes the rows
       - Both empty the table. DELETE works row by row (and can take a WHERE), while TRUNCATE empties the whole table in one quick operation

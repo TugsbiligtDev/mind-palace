@@ -12,7 +12,7 @@ steps:
       Apps usually describe a connection in one line, a **connection string** (or *URL*):
 
       ```text
-      postgresql://app_user:s3cret@db.example.com:5432/wanderly?sslmode=require
+      postgresql://app_user:s3cret@db.example.com:5432/bookstore?sslmode=require
       └─scheme──┘ └─user─┘ └pass┘ └────host─────┘ └port┘ └─db──┘ └─options──┘
       ```
 
@@ -30,7 +30,7 @@ steps:
 
       with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
           rows = conn.execute(
-              "SELECT trip_name FROM trips WHERE traveler_id = %s",
+              "SELECT order_id, status FROM orders WHERE customer_id = %s",
               (1,),
           ).fetchall()
       ```
@@ -42,7 +42,7 @@ steps:
       const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
       const { rows } = await pool.query(
-        "SELECT trip_name FROM trips WHERE traveler_id = $1",
+        "SELECT order_id, status FROM orders WHERE customer_id = $1",
         [1],
       );
       ```
@@ -56,10 +56,10 @@ steps:
 
       ```python
       # NEVER do this
-      sql = f"SELECT * FROM travelers WHERE email = '{email_from_form}'"
+      sql = f"SELECT * FROM customers WHERE email = '{email_from_form}'"
       ```
 
-      A normal visitor types `amina@example.com`. An attacker types:
+      A normal visitor types `emma.johnson@example.com`. An attacker types:
 
       ```text
       nobody@example.com' OR '1'='1
@@ -68,18 +68,18 @@ steps:
       and the query becomes:
 
       ```sql
-      SELECT * FROM travelers WHERE email = 'nobody@example.com' OR '1'='1'
+      SELECT * FROM customers WHERE email = 'nobody@example.com' OR '1'='1'
       ```
 
-      `'1'='1'` is always true, so **every traveler** comes back. With other inputs, an attacker can read any table, change data, or drop tables. This is **SQL injection**, for decades one of the most common ways websites get hacked.
+      `'1'='1'` is always true, so **every customer** comes back. With other inputs, an attacker can read any table, change data, or drop tables. This is **SQL injection**, for decades one of the most common ways websites get hacked.
 
   - kind: try
     title: What the attacker's query returns
     body: |
-      This is exactly the SQL the careless app would build. Run it: every traveler's email leaks, for a login that should have matched nobody.
+      This is exactly the SQL the careless app would build. Run it: all 5,020 customers' emails leak, for a login that should have matched nobody.
     sql: |
-      SELECT full_name, email
-      FROM travelers
+      SELECT first_name, last_name, email
+      FROM customers
       WHERE email = 'nobody@example.com' OR '1'='1';
 
   - kind: explain
@@ -88,7 +88,7 @@ steps:
       With a **parameterized query**, the SQL text and the values travel **separately**. PostgreSQL parses the SQL first, with a placeholder where the value goes, and then plugs the value in as **pure data**. Quotes in it are just characters. They can never change the query's structure.
 
       ```python
-      conn.execute("SELECT * FROM travelers WHERE email = %s", (email_from_form,))
+      conn.execute("SELECT * FROM customers WHERE email = %s", (email_from_form,))
       ```
 
       Rules:
@@ -104,22 +104,22 @@ steps:
     body: |
       `PREPARE` stores the query with a `$1` placeholder, and `EXECUTE` passes the attacker's text as the value. Run it: **no rows**, because no email is literally `nobody@example.com' OR '1'='1`.
     sql: |
-      PREPARE find_traveler(text) AS
-          SELECT full_name, email FROM travelers WHERE email = $1;
+      PREPARE find_customer(text) AS
+          SELECT first_name, email FROM customers WHERE email = $1;
 
-      EXECUTE find_traveler('nobody@example.com'' OR ''1''=''1');
+      EXECUTE find_customer('nobody@example.com'' OR ''1''=''1');
 
   - kind: try
     title: Your turn to parameterize
     body: |
-      Prepare a statement named **trips_for** that takes an **integer** traveler ID and returns `trip_name` and `status` of that traveler's trips. Then execute it for traveler **1**.
+      Prepare a statement named **orders_for** that takes an **integer** customer ID and returns the `order_id` and `status` of that customer's orders. Then execute it for customer **40** (Diego).
     sql: |
-      SELECT trip_name, status FROM trips WHERE traveler_id = 1;
+      SELECT order_id, status FROM orders WHERE customer_id = 40;
     expect: |
-      PREPARE trips_for(integer) AS
-          SELECT trip_name, status FROM trips WHERE traveler_id = $1;
+      PREPARE orders_for(integer) AS
+          SELECT order_id, status FROM orders WHERE customer_id = $1;
 
-      EXECUTE trips_for(1);
+      EXECUTE orders_for(40);
 
   - kind: explain
     title: Keep passwords out of your code
@@ -154,8 +154,8 @@ steps:
       | JavaScript / TypeScript | **Prisma**, **Drizzle** |
 
       ```python
-      # Django: roughly SELECT * FROM trips WHERE status = 'planned'
-      Trip.objects.filter(status="planned")
+      # Django: roughly SELECT * FROM orders WHERE status = 'pending'
+      Order.objects.filter(status="pending")
       ```
 
       **Pros:** less repetitive code, parameterization by default, migrations built in (Module 39).
@@ -169,34 +169,34 @@ steps:
       This innocent-looking loop:
 
       ```python
-      trips = Trip.objects.all()           # 1 query
-      for trip in trips:
-          print(trip.traveler.full_name)   # +1 query per trip!
+      orders = Order.objects.all()           # 1 query
+      for order in orders:
+          print(order.customer.first_name)   # +1 query per order!
       ```
 
-      runs **1 + N** queries: one for the trips, then one more for each trip's traveler (Module 33). With 1,000 trips, that's 1,001 round trips.
+      runs **1 + N** queries: one for the orders, then one more for each order's customer (Module 33). With Inkwell's 39,419 orders, that's 39,420 round trips.
 
       ORMs have a switch to load related rows up front, in one JOIN or one `IN (…)` query:
 
-      - Django: `Trip.objects.select_related("traveler")`
-      - SQLAlchemy: `select(Trip).options(joinedload(Trip.traveler))`
-      - Prisma: `prisma.trip.findMany({ include: { traveler: true } })`
+      - Django: `Order.objects.select_related("customer")`
+      - SQLAlchemy: `select(Order).options(joinedload(Order.customer))`
+      - Prisma: `prisma.order.findMany({ include: { customer: true } })`
 
       Turn on query logging in development, and you'll see N+1 immediately.
 
   - kind: mac
     title: A Python script with psycopg
     body: |
-      This makes a small project folder, installs psycopg 3 in a private environment, writes a script that uses a **parameterized** query and reads the connection string from an environment variable, and runs it. It prints the trips of the traveler whose email you pass in.
+      This makes a small project folder, installs psycopg 3 in a private environment, writes a script that uses a **parameterized** query and reads the connection string from an environment variable, and runs it. It prints the orders of the customer whose email you pass in.
     commands: |
       mkdir -p ~/Documents/sql/pyapp && cd ~/Documents/sql/pyapp
       python3 -m venv .venv
       source .venv/bin/activate
       pip install "psycopg[binary]"
-      printf 'import os, sys, psycopg\nwith psycopg.connect(os.environ["DATABASE_URL"]) as conn:\n    rows = conn.execute("SELECT t.trip_name FROM trips t JOIN travelers tr USING (traveler_id) WHERE tr.email = %%s", (sys.argv[1],)).fetchall()\n    print(rows)\n' > trips.py
-      export DATABASE_URL="postgresql://localhost:5432/learn_sql"
-      python trips.py amina@example.com
-      python trips.py "nobody@example.com' OR '1'='1"
+      printf 'import os, sys, psycopg\nwith psycopg.connect(os.environ["DATABASE_URL"]) as conn:\n    rows = conn.execute("SELECT o.order_id, o.status FROM orders o JOIN customers c USING (customer_id) WHERE c.email = %%s", (sys.argv[1],)).fetchall()\n    print(rows)\n' > orders.py
+      export DATABASE_URL="postgresql://localhost:5432/bookstore"
+      python orders.py liam.smith@example.com
+      python orders.py "nobody@example.com' OR '1'='1"
 
   - kind: why
     body: |

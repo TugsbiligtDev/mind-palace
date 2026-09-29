@@ -1,11 +1,13 @@
 // Content checks: every file must match its schema, and every piece of SQL must really
 // work on PostgreSQL. Runs before each build, so broken content never goes live.
-//   pnpm check:content
+//   pnpm check:content            everything
+//   pnpm check:content 19-ctes    only lessons whose key contains "19-ctes" (skips the Practice hub)
 import { PGlite, types } from "@electric-sql/pglite";
 import { loadAllTracks, loadStory, loadTrack } from "../src/lib/content/load";
 import { loadPractice } from "../src/lib/content/practice";
 import { freshCopy, grade, lastRows, rawTextParsers, resultText, runInput } from "../src/lib/sql/core";
 
+const only = process.argv[2];
 const problems: string[] = [];
 let checks = 0;
 
@@ -28,18 +30,23 @@ async function main() {
         fail(bundle.track.id, `there's no automatic checker for ${bundle.track.engine} lessons yet, so they can't go live`);
       continue;
     }
-    const lessonBase = await makeBase(bundle.dataset);
+    // One base database per dataset, built the first time a lesson needs it.
+    const bases = new Map<string, PGlite>();
+    let lessonBase: PGlite;
     let copies: PGlite[] = [];
     const fresh = async () => {
-      const copy = (await freshCopy(lessonBase, { PGlite, types })) as PGlite;
+      const copy = (await freshCopy(lessonBase, { PGlite, types }, "none")) as PGlite;
       copies.push(copy);
       return copy;
     };
 
     for (const { level, topics } of bundle.levels) {
       for (const t of topics) {
+        if (only && !t.key.includes(only)) continue;
         await Promise.all(copies.map((c) => c.close()));
         copies = [];
+        if (!bases.has(t.engine.key)) bases.set(t.engine.key, await makeBase(t.engine.setup));
+        lessonBase = bases.get(t.engine.key)!;
         for (const [i, step] of t.lesson.steps.entries()) {
           if (step.kind !== "try") continue;
           const where = `${t.key} lesson step ${i + 1}`;
@@ -86,10 +93,10 @@ async function main() {
       console.log(`  checked ${bundle.track.id}/${level.id} (${topics.length} topics)`);
     }
     await Promise.all(copies.map((c) => c.close()));
-    await lessonBase.close();
+    await Promise.all([...bases.values()].map((b) => b.close()));
   }
 
-  await checkPractice();
+  if (!only) await checkPractice();
 
   if (problems.length) {
     console.error(`\nContent check failed: ${problems.length} problem(s)\n\n${problems.join("\n")}\n`);
@@ -135,7 +142,7 @@ async function checkPractice() {
 
     let base: PGlite;
     try {
-      base = await makeBase(`${track.dataset}\n${c.evidence_setup}`);
+      base = await makeBase(`${track.engine(c.dataset).setup}\n${c.evidence_setup}`);
     } catch (e) {
       fail(where, `evidence_setup errors: ${(e as Error).message}`);
       continue;
@@ -143,7 +150,7 @@ async function checkPractice() {
     // Every grade opens fresh copies of the database; close them all afterwards or memory runs out.
     const copies: PGlite[] = [];
     const fresh = async () => {
-      const copy = (await freshCopy(base, { PGlite, types })) as PGlite;
+      const copy = (await freshCopy(base, { PGlite, types }, "none")) as PGlite;
       copies.push(copy);
       return copy;
     };

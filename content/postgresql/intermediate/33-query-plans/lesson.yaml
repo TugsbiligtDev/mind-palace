@@ -12,22 +12,24 @@ steps:
   - kind: try
     title: Your first plan
     body: |
-      Run it. The plan is a small tree. Here, it's a single step: read the trips table from start to end (*Seq Scan*), keeping rows that match the *Filter*.
+      Run it. The plan is a small tree. Here, it's a single step: read the orders table from start to end (*Seq Scan*), keeping rows that match the *Filter*.
     sql: |
-      EXPLAIN SELECT * FROM trips WHERE status = 'planned';
+      EXPLAIN SELECT * FROM orders WHERE status = 'pending';
 
   - kind: explain
     title: Reading a plan
     body: |
       ```text
-      Hash Join  (cost=23.73..43.20 rows=750 width=64)
-        Hash Cond: (t.traveler_id = tr.traveler_id)
-        ->  Seq Scan on trips t  (cost=0.00..17.50 rows=750 width=36)
-        ->  Hash  (cost=16.10..16.10 rows=610 width=36)
-              ->  Seq Scan on travelers tr  (cost=0.00..16.10 rows=610 width=36)
+      Hash Join  (cost=185.95..978.70 rows=39419 width=9)
+        Hash Cond: (o.customer_id = c.customer_id)
+        ->  Seq Scan on orders o  (cost=0.00..689.19 rows=39419 width=8)
+        ->  Hash  (cost=123.20..123.20 rows=5020 width=9)
+              ->  Seq Scan on customers c  (cost=0.00..123.20 rows=5020 width=9)
       ```
 
-      - It's a **tree**. Each `->` is a step feeding the one above it. Read from the **most indented** lines up: scan travelers, build a hash, scan trips, join.
+      That's the plan for `SELECT o.order_id, c.first_name FROM orders o JOIN customers c ON c.customer_id = o.customer_id`.
+
+      - It's a **tree**. Each `->` is a step feeding the one above it. Read from the **most indented** lines up: scan customers, build a hash, scan orders, join.
       - **`cost=start..total`**: the planner's estimate of effort, in made-up units. Useful for comparing plans, not as seconds.
       - **`rows`**: how many rows the planner **expects** that step to produce.
       - **`width`**: the average row size in bytes.
@@ -60,20 +62,22 @@ steps:
   - kind: explain
     title: Estimated vs. actual rows
     body: |
-      Look at the join plan again: **rows=750** for trips. Wanderly has **7** trips.
+      The join plan above guessed **39,419** orders, exactly right. That's because the planner estimates from **statistics** that `ANALYZE` collects (autovacuum usually runs it for you, Module 43), and the bookstore's tables were analyzed after they were loaded.
 
-      The planner estimates from **statistics** that `ANALYZE` collects (autovacuum usually runs it for you, Module 43). These tables were just loaded and never analyzed, so the planner is guessing.
+      A brand-new table has **no** statistics yet, so the planner has to guess.
 
       When estimates and actual rows are **far apart** (10× or more), the planner may choose the wrong join or scan. The first fix is always the same: **`ANALYZE table_name;`** to refresh the statistics. Module 42 covers harder cases.
 
   - kind: try
     title: Fix a bad estimate
     body: |
-      The first plan guesses 750 rows. After `ANALYZE trips`, the second knows there are 7. Run it and compare the `rows=` numbers.
+      A fresh copy of the orders table, never analyzed. How many pending orders are there? Run it: the planner guesses **161**. The real answer is 514.
+
+      Then add `ANALYZE orders_copy;` before the EXPLAIN and run again: now it expects 536, close to reality.
     sql: |
-      EXPLAIN SELECT * FROM trips;
-      ANALYZE trips;
-      EXPLAIN SELECT * FROM trips;
+      CREATE TABLE orders_copy AS SELECT * FROM orders;
+
+      EXPLAIN SELECT * FROM orders_copy WHERE status = 'pending';
 
   - kind: explain
     title: Buffers
@@ -92,16 +96,17 @@ steps:
   - kind: explain
     title: "Slow pattern 1: a function on an indexed column"
     body: |
-      An index on `booked_on` stores dates, not years. So
+      An index on `ordered_at` stores moments, not years and months. So
 
       ```sql
-      WHERE EXTRACT(YEAR FROM booked_on) = 2021       -- can't use the index
+      WHERE EXTRACT(YEAR FROM ordered_at) = 2025
+        AND EXTRACT(MONTH FROM ordered_at) = 3            -- can't use the index
       ```
 
-      makes PostgreSQL compute the year for **every row**. Rewrite the condition so the column stands alone, as a range:
+      makes PostgreSQL compute the year and month for **every row**. Rewrite the condition so the column stands alone, as a range:
 
       ```sql
-      WHERE booked_on >= '2021-01-01' AND booked_on < '2022-01-01'   -- uses the index
+      WHERE ordered_at >= '2025-03-01' AND ordered_at < '2025-04-01'   -- uses the index
       ```
 
       The same goes for `lower(email) = …` (use an expression index, Module 32), `amount + 0 > 10`, and casts like `created_at::date = …`.
@@ -109,67 +114,58 @@ steps:
   - kind: try
     title: See the rewrite win
     body: |
-      Same answer, two plans. Run it: the first scans the whole table, the second uses the index on `booked_on`. Compare the Execution Times.
+      Same answer (902 orders in March 2025), two plans. Run it: the first scans all 39,419 orders, the second uses the index on `ordered_at`. Compare the Execution Times and the Buffers.
+
+      Look at the first plan's `rows=1` estimate too: the planner can't guess what a function will return, so its estimate is badly wrong (902 actual).
     sql: |
-      CREATE TABLE bookings_big AS
-      SELECT g AS booking_id,
-             date '2020-01-01' + (g % 2000) AS booked_on
-      FROM generate_series(1, 200000) AS g;
-      CREATE INDEX ON bookings_big (booked_on);
-      VACUUM ANALYZE bookings_big;
+      CREATE INDEX ON orders (ordered_at);
 
-      EXPLAIN ANALYZE SELECT count(*) FROM bookings_big
-      WHERE EXTRACT(YEAR FROM booked_on) = 2021;
+      EXPLAIN ANALYZE SELECT count(*) FROM orders
+      WHERE EXTRACT(YEAR FROM ordered_at) = 2025 AND EXTRACT(MONTH FROM ordered_at) = 3;
 
-      EXPLAIN ANALYZE SELECT count(*) FROM bookings_big
-      WHERE booked_on >= '2021-01-01' AND booked_on < '2022-01-01';
+      EXPLAIN ANALYZE SELECT count(*) FROM orders
+      WHERE ordered_at >= '2025-03-01' AND ordered_at < '2025-04-01';
 
   - kind: explain
     title: "Slow patterns 2 and 3: wildcards and N+1"
     body: |
-      **Leading-wildcard LIKE.** `WHERE name LIKE '%tower%'` can't use a B-tree (Module 26). The fix is a trigram index (Module 46).
+      **Leading-wildcard LIKE.** `WHERE title LIKE '%river%'` can't use a B-tree (Module 26). The fix is a trigram index (Module 46).
 
-      **N+1 queries.** An app loads 50 trips with one query, then runs **one more query per trip** to get its traveler: 1 + 50 = 51 round trips to the database. Each is fast, but together they're slow, and the plan of any single query looks fine. The fix: get everything in **one** query with a JOIN, or with `WHERE traveler_id IN (…)`. You'll see where this comes from (ORMs) in Module 38.
+      **N+1 queries.** An app loads 50 orders with one query, then runs **one more query per order** to get its customer: 1 + 50 = 51 round trips to the database. Each is fast, but together they're slow, and the plan of any single query looks fine. The fix: get everything in **one** query with a JOIN, or with `WHERE customer_id IN (…)`. You'll see where this comes from (ORMs) in Module 38.
 
   - kind: explain
     title: "Slow pattern 4: deep OFFSET"
     body: |
-      Page 7,500 of a list, 20 per page:
+      Page 1,500 of the order history, 20 per page:
 
       ```sql
-      SELECT … ORDER BY booking_id LIMIT 20 OFFSET 150000;
+      SELECT … ORDER BY order_id LIMIT 20 OFFSET 30000;
       ```
 
-      PostgreSQL has to produce **150,020 rows** and throw away the first 150,000. Every later page is slower than the one before.
+      PostgreSQL has to produce **30,020 rows** and throw away the first 30,000. Every later page is slower than the one before.
 
       **Keyset pagination** remembers where the last page **ended** and asks for what comes **after** it:
 
       ```sql
-      SELECT … WHERE booking_id > 150000   -- last id seen on the previous page
-      ORDER BY booking_id
+      SELECT … WHERE order_id > 30000   -- last id seen on the previous page
+      ORDER BY order_id
       LIMIT 20;
       ```
 
-      With an index on `booking_id`, it jumps straight there. Page 7,500 is as fast as page 1. The trade-off: you can go "next" and "previous", but not jump to "page 7,500" directly.
+      With an index on `order_id` (the primary key has one), it jumps straight there. Page 1,500 is as fast as page 1. The trade-off: you can go "next" and "previous", but not jump to "page 1,500" directly.
 
   - kind: try
     title: Your turn for keyset pagination
     body: |
-      The starter pages with OFFSET. Rewrite it with **keyset pagination**: the previous page ended at `booking_id` **150000**. Return the next **5** `booking_id`s. Then add `EXPLAIN ANALYZE` in front of both versions and compare.
+      The starter pages with OFFSET (and is off by one, a classic OFFSET bug). Rewrite it with **keyset pagination**: the previous page ended at `order_id` **30000**. Return the next **5** `order_id`s. Then add `EXPLAIN ANALYZE` in front of both versions and compare.
     sql: |
-      CREATE TABLE bookings_big AS SELECT g AS booking_id FROM generate_series(1, 200000) AS g;
-      ALTER TABLE bookings_big ADD PRIMARY KEY (booking_id);
-
-      SELECT booking_id FROM bookings_big
-      ORDER BY booking_id
-      LIMIT 5 OFFSET 150001;
+      SELECT order_id FROM orders
+      ORDER BY order_id
+      LIMIT 5 OFFSET 30001;
     expect: |
-      CREATE TABLE bookings_big AS SELECT g AS booking_id FROM generate_series(1, 200000) AS g;
-      ALTER TABLE bookings_big ADD PRIMARY KEY (booking_id);
-
-      SELECT booking_id FROM bookings_big
-      WHERE booking_id > 150000
-      ORDER BY booking_id
+      SELECT order_id FROM orders
+      WHERE order_id > 30000
+      ORDER BY order_id
       LIMIT 5;
     ordered: true
 

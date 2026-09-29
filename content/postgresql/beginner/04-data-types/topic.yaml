@@ -2,3 +2,4 @@ title: Core Data Types
 module: 4
 summary: Whole numbers, exact decimals vs. floating point (why money is never a float), text, booleans, dates, timestamps, intervals, and casting.
 minutes: 30
+dataset: practice

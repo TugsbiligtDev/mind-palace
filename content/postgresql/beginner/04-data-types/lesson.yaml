@@ -15,11 +15,11 @@ steps:
     body: |
       | Type | Holds | Use it for |
       |---|---|---|
-      | `integer` | whole numbers up to about ±2.1 billion | counts, IDs, nights |
+      | `integer` | whole numbers up to about ±2.1 billion | counts, IDs, stock |
       | `bigint` | whole numbers up to about ±9.2 quintillion | very large counts |
       | `numeric(p, s)` | **exact** decimals: *p* digits in total, *s* after the point | **money**, anything that must add up exactly |
 
-      `numeric(6,2)` (like `entry_fee`) allows up to 6 digits, 2 of them after the point, so the biggest value is `9999.99`. Values are rounded to 2 places when stored, and a value that's too big raises an error instead of being silently changed.
+      `numeric(6,2)` allows up to 6 digits, 2 of them after the point, so the biggest value is `9999.99`. Values are rounded to 2 places when stored, and a value that's too big raises an error instead of being silently changed.
 
   - kind: info
     title: "🔹 smallint"
@@ -101,33 +101,32 @@ steps:
     body: |
       Comparisons produce booleans. Run it: `t` means true and `f` means false.
 
-      Look at the `under_20` column: which attraction costs less than 20?
+      Look at the `under_8` column: which books cost less than 8?
     sql: |
-      SELECT name,
-             entry_fee = 0  AS is_free,
-             entry_fee < 20 AS under_20
-      FROM attractions;
+      SELECT title,
+             stock = 0  AS sold_out,
+             price < 8  AS under_8
+      FROM books;
 
   - kind: try
     title: Date arithmetic
     body: |
-      How long was each trip in days, and when was one week after it started? (`WHERE end_date IS NOT NULL` skips the trip with no end date yet.)
+      `birth_date` is a `date`. How many days old was each customer on New Year's Day 2025, and on which date was their 10,000th day?
     sql: |
-      SELECT trip_name,
-             end_date - start_date AS days,
-             start_date + 7 AS one_week_in
-      FROM trips
-      WHERE end_date IS NOT NULL;
+      SELECT first_name,
+             '2025-01-01'::date - birth_date AS days_old,
+             birth_date + 10000 AS day_10000
+      FROM customers;
 
   - kind: try
     title: Timestamps and intervals
     body: |
-      A hotel stay from check-in to check-out. The `+01` is the time zone offset: Rome in February is one hour ahead of UTC (universal time).
+      A parcel from the moment it was ordered to the moment it arrived. The `+01` is the time zone offset: Berlin in February is one hour ahead of UTC (universal time).
 
-      Subtracting two moments gives an **interval**. Try adding `+ interval '1 day'` to the check-out time.
+      Subtracting two moments gives an **interval**. Try adding `+ interval '1 day'` to the arrival time.
     sql: |
       SELECT '2026-02-06 11:00+01'::timestamptz
-           - '2026-02-01 14:00+01'::timestamptz AS stay_length;
+           - '2026-02-01 14:00+01'::timestamptz AS delivery_time;
 
   - kind: explain
     title: "Casting: converting between types"
@@ -146,7 +145,7 @@ steps:
   - kind: try
     title: Your turn to cast
     body: |
-      Some Wanderly prices arrived as **text**, like `'19.99'`. Convert `'19.99'` to `numeric(6,2)`, multiply it by 3, and label the result **total**.
+      Some prices from a supplier's price list arrived as **text**, like `'19.99'`. Convert `'19.99'` to `numeric(6,2)`, multiply it by 3, and label the result **total**.
     sql: |
       SELECT '19.99' AS price_text;
     expect: |

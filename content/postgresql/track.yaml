@@ -5,5 +5,18 @@ color: "#2563eb"
 engine: postgres
 engine_version: "18"
 last_reviewed: "2026-09-24"
-dataset: dataset.sql
+# The practice databases, built from the same files learners download for their Mac
+# (public/downloads/postgresql/). Beginner Modules 1–10 use `practice`, 11–17 use
+# `bookstore`, and Intermediate uses `bookstore_growth` (see each level.yaml / topic.yaml).
+datasets:
+  practice:
+    database: practice
+    files: [01_practice_basics.sql]
+  bookstore:
+    database: bookstore
+    files: [02_bookstore.sql]
+  bookstore_growth:
+    database: bookstore
+    files: [02_bookstore.sql, 03_bookstore_growth.sql]
+dataset: bookstore
 levels: [beginner, intermediate, advanced]

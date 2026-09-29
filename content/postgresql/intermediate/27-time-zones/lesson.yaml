@@ -2,7 +2,7 @@ steps:
   - kind: explain
     title: One moment, many clocks
     body: |
-      Amina's balance payment arrived at **23:40 on 20 February**, London time (which is UTC in winter). In Ulaanbaatar at that same instant, clocks read **07:40 on 21 February**. Same moment, different date.
+      Mia Tanaka lives in Tokyo. One of her payments reached Inkwell at **18:45 on 21 April 2024**, UTC (universal time, the same as London in winter). In Tokyo at that same instant, clocks read **03:45 on 22 April**. Same moment, different date.
 
       That's the core problem of time zones, and it's why Module 4 said: **use `timestamptz` for anything that happened.**
 
@@ -19,7 +19,7 @@ steps:
 
       ```sql
       SHOW TimeZone;
-      SET TimeZone = 'Asia/Ulaanbaatar';
+      SET TimeZone = 'Asia/Tokyo';
       ```
 
       **The stored value never changes.** Only the display does. This page uses **UTC**. On your Mac, psql uses your Mac's zone unless you set it.
@@ -27,10 +27,10 @@ steps:
   - kind: try
     title: Same payment, two clocks
     body: |
-      Run it: payment 6 shown in UTC. Then add `SET TimeZone = 'Asia/Ulaanbaatar';` as the first line and run again. The date and time change, and so does the `+08`. It's the same moment.
+      Run it: Mia's payment 3365 shown in UTC. Then add `SET TimeZone = 'Asia/Tokyo';` as the first line and run again. The date and time change, and so does the `+09`. It's the same moment.
     sql: |
       SHOW TimeZone;
-      SELECT payment_id, paid_at FROM payments WHERE payment_id = 6;
+      SELECT payment_id, paid_at FROM payments WHERE payment_id = 3365;
 
   - kind: explain
     title: AT TIME ZONE
@@ -43,41 +43,51 @@ steps:
       | `timestamp` (wall clock) | `timestamptz` (a moment) | *This wall-clock time was in Rome, so which moment was it?* |
 
       ```sql
-      SELECT paid_at AT TIME ZONE 'Asia/Ulaanbaatar' AS ub_time
+      SELECT paid_at AT TIME ZONE 'Asia/Tokyo' AS tokyo_time
       FROM payments;
       ```
 
-      The most common use: **reporting by local day**. `(paid_at AT TIME ZONE 'Asia/Ulaanbaatar')::date` is the date in Ulaanbaatar, whatever the session zone.
+      The zone can come from a **column**, too. Every Inkwell customer has a `time_zone`, so `paid_at AT TIME ZONE c.time_zone` shows each payment in its own customer's local time.
+
+      The most common use: **reporting by local day**. `(paid_at AT TIME ZONE 'Asia/Tokyo')::date` is the date in Tokyo, whatever the session zone.
 
   - kind: try
-    title: Local times for every payment
+    title: Each customer's own clock
     body: |
-      Run it and compare the two columns. Several payments land on a **different date** in Ulaanbaatar.
+      Mia's payments, shown in UTC and in her own time zone (taken from her customer row). Run it and compare the two columns. Several payments land on a **different date** in Tokyo.
     sql: |
-      SELECT payment_id,
-             paid_at,
-             paid_at AT TIME ZONE 'Asia/Ulaanbaatar' AS ub_wall_clock
-      FROM payments
-      ORDER BY paid_at;
+      SELECT p.payment_id,
+             p.paid_at,
+             c.time_zone,
+             p.paid_at AT TIME ZONE c.time_zone AS local_wall_clock
+      FROM payments p
+      JOIN orders o    ON o.order_id = p.order_id
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE c.customer_id = 9
+      ORDER BY p.paid_at;
 
   - kind: try
     title: Your turn to find the date shifts
     body: |
-      Wanderly's office is in Ulaanbaatar, and its daily report must use **Ulaanbaatar dates**. Find the payments whose UTC date differs from their Ulaanbaatar date. Return `payment_id`, **utc_date** (`paid_at::date` in this UTC session) and **ub_date**.
+      Mia's order history must show **Tokyo dates**. Find Mia's payments whose UTC date differs from their Tokyo date. Return `payment_id`, **utc_date** (`paid_at::date` in this UTC session) and **tokyo_date**. You should find 13 of her 49 payments.
     sql: |
-      SELECT payment_id, paid_at
-      FROM payments;
+      SELECT p.payment_id, p.paid_at
+      FROM payments p
+      JOIN orders o ON o.order_id = p.order_id
+      WHERE o.customer_id = 9;
     expect: |
-      SELECT payment_id,
-             paid_at::date AS utc_date,
-             (paid_at AT TIME ZONE 'Asia/Ulaanbaatar')::date AS ub_date
-      FROM payments
-      WHERE paid_at::date <> (paid_at AT TIME ZONE 'Asia/Ulaanbaatar')::date;
+      SELECT p.payment_id,
+             p.paid_at::date AS utc_date,
+             (p.paid_at AT TIME ZONE 'Asia/Tokyo')::date AS tokyo_date
+      FROM payments p
+      JOIN orders o ON o.order_id = p.order_id
+      WHERE o.customer_id = 9
+        AND p.paid_at::date <> (p.paid_at AT TIME ZONE 'Asia/Tokyo')::date;
 
   - kind: explain
     title: Named zones, not offsets
     body: |
-      Write zones as **names** from the time zone database: `'Europe/Rome'`, `'America/New_York'`, `'Asia/Ulaanbaatar'`.
+      Write zones as **names** from the time zone database: `'Europe/Rome'`, `'America/New_York'`, `'Asia/Tokyo'`. That's how Inkwell's `customers.time_zone` stores them.
 
       Avoid fixed offsets like `'+01'`:
 
@@ -134,7 +144,7 @@ steps:
       WHERE paid_at BETWEEN '2026-02-01' AND '2026-02-20'      -- WRONG
       ```
 
-      `'2026-02-20'` becomes **midnight at the start** of the 20th. Anything later that day, like Amina's payment at 23:40, is **excluded**.
+      `'2026-02-20'` becomes **midnight at the start** of the 20th. Anything later that day, like a payment at 23:40, is **excluded**.
 
       The safe pattern is a **half-open range**, from the start **up to but not including** the next day:
 
@@ -147,9 +157,9 @@ steps:
   - kind: try
     title: BETWEEN misses a payment
     body: |
-      A payment was made on 20 February, yet this returns **nothing**. Run it. Then change it to the half-open pattern ending `< '2026-02-21'`.
+      Payments from 1 to 20 February 2026. Run it: 1,155. Then change it to the half-open pattern ending `< '2026-02-21'` and run again: 1,211. BETWEEN silently lost the 56 payments made during 20 February.
     sql: |
-      SELECT payment_id, paid_at
+      SELECT count(*) AS payments
       FROM payments
       WHERE paid_at BETWEEN '2026-02-01' AND '2026-02-20';
 
@@ -175,7 +185,7 @@ steps:
       FROM generate_series('2026-02-01'::date, '2026-02-28'::date, interval '1 day') AS d;
       ```
 
-      For a **local-day** report, generate the days, then compare against `(paid_at AT TIME ZONE 'Asia/Ulaanbaatar')::date`, so every payment lands in the right day for the office that reads the report.
+      For a **local-day** report, generate the days, then compare against `(paid_at AT TIME ZONE 'Asia/Tokyo')::date`, so every payment lands in the right day for the person who reads the report.
 
   - kind: why
     body: |

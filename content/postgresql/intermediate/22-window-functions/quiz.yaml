@@ -15,15 +15,15 @@ questions:
     code: |
       SELECT sum(amount) OVER (ORDER BY paid_at) AS running
       FROM payments
-      WHERE trip_id = 5
+      WHERE order_id = 174
       ORDER BY paid_at;
     options:
-      - "300.00\n610.00\n-300.00"
-      - "300.00\n910.00\n610.00"
-      - "610.00\n610.00\n610.00"
-      - "300.00\n910.00\n1210.00"
+      - "52.97\n-52.97"
+      - "52.97\n0.00"
+      - "0.00\n0.00"
+      - "52.97\n105.94"
     answer: 1
-    explanation: "Trip 5's payments are 300, 610 and −300. The running total goes 300, then 910, then back down to 610."
+    explanation: "Order 174 has a payment of 52.97 and then a refund of −52.97. The running total goes 52.97, then back down to 0.00."
 
   - type: mcq
     prompt: "Why does `SELECT … WHERE row_number() OVER (ORDER BY salary) <= 3` fail?"
@@ -47,12 +47,13 @@ questions:
   - type: predict
     prompt: What does this return?
     code: |
-      SELECT count(*) FILTER (WHERE method = 'card') AS card_payments
+      SELECT count(*) FILTER (WHERE method = 'card') AS card_rows,
+             count(*) AS all_rows
       FROM payments;
     options:
-      - "14"
-      - "9"
-      - "4"
-      - "1"
+      - "37274 | 37274"
+      - "15968 | 37274"
+      - "15968 | 15968"
+      - "4 | 37274"
     answer: 1
-    explanation: Of the 14 payments, 9 were by card, 4 by transfer and 1 in cash. FILTER counts only the card ones.
+    explanation: FILTER applies only to the aggregate it's attached to. `card_rows` counts the 15,968 card rows (payments and refunds), while the plain `count(*)` still counts all 37,274.

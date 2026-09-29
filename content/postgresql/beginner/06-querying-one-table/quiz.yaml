@@ -3,31 +3,31 @@ questions:
   - type: predict
     prompt: What does this return?
     code: |
-      SELECT name
-      FROM countries
-      WHERE continent = 'Asia' AND name <> 'Japan';
+      SELECT first_name
+      FROM customers
+      WHERE country = 'UK' AND city <> 'London';
     options:
-      - "Japan"
-      - "Mongolia"
-      - "Japan\nMongolia"
+      - "Liam"
+      - "Olivia"
+      - "Liam\nOlivia\nZoe"
       - No rows
     answer: 1
-    explanation: Two countries are in Asia (Japan and Mongolia). `AND name <> 'Japan'` removes Japan, leaving Mongolia.
+    explanation: Three customers live in the UK (Liam and Zoe in London, Olivia in Manchester). `AND city <> 'London'` removes the two Londoners, leaving Olivia.
 
   - type: predict
-    prompt: The countries sorted A→Z are France, Italy, Japan, Mongolia, Peru. What does this return?
+    prompt: The genres sorted A→Z start Classic, Fantasy, Horror, Mystery, Non-Fiction… What does this return?
     code: |
-      SELECT name
-      FROM countries
-      ORDER BY name
+      SELECT DISTINCT genre
+      FROM books
+      ORDER BY genre
       LIMIT 2 OFFSET 1;
     options:
-      - "France\nItaly"
-      - "Italy\nJapan"
-      - "Japan\nMongolia"
-      - "Italy"
+      - "Classic\nFantasy"
+      - "Fantasy\nHorror"
+      - "Horror\nMystery"
+      - "Fantasy"
     answer: 1
-    explanation: "`OFFSET 1` skips France, then `LIMIT 2` returns the next two: Italy and Japan."
+    explanation: "`OFFSET 1` skips Classic, then `LIMIT 2` returns the next two: Fantasy and Horror."
 
   - type: predict
     prompt: What does this return?
@@ -42,17 +42,17 @@ questions:
     explanation: Both 7 and 2 are integers, so PostgreSQL does whole-number division and drops the remainder. Write `7.0 / 2` to get 3.5.
 
   - type: mcq
-    prompt: "Why does `SELECT entry_fee * 100 AS cents FROM attractions WHERE cents > 2000;` fail?"
+    prompt: "Why does `SELECT price * 100 AS cents FROM books WHERE cents > 2000;` fail?"
     options:
       - You can't multiply in SELECT
       - WHERE runs before SELECT, so the alias `cents` doesn't exist yet
       - Aliases must be in double quotes
       - 2000 is too big
     answer: 1
-    explanation: "PostgreSQL evaluates FROM → WHERE → SELECT → ORDER BY. Repeat the calculation in WHERE (`entry_fee * 100 > 2000`), or use the alias only in ORDER BY."
+    explanation: "PostgreSQL evaluates FROM → WHERE → SELECT → ORDER BY. Repeat the calculation in WHERE (`price * 100 > 2000`), or use the alias only in ORDER BY."
 
   - type: mcq
-    prompt: "Which nights values does `WHERE nights BETWEEN 3 AND 5` keep?"
+    prompt: "Which stock values does `WHERE stock BETWEEN 3 AND 5` keep?"
     options:
       - "4 only"
       - "3 and 4"

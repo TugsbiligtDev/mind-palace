@@ -31,14 +31,14 @@ questions:
     explanation: The circle means "zero is allowed", and the crow's foot means "many". Together they read "zero or more".
 
   - type: mcq
-    prompt: Travelers book tours, and each booking records the number of seats. Where does `seats` go?
+    prompt: Customers join book clubs, and each membership records the number of copies pre-ordered. Where does `copies` go?
     options:
-      - travelers
-      - tours
-      - A junction table such as bookings, with traveler_id and tour_id
-      - A separate seats table with only a seats column
+      - customers
+      - clubs
+      - A junction table such as memberships, with customer_id and club_id
+      - A separate copies table with only a copies column
     answer: 2
-    explanation: Seats describe one traveler + tour pair, so they belong on the junction table that represents the booking.
+    explanation: Copies describe one customer + club pair, so they belong on the junction table that represents the membership.
 
   - type: mcq
     prompt: A `flights` table points at `airports` twice, for where it leaves from and where it lands. What are good FK names?

@@ -1,7 +1,7 @@
 pass: 3
 questions:
   - type: mcq
-    prompt: A new trip is inserted. When does it show up in a plain view built on trips?
+    prompt: A new order is inserted. When does it show up in a plain view built on orders?
     options:
       - After REFRESH
       - Immediately, because a view reruns its query every time it's read

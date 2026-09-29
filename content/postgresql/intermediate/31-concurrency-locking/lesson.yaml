@@ -18,7 +18,7 @@ steps:
 
       Each transaction reads from a **snapshot**: the versions that were committed when its snapshot was taken. So:
 
-      - **Readers never wait for writers**, and **writers never wait for readers**. A report can read trips while someone updates them. It simply sees the older version.
+      - **Readers never wait for writers**, and **writers never wait for readers**. A report can read orders while someone updates them. It simply sees the older version.
       - **Writers of the same row do wait for each other** (below).
       - Old versions pile up and are cleaned later by **VACUUM** (Module 43).
 
@@ -27,12 +27,12 @@ steps:
   - kind: try
     title: A new version appears
     body: |
-      Run it. After the UPDATE, trip 6 has a **different `xmin`**: it's a new row version, written by this transaction.
+      Run it. After the UPDATE, order 28 has a **different `xmin`**: it's a new row version, written by this transaction.
     sql: |
       BEGIN;
-      SELECT xmin, trip_id, status FROM trips WHERE trip_id = 6;
-      UPDATE trips SET status = 'completed' WHERE trip_id = 6;
-      SELECT xmin, trip_id, status FROM trips WHERE trip_id = 6;
+      SELECT xmin, order_id, status FROM orders WHERE order_id = 28;
+      UPDATE orders SET status = 'paid' WHERE order_id = 28;
+      SELECT xmin, order_id, status FROM orders WHERE order_id = 28;
       COMMIT;
 
   - kind: explain
@@ -68,7 +68,7 @@ steps:
   - kind: explain
     title: The lost update
     body: |
-      The gift shop has **5** maps. Two cashiers each sell one at the same moment. Their app reads the count, subtracts 1 in the app, and writes it back:
+      The gift shelf has **5** bookmarks. Two cashiers each sell one at the same moment. Their app reads the count, subtracts 1 in the app, and writes it back:
 
       | Time | Cashier A | Cashier B | qty in the table |
       |---|---|---|---|
@@ -77,7 +77,7 @@ steps:
       | 3 | `UPDATE … SET qty = 4` | | 4 |
       | 4 | | `UPDATE … SET qty = 4` | **4** |
 
-      Two maps sold, but the count says 4, not 3. B's write **silently erased** A's. No error, just wrong stock. This is a **lost update**, and Read Committed doesn't prevent it by itself.
+      Two bookmarks sold, but the count says 4, not 3. B's write **silently erased** A's. No error, just wrong stock. This is a **lost update**, and Read Committed doesn't prevent it by itself.
 
   - kind: explain
     title: Three fixes
@@ -85,7 +85,7 @@ steps:
       **1. Let the database do the maths (best when possible).**
 
       ```sql
-      UPDATE stock SET qty = qty - 1 WHERE item = 'map';
+      UPDATE stock SET qty = qty - 1 WHERE item = 'bookmark';
       ```
 
       The second UPDATE **waits** for the first to commit, then applies `qty - 1` to the **new** value. Result: 3. ✓
@@ -94,9 +94,9 @@ steps:
 
       ```sql
       BEGIN;
-      SELECT qty FROM stock WHERE item = 'map' FOR UPDATE;   -- locks this row
+      SELECT qty FROM stock WHERE item = 'bookmark' FOR UPDATE;   -- locks this row
       -- app checks, decides...
-      UPDATE stock SET qty = 4 WHERE item = 'map';
+      UPDATE stock SET qty = 4 WHERE item = 'bookmark';
       COMMIT;                                                -- lock released
       ```
 
@@ -107,17 +107,17 @@ steps:
   - kind: try
     title: Your turn for the safe decrement
     body: |
-      Sell **2** maps using an update that's safe from lost updates: let the database subtract from the current value. Return the new `qty`.
+      Sell **2** bookmarks using an update that's safe from lost updates: let the database subtract from the current value. Return the new `qty`.
     sql: |
       CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL CHECK (qty >= 0));
-      INSERT INTO stock VALUES ('map', 5);
+      INSERT INTO stock VALUES ('bookmark', 5);
 
-      UPDATE stock SET qty = 3 WHERE item = 'map' RETURNING qty;
+      UPDATE stock SET qty = 3 WHERE item = 'bookmark' RETURNING qty;
     expect: |
       CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL CHECK (qty >= 0));
-      INSERT INTO stock VALUES ('map', 5);
+      INSERT INTO stock VALUES ('bookmark', 5);
 
-      UPDATE stock SET qty = qty - 2 WHERE item = 'map' RETURNING qty;
+      UPDATE stock SET qty = qty - 2 WHERE item = 'bookmark' RETURNING qty;
 
   - kind: explain
     title: Job queues with SKIP LOCKED
@@ -145,7 +145,7 @@ steps:
       In this single-session sandbox, the first pending job is taken. With several workers running this at once, each would get a different job. Run it.
     sql: |
       CREATE TABLE jobs (job_id integer PRIMARY KEY, task text, status text DEFAULT 'pending');
-      INSERT INTO jobs (job_id, task) VALUES (1, 'email Amina'), (2, 'email Erik'), (3, 'monthly report');
+      INSERT INTO jobs (job_id, task) VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report');
 
       BEGIN;
       SELECT job_id, task
@@ -178,13 +178,13 @@ steps:
   - kind: mac
     title: Watch a session wait
     body: |
-      Open **two** Terminal windows side by side, and run `psql learn_sql` in both. In window 1, run the first two lines. In window 2, run the third: it **hangs**, waiting for the row lock. Back in window 1, run `COMMIT;`, and window 2 finishes instantly. Then run the last line in either window.
+      Open **two** Terminal windows side by side, and run `psql bookstore` in both. In window 1, run the first two lines. In window 2, run the third: it **hangs**, waiting for the row lock. Back in window 1, run `COMMIT;`, and window 2 finishes instantly. Then run the last line in either window.
     commands: |
       BEGIN;                                                    -- window 1
-      UPDATE trips SET status = 'planned' WHERE trip_id = 6;    -- window 1
-      UPDATE trips SET status = 'cancelled' WHERE trip_id = 6;  -- window 2 (waits)
-      COMMIT;                                                   -- window 1
-      SELECT status FROM trips WHERE trip_id = 6;
+      UPDATE orders SET status = 'paid' WHERE order_id = 28;       -- window 1
+      UPDATE orders SET status = 'cancelled' WHERE order_id = 28;  -- window 2 (waits)
+      COMMIT;                                                      -- window 1
+      SELECT status FROM orders WHERE order_id = 28;
 
   - kind: info
     title: "🔹 Advisory locks"

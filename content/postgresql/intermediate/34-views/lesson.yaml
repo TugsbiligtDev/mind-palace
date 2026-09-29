@@ -2,18 +2,19 @@ steps:
   - kind: explain
     title: A saved query with a name
     body: |
-      You've written the "trips with traveler names and totals" join many times. A **view** saves a query under a name so you can use it like a table:
+      You've written the "orders with customer names and totals" join many times. A **view** saves a query under a name so you can use it like a table:
 
       ```sql
-      CREATE VIEW trip_summary AS
-      SELECT t.trip_id, t.trip_name, tr.full_name AS traveler,
-             t.status, sum(s.cost) AS total_cost
-      FROM trips t
-      JOIN travelers tr ON tr.traveler_id = t.traveler_id
-      LEFT JOIN trip_stops s ON s.trip_id = t.trip_id
-      GROUP BY t.trip_id, tr.full_name;
+      CREATE VIEW order_summary AS
+      SELECT o.order_id, o.ordered_at, o.status,
+             c.first_name || ' ' || c.last_name AS customer,
+             sum(oi.quantity * oi.unit_price) AS total
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      LEFT JOIN order_items oi ON oi.order_id = o.order_id
+      GROUP BY o.order_id, c.customer_id;
 
-      SELECT * FROM trip_summary WHERE status = 'completed';
+      SELECT * FROM order_summary WHERE status = 'pending';
       ```
 
       A view **stores no data**. Every time you select from it, PostgreSQL runs the saved query, so it's **always up to date**.
@@ -21,37 +22,38 @@ steps:
   - kind: try
     title: Create and use a view
     body: |
-      Run it. Then add a second query below: `SELECT traveler, sum(total_cost) FROM trip_summary GROUP BY traveler;`. You can filter, join and group a view like any table.
+      Run it: the 514 pending orders, each with its customer's name and total. Then add a second query below: `SELECT customer, sum(total) FROM order_summary GROUP BY customer ORDER BY 2 DESC LIMIT 5;`. You can filter, join and group a view like any table.
     sql: |
-      CREATE VIEW trip_summary AS
-      SELECT t.trip_id, t.trip_name, tr.full_name AS traveler,
-             t.status, sum(s.cost) AS total_cost
-      FROM trips t
-      JOIN travelers tr ON tr.traveler_id = t.traveler_id
-      LEFT JOIN trip_stops s ON s.trip_id = t.trip_id
-      GROUP BY t.trip_id, tr.full_name;
+      CREATE VIEW order_summary AS
+      SELECT o.order_id, o.ordered_at, o.status,
+             c.first_name || ' ' || c.last_name AS customer,
+             sum(oi.quantity * oi.unit_price) AS total
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      LEFT JOIN order_items oi ON oi.order_id = o.order_id
+      GROUP BY o.order_id, c.customer_id;
 
-      SELECT * FROM trip_summary WHERE status = 'completed';
+      SELECT * FROM order_summary WHERE status = 'pending';
 
   - kind: try
     title: Your turn to create a view
     body: |
-      Create a view named **payment_totals** with one row per trip: `trip_id` and the sum of its payments labeled **paid**. Then select every row from it where `paid` is **under 800**.
+      Create a view named **payment_totals** with one row per order: `order_id` and the sum of its payments labeled **paid** (refunds are negative, so they cancel payments out). Then select every row from it where `paid` is **0**: the fully refunded orders.
     sql: |
-      SELECT trip_id, amount FROM payments;
+      SELECT order_id, amount FROM payments;
     expect: |
       CREATE VIEW payment_totals AS
-      SELECT trip_id, sum(amount) AS paid
+      SELECT order_id, sum(amount) AS paid
       FROM payments
-      GROUP BY trip_id;
+      GROUP BY order_id;
 
-      SELECT * FROM payment_totals WHERE paid < 800;
+      SELECT * FROM payment_totals WHERE paid = 0;
 
   - kind: explain
     title: What views are good for
     body: |
       - **Reuse**: write a tricky join once, and everyone uses the same logic, so reports agree.
-      - **Hiding complexity**: analysts query `trip_summary` without knowing it joins three tables.
+      - **Hiding complexity**: analysts query `order_summary` without knowing it joins three tables.
       - **A stable interface**: you can reorganize the tables underneath and update the view, and queries using it keep working.
       - **Security**: grant access to a view that shows only some columns or rows, not the whole table (Module 37).
 
@@ -86,15 +88,15 @@ steps:
   - kind: try
     title: Stale until refreshed
     body: |
-      A new payment arrives in September after the materialized view was built. Run it: the first SELECT doesn't show September. After REFRESH, it does.
+      A new payment arrives in September 2026, after the materialized view was built. Run it: the first SELECT doesn't show September. After REFRESH, it does.
     sql: |
       CREATE MATERIALIZED VIEW monthly_revenue AS
       SELECT date_trunc('month', paid_at)::date AS month, sum(amount) AS received
       FROM payments
       GROUP BY 1;
 
-      INSERT INTO payments (trip_id, amount, paid_at, method)
-      VALUES (6, 400.00, '2026-09-01 10:00+00', 'card');
+      INSERT INTO payments (order_id, kind, amount, method, paid_at)
+      VALUES (39419, 'payment', 40.00, 'card', '2026-09-01 10:00+00');
 
       SELECT * FROM monthly_revenue WHERE month = '2026-09-01';
 
@@ -124,8 +126,8 @@ steps:
       FROM payments
       GROUP BY 1;
 
-      INSERT INTO payments (trip_id, amount, paid_at, method)
-      VALUES (6, 400.00, '2026-09-01 10:00+00', 'card');
+      INSERT INTO payments (order_id, kind, amount, method, paid_at)
+      VALUES (39419, 'payment', 40.00, 'card', '2026-09-01 10:00+00');
 
       REFRESH MATERIALIZED VIEW CONCURRENTLY monthly_revenue;
       SELECT * FROM monthly_revenue WHERE month = '2026-09-01';
@@ -136,8 +138,8 @@ steps:
       FROM payments
       GROUP BY 1;
 
-      INSERT INTO payments (trip_id, amount, paid_at, method)
-      VALUES (6, 400.00, '2026-09-01 10:00+00', 'card');
+      INSERT INTO payments (order_id, kind, amount, method, paid_at)
+      VALUES (39419, 'payment', 40.00, 'card', '2026-09-01 10:00+00');
 
       CREATE UNIQUE INDEX monthly_revenue_month_idx ON monthly_revenue (month);
       REFRESH MATERIALIZED VIEW CONCURRENTLY monthly_revenue;
@@ -157,7 +159,7 @@ steps:
 
   - kind: why
     body: |
-      Views give a team one shared, trusted definition of "trip total" or "active customer". Materialized views make heavy reports load instantly. Both are how databases stay understandable as they grow.
+      Views give a team one shared, trusted definition of "order total" or "active customer". Materialized views make heavy reports load instantly. Both are how databases stay understandable as they grow.
 
   - kind: recap
     body: |

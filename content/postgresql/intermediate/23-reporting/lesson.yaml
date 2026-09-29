@@ -4,7 +4,7 @@ steps:
     body: |
       Most business reports are the same shape: **time buckets down the side, numbers across the top**. *Revenue per month. Sign-ups per week. Payments per method per quarter.*
 
-      This module builds that shape step by step with Wanderly's `payments` table: bucket by time, fill in the missing buckets, spread categories into columns, and add totals.
+      This module builds that shape step by step with Inkwell's `payments` table: bucket by time, fill in the missing buckets, spread categories into columns, and add totals.
 
   - kind: explain
     title: Buckets with date_trunc
@@ -29,7 +29,7 @@ steps:
   - kind: try
     title: Money per month
     body: |
-      Run it. Then change `'month'` to `'quarter'`.
+      Run it: 43 months of Inkwell's takings. Can you spot the Christmas rush? Then change `'month'` to `'quarter'`.
     sql: |
       SELECT date_trunc('month', paid_at)::date AS month,
              count(*)    AS payments,
@@ -41,19 +41,33 @@ steps:
   - kind: explain
     title: The missing months
     body: |
-      Look at the result again: it jumps from October 2025 to January 2026, and from June to August 2026. Months with **no payments** have no rows, so they simply vanish.
+      The whole shop takes money every month. One customer doesn't. Here's Diego Patel's (customer 40) spending per month in 2025:
 
-      On a chart, that's a lie: the line goes straight from October to January as if money kept coming in. A report should show those months with **0**.
+      ```sql
+      WITH diego AS (
+          SELECT p.*
+          FROM payments p
+          JOIN orders o USING (order_id)
+          WHERE o.customer_id = 40
+      )
+      SELECT date_trunc('month', paid_at)::date AS month, sum(amount) AS spent
+      FROM diego
+      WHERE paid_at >= '2025-01-01' AND paid_at < '2026-01-01'
+      GROUP BY 1
+      ORDER BY 1;
+      ```
+
+      It jumps from May to August, and from September to November. Months with **no payments** have no rows, so they simply vanish. On a chart, that's a lie: the line goes straight from May to August as if Diego kept spending. A report should show those months with **0**.
 
       The fix: generate every month yourself with **`generate_series`**, then LEFT JOIN the data onto it:
 
       ```sql
       SELECT m::date AS month,
-             COALESCE(sum(p.amount), 0) AS received
-      FROM generate_series('2025-09-01'::timestamptz,
-                           '2026-08-01'::timestamptz,
+             COALESCE(sum(d.amount), 0) AS spent
+      FROM generate_series('2025-01-01'::timestamptz,
+                           '2025-12-01'::timestamptz,
                            interval '1 month') AS m
-      LEFT JOIN payments p ON date_trunc('month', p.paid_at) = m
+      LEFT JOIN diego d ON date_trunc('month', d.paid_at) = m
       GROUP BY m
       ORDER BY m;
       ```
@@ -64,35 +78,53 @@ steps:
   - kind: try
     title: Every month, even empty ones
     body: |
-      Run it: 12 months, with November, December and July at 0.
+      Run it: 12 months, with June, July and October at 0.
     sql: |
+      WITH diego AS (
+          SELECT p.*
+          FROM payments p
+          JOIN orders o USING (order_id)
+          WHERE o.customer_id = 40
+      )
       SELECT m::date AS month,
-             COALESCE(sum(p.amount), 0) AS received
-      FROM generate_series('2025-09-01'::timestamptz,
-                           '2026-08-01'::timestamptz,
+             COALESCE(sum(d.amount), 0) AS spent
+      FROM generate_series('2025-01-01'::timestamptz,
+                           '2025-12-01'::timestamptz,
                            interval '1 month') AS m
-      LEFT JOIN payments p ON date_trunc('month', p.paid_at) = m
+      LEFT JOIN diego d ON date_trunc('month', d.paid_at) = m
       GROUP BY m
       ORDER BY m;
 
   - kind: try
     title: Your turn to fill the gaps
     body: |
-      Make the same calendar, but show the **number of payments** per month labeled **payments**, with **0** for empty months. Columns: `month` (as a date) and `payments`, ordered by month.
+      Make the same 2025 calendar for Diego, but show the **number of payments** per month labeled **payments**, with **0** for empty months. Columns: `month` (as a date) and `payments`, ordered by month.
 
-      Careful: `count(*)` would count the empty month's single NULL-filled row as 1. Count a column from `p` instead.
+      Careful: `count(*)` would count an empty month's single NULL-filled row as 1. Count a column from `d` instead.
     sql: |
+      WITH diego AS (
+          SELECT p.*
+          FROM payments p
+          JOIN orders o USING (order_id)
+          WHERE o.customer_id = 40
+      )
       SELECT m::date AS month
-      FROM generate_series('2025-09-01'::timestamptz,
-                           '2026-08-01'::timestamptz,
+      FROM generate_series('2025-01-01'::timestamptz,
+                           '2025-12-01'::timestamptz,
                            interval '1 month') AS m
       ORDER BY m;
     expect: |
-      SELECT m::date AS month, count(p.payment_id) AS payments
-      FROM generate_series('2025-09-01'::timestamptz,
-                           '2026-08-01'::timestamptz,
+      WITH diego AS (
+          SELECT p.*
+          FROM payments p
+          JOIN orders o USING (order_id)
+          WHERE o.customer_id = 40
+      )
+      SELECT m::date AS month, count(d.payment_id) AS payments
+      FROM generate_series('2025-01-01'::timestamptz,
+                           '2025-12-01'::timestamptz,
                            interval '1 month') AS m
-      LEFT JOIN payments p ON date_trunc('month', p.paid_at) = m
+      LEFT JOIN diego d ON date_trunc('month', d.paid_at) = m
       GROUP BY m
       ORDER BY m;
     ordered: true
@@ -100,15 +132,16 @@ steps:
   - kind: explain
     title: "Pivot: categories become columns"
     body: |
-      *"Money per month, split by payment method"* could be one row per month **and** method. But people read it more easily as one row per month with a **column per method**. Turning rows into columns is called a **pivot**.
+      *"Money per quarter, split by payment method"* could be one row per quarter **and** method. But people read it more easily as one row per quarter with a **column per method**. Turning rows into columns is called a **pivot**.
 
       `FILTER` (Module 22) makes it simple:
 
       ```sql
       SELECT date_trunc('quarter', paid_at)::date AS quarter,
-             sum(amount) FILTER (WHERE method = 'card')     AS card,
-             sum(amount) FILTER (WHERE method = 'transfer') AS transfer,
-             sum(amount) FILTER (WHERE method = 'cash')     AS cash
+             sum(amount) FILTER (WHERE method = 'card')          AS card,
+             sum(amount) FILTER (WHERE method = 'paypal')        AS paypal,
+             sum(amount) FILTER (WHERE method = 'bank_transfer') AS bank_transfer,
+             sum(amount) FILTER (WHERE method = 'gift_card')     AS gift_card
       FROM payments
       GROUP BY 1
       ORDER BY 1;
@@ -125,7 +158,7 @@ steps:
   - kind: try
     title: Your turn to pivot
     body: |
-      One row per **quarter** (as a date, labeled **quarter**), with the **number** of payments by `card` and by `transfer` as two columns, **card** and **transfer**. Order by quarter.
+      One row per **quarter** (as a date, labeled **quarter**), with the **number** of rows paid by `card` and by `paypal` as two columns, **card** and **paypal**. Order by quarter.
     sql: |
       SELECT date_trunc('quarter', paid_at)::date AS quarter, method, count(*)
       FROM payments
@@ -133,8 +166,8 @@ steps:
       ORDER BY 1, 2;
     expect: |
       SELECT date_trunc('quarter', paid_at)::date AS quarter,
-             count(*) FILTER (WHERE method = 'card')     AS card,
-             count(*) FILTER (WHERE method = 'transfer') AS transfer
+             count(*) FILTER (WHERE method = 'card')   AS card,
+             count(*) FILTER (WHERE method = 'paypal') AS paypal
       FROM payments
       GROUP BY 1
       ORDER BY 1;

@@ -8,13 +8,13 @@ The owner's full plan for the PostgreSQL course: 51 modules across three levels.
 
 | Level | Modules | Status |
 |---|---|---|
-| Beginner: Fundamentals | 1–17 | Built (branch `content/postgresql-v2`) |
-| Intermediate: Essential+ | 18–39 | Built (branch `content/postgresql-v2`) |
+| Beginner: Fundamentals | 1–17 | Rebuilt on the bookstore files (branch `content/bookstore-dataset`) |
+| Intermediate: Essential+ | 18–39 | Rebuilt on the bookstore files (branch `content/bookstore-dataset`) |
 | Advanced: Mastery | 40–46, plus optional 47–51 | Planned |
 
 ## What runs where
 
-Lessons run on a real PostgreSQL 18 inside the browser (PGlite), with the Wanderly trip-planning dataset (`content/postgresql/dataset.sql`). Some topics can't run there. They become reading steps plus "try it on your Mac" steps:
+Lessons run on a real PostgreSQL 18 inside the browser (PGlite), on the owner's four Inkwell Books files in `public/downloads/postgresql/` (the same files learners download for their Mac; `content/postgresql/track.yaml` lists them as datasets): Modules 1–10 use `01_practice_basics.sql` (`practice`), Modules 11–17 use `02_bookstore.sql` (`bookstore`), and Intermediate uses 02 + 03 (the grown `bookstore`, ~39,000 orders). File 04 (2 million rows) is Mac-only. The course switched from the Wanderly trip-planning data on 2026-09-29.
 
 - **Needs two sessions at once** (locking, deadlocks in Module 31): explained with step-by-step timelines.
 - **Needs a real server or other tools** (psql connection flags, Python code, pg_dump, Docker, replication, PgBouncer, config files): Mac steps only.

@@ -39,6 +39,18 @@ function splitPattern(arg: string | undefined): { schema: string; name: string }
   return { schema: likePattern(a.replace(/"/g, "")), name: likePattern(b.replace(/"/g, "")) };
 }
 
+// The name of the database this sandbox stands in for, stored by the course's dataset with
+// ALTER DATABASE … SET. PGlite doesn't apply per-database settings to new sessions, so read
+// the stored value from the catalog.
+async function databaseName(db: PGliteInterface) {
+  const r = await db.query<{ name: string }>(
+    `SELECT substring(c FROM 'mindpalace\\.database=(.*)') AS name
+     FROM pg_db_role_setting, unnest(setconfig) AS c
+     WHERE c LIKE 'mindpalace.database=%'`,
+  );
+  return r.rows[0]?.name ?? "learn_sql";
+}
+
 export async function runMeta(db: PGliteInterface, piece: Extract<Piece, { kind: "meta" }>, blocks: Block[]): Promise<RunError | undefined> {
   const [cmd, ...args] = piece.text.split(/\s+/);
   const warnExtra = (n: number) =>
@@ -57,12 +69,9 @@ export async function runMeta(db: PGliteInterface, piece: Extract<Piece, { kind:
         kind: "rows",
         title: "List of databases",
         columns: ["Name", "Owner", "Encoding"],
-        rows: [
-          ["learn_sql", "detective", "UTF8"],
-          ["postgres", "detective", "UTF8"],
-          ["template0", "detective", "UTF8"],
-          ["template1", "detective", "UTF8"],
-        ],
+        rows: [await databaseName(db), "postgres", "template0", "template1"]
+          .sort()
+          .map((name) => [name, "detective", "UTF8"]),
       });
       return;
     }
@@ -70,10 +79,11 @@ export async function runMeta(db: PGliteInterface, piece: Extract<Piece, { kind:
     case "\\connect": {
       warnExtra(1);
       const target = args[0];
-      if (!target || target === "learn_sql")
-        blocks.push({ kind: "status", text: 'You are now connected to database "learn_sql" as user "detective".' });
+      const name = await databaseName(db);
+      if (!target || target === name)
+        blocks.push({ kind: "status", text: `You are now connected to database "${name}" as user "detective".` });
       else
-        blocks.push({ kind: "status", text: `In this browser sandbox only "learn_sql" is available. Try \\c ${target} in your Terminal.` });
+        blocks.push({ kind: "status", text: `In this browser sandbox only "${name}" is available. Try \\c ${target} in your Terminal.` });
       return;
     }
     case "\\dn": {

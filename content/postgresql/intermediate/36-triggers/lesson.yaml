@@ -10,8 +10,8 @@ steps:
       2. A **trigger** that attaches the function to a table and an event.
 
       ```sql
-      CREATE TRIGGER trips_touch
-      BEFORE UPDATE ON trips
+      CREATE TRIGGER orders_touch
+      BEFORE UPDATE ON orders
       FOR EACH ROW
       EXECUTE FUNCTION touch_updated_at();
       ```
@@ -54,8 +54,8 @@ steps:
       END;
       $$;
 
-      CREATE TRIGGER trips_touch
-      BEFORE UPDATE ON trips
+      CREATE TRIGGER orders_touch
+      BEFORE UPDATE ON orders
       FOR EACH ROW
       EXECUTE FUNCTION touch_updated_at();
       ```
@@ -67,7 +67,7 @@ steps:
     body: |
       The UPDATE never mentions `updated_at`, yet it's set. Run it. (`now()` is the transaction's start time, so yours will show today.)
     sql: |
-      ALTER TABLE trips ADD COLUMN updated_at timestamptz;
+      ALTER TABLE orders ADD COLUMN updated_at timestamptz;
 
       CREATE FUNCTION touch_updated_at()
       RETURNS trigger
@@ -79,22 +79,22 @@ steps:
       END;
       $$;
 
-      CREATE TRIGGER trips_touch
-      BEFORE UPDATE ON trips
+      CREATE TRIGGER orders_touch
+      BEFORE UPDATE ON orders
       FOR EACH ROW
       EXECUTE FUNCTION touch_updated_at();
 
-      UPDATE trips SET status = 'cancelled' WHERE trip_id = 6;
-      SELECT trip_id, status, updated_at FROM trips WHERE trip_id IN (5, 6);
+      UPDATE orders SET status = 'cancelled' WHERE order_id = 28;
+      SELECT order_id, status, updated_at FROM orders WHERE order_id IN (27, 28);
 
   - kind: try
     title: Your turn to clean on the way in
     body: |
-      Write a **BEFORE INSERT OR UPDATE** row trigger on `travelers` that stores every email **trimmed and lowercased**. Name the function `clean_email` and the trigger `travelers_clean_email`. The INSERT and SELECT below will check it.
+      Messy emails keep arriving (Module 26). Write a **BEFORE INSERT OR UPDATE** row trigger on `customers` that stores every email **trimmed and lowercased**. Name the function `clean_email` and the trigger `customers_clean_email`. The INSERT and SELECT below will check it.
     sql: |
-      INSERT INTO travelers (full_name, email) VALUES ('Nara Nomad', '  Nara@Example.COM ');
+      INSERT INTO customers (first_name, last_name, email) VALUES ('Nara', 'Nomad', '  Nara@Example.COM ');
 
-      SELECT full_name, email FROM travelers WHERE full_name = 'Nara Nomad';
+      SELECT first_name, email FROM customers WHERE last_name = 'Nomad';
     expect: |
       CREATE FUNCTION clean_email()
       RETURNS trigger
@@ -106,14 +106,14 @@ steps:
       END;
       $$;
 
-      CREATE TRIGGER travelers_clean_email
-      BEFORE INSERT OR UPDATE ON travelers
+      CREATE TRIGGER customers_clean_email
+      BEFORE INSERT OR UPDATE ON customers
       FOR EACH ROW
       EXECUTE FUNCTION clean_email();
 
-      INSERT INTO travelers (full_name, email) VALUES ('Nara Nomad', '  Nara@Example.COM ');
+      INSERT INTO customers (first_name, last_name, email) VALUES ('Nara', 'Nomad', '  Nara@Example.COM ');
 
-      SELECT full_name, email FROM travelers WHERE full_name = 'Nara Nomad';
+      SELECT first_name, email FROM customers WHERE last_name = 'Nomad';
 
   - kind: explain
     title: Audit tables
@@ -125,8 +125,8 @@ steps:
           audit_id    bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           operation   text NOT NULL,          -- INSERT / UPDATE / DELETE
           payment_id  integer NOT NULL,
-          old_amount  numeric(8,2),
-          new_amount  numeric(8,2),
+          old_amount  numeric(10,2),
+          new_amount  numeric(10,2),
           changed_by  text NOT NULL DEFAULT current_user,
           changed_at  timestamptz NOT NULL DEFAULT now()
       );
@@ -139,14 +139,14 @@ steps:
   - kind: try
     title: Catch a changed payment
     body: |
-      Someone edits payment 7 (the refund) and deletes payment 13. Run it: the audit table recorded both, with the old values.
+      Someone edits refund 36615 (the one on order 174) and deletes payment 139. Run it: the audit table recorded both, with the old values.
     sql: |
       CREATE TABLE payments_audit (
           audit_id    bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           operation   text NOT NULL,
           payment_id  integer NOT NULL,
-          old_amount  numeric(8,2),
-          new_amount  numeric(8,2),
+          old_amount  numeric(10,2),
+          new_amount  numeric(10,2),
           changed_by  text NOT NULL DEFAULT current_user,
           changed_at  timestamptz NOT NULL DEFAULT now()
       );
@@ -172,26 +172,26 @@ steps:
       FOR EACH ROW
       EXECUTE FUNCTION audit_payments();
 
-      UPDATE payments SET amount = -500.00 WHERE payment_id = 7;
-      DELETE FROM payments WHERE payment_id = 13;
+      UPDATE payments SET amount = -60.00 WHERE payment_id = 36615;
+      DELETE FROM payments WHERE payment_id = 139;
 
       SELECT operation, payment_id, old_amount, new_amount FROM payments_audit ORDER BY audit_id;
 
   - kind: try
     title: Your turn to audit status changes
     body: |
-      The `trip_status_log` table is ready. Write an **AFTER UPDATE** row trigger on `trips` (function `log_status`, trigger `trips_log_status`) that inserts `trip_id`, the **old** status and the **new** status, but **only when the status actually changed**.
+      The `order_status_log` table is ready. Write an **AFTER UPDATE** row trigger on `orders` (function `log_status`, trigger `orders_log_status`) that inserts `order_id`, the **old** status and the **new** status, but **only when the status actually changed**.
 
-      Hint: `IF NEW.status IS DISTINCT FROM OLD.status THEN …` (Module 7). The UPDATEs below change one status and leave another the same.
+      Hint: `IF NEW.status IS DISTINCT FROM OLD.status THEN …` (Module 7). The UPDATEs below change one status (order 28 was pending) and leave another the same (order 1 was already delivered).
     sql: |
-      CREATE TABLE trip_status_log (trip_id integer, old_status text, new_status text);
+      CREATE TABLE order_status_log (order_id integer, old_status text, new_status text);
 
-      UPDATE trips SET status = 'cancelled' WHERE trip_id = 6;
-      UPDATE trips SET status = 'completed' WHERE trip_id = 1;
+      UPDATE orders SET status = 'cancelled' WHERE order_id = 28;
+      UPDATE orders SET status = 'delivered' WHERE order_id = 1;
 
-      SELECT * FROM trip_status_log;
+      SELECT * FROM order_status_log;
     expect: |
-      CREATE TABLE trip_status_log (trip_id integer, old_status text, new_status text);
+      CREATE TABLE order_status_log (order_id integer, old_status text, new_status text);
 
       CREATE FUNCTION log_status()
       RETURNS trigger
@@ -199,21 +199,21 @@ steps:
       AS $$
       BEGIN
           IF NEW.status IS DISTINCT FROM OLD.status THEN
-              INSERT INTO trip_status_log VALUES (NEW.trip_id, OLD.status, NEW.status);
+              INSERT INTO order_status_log VALUES (NEW.order_id, OLD.status, NEW.status);
           END IF;
           RETURN NULL;
       END;
       $$;
 
-      CREATE TRIGGER trips_log_status
-      AFTER UPDATE ON trips
+      CREATE TRIGGER orders_log_status
+      AFTER UPDATE ON orders
       FOR EACH ROW
       EXECUTE FUNCTION log_status();
 
-      UPDATE trips SET status = 'cancelled' WHERE trip_id = 6;
-      UPDATE trips SET status = 'completed' WHERE trip_id = 1;
+      UPDATE orders SET status = 'cancelled' WHERE order_id = 28;
+      UPDATE orders SET status = 'delivered' WHERE order_id = 1;
 
-      SELECT * FROM trip_status_log;
+      SELECT * FROM order_status_log;
 
   - kind: explain
     title: Trigger pitfalls

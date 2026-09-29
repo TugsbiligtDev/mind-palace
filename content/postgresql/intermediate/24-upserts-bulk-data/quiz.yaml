@@ -14,8 +14,8 @@ questions:
     prompt: What does the last statement return?
     code: |
       CREATE TABLE stock (item text PRIMARY KEY, qty integer);
-      INSERT INTO stock VALUES ('map', 5);
-      INSERT INTO stock VALUES ('map', 2)
+      INSERT INTO stock VALUES ('bookmark', 5);
+      INSERT INTO stock VALUES ('bookmark', 2)
       ON CONFLICT (item) DO UPDATE SET qty = stock.qty + EXCLUDED.qty;
       SELECT qty FROM stock;
     options:
@@ -29,8 +29,8 @@ questions:
   - type: fill
     prompt: In an upsert, refer to the value you **tried** to insert.
     code: |
-      INSERT INTO countries (name, continent) VALUES ('Peru', 'Americas')
-      ON CONFLICT (name) DO UPDATE SET continent = ____.continent;
+      INSERT INTO publishers (name, country) VALUES ('Bloomsbury', 'Ireland')
+      ON CONFLICT (name) DO UPDATE SET country = ____.country;
     answer: EXCLUDED
     accept: ["excluded"]
     explanation: "`EXCLUDED` holds the row that was proposed for insertion."

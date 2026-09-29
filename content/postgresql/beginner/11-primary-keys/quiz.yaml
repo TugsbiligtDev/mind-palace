@@ -39,12 +39,12 @@ questions:
     explanation: Identity numbers are never reused. The deleted 2 stays unused, and the new row gets 3.
 
   - type: fill
-    prompt: Make `(trip_id, visit_order)` the primary key together.
+    prompt: Make `(order_id, book_id)` the primary key together, the way `order_items` does.
     code: |
-      CREATE TABLE stops_copy (
-          trip_id     integer,
-          visit_order integer,
-          ____ (trip_id, visit_order)
+      CREATE TABLE lines_copy (
+          order_id  integer,
+          book_id   integer,
+          ____ (order_id, book_id)
       );
     answer: PRIMARY KEY
     accept: ["primary key"]

@@ -24,9 +24,9 @@ questions:
     prompt: Test your grants by acting as another role.
     code: |
       CREATE ROLE tester NOLOGIN;
-      GRANT SELECT ON trips TO tester;
+      GRANT SELECT ON orders TO tester;
       SET ____ tester;
-      SELECT count(*) FROM trips;
+      SELECT count(*) FROM orders;
     answer: ROLE
     accept: ["role"]
     explanation: "`SET ROLE tester` makes the session act with tester's privileges, which is handy for checking what a role can do."
@@ -42,9 +42,9 @@ questions:
     explanation: The app gets exactly the rights it needs day to day. Structure changes run under a separate, more powerful role.
 
   - type: mcq
-    prompt: Support staff must see travelers' names but never their emails. Which options work?
+    prompt: Support staff must see customers' names but never their emails. Which options work?
     options:
-      - Column-level GRANT SELECT (full_name, …), or a view without the email column
+      - Column-level GRANT SELECT (first_name, last_name, …), or a view without the email column
       - GRANT SELECT on the whole table
       - A CHECK constraint
       - An index on email

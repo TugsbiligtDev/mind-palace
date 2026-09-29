@@ -28,17 +28,64 @@ export function readYaml<S extends z.ZodType>(file: string, schema: S): z.infer<
   return parsed.data;
 }
 
+// What the in-browser SQL engine needs: `key` names the loaded database (one per dataset),
+// `setup` is the SQL that builds it.
+export type Engine = { key: string; setup: string };
+
 export type TopicBundle = {
   id: string;
   key: string; // "track/level/topic", used for progress
   topic: Topic;
   lesson: Lesson;
   quiz: Quiz;
+  engine: Engine;
 };
 
 export type LevelBundle = { level: Level; topics: TopicBundle[] };
 
-export type TrackBundle = { track: Track; dataset: string; setup?: string; levels: LevelBundle[] };
+export type TrackBundle = {
+  track: Track;
+  /** Engine for a named dataset; no name means the course's default. */
+  engine: (dataset?: string) => Engine;
+  setup?: string;
+  levels: LevelBundle[];
+};
+
+export const DOWNLOADS_DIR = path.join(process.cwd(), "public", "downloads");
+
+// The dataset files are written for real psql (`psql -f file.sql`). The browser engine is
+// a single database, so drop the lines only psql understands: creating and switching
+// databases, backslash commands (\c, \echo, \set, \if … \endif blocks) and `\gset`.
+export function browserSql(text: string): string {
+  const out: string[] = [];
+  let depth = 0;
+  for (const line of text.split("\n")) {
+    const t = line.trim();
+    if (/^\\if\b/.test(t)) depth++;
+    else if (/^\\endif\b/.test(t)) depth--;
+    else if (depth === 0 && !t.startsWith("\\") && !/^(DROP|CREATE) DATABASE\b/i.test(t))
+      out.push(line.replace(/\s*\\gset\s*$/, ";"));
+  }
+  return out.join("\n");
+}
+
+function datasetEngines(track: Track) {
+  const cache = new Map<string, Engine>();
+  return (name = track.dataset): Engine => {
+    if (!name) return { key: track.id, setup: "" };
+    const ds = track.datasets[name];
+    if (!ds) throw new Error(`${track.id}: there's no dataset called "${name}" in track.yaml`);
+    let engine = cache.get(name);
+    if (!engine) {
+      const sql = ds.files.map((f) => browserSql(fs.readFileSync(path.join(DOWNLOADS_DIR, track.id, f), "utf8")));
+      // Remember which database this pretends to be, for psql's \l, \c and prompt messages.
+      sql.push(`DO $mp$ BEGIN EXECUTE format('ALTER DATABASE %I SET mindpalace.database = %L', current_database(), '${ds.database}'); END $mp$;`);
+      engine = { key: `${track.id}/${name}`, setup: sql.join("\n") };
+      cache.set(name, engine);
+    }
+    return engine;
+  };
+}
 
 export function loadStory() {
   return readYaml(path.join(CONTENT_DIR, "story", "bible.yaml"), storySchema);
@@ -54,7 +101,7 @@ export function listTrackIds(): string[] {
 export function loadTrack(id: string): TrackBundle {
   const dir = path.join(CONTENT_DIR, id);
   const track = readYaml(path.join(dir, "track.yaml"), trackSchema);
-  const dataset = track.dataset ? fs.readFileSync(path.join(dir, track.dataset), "utf8") : "";
+  const engine = datasetEngines(track);
   const setupFile = path.join(dir, "setup.md");
   const setup = fs.existsSync(setupFile) ? fs.readFileSync(setupFile, "utf8") : undefined;
 
@@ -71,10 +118,10 @@ export function loadTrack(id: string): TrackBundle {
         quiz: readYaml(path.join(t, "quiz.yaml"), quizSchema),
       };
     });
-    return { level, topics };
+    return { level, topics: topics.map((t) => ({ ...t, engine: engine(t.topic.dataset ?? level.dataset) })) };
   });
 
-  return { track, dataset, setup, levels };
+  return { track, engine, setup, levels };
 }
 
 export function loadAllTracks(): TrackBundle[] {
@@ -146,7 +193,7 @@ export function topicContext(trackId: string, levelId: string, topicId: string) 
     quizHref: `${base}/quiz`,
     nextHref: next ? topicHref(trackId, levelId, next.id) : `/courses/${trackId}/${levelId}`,
     nextLabel: next ? `Next: Module ${next.topic.module}, ${next.topic.title} →` : "Level complete, back to the level →",
-    lessonEngine: { key: trackId, setup: bundle.dataset },
+    lessonEngine: topic.engine,
   };
 }
 

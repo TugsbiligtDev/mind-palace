@@ -1,9 +1,9 @@
 pass: 3
 questions:
   - type: mcq
-    prompt: What changes when you run `SET TimeZone = 'Asia/Ulaanbaatar';`?
+    prompt: What changes when you run `SET TimeZone = 'Asia/Tokyo';`?
     options:
-      - Every stored timestamptz value is shifted by 8 hours
+      - Every stored timestamptz value is shifted by 9 hours
       - Only how timestamptz values are displayed (and how zoneless text is interpreted). The stored moments don't change.
       - All timestamps become plain timestamps
       - Nothing at all
@@ -14,27 +14,29 @@ questions:
     prompt: What does this return?
     code: |
       SET TimeZone = 'UTC';
-      SELECT ('2026-02-20 23:40:00+00'::timestamptz AT TIME ZONE 'Asia/Ulaanbaatar')::date AS ub_date;
+      SELECT ('2026-02-20 23:40:00+00'::timestamptz AT TIME ZONE 'Asia/Tokyo')::date AS tokyo_date;
     options:
       - "2026-02-20"
       - "2026-02-21"
       - "2026-02-19"
       - An error
     answer: 1
-    explanation: Ulaanbaatar is UTC+8, so 23:40 UTC on the 20th is 07:40 on the 21st there.
+    explanation: Tokyo is UTC+9, so 23:40 UTC on the 20th is 08:40 on the 21st there.
 
   - type: predict
     prompt: What does this return?
     code: |
-      SELECT count(*) FROM payments
+      CREATE TABLE p (paid_at timestamptz);
+      INSERT INTO p VALUES ('2026-02-05 10:00+00'), ('2026-02-20 00:00+00'), ('2026-02-20 23:40+00');
+      SELECT count(*) FROM p
       WHERE paid_at BETWEEN '2026-02-01' AND '2026-02-20';
     options:
-      - "0"
       - "1"
       - "2"
       - "3"
-    answer: 0
-    explanation: "The only early-February payment was at 23:40 on the 20th, but `'2026-02-20'` means midnight at the start of that day, so it's excluded. Use `< '2026-02-21'`."
+      - "0"
+    answer: 1
+    explanation: "`'2026-02-20'` means midnight at the **start** of the 20th. The payment at exactly midnight is included, but the one at 23:40 isn't. Use `< '2026-02-21'`."
 
   - type: mcq
     prompt: Why prefer `'Europe/Rome'` over `'+01'`?

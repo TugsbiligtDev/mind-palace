@@ -1,0 +1,263 @@
+steps:
+  - kind: explain
+    title: Exponents, the fast-growth tool
+    body: |
+      An **exponent** says "multiply this many times". `2³ = 2 × 2 × 2 = 8`. In JavaScript you write it `2 ** 3`.
+
+      Exponents matter in this course because they describe how fast things blow up. Each extra item doubles the work of trying every yes/no combination: 10 items give `2¹⁰ = 1 024` combinations, but 40 items give over a trillion.
+
+  - kind: code
+    title: Feel the growth
+    body: |
+      Run this and watch how quickly powers of 2 grow. Then change the loop to go up to 60.
+    code: |
+      for (let n = 0; n <= 30; n += 5) {
+        console.log(n, 2 ** n);
+      }
+
+  - kind: explain
+    title: Logarithms are "how many times can I halve n?"
+    body: |
+      A **logarithm** answers: *how many times can I cut `n` in half before I reach 1?* We write it **log₂ n**.
+
+      | n | halvings | log₂ n |
+      |---|---|---|
+      | 8 | 8 → 4 → 2 → 1 | 3 |
+      | 16 | 16 → 8 → 4 → 2 → 1 | 4 |
+      | 1 000 | about 10 halvings | ≈ 10 |
+      | 1 000 000 | about 20 halvings | ≈ 20 |
+
+      That last row is the magic: a million items need only about **20** halvings. Anything that halves its work at each step (like binary search in Module 11) is incredibly fast. `Math.log2(n)` computes it.
+
+  - kind: code
+    title: Count the halvings
+    body: |
+      Write `halvings(n)`: how many times can you halve `n` (rounding **down** each time) before you reach 1?
+
+      - `halvings(8)` is `3`
+      - `halvings(10)` is `3` (10 → 5 → 2 → 1)
+      - `halvings(1)` is `0`
+    code: |
+      function halvings(n) {
+        return n;
+      }
+    tests:
+      - "halvings(8)"
+      - "halvings(10)"
+      - "halvings(1)"
+      - "halvings(1000)"
+      - "halvings(1000000)"
+    solution: |
+      function halvings(n) {
+        let count = 0;
+        while (n > 1) {
+          n = Math.floor(n / 2);
+          count++;
+        }
+        return count;
+      }
+    hint: Loop while `n` is bigger than 1, halve it with `Math.floor(n / 2)`, and count the rounds.
+    reject:
+      - |
+        function halvings(n) {
+          let count = 0;
+          while (n > 0) {
+            n = Math.floor(n / 2);
+            count++;
+          }
+          return count;
+        }
+
+  - kind: explain
+    title: The sum 1 + 2 + … + n
+    body: |
+      This sum shows up constantly, especially when a loop inside a loop does 1 step, then 2, then 3, and so on.
+
+      Write the numbers forwards and backwards and add each column:
+
+      ```
+       1 +   2 + … + n-1 +   n
+       n + n-1 + … +   2 +   1
+      ------------------------
+      (n+1) each, n times
+      ```
+
+      That is `n × (n + 1)` for two copies, so one copy is
+
+      **1 + 2 + … + n = n × (n + 1) / 2**
+
+      For `n = 100` that is `100 × 101 / 2 = 5 050`, with no loop at all.
+
+  - kind: code
+    title: Use the formula
+    body: |
+      Write `sumTo(n)` with the formula, not a loop. Try `sumTo(1000000)` in a `console.log`: it answers instantly.
+    code: |
+      function sumTo(n) {
+        return 0;
+      }
+
+      console.log(sumTo(100));
+    tests:
+      - "sumTo(100)"
+      - "sumTo(0)"
+      - "sumTo(1)"
+      - "sumTo(1000000)"
+    solution: |
+      function sumTo(n) {
+        return (n * (n + 1)) / 2;
+      }
+    reject:
+      - |
+        function sumTo(n) {
+          return n * (n + 1);
+        }
+
+  - kind: explain
+    title: Modulo, the remainder
+    body: |
+      `a % n` gives the **remainder** after dividing `a` by `n`. `17 % 5` is `2`. It is perfect for wrapping around: hours on a clock, the last digit of a number (`n % 10`), even/odd (`n % 2`), and array indexes that loop back to the start.
+
+      **The JavaScript trap:** with negative numbers, `%` keeps the sign of the *left* side.
+
+      ```js
+      -1 % 5    // -1   (not 4!)
+      7 % 5     // 2
+      ```
+
+      To get a result that is always between `0` and `n - 1`, use `((a % n) + n) % n`.
+
+  - kind: code
+    title: A modulo that never goes negative
+    body: |
+      Write `mod(a, n)` that returns a value from `0` to `n - 1` even when `a` is negative. `mod(-1, 5)` should be `4`.
+    code: |
+      function mod(a, n) {
+        return a % n;
+      }
+    tests:
+      - "mod(7, 5)"
+      - "mod(-1, 5)"
+      - "mod(-10, 5)"
+      - "mod(-12, 5)"
+      - "mod(0, 3)"
+    solution: |
+      function mod(a, n) {
+        return ((a % n) + n) % n;
+      }
+    hint: "`a % n` can be as low as `-(n - 1)`. Add `n` to lift it into the positive range, then take `% n` again."
+    reject:
+      - |
+        function mod(a, n) {
+          return a % n;
+        }
+
+  - kind: explain
+    title: floor, trunc and friends
+    body: |
+      JavaScript has no integer division, so `7 / 2` is `3.5`. To drop the decimals you choose *how*:
+
+      | Call | `3.7` | `-3.7` |
+      |---|---|---|
+      | `Math.floor` (round down) | 3 | **-4** |
+      | `Math.trunc` (cut the decimals off) | 3 | **-3** |
+      | `Math.round` (nearest) | 4 | -4 |
+
+      They agree for positive numbers and differ for negative ones. When a problem says "integer division" or "round toward zero", you want **`Math.trunc`**. When you want the halves of a positive index (binary search), `Math.floor` is fine.
+
+  - kind: code
+    title: Chop off the decimals
+    body: |
+      Write `chop(x)`: remove the decimal part, moving toward zero. `chop(-3.7)` is `-3` and `chop(3.7)` is `3`.
+    code: |
+      function chop(x) {
+        return Math.floor(x);
+      }
+    tests:
+      - "chop(3.7)"
+      - "chop(-3.7)"
+      - "chop(0.4)"
+      - "chop(-0.4)"
+      - "chop(5)"
+    solution: |
+      function chop(x) {
+        return Math.trunc(x);
+      }
+    reject:
+      - |
+        function chop(x) {
+          return Math.round(x);
+        }
+
+  - kind: explain
+    title: Big numbers and small traps
+    body: |
+      JavaScript numbers are 64-bit floating-point. Two things follow.
+
+      **Integers are exact only up to `Number.MAX_SAFE_INTEGER`**, which is `9 007 199 254 740 991` (2⁵³ − 1). Beyond that, neighbouring integers become indistinguishable.
+
+      **Decimals are stored in binary**, and many simple decimals cannot be stored exactly. So `0.1 + 0.2` is `0.30000000000000004`, and `0.1 + 0.2 === 0.3` is `false`. Never compare decimals with `===`. Check that they are *close enough*.
+
+  - kind: code
+    title: See the traps
+    body: |
+      Run this and read each line. Then predict what `2 ** 53 + 2` prints before you change it.
+    code: |
+      console.log(0.1 + 0.2);
+      console.log(0.1 + 0.2 === 0.3);
+      console.log(Number.MAX_SAFE_INTEGER);
+      console.log(2 ** 53, 2 ** 53 + 1);
+      console.log(Number.isSafeInteger(2 ** 53));
+
+  - kind: code
+    title: Compare decimals safely
+    body: |
+      Write `nearlyEqual(a, b)` that returns `true` when `a` and `b` differ by less than `0.000001`, so `nearlyEqual(0.1 + 0.2, 0.3)` is `true`.
+    code: |
+      function nearlyEqual(a, b) {
+        return a === b;
+      }
+    tests:
+      - "nearlyEqual(0.1 + 0.2, 0.3)"
+      - "nearlyEqual(1, 2)"
+      - "nearlyEqual(5, 5)"
+      - "nearlyEqual(0.1 + 0.2, 0.31)"
+      - "nearlyEqual(-1.5, -1.5000000001)"
+    solution: |
+      function nearlyEqual(a, b) {
+        return Math.abs(a - b) < 0.000001;
+      }
+    hint: Use `Math.abs(a - b)` to get the distance between them, whichever is bigger.
+    reject:
+      - |
+        function nearlyEqual(a, b) {
+          return a - b < 0.000001;
+        }
+
+  - kind: info
+    title: "🔹 BigInt, only when you must"
+    body: |
+      When a problem needs integers beyond 2⁵³, JavaScript has `BigInt`: write `123n`, and do maths on other BigInts.
+
+      ```js
+      2n ** 64n              // 18446744073709551616n
+      Number.MAX_SAFE_INTEGER + 2   // wrong, rounded
+      BigInt(Number.MAX_SAFE_INTEGER) + 2n   // exact
+      ```
+
+      You cannot mix BigInt and normal numbers in one expression (`1n + 1` is an error), and BigInt is slower. Use it only for overflow problems, which appear again in Module 31.
+
+  - kind: why
+    body: |
+      Almost every algorithm in this course leans on this small toolbox. Logarithms explain why binary search is fast, the sum formula explains why nested loops are slow, and modulo and floating-point traps are where silent wrong answers come from.
+
+      A wrong answer that looks plausible (`-1` instead of `4`, `0.30000000000000004` instead of `0.3`) is worse than a crash. Now you know where to look.
+
+  - kind: recap
+    body: |
+      - `2 ** n` grows extremely fast. **log₂ n** is "how many times can I halve n", so a million items need only about 20 halvings.
+      - `1 + 2 + … + n = n(n + 1) / 2`.
+      - `%` is the remainder, but with negatives it keeps the left side's sign. Use `((a % n) + n) % n` for a non-negative result.
+      - `Math.floor` rounds down, `Math.trunc` cuts toward zero, and they differ for negatives.
+      - Integers are exact up to `Number.MAX_SAFE_INTEGER`. Decimals are not exact, so compare them with a tolerance.
+      - 🔹 `BigInt` handles huge integers, but only use it when you have to.

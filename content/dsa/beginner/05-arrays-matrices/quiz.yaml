@@ -1,0 +1,48 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Why is reading `arr[500]` an O(1) operation?
+    options:
+      - The array is sorted
+      - Items sit side by side in memory, so the computer jumps straight to the position
+      - JavaScript caches every index
+      - It is not O(1); it is O(n)
+    answer: 1
+    explanation: A contiguous block lets the computer calculate where position 500 lives with one step of arithmetic.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const grid = [
+        [1, 2, 3],
+        [4, 5, 6],
+      ];
+      console.log(grid[1][2], grid.length, grid[0].length);
+    options: ["6 2 3", "3 2 3", "6 3 2", "4 2 3"]
+    answer: 0
+    explanation: "`grid[1][2]` is row 1, column 2, which is 6. There are 2 rows and 3 columns."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const a = [1, 2, 3, 4];
+      let left = 0;
+      let right = a.length - 1;
+      while (left < right) {
+        [a[left], a[right]] = [a[right], a[left]];
+        left++;
+        right--;
+      }
+      console.log(a);
+    options: ["[ 4, 3, 2, 1 ]", "[ 1, 2, 3, 4 ]", "[ 4, 2, 3, 1 ]", "[ 2, 1, 4, 3 ]"]
+    answer: 0
+    explanation: The pointers swap 1↔4, then 2↔3, then meet, so the array is reversed.
+  - type: mcq
+    prompt: Which cells lie on the anti-diagonal of an `n × n` grid?
+    options: ["row = column", "row + column = n − 1", "row = n − column − 2", "row × column = n"]
+    answer: 1
+    explanation: The anti-diagonal runs from the top-right to the bottom-left, so the row and column add up to n − 1.
+  - type: fill
+    prompt: An array has 5 items. To wrap the position 7 back into the array, you compute `7 % ____`.
+    code: |
+      console.log(7 % ____);
+    answer: "5"
+    explanation: "`7 % 5` is 2, so position 7 wraps around to position 2. The same idea shrinks a rotation amount that is bigger than the array."

@@ -1,0 +1,4 @@
+title: "Strings"
+module: 6
+summary: "Work with text: pick out letters with indexes and slices, clean and reshape text with string methods, and build messages with f-strings."
+minutes: 65

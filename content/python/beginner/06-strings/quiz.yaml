@@ -1,0 +1,44 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      word = "detective"
+      print(word[2:5])
+    options: ["tec", "tect", "ete", "etec"]
+    answer: 0
+    explanation: "Index 2 is `t`, and the slice stops *before* index 5, so it takes indexes 2, 3, 4: `t`, `e`, `c`."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      name = "  Ada  "
+      name.upper()
+      print(name.strip())
+    options: ["Ada", "ADA", "None", "Error"]
+    answer: 0
+    explanation: "`name.upper()` returned a new string that was thrown away, because strings never change. `strip()` then removes the spaces."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print("-".join(["a", "b", "c"]))
+    options: ["a-b-c", "abc", "['a', 'b', 'c']", "-a-b-c-"]
+    answer: 0
+    explanation: "`join` glues the list items together with the text before the dot placed between them."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      item = "book"
+      n = 2
+      print(f"{n} {item}s")
+    options: ["2 books", "n item s", "{n} {item}s", "2 book s"]
+    answer: 0
+    explanation: "An f-string replaces each `{...}` with its value."
+  - type: mcq
+    prompt: Why does `word[0] = "b"` fail on a string?
+    options:
+      - Strings are immutable, so you must build a new string
+      - Index 0 does not exist
+      - The letter b is reserved
+      - Strings can only be changed in a function
+    answer: 0
+    explanation: You can never change a string in place. Build a new one instead, such as `"b" + word[1:]`.

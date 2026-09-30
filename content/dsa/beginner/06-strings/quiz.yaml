@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      console.log("b".charCodeAt(0) - "a".charCodeAt(0));
+    options: ["1", "98", "0", "2"]
+    answer: 0
+    explanation: "`b` is 98 and `a` is 97, so the difference is 1, the position of `b` counting from 0."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      console.log("a" + 1 + 2);
+    options: ["a12", "a3", "3", "12"]
+    answer: 0
+    explanation: Adding a number to a string turns it into text, so `"a" + 1` is `"a1"` and then `"a12"`.
+  - type: mcq
+    prompt: Why can a 26-slot array count letters in O(1) extra space?
+    options:
+      - JavaScript arrays are free
+      - The alphabet has a fixed size, so the array is the same size whatever the input length
+      - Strings are already arrays
+      - It cannot; it is O(n)
+    answer: 1
+    explanation: 26 does not grow with the input, so the extra memory is constant.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      console.log("😀".length, [..."😀"].length);
+    options: ["2 1", "1 1", "1 2", "2 2"]
+    answer: 0
+    explanation: "An emoji is stored as two 16-bit units, so `.length` says 2, but spreading walks real characters and finds 1."
+  - type: fill
+    prompt: To turn the lowercase letter `ch` into an index from 0 to 25, write `ch.charCodeAt(0) - "a".____(0)`.
+    code: |
+      const ch = "d";
+      console.log(ch.charCodeAt(0) - "a".____(0));
+    answer: charCodeAt
+    explanation: "`charCodeAt(0)` returns the number code of the first character."

@@ -1,0 +1,310 @@
+steps:
+  - kind: explain
+    title: A save button with a memory
+    body: |
+      Ever named files `report_final`, `report_final2`, `report_REALLY_final`? **Version control** fixes that. It records **snapshots** of your project over time, so you can:
+
+      - go back to any earlier version,
+      - see exactly what changed, and when, and why,
+      - try something risky without fear,
+      - work with other people without overwriting each other.
+
+      **Git** is the standard tool for this, and **GitHub** is a website that stores your Git projects online (a backup, and a place to share). Git works on your Mac; GitHub is the cloud copy.
+
+      Words to know:
+
+      | Word | Meaning |
+      |---|---|
+      | **repository** (repo) | a project folder that Git is tracking |
+      | **commit** | one saved snapshot, with a message |
+      | **staging** | choosing which changes go into the next commit |
+      | **branch** | a line of history (the main one is called `main`) |
+
+  - kind: mac
+    title: Check Git and say who you are
+    body: |
+      Git stamps every commit with your name and email. Set them once. Use your own name and the email of your GitHub account.
+
+      **Checkpoint:** paste the output. It should contain `git version`.
+    commands: |
+      git --version
+      git config --global user.name "Your Name"
+      git config --global user.email "you@example.com"
+      git config --global init.defaultBranch main
+      git config --list --show-origin | grep user
+    expect_output:
+      - "git version"
+
+  - kind: explain
+    title: The everyday loop
+    body: |
+      Git's daily rhythm is four commands:
+
+      ```bash
+      git init                    # once: start tracking this folder
+      git status                  # what has changed?
+      git add hello.py            # stage a change for the next snapshot
+      git commit -m "Add hello script"   # save the snapshot
+      ```
+
+      Other useful ones:
+
+      - `git log --oneline`: the list of commits, newest first,
+      - `git diff`: show the lines you changed but have not staged yet,
+      - `git add .`: stage everything in this folder (check `git status` first!).
+
+      Think of staging as putting items in a box, and the commit as sealing and labelling the box.
+
+  - kind: mac
+    title: Your first commit
+    body: |
+      Make a project, put a file in it, and commit it. Read what `git status` says before and after.
+
+      **Checkpoint:** paste the output. It should contain `Add hello script`.
+    commands: |
+      mkdir -p ~/Desktop/git-practice && cd ~/Desktop/git-practice
+      git init
+      echo 'print("hello")' > hello.py
+      git status
+      git add hello.py
+      git commit -m "Add hello script"
+      git log --oneline
+    expect_output:
+      - "Add hello script"
+
+  - kind: code
+    title: Read git status
+    body: |
+      `git status --short` prints one line per changed file: a two-letter code, a space, then the file name. The codes: `??` = new file Git does not know yet, ` M` = modified, `A ` = added (staged), ` D` = deleted.
+
+      Finish `count_changes(lines)`: return a dictionary with the keys `"new"`, `"modified"`, `"deleted"` counting how many lines have `??`, ` M` and ` D` respectively. Lines with other codes are ignored.
+
+      `count_changes(["?? notes.txt", " M app.py"])` is `{"new": 1, "modified": 1, "deleted": 0}`.
+    code: |
+      def count_changes(lines):
+          return {"new": 0, "modified": 0, "deleted": 0}
+    tests:
+      - "count_changes(['?? notes.txt', ' M app.py'])"
+      - "count_changes([])"
+      - "count_changes([' M a.py', ' M b.py', ' D c.py', '?? d.txt', 'A  e.py'])"
+    solution: |
+      def count_changes(lines):
+          counts = {"new": 0, "modified": 0, "deleted": 0}
+          for line in lines:
+              code = line[:2]
+              if code == "??":
+                  counts["new"] += 1
+              elif code == " M":
+                  counts["modified"] += 1
+              elif code == " D":
+                  counts["deleted"] += 1
+          return counts
+    hint: "The code is `line[:2]`. Compare it with `\"??\"`, `\" M\"` and `\" D\"`."
+    reject:
+      - |
+        def count_changes(lines):
+            return {"new": len(lines), "modified": 0, "deleted": 0}
+
+  - kind: explain
+    title: Good commit messages
+    body: |
+      A commit message is a note to your future self. A good one:
+
+      - starts with a **short summary line** (about 50 characters or fewer),
+      - uses the **imperative** mood, as if giving an order: *"Add search"*, *"Fix crash on empty input"*, not *"Added search"* or *"fixes"*,
+      - says **what and why**, not "stuff" or "update",
+      - has no full stop at the end of the summary.
+
+      Commit **small, focused** changes: one idea per commit. Then `git log --oneline` reads like a story.
+
+  - kind: code
+    title: Review a commit message
+    body: |
+      Finish `message_problems(message)`. Return a list of problems found, in this order (return `[]` if there are none):
+
+      1. `"too long"` if the first line is over 50 characters,
+      2. `"ends with a period"` if the first line ends with `.`,
+      3. `"vague"` if the first line (ignoring capitals) is one of `"update"`, `"fix"`, `"stuff"`, `"changes"`,
+      4. `"lowercase start"` if the first character is not a capital letter.
+
+      `message_problems("Add search")` is `[]`. `message_problems("fix")` is `["vague", "lowercase start"]`.
+    code: |
+      def message_problems(message):
+          return []
+    tests:
+      - "message_problems('Add search')"
+      - "message_problems('fix')"
+      - "message_problems('Fix crash on empty input.')"
+      - "message_problems('X' * 51)"
+      - "message_problems('Update')"
+      - "message_problems('add x. \\n\\nlong body')"
+    solution: |
+      def message_problems(message):
+          first = message.split("\n")[0]
+          problems = []
+          if len(first) > 50:
+              problems.append("too long")
+          if first.endswith("."):
+              problems.append("ends with a period")
+          if first.lower() in ("update", "fix", "stuff", "changes"):
+              problems.append("vague")
+          if not first[:1].isupper():
+              problems.append("lowercase start")
+          return problems
+    hint: "Take `first = message.split(\"\\n\")[0]`. Check each rule with its own `if` and append in order. `first[:1].isupper()` is safe on empty text."
+    reject:
+      - |
+        def message_problems(message):
+            return []
+
+  - kind: explain
+    title: "What NOT to commit: .gitignore"
+    body: |
+      Some files must never go into Git:
+
+      - **Secrets**: passwords, API keys, `.env` files. Once pushed to GitHub they are effectively public forever.
+      - **Generated or heavy stuff**: `.venv/` (your virtual environment, Module 19), `__pycache__/`, `*.pyc`, `.DS_Store` (a Mac file).
+
+      A file called **`.gitignore`** lists patterns Git should skip:
+
+      ```
+      .venv/
+      __pycache__/
+      *.pyc
+      .env
+      .DS_Store
+      ```
+
+      A pattern ending in `/` is a folder. `*` matches anything (`*.pyc` means any file ending `.pyc`).
+
+  - kind: code
+    title: Is it ignored?
+    body: |
+      Finish `is_ignored(path, patterns)`. A path such as `"src/__pycache__/app.pyc"` is ignored if **any** pattern matches:
+
+      - a pattern ending in `/` (like `.venv/`) matches if that folder name appears as a **whole part** of the path, e.g. `".venv/lib/x.py"` or `"a/.venv/b"`,
+      - any other pattern matches the **file name** (the last part of the path) using wildcards. Use `fnmatch.fnmatch(name, pattern)`.
+
+      `fnmatch.fnmatch("app.pyc", "*.pyc")` is `True`.
+    code: |
+      from fnmatch import fnmatch
+
+
+      def is_ignored(path, patterns):
+          return False
+    tests:
+      - "is_ignored('src/__pycache__/app.pyc', ['__pycache__/'])"
+      - "is_ignored('main.py', ['*.pyc', '.env'])"
+      - "is_ignored('a/b/app.pyc', ['*.pyc'])"
+      - "is_ignored('.env', ['.env'])"
+      - "is_ignored('venv_notes.txt', ['.venv/'])"
+      - "is_ignored('.venv/lib/x.py', ['.venv/'])"
+    solution: |
+      from fnmatch import fnmatch
+
+
+      def is_ignored(path, patterns):
+          parts = path.split("/")
+          for pattern in patterns:
+              if pattern.endswith("/"):
+                  if pattern[:-1] in parts[:-1]:
+                      return True
+              elif fnmatch(parts[-1], pattern):
+                  return True
+          return False
+    hint: "For folder patterns, check `pattern[:-1] in parts[:-1]` (every part except the file name). Otherwise `fnmatch(parts[-1], pattern)`."
+    reject:
+      - |
+        from fnmatch import fnmatch
+
+
+        def is_ignored(path, patterns):
+            return any(pattern in path for pattern in patterns)
+
+  - kind: mac
+    title: Ignore, change, compare
+    body: |
+      Add a `.gitignore`, then change the file and look at the difference before saving it.
+
+      **Checkpoint:** paste the output. It should contain `hello, detective` (from `git diff`) and your new commit message.
+    commands: |
+      cd ~/Desktop/git-practice
+      printf '.venv/\n__pycache__/\n*.pyc\n.env\n.DS_Store\n' > .gitignore
+      echo 'print("hello, detective")' > hello.py
+      git diff
+      git add .
+      git commit -m "Greet the detective and ignore junk files"
+      git log --oneline
+    expect_output:
+      - "hello, detective"
+      - "Greet the detective"
+
+  - kind: explain
+    title: Undoing simple mistakes
+    body: |
+      Everything committed is safe, so you can experiment. For small mistakes:
+
+      | Situation | Command |
+      |---|---|
+      | I edited a file and want the last committed version back | `git restore hello.py` |
+      | I staged a file by mistake | `git restore --staged hello.py` |
+      | My last commit message has a typo | `git commit --amend -m "Better message"` (only if not pushed) |
+      | A committed change was a mistake | `git revert HEAD` (makes a new commit that undoes it) |
+
+      **Be careful:** `git restore` on an unsaved edit throws that edit away for good, because Git cannot recover changes it never committed. Commit early and often.
+
+  - kind: mac
+    title: Throw away an edit
+    body: |
+      Break the file on purpose, see Git notice, and restore it.
+
+      **Checkpoint:** paste the output. The last `git status` should say `nothing to commit, working tree clean`.
+    commands: |
+      cd ~/Desktop/git-practice
+      echo 'oops this is broken' > hello.py
+      git status --short
+      git restore hello.py
+      cat hello.py
+      git status
+    expect_output:
+      - "working tree clean"
+
+  - kind: explain
+    title: "GitHub: your project in the cloud"
+    body: |
+      To put a project on GitHub:
+
+      1. Create a free account at **github.com** and make a **new empty repository** (no README, no licence, so the two copies do not clash). Copy its address, which looks like `https://github.com/yourname/git-practice.git`.
+      2. In Terminal, connect and upload (**push**):
+
+      ```bash
+      git remote add origin https://github.com/yourname/git-practice.git
+      git push -u origin main
+      ```
+
+      Later, `git push` uploads new commits, and `git clone <address>` downloads a copy of any repository onto a new machine. Git may ask you to sign in; the simplest method is GitHub's **GitHub CLI**: `brew install gh`, then `gh auth login`.
+
+      Never push secrets. If you do, change that password or key immediately. Deleting the file afterwards is not enough, because it is still in the history.
+
+  - kind: mac
+    title: Push to GitHub (optional)
+    body: |
+      Create your account and an empty repository first (this needs the website, so the lesson cannot do it for you), then run the two commands above with **your own** address. When it works, refresh the repository page on GitHub and you will see your files and commits.
+
+      Press *I ran it* when you have seen your commits on GitHub, or choose *Skip for now*.
+    commands: |
+      cd ~/Desktop/git-practice
+      git remote add origin https://github.com/YOUR-NAME/git-practice.git
+      git push -u origin main
+
+  - kind: why
+    body: |
+      Git turns "I hope I didn't break it" into "I can always go back". It is also how every software team collaborates, and GitHub is where your finished projects become a portfolio. Commit small and often, write messages a stranger could understand, and keep secrets out.
+
+  - kind: recap
+    body: |
+      - Git records **commits** (snapshots). `init`, `status`, `add`, `commit`, `log --oneline`, `diff`.
+      - Good messages: short, imperative, specific, one idea per commit.
+      - **`.gitignore`** keeps `.venv/`, `__pycache__/`, `.env` and other secrets or junk out of the repo.
+      - Undo small mistakes with `git restore` (edit) and `git revert` (commit).
+      - **GitHub** stores your repo online: `git remote add origin …`, `git push`, `git clone`. Never push secrets.

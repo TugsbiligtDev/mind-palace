@@ -1,0 +1,34 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print? (Index maths in a heap array.)
+    code: |
+      const i = 5;
+      console.log((i - 1) >> 1, 2 * i + 1, 2 * i + 2);
+    options: ["2 11 12", "2 10 11", "3 11 12", "2 6 7"]
+    answer: 0
+    explanation: "The parent of index 5 is 2, and its children would be 11 and 12."
+  - type: mcq
+    prompt: What are the costs of push and pop on a binary heap with n items?
+    options: ["Both O(1)", "Both O(log n)", "Push O(log n), pop O(n)", "Both O(n)"]
+    answer: 1
+    explanation: A new item sifts up (or the moved item sifts down) along one path from a leaf to the root, whose length is about log n.
+  - type: mcq
+    prompt: You need the 10 largest numbers from a stream of a billion. Which structure is best?
+    options: ["A sorted array", "A min-heap of size 10", "A max-heap of everything", "A Set"]
+    answer: 1
+    explanation: The min-heap's root is the smallest of your current top 10. A new number bigger than it replaces it, using only 10 items of memory.
+  - type: mcq
+    prompt: How do you turn a `MinHeap` into a max-heap?
+    options: ["Reverse the array", "Flip the comparator, e.g. `(a, b) => b - a`", "Use `Math.max`", "You cannot"]
+    answer: 1
+    explanation: The heap only relies on the comparator to decide which item comes out first.
+  - type: predict
+    prompt: What does this print? (`low` is the smaller half, `high` the larger half.)
+    code: |
+      const low = [1, 2, 3];
+      const high = [4, 5];
+      console.log(low.length > high.length ? low[low.length - 1] : (low[low.length - 1] + high[0]) / 2);
+    options: ["3", "3.5", "2", "4"]
+    answer: 0
+    explanation: "`low` has more items, so the median is the largest of the small half. With 5 numbers, the middle one is 3."

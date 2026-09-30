@@ -1,0 +1,295 @@
+steps:
+  - kind: explain
+    title: Choose your own tool
+    body: |
+      This review covers Modules 4 to 9: variables, operators, strings, input, conditionals and loops. The questions never say which tool to use. The last case is the **Part 2 checkpoint**, a number-guessing game.
+
+      For each case, write down (in a comment) what goes in and what comes out, decide on a plan, then code it. If it fails, the message names the first test that went wrong. After a wrong attempt you can ask for a hint, and after three you can see one working answer. Try hard before you look.
+
+  - kind: code
+    title: "1. The till"
+    body: |
+      Write `bill_total(price, quantity, tax_percent)`: the price of `quantity` items, plus tax, rounded to **2 decimals**. `bill_total(10, 3, 20)` is `36.0`, because 30 plus 20% is 36.
+    code: |
+      def bill_total(price, quantity, tax_percent):
+          # your code
+          pass
+    tests:
+      - "bill_total(10, 3, 20)"
+      - "bill_total(9.99, 2, 8)"
+      - "bill_total(5, 0, 20)"
+      - "bill_total(100, 1, 0)"
+    solution: |
+      def bill_total(price, quantity, tax_percent):
+          subtotal = price * quantity
+          return round(subtotal * (1 + tax_percent / 100), 2)
+    hint: "Multiply price by quantity, then multiply by `1 + tax_percent / 100`, then `round(..., 2)`."
+    reject:
+      - |
+        def bill_total(price, quantity, tax_percent):
+            return round(price * quantity + tax_percent, 2)
+
+  - kind: code
+    title: "2. Tidy the name"
+    body: |
+      Customer names arrive messy: extra spaces everywhere and random capitals. Write `clean_name(raw)` so `"  aDA    loVELACE "` becomes `"Ada Lovelace"`.
+
+      `text.title()` capitalises every word. `"-".join(text.split())` splits on runs of spaces and rejoins with one separator.
+    code: |
+      def clean_name(raw):
+          # your code
+          pass
+    tests:
+      - "clean_name('  aDA    loVELACE ')"
+      - "clean_name('moth')"
+      - "clean_name('ODVAL   BOLD')"
+      - "clean_name('   ')"
+    solution: |
+      def clean_name(raw):
+          return " ".join(raw.split()).title()
+    hint: "`raw.split()` with no argument ignores extra spaces. Join with `\" \"`, then `.title()`."
+    reject:
+      - |
+        def clean_name(raw):
+            return raw.strip().title()
+
+  - kind: code
+    title: "3. Ticket prices"
+    body: |
+      The museum charges: **children under 12** pay 5, **seniors 65 and over** pay 7, everyone else pays 12. **Students** get 3 off the *adult* price only. Write `ticket_price(age, is_student)`.
+    code: |
+      def ticket_price(age, is_student):
+          # your code
+          pass
+    tests:
+      - "ticket_price(8, False)"
+      - "ticket_price(8, True)"
+      - "ticket_price(30, False)"
+      - "ticket_price(30, True)"
+      - "ticket_price(70, True)"
+      - "ticket_price(65, False)"
+      - "ticket_price(12, True)"
+    solution: |
+      def ticket_price(age, is_student):
+          if age < 12:
+              return 5
+          if age >= 65:
+              return 7
+          if is_student:
+              return 9
+          return 12
+    hint: "Check children and seniors first (they return early). Only the remaining adults can get the student discount."
+    reject:
+      - |
+        def ticket_price(age, is_student):
+            price = 12
+            if age < 12:
+                price = 5
+            elif age >= 65:
+                price = 7
+            if is_student:
+                price -= 3
+            return price
+
+  - kind: code
+    title: "4. Long words"
+    body: |
+      Write `count_long_words(sentence, n)`: how many words in the sentence have **more than** `n` letters? Words are separated by spaces. `count_long_words("the quick brown fox", 3)` is `2` (`quick` and `brown`).
+    code: |
+      def count_long_words(sentence, n):
+          # your code
+          pass
+    tests:
+      - "count_long_words('the quick brown fox', 3)"
+      - "count_long_words('a bb ccc', 2)"
+      - "count_long_words('', 0)"
+      - "count_long_words('one two six', 3)"
+    solution: |
+      def count_long_words(sentence, n):
+          count = 0
+          for word in sentence.split():
+              if len(word) > n:
+                  count += 1
+          return count
+    hint: "Loop over `sentence.split()`, and count the words where `len(word) > n`."
+    reject:
+      - |
+        def count_long_words(sentence, n):
+            count = 0
+            for word in sentence.split():
+                if len(word) >= n:
+                    count += 1
+            return count
+
+  - kind: code
+    title: "5. Add up the list"
+    body: |
+      A clerk types numbers separated by commas, like `"3,4,5"`. Write `sum_text(text)`: return their total as a whole number. An empty string gives `0`. `sum_text("3,4,5")` is `12`.
+    code: |
+      def sum_text(text):
+          # your code
+          pass
+    tests:
+      - "sum_text('3,4,5')"
+      - "sum_text('10')"
+      - "sum_text('')"
+      - "sum_text('-2,2,100')"
+    solution: |
+      def sum_text(text):
+          total = 0
+          if text == "":
+              return total
+          for piece in text.split(","):
+              total += int(piece)
+          return total
+    hint: "`\"\".split(\",\")` gives `['']`, and `int('')` fails, so handle the empty text first. Then convert each piece with `int`."
+    reject:
+      - |
+        def sum_text(text):
+            return len(text.split(","))
+
+  - kind: code
+    title: "6. Hot or cold"
+    body: |
+      Write `rate_guess(secret, guess)`. It returns `"too low"` if the guess is below the secret, `"too high"` if above, and `"correct"` if equal. This is the heart of the guessing game in the next case.
+    code: |
+      def rate_guess(secret, guess):
+          # your code
+          pass
+    tests:
+      - "rate_guess(7, 3)"
+      - "rate_guess(7, 9)"
+      - "rate_guess(7, 7)"
+      - "rate_guess(0, -1)"
+    solution: |
+      def rate_guess(secret, guess):
+          if guess < secret:
+              return "too low"
+          if guess > secret:
+              return "too high"
+          return "correct"
+    hint: "Three outcomes: `if guess < secret`, `if guess > secret`, otherwise they are equal."
+    reject:
+      - |
+        def rate_guess(secret, guess):
+            if guess <= secret:
+                return "too low"
+            return "too high"
+
+  - kind: explain
+    title: The checkpoint game
+    body: |
+      Now build the whole game as one function, `play_round(secret, max_attempts)`. The player types guesses with `input()`:
+
+      - The typed text must be **digits only** (`text.isdigit()` is `True` for `"12"` and `False` for `"abc"` or `""`). If not, print `Numbers only` and ask again. A bad entry does **not** use up an attempt.
+      - Convert with `int(...)`, and count the attempt.
+      - If the guess is lower than the secret, print `Too low`; higher, print `Too high`.
+      - If it equals the secret, print `Correct in N` (N = attempts used) and stop.
+      - If the attempts run out, print `Out of attempts. The number was X`.
+
+      The "play again" loop goes around this function. You will run the complete game on your Mac at the end.
+
+  - kind: code
+    title: "7. Checkpoint: the guessing game"
+    body: |
+      Write `play_round(secret, max_attempts)` as described in the previous step. The checker feeds it typed answers and reads what it prints.
+
+      The example answers shown above the editor are `"abc"`, `"5"`, `"9"`, `"7"` for a secret of 7.
+    code: |
+      def play_round(secret, max_attempts):
+          # your code
+          pass
+    stdin: ["abc", "5", "9", "7"]
+    tests:
+      - "given_input(['abc', '5', '9', '7'], lambda: play_round(7, 5))"
+      - "given_input(['7'], lambda: play_round(7, 3))"
+      - "given_input(['1', '2', '3', '4'], lambda: play_round(7, 3))"
+      - "given_input(['', '  ', '8', '6', '7'], lambda: play_round(7, 4))"
+      - "given_input(['10', '5'], lambda: play_round(5, 2))"
+    solution: |
+      def play_round(secret, max_attempts):
+          attempts = 0
+          while attempts < max_attempts:
+              text = input("Guess? ")
+              if not text.isdigit():
+                  print("Numbers only")
+                  continue
+              guess = int(text)
+              attempts += 1
+              if guess < secret:
+                  print("Too low")
+              elif guess > secret:
+                  print("Too high")
+              else:
+                  print("Correct in", attempts)
+                  return
+          print("Out of attempts. The number was", secret)
+    hint: "Use a `while attempts < max_attempts:` loop. Check `text.isdigit()` first (with `continue`), then `attempts += 1`, then compare."
+    reject:
+      - |
+        def play_round(secret, max_attempts):
+            attempts = 0
+            while attempts < max_attempts:
+                text = input("Guess? ")
+                attempts += 1
+                if not text.isdigit():
+                    print("Numbers only")
+                    continue
+                guess = int(text)
+                if guess < secret:
+                    print("Too low")
+                elif guess > secret:
+                    print("Too high")
+                else:
+                    print("Correct in", attempts)
+                    return
+            print("Out of attempts. The number was", secret)
+
+  - kind: mac
+    title: Play it on your Mac
+    body: |
+      This is the full game with a **play again** loop around your round. The commands below save it as `guess.py` and run it, feeding the typed answers through `printf` (`\n` is the Enter key) so the output is predictable. Then run it yourself with `uv run guess.py` and play for real.
+
+      **Checkpoint:** paste the output. It should contain `Correct in 2`.
+    commands: |
+      mkdir -p ~/Desktop/python-practice && cd ~/Desktop/python-practice
+      cat > guess.py <<'PY'
+      def play_round(secret, max_attempts):
+          attempts = 0
+          while attempts < max_attempts:
+              text = input("Guess? ")
+              if not text.isdigit():
+                  print("Numbers only")
+                  continue
+              guess = int(text)
+              attempts += 1
+              if guess < secret:
+                  print("Too low")
+              elif guess > secret:
+                  print("Too high")
+              else:
+                  print("Correct in", attempts)
+                  return
+          print("Out of attempts. The number was", secret)
+
+
+      while True:
+          play_round(7, 3)
+          answer = input("Play again? (yes/no) ")
+          if answer.strip().lower() != "yes":
+              break
+      print("Thanks for playing")
+      PY
+      printf '5\n7\nno\n' | uv run guess.py
+    expect_output:
+      - "Correct in 2"
+
+  - kind: why
+    body: |
+      A tiny game uses nearly everything in Part 2: input and conversion, validation, loops with `continue`, comparisons and early exits. You did not memorise a recipe. You broke the job into small steps. That habit is the real skill.
+
+  - kind: recap
+    body: |
+      - You combined arithmetic, string methods, loops and decisions to solve seven small problems.
+      - You validated typed input (`isdigit`), converted it, and gave hints.
+      - The **Part 2 checkpoint** is done: a guessing game with limited attempts, hints, input checking and a play-again loop.

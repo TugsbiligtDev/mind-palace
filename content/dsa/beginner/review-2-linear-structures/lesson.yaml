@@ -1,0 +1,477 @@
+steps:
+  - kind: explain
+    title: Choose your own tool
+    body: |
+      This review covers Modules 5 to 9. Each question fits one of those tools, but the question never says which.
+
+      For each one, ask: *Is this walking an array? Counting or remembering with a Map or Set? Following pointers? Matching things with a stack or a queue?* Then write the plainest solution that works.
+
+      The linked-list questions come with `ListNode`, `fromArray` and `toArray` already in the editor.
+
+  - kind: code
+    title: "1. Around the edge"
+    body: |
+      Write `spiralOrder(matrix)`: return every value of a rectangular grid in **spiral order**, starting top-left, going right, then down, then left, then up, and so on inwards.
+
+      `[[1, 2, 3], [4, 5, 6], [7, 8, 9]]` gives `[1, 2, 3, 6, 9, 8, 7, 4, 5]`.
+    code: |
+      function spiralOrder(matrix) {
+        // your code
+        return [];
+      }
+    tests:
+      - "spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]])"
+      - "spiralOrder([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])"
+      - "spiralOrder([[1]])"
+      - "spiralOrder([[1], [2], [3]])"
+      - "spiralOrder([[1, 2, 3]])"
+    solution: |
+      function spiralOrder(matrix) {
+        const out = [];
+        let top = 0;
+        let bottom = matrix.length - 1;
+        let left = 0;
+        let right = matrix[0].length - 1;
+        while (top <= bottom && left <= right) {
+          for (let c = left; c <= right; c++) out.push(matrix[top][c]);
+          top++;
+          for (let r = top; r <= bottom; r++) out.push(matrix[r][right]);
+          right--;
+          if (top <= bottom) {
+            for (let c = right; c >= left; c--) out.push(matrix[bottom][c]);
+            bottom--;
+          }
+          if (left <= right) {
+            for (let r = bottom; r >= top; r--) out.push(matrix[r][left]);
+            left++;
+          }
+        }
+        return out;
+      }
+    hint: Keep four boundaries (`top`, `bottom`, `left`, `right`) and shrink one after walking each side. Re-check the boundaries before the last two sides, or a single row or column is counted twice.
+    reject:
+      - |
+        function spiralOrder(matrix) {
+          return matrix.flat();
+        }
+
+  - kind: code
+    title: "2. Tidy the sentence"
+    body: |
+      Write `reverseWords(s)`: return the words of `s` in reverse order, separated by **single spaces**, with no leading or trailing spaces. The input may have extra spaces.
+
+      `"  hello   world "` gives `"world hello"`.
+    code: |
+      function reverseWords(s) {
+        // your code
+        return s;
+      }
+    tests:
+      - "reverseWords('  hello   world ')"
+      - "reverseWords('the sky is blue')"
+      - "reverseWords('single')"
+      - "reverseWords('')"
+      - "reverseWords('   ')"
+    solution: |
+      function reverseWords(s) {
+        const trimmed = s.trim();
+        if (trimmed === "") return "";
+        return trimmed.split(/\s+/).reverse().join(" ");
+      }
+    hint: "`split(/\\s+/)` splits on any run of spaces. Trim first, and deal with the empty result."
+    reject:
+      - |
+        function reverseWords(s) {
+          return s.split(" ").reverse().join(" ");
+        }
+
+  - kind: code
+    title: "3. Close duplicates"
+    body: |
+      Write `hasNearbyDuplicate(nums, k)`: return `true` if two **equal** values sit at positions at most `k` apart, else `false`.
+
+      `([1, 2, 3, 1], 3)` is `true` (positions 0 and 3), but `([1, 2, 3, 1], 2)` is `false`.
+    code: |
+      function hasNearbyDuplicate(nums, k) {
+        // your code
+        return false;
+      }
+    tests:
+      - "hasNearbyDuplicate([1, 2, 3, 1], 3)"
+      - "hasNearbyDuplicate([1, 2, 3, 1], 2)"
+      - "hasNearbyDuplicate([1, 0, 1, 1], 1)"
+      - "hasNearbyDuplicate([], 5)"
+      - "hasNearbyDuplicate([9], 1)"
+    solution: |
+      function hasNearbyDuplicate(nums, k) {
+        const lastSeen = new Map();
+        for (let i = 0; i < nums.length; i++) {
+          if (lastSeen.has(nums[i]) && i - lastSeen.get(nums[i]) <= k) return true;
+          lastSeen.set(nums[i], i);
+        }
+        return false;
+      }
+    hint: Remember the **latest position** of every value in a Map, and compare distances as you scan.
+    reject:
+      - |
+        function hasNearbyDuplicate(nums, k) {
+          return new Set(nums).size < nums.length;
+        }
+
+  - kind: code
+    title: "4. Sorted list, duplicates gone"
+    body: |
+      Write `removeDuplicates(head)` for a **sorted** linked list: delete nodes so each value appears only once. Return the head.
+
+      `1 → 1 → 2 → 3 → 3` becomes `1 → 2 → 3`.
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function removeDuplicates(head) {
+        // your code
+        return head;
+      }
+    tests:
+      - "toArray(removeDuplicates(fromArray([1, 1, 2, 3, 3])))"
+      - "toArray(removeDuplicates(fromArray([1, 1, 1])))"
+      - "toArray(removeDuplicates(fromArray([])))"
+      - "toArray(removeDuplicates(fromArray([1, 2, 3])))"
+    solution: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function removeDuplicates(head) {
+        let curr = head;
+        while (curr !== null && curr.next !== null) {
+          if (curr.next.val === curr.val) curr.next = curr.next.next;
+          else curr = curr.next;
+        }
+        return head;
+      }
+    hint: Because the list is sorted, equal values sit next to each other. Compare `curr` with `curr.next`, and skip the next node when they match.
+    reject:
+      - |
+        class ListNode {
+          constructor(val, next = null) {
+            this.val = val;
+            this.next = next;
+          }
+        }
+
+        function fromArray(values) {
+          const dummy = new ListNode(0);
+          let tail = dummy;
+          for (const v of values) {
+            tail.next = new ListNode(v);
+            tail = tail.next;
+          }
+          return dummy.next;
+        }
+
+        function toArray(head) {
+          const out = [];
+          for (let n = head; n !== null; n = n.next) out.push(n.val);
+          return out;
+        }
+
+        function removeDuplicates(head) {
+          return head;
+        }
+
+  - kind: code
+    title: "5. From the end"
+    body: |
+      Write `nthFromEnd(head, n)`: the **value** of the `n`-th node counting from the end (`n = 1` is the last node). Return `null` if the list has fewer than `n` nodes. Do it in one pass with two pointers.
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function nthFromEnd(head, n) {
+        // your code
+        return null;
+      }
+    tests:
+      - "nthFromEnd(fromArray([1, 2, 3, 4, 5]), 2)"
+      - "nthFromEnd(fromArray([1, 2, 3, 4, 5]), 5)"
+      - "nthFromEnd(fromArray([1, 2, 3]), 1)"
+      - "nthFromEnd(fromArray([1, 2, 3]), 4)"
+      - "nthFromEnd(fromArray([]), 1)"
+    solution: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function nthFromEnd(head, n) {
+        let lead = head;
+        for (let i = 0; i < n; i++) {
+          if (lead === null) return null;
+          lead = lead.next;
+        }
+        let follow = head;
+        while (lead !== null) {
+          lead = lead.next;
+          follow = follow.next;
+        }
+        return follow.val;
+      }
+    hint: Move one pointer `n` steps ahead first. Then move both together until the front one falls off the end.
+    reject:
+      - |
+        class ListNode {
+          constructor(val, next = null) {
+            this.val = val;
+            this.next = next;
+          }
+        }
+
+        function fromArray(values) {
+          const dummy = new ListNode(0);
+          let tail = dummy;
+          for (const v of values) {
+            tail.next = new ListNode(v);
+            tail = tail.next;
+          }
+          return dummy.next;
+        }
+
+        function toArray(head) {
+          const out = [];
+          for (let n = head; n !== null; n = n.next) out.push(n.val);
+          return out;
+        }
+
+        function nthFromEnd(head, n) {
+          return head === null ? null : head.val;
+        }
+
+  - kind: code
+    title: "6. A stack that knows its minimum"
+    body: |
+      Build `MinStack` with `push(x)`, `pop()`, `top()` and `getMin()`, where `getMin()` returns the smallest value currently in the stack in **O(1)**.
+    code: |
+      class MinStack {
+        constructor() {
+          this.items = [];
+        }
+        push(x) {}
+        pop() {}
+        top() {}
+        getMin() {}
+      }
+    tests:
+      - "(() => { const s = new MinStack(); s.push(5); s.push(3); s.push(7); s.push(3); const a = s.getMin(); s.pop(); const b = s.getMin(); s.pop(); const c = s.getMin(); s.pop(); const d = s.getMin(); return [a, b, c, d]; })()"
+      - "(() => { const s = new MinStack(); s.push(2); s.push(0); s.push(3); return [s.top(), s.getMin()]; })()"
+      - "(() => { const s = new MinStack(); s.push(-1); s.push(-5); s.pop(); return [s.top(), s.getMin()]; })()"
+    solution: |
+      class MinStack {
+        constructor() {
+          this.items = [];
+          this.mins = [];
+        }
+        push(x) {
+          this.items.push(x);
+          const currentMin = this.mins.length ? this.mins[this.mins.length - 1] : Infinity;
+          this.mins.push(Math.min(x, currentMin));
+        }
+        pop() {
+          this.mins.pop();
+          return this.items.pop();
+        }
+        top() {
+          return this.items[this.items.length - 1];
+        }
+        getMin() {
+          return this.mins[this.mins.length - 1];
+        }
+      }
+    hint: Keep a second stack. Alongside every item, store "the smallest value at or below this point".
+    reject:
+      - |
+        class MinStack {
+          constructor() { this.items = []; }
+          push(x) { this.items.push(x); }
+          pop() { return this.items.pop(); }
+          top() { return this.items[this.items.length - 1]; }
+          getMin() { return this.items[0]; }
+        }
+
+  - kind: code
+    title: "7. Shared values"
+    body: |
+      Write `intersection(a, b)`: the values that appear in **both** arrays, each listed once, in **ascending** order.
+    code: |
+      function intersection(a, b) {
+        // your code
+        return [];
+      }
+    tests:
+      - "intersection([1, 2, 2, 1], [2, 2])"
+      - "intersection([4, 9, 5], [9, 4, 9, 8, 4])"
+      - "intersection([], [1])"
+      - "intersection([1, 2], [3, 4])"
+      - "intersection([10, 2, 30], [30, 10])"
+    solution: |
+      function intersection(a, b) {
+        const inA = new Set(a);
+        const common = new Set();
+        for (const x of b) if (inA.has(x)) common.add(x);
+        return [...common].sort((x, y) => x - y);
+      }
+    hint: Put one array in a Set, then check each value of the other. Remember the numeric comparator for `sort`.
+    reject:
+      - |
+        function intersection(a, b) {
+          return a.filter((x) => b.includes(x));
+        }
+
+  - kind: code
+    title: "8. A queue built from stacks"
+    body: |
+      Build `MyQueue` (first in, first out) using only **two stacks** (arrays where you use just `push` and `pop`). Methods: `push(x)`, `pop()` (removes and returns the front), `peek()` (front without removing), `empty()`.
+
+      Idea: put new items on an `inbox` stack. When you need the front and the `outbox` is empty, pour the whole inbox into the outbox. That reverses the order.
+    code: |
+      class MyQueue {
+        constructor() {
+          this.inbox = [];
+          this.outbox = [];
+        }
+        push(x) {}
+        pop() {}
+        peek() {}
+        empty() {
+          return true;
+        }
+      }
+    tests:
+      - "(() => { const q = new MyQueue(); q.push(1); q.push(2); const a = q.peek(); const b = q.pop(); q.push(3); return [a, b, q.pop(), q.pop(), q.empty()]; })()"
+      - "new MyQueue().empty()"
+      - "(() => { const q = new MyQueue(); q.push(5); return [q.empty(), q.pop(), q.empty()]; })()"
+    solution: |
+      class MyQueue {
+        constructor() {
+          this.inbox = [];
+          this.outbox = [];
+        }
+        push(x) {
+          this.inbox.push(x);
+        }
+        move() {
+          if (this.outbox.length === 0) {
+            while (this.inbox.length > 0) this.outbox.push(this.inbox.pop());
+          }
+        }
+        pop() {
+          this.move();
+          return this.outbox.pop();
+        }
+        peek() {
+          this.move();
+          return this.outbox[this.outbox.length - 1];
+        }
+        empty() {
+          return this.inbox.length === 0 && this.outbox.length === 0;
+        }
+      }
+    hint: Only pour the inbox into the outbox when the outbox is **empty**. Otherwise you would mix up the order.
+    reject:
+      - |
+        class MyQueue {
+          constructor() { this.s = []; }
+          push(x) { this.s.push(x); }
+          pop() { return this.s.pop(); }
+          peek() { return this.s[this.s.length - 1]; }
+          empty() { return this.s.length === 0; }
+        }
+
+  - kind: why
+    body: |
+      Notice how many of these were the same few ideas in different clothes: a pointer moving through data, a Map or Set remembering what you saw, a stack holding "what to come back to". Recognising the idea is most of the work.
+
+  - kind: recap
+    body: |
+      - Walk once and keep a few variables (boundaries, lowest, last seen).
+      - Use a **Map** or **Set** when you need to remember or look something up.
+      - On a **sorted** list, equal values are neighbours.
+      - Two pointers a fixed distance apart find "n from the end" in one pass.
+      - Two stacks can imitate a queue, and a second stack can remember extra facts (like the minimum).

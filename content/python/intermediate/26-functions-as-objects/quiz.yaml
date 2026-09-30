@@ -1,0 +1,53 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      words = ["pear", "fig", "banana"]
+      print(sorted(words, key=len))
+    options: ["['fig', 'pear', 'banana']", "['banana', 'fig', 'pear']", "['pear', 'fig', 'banana']", "['banana', 'pear', 'fig']"]
+    answer: 0
+    explanation: "`key=len` sorts by length: fig (3), pear (4), banana (6)."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def make_adder(n):
+          def add(x):
+              return x + n
+          return add
+
+      add5 = make_adder(5)
+      add10 = make_adder(10)
+      print(add5(1), add10(1))
+    options: ["6 11", "6 6", "11 11", "5 10"]
+    answer: 0
+    explanation: "Each adder remembers its own `n` (a closure), so they are independent."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from functools import partial
+      def power(base, exponent):
+          return base ** exponent
+      cube = partial(power, exponent=3)
+      print(cube(2))
+    options: ["8", "6", "9", "Error"]
+    answer: 0
+    explanation: "`partial` fixed `exponent=3`, so `cube(2)` is 2 ** 3 = 8."
+  - type: mcq
+    prompt: What does `@cache` do to a function?
+    options:
+      - It remembers results so the same arguments are not computed again
+      - It runs the function in the background
+      - It makes the function private
+      - It checks the types
+    answer: 0
+    explanation: Caching (memoization) stores previous results for a fast lookup. It is only safe for pure functions.
+  - type: mcq
+    prompt: What is the difference between `f` and `f()`?
+    options:
+      - "`f` is the function object; `f()` calls it and gives its result"
+      - They are identical
+      - "`f()` is a syntax error"
+      - "`f` is faster"
+    answer: 0
+    explanation: Without brackets you refer to the function itself, which you can pass around. With brackets you run it.

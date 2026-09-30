@@ -1,0 +1,48 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def double(x: int) -> int:
+          return x * 2
+
+      print(double("ab"))
+    options: ["abab", "Error: expected int", "ab", "4"]
+    answer: 0
+    explanation: "Type hints are not enforced at runtime, so Python multiplies the text by 2. Only a type checker would flag it."
+  - type: mcq
+    prompt: Which is the modern way to say "an int or None"?
+    options: ["int | None", "Optional[int] only", "int or None", "Maybe(int)"]
+    answer: 0
+    explanation: "`int | None` (Python 3.10+) is the modern spelling. `Optional[int]` is the legacy form of the same thing."
+  - type: mcq
+    prompt: What is the main benefit of running mypy on your code?
+    options:
+      - It finds type mistakes before the program runs
+      - It makes the program faster
+      - It converts types automatically at runtime
+      - It replaces testing
+    answer: 0
+    explanation: "A type checker analyses your hints statically. Tests are still needed for behaviour."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from typing import TypedDict
+
+      class Book(TypedDict):
+          title: str
+          year: int
+
+      b: Book = {"title": "Dune", "year": 1965}
+      print(type(b).__name__, b["year"])
+    options: ["dict 1965", "Book 1965", "TypedDict 1965", "Error"]
+    answer: 0
+    explanation: "A TypedDict is a plain `dict` at runtime. The class only describes its shape for checkers."
+  - type: fill
+    prompt: Complete the hint for a list of strings.
+    code: |
+      def shout(words: ____[str]) -> None:
+          for w in words:
+              print(w.upper())
+    answer: list
+    explanation: "Since Python 3.9 you can write `list[str]` using the built-in `list`."

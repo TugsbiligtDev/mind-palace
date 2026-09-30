@@ -1,0 +1,4 @@
+title: "HTTP & Web APIs"
+module: 37
+summary: "Talk to other programs over the web: requests, responses, status codes and headers, JSON APIs with httpx, keeping keys safe in environment variables, and handling timeouts, retries and rate limits."
+minutes: 95

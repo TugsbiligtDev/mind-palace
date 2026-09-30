@@ -1,0 +1,4 @@
+title: "Decorators"
+module: 27
+summary: "Wrap functions with extra behaviour without touching their code: how the @ syntax works, writing decorators with functools.wraps, and decorators that take arguments."
+minutes: 70

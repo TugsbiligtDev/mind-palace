@@ -1,0 +1,262 @@
+steps:
+  - kind: explain
+    title: The next-greater problem
+    body: |
+      *For every number, find the next number to its right that is bigger.* `[2, 1, 2, 4, 3]` gives `[4, 2, 4, -1, -1]`.
+
+      The brute force scans right from each position: O(n²). A **monotonic stack** does it in one pass.
+
+      A monotonic stack is an ordinary stack that you keep **sorted** (each new item removes whatever would break the order). For "next greater", keep the stack **decreasing**: values still *waiting* for something bigger.
+
+  - kind: explain
+    title: How the stack works
+    body: |
+      Walk left to right. For each new number `x`:
+
+      1. **While** the stack's top is smaller than `x`, `x` is that item's "next greater". Record it and pop.
+      2. **Push** `x` (or its index).
+
+      Anything left on the stack at the end never found a bigger number.
+
+      We store **indexes** on the stack so we can write results into the right slot. Each item is pushed once and popped once, so the whole pass is **O(n)**.
+
+  - kind: code
+    title: "Find the bug: equal is not greater"
+    body: |
+      `nextGreater(nums)` returns, for each item, the next **strictly bigger** item to its right, or `-1`. This version treats an equal value as "bigger". Fix it. (`[2, 2]` must give `[-1, -1]`.)
+    code: |
+      function nextGreater(nums) {
+        const result = Array(nums.length).fill(-1);
+        const stack = [];
+        for (let i = 0; i < nums.length; i++) {
+          while (stack.length > 0 && nums[stack[stack.length - 1]] <= nums[i]) {
+            result[stack.pop()] = nums[i];
+          }
+          stack.push(i);
+        }
+        return result;
+      }
+    tests:
+      - "nextGreater([2, 1, 2, 4, 3])"
+      - "nextGreater([2, 2])"
+      - "nextGreater([5, 4, 3])"
+      - "nextGreater([1, 2, 3])"
+      - "nextGreater([])"
+      - "nextGreater([3, 3, 5])"
+    solution: |
+      function nextGreater(nums) {
+        const result = Array(nums.length).fill(-1);
+        const stack = [];
+        for (let i = 0; i < nums.length; i++) {
+          while (stack.length > 0 && nums[stack[stack.length - 1]] < nums[i]) {
+            result[stack.pop()] = nums[i];
+          }
+          stack.push(i);
+        }
+        return result;
+      }
+    hint: "The comparison must be `<`, not `<=`. Equal values are not \"greater\"."
+    broken_starter: true
+    reject:
+      - |
+        function nextGreater(nums) {
+          const result = Array(nums.length).fill(-1);
+          const stack = [];
+          for (let i = 0; i < nums.length; i++) {
+            while (stack.length > 0 && nums[stack[stack.length - 1]] <= nums[i]) {
+              result[stack.pop()] = nums[i];
+            }
+            stack.push(i);
+          }
+          return result;
+        }
+
+  - kind: code
+    title: Daily temperatures
+    body: |
+      `temps[i]` is the temperature on day `i`. Write `dailyTemperatures(temps)`: for each day, **how many days** you must wait for a warmer one (`0` if never). `[73, 74, 75, 71, 69, 72, 76, 73]` gives `[1, 1, 4, 2, 1, 1, 0, 0]`.
+
+      Same stack of waiting indexes, but store the **distance** `i - j` instead of the value.
+    code: |
+      function dailyTemperatures(temps) {
+        return temps.map(() => 0);
+      }
+    tests:
+      - "dailyTemperatures([73, 74, 75, 71, 69, 72, 76, 73])"
+      - "dailyTemperatures([30, 40, 50, 60])"
+      - "dailyTemperatures([30, 60, 90])"
+      - "dailyTemperatures([90, 80, 70])"
+      - "dailyTemperatures([50])"
+    solution: |
+      function dailyTemperatures(temps) {
+        const result = Array(temps.length).fill(0);
+        const stack = [];
+        for (let i = 0; i < temps.length; i++) {
+          while (stack.length > 0 && temps[stack[stack.length - 1]] < temps[i]) {
+            const j = stack.pop();
+            result[j] = i - j;
+          }
+          stack.push(i);
+        }
+        return result;
+      }
+    hint: When day `i` is warmer than the day `j` on top of the stack, the wait for `j` is `i - j`.
+    reject:
+      - |
+        function dailyTemperatures(temps) {
+          return temps.map(() => 1);
+        }
+
+  - kind: code
+    title: Online stock span
+    body: |
+      Prices arrive one day at a time. The **span** of today's price is how many consecutive days (counting today, going backwards) had a price **less than or equal to** today's.
+
+      Finish `StockSpanner`: `next(price)` returns today's span. Keep a stack of `[price, span]` pairs, and when a new price is at least as big as the top, **absorb** the top's span.
+    code: |
+      class StockSpanner {
+        constructor() {
+          this.stack = [];
+        }
+        next(price) {
+          return 1;
+        }
+      }
+    tests:
+      - "(() => { const s = new StockSpanner(); return [100, 80, 60, 70, 60, 75, 85].map((p) => s.next(p)); })()"
+      - "(() => { const s = new StockSpanner(); return [5, 5, 5].map((p) => s.next(p)); })()"
+      - "(() => { const s = new StockSpanner(); return [1, 2, 3, 4].map((p) => s.next(p)); })()"
+    solution: |
+      class StockSpanner {
+        constructor() {
+          this.stack = [];
+        }
+        next(price) {
+          let span = 1;
+          while (this.stack.length > 0 && this.stack[this.stack.length - 1][0] <= price) {
+            span += this.stack.pop()[1];
+          }
+          this.stack.push([price, span]);
+          return span;
+        }
+      }
+    hint: "Pop while the top price is `<= price`, adding each popped span to `span`. Then push `[price, span]`."
+    reject:
+      - |
+        class StockSpanner {
+          constructor() { this.stack = []; }
+          next(price) { return 1; }
+        }
+
+  - kind: explain
+    title: Largest rectangle in a histogram
+    body: |
+      A **histogram** is a row of bars with heights. The task: the area of the largest rectangle that fits inside the bars.
+
+      For each bar, the biggest rectangle that uses it as the **shortest bar** stretches left and right until it meets a shorter bar. So for each bar we need "the first shorter bar on the left" and "on the right", a next-smaller problem, solved with an **increasing** monotonic stack.
+
+      Walk the bars. While the current bar is **shorter** than the top of the stack, pop it. The popped bar's rectangle is:
+      - height = the popped bar's height,
+      - width = from just after the new stack top up to just before the current bar.
+
+      Add a bar of height 0 at the end to flush the stack.
+
+  - kind: code
+    title: Largest rectangle
+    body: |
+      Write `largestRectangle(heights)`: the area of the largest rectangle inside the histogram. `[2, 1, 5, 6, 2, 3]` gives `10` (heights 5 and 6, width 2).
+    code: |
+      function largestRectangle(heights) {
+        return 0;
+      }
+    tests:
+      - "largestRectangle([2, 1, 5, 6, 2, 3])"
+      - "largestRectangle([2, 4])"
+      - "largestRectangle([1])"
+      - "largestRectangle([])"
+      - "largestRectangle([3, 3, 3, 3])"
+      - "largestRectangle([6, 5, 4, 3, 2, 1])"
+    solution: |
+      function largestRectangle(heights) {
+        const stack = [];
+        let best = 0;
+        const bars = [...heights, 0];
+        for (let i = 0; i < bars.length; i++) {
+          while (stack.length > 0 && bars[stack[stack.length - 1]] > bars[i]) {
+            const height = bars[stack.pop()];
+            const left = stack.length === 0 ? -1 : stack[stack.length - 1];
+            best = Math.max(best, height * (i - left - 1));
+          }
+          stack.push(i);
+        }
+        return best;
+      }
+    hint: The width of a popped bar is `i - (new top of stack) - 1`, or `i` when the stack is empty.
+    reject:
+      - |
+        function largestRectangle(heights) {
+          return Math.max(0, ...heights);
+        }
+
+  - kind: explain
+    title: Monotonic deque, sliding window maximum
+    body: |
+      *For every window of length `k`, report the maximum.* A heap works (O(n log n)), but a **monotonic deque** does it in O(n).
+
+      A **deque** lets you remove from **both ends**. Keep it holding **indexes** whose values are in **decreasing** order:
+
+      1. **Back:** while the new value is bigger than the value at the back, pop the back (those can never be a maximum again).
+      2. Push the new index at the back.
+      3. **Front:** if the front index has slid out of the window, remove it.
+      4. The **front** is always the window's maximum.
+
+      In JavaScript, use an array with a `head` index for the front (no `shift`, so it stays O(1)).
+
+  - kind: code
+    title: Sliding window maximum
+    body: |
+      Write `maxSlidingWindow(nums, k)`: an array with the maximum of every window of length `k`. `[1, 3, -1, -3, 5, 3, 6, 7]` with `k = 3` gives `[3, 3, 5, 5, 6, 7]`.
+    code: |
+      function maxSlidingWindow(nums, k) {
+        return [];
+      }
+    tests:
+      - "maxSlidingWindow([1, 3, -1, -3, 5, 3, 6, 7], 3)"
+      - "maxSlidingWindow([1], 1)"
+      - "maxSlidingWindow([9, 8, 7, 6], 2)"
+      - "maxSlidingWindow([1, 2, 3, 4], 4)"
+      - "maxSlidingWindow([4, 2, 12, 11, -5], 2)"
+      - "maxSlidingWindow(Array.from({ length: 50000 }, (_, i) => (i * 31) % 977), 100).slice(0, 5)"
+    solution: |
+      function maxSlidingWindow(nums, k) {
+        const deque = [];
+        let head = 0;
+        const result = [];
+        for (let i = 0; i < nums.length; i++) {
+          while (deque.length > head && nums[deque[deque.length - 1]] <= nums[i]) deque.pop();
+          deque.push(i);
+          if (deque[head] <= i - k) head++;
+          if (i >= k - 1) result.push(nums[deque[head]]);
+        }
+        return result;
+      }
+    hint: Store indexes. Drop smaller values from the back, drop an expired index from the front, and record `nums[front]` once the first full window exists (`i >= k - 1`).
+    reject:
+      - |
+        function maxSlidingWindow(nums, k) {
+          return nums.slice(0, nums.length - k + 1);
+        }
+
+  - kind: why
+    body: |
+      A monotonic stack answers "what is the nearest bigger (or smaller) thing on this side?" for every element in one pass. That question hides inside stock prices, histograms, skylines, rain water, and many interview favourites.
+
+      The reason it is O(n): every item is pushed once and popped at most once. The `while` loop looks scary, but it is amortized.
+
+  - kind: recap
+    body: |
+      - A **monotonic stack** stays sorted by popping items that break the order. Each item is pushed and popped once: **O(n)**.
+      - **Next greater:** keep a *decreasing* stack of waiting indexes. Pop while the top is smaller than the new value.
+      - **Daily temperatures / stock span:** the same, recording a distance or an absorbed span.
+      - **Largest rectangle:** an *increasing* stack. A popped bar's width comes from the new top and the current index.
+      - **Sliding window maximum:** a monotonic **deque** of indexes, with drops from the back (smaller) and the front (expired).

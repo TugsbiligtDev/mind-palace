@@ -1,0 +1,384 @@
+steps:
+  - kind: explain
+    title: Welcome to the patterns
+    body: |
+      In the Beginner level you learned the tools: arrays, maps, stacks, recursion. Now you learn **patterns**: problem shapes that keep coming back, each with a standard trick.
+
+      Recognising the pattern is most of the work. This module has two of them, and both replace a slow nested loop (O(n²)) with a single pass (O(n)).
+
+  - kind: explain
+    title: Pattern 1a, pointers at both ends
+    body: |
+      When the array is **sorted**, put one pointer at the start (`left`) and one at the end (`right`), and move them towards each other based on what you see.
+
+      *Find two numbers in a sorted array that add up to `target`.*
+
+      - If `nums[left] + nums[right]` is **too small**, the only way to grow the sum is to move `left` right.
+      - If it is **too big**, move `right` left.
+      - If it matches, done.
+
+      Each step throws away one candidate for good, so it takes at most `n` steps: **O(n) time, O(1) space**.
+
+  - kind: code
+    title: "Find the bug: the same number twice"
+    body: |
+      `twoSumSorted(nums, target)` should return the positions `[i, j]` (with `i < j`) of two numbers in a sorted array that add up to `target`, or `null` if there is no such pair. This version can pair a number with itself. Fix it.
+    code: |
+      function twoSumSorted(nums, target) {
+        let left = 0;
+        let right = nums.length - 1;
+        while (left <= right) {
+          const sum = nums[left] + nums[right];
+          if (sum === target) return [left, right];
+          if (sum < target) left++;
+          else right--;
+        }
+        return null;
+      }
+    tests:
+      - "twoSumSorted([2, 7, 11, 15], 9)"
+      - "twoSumSorted([1, 2, 3, 4, 6], 6)"
+      - "twoSumSorted([2, 4], 4)"
+      - "twoSumSorted([5], 10)"
+      - "twoSumSorted([], 3)"
+      - "twoSumSorted([-3, 0, 3, 8], 0)"
+    solution: |
+      function twoSumSorted(nums, target) {
+        let left = 0;
+        let right = nums.length - 1;
+        while (left < right) {
+          const sum = nums[left] + nums[right];
+          if (sum === target) return [left, right];
+          if (sum < target) left++;
+          else right--;
+        }
+        return null;
+      }
+    hint: When `left === right`, both pointers point at the same element. Two different elements need `left < right`.
+    broken_starter: true
+    reject:
+      - |
+        function twoSumSorted(nums, target) {
+          let left = 0;
+          let right = nums.length - 1;
+          while (left <= right) {
+            const sum = nums[left] + nums[right];
+            if (sum === target) return [left, right];
+            if (sum < target) left++;
+            else right--;
+          }
+          return null;
+        }
+
+  - kind: code
+    title: Container with the most water
+    body: |
+      `heights[i]` is the height of a vertical wall at position `i`. Pick two walls: together with the floor they hold water of amount `(distance between them) × (the shorter wall)`. Write `maxWater(heights)` returning the biggest amount.
+
+      Start with the widest pair. Then move the pointer at the **shorter** wall inwards, because keeping the shorter wall can never do better once the width shrinks.
+    code: |
+      function maxWater(heights) {
+        return 0;
+      }
+    tests:
+      - "maxWater([1, 8, 6, 2, 5, 4, 8, 3, 7])"
+      - "maxWater([1, 1])"
+      - "maxWater([4, 3, 2, 1, 4])"
+      - "maxWater([1, 2, 1])"
+      - "maxWater([5])"
+    solution: |
+      function maxWater(heights) {
+        let left = 0;
+        let right = heights.length - 1;
+        let best = 0;
+        while (left < right) {
+          const area = (right - left) * Math.min(heights[left], heights[right]);
+          best = Math.max(best, area);
+          if (heights[left] < heights[right]) left++;
+          else right--;
+        }
+        return best;
+      }
+    hint: Compute the area, remember the best, then move whichever pointer is at the shorter wall.
+    reject:
+      - |
+        function maxWater(heights) {
+          return Math.max(...heights) * (heights.length - 1);
+        }
+
+  - kind: explain
+    title: Pattern 1b, pointers moving the same way
+    body: |
+      Another version: both pointers start at the front and move **in the same direction**, at different roles.
+
+      - A **read** pointer scans every element.
+      - A **write** pointer marks where the next "kept" value goes.
+
+      You used this in "move zeroes". It edits an array **in place** in one pass. Removing duplicates from a *sorted* array is the classic example: copy an element forward only if it differs from the last kept one.
+
+  - kind: code
+    title: Remove duplicates in place
+    body: |
+      Write `removeDuplicates(nums)` for a **sorted** array. Rewrite the array so its first `k` positions hold each distinct value once (in order), and **return `k`**. What lies beyond position `k` does not matter.
+    code: |
+      function removeDuplicates(nums) {
+        return nums.length;
+      }
+    tests:
+      - "(() => { const a = [1, 1, 2]; const k = removeDuplicates(a); return [k, a.slice(0, k)]; })()"
+      - "(() => { const a = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]; const k = removeDuplicates(a); return [k, a.slice(0, k)]; })()"
+      - "(() => { const a = []; const k = removeDuplicates(a); return [k, a.slice(0, k)]; })()"
+      - "(() => { const a = [7]; const k = removeDuplicates(a); return [k, a.slice(0, k)]; })()"
+      - "(() => { const a = [2, 2, 2]; const k = removeDuplicates(a); return [k, a.slice(0, k)]; })()"
+    solution: |
+      function removeDuplicates(nums) {
+        if (nums.length === 0) return 0;
+        let write = 1;
+        for (let read = 1; read < nums.length; read++) {
+          if (nums[read] !== nums[write - 1]) {
+            nums[write] = nums[read];
+            write++;
+          }
+        }
+        return write;
+      }
+    hint: Compare each `nums[read]` with the last kept value, `nums[write - 1]`.
+    reject:
+      - |
+        function removeDuplicates(nums) {
+          return new Set(nums).size;
+        }
+
+  - kind: explain
+    title: The Dutch national flag
+    body: |
+      *Sort an array that contains only 0, 1 and 2 (three "colours") in one pass, in place.* Use **three regions** and three pointers:
+
+      - everything before `low` is `0`,
+      - everything after `high` is `2`,
+      - `mid` scans the unknown middle.
+
+      ```
+      [ 0 0 0 | 1 1 1 | ? ? ? ? | 2 2 2 ]
+               low      mid       high
+      ```
+
+      At `mid`: a `0` swaps to `low` (both move up), a `1` just moves `mid`, a `2` swaps to `high` (only `high` moves down, because the swapped-in value is still unknown).
+
+  - kind: code
+    title: Sort the colours
+    body: |
+      Write `sortColors(nums)` that sorts an array of `0`s, `1`s and `2`s **in place** in one pass with the three-pointer method.
+    code: |
+      function sortColors(nums) {
+        let low = 0;
+        let mid = 0;
+        let high = nums.length - 1;
+      }
+    tests:
+      - "(() => { const a = [2, 0, 2, 1, 1, 0]; sortColors(a); return a; })()"
+      - "(() => { const a = [2, 0, 1]; sortColors(a); return a; })()"
+      - "(() => { const a = [1]; sortColors(a); return a; })()"
+      - "(() => { const a = []; sortColors(a); return a; })()"
+      - "(() => { const a = [2, 2, 2, 0, 0]; sortColors(a); return a; })()"
+    solution: |
+      function sortColors(nums) {
+        let low = 0;
+        let mid = 0;
+        let high = nums.length - 1;
+        while (mid <= high) {
+          if (nums[mid] === 0) {
+            [nums[low], nums[mid]] = [nums[mid], nums[low]];
+            low++;
+            mid++;
+          } else if (nums[mid] === 1) {
+            mid++;
+          } else {
+            [nums[mid], nums[high]] = [nums[high], nums[mid]];
+            high--;
+          }
+        }
+      }
+    hint: "After swapping with `high`, do **not** move `mid`. You have not looked at the value you just swapped in."
+    reject:
+      - |
+        function sortColors(nums) {}
+
+  - kind: explain
+    title: 3Sum, and skipping duplicates
+    body: |
+      *Find all unique triples that add to 0.* Sort the array, fix the first number `nums[i]`, and use two pointers on the rest to find a pair adding to `-nums[i]`. That is O(n²) instead of O(n³).
+
+      The tricky part is **duplicates**. After sorting, equal values sit together, so skip them:
+
+      - skip `i` if `nums[i] === nums[i - 1]`,
+      - after finding a triple, move `left` and `right` past their duplicates too.
+
+  - kind: code
+    title: 3Sum
+    body: |
+      Write `threeSum(nums)`: every **unique** triple `[a, b, c]` from the array with `a + b + c === 0`. The order of triples and of numbers inside them does not matter for the checker.
+    code: |
+      function threeSum(nums) {
+        const result = [];
+        return result;
+      }
+    unordered: true
+    tests:
+      - "threeSum([-1, 0, 1, 2, -1, -4])"
+      - "threeSum([0, 1, 1])"
+      - "threeSum([0, 0, 0])"
+      - "threeSum([0, 0, 0, 0])"
+      - "threeSum([])"
+      - "threeSum([-2, 0, 0, 2, 2])"
+    solution: |
+      function threeSum(nums) {
+        const sorted = [...nums].sort((a, b) => a - b);
+        const result = [];
+        for (let i = 0; i < sorted.length - 2; i++) {
+          if (i > 0 && sorted[i] === sorted[i - 1]) continue;
+          let left = i + 1;
+          let right = sorted.length - 1;
+          while (left < right) {
+            const sum = sorted[i] + sorted[left] + sorted[right];
+            if (sum === 0) {
+              result.push([sorted[i], sorted[left], sorted[right]]);
+              left++;
+              right--;
+              while (left < right && sorted[left] === sorted[left - 1]) left++;
+              while (left < right && sorted[right] === sorted[right + 1]) right--;
+            } else if (sum < 0) {
+              left++;
+            } else {
+              right--;
+            }
+          }
+        }
+        return result;
+      }
+    hint: Sort first. After recording a triple, move both pointers and skip repeats, or `[0, 0, 0, 0]` gives the same triple twice.
+    reject:
+      - |
+        function threeSum(nums) {
+          const out = [];
+          for (let i = 0; i < nums.length; i++)
+            for (let j = i + 1; j < nums.length; j++)
+              for (let k = j + 1; k < nums.length; k++)
+                if (nums[i] + nums[j] + nums[k] === 0) out.push([nums[i], nums[j], nums[k]]);
+          return out;
+        }
+
+  - kind: explain
+    title: Pattern 2, cyclic sort
+    body: |
+      A different trick for arrays whose values fall in a **known range**, like `1 … n` in an array of `n` items. Each value has a "correct" home: **value `v` belongs at index `v - 1`**.
+
+      **Cyclic sort:** look at position `i`. If its value is not at its home and the home does not already hold the same value, **swap it home**. Repeat at `i` until the value at `i` is right (or a duplicate), then move on.
+
+      ```js
+      let i = 0;
+      while (i < nums.length) {
+        const home = nums[i] - 1;
+        if (nums[i] >= 1 && nums[i] <= nums.length && nums[i] !== nums[home]) {
+          [nums[i], nums[home]] = [nums[home], nums[i]];
+        } else {
+          i++;
+        }
+      }
+      ```
+
+      Every swap puts one value home for good, so it is **O(n) time and O(1) space**. Afterwards, any position `i` where `nums[i] !== i + 1` reveals a **missing** number (`i + 1`) and a **duplicate** (`nums[i]`).
+
+  - kind: code
+    title: Find all missing numbers
+    body: |
+      `nums` has `n` numbers, each between `1` and `n`, and some appear twice, so some numbers are missing. Write `findDisappeared(nums)`: every number from `1` to `n` that does **not** appear, in ascending order. Use cyclic sort. You may change the array.
+    code: |
+      function findDisappeared(nums) {
+        return [];
+      }
+    tests:
+      - "findDisappeared([4, 3, 2, 7, 8, 2, 3, 1])"
+      - "findDisappeared([1, 1])"
+      - "findDisappeared([1, 2, 3])"
+      - "findDisappeared([2, 2, 2])"
+      - "findDisappeared([])"
+    solution: |
+      function findDisappeared(nums) {
+        let i = 0;
+        while (i < nums.length) {
+          const home = nums[i] - 1;
+          if (nums[i] !== nums[home]) {
+            [nums[i], nums[home]] = [nums[home], nums[i]];
+          } else {
+            i++;
+          }
+        }
+        const missing = [];
+        for (let j = 0; j < nums.length; j++) {
+          if (nums[j] !== j + 1) missing.push(j + 1);
+        }
+        return missing;
+      }
+    hint: Swap `nums[i]` home unless the home already holds the same value (a duplicate). Afterwards, every `j` with `nums[j] !== j + 1` means `j + 1` is missing.
+    reject:
+      - |
+        function findDisappeared(nums) {
+          return [];
+        }
+
+  - kind: code
+    title: First missing positive
+    body: |
+      Given any integers (including negatives, zero and huge values), write `firstMissingPositive(nums)`: the smallest positive integer that is **not** in the array. Do it in O(n) time and O(1) extra space.
+
+      Trick: only values from `1` to `n` can matter. Ignore everything else while you cyclic-sort. The answer is at most `n + 1`.
+    code: |
+      function firstMissingPositive(nums) {
+        return 1;
+      }
+    tests:
+      - "firstMissingPositive([1, 2, 0])"
+      - "firstMissingPositive([3, 4, -1, 1])"
+      - "firstMissingPositive([7, 8, 9, 11, 12])"
+      - "firstMissingPositive([1])"
+      - "firstMissingPositive([2, 1])"
+      - "firstMissingPositive([])"
+      - "firstMissingPositive([1, 1, 2, 2])"
+    solution: |
+      function firstMissingPositive(nums) {
+        const n = nums.length;
+        let i = 0;
+        while (i < n) {
+          const v = nums[i];
+          if (v >= 1 && v <= n && nums[v - 1] !== v) {
+            [nums[i], nums[v - 1]] = [nums[v - 1], nums[i]];
+          } else {
+            i++;
+          }
+        }
+        for (let j = 0; j < n; j++) {
+          if (nums[j] !== j + 1) return j + 1;
+        }
+        return n + 1;
+      }
+    hint: Only swap when the value is in `1 … n` and its home does not already hold it. Then the first position `j` with `nums[j] !== j + 1` gives the answer `j + 1`.
+    reject:
+      - |
+        function firstMissingPositive(nums) {
+          return Math.max(0, ...nums) + 1;
+        }
+
+  - kind: why
+    body: |
+      Two pointers and cyclic sort share one idea: **use the structure of the input** (sorted order, or values in a known range) to skip work. A nested loop compares everything with everything. These patterns compare each element with only what could matter, once.
+
+      When you meet a new problem, ask: "Is it sorted? Are the values in a range? Can I keep two markers?"
+
+  - kind: recap
+    body: |
+      - **Opposite-end pointers** on sorted data: move the pointer that can improve the answer. O(n) time, O(1) space.
+      - **Read/write pointers** edit an array in place in one pass (remove duplicates, move zeroes).
+      - The **Dutch national flag** uses `low`, `mid`, `high` to sort three values in one pass.
+      - **3Sum**: sort, fix one number, two-pointer the rest, and skip duplicates.
+      - **Cyclic sort**: value `v` belongs at index `v - 1`. Swap values home in O(n), then scan for misplaced ones to find missing and duplicate numbers.

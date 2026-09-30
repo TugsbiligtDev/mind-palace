@@ -1,0 +1,313 @@
+steps:
+  - kind: explain
+    title: The with statement, in depth
+    body: |
+      You already use `with open(...) as f:`. The idea is general: **set something up, do some work, and always tear it down**, even if an error happens in the middle.
+
+      ```python
+      with open("notes.txt", "w") as f:
+          f.write("hi")
+      # the file is closed here, no matter what
+      ```
+
+      Without `with` you would need `try/finally` to be safe:
+
+      ```python
+      f = open("notes.txt", "w")
+      try:
+          f.write("hi")
+      finally:
+          f.close()
+      ```
+
+      A **context manager** is any object that knows how to set up (`__enter__`) and tear down (`__exit__`). `with` calls them for you. You will meet them for **files, locks** (so two threads don't clash), **database transactions**, **temporary directories**, and **temporary settings**.
+
+      You can open several in one statement: `with open("a") as a, open("b", "w") as b:`.
+
+  - kind: code
+    title: Two files in one with
+    body: |
+      Write `copy_upper(src, dst)`: read the text of the file `src`, and write it, in **upper case**, to the file `dst`. Use **one `with` statement** that opens both files. Use UTF-8.
+    code: |
+      def copy_upper(src, dst):
+          pass
+    tests:
+      - "open('a.txt', 'w', encoding='utf-8').write('hello café\\n')\ncopy_upper('a.txt', 'b.txt')\nresult = open('b.txt', encoding='utf-8').read()"
+      - "open('e.txt', 'w').write('')\ncopy_upper('e.txt', 'f.txt')\nresult = open('f.txt').read()"
+    solution: |
+      def copy_upper(src, dst):
+          with open(src, encoding="utf-8") as source, open(dst, "w", encoding="utf-8") as target:
+              target.write(source.read().upper())
+    hint: "`with open(src, ...) as source, open(dst, \"w\", ...) as target:`"
+    reject:
+      - |
+        def copy_upper(src, dst):
+            with open(src, encoding="utf-8") as source:
+                text = source.read()
+            with open(dst, "w", encoding="utf-8") as target:
+                target.write(text)
+
+  - kind: explain
+    title: "Writing your own: __enter__ and __exit__"
+    body: |
+      A class becomes a context manager with two methods:
+
+      ```python
+      class Tracker:
+          def __init__(self, events):
+              self.events = events
+
+          def __enter__(self):
+              self.events.append("enter")
+              return self                      # this is what 'as x' receives
+
+          def __exit__(self, exc_type, exc, traceback):
+              self.events.append("exit")
+              return False                     # False: let any exception continue
+      ```
+
+      - `__enter__` runs at the start of the `with` block; whatever it returns is bound by `as`.
+      - `__exit__` runs at the end, **always**, even if the block raised. It is told about the exception (`exc_type`, `exc`, `traceback`; all `None` if there was none).
+      - If `__exit__` returns **`True`**, the exception is **swallowed** (suppressed). Return `False` (or `None`) to let it propagate.
+
+  - kind: code
+    title: A recording context manager
+    body: |
+      Write a class `Recorder(log)` that is a context manager. On entering it appends `"start"` to the list `log`; on leaving it appends `"end"` (even after an error). It must **not** hide exceptions. `__enter__` returns the recorder itself.
+    code: |
+      class Recorder:
+          pass
+    tests:
+      - "log = []\nwith Recorder(log):\n    log.append('work')\nresult = log"
+      - "log = []\ntry:\n    with Recorder(log):\n        raise ValueError('boom')\nexcept ValueError:\n    log.append('caught')\nresult = log"
+      - "log = []\nwith Recorder(log) as r:\n    pass\nresult = (r.__class__.__name__, log)"
+    solution: |
+      class Recorder:
+          def __init__(self, log):
+              self.log = log
+
+          def __enter__(self):
+              self.log.append("start")
+              return self
+
+          def __exit__(self, exc_type, exc, traceback):
+              self.log.append("end")
+              return False
+    hint: "`__enter__` appends `\"start\"` and returns `self`; `__exit__` appends `\"end\"` and returns `False`."
+    reject:
+      - |
+        class Recorder:
+            def __init__(self, log):
+                self.log = log
+
+            def __enter__(self):
+                self.log.append("start")
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+  - kind: code
+    title: Swallow chosen errors
+    body: |
+      Write `ignore(*kinds)`, a class-based context manager. Inside `with ignore(KeyError, IndexError):` those exception types are silently swallowed, and the program continues after the `with`. **Other** exceptions must still propagate.
+
+      `__exit__` should return `True` when `exc_type` is not `None` and is a subclass of one of the kinds (`issubclass(exc_type, kinds)`).
+    code: |
+      class ignore:
+          pass
+    tests:
+      - "with ignore(KeyError):\n    {}['x']\nresult = 'continued'"
+      - "with ignore(KeyError, IndexError):\n    [][0]\nresult = 'continued'"
+      - "try:\n    with ignore(KeyError):\n        1 / 0\nexcept ZeroDivisionError:\n    result = 'not swallowed'"
+      - "with ignore(ValueError):\n    pass\nresult = 'no error'"
+    solution: |
+      class ignore:
+          def __init__(self, *kinds):
+              self.kinds = kinds
+
+          def __enter__(self):
+              return self
+
+          def __exit__(self, exc_type, exc, traceback):
+              return exc_type is not None and issubclass(exc_type, self.kinds)
+    hint: "Store the kinds. `__exit__` returns `exc_type is not None and issubclass(exc_type, self.kinds)`."
+    reject:
+      - |
+        class ignore:
+            def __init__(self, *kinds):
+                self.kinds = kinds
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return True
+
+  - kind: explain
+    title: "@contextmanager: the short way"
+    body: |
+      Writing a class for every context manager is heavy. `contextlib.contextmanager` turns a **generator** into one: everything before `yield` is the set-up, everything after is the tear-down.
+
+      ```python
+      from contextlib import contextmanager
+
+      @contextmanager
+      def temporary_value(settings, key, value):
+          old = settings.get(key)
+          settings[key] = value
+          try:
+              yield settings               # the 'as' value
+          finally:
+              if old is None:
+                  del settings[key]
+              else:
+                  settings[key] = old      # always restore
+      ```
+
+      The `try/finally` around `yield` is the important part: it guarantees the clean-up runs even if the block raises.
+
+      Used like: `with temporary_value(config, "debug", True): ...`
+
+  - kind: code
+    title: A temporary setting
+    body: |
+      Write a `@contextmanager` function `temporarily(d, key, value)`. Inside the `with`, `d[key]` is `value`. After the `with` (even after an error) the dictionary is put **back exactly as it was**: the old value restored, or the key removed if it did not exist before.
+    code: |
+      from contextlib import contextmanager
+
+
+      def temporarily(d, key, value):
+          pass
+    tests:
+      - "d = {'debug': False}\nwith temporarily(d, 'debug', True):\n    inside = d['debug']\nresult = (inside, d)"
+      - "d = {}\nwith temporarily(d, 'x', 1):\n    inside = dict(d)\nresult = (inside, d)"
+      - "d = {'a': 1}\ntry:\n    with temporarily(d, 'a', 2):\n        raise RuntimeError('boom')\nexcept RuntimeError:\n    pass\nresult = d"
+    solution: |
+      from contextlib import contextmanager
+
+
+      @contextmanager
+      def temporarily(d, key, value):
+          existed = key in d
+          old = d.get(key)
+          d[key] = value
+          try:
+              yield d
+          finally:
+              if existed:
+                  d[key] = old
+              else:
+                  del d[key]
+    hint: "Remember whether the key `existed`. Put the restore code in a `finally` after the `yield`."
+    reject:
+      - |
+        from contextlib import contextmanager
+
+
+        @contextmanager
+        def temporarily(d, key, value):
+            d[key] = value
+            yield d
+
+  - kind: code
+    title: A safe transaction
+    body: |
+      A **transaction** either fully happens or not at all. Write a `@contextmanager` called `transaction(data)` for a **list**. Inside the `with`, changes to the list are allowed. If the block **raises an exception**, restore the list to how it was **before** the block (keep the same list object, so restore its contents in place) and then let the exception continue. If there is no error, keep the changes.
+
+      A saved copy is `backup = list(data)`; restore with `data[:] = backup`.
+    code: |
+      from contextlib import contextmanager
+
+
+      def transaction(data):
+          pass
+    tests:
+      - "items = [1, 2]\nwith transaction(items):\n    items.append(3)\nresult = items"
+      - "items = [1, 2]\ntry:\n    with transaction(items):\n        items.append(3)\n        items.clear()\n        raise ValueError('fail')\nexcept ValueError:\n    pass\nresult = items"
+      - "items = ['a']\ntry:\n    with transaction(items):\n        items.append('b')\n        raise KeyError('x')\nexcept KeyError as e:\n    result = (items, type(e).__name__)"
+    solution: |
+      from contextlib import contextmanager
+
+
+      @contextmanager
+      def transaction(data):
+          backup = list(data)
+          try:
+              yield data
+          except Exception:
+              data[:] = backup
+              raise
+    hint: "`try: yield data`, then `except Exception:` restore with `data[:] = backup` and `raise` again."
+    reject:
+      - |
+        from contextlib import contextmanager
+
+
+        @contextmanager
+        def transaction(data):
+            yield data
+
+  - kind: code
+    title: Work in another folder
+    body: |
+      Write a `@contextmanager` called `working_in(path)` that changes the current directory to `path` (with `os.chdir`), lets the block run, and **always** changes back to the original directory afterwards. Get the original with `os.getcwd()`.
+    code: |
+      import os
+      from contextlib import contextmanager
+
+
+      def working_in(path):
+          pass
+    tests:
+      - "import os\nos.mkdir('sub')\nstart = os.getcwd()\nwith working_in('sub'):\n    inside = os.path.basename(os.getcwd())\nresult = (inside, os.getcwd() == start)"
+      - "import os\nos.mkdir('sub2')\nstart = os.getcwd()\ntry:\n    with working_in('sub2'):\n        raise ValueError('x')\nexcept ValueError:\n    pass\nresult = os.getcwd() == start"
+    solution: |
+      import os
+      from contextlib import contextmanager
+
+
+      @contextmanager
+      def working_in(path):
+          original = os.getcwd()
+          os.chdir(path)
+          try:
+              yield
+          finally:
+              os.chdir(original)
+    hint: "Save `os.getcwd()`, `os.chdir(path)`, then `try: yield` and `finally: os.chdir(original)`."
+    reject:
+      - |
+        import os
+        from contextlib import contextmanager
+
+
+        @contextmanager
+        def working_in(path):
+            original = os.getcwd()
+            os.chdir(path)
+            yield
+            os.chdir(original)
+
+  - kind: explain
+    title: Where else you will see with
+    body: |
+      - **Locks:** `with lock:` makes sure only one thread runs a section at a time.
+      - **Database transactions:** `with connection:` commits on success and rolls back on error (Module 38).
+      - **Temporary files and folders:** `with tempfile.TemporaryDirectory() as folder:` deletes everything on exit.
+      - **Timing and profiling:** a context manager that records how long a block took.
+      - **Testing:** `with pytest.raises(ValueError):` passes only if the block raises that error (Module 34).
+      - **Mocks:** `with patch(...):` swaps something out for the length of the block.
+
+      Whenever you write "do X, then clean up Y, even on error", ask whether it should be a context manager.
+
+  - kind: why
+    body: |
+      Forgetting to close a file, release a lock or undo a temporary change causes bugs that appear only when something else goes wrong, the hardest kind to find. Context managers make clean-up automatic and impossible to forget, so the "happy path" and the "error path" behave correctly by construction.
+
+  - kind: recap
+    body: |
+      - `with` guarantees set-up and tear-down: files, locks, transactions, temporary changes.
+      - A context manager has `__enter__` (returns the `as` value) and `__exit__(exc_type, exc, tb)`. Returning `True` from `__exit__` swallows the exception.
+      - `@contextlib.contextmanager` turns a generator into one: set-up, `yield`, then tear-down in a **`finally`**.
+      - You can open several resources in one `with a, b:`.

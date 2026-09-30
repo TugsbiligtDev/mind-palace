@@ -1,0 +1,4 @@
+title: "Working with Files"
+module: 17
+summary: "Make your program remember things: read and write text files with open() and with, use pathlib, and save data as CSV and JSON."
+minutes: 75

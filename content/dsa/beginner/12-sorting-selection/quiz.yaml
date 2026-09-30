@@ -1,0 +1,43 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What is the time complexity of insertion sort in the worst case?
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(log n)"]
+    answer: 2
+    explanation: In the worst case, every new item slides past all the items before it, so the work adds up like 1 + 2 + … + n.
+  - type: mcq
+    prompt: Merge sort always splits the array in half and merges. Which statement is true?
+    options:
+      - It is O(n²) in the worst case
+      - It is O(n log n) always, and needs O(n) extra space
+      - It sorts in place with O(1) extra space
+      - It is not stable
+    answer: 1
+    explanation: "There are about log n levels of splitting, each doing n work to merge. The merged arrays take O(n) extra space, and `<=` keeps it stable."
+  - type: mcq
+    prompt: Quicksort with the first item as the pivot is run on an already-sorted array. What happens?
+    options:
+      - It is O(n log n), its best case
+      - It degrades to O(n²), because every partition is lopsided
+      - It returns the array unchanged in O(1)
+      - It crashes
+    answer: 1
+    explanation: The pivot is always the smallest item, so one side is empty and the other has everything left. A random pivot avoids this.
+  - type: mcq
+    prompt: You only need the median of a huge array. Which approach is fastest on average?
+    options: ["Sort it fully, then take the middle", "Quickselect", "Bubble sort", "Try every pair"]
+    answer: 1
+    explanation: Quickselect finds the k-th item in average O(n) by recursing into only one side of each partition.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const people = [
+        { name: "A", age: 30 },
+        { name: "B", age: 25 },
+        { name: "C", age: 30 },
+      ];
+      people.sort((a, b) => a.age - b.age);
+      console.log(people.map((p) => p.name).join(""));
+    options: ["BAC", "BCA", "ABC", "CAB"]
+    answer: 0
+    explanation: B (25) comes first. A and C are both 30, and because `sort` is stable, A stays before C.

@@ -1,0 +1,5 @@
+title: "Library system"
+module: 24
+kind: review
+summary: "The Part 6 checkpoint: build a library-management system with Book, Member and Library classes, borrowing and return rules, and custom string output, one class at a time."
+minutes: 65

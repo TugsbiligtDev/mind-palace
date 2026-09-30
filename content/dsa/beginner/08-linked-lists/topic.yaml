@@ -1,0 +1,4 @@
+title: Linked Lists
+module: 8
+summary: "Nodes and pointers: build a list, walk it, reverse it, find the middle, detect a cycle, merge two lists, and use a dummy node to avoid special cases."
+minutes: 60

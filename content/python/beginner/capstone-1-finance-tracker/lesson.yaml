@@ -1,0 +1,387 @@
+steps:
+  - kind: explain
+    title: The brief
+    body: |
+      You have learned to store data, control the flow, organise code, handle mistakes and save to files. Now build something *useful*: a **personal finance tracker** you can actually use.
+
+      It must:
+
+      - **add** transactions (date, description, amount, category),
+      - **list** them and **summarise** income, spending and balance,
+      - total spending **by category**, with fast lookups,
+      - **save** to a JSON file and load it back,
+      - handle **bad input** without crashing,
+      - live on **GitHub** as a `uv` project.
+
+      Six graded steps build the pieces in the browser. The last step assembles them into a real command-line program on your Mac.
+
+  - kind: explain
+    title: House rules
+    body: |
+      Two rules keep a money program honest.
+
+      1. **Store money as whole cents (integers).** Floats are inexact (`0.1 + 0.2 != 0.3`, Module 4). `42.50` dollars is `4250` cents. Convert at the edges only: on the way in with `round(float(text) * 100)`, and on the way out when displaying.
+      2. **Validate everything that comes from outside** (typed text, files). Raise `ValueError` with a clear message, and let the *caller* decide how to react.
+
+      A transaction is a dictionary like `{"date": "2026-09-30", "description": "Groceries", "cents": -4250, "category": "food"}`. **Negative** means money spent; **positive** means money received.
+
+  - kind: code
+    title: "1. Parse a transaction"
+    body: |
+      Write `parse_transaction(line)`. The line looks like `"2026-09-30,Groceries,-42.50,food"` (date, description, amount in dollars, category). Return the dictionary above, with the amount converted to **cents**, and text trimmed. Category is lower-cased.
+
+      Raise `ValueError` for: not exactly 4 comma-separated parts; a date that is not a real `YYYY-MM-DD` date; an amount that is not a number; or an empty description or category.
+
+      (`date.fromisoformat` from `datetime` checks the date for you.)
+    code: |
+      from datetime import date
+
+
+      def parse_transaction(line):
+          # your code
+          pass
+    tests:
+      - "parse_transaction('2026-09-30,Groceries,-42.50,food')"
+      - "parse_transaction(' 2026-10-01 , Salary , 2000 , Income ')"
+      - "parse_transaction('2026-01-05,Coffee,-3.10,food')"
+      - "try:\n    parse_transaction('2026-09-30,Groceries,-42.50')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "try:\n    parse_transaction('2026-13-40,Rent,-900,home')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "try:\n    parse_transaction('2026-09-30,Rent,lots,home')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "try:\n    parse_transaction('2026-09-30,,-5,home')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+    solution: |
+      from datetime import date
+
+
+      def parse_transaction(line):
+          parts = [p.strip() for p in line.split(",")]
+          if len(parts) != 4:
+              raise ValueError("expected date,description,amount,category")
+          when, description, amount, category = parts
+          date.fromisoformat(when)
+          if not description or not category:
+              raise ValueError("description and category are required")
+          cents = round(float(amount) * 100)
+          return {"date": when, "description": description, "cents": cents, "category": category.lower()}
+    hint: "`date.fromisoformat(when)` and `float(amount)` both raise `ValueError` for you when the text is bad. Just check the count and the empty fields yourself."
+    reject:
+      - |
+        from datetime import date
+
+
+        def parse_transaction(line):
+            when, description, amount, category = line.split(",")
+            return {"date": when, "description": description, "cents": float(amount) * 100, "category": category}
+
+  - kind: code
+    title: "2. Format money"
+    body: |
+      Write `format_cents(cents)`: show whole cents as dollars with two decimals and a sign only for negatives. `4250` is `"42.50"`, `-4250` is `"-42.50"`, `5` is `"0.05"`, `0` is `"0.00"`.
+
+      Use `divmod(abs(cents), 100)` (it returns dollars and remaining cents) and an f-string with `:02d`.
+    code: |
+      def format_cents(cents):
+          # your code
+          pass
+    tests:
+      - "format_cents(4250)"
+      - "format_cents(-4250)"
+      - "format_cents(5)"
+      - "format_cents(0)"
+      - "format_cents(-1)"
+      - "format_cents(123456789)"
+    solution: |
+      def format_cents(cents):
+          dollars, rest = divmod(abs(cents), 100)
+          sign = "-" if cents < 0 else ""
+          return f"{sign}{dollars}.{rest:02d}"
+    hint: "`dollars, rest = divmod(abs(cents), 100)`, then `f\"{sign}{dollars}.{rest:02d}\"`."
+    reject:
+      - |
+        def format_cents(cents):
+            return str(cents / 100)
+
+  - kind: code
+    title: "3. Summarise the ledger"
+    body: |
+      A **ledger** is a list of transactions. Write `summarize(ledger)` returning a dictionary with three whole-cent numbers: `"income"` (the sum of positive amounts), `"spending"` (the sum of the **absolute** values of negative amounts, as a positive number) and `"balance"` (income minus spending).
+    code: |
+      def summarize(ledger):
+          # your code
+          pass
+    tests:
+      - "summarize([{'cents': 200000}, {'cents': -4250}, {'cents': -310}])"
+      - "summarize([])"
+      - "summarize([{'cents': -100}])"
+      - "summarize([{'cents': 500}, {'cents': 0}])"
+    solution: |
+      def summarize(ledger):
+          income = 0
+          spending = 0
+          for tx in ledger:
+              if tx["cents"] > 0:
+                  income += tx["cents"]
+              else:
+                  spending += -tx["cents"]
+          return {"income": income, "spending": spending, "balance": income - spending}
+    hint: "Loop once. Positive amounts go to `income`; the rest go to `spending` as `-tx[\"cents\"]`."
+    reject:
+      - |
+        def summarize(ledger):
+            total = sum(tx["cents"] for tx in ledger)
+            return {"income": total, "spending": 0, "balance": total}
+
+  - kind: code
+    title: "4. Spending by category"
+    body: |
+      Write `spending_by_category(ledger)`: a dictionary from category to the total spent there (a positive number of cents). Only negative transactions count. Categories with no spending must not appear. The dictionary must be ordered from the **biggest** spend to the smallest (ties: alphabetical by category).
+
+      The `sorted(..., key=..., )` function can order the items; then rebuild a dict.
+    code: |
+      def spending_by_category(ledger):
+          # your code
+          pass
+    tests:
+      - "spending_by_category([{'category': 'food', 'cents': -500}, {'category': 'home', 'cents': -90000}, {'category': 'food', 'cents': -250}, {'category': 'pay', 'cents': 5000}])"
+      - "list(spending_by_category([{'category': 'a', 'cents': -1}, {'category': 'b', 'cents': -5}, {'category': 'c', 'cents': -5}]).items())"
+      - "spending_by_category([])"
+    solution: |
+      def spending_by_category(ledger):
+          totals = {}
+          for tx in ledger:
+              if tx["cents"] < 0:
+                  totals[tx["category"]] = totals.get(tx["category"], 0) - tx["cents"]
+          ordered = sorted(totals.items(), key=lambda item: (-item[1], item[0]))
+          return dict(ordered)
+    hint: "Count with `.get`, then `sorted(totals.items(), key=lambda item: (-item[1], item[0]))` and `dict(...)`."
+    reject:
+      - |
+        def spending_by_category(ledger):
+            totals = {}
+            for tx in ledger:
+                totals[tx["category"]] = totals.get(tx["category"], 0) + tx["cents"]
+            return totals
+
+  - kind: code
+    title: "5. Fast category lookups"
+    body: |
+      Looking up "all my food purchases" by scanning the whole ledger every time is slow when there are thousands of rows. Write `index_by_category(ledger)`: a dictionary from category to the **list of transactions** in that category, in ledger order. Then any category is a single dictionary lookup.
+    code: |
+      def index_by_category(ledger):
+          # your code
+          pass
+    tests:
+      - "index_by_category([{'category': 'food', 'cents': -1}, {'category': 'home', 'cents': -2}, {'category': 'food', 'cents': -3}])"
+      - "index_by_category([])"
+    solution: |
+      def index_by_category(ledger):
+          index = {}
+          for tx in ledger:
+              index.setdefault(tx["category"], []).append(tx)
+          return index
+    hint: "`index.setdefault(category, [])` gives the list (creating it if new), and you can `.append` to it."
+    reject:
+      - |
+        def index_by_category(ledger):
+            return {tx["category"]: [tx] for tx in ledger}
+
+  - kind: code
+    title: "6. Save and load safely"
+    body: |
+      Write `save_ledger(path, ledger)` and `load_ledger(path)`. Saving writes JSON. Loading must return `[]` if the file is missing, damaged, or not a list. It must also **drop any item that is not a dictionary** with the keys `date`, `description`, `cents` (a whole number) and `category`, so one bad row can never crash the program.
+    code: |
+      def save_ledger(path, ledger):
+          # your code
+          pass
+
+
+      def load_ledger(path):
+          # your code
+          pass
+    tests:
+      - "(save_ledger('l.json', [{'date': '2026-01-01', 'description': 'x', 'cents': -5, 'category': 'a'}]), load_ledger('l.json'))[1]"
+      - "load_ledger('missing.json')"
+      - "(open('bad.json', 'w').write('nope'), load_ledger('bad.json'))[1]"
+      - "(open('mix.json', 'w').write('[1, {\"date\": \"d\", \"description\": \"x\", \"cents\": 5, \"category\": \"a\"}, {\"cents\": \"5\"}]'), load_ledger('mix.json'))[1]"
+      - "(open('obj.json', 'w').write('{}'), load_ledger('obj.json'))[1]"
+    solution: |
+      import json
+
+      KEYS = ("date", "description", "cents", "category")
+
+
+      def save_ledger(path, ledger):
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(ledger, f, indent=2)
+
+
+      def load_ledger(path):
+          try:
+              with open(path, encoding="utf-8") as f:
+                  data = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              return []
+          if not isinstance(data, list):
+              return []
+          return [
+              tx for tx in data
+              if isinstance(tx, dict) and all(k in tx for k in KEYS) and isinstance(tx["cents"], int)
+          ]
+    hint: "After loading, filter with a comprehension: `isinstance(tx, dict)`, all four keys present, and `isinstance(tx[\"cents\"], int)`."
+    reject:
+      - |
+        import json
+
+
+        def save_ledger(path, ledger):
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(ledger, f)
+
+
+        def load_ledger(path):
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+
+  - kind: explain
+    title: Put it together
+    body: |
+      You now have every piece. On your Mac you will assemble a real program with three files:
+
+      - `ledger.py`: your pure functions (parse, summarise, category totals),
+      - `storage.py`: load and save,
+      - `main.py`: the menu that ties them together.
+
+      Then you will make it a **`uv` project**, commit it in small steps, and push it to **GitHub** with a README. (The commands below write small versions of the files; replace them with your own code from the steps above as you improve it.)
+
+  - kind: mac
+    title: Build and run the tracker
+    body: |
+      This creates the project and runs it with typed commands (through `printf`) so the output is predictable. Then run `uv run main.py` yourself and add real transactions.
+
+      **Checkpoint:** paste the output. It should contain `balance 1957.40` and `food`.
+    commands: |
+      mkdir -p ~/Desktop/finance-tracker && cd ~/Desktop/finance-tracker
+      uv init --bare
+      cat > ledger.py <<'PY'
+      from datetime import date
+
+
+      def parse_transaction(line):
+          parts = [p.strip() for p in line.split(",")]
+          if len(parts) != 4:
+              raise ValueError("expected date,description,amount,category")
+          when, description, amount, category = parts
+          date.fromisoformat(when)
+          if not description or not category:
+              raise ValueError("description and category are required")
+          return {"date": when, "description": description,
+                  "cents": round(float(amount) * 100), "category": category.lower()}
+
+
+      def format_cents(cents):
+          dollars, rest = divmod(abs(cents), 100)
+          return f"{'-' if cents < 0 else ''}{dollars}.{rest:02d}"
+
+
+      def summarize(ledger):
+          income = sum(t["cents"] for t in ledger if t["cents"] > 0)
+          spending = -sum(t["cents"] for t in ledger if t["cents"] < 0)
+          return {"income": income, "spending": spending, "balance": income - spending}
+
+
+      def spending_by_category(ledger):
+          totals = {}
+          for t in ledger:
+              if t["cents"] < 0:
+                  totals[t["category"]] = totals.get(t["category"], 0) - t["cents"]
+          return dict(sorted(totals.items(), key=lambda kv: (-kv[1], kv[0])))
+      PY
+      cat > storage.py <<'PY'
+      import json
+      from pathlib import Path
+
+      FILE = Path(__file__).parent / "ledger.json"
+
+
+      def load():
+          try:
+              data = json.loads(FILE.read_text(encoding="utf-8"))
+          except (FileNotFoundError, json.JSONDecodeError):
+              return []
+          return data if isinstance(data, list) else []
+
+
+      def save(ledger):
+          FILE.write_text(json.dumps(ledger, indent=2), encoding="utf-8")
+      PY
+      cat > main.py <<'PY'
+      import ledger
+      import storage
+
+
+      def main():
+          entries = storage.load()
+          while True:
+              command = input("add / summary / quit> ").strip().lower()
+              if command == "add":
+                  try:
+                      entries.append(ledger.parse_transaction(input("date,description,amount,category> ")))
+                  except ValueError as error:
+                      print("Could not add:", error)
+              elif command == "summary":
+                  s = ledger.summarize(entries)
+                  print("balance", ledger.format_cents(s["balance"]))
+                  for category, cents in ledger.spending_by_category(entries).items():
+                      print(" ", category, ledger.format_cents(cents))
+              elif command == "quit":
+                  storage.save(entries)
+                  break
+
+
+      if __name__ == "__main__":
+          main()
+      PY
+      printf 'add\n2026-09-30,Salary,2000,income\nadd\n2026-09-30,Groceries,-42.60,food\nadd\nbad line\nsummary\nquit\n' | uv run main.py
+    expect_output:
+      - "balance 1957.40"
+      - "food"
+
+  - kind: mac
+    title: Publish it to GitHub
+    body: |
+      Make it a proper repository: a `.gitignore` (so your personal `ledger.json` is never pushed), a README, and a few **small, meaningful commits**. Then create an **empty** repository on github.com and push (Module 18).
+
+      **Checkpoint:** paste the output of the commands below. It should contain `Add README` and `Add finance tracker`.
+    commands: |
+      cd ~/Desktop/finance-tracker
+      printf '.venv/\n__pycache__/\n*.pyc\n.env\n.DS_Store\nledger.json\n' > .gitignore
+      cat > README.md <<'MD'
+      # Finance tracker
+      A command-line personal finance tracker. Money is stored in whole cents, so there are no floating-point surprises.
+
+      ## Run it
+      `uv run main.py`, then type `add`, `summary` or `quit`.
+
+      ## Design notes
+      - `ledger.py`: pure functions (parsing, summaries).
+      - `storage.py`: JSON file storage that survives a missing or damaged file.
+      - Category totals use a dictionary, so lookups are fast however many transactions there are.
+      MD
+      git init
+      git add ledger.py storage.py main.py pyproject.toml .gitignore
+      git commit -m "Add finance tracker"
+      git add README.md
+      git commit -m "Add README"
+      git log --oneline
+    expect_output:
+      - "Add README"
+      - "Add finance tracker"
+
+  - kind: why
+    body: |
+      This is a small but genuine program: it validates messy input, keeps money exact, remembers its data, and survives bad files. Every skill in the Beginner level shows up here, and the finished project on GitHub is the first entry in your portfolio. In the Intermediate level you will turn projects like this into classes, add tests, connect them to APIs and databases, and make them professional.
+
+  - kind: recap
+    body: |
+      - You built a **personal finance tracker**: parse and validate, format money from **whole cents**, summarise, total by category with dict lookups, and save/load robustly.
+      - Convert at the edges; validate everything from outside; let callers decide how to handle errors.
+      - The Beginner level is complete. You can write programs of a few hundred lines, use the terminal, Git and `uv`, handle files and bad input, read tracebacks, and reason about which data structure makes code fast.

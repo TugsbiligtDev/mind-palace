@@ -1,0 +1,4 @@
+title: "Type Hints"
+module: 33
+summary: "Say what your code expects and returns: annotating variables, parameters and returns, modern list[int] and X | None syntax, TypedDict, Literal and aliases, and checking them with mypy."
+minutes: 80

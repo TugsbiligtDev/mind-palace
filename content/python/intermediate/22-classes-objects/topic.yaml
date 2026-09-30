@@ -1,0 +1,4 @@
+title: "Classes & Objects"
+module: 22
+summary: "Bundle data and the functions that use it into your own types: classes, __init__, self, instance methods, class attributes and the shared-list trap, @classmethod and @staticmethod."
+minutes: 75

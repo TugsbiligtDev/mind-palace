@@ -1,0 +1,464 @@
+steps:
+  - kind: explain
+    title: Counter, defaultdict and deque
+    body: |
+      The `collections` module has three containers you will use constantly.
+
+      **`Counter`**: counts things for you.
+
+      ```python
+      from collections import Counter
+      c = Counter("banana")          # Counter({'a': 3, 'n': 2, 'b': 1})
+      c["a"]                         # 3        (missing items count as 0)
+      c.most_common(2)               # [('a', 3), ('n', 2)]
+      ```
+
+      **`defaultdict`**: a dict that creates missing values for you.
+
+      ```python
+      from collections import defaultdict
+      groups = defaultdict(list)     # a missing key starts as []
+      groups["a"].append("apple")    # no KeyError, no setdefault
+      ```
+
+      **`deque`** ("deck"): a queue with fast adds and removals at **both ends** (a list is slow at the front). With `maxlen` it keeps only the newest items.
+
+      ```python
+      from collections import deque
+      recent = deque(maxlen=3)
+      for n in range(5):
+          recent.append(n)
+      list(recent)                   # [2, 3, 4]
+      ```
+
+  - kind: code
+    title: Most common words
+    body: |
+      Write `top_words(text, n)`: split the text on spaces, lower-case each word, and return the `n` most common as a list of `(word, count)` pairs. Order by count (biggest first), and for equal counts **alphabetically**. Use `Counter`.
+    code: |
+      from collections import Counter
+
+
+      def top_words(text, n):
+          return []
+    tests:
+      - "top_words('the cat and the hat and THE bat', 2)"
+      - "top_words('b a b a c', 3)"
+      - "top_words('', 5)"
+      - "top_words('x y z', 1)"
+    solution: |
+      from collections import Counter
+
+
+      def top_words(text, n):
+          counts = Counter(word.lower() for word in text.split())
+          ordered = sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))
+          return ordered[:n]
+    hint: "Build the Counter from lower-cased words, then sort its `.items()` by `(-count, word)` and slice `[:n]`."
+    reject:
+      - |
+        from collections import Counter
+
+
+        def top_words(text, n):
+            return Counter(text.split()).most_common(n)
+
+  - kind: code
+    title: Group with defaultdict
+    body: |
+      Write `by_first_letter(words)`: a dictionary from each word's first letter (lower case) to the list of those words, in the order given. Use `defaultdict(list)` and return an ordinary `dict`. Skip empty strings.
+    code: |
+      from collections import defaultdict
+
+
+      def by_first_letter(words):
+          return {}
+    tests:
+      - "by_first_letter(['apple', 'Avocado', 'banana', 'blueberry', 'cherry'])"
+      - "by_first_letter([])"
+      - "by_first_letter(['', 'x'])"
+    solution: |
+      from collections import defaultdict
+
+
+      def by_first_letter(words):
+          groups = defaultdict(list)
+          for word in words:
+              if word:
+                  groups[word[0].lower()].append(word)
+          return dict(groups)
+    hint: "`groups[word[0].lower()].append(word)` works without checking the key first."
+    reject:
+      - |
+        from collections import defaultdict
+
+
+        def by_first_letter(words):
+            return {w[0]: [w] for w in words}
+
+  - kind: code
+    title: The last few
+    body: |
+      Write `last_n(items, n)`: return a list of the last `n` items of any iterable, using `deque(maxlen=n)`. (Works even on a generator you cannot slice.) `last_n(range(10), 3)` is `[7, 8, 9]`.
+    code: |
+      from collections import deque
+
+
+      def last_n(items, n):
+          return []
+    tests:
+      - "last_n(range(10), 3)"
+      - "last_n([1, 2], 5)"
+      - "last_n((x * x for x in range(6)), 2)"
+      - "last_n([], 3)"
+    solution: |
+      from collections import deque
+
+
+      def last_n(items, n):
+          return list(deque(items, maxlen=n))
+    hint: "`deque(items, maxlen=n)` keeps only the last `n`."
+    reject:
+      - |
+        from collections import deque
+
+
+        def last_n(items, n):
+            return list(items)[:n]
+
+  - kind: explain
+    title: "Dates and time zones: naive vs. aware"
+    body: |
+      A `datetime` can be **naive** (no time zone: "12:00, but where?") or **aware** (it knows its zone). Mixing them is one of the classic sources of date bugs:
+
+      ```python
+      from datetime import datetime, timezone
+      from zoneinfo import ZoneInfo
+
+      naive = datetime(2026, 7, 1, 12, 0)                          # naive
+      aware = datetime(2026, 7, 1, 12, 0, tzinfo=ZoneInfo("Europe/London"))
+      aware.astimezone(timezone.utc)                               # 11:00 UTC (British Summer Time)
+      naive < aware                                                # TypeError: can't compare
+      ```
+
+      **Rules that avoid the bugs:**
+
+      1. **Store and calculate in UTC**; convert to a local zone only to show a person.
+      2. Use **aware** datetimes: `datetime.now(timezone.utc)`, never plain `datetime.now()` or `utcnow()`.
+      3. Use `zoneinfo.ZoneInfo("Region/City")` for named zones. It knows daylight saving.
+      4. Never compare or subtract a naive with an aware datetime.
+
+  - kind: code
+    title: Convert to UTC
+    body: |
+      Write `to_utc(text, zone)`. `text` is a local time like `"2026-07-01 12:00"` and `zone` a name like `"Europe/London"`. Attach that time zone, convert to UTC, and return the UTC time as text in the form `"2026-07-01 11:00"`.
+
+      Parse with `datetime.strptime(text, "%Y-%m-%d %H:%M")`, attach the zone with `.replace(tzinfo=ZoneInfo(zone))`, convert with `.astimezone(timezone.utc)`, and format with `.strftime("%Y-%m-%d %H:%M")`.
+    code: |
+      from datetime import datetime, timezone
+      from zoneinfo import ZoneInfo
+
+
+      def to_utc(text, zone):
+          return text
+    tests:
+      - "to_utc('2026-07-01 12:00', 'Europe/London')"
+      - "to_utc('2026-01-15 12:00', 'Europe/London')"
+      - "to_utc('2026-07-01 09:30', 'America/New_York')"
+      - "to_utc('2026-07-01 12:00', 'UTC')"
+      - "to_utc('2026-07-01 12:00', 'Asia/Ulaanbaatar')"
+    solution: |
+      from datetime import datetime, timezone
+      from zoneinfo import ZoneInfo
+
+
+      def to_utc(text, zone):
+          local = datetime.strptime(text, "%Y-%m-%d %H:%M").replace(tzinfo=ZoneInfo(zone))
+          return local.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    hint: "Follow the four steps in the body: parse, attach the zone, convert, format."
+    reject:
+      - |
+        from datetime import datetime, timezone
+        from zoneinfo import ZoneInfo
+
+
+        def to_utc(text, zone):
+            return text
+
+  - kind: explain
+    title: Regular expressions (re)
+    body: |
+      A **regular expression** (regex) describes a *pattern* in text, for finding or extracting pieces. Python's `re` module runs them.
+
+      ```python
+      import re
+
+      re.search(r"\d+", "order 66 shipped")        # finds '66'
+      re.findall(r"\d+", "a1 b22 c333")            # ['1', '22', '333']
+      m = re.match(r"(\d{4})-(\d{2})-(\d{2})", "2026-09-30")
+      m.groups()                                   # ('2026', '09', '30')
+      re.sub(r"\s+", " ", "a   b    c")            # 'a b c'
+      ```
+
+      Common building blocks:
+
+      | Pattern | Matches |
+      |---|---|
+      | `\d` `\w` `\s` | a digit / a word character / whitespace |
+      | `.` | any one character |
+      | `+` `*` `?` | one or more / zero or more / optional |
+      | `{3}` | exactly three |
+      | `( )` | a **group** you can pull out |
+      | `^` `$` | start / end of the text |
+
+      Write patterns as **raw strings** `r"..."` so backslashes are left alone. `match` checks from the *start*; `search` looks *anywhere*; `fullmatch` needs the whole text to fit. If a regex is getting longer than a line or two, consider whether plain `split()` and `startswith()` would be clearer.
+
+  - kind: code
+    title: Parse a log line
+    body: |
+      Log lines look like `"2026-09-30 12:01:02 ERROR db: connection timeout"`: date, time, level (upper-case letters), a source name followed by a colon, then the message. Write `parse_line(line)` returning a dictionary with keys `date`, `time`, `level`, `source`, `message`. If the line does not fit the pattern, return `None`.
+
+      Use one regex with **groups**, and `re.fullmatch`.
+    code: |
+      import re
+
+
+      def parse_line(line):
+          return None
+    tests:
+      - "parse_line('2026-09-30 12:01:02 ERROR db: connection timeout')"
+      - "parse_line('2026-09-30 12:01:03 INFO web: started')"
+      - "parse_line('not a log line')"
+      - "parse_line('2026-09-30 12:01:02 ERROR db connection timeout')"
+      - "parse_line('')"
+    solution: |
+      import re
+
+      PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([A-Z]+) (\w+): (.*)")
+
+
+      def parse_line(line):
+          m = PATTERN.fullmatch(line)
+          if not m:
+              return None
+          date, time, level, source, message = m.groups()
+          return {"date": date, "time": time, "level": level, "source": source, "message": message}
+    hint: "Groups: `(\\d{4}-\\d{2}-\\d{2})` date, `(\\d{2}:\\d{2}:\\d{2})` time, `([A-Z]+)` level, `(\\w+):` source, `(.*)` message."
+    reject:
+      - |
+        import re
+
+
+        def parse_line(line):
+            parts = line.split(" ")
+            return {"date": parts[0]}
+
+  - kind: explain
+    title: "argparse: command-line options"
+    body: |
+      Programs you run from the terminal take **arguments**: `ls -l folder`, `git commit -m "msg"`. Python's `argparse` reads them, checks them, converts types, writes `--help` for you, and prints a clear error when something is wrong.
+
+      ```python
+      import argparse
+
+      parser = argparse.ArgumentParser(description="Greet someone")
+      parser.add_argument("name")                                  # positional, required
+      parser.add_argument("--times", type=int, default=1)          # option with a value
+      parser.add_argument("--shout", action="store_true")          # a flag: True if present
+
+      args = parser.parse_args()          # reads sys.argv
+      # in tests, pass a list instead: parser.parse_args(["Ada", "--times", "2"])
+      ```
+
+      Then `args.name`, `args.times`, `args.shout`. `vars(args)` turns the result into a dict. Run as `python greet.py Ada --times 2 --shout`.
+
+  - kind: code
+    title: Build a parser
+    body: |
+      Write `parse(argv)` which builds an `ArgumentParser` and parses the list `argv`, returning the result as a **dictionary** (`vars(args)`). It needs:
+
+      - a positional `path`,
+      - `--limit` (an integer, default `10`),
+      - `--verbose` (a flag),
+      - `--format` with choices `"text"` or `"json"`, default `"text"`.
+    code: |
+      import argparse
+
+
+      def parse(argv):
+          return {}
+    tests:
+      - "parse(['logs.txt'])"
+      - "parse(['a.log', '--limit', '3', '--verbose'])"
+      - "parse(['a.log', '--format', 'json'])"
+      - "try:\n    parse(['a.log', '--format', 'xml'])\nexcept SystemExit:\n    result = 'exit'"
+      - "try:\n    parse(['a.log', '--limit', 'many'])\nexcept SystemExit:\n    result = 'exit'"
+    solution: |
+      import argparse
+
+
+      def parse(argv):
+          parser = argparse.ArgumentParser(prog="analyze")
+          parser.add_argument("path")
+          parser.add_argument("--limit", type=int, default=10)
+          parser.add_argument("--verbose", action="store_true")
+          parser.add_argument("--format", choices=["text", "json"], default="text")
+          return vars(parser.parse_args(argv))
+    hint: "Four `add_argument` calls: `path`, `--limit` (type and default), `--verbose` (`action=\"store_true\"`), `--format` (choices and default)."
+    reject:
+      - |
+        import argparse
+
+
+        def parse(argv):
+            return {"path": argv[0], "limit": 10, "verbose": False, "format": "text"}
+
+  - kind: explain
+    title: "logging: better than print"
+    body: |
+      `print` is fine for a quick look. Real programs use the `logging` module:
+
+      - **Levels** say how serious a message is: `DEBUG` < `INFO` < `WARNING` < `ERROR` < `CRITICAL`. You choose the minimum level to show: detailed while developing, quiet in production, without editing every line.
+      - **Handlers** decide where messages go (screen, file, network); **formatters** decide how they look (time, level, name).
+      - Messages carry **context** (which module, when), and can include tracebacks: `logger.exception("failed")`.
+
+      ```python
+      import logging
+
+      logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+      log = logging.getLogger(__name__)
+      log.info("started")
+      log.warning("disk almost full")
+      log.debug("hidden at INFO level")
+      ```
+
+      Create one logger per module with `getLogger(__name__)`. Do not call `basicConfig` in libraries, only in the program's entry point.
+
+  - kind: code
+    title: A logger you can read back
+    body: |
+      Write `make_logger(stream, level)`. It returns a logger named `"agency"` that writes to the file-like object `stream` (a `StringIO`), shows messages at `level` or above, and formats each line as `LEVEL: message`. Remove old handlers first, and turn off propagation (`logger.propagate = False`) so tests are clean.
+    code: |
+      import logging
+
+
+      def make_logger(stream, level):
+          return logging.getLogger("agency")
+    tests:
+      - "import io\ns = io.StringIO()\nlog = make_logger(s, logging.INFO)\nlog.info('hello')\nlog.debug('hidden')\nlog.warning('careful')\nresult = s.getvalue()"
+      - "import io\ns = io.StringIO()\nlog = make_logger(s, logging.ERROR)\nlog.warning('no')\nlog.error('yes')\nresult = s.getvalue()"
+      - "import io\ns = io.StringIO()\nlog = make_logger(s, logging.DEBUG)\nlog = make_logger(s, logging.DEBUG)\nlog.debug('once')\nresult = s.getvalue()"
+    solution: |
+      import logging
+
+
+      def make_logger(stream, level):
+          logger = logging.getLogger("agency")
+          logger.handlers.clear()
+          handler = logging.StreamHandler(stream)
+          handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+          logger.addHandler(handler)
+          logger.setLevel(level)
+          logger.propagate = False
+          return logger
+    hint: "`StreamHandler(stream)`, `Formatter(\"%(levelname)s: %(message)s\")`, `logger.setLevel(level)`. Clear old handlers with `logger.handlers.clear()`."
+    reject:
+      - |
+        import logging
+
+
+        def make_logger(stream, level):
+            logger = logging.getLogger("agency")
+            logger.addHandler(logging.StreamHandler(stream))
+            logger.setLevel(level)
+            return logger
+
+  - kind: code
+    title: Back up a file
+    body: |
+      `shutil` copies, moves and deletes files and whole folders. Write `backup(path)`: copy the file to a new file with `.bak` added to the name (`notes.txt` becomes `notes.txt.bak`), keeping its contents, using `shutil.copy2`. Return the new file name.
+    code: |
+      import shutil
+
+
+      def backup(path):
+          return path
+    tests:
+      - "open('n.txt', 'w').write('keep me')\nname = backup('n.txt')\nresult = (name, open('n.txt.bak').read())"
+      - "open('a.py', 'w').write('x = 1')\nbackup('a.py')\nimport os\nresult = sorted(os.listdir('.'))"
+    solution: |
+      import shutil
+
+
+      def backup(path):
+          target = path + ".bak"
+          shutil.copy2(path, target)
+          return target
+    hint: "`shutil.copy2(path, path + \".bak\")`."
+    reject:
+      - |
+        import shutil
+
+
+        def backup(path):
+            return path + ".bak"
+
+  - kind: explain
+    title: "subprocess: run other programs"
+    body: |
+      `subprocess.run` starts another program from Python and can capture what it prints:
+
+      ```python
+      import subprocess
+
+      result = subprocess.run(["git", "--version"], capture_output=True, text=True, check=True)
+      print(result.stdout)          # git version 2.x
+      ```
+
+      - Pass the command as a **list** of words (`["ls", "-l"]`), not one string. It is safer and avoids the shell.
+      - `capture_output=True, text=True` gives you the output as text.
+      - `check=True` raises `CalledProcessError` if the program fails, so failures do not pass silently.
+      - **Never** build a command from untrusted input (never use `shell=True` with user text): that is command injection (Advanced, Security).
+
+      A browser tab cannot start programs, so this one you try on your Mac.
+
+  - kind: mac
+    title: subprocess and argparse on your Mac
+    body: |
+      Save this small script and run it with an option. It uses `argparse`, `subprocess` and `logging` together.
+
+      **Checkpoint:** paste the output. It should contain `git version` and `INFO`.
+    commands: |
+      mkdir -p ~/Desktop/python-practice && cd ~/Desktop/python-practice
+      cat > tool.py <<'PY'
+      import argparse
+      import logging
+      import subprocess
+
+      parser = argparse.ArgumentParser(description="Show the git version")
+      parser.add_argument("--verbose", action="store_true")
+      args = parser.parse_args()
+
+      logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s: %(message)s")
+      logging.info("checking git")
+      result = subprocess.run(["git", "--version"], capture_output=True, text=True, check=True)
+      print(result.stdout.strip())
+      PY
+      uv run tool.py --verbose
+      uv run tool.py --help
+    expect_output:
+      - "git version"
+      - "INFO"
+
+  - kind: why
+    body: |
+      This lesson is your everyday toolbox. `Counter`, `defaultdict` and `deque` replace many hand-written loops; correct time-zone handling prevents whole classes of bugs; `re`, `argparse`, `logging`, `shutil` and `subprocess` are what turn a script into a real tool. You will use them all in the log-analyzer checkpoint.
+
+  - kind: recap
+    body: |
+      - `collections`: **Counter** (count, `most_common`), **defaultdict** (auto-created values), **deque** (fast both ends, `maxlen`).
+      - Dates: use **aware** datetimes, work in **UTC**, convert with `zoneinfo`; never mix naive and aware.
+      - `re`: `search`, `match`, `fullmatch`, `findall`, `sub`; groups `( )`; raw strings.
+      - `argparse`: positional args, options with `type`/`default`/`choices`, flags with `store_true`; `parse_args(list)` in tests.
+      - `logging`: levels, handlers, formatters, `getLogger(__name__)`; better than `print`.
+      - `shutil` copies and moves files; `subprocess.run([...], check=True)` runs programs safely.

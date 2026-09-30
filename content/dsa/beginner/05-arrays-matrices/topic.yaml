@@ -1,0 +1,4 @@
+title: Arrays & Matrices
+module: 5
+summary: "How arrays sit in memory, walking and changing them in place, reversing and rotating, and working with grids: rows, columns, bounds and diagonals."
+minutes: 50

@@ -1,0 +1,4 @@
+title: Union-Find (Disjoint Set Union)
+module: 25
+summary: "Track which items belong to the same group: find with path compression, union by size, counting components, spotting a redundant edge, and Kruskal's minimum spanning tree."
+minutes: 65

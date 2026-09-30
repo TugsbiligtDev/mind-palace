@@ -1,0 +1,36 @@
+pass: 2
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def parse(line):
+          parts = line.split(",")
+          if len(parts) != 2:
+              raise ValueError("bad line")
+          return parts
+
+      try:
+          parse("a,b,c")
+      except ValueError as e:
+          print("caught:", e)
+    options: ["caught: bad line", "['a', 'b', 'c']", "bad line", "Error"]
+    answer: 0
+    explanation: "Three parts, not two, so `raise` runs. The `except` block prints the exception's message."
+  - type: mcq
+    prompt: Which is the best way to make a program keep its contacts between runs?
+    options:
+      - Save them to a JSON file and load it at start-up
+      - Keep them in a global variable
+      - Print them and copy by hand
+      - Use a bigger list
+    answer: 0
+    explanation: Variables vanish when the program ends. A file on storage survives.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      import json
+      data = json.loads('[{"name": "Ada"}]')
+      print(data[0]["name"])
+    options: ["Ada", "[{'name': 'Ada'}]", "name", "Error"]
+    answer: 0
+    explanation: "`json.loads` turns JSON text into Python lists and dicts."

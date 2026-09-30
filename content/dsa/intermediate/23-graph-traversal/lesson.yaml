@@ -1,0 +1,375 @@
+steps:
+  - kind: explain
+    title: Visiting every vertex
+    body: |
+      Almost every graph question begins by **exploring** the graph: from a starting vertex, visit everything that can be reached. Two standard ways:
+
+      - **DFS (depth-first search)**: go as deep as possible along one path, then back up and try another. Uses a **stack** (or recursion).
+      - **BFS (breadth-first search)**: visit all the neighbours first, then all *their* neighbours, and so on, spreading out in rings. Uses a **queue**.
+
+      Both visit each vertex and each edge once: **O(V + E)**.
+
+      **The crucial rule: keep a `visited` set.** A graph can have cycles, and without it you would walk in circles forever. Mark a vertex visited the moment you **add it to the stack or queue** (not when you take it out), so it is never added twice.
+
+  - kind: code
+    title: Depth-first order
+    body: |
+      Write `dfsOrder(graph, start)`: the vertices in the order a **recursive DFS** visits them. `graph` is an adjacency list, and you look at each vertex's neighbours **in the order given**. Return the order as an array.
+    code: |
+      function dfsOrder(graph, start) {
+        const visited = new Set();
+        const order = [];
+        return order;
+      }
+    tests:
+      - "dfsOrder([[1, 2], [0, 3], [0, 3], [1, 2]], 0)"
+      - "dfsOrder([[1], [0, 2], [1]], 1)"
+      - "dfsOrder([[]], 0)"
+      - "dfsOrder([[1], [0], [3], [2]], 0)"
+      - "dfsOrder([[2, 1], [0], [0]], 0)"
+    solution: |
+      function dfsOrder(graph, start) {
+        const visited = new Set();
+        const order = [];
+        function visit(v) {
+          visited.add(v);
+          order.push(v);
+          for (const next of graph[v]) {
+            if (!visited.has(next)) visit(next);
+          }
+        }
+        visit(start);
+        return order;
+      }
+    hint: Mark the vertex visited, record it, then recurse into each unvisited neighbour.
+    reject:
+      - |
+        function dfsOrder(graph, start) {
+          return graph.map((_, i) => i);
+        }
+
+  - kind: code
+    title: Breadth-first order
+    body: |
+      Write `bfsOrder(graph, start)`: the vertices in **breadth-first** order, using a queue. Mark a vertex visited when you **enqueue** it. Neighbours are taken in the order given.
+    code: |
+      function bfsOrder(graph, start) {
+        return [];
+      }
+    tests:
+      - "bfsOrder([[1, 2], [0, 3], [0, 3], [1, 2]], 0)"
+      - "bfsOrder([[1], [0, 2], [1]], 1)"
+      - "bfsOrder([[]], 0)"
+      - "bfsOrder([[1, 2], [3], [3], []], 0)"
+      - "bfsOrder([[3, 1], [0, 2], [1], [0]], 0)"
+    solution: |
+      function bfsOrder(graph, start) {
+        const visited = new Set([start]);
+        const queue = [start];
+        const order = [];
+        for (let head = 0; head < queue.length; head++) {
+          const v = queue[head];
+          order.push(v);
+          for (const next of graph[v]) {
+            if (!visited.has(next)) {
+              visited.add(next);
+              queue.push(next);
+            }
+          }
+        }
+        return order;
+      }
+    hint: Use an array as a queue with a `head` index (never `shift`). Add a neighbour to `visited` at the moment you push it.
+    reject:
+      - |
+        function bfsOrder(graph, start) {
+          return [start];
+        }
+
+  - kind: explain
+    title: Connected components
+    body: |
+      A **connected component** is a group of vertices that can all reach each other. A graph may have several. To **count** them:
+
+      - loop over every vertex,
+      - if it is not visited yet, it starts a **new component**: count it and DFS/BFS from it to mark its whole group visited.
+
+      The same idea, run on a grid, counts **islands**.
+
+  - kind: code
+    title: Count the components
+    body: |
+      Write `countComponents(n, edges)`: the number of connected components in an undirected graph with `n` vertices (`0 … n-1`) and the given edge list. A vertex with no edges is a component of its own.
+    code: |
+      function countComponents(n, edges) {
+        return n;
+      }
+    tests:
+      - "countComponents(5, [[0, 1], [1, 2], [3, 4]])"
+      - "countComponents(5, [[0, 1], [1, 2], [2, 3], [3, 4]])"
+      - "countComponents(3, [])"
+      - "countComponents(1, [])"
+      - "countComponents(6, [[0, 1], [2, 3], [4, 5], [1, 2]])"
+      - "countComponents(3, [[0, 1], [1, 2], [0, 2]])"
+    solution: |
+      function countComponents(n, edges) {
+        const graph = Array.from({ length: n }, () => []);
+        for (const [u, v] of edges) {
+          graph[u].push(v);
+          graph[v].push(u);
+        }
+        const visited = new Set();
+        let count = 0;
+        for (let start = 0; start < n; start++) {
+          if (visited.has(start)) continue;
+          count++;
+          const stack = [start];
+          visited.add(start);
+          while (stack.length > 0) {
+            const v = stack.pop();
+            for (const next of graph[v]) {
+              if (!visited.has(next)) {
+                visited.add(next);
+                stack.push(next);
+              }
+            }
+          }
+        }
+        return count;
+      }
+    hint: Build the adjacency list first. For each unvisited vertex, add 1 to the count and explore its whole group.
+    reject:
+      - |
+        function countComponents(n, edges) {
+          return n - edges.length;
+        }
+
+  - kind: code
+    title: Number of islands
+    body: |
+      A map is a grid of `"1"` (land) and `"0"` (water). An **island** is a group of land cells connected up, down, left or right. Write `numIslands(grid)`: how many islands there are.
+    code: |
+      function numIslands(grid) {
+        return 0;
+      }
+    tests:
+      - "numIslands([['1', '1', '0', '0', '0'], ['1', '1', '0', '0', '0'], ['0', '0', '1', '0', '0'], ['0', '0', '0', '1', '1']])"
+      - "numIslands([['1', '0', '1'], ['0', '1', '0'], ['1', '0', '1']])"
+      - "numIslands([['0']])"
+      - "numIslands([])"
+      - "numIslands([['1', '1'], ['1', '1']])"
+    solution: |
+      function numIslands(grid) {
+        if (grid.length === 0) return 0;
+        const rows = grid.length;
+        const cols = grid[0].length;
+        const seen = grid.map((row) => row.map(() => false));
+        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        let islands = 0;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (grid[r][c] !== "1" || seen[r][c]) continue;
+            islands++;
+            const stack = [[r, c]];
+            seen[r][c] = true;
+            while (stack.length > 0) {
+              const [cr, cc] = stack.pop();
+              for (const [dr, dc] of dirs) {
+                const nr = cr + dr;
+                const nc = cc + dc;
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] === "1" && !seen[nr][nc]) {
+                  seen[nr][nc] = true;
+                  stack.push([nr, nc]);
+                }
+              }
+            }
+          }
+        }
+        return islands;
+      }
+    hint: Scan every cell. When you find unvisited land, count an island and explore its whole connected group so it is not counted again.
+    reject:
+      - |
+        function numIslands(grid) {
+          let count = 0;
+          for (const row of grid) for (const cell of row) if (cell === "1") count++;
+          return count;
+        }
+
+  - kind: code
+    title: "Find the bug: painting forever"
+    body: |
+      `floodFill(image, sr, sc, color)` recolours the connected area around `(sr, sc)` (cells with the same starting colour) to `color`, like the paint bucket tool, and returns the image. It works for most inputs but **crashes** when the new colour equals the old one. Think about why, and fix it.
+    code: |
+      function floodFill(image, sr, sc, color) {
+        const original = image[sr][sc];
+        function fill(r, c) {
+          if (r < 0 || r >= image.length || c < 0 || c >= image[0].length) return;
+          if (image[r][c] !== original) return;
+          image[r][c] = color;
+          fill(r + 1, c);
+          fill(r - 1, c);
+          fill(r, c + 1);
+          fill(r, c - 1);
+        }
+        fill(sr, sc);
+        return image;
+      }
+    tests:
+      - "floodFill([[1, 1, 1], [1, 1, 0], [1, 0, 1]], 1, 1, 2)"
+      - "floodFill([[0, 0, 0], [0, 0, 0]], 0, 0, 0)"
+      - "floodFill([[1, 1], [1, 1]], 0, 0, 1)"
+      - "floodFill([[0, 1], [1, 0]], 0, 0, 5)"
+      - "floodFill([[5]], 0, 0, 7)"
+    solution: |
+      function floodFill(image, sr, sc, color) {
+        const original = image[sr][sc];
+        if (original === color) return image;
+        function fill(r, c) {
+          if (r < 0 || r >= image.length || c < 0 || c >= image[0].length) return;
+          if (image[r][c] !== original) return;
+          image[r][c] = color;
+          fill(r + 1, c);
+          fill(r - 1, c);
+          fill(r, c + 1);
+          fill(r, c - 1);
+        }
+        fill(sr, sc);
+        return image;
+      }
+    hint: The fill uses the cell's colour to know whether it was already painted. If the new colour equals the old one, painting never changes that, so nothing counts as visited. Return early in that case.
+    broken_starter: true
+    reject:
+      - |
+        function floodFill(image, sr, sc, color) {
+          const original = image[sr][sc];
+          function fill(r, c) {
+            if (r < 0 || r >= image.length || c < 0 || c >= image[0].length) return;
+            if (image[r][c] !== original) return;
+            image[r][c] = color;
+            fill(r + 1, c);
+            fill(r - 1, c);
+            fill(r, c + 1);
+            fill(r, c - 1);
+          }
+          fill(sr, sc);
+          return image;
+        }
+
+  - kind: explain
+    title: Detecting cycles
+    body: |
+      **Undirected graph:** during DFS, if you reach an already-visited vertex that is **not the one you just came from**, there is a cycle.
+
+      **Directed graph:** "already visited" is not enough (two paths can legitimately meet). Use **three colours**:
+
+      - **white**: not visited yet,
+      - **grey**: on the current DFS path (visited, but not finished),
+      - **black**: fully finished.
+
+      Reaching a **grey** vertex means you found a way back to something still in progress: a **cycle**. Reaching a black one is fine.
+
+  - kind: code
+    title: Cycle in a directed graph
+    body: |
+      Write `hasCycleDirected(n, edges)`: `true` if the directed graph (edges are `[from, to]`) contains a cycle. Use the three colours with DFS.
+    code: |
+      function hasCycleDirected(n, edges) {
+        return false;
+      }
+    tests:
+      - "hasCycleDirected(2, [[0, 1], [1, 0]])"
+      - "hasCycleDirected(3, [[0, 1], [1, 2]])"
+      - "hasCycleDirected(4, [[0, 1], [0, 2], [1, 3], [2, 3]])"
+      - "hasCycleDirected(3, [[0, 1], [1, 2], [2, 0]])"
+      - "hasCycleDirected(1, [[0, 0]])"
+      - "hasCycleDirected(1, [])"
+    solution: |
+      function hasCycleDirected(n, edges) {
+        const graph = Array.from({ length: n }, () => []);
+        for (const [u, v] of edges) graph[u].push(v);
+        const color = Array(n).fill(0); // 0 white, 1 grey, 2 black
+        function dfs(v) {
+          color[v] = 1;
+          for (const next of graph[v]) {
+            if (color[next] === 1) return true;
+            if (color[next] === 0 && dfs(next)) return true;
+          }
+          color[v] = 2;
+          return false;
+        }
+        for (let v = 0; v < n; v++) {
+          if (color[v] === 0 && dfs(v)) return true;
+        }
+        return false;
+      }
+    hint: Grey means "on my current path". Meeting a grey vertex is a cycle. Turn a vertex black when all its neighbours are done.
+    reject:
+      - |
+        function hasCycleDirected(n, edges) {
+          return edges.length >= n;
+        }
+
+  - kind: explain
+    title: Bipartite graphs, two-colouring
+    body: |
+      A graph is **bipartite** if you can split its vertices into two groups so that every edge goes **between** the groups (never inside one). Like assigning players to two teams so that nobody is on the same team as someone they dislike.
+
+      Test it by **colouring**: start at a vertex and give it colour 0. Give every neighbour the opposite colour, and so on (BFS or DFS). If you ever find an edge whose two ends have the **same** colour, it is not bipartite. Remember to try every component.
+
+  - kind: code
+    title: Is the graph bipartite?
+    body: |
+      Write `isBipartite(graph)`: `graph` is an adjacency list of an undirected graph. Return `true` if the vertices can be split into two groups with every edge crossing between them.
+    code: |
+      function isBipartite(graph) {
+        return true;
+      }
+    tests:
+      - "isBipartite([[1, 3], [0, 2], [1, 3], [0, 2]])"
+      - "isBipartite([[1, 2, 3], [0, 2], [0, 1, 3], [0, 2]])"
+      - "isBipartite([[], []])"
+      - "isBipartite([[1], [0, 2], [1, 3], [2, 4], [3, 0]])"
+      - "isBipartite([[1], [0], [3], [2]])"
+    solution: |
+      function isBipartite(graph) {
+        const color = Array(graph.length).fill(-1);
+        for (let start = 0; start < graph.length; start++) {
+          if (color[start] !== -1) continue;
+          color[start] = 0;
+          const queue = [start];
+          for (let head = 0; head < queue.length; head++) {
+            const v = queue[head];
+            for (const next of graph[v]) {
+              if (color[next] === -1) {
+                color[next] = 1 - color[v];
+                queue.push(next);
+              } else if (color[next] === color[v]) {
+                return false;
+              }
+            }
+          }
+        }
+        return true;
+      }
+    hint: Colour with 0 and 1. A neighbour with no colour gets the opposite. A neighbour with the same colour means an odd cycle, so return false.
+    reject:
+      - |
+        function isBipartite(graph) {
+          return true;
+        }
+
+  - kind: why
+    body: |
+      Traversal is the engine of graph algorithms. Islands, flood fill, friends-of-friends, "can I get from A to B?", "is this schedule possible?", "can these people be split into two teams?" are all one traversal with a small twist.
+
+      The mental checklist: **build the graph, keep a visited set, choose DFS (deep, recursion-friendly) or BFS (nearest first)**.
+
+  - kind: recap
+    body: |
+      - **DFS** (stack or recursion) goes deep. **BFS** (queue) goes ring by ring. Both are **O(V + E)**.
+      - Always keep a **visited** set. Mark on **push**, so a vertex is never queued twice.
+      - **Connected components / islands:** loop over vertices, and each unvisited one starts a new group.
+      - **Flood fill** must not loop when the new colour equals the old one.
+      - **Cycles:** undirected, a visited neighbour that is not your parent. Directed, three colours (white, grey, black).
+      - **Bipartite:** two-colour with BFS or DFS. The same colour on both ends of an edge means "no".

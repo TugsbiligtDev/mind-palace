@@ -1,0 +1,4 @@
+title: "Modules & the Standard Library"
+module: 15
+summary: "Use code other people wrote: import Python's built-in toolbox (math, random, datetime, pathlib, sys), split your own code across files, and read the official docs."
+minutes: 65

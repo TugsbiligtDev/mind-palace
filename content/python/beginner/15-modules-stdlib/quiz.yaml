@@ -1,0 +1,43 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      import math
+      print(math.ceil(4.2), math.floor(4.8))
+    options: ["5 4", "4 4", "5 5", "4 5"]
+    answer: 0
+    explanation: "`ceil` rounds up (4.2 → 5) and `floor` rounds down (4.8 → 4)."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from datetime import date
+      print((date(2026, 3, 10) - date(2026, 3, 1)).days)
+    options: ["9", "10", "-9", "1"]
+    answer: 0
+    explanation: "March 10th is nine days after March 1st."
+  - type: mcq
+    prompt: What is `if __name__ == "__main__":` for?
+    options:
+      - Code inside runs only when the file is run directly, not when it is imported
+      - It imports the main module
+      - It makes the program run faster
+      - It is required at the top of every file
+    answer: 0
+    explanation: When a file is imported, `__name__` is the module's name instead of `"__main__"`, so the block is skipped.
+  - type: mcq
+    prompt: Why do programmers use `random.seed(...)` (or `random.Random(seed)`) in tests?
+    options:
+      - The same seed gives the same "random" numbers every time, so results can be checked
+      - It makes the numbers more random
+      - It is required to import random
+      - It speeds up the program
+    answer: 0
+    explanation: A seed makes the random sequence repeatable, which makes randomised code testable.
+  - type: fill
+    prompt: Complete the import so the code can write `sqrt(25)` directly.
+    code: |
+      from math ____ sqrt
+      print(sqrt(25))
+    answer: import
+    explanation: "`from module import name` brings a name in directly."

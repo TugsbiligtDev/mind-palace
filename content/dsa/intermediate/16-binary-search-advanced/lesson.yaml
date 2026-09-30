@@ -1,0 +1,272 @@
+steps:
+  - kind: explain
+    title: Binary search is bigger than sorted arrays
+    body: |
+      In Module 11 you searched sorted arrays. The real idea is broader:
+
+      > If a yes/no question is **"no, no, no … yes, yes, yes"** as you move along a range, you can find the switch point by halving.
+
+      That range does not have to be an array. It can be a set of possible answers. Whenever you can look at the middle and say "the answer is definitely on the left" or "definitely on the right", binary search works.
+
+  - kind: explain
+    title: Rotated sorted arrays
+    body: |
+      A sorted array that was **rotated** looks like `[4, 5, 6, 7, 0, 1, 2]`: sorted, but the start moved. The array is not sorted overall, yet **at least one half is always sorted**.
+
+      At `mid`, check which half is sorted (`nums[lo] <= nums[mid]` means the left half is), then ask whether the target lies inside that sorted half:
+
+      - inside → go into that half,
+      - otherwise → go into the other half.
+
+      Still **O(log n)**. The `<=` matters: when `lo === mid` the "left half" is a single item.
+
+  - kind: code
+    title: "Find the bug: the one-item left half"
+    body: |
+      `searchRotated(nums, target)` returns the index of `target` in a rotated sorted array (no duplicates), or `-1`. It fails on tiny arrays such as `[3, 1]`. Find the comparison that is off by one and fix it.
+    code: |
+      function searchRotated(nums, target) {
+        let lo = 0;
+        let hi = nums.length - 1;
+        while (lo <= hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (nums[mid] === target) return mid;
+          if (nums[lo] < nums[mid]) {
+            if (nums[lo] <= target && target < nums[mid]) hi = mid - 1;
+            else lo = mid + 1;
+          } else {
+            if (nums[mid] < target && target <= nums[hi]) lo = mid + 1;
+            else hi = mid - 1;
+          }
+        }
+        return -1;
+      }
+    tests:
+      - "searchRotated([4, 5, 6, 7, 0, 1, 2], 0)"
+      - "searchRotated([4, 5, 6, 7, 0, 1, 2], 3)"
+      - "searchRotated([3, 1], 1)"
+      - "searchRotated([1], 1)"
+      - "searchRotated([5, 1, 3], 5)"
+      - "searchRotated([6, 7, 1, 2, 3, 4, 5], 6)"
+    solution: |
+      function searchRotated(nums, target) {
+        let lo = 0;
+        let hi = nums.length - 1;
+        while (lo <= hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (nums[mid] === target) return mid;
+          if (nums[lo] <= nums[mid]) {
+            if (nums[lo] <= target && target < nums[mid]) hi = mid - 1;
+            else lo = mid + 1;
+          } else {
+            if (nums[mid] < target && target <= nums[hi]) lo = mid + 1;
+            else hi = mid - 1;
+          }
+        }
+        return -1;
+      }
+    hint: When `lo` equals `mid`, the left half is one item, which is sorted. Change `nums[lo] < nums[mid]` so that case counts.
+    broken_starter: true
+    reject:
+      - |
+        function searchRotated(nums, target) {
+          let lo = 0;
+          let hi = nums.length - 1;
+          while (lo <= hi) {
+            const mid = Math.floor((lo + hi) / 2);
+            if (nums[mid] === target) return mid;
+            if (nums[lo] < nums[mid]) {
+              if (nums[lo] <= target && target < nums[mid]) hi = mid - 1;
+              else lo = mid + 1;
+            } else {
+              if (nums[mid] < target && target <= nums[hi]) lo = mid + 1;
+              else hi = mid - 1;
+            }
+          }
+          return -1;
+        }
+
+  - kind: code
+    title: The minimum of a rotated array
+    body: |
+      Write `findMin(nums)`: the smallest value in a rotated sorted array (no duplicates), in O(log n). The minimum is the "switch point".
+
+      Compare `nums[mid]` with `nums[hi]`: if `nums[mid] > nums[hi]`, the minimum is to the **right** of `mid`. Otherwise it is at `mid` or to its left.
+    code: |
+      function findMin(nums) {
+        return nums[0];
+      }
+    tests:
+      - "findMin([3, 4, 5, 1, 2])"
+      - "findMin([4, 5, 6, 7, 0, 1, 2])"
+      - "findMin([11, 13, 15, 17])"
+      - "findMin([2, 1])"
+      - "findMin([1])"
+    solution: |
+      function findMin(nums) {
+        let lo = 0;
+        let hi = nums.length - 1;
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (nums[mid] > nums[hi]) lo = mid + 1;
+          else hi = mid;
+        }
+        return nums[lo];
+      }
+    hint: This is the "boundary" template (`lo < hi`, `hi = mid`). The answer is where the switch happens.
+    reject:
+      - |
+        function findMin(nums) {
+          return nums[0];
+        }
+
+  - kind: explain
+    title: Finding a peak
+    body: |
+      A **peak** is an item bigger than both its neighbours (the edges count as `-∞`). You do not need a sorted array. Look at `mid` and the item to its right:
+
+      - if `nums[mid] < nums[mid + 1]`, the ground is **rising**, so a peak exists on the right,
+      - otherwise a peak exists at `mid` or on the left.
+
+      Either way, you have kept a side that must contain a peak, so halving works. O(log n).
+
+  - kind: code
+    title: Find a peak
+    body: |
+      Write `findPeak(nums)`: the index of **any** peak. Neighbours at the ends count as smaller. Adjacent items are never equal.
+    code: |
+      function findPeak(nums) {
+        return 0;
+      }
+    tests:
+      - "(() => { const a = [1, 2, 3, 1]; const i = findPeak(a); return (i === 0 || a[i] > a[i - 1]) && (i === a.length - 1 || a[i] > a[i + 1]); })()"
+      - "(() => { const a = [1, 2, 1, 3, 5, 6, 4]; const i = findPeak(a); return (i === 0 || a[i] > a[i - 1]) && (i === a.length - 1 || a[i] > a[i + 1]); })()"
+      - "(() => { const a = [5]; const i = findPeak(a); return i === 0; })()"
+      - "(() => { const a = [1, 2, 3, 4, 5]; const i = findPeak(a); return i === 4; })()"
+      - "(() => { const a = [5, 4, 3, 2, 1]; const i = findPeak(a); return i === 0; })()"
+    solution: |
+      function findPeak(nums) {
+        let lo = 0;
+        let hi = nums.length - 1;
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (nums[mid] < nums[mid + 1]) lo = mid + 1;
+          else hi = mid;
+        }
+        return lo;
+      }
+    hint: If the next item is bigger, the ground rises to the right, so move `lo` past `mid`. Otherwise keep `mid` with `hi = mid`.
+    reject:
+      - |
+        function findPeak(nums) {
+          return 0;
+        }
+
+  - kind: explain
+    title: Binary search on the answer
+    body: |
+      The biggest leap: search over **possible answers** instead of positions.
+
+      *Koko eats bananas. There are piles of bananas, and she has `h` hours. Each hour she picks one pile and eats up to `speed` bananas from it. What is the smallest speed that finishes in time?*
+
+      - Speed 1 is too slow. A huge speed finishes easily.
+      - If speed `s` works, every bigger speed works too: **"no, no, no, yes, yes, yes"**.
+
+      So binary search the speed between `1` and the biggest pile. To test a speed, simulate: hours needed = the sum of `Math.ceil(pile / speed)`.
+
+      The recipe: **(1)** define the range of answers, **(2)** write a `works(answer)` function, **(3)** binary search for the first answer where it works.
+
+  - kind: code
+    title: Koko eating bananas
+    body: |
+      Write `minEatingSpeed(piles, h)`: the smallest whole speed that lets Koko finish all piles within `h` hours. `h` is at least the number of piles.
+    code: |
+      function minEatingSpeed(piles, h) {
+        return Math.max(...piles);
+      }
+    tests:
+      - "minEatingSpeed([3, 6, 7, 11], 8)"
+      - "minEatingSpeed([30, 11, 23, 4, 20], 5)"
+      - "minEatingSpeed([30, 11, 23, 4, 20], 6)"
+      - "minEatingSpeed([5], 5)"
+      - "minEatingSpeed([1000000000], 2)"
+      - "minEatingSpeed([1, 1, 1, 1], 4)"
+    solution: |
+      function minEatingSpeed(piles, h) {
+        let lo = 1;
+        let hi = Math.max(...piles);
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          let hours = 0;
+          for (const p of piles) hours += Math.ceil(p / mid);
+          if (hours <= h) hi = mid;
+          else lo = mid + 1;
+        }
+        return lo;
+      }
+    hint: If speed `mid` finishes in time, it might be the smallest, so `hi = mid`. If not, the answer is bigger, so `lo = mid + 1`.
+    reject:
+      - |
+        function minEatingSpeed(piles, h) {
+          return Math.max(...piles);
+        }
+
+  - kind: code
+    title: Ship packages within D days
+    body: |
+      Packages have weights, and must be shipped **in order**, one ship per day, carrying as much as fits without splitting the order. Write `shipWithinDays(weights, days)`: the **smallest ship capacity** that delivers everything within `days` days.
+
+      The capacity is at least the heaviest package and at most the total weight. To test a capacity, load the ship greedily and count the days.
+    code: |
+      function shipWithinDays(weights, days) {
+        return weights.reduce((a, b) => a + b, 0);
+      }
+    tests:
+      - "shipWithinDays([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 5)"
+      - "shipWithinDays([3, 2, 2, 4, 1, 4], 3)"
+      - "shipWithinDays([1, 2, 3, 1, 1], 4)"
+      - "shipWithinDays([10], 1)"
+      - "shipWithinDays([5, 5, 5, 5], 4)"
+    solution: |
+      function shipWithinDays(weights, days) {
+        let lo = Math.max(...weights);
+        let hi = weights.reduce((a, b) => a + b, 0);
+        const daysNeeded = (capacity) => {
+          let count = 1;
+          let load = 0;
+          for (const w of weights) {
+            if (load + w > capacity) {
+              count++;
+              load = 0;
+            }
+            load += w;
+          }
+          return count;
+        };
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (daysNeeded(mid) <= days) hi = mid;
+          else lo = mid + 1;
+        }
+        return lo;
+      }
+    hint: Write a helper that counts the days a given capacity needs, then binary search the capacity between the heaviest package and the total.
+    reject:
+      - |
+        function shipWithinDays(weights, days) {
+          return Math.max(...weights);
+        }
+
+  - kind: why
+    body: |
+      "Minimum X such that it works" and "maximum X such that it works" are among the most common hard-looking problems, and binary search on the answer solves them in a few lines. The skill is spotting that the yes/no answer flips only once.
+
+      The cost is `O(log(range) × cost of checking one answer)`, which is tiny.
+
+  - kind: recap
+    body: |
+      - Binary search works on any **monotonic** yes/no condition, not only sorted arrays.
+      - **Rotated array:** one half is always sorted (`nums[lo] <= nums[mid]`). Decide whether the target lies in it.
+      - **Minimum in a rotated array:** compare `nums[mid]` with `nums[hi]`.
+      - **Peak finding:** move toward the rising side.
+      - **Binary search on the answer:** define the range, write `works(answer)`, find the first `true`. Used for minimum speed or capacity problems.

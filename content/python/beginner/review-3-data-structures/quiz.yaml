@@ -1,0 +1,29 @@
+pass: 2
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      book = [{"name": "Ada"}, {"name": "Bold"}]
+      for contact in book:
+          contact["name"] = contact["name"].upper()
+      print(book[0]["name"])
+    options: ["ADA", "Ada", "Bold", "Error"]
+    answer: 0
+    explanation: "Each `contact` is the actual dictionary inside the list, so changing it changes the book."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      names = ["bold", "Ada", "Cole"]
+      print(sorted(names))
+    options: ["['Ada', 'Cole', 'bold']", "['Ada', 'bold', 'Cole']", "['bold', 'Ada', 'Cole']", "['Cole', 'bold', 'Ada']"]
+    answer: 0
+    explanation: "Plain sorting puts capital letters before lowercase ones. That is why the earlier case used `key=str.lower`."
+  - type: mcq
+    prompt: Why is a dictionary index by phone number faster than searching the list?
+    options:
+      - A dictionary jumps straight to the key instead of checking every contact
+      - Dictionaries use less memory always
+      - Lists cannot hold phone numbers
+      - Because dictionaries are sorted
+    answer: 0
+    explanation: A dictionary looks up a key almost instantly. A list search may need to look at every item.

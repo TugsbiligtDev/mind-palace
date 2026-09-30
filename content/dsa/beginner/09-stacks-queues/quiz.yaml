@@ -1,0 +1,52 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const stack = [];
+      stack.push(1);
+      stack.push(2);
+      stack.push(3);
+      stack.pop();
+      console.log(stack[stack.length - 1], stack.length);
+    options: ["2 2", "3 3", "1 2", "2 3"]
+    answer: 0
+    explanation: "`pop` removes 3, so the top is now 2 and two items remain."
+  - type: mcq
+    prompt: Why is `queue.shift()` a poor way to dequeue from a large array?
+    options:
+      - It returns the wrong item
+      - It is O(n), because every remaining item slides forward
+      - It cannot be used on numbers
+      - It makes the array immutable
+    answer: 1
+    explanation: Removing the first item forces all the others to shift one place. A `head` index avoids that.
+  - type: mcq
+    prompt: A browser's Back button works like which structure?
+    options: ["A queue", "A stack", "A hash map", "A sorted array"]
+    answer: 1
+    explanation: The most recently visited page is the first one you go back to, which is last in, first out.
+  - type: predict
+    prompt: What does this print? (The tokens are Reverse Polish Notation.)
+    code: |
+      const stack = [];
+      for (const t of ["6", "2", "/", "4", "+"]) {
+        if (t === "/" || t === "+") {
+          const b = stack.pop();
+          const a = stack.pop();
+          stack.push(t === "/" ? a / b : a + b);
+        } else {
+          stack.push(Number(t));
+        }
+      }
+      console.log(stack.pop());
+    options: ["7", "5", "1.5", "10"]
+    answer: 0
+    explanation: "`6 2 /` gives 3, then `3 4 +` gives 7."
+  - type: fill
+    prompt: Complete the bracket check. A closing bracket must match the item on the ____ of the stack.
+    code: |
+      const stack = ["(", "["];
+      console.log(stack[stack.length - 1] === "____");
+    answer: "["
+    explanation: "The most recent opener, the top of the stack, is `[`. That is the one a closing `]` must match."

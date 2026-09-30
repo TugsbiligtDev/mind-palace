@@ -1,0 +1,216 @@
+steps:
+  - kind: explain
+    title: A computer is a very fast, very literal helper
+    body: |
+      A computer does exactly what it is told, extremely fast, and nothing else. It never guesses what you meant. A **program** is a list of instructions written so precisely that even a computer cannot misread them.
+
+      Every computer, from a phone to a laptop, has three parts that matter to a programmer. Picture a kitchen:
+
+      | Part | Kitchen | Job |
+      |---|---|---|
+      | **CPU** (processor) | The chef | Does the actual work, one tiny step at a time, billions of steps per second |
+      | **RAM** (memory) | The counter | Holds what the chef is working on *right now*. Fast, but it is wiped when the power goes off |
+      | **Storage** (SSD or disk) | The pantry | Keeps everything for the long term. Bigger, slower, and it survives switching off |
+
+      When you open a program, the computer copies it from the pantry (storage) to the counter (RAM), and the chef (CPU) follows its instructions.
+
+  - kind: code
+    title: Meet Python
+    body: |
+      Python is the language you will write. This is a **program**: two lines of instructions. Press **Run** and Python's answer appears below.
+
+      `print(...)` tells Python to show something on the screen. Change the message to your own name and run it again.
+    code: |
+      print("Hello, detective!")
+      print(2 + 2)
+
+  - kind: explain
+    title: Everything is stored as 0s and 1s
+    body: |
+      Inside RAM and storage, everything (numbers, letters, photos, songs) is stored as a long row of tiny switches. Each switch is either **off (0)** or **on (1)**. One switch is a **bit**, and eight bits make a **byte**.
+
+      Counting with only 0 and 1 is called **binary**. It works like normal counting, but you run out of digits sooner:
+
+      | Normal | 0 | 1 | 2 | 3 | 4 | 5 |
+      |---|---|---|---|---|---|---|
+      | Binary | 0 | 1 | 10 | 11 | 100 | 101 |
+
+      Python can show you any whole number in binary with `format(number, "b")`. For example, `format(5, "b")` gives `'101'`.
+
+  - kind: code
+    title: Write a number in binary
+    body: |
+      Finish `to_binary(n)`. It should return the number `n` written in binary, as text. `to_binary(5)` is `"101"`, and `to_binary(8)` is `"1000"`.
+
+      A **function** is a named recipe: `def to_binary(n):` starts it, and `return` hands back the answer. You will learn functions properly in Module 14. For now, just replace the placeholder line.
+    code: |
+      def to_binary(n):
+          return ""
+    tests:
+      - "to_binary(5)"
+      - "to_binary(8)"
+      - "to_binary(0)"
+      - "to_binary(255)"
+      - "to_binary(1)"
+    solution: |
+      def to_binary(n):
+          return format(n, "b")
+    hint: The built-in `format(n, "b")` already does this. Return its answer.
+    reject:
+      - |
+        def to_binary(n):
+            return str(n)
+
+  - kind: explain
+    title: How much fits? Kilobytes, megabytes, gigabytes
+    body: |
+      Storage sizes count bytes, and each unit is about a thousand times bigger than the one before:
+
+      | Unit | About |
+      |---|---|
+      | 1 KB (kilobyte) | a short text message |
+      | 1 MB (megabyte) | one photo |
+      | 1 GB (gigabyte) | 1,000 MB, about 1,000 photos |
+      | 1 TB (terabyte) | 1,000 GB |
+
+      This is real arithmetic, and Python is happy to do it: `*` multiplies and `//` divides and throws away any leftover, so `7 // 2` is `3`. It is how you ask "how many *whole* things fit?".
+
+  - kind: code
+    title: How many photos fit?
+    body: |
+      Finish `photos_that_fit(storage_gb, photo_mb)`: how many **whole** photos of `photo_mb` megabytes fit in `storage_gb` gigabytes? Use 1 GB = 1000 MB.
+
+      A 64 GB phone can hold `photos_that_fit(64, 5)`, which is `12800` five-megabyte photos.
+    code: |
+      def photos_that_fit(storage_gb, photo_mb):
+          return 0
+    tests:
+      - "photos_that_fit(64, 5)"
+      - "photos_that_fit(1, 3)"
+      - "photos_that_fit(2, 1000)"
+      - "photos_that_fit(0, 5)"
+      - "photos_that_fit(256, 8)"
+    solution: |
+      def photos_that_fit(storage_gb, photo_mb):
+          return storage_gb * 1000 // photo_mb
+    hint: First turn gigabytes into megabytes (`storage_gb * 1000`), then divide with `//` so leftovers are dropped.
+    reject:
+      - |
+        def photos_that_fit(storage_gb, photo_mb):
+            return storage_gb * 1000 / photo_mb
+
+  - kind: explain
+    title: Files and folders
+    body: |
+      Storage is organised into **folders** (also called directories) that hold **files** and other folders. It forms a tree. Every file has a **path**, its address in that tree:
+
+      ```
+      /Users/ada/notes/todo.txt
+      ```
+
+      Read it from left to right: start at the top `/` (the root), go into `Users`, then `ada`, then `notes`, and there is the file `todo.txt`. The last piece is the **file name**, and everything before it is the **folder**.
+
+      The `.txt` at the end is the **extension**. It hints at what kind of file it is: `.txt` for plain text, `.jpg` for a photo, `.py` for a Python program.
+
+  - kind: code
+    title: Split a path
+    body: |
+      Finish `describe_path(path)`. It should return a pair `(folder, file_name)`. For `"/Users/ada/notes/todo.txt"` that is `("/Users/ada/notes", "todo.txt")`.
+
+      Python's `pathlib.Path` understands paths. If `p = Path(path)`, then `p.parent` is the folder and `p.name` is the file name. Convert the folder to text with `str(...)`.
+    code: |
+      from pathlib import Path
+
+
+      def describe_path(path):
+          p = Path(path)
+          return ("", "")
+    tests:
+      - "describe_path('/Users/ada/notes/todo.txt')"
+      - "describe_path('/photos/cat.jpg')"
+      - "describe_path('/a/b/c/d/e.py')"
+      - "describe_path('/readme.md')"
+    solution: |
+      from pathlib import Path
+
+
+      def describe_path(path):
+          p = Path(path)
+          return (str(p.parent), p.name)
+    hint: "`p.parent` is a `Path` object, so wrap it in `str(...)` to get plain text back."
+    reject:
+      - |
+        from pathlib import Path
+
+
+        def describe_path(path):
+            p = Path(path)
+            return (p.name, str(p.parent))
+
+  - kind: explain
+    title: What is a programming language?
+    body: |
+      The CPU only understands **machine code**, long strings of 0s and 1s that no person wants to write. A **programming language** is a bridge: you write instructions in words that are close to English, and a tool translates them into machine code.
+
+      There are two main ways to translate:
+
+      - **Compiled** languages (like C or Rust): a tool called a **compiler** translates your *whole* program into machine code first. Then the machine code runs.
+      - **Interpreted** languages (like Python): a tool called an **interpreter** reads your program and carries it out **line by line**, as it goes.
+
+      Python is interpreted. That is why you can type one line, press Run, and see the result at once. It is friendly for learning, and it is why this whole course can run in your browser.
+
+  - kind: info
+    title: "🔹 Python 2 is dead"
+    body: |
+      You will find old tutorials online that write `print "hello"` (no brackets). That is **Python 2**, which stopped being supported in **2020**. Modern Python 3 needs `print("hello")`.
+
+      If a tutorial uses `print` without brackets, or `raw_input`, or `xrange`, close it and find a newer one. This course teaches **Python 3.14**.
+
+  - kind: explain
+    title: What "3.14" means
+    body: |
+      Python's version looks like `3.14.2`. Read it as three numbers:
+
+      - **3** is the *major* version. It changes very rarely (Python 2 → Python 3 broke a lot of old code).
+      - **14** is the *minor* version. A new one arrives every year, with new features. Code written for 3.14 may not run on 3.9.
+      - **2** is the *patch* version: small bug fixes, safe to update.
+
+      So "Python 3.14" means the fourteenth yearly release of Python 3.
+
+  - kind: code
+    title: Read a version number
+    body: |
+      Finish `parse_version(text)`. It receives text like `"3.14.2"` and returns three whole numbers as a tuple: `(3, 14, 2)`.
+
+      Two tools help: `text.split(".")` cuts the text at every dot into a list of pieces, and `int("14")` turns text into a number.
+    code: |
+      def parse_version(text):
+          major, minor, patch = text.split(".")
+          return (0, 0, 0)
+    tests:
+      - "parse_version('3.14.2')"
+      - "parse_version('3.9.18')"
+      - "parse_version('2.7.0')"
+      - "parse_version('3.14.0')[1] + 1"
+    solution: |
+      def parse_version(text):
+          major, minor, patch = text.split(".")
+          return (int(major), int(minor), int(patch))
+    hint: "`split` gave you three pieces of text. Wrap each in `int(...)` when you build the tuple."
+    reject:
+      - |
+        def parse_version(text):
+            major, minor, patch = text.split(".")
+            return (major, minor, patch)
+
+  - kind: why
+    body: |
+      Every mystery about a program ("why is it slow?", "why did it lose my file?", "why does it say 3.9 is too old?") starts with these ideas: RAM is fast and forgetful, storage is slow and permanent, everything is binary, and an interpreter runs your code line by line. Knowing the kitchen makes every later lesson easier to picture.
+
+  - kind: recap
+    body: |
+      - A computer has a **CPU** (does the work), **RAM** (fast, temporary) and **storage** (slow, permanent).
+      - Everything is stored in **binary**: bits (0 or 1), eight to a byte.
+      - Files live in **folders**; a **path** is a file's address, and its last piece is the file name.
+      - A **programming language** turns human-readable instructions into machine code. Python is **interpreted**: run line by line.
+      - **Python 2 is dead** (2020). Use Python 3. A version `3.14.2` is major.minor.patch.

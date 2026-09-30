@@ -1,0 +1,261 @@
+steps:
+  - kind: explain
+    title: Text is a row of characters
+    body: |
+      A **string** (`str`) is text in quotes: `"detective"` or `'detective'`, both work. Think of it as a row of boxes, one **character** per box, numbered from **0**:
+
+      ```
+       d  e  t  e  c  t  i  v  e
+       0  1  2  3  4  5  6  7  8
+      -9 -8 -7 -6 -5 -4 -3 -2 -1
+      ```
+
+      Square brackets pick characters out. `word[0]` is `"d"`. Negative numbers count from the end: `word[-1]` is the last character.
+
+      A **slice** takes a piece: `word[start:stop]` goes from `start` up to **but not including** `stop`. Leave one out and it goes to that end.
+
+      | Code | Result |
+      |---|---|
+      | `word[0:3]` | `"det"` |
+      | `word[:3]` | `"det"` |
+      | `word[3:]` | `"ective"` |
+      | `word[-3:]` | `"ive"` |
+      | `word[::-1]` | `"evitceted"` (reversed) |
+
+      `len(word)` is the number of characters (9).
+
+  - kind: code
+    title: Index and slice
+    body: |
+      Run this and check each answer against the picture above. Try a slice of your own.
+    code: |
+      word = "detective"
+      print(word[0])
+      print(word[-1])
+      print(word[0:3])
+      print(word[3:])
+      print(word[::-1])
+      print(len(word))
+
+  - kind: code
+    title: Initials
+    body: |
+      Finish `initials(full_name)`. For `"Ada Lovelace"` return `"A.L."`. The name always has exactly two words.
+
+      `full_name.split()` cuts text at the spaces and gives a list of words: `"Ada Lovelace".split()` is `["Ada", "Lovelace"]`. Then `words[0]` is the first word, and `words[0][0]` is its first letter.
+    code: |
+      def initials(full_name):
+          words = full_name.split()
+          return ""
+    tests:
+      - "initials('Ada Lovelace')"
+      - "initials('Odval Bold')"
+      - "initials('x y')"
+    solution: |
+      def initials(full_name):
+          words = full_name.split()
+          return words[0][0] + "." + words[1][0] + "."
+    hint: "First letter of the first word, a dot, first letter of the second word, a dot. Join text pieces with `+`."
+    reject:
+      - |
+        def initials(full_name):
+            words = full_name.split()
+            return words[0] + "." + words[1] + "."
+
+  - kind: explain
+    title: Strings never change (immutable)
+    body: |
+      You cannot change a character inside a string:
+
+      ```python
+      word = "cat"
+      word[0] = "b"     # TypeError: 'str' object does not support item assignment
+      ```
+
+      Instead you **build a new string** and point the name at it: `word = "b" + word[1:]` gives `"bat"`.
+
+      Every string method works this way too: it *returns* a new string and leaves the original alone. So `name.upper()` on its own line does nothing useful. You must use the result: `name = name.upper()`.
+
+  - kind: code
+    title: Change the first letter
+    body: |
+      `capitalize_first(text)` should turn the first letter into a capital and leave the rest alone: `"mystery"` becomes `"Mystery"`. The starter tries to change the string in place, which Python forbids. Fix it.
+
+      `text[0].upper()` gives the capital first letter, and `text[1:]` is everything after it.
+    code: |
+      def capitalize_first(text):
+          text[0] = text[0].upper()
+          return text
+    tests:
+      - "capitalize_first('mystery')"
+      - "capitalize_first('Case')"
+      - "capitalize_first('x')"
+      - "capitalize_first('a tale')"
+    solution: |
+      def capitalize_first(text):
+          return text[0].upper() + text[1:]
+    hint: Build a new string from the capital letter plus the rest.
+    broken_starter: true
+
+  - kind: explain
+    title: Methods you will use daily
+    body: |
+      A **method** is a function attached to a value, called with a dot: `text.upper()`.
+
+      | Method | What it does | Example → result |
+      |---|---|---|
+      | `lower()` / `upper()` | change case | `"Ab".upper()` → `"AB"` |
+      | `strip()` | remove spaces from both ends | `"  hi  ".strip()` → `"hi"` |
+      | `replace(old, new)` | swap every `old` for `new` | `"a-b".replace("-", " ")` → `"a b"` |
+      | `split(sep)` | cut into a list | `"a,b".split(",")` → `["a", "b"]` |
+      | `join(list)` | glue a list into text | `"-".join(["a","b"])` → `"a-b"` |
+      | `startswith(x)` | does it begin with `x`? | `"Mr Bold".startswith("Mr")` → `True` |
+      | `find(x)` | index of `x`, or `-1` if absent | `"abc".find("c")` → `2` |
+
+      `x in text` asks whether one piece of text sits inside another: `"tec" in "detective"` is `True`.
+
+  - kind: code
+    title: Make a URL slug
+    body: |
+      Finish `slugify(title)`. A *slug* is the web-friendly version of a title: no spaces around it, lower case, and single dashes instead of spaces. `"  The Missing Ledger "` becomes `"the-missing-ledger"`.
+
+      Chain the methods: `title.strip().lower().replace(" ", "-")`.
+    code: |
+      def slugify(title):
+          return title
+    tests:
+      - "slugify('  The Missing Ledger ')"
+      - "slugify('Case Closed')"
+      - "slugify('one')"
+      - "slugify('A B C')"
+    solution: |
+      def slugify(title):
+          return title.strip().lower().replace(" ", "-")
+    hint: "Strip the spaces at the ends first, then lower-case, then replace the inner spaces."
+    reject:
+      - |
+        def slugify(title):
+            return title.lower().replace(" ", "-")
+
+  - kind: code
+    title: Hide a card number
+    body: |
+      Finish `mask_card(number)`: keep only the **last four** characters and turn every earlier character into `*`. `"1234567812345678"` becomes `"************5678"`.
+
+      Multiplying text repeats it: `"*" * 3` is `"***"`. And `number[-4:]` is the last four characters.
+    code: |
+      def mask_card(number):
+          return number
+    tests:
+      - "mask_card('1234567812345678')"
+      - "mask_card('123456789')"
+      - "mask_card('1234')"
+      - "mask_card('98765')"
+    solution: |
+      def mask_card(number):
+          return "*" * (len(number) - 4) + number[-4:]
+    hint: "How many stars? `len(number) - 4`. Then add the last four characters."
+    reject:
+      - |
+        def mask_card(number):
+            return "*" * 12 + number[-4:]
+
+  - kind: explain
+    title: "f-strings: put values into text"
+    body: |
+      To mix values into a message, put an `f` before the opening quote and write the value inside curly brackets:
+
+      ```python
+      name = "Ada"
+      clues = 3
+      print(f"{name} found {clues} clues")        # Ada found 3 clues
+      print(f"Total: {clues * 2}")                # any expression works
+      print(f"Price: {12.5:.2f}")                 # Price: 12.50 (2 decimals)
+      ```
+
+      **f-strings are the standard way.** They are shorter and clearer than gluing pieces with `+` (which also fails if one piece is a number: `"Age: " + 30` is a `TypeError`).
+
+      Other things to know:
+
+      - **Escape characters** start with a backslash: `\n` is a new line, `\t` a tab, `\"` a quote, `\\` a backslash. `print("a\nb")` prints two lines.
+      - **Triple quotes** `"""..."""` make a **multi-line string** that keeps line breaks.
+
+  - kind: code
+    title: A clue summary
+    body: |
+      Finish `summary(name, clues, budget)` with an f-string. It returns text like `"Ada: 3 clues, budget 12.50"`. The budget always shows **two decimals** (`:.2f`).
+    code: |
+      def summary(name, clues, budget):
+          return ""
+    tests:
+      - "summary('Ada', 3, 12.5)"
+      - "summary('Moth', 0, 100)"
+      - "summary('Bold', 12, 0.256)"
+    solution: |
+      def summary(name, clues, budget):
+          return f"{name}: {clues} clues, budget {budget:.2f}"
+    hint: "`f\"{name}: {clues} clues, budget {budget:.2f}\"`."
+    reject:
+      - |
+        def summary(name, clues, budget):
+            return f"{name}: {clues} clues, budget {budget}"
+
+  - kind: code
+    title: Look for an email
+    body: |
+      Finish `looks_like_email(text)`: `True` if the text contains an `@` that is **not the first character**, and ends with `.com`. So `"ada@inkwell.com"` is `True`, `"@inkwell.com"` is `False`, `"ada.com"` is `False`.
+
+      `text.find("@")` gives the position of the `@` (or `-1`), and `text.endswith(".com")` checks the end.
+    code: |
+      def looks_like_email(text):
+          return False
+    tests:
+      - "looks_like_email('ada@inkwell.com')"
+      - "looks_like_email('@inkwell.com')"
+      - "looks_like_email('ada.com')"
+      - "looks_like_email('ada@inkwell.org')"
+      - "looks_like_email('a@b.com')"
+    solution: |
+      def looks_like_email(text):
+          return text.find("@") > 0 and text.endswith(".com")
+    hint: "`find` returns `-1` when missing and `0` when the `@` is first, so you want it to be greater than 0."
+    reject:
+      - |
+        def looks_like_email(text):
+            return "@" in text and text.endswith(".com")
+
+  - kind: info
+    title: "🔹 Older ways to format text: % and .format()"
+    body: |
+      In older code you will see two other styles that do the same job as f-strings:
+
+      ```python
+      "%s found %d clues" % ("Ada", 3)          # the very old way
+      "{} found {} clues".format("Ada", 3)      # the older way
+      ```
+
+      They still work, and you should be able to read them. Write **f-strings** in your own code.
+
+  - kind: info
+    title: "🔹 t-strings (new in Python 3.14)"
+    body: |
+      Python 3.14 added **template strings**, written with a `t` instead of an `f`:
+
+      ```python
+      name = "Ada"
+      template = t"Hello {name}"
+      ```
+
+      An f-string immediately produces finished text. A **t-string** produces a *template object* that keeps the fixed text and the inserted values **separate**, so a library can inspect and safely process them (for example, to stop harmful input in a database query or web page). You will rarely write one yourself as a beginner. It is good to know the name when you see it.
+
+  - kind: why
+    body: |
+      Almost everything a program handles is text: names, messages, file contents, web pages, dates. Knowing slicing, the string methods, and f-strings lets you clean up messy data and build clear output in a few lines, and you will use them in every program you write.
+
+  - kind: recap
+    body: |
+      - A `str` is a row of characters, indexed from `0` (and `-1` from the end). Slices: `s[start:stop]`, and `stop` is not included.
+      - Strings are **immutable**: methods return new strings. Use the result.
+      - Key methods: `split`, `join`, `strip`, `replace`, `lower`, `upper`, `startswith`, `find`; `in` tests for a piece.
+      - **f-strings** (`f"Hi {name}"`) are the standard. `\n` is a new line; `"""..."""` spans lines.
+      - 🔹 `%` and `.format()` are older; **t-strings** are new in 3.14.

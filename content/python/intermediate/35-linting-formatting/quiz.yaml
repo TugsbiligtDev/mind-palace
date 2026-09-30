@@ -1,0 +1,37 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What is the difference between a linter and a formatter?
+    options:
+      - A linter reports likely mistakes; a formatter rewrites layout to a standard style
+      - They are the same thing
+      - A formatter finds bugs; a linter fixes spacing
+      - A linter only works on tests
+    answer: 0
+    explanation: Ruff does both jobs, with `ruff check` (lint) and `ruff format` (format).
+  - type: mcq
+    prompt: What does the Ruff rule code F401 mean?
+    options: ["An imported name is never used", "A line is too long", "A name is undefined", "Imports are unsorted"]
+    answer: 0
+    explanation: "`F401` flags an unused import. `F821` would be an undefined name, and `I001` unsorted imports."
+  - type: mcq
+    prompt: Which is the best name for a boolean variable?
+    options: ["is_valid", "flag", "x", "validity_status_boolean_value"]
+    answer: 0
+    explanation: Boolean names read as questions, so `if is_valid:` reads like English.
+  - type: mcq
+    prompt: What is a pre-commit hook for?
+    options:
+      - It runs checks automatically on every git commit and can refuse a commit that fails them
+      - It backs up your files
+      - It pushes code to GitHub
+      - It installs packages
+    answer: 0
+    explanation: Hooks make quality checks impossible to forget.
+  - type: fill
+    prompt: Complete the command that lets Ruff automatically repair the safe problems it finds.
+    code: |
+      uv run ruff check . ____
+    runnable: false
+    answer: "--fix"
+    explanation: "`ruff check --fix` applies the automatic fixes."

@@ -1,0 +1,294 @@
+steps:
+  - kind: explain
+    title: Debugging is a method, not luck
+    body: |
+      Beginners change code at random and hope. Professionals follow a **method**:
+
+      1. **Reproduce** the bug reliably. If you cannot make it happen on demand, you cannot know you fixed it.
+      2. **Read the evidence:** the error message, the traceback (Module 3), the actual vs. expected values.
+      3. **Form a hypothesis:** "I think the list is empty when it gets here."
+      4. **Test the hypothesis** with the smallest experiment: a print, a log line, a breakpoint.
+      5. **Fix one thing**, re-run, and confirm. Then add a **test** so it never returns (Module 34).
+
+      Change **one thing at a time**, and write down what you learned. The tools in this lesson are just ways to look inside a running program.
+
+  - kind: explain
+    title: breakpoint() and pdb
+    body: |
+      Python has a built-in debugger, **pdb**. Put `breakpoint()` on the line where you want to pause. When the program reaches it, you get a `(Pdb)` prompt with the program frozen:
+
+      ```python
+      def total(prices):
+          result = 0
+          for price in prices:
+              breakpoint()          # the program stops here each time round
+              result += price
+          return result
+      ```
+
+      Useful pdb commands (type at the prompt):
+
+      | Command | Does |
+      |---|---|
+      | `p expr` | **print** the value of any expression: `p result`, `p prices[0]` |
+      | `n` | run the **next** line |
+      | `s` | **step** into a function call |
+      | `c` | **continue** until the next breakpoint |
+      | `l` | **list** the code around here |
+      | `w` | show the call stack (**where** am I) |
+      | `q` | **quit** |
+
+      You can also run any program under the debugger from the start: `uv run python -m pdb script.py`, and pdb **post-mortem** opens right after a crash: `python -m pdb -c continue script.py`.
+
+  - kind: mac
+    title: Drive pdb from Terminal
+    body: |
+      Make a tiny buggy script and step through it with pdb. The `printf` feeds pdb the commands `n` (next) twice, `p` to print a variable, then `q` to quit, so you can see how it works. Then run `uv run python -m pdb bug.py` yourself and type commands.
+
+      **Checkpoint:** paste the output. It should contain `(Pdb)`.
+    commands: |
+      mkdir -p ~/Desktop/debug && cd ~/Desktop/debug
+      cat > bug.py <<'PY'
+      def total(prices):
+          result = 0
+          for price in prices:
+              result += price
+          return result
+
+
+      print(total([2, 3, 5]))
+      PY
+      printf 'n\nn\nn\np result\nq\n' | uv run python -m pdb bug.py
+    expect_output:
+      - "(Pdb)"
+
+  - kind: explain
+    title: The VS Code debugger
+    body: |
+      A visual debugger does the same job with less typing. In VS Code:
+
+      1. **Set a breakpoint:** click in the gutter left of a line number. A red dot appears.
+      2. **Run with the debugger:** open the Run and Debug panel (or press **F5**) and choose *Python File*. The program pauses on the red dot.
+      3. **Inspect:** the **Variables** panel shows every local; you can add expressions to **Watch** and see them update as you step.
+      4. **Step:** **F10** (step over a line), **F11** (step into a function), **Shift+F11** (step out), **F5** (continue).
+      5. **Conditional breakpoint:** right-click a breakpoint → *Edit Breakpoint* → add a condition like `price < 0`. It stops only when the condition is true. It is perfect for "the bug only happens on the 5,000th item".
+
+      Use the **Call Stack** panel to see how the program got here, and click a frame to inspect its variables.
+
+  - kind: code
+    title: Make a trace log
+    body: |
+      Logging is debugging you can leave switched on. Write a decorator `traced(log)` (a decorator with an argument): it returns a decorator that appends `"call name(args)"` before running the function and `"return name -> value"` afterwards to the list `log`. Show arguments with `repr`, separated by `", "`. Keep the function's name with `@wraps`.
+
+      With `@traced(log)` on `add`, calling `add(2, 3)` appends `"call add(2, 3)"` and `"return add -> 5"`.
+    code: |
+      from functools import wraps
+
+
+      def traced(log):
+          pass
+    tests:
+      - "log = []\n@traced(log)\ndef add(a, b):\n    return a + b\n\nadd(2, 3)\nresult = log"
+      - "log = []\n@traced(log)\ndef greet(name):\n    return 'hi ' + name\n\ngreet('Ada')\nresult = (log, greet.__name__)"
+      - "log = []\n@traced(log)\ndef f():\n    return None\n\nf()\nresult = log"
+    solution: |
+      from functools import wraps
+
+
+      def traced(log):
+          def decorator(func):
+              @wraps(func)
+              def wrapper(*args, **kwargs):
+                  shown = ", ".join(repr(a) for a in args)
+                  log.append(f"call {func.__name__}({shown})")
+                  value = func(*args, **kwargs)
+                  log.append(f"return {func.__name__} -> {value!r}")
+                  return value
+
+              return wrapper
+
+          return decorator
+    hint: "Three layers (Module 27): `traced(log)` returns `decorator(func)`, which returns `wrapper`. Use `repr` for the arguments and the value."
+    reject:
+      - |
+        from functools import wraps
+
+
+        def traced(log):
+            def decorator(func):
+                @wraps(func)
+                def wrapper(*args, **kwargs):
+                    return func(*args, **kwargs)
+
+                return wrapper
+
+            return decorator
+
+  - kind: explain
+    title: Minimal reproducible examples
+    body: |
+      When something fails deep in a large program, do not debug the big program. **Shrink it.** Remove everything that is not needed to make the bug appear until only a few lines remain. This is a **minimal reproducible example (MRE)**. It has three big payoffs:
+
+      - Often the cause becomes obvious *while* shrinking.
+      - It is the only form in which other people (or an AI assistant, or a library's issue tracker) can help you.
+      - It becomes your **failing test**.
+
+      Shrinking data works the same way: if a function fails on a list of 10,000 items, find the smallest list that still fails. A simple approach: try removing one item at a time, keep the removal if the failure remains, and repeat until nothing more can be removed.
+
+  - kind: code
+    title: Shrink the failing input
+    body: |
+      Write `minimize(items, fails)`. `fails(list)` returns `True` when the bug shows up for that list. It is `True` for the full `items`. Repeatedly try removing **one item at a time** (from the front to the back); keep a removal if `fails` is still `True`; stop when no single removal keeps it failing. Return the smaller list. The original must not be modified.
+
+      For `fails = lambda xs: 0 in xs` and `items = [3, 0, 9]` the answer is `[0]`.
+    code: |
+      def minimize(items, fails):
+          return list(items)
+    tests:
+      - "minimize([3, 0, 9], lambda xs: 0 in xs)"
+      - "minimize([1, 2, 3, 4, 5, 6], lambda xs: 2 in xs and 5 in xs)"
+      - "minimize(list(range(50)), lambda xs: sum(xs) > 100)"
+      - "(lambda src: (minimize(src, lambda xs: 1 in xs), src))([1, 2])"
+      - "minimize(['a', 'b', 'c'], lambda xs: len(xs) >= 2)"
+    solution: |
+      def minimize(items, fails):
+          current = list(items)
+          changed = True
+          while changed:
+              changed = False
+              i = 0
+              while i < len(current):
+                  candidate = current[:i] + current[i + 1:]
+                  if fails(candidate):
+                      current = candidate
+                      changed = True
+                  else:
+                      i += 1
+          return current
+    hint: "Loop: for each index build `candidate` without that item. If `fails(candidate)`, keep it (and don't advance `i`); else advance. Repeat until a full pass changes nothing."
+    reject:
+      - |
+        def minimize(items, fails):
+            return list(items)
+
+  - kind: code
+    title: "Find the bug: the median"
+    body: |
+      `median(numbers)` should return the middle value of a non-empty list; for an even number of items, the average of the two middle values (`median([1, 2, 3, 4])` is `2.5`). It has a bug. Use the method: try `median([1, 2, 3, 4])` first, decide what went wrong, and fix it.
+    code: |
+      def median(numbers):
+          ordered = sorted(numbers)
+          middle = len(ordered) // 2
+          return ordered[middle]
+    tests:
+      - "median([3, 1, 2])"
+      - "median([1, 2, 3, 4])"
+      - "median([5])"
+      - "median([4, 1])"
+      - "(lambda n: (median(n), n))([9, 1, 5])"
+    solution: |
+      def median(numbers):
+          ordered = sorted(numbers)
+          middle = len(ordered) // 2
+          if len(ordered) % 2 == 1:
+              return ordered[middle]
+          return (ordered[middle - 1] + ordered[middle]) / 2
+    hint: "For an even length, the two middle items are at `middle - 1` and `middle`. Average them."
+    broken_starter: true
+
+  - kind: code
+    title: "Find the bug: the moving average"
+    body: |
+      `moving_average(values, window)` returns the average of every run of `window` consecutive values. `moving_average([1, 2, 3, 4], 2)` should be `[1.5, 2.5, 3.5]`. The starter misses the last one. Reproduce it with a tiny input, find the off-by-one, and fix it.
+    code: |
+      def moving_average(values, window):
+          averages = []
+          for start in range(len(values) - window):
+              chunk = values[start:start + window]
+              averages.append(sum(chunk) / window)
+          return averages
+    tests:
+      - "moving_average([1, 2, 3, 4], 2)"
+      - "moving_average([1, 2, 3], 3)"
+      - "moving_average([5], 1)"
+      - "moving_average([1, 2], 3)"
+      - "moving_average([2, 4, 6, 8, 10], 2)"
+    solution: |
+      def moving_average(values, window):
+          averages = []
+          for start in range(len(values) - window + 1):
+              chunk = values[start:start + window]
+              averages.append(sum(chunk) / window)
+          return averages
+    hint: "There are `len(values) - window + 1` runs. `range` stops before its end, so the `+ 1` matters."
+    broken_starter: true
+
+  - kind: explain
+    title: Reading library source
+    body: |
+      When a library behaves oddly, the truth is in its source code, and Python makes it easy to read:
+
+      - `help(json.loads)` shows the documentation.
+      - `inspect.getsource(json.loads)` prints the actual code.
+      - `json.loads.__module__` and `inspect.getsourcefile(func)` say **where** it lives.
+      - In VS Code, **Cmd+click** a function name (or *Go to Definition*) to jump into it.
+
+      ```python
+      import inspect, json
+      print(inspect.getsource(json.loads).splitlines()[0])   # def loads(s, *, cls=None, ...
+      ```
+
+      Don't be afraid of it. Most library code is ordinary Python, and reading a few functions often answers a question that a search never could. Two habits: read the **tests** of the library (they show intended use), and check the **version** you have installed (`uv pip list`) because behaviour changes between versions.
+
+  - kind: code
+    title: Where does it come from?
+    body: |
+      Write `describe_function(func)` returning a tuple of two texts: the function's module name (`func.__module__`) and the **name in the first line of its source**, for example `"def loads"` for `json.loads`. Take the first line of `inspect.getsource(func)` and cut it at the first `(`.
+    code: |
+      import inspect
+
+
+      def describe_function(func):
+          return ("", "")
+    tests:
+      - "import json\nresult = describe_function(json.loads)"
+      - "import json\nresult = describe_function(json.dumps)"
+      - "import textwrap\nresult = describe_function(textwrap.fill)"
+      - "describe_function(describe_function)"
+    solution: |
+      import inspect
+
+
+      def describe_function(func):
+          first_line = inspect.getsource(func).splitlines()[0]
+          return (func.__module__, first_line.split("(")[0])
+    hint: "`inspect.getsource(func).splitlines()[0].split(\"(\")[0]`."
+    reject:
+      - |
+        import inspect
+
+
+        def describe_function(func):
+            return (func.__module__, func.__name__)
+
+  - kind: info
+    title: "🔹 Habits of good debuggers"
+    body: |
+      - **Read the error message literally.** It usually says exactly what is wrong.
+      - **Doubt your assumptions**, not just your code. "That variable is definitely a list" is the assumption that is wrong.
+      - **Explain the problem out loud** (to a rubber duck, a friend, or an AI assistant). Putting it into words often reveals the flaw.
+      - **Bisect:** if it worked yesterday, `git bisect` finds the commit that broke it by halving the history.
+      - **Take breaks.** A fresh mind sees the typo.
+      - After fixing, ask: *why did I not catch this earlier, and can a test or a type hint catch it next time?*
+
+  - kind: why
+    body: |
+      You will spend a large share of your career finding out why code does not do what you expected. A calm, repeatable method (reproduce, shrink, hypothesise, look inside with a debugger or logs, fix one thing, add a test) turns that from stressful guessing into routine detective work, which is the whole spirit of this course.
+
+  - kind: recap
+    body: |
+      - Method: **reproduce → evidence → hypothesis → smallest experiment → fix one thing → add a test**.
+      - **`breakpoint()`** starts pdb: `p` print, `n` next, `s` step, `c` continue, `l` list, `w` where, `q` quit.
+      - **VS Code debugger:** breakpoints, Variables and Watch, step over/into/out, **conditional breakpoints**.
+      - **Logging** records what happened without stopping the program.
+      - Shrink bugs to a **minimal reproducible example**; read library source with `help`, `inspect.getsource`, Go to Definition.

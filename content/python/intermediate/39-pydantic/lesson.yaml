@@ -1,0 +1,436 @@
+steps:
+  - kind: explain
+    title: Trust nothing that comes from outside
+    body: |
+      Data from a file, a form or a web API is **untrusted**: fields can be missing, `null`, the wrong type, or out of range. Code that assumes otherwise crashes at some random distance from the real cause (`KeyError: 'price'` ten functions later).
+
+      **Pydantic** checks data **at the edge** and turns it into a proper, typed object, or explains exactly what was wrong. You describe the shape with **type hints** (Module 33) and Pydantic does the rest:
+
+      ```python
+      from pydantic import BaseModel
+
+      class User(BaseModel):
+          name: str
+          age: int
+          email: str | None = None      # optional, default None
+
+      user = User(name="Ada", age="34")   # "34" is converted to 34
+      user.age                            # 34 (an int)
+      ```
+
+      This course uses **Pydantic v2** (the current major version; **v1 is legacy**, with different names for many methods, so check which one a tutorial uses).
+
+      By default Pydantic is **lax**: it converts sensible values (`"34"` → `34`) but rejects nonsense (`"abc"` for an int).
+
+  - kind: code
+    title: Try a model
+    body: |
+      Run this. See the automatic conversion, and the error Pydantic raises for bad data.
+    code: |
+      from pydantic import BaseModel, ValidationError
+
+
+      class User(BaseModel):
+          name: str
+          age: int
+          email: str | None = None
+
+
+      user = User(name="Ada", age="34")
+      print(user)
+      print(user.age + 1)
+
+      try:
+          User(name="Bo", age="not a number")
+      except ValidationError as error:
+          print(error)
+
+  - kind: code
+    title: Validate or explain
+    body: |
+      Using the `User` model below, write `check_user(data)` which takes a dict and returns `(True, [])` if it is valid, or `(False, errors)` where `errors` is a **sorted list of `(field, error_type)`** pairs from `exception.errors()`. In each error dict, `loc` is a tuple like `("age",)` and `type` is a short code such as `"missing"` or `"int_parsing"`.
+    code: |
+      from pydantic import BaseModel, ValidationError
+
+
+      class User(BaseModel):
+          name: str
+          age: int
+          email: str | None = None
+
+
+      def check_user(data):
+          return (True, [])
+    tests:
+      - "check_user({'name': 'Ada', 'age': 34})"
+      - "check_user({'name': 'Ada', 'age': '34', 'email': 'a@b.c'})"
+      - "check_user({'name': 'Ada'})"
+      - "check_user({'age': 'x'})"
+      - "check_user({})"
+    solution: |
+      from pydantic import BaseModel, ValidationError
+
+
+      class User(BaseModel):
+          name: str
+          age: int
+          email: str | None = None
+
+
+      def check_user(data):
+          try:
+              User(**data)
+          except ValidationError as error:
+              return (False, sorted((e["loc"][0], e["type"]) for e in error.errors()))
+          return (True, [])
+    hint: "`try: User(**data)` and `except ValidationError as error:`. Each `e` in `error.errors()` has `\"loc\"` and `\"type\"`."
+    reject:
+      - |
+        from pydantic import BaseModel, ValidationError
+
+
+        class User(BaseModel):
+            name: str
+            age: int
+            email: str | None = None
+
+
+        def check_user(data):
+            return (True, [])
+
+  - kind: explain
+    title: Constraints with Field
+    body: |
+      Types are not enough: an age of `-5` is an `int` but nonsense. `Field(...)` adds rules:
+
+      ```python
+      from pydantic import BaseModel, Field
+
+      class Book(BaseModel):
+          title: str = Field(min_length=1)
+          price: float = Field(gt=0)                 # greater than 0
+          year: int = Field(ge=1450, le=2100)        # between, inclusive
+          tags: list[str] = Field(default_factory=list)
+      ```
+
+      Common options: `gt`, `ge`, `lt`, `le` (number bounds), `min_length`, `max_length` (text or lists), `pattern` (regex), `default`, `default_factory` (for mutable defaults, as in dataclasses), `alias` (a different name in the input data).
+
+      Then a whole class of bad input is rejected the moment the object is created, so the rest of your program can rely on it being valid.
+
+  - kind: code
+    title: A validated Book
+    body: |
+      Write the model `Book` with:
+
+      - `title`: text, at least 1 character,
+      - `price`: number, greater than 0,
+      - `year`: integer between 1450 and 2100 inclusive,
+      - `tags`: list of text, defaulting to a fresh empty list.
+
+      The checker tries good and bad data.
+    code: |
+      from pydantic import BaseModel, Field, ValidationError
+    tests:
+      - "Book(title='Dune', price=12.5, year=1965).model_dump()"
+      - "Book(title='Dune', price='12.5', year='1965', tags=['sf']).model_dump()"
+      - "try:\n    Book(title='', price=0, year=1000)\nexcept ValidationError as e:\n    result = sorted((x['loc'][0], x['type']) for x in e.errors())"
+      - "a = Book(title='a', price=1, year=2000)\nb = Book(title='b', price=1, year=2000)\na.tags.append('x')\nresult = (a.tags, b.tags)"
+    solution: |
+      from pydantic import BaseModel, Field, ValidationError
+
+
+      class Book(BaseModel):
+          title: str = Field(min_length=1)
+          price: float = Field(gt=0)
+          year: int = Field(ge=1450, le=2100)
+          tags: list[str] = Field(default_factory=list)
+    hint: "Four fields with `Field(...)`: `min_length=1`, `gt=0`, `ge=1450, le=2100`, and `default_factory=list`."
+    reject:
+      - |
+        from pydantic import BaseModel, Field, ValidationError
+
+
+        class Book(BaseModel):
+            title: str
+            price: float
+            year: int
+            tags: list[str] = []
+
+  - kind: explain
+    title: JSON in, objects out
+    body: |
+      Pydantic reads JSON text or dictionaries straight into models, including **nested** ones:
+
+      ```python
+      class Item(BaseModel):
+          name: str
+          price: float
+
+      class Order(BaseModel):
+          id: int
+          items: list[Item]
+
+      order = Order.model_validate_json('{"id": 1, "items": [{"name": "pen", "price": 2}]}')
+      order.items[0].name          # 'pen'
+      order.model_dump()           # back to plain dicts and lists
+      order.model_dump_json()      # back to JSON text
+      ```
+
+      The key v2 methods: `Model.model_validate(dict)`, `Model.model_validate_json(text)`, `instance.model_dump()`, `instance.model_dump_json()`. (In v1 these were `parse_obj`, `parse_raw`, `.dict()`, `.json()`, which you may see in older code.)
+
+      Because the whole structure is validated, one bad item deep inside gives an error with its exact **location**, like `items.1.price`.
+
+  - kind: code
+    title: Parse an order
+    body: |
+      With the models below, write `order_total(json_text)`: parse the JSON into an `Order` and return the total price of all items (sum of `price * quantity`), rounded to 2 decimals. If the JSON is not valid for the model, return `None`.
+    code: |
+      from pydantic import BaseModel, Field, ValidationError
+
+
+      class Item(BaseModel):
+          name: str
+          price: float = Field(ge=0)
+          quantity: int = Field(default=1, ge=1)
+
+
+      class Order(BaseModel):
+          id: int
+          items: list[Item]
+
+
+      def order_total(json_text):
+          return None
+    tests:
+      - "order_total('{\"id\": 1, \"items\": [{\"name\": \"pen\", \"price\": 2.5, \"quantity\": 2}, {\"name\": \"book\", \"price\": 10}]}')"
+      - "order_total('{\"id\": 1, \"items\": []}')"
+      - "order_total('{\"id\": 1, \"items\": [{\"name\": \"pen\", \"price\": -1}]}')"
+      - "order_total('not json')"
+      - "order_total('{\"items\": []}')"
+    solution: |
+      from pydantic import BaseModel, Field, ValidationError
+
+
+      class Item(BaseModel):
+          name: str
+          price: float = Field(ge=0)
+          quantity: int = Field(default=1, ge=1)
+
+
+      class Order(BaseModel):
+          id: int
+          items: list[Item]
+
+
+      def order_total(json_text):
+          try:
+              order = Order.model_validate_json(json_text)
+          except ValidationError:
+              return None
+          return round(sum(item.price * item.quantity for item in order.items), 2)
+    hint: "`Order.model_validate_json(json_text)` inside `try`; invalid JSON text is also a `ValidationError`."
+    reject:
+      - |
+        from pydantic import BaseModel, Field, ValidationError
+
+
+        class Item(BaseModel):
+            name: str
+            price: float = Field(ge=0)
+            quantity: int = Field(default=1, ge=1)
+
+
+        class Order(BaseModel):
+            id: int
+            items: list[Item]
+
+
+        def order_total(json_text):
+            import json
+            data = json.loads(json_text)
+            return round(sum(i["price"] * i.get("quantity", 1) for i in data["items"]), 2)
+
+  - kind: explain
+    title: Custom validators
+    body: |
+      Sometimes a rule needs code. A **validator** runs your function on a field:
+
+      ```python
+      from pydantic import BaseModel, field_validator
+
+      class Signup(BaseModel):
+          email: str
+
+          @field_validator("email")
+          @classmethod
+          def clean_email(cls, value: str) -> str:
+              value = value.strip().lower()
+              if "@" not in value:
+                  raise ValueError("must contain @")
+              return value
+      ```
+
+      Raising `ValueError` (or `AssertionError`) inside a validator turns into a normal validation error with a nice message. The returned value replaces the input, so validators can also **normalise** data (trim spaces, lower-case). Use `@model_validator(mode="after")` for rules that involve several fields together (for example "end date must be after start date").
+
+  - kind: code
+    title: Normalise an email
+    body: |
+      Write a model `Signup` with fields `name: str` and `email: str`. A `field_validator` on `email` should strip spaces and lower-case it, and raise `ValueError("must contain @")` if there is no `@`. A second validator on `name` should reject an empty or all-spaces name with `ValueError("name required")` and otherwise return the stripped name.
+    code: |
+      from pydantic import BaseModel, ValidationError, field_validator
+    tests:
+      - "Signup(name='  Ada ', email='  ADA@Inkwell.COM ').model_dump()"
+      - "try:\n    Signup(name='Ada', email='nope')\nexcept ValidationError as e:\n    result = [x['msg'] for x in e.errors()]"
+      - "try:\n    Signup(name='   ', email='a@b.c')\nexcept ValidationError as e:\n    result = [x['msg'] for x in e.errors()]"
+    solution: |
+      from pydantic import BaseModel, ValidationError, field_validator
+
+
+      class Signup(BaseModel):
+          name: str
+          email: str
+
+          @field_validator("name")
+          @classmethod
+          def name_required(cls, value: str) -> str:
+              value = value.strip()
+              if not value:
+                  raise ValueError("name required")
+              return value
+
+          @field_validator("email")
+          @classmethod
+          def clean_email(cls, value: str) -> str:
+              value = value.strip().lower()
+              if "@" not in value:
+                  raise ValueError("must contain @")
+              return value
+    hint: "Two `@field_validator(...)` methods with `@classmethod`. The message you raise appears in the error's `msg` as `Value error, <message>`."
+    reject:
+      - |
+        from pydantic import BaseModel, ValidationError, field_validator
+
+
+        class Signup(BaseModel):
+            name: str
+            email: str
+
+  - kind: explain
+    title: Settings from the environment
+    body: |
+      Application settings (database address, debug flag, API keys) should come from the **environment**, not the code (Module 37). The companion package **`pydantic-settings`** does this with a model:
+
+      ```python
+      from pydantic_settings import BaseSettings, SettingsConfigDict
+
+      class Settings(BaseSettings):
+          model_config = SettingsConfigDict(env_file=".env")
+
+          api_key: str
+          debug: bool = False
+          max_results: int = 10
+
+      settings = Settings()      # reads API_KEY, DEBUG, MAX_RESULTS from the environment / .env
+      ```
+
+      The fields are looked up as environment variables (case-insensitive) and **validated and converted**: `DEBUG=true` becomes the boolean `True`, `MAX_RESULTS=abc` fails with a clear error at start-up instead of misbehaving later. A missing required setting stops the program immediately with a helpful message.
+
+      That package is not available in the browser, so here you build the same idea with a plain model, and on your Mac you use the real thing.
+
+  - kind: code
+    title: Settings from a dict
+    body: |
+      With the `Settings` model below, write `load_settings(env)` which takes an environment-like dict with upper-case names (`API_KEY`, `DEBUG`, `MAX_RESULTS`) and returns a `Settings`. Map them to the lower-case fields, leave out the ones that are absent (so the defaults apply), and let Pydantic convert types. Missing `API_KEY` should raise `ValidationError`.
+    code: |
+      from pydantic import BaseModel, ValidationError
+
+
+      class Settings(BaseModel):
+          api_key: str
+          debug: bool = False
+          max_results: int = 10
+
+
+      def load_settings(env):
+          return Settings(api_key="")
+    tests:
+      - "load_settings({'API_KEY': 'abc'}).model_dump()"
+      - "load_settings({'API_KEY': 'abc', 'DEBUG': 'true', 'MAX_RESULTS': '25', 'OTHER': 'x'}).model_dump()"
+      - "try:\n    load_settings({'DEBUG': 'true'})\nexcept ValidationError as e:\n    result = [x['type'] for x in e.errors()]"
+      - "try:\n    load_settings({'API_KEY': 'k', 'MAX_RESULTS': 'many'})\nexcept ValidationError as e:\n    result = [x['loc'][0] for x in e.errors()]"
+    solution: |
+      from pydantic import BaseModel, ValidationError
+
+
+      class Settings(BaseModel):
+          api_key: str
+          debug: bool = False
+          max_results: int = 10
+
+
+      def load_settings(env):
+          values = {name: env[name.upper()] for name in Settings.model_fields if name.upper() in env}
+          return Settings(**values)
+    hint: "Loop over `Settings.model_fields`; for each field name, look up its upper-case version in `env` and include it only if present."
+    reject:
+      - |
+        from pydantic import BaseModel, ValidationError
+
+
+        class Settings(BaseModel):
+            api_key: str
+            debug: bool = False
+            max_results: int = 10
+
+
+        def load_settings(env):
+            return Settings(api_key="secret")
+
+  - kind: mac
+    title: Real pydantic-settings on your Mac
+    body: |
+      Use the real `pydantic-settings`. It reads the value from a `.env` file and converts types, then fails clearly when a required value is missing.
+
+      **Checkpoint:** paste the output. It should contain `debug=True` and `ValidationError`.
+    commands: |
+      mkdir -p ~/Desktop/settings-practice && cd ~/Desktop/settings-practice
+      uv init --bare
+      uv add pydantic-settings
+      printf 'API_KEY=not-a-real-key\nDEBUG=true\n' > .env
+      cat > app.py <<'PY'
+      from pydantic import ValidationError
+      from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+      class Settings(BaseSettings):
+          model_config = SettingsConfigDict(env_file=".env")
+
+          api_key: str
+          debug: bool = False
+          max_results: int = 10
+
+
+      settings = Settings()
+      print(f"debug={settings.debug} max_results={settings.max_results}")
+
+      try:
+          Settings(_env_file=None, api_key=None)
+      except ValidationError as error:
+          print("ValidationError:", error.error_count(), "problem(s)")
+      PY
+      uv run app.py
+    expect_output:
+      - "debug=True"
+      - "ValidationError"
+
+  - kind: why
+    body: |
+      Pydantic moves "is this data valid?" from scattered `if` statements to one declaration, right at the edge of your program. Everything inside can then trust its inputs, and every outside problem is reported with the field, the reason and the location. It is the foundation of FastAPI and of many modern Python tools, and it builds directly on type hints.
+
+  - kind: recap
+    body: |
+      - **Pydantic v2** models are classes with typed fields; data is **validated and converted** on creation; bad data raises `ValidationError` with `loc`, `type` and `msg`.
+      - `Field(gt=, ge=, lt=, le=, min_length=, max_length=, pattern=, default_factory=)` add constraints.
+      - `Model.model_validate(dict)`, `Model.model_validate_json(text)`, `.model_dump()`, `.model_dump_json()` (v1's `parse_obj`, `.dict()` are legacy).
+      - Nested models and lists validate deeply. `@field_validator` (with `@classmethod`) normalises or rejects values; `@model_validator` checks several fields.
+      - **pydantic-settings** loads typed settings from environment variables and `.env` files.

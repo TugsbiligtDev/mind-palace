@@ -1,0 +1,304 @@
+steps:
+  - kind: explain
+    title: Repeating things
+    body: |
+      Computers are brilliant at doing the same thing many times. A **loop** repeats a block of indented code. Python has two kinds.
+
+      **`for`: "do this for each item".**
+
+      ```python
+      for letter in "cat":
+          print(letter)      # prints c, then a, then t
+      ```
+
+      `letter` is a name Python re-points at each item in turn. You can loop over text, lists, and (very often) over `range()`.
+
+      **`while`: "keep going as long as this is true".**
+
+      ```python
+      count = 3
+      while count > 0:
+          print(count)
+          count -= 1         # without this the loop would never end!
+      print("Liftoff")
+      ```
+
+      Use **`for`** when you know what to loop over. Use **`while`** when you loop until something changes.
+
+  - kind: code
+    title: Loop it
+    body: |
+      Run this. Then change the `range` numbers and predict the output first.
+
+      `range(5)` gives `0, 1, 2, 3, 4` (**five** numbers, starting at 0, stopping *before* 5). `range(2, 6)` gives `2, 3, 4, 5`. `range(0, 10, 3)` counts in steps of 3: `0, 3, 6, 9`.
+    code: |
+      for i in range(5):
+          print("step", i)
+
+      for n in range(2, 6):
+          print(n * n)
+
+      total = 0
+      for n in range(1, 4):
+          total += n
+      print("total", total)
+
+  - kind: code
+    title: Add up 1 to n
+    body: |
+      `sum_to(n)` should return `1 + 2 + ... + n`. `sum_to(4)` is `10`. The starter has an **off-by-one error**: it uses `range(n)`, which counts from 0 up to `n - 1`. Fix the range so it covers `1` through `n`.
+    code: |
+      def sum_to(n):
+          total = 0
+          for i in range(n):
+              total += i
+          return total
+    tests:
+      - "sum_to(4)"
+      - "sum_to(1)"
+      - "sum_to(0)"
+      - "sum_to(100)"
+    solution: |
+      def sum_to(n):
+          total = 0
+          for i in range(1, n + 1):
+              total += i
+          return total
+    hint: "`range(1, n + 1)` starts at 1 and stops before `n + 1`, so the last number is `n`."
+    broken_starter: true
+
+  - kind: code
+    title: Count the vowels
+    body: |
+      Finish `count_vowels(text)`: how many of the letters `a`, `e`, `i`, `o`, `u` does the text contain (in lower case)? Loop over the text one letter at a time and keep a counter.
+
+      You can test a letter with `letter in "aeiou"`.
+    code: |
+      def count_vowels(text):
+          count = 0
+          return count
+    tests:
+      - "count_vowels('detective')"
+      - "count_vowels('rhythm')"
+      - "count_vowels('')"
+      - "count_vowels('aeiou')"
+      - "count_vowels('Inkwell Books')"
+    solution: |
+      def count_vowels(text):
+          count = 0
+          for letter in text.lower():
+              if letter in "aeiou":
+                  count += 1
+          return count
+    hint: "Use `text.lower()` so capitals count, then `count += 1` inside an `if`."
+    reject:
+      - |
+        def count_vowels(text):
+            count = 0
+            for letter in text:
+                if letter in "aeiou":
+                    count += 1
+            return count
+
+  - kind: explain
+    title: while loops, and stopping them
+    body: |
+      A `while` loop checks its condition **before every round**. Two dangers:
+
+      - **The infinite loop.** If nothing inside the loop ever makes the condition false, it runs forever. The classic cause is forgetting `count -= 1`. (If your program seems frozen, press **Ctrl + C** in the terminal to stop it.)
+      - **Off-by-one errors.** Does the loop run `n` times or `n + 1`? Does `range` include the end? (It doesn't.) When in doubt, test the smallest cases: 0, 1 and 2.
+
+      Two keywords give you control **inside** a loop:
+
+      - `break` leaves the loop completely,
+      - `continue` skips the rest of this round and jumps to the next.
+
+      ```python
+      for n in range(10):
+          if n == 3:
+              continue     # skip 3
+          if n == 6:
+              break        # stop at 6
+          print(n)         # prints 0 1 2 4 5
+      ```
+
+  - kind: code
+    title: How many digits?
+    body: |
+      Finish `count_digits(n)` for a whole number `n >= 0` using a **while** loop. Repeatedly cut off the last digit with `n // 10` and count how many cuts it takes to reach 0. `count_digits(1234)` is `4`, and `count_digits(0)` is `1` (the number `0` has one digit).
+    code: |
+      def count_digits(n):
+          return 0
+    tests:
+      - "count_digits(1234)"
+      - "count_digits(7)"
+      - "count_digits(0)"
+      - "count_digits(1000000)"
+      - "count_digits(99)"
+    solution: |
+      def count_digits(n):
+          if n == 0:
+              return 1
+          count = 0
+          while n > 0:
+              n = n // 10
+              count += 1
+          return count
+    hint: "Handle 0 first. Then `while n > 0:` cut a digit (`n = n // 10`) and add 1 to the count."
+    reject:
+      - |
+        def count_digits(n):
+            count = 0
+            while n > 0:
+                n = n // 10
+                count += 1
+            return count
+
+  - kind: explain
+    title: enumerate() and zip()
+    body: |
+      Two handy helpers for `for` loops.
+
+      **`enumerate`** gives you the position *and* the item, so you don't have to count yourself:
+
+      ```python
+      for i, name in enumerate(["Ada", "Moth", "Bold"]):
+          print(i, name)          # 0 Ada / 1 Moth / 2 Bold
+      ```
+
+      **`zip`** walks two sequences side by side:
+
+      ```python
+      for name, score in zip(["Ada", "Moth"], [90, 75]):
+          print(name, score)      # Ada 90 / Moth 75
+      ```
+
+      A quick first look at **lists**, which you will study properly in the next part: `items = []` makes an empty one, and `items.append(x)` adds `x` to the end.
+
+  - kind: code
+    title: Find the first negative
+    body: |
+      Finish `first_negative(numbers)`: return the **position** (index) of the first number below 0, or `-1` if there is none. `first_negative([4, 7, -2, 9, -5])` is `2`.
+
+      Use `enumerate` and return as soon as you find it.
+    code: |
+      def first_negative(numbers):
+          return -1
+    tests:
+      - "first_negative([4, 7, -2, 9, -5])"
+      - "first_negative([1, 2, 3])"
+      - "first_negative([])"
+      - "first_negative([-1])"
+      - "first_negative([0, 0, -3])"
+    solution: |
+      def first_negative(numbers):
+          for i, n in enumerate(numbers):
+              if n < 0:
+                  return i
+          return -1
+    hint: "`for i, n in enumerate(numbers):` and `return i` when `n < 0`. If the loop ends, return `-1`."
+    reject:
+      - |
+        def first_negative(numbers):
+            for i, n in enumerate(numbers):
+                if n <= 0:
+                    return i
+            return -1
+
+  - kind: code
+    title: Add pairs
+    body: |
+      Finish `pair_sums(a, b)`: two lists of equal length go in, and a new list of the sums of matching positions comes out. `pair_sums([1, 2, 3], [10, 20, 30])` is `[11, 22, 33]`.
+
+      Use `zip` and `append`.
+    code: |
+      def pair_sums(a, b):
+          result = []
+          return result
+    tests:
+      - "pair_sums([1, 2, 3], [10, 20, 30])"
+      - "pair_sums([], [])"
+      - "pair_sums([5], [5])"
+      - "pair_sums([1, 1], [-1, -1])"
+    solution: |
+      def pair_sums(a, b):
+          result = []
+          for x, y in zip(a, b):
+              result.append(x + y)
+          return result
+    hint: "`for x, y in zip(a, b):` then `result.append(x + y)`."
+    reject:
+      - |
+        def pair_sums(a, b):
+            result = []
+            for x in a:
+                result.append(x)
+            return result
+
+  - kind: explain
+    title: Never change a list while looping over it
+    body: |
+      This looks harmless and is a trap:
+
+      ```python
+      numbers = [1, 2, 3, 4]
+      for n in numbers:
+          if n % 2 == 0:
+              numbers.remove(n)     # changes the list mid-loop
+      ```
+
+      When an item is removed, the ones after it shift left, and the loop **skips** an item. The result is silently wrong.
+
+      The safe pattern: **build a new list** with the items you want to keep, and loop over the original untouched.
+
+  - kind: code
+    title: Keep the positives
+    body: |
+      Finish `keep_positive(numbers)`: return a **new** list with only the numbers greater than 0, in the same order. Do not change the original list. `keep_positive([3, -1, 0, 8])` is `[3, 8]`.
+    code: |
+      def keep_positive(numbers):
+          numbers.remove(0)
+          return numbers
+    tests:
+      - "keep_positive([3, -1, 0, 8])"
+      - "keep_positive([])"
+      - "keep_positive([-5, -6])"
+      - "(lambda nums: (keep_positive(nums), nums))([1, -1])"
+    solution: |
+      def keep_positive(numbers):
+          result = []
+          for n in numbers:
+              if n > 0:
+                  result.append(n)
+          return result
+    hint: "Start with `result = []`, loop over `numbers`, and `append` the ones with `n > 0`."
+    broken_starter: true
+
+  - kind: info
+    title: "🔹 for / else"
+    body: |
+      A loop can have an `else` block that runs only if the loop **finished without hitting `break`**:
+
+      ```python
+      for n in [4, 6, 8]:
+          if n % 2 == 1:
+              print("found an odd number")
+              break
+      else:
+          print("all even")       # runs: no break happened
+      ```
+
+      It reads oddly (many people misread it), so most programmers use a `return` or a flag variable instead. Recognise it; don't rely on it.
+
+  - kind: why
+    body: |
+      Loops are where the computer's speed pays off: a task you would never do by hand 10,000 times takes a blink. Nearly every real program is loops around decisions. The mistakes to remember are all small: an off-by-one range, a loop that can never stop, and changing a list while looping over it.
+
+  - kind: recap
+    body: |
+      - `for x in things:` visits each item. `while condition:` repeats until the condition is false.
+      - `range(stop)`, `range(start, stop)`, `range(start, stop, step)`; the stop value is **not** included.
+      - `break` leaves the loop; `continue` skips to the next round.
+      - `enumerate` gives position and item; `zip` walks sequences together.
+      - Watch for **infinite loops**, **off-by-one** errors, and **changing a list while looping** (build a new list instead).
+      - 🔹 `for ... else` runs its `else` only when there was no `break`.

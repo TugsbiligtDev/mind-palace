@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which command tells you which folder you are currently in?
+    options: ["ls", "pwd", "cd", "mkdir"]
+    answer: 1
+    explanation: "`pwd` prints the working directory. `ls` lists what is inside it."
+  - type: mcq
+    prompt: You are in `/Users/ada/Desktop`. What does `cd ..` do?
+    options:
+      - Goes up to `/Users/ada`
+      - Goes into a folder called `..`
+      - Stays where you are
+      - Goes to the top of the disk
+    answer: 0
+    explanation: "`..` means the folder one level up."
+  - type: mcq
+    prompt: Which of these is an absolute path?
+    options: ["notes/todo.txt", "../photos", "/Users/ada/notes", "./run.py"]
+    answer: 2
+    explanation: An absolute path starts at the top of the disk with `/`. The others start from where you are.
+  - type: mcq
+    prompt: Why should you be careful with `rm -rf`?
+    options:
+      - It is slow
+      - It deletes a folder and everything in it, with no Trash and no warning
+      - It only works on Windows
+      - It renames files
+    answer: 1
+    explanation: "`-r` includes everything inside, and `-f` turns off the warnings. There is no undo."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from pathlib import Path
+      print(Path("/Users/ada/Desktop").parent)
+    options: ["/Users/ada", "/Users/ada/Desktop", "Desktop", "/Users"]
+    answer: 0
+    explanation: "`.parent` is the folder containing that path, one level up."

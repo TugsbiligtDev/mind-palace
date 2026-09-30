@@ -1,0 +1,41 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which part of a computer forgets everything when the power goes off?
+    options:
+      - The CPU
+      - RAM
+      - Storage (the SSD)
+      - The folder tree
+    answer: 1
+    explanation: RAM is the fast "counter" where the computer works right now. It is wiped when the power goes off. Storage keeps your files.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(format(6, "b"))
+    options: ["110", "6", "101", "1100"]
+    answer: 0
+    explanation: "6 in binary is 110: one 4, one 2 and no 1."
+  - type: mcq
+    prompt: Python is called an *interpreted* language. What does that mean?
+    options:
+      - It only works in a web browser
+      - An interpreter reads and carries out your code line by line
+      - It has to be translated into a separate program before it can run at all
+      - It can only print text
+    answer: 1
+    explanation: An interpreter runs your instructions as it reads them, which is why one line can be tried on its own.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(17 // 5)
+    options: ["3", "3.4", "2", "4"]
+    answer: 0
+    explanation: "`//` divides and drops the leftover: 5 goes into 17 three times (15), with 2 left over."
+  - type: fill
+    prompt: "The file `/Users/ada/notes/todo.txt` has the file name `todo.txt`. Complete the code so it prints just that name."
+    code: |
+      from pathlib import Path
+      print(Path("/Users/ada/notes/todo.txt").____)
+    answer: name
+    explanation: "A `Path` has a `.name` (the file name) and a `.parent` (the folder)."

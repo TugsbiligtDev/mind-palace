@@ -1,0 +1,5 @@
+title: "Your DSA library"
+module: 12
+kind: capstone
+summary: Build your own small library of data structures and algorithms (LinkedList, Stack, Queue, merge sort, binary search and quickselect), then test it with node:test on your Mac.
+minutes: 75

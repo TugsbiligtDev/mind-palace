@@ -1,0 +1,25 @@
+id: beginner
+title: Beginner
+season: 1
+season_title: The Puzzle Vault
+season_pitch: |
+  The agency keeps a vault of locked puzzles, and every lock opens to a piece of code. Learn to
+  read a problem, count the work a solution does, and use JavaScript's arrays, strings, hash
+  maps, linked lists, stacks and queues. Then master recursion, searching and sorting.
+status: open
+topics:
+  - 01-how-to-approach-a-problem
+  - 02-math-you-need
+  - 03-big-o
+  - 04-js-builtins
+  - review-1-foundations
+  - 05-arrays-matrices
+  - 06-strings
+  - 07-hash-maps-sets
+  - 08-linked-lists
+  - 09-stacks-queues
+  - review-2-linear-structures
+  - 10-recursion
+  - 11-searching
+  - 12-sorting-selection
+  - capstone-1-dsa-library

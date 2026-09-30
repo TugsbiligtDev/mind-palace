@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const nums = [3, 1, 4, 1, 5];
+      const prefix = [0];
+      for (const n of nums) prefix.push(prefix[prefix.length - 1] + n);
+      console.log(prefix[4] - prefix[1]);
+    options: ["6", "9", "5", "3"]
+    answer: 0
+    explanation: "`prefix[4] - prefix[1]` is the sum of the items at positions 1 to 3: 1 + 4 + 1 = 6."
+  - type: mcq
+    prompt: You must answer 100 000 range-sum questions on an array of 100 000 numbers. Which approach is fast enough?
+    options: ["Add the numbers for each question", "Build prefix sums once, then answer each question in O(1)", "Sort the array first", "Recursion"]
+    answer: 1
+    explanation: The naive way is 10¹⁰ steps. Prefix sums cost O(n) once plus O(1) per question.
+  - type: mcq
+    prompt: "When counting subarrays with sum k using a prefix-sum Map, why do you start the map with `{0: 1}`?"
+    options:
+      - To avoid an error
+      - It represents the empty prefix, so subarrays starting at position 0 are counted
+      - Because k is always 0
+      - It is not needed
+    answer: 1
+    explanation: A subarray starting at index 0 has nothing before it, which is a prefix total of 0. That prefix has to be in the map.
+  - type: predict
+    prompt: What does this print? (A difference array for `n = 4` and one update `[1, 2, 5]`.)
+    code: |
+      const diff = [0, 0, 0, 0, 0];
+      diff[1] += 5;
+      diff[3] -= 5;
+      let running = 0;
+      const out = [];
+      for (let i = 0; i < 4; i++) {
+        running += diff[i];
+        out.push(running);
+      }
+      console.log(out);
+    options: ["[ 0, 5, 5, 0 ]", "[ 0, 5, 0, 0 ]", "[ 5, 5, 5, 5 ]", "[ 0, 5, 5, 5 ]"]
+    answer: 0
+    explanation: The +5 starts at index 1 and the −5 at index 3 cancels it, so positions 1 and 2 hold 5.
+  - type: mcq
+    prompt: A difference array makes which operation cheap?
+    options: ["Reading one value", "Adding a value to a whole range", "Sorting", "Searching"]
+    answer: 1
+    explanation: Each range update is two O(1) edits, and one pass at the end produces the final values.

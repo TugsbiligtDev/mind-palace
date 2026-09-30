@@ -1,0 +1,367 @@
+steps:
+  - kind: explain
+    title: Why a database?
+    body: |
+      JSON and CSV files are fine for small data, but as data grows you need to **search fast, change safely, avoid duplicates and let many users in at once**. A **database** does all of that.
+
+      A **relational database** stores data in **tables**, like spreadsheets with rules:
+
+      - a **row** is one record (one book),
+      - a **column** is one property (title, price) with a **type**,
+      - a **primary key** uniquely identifies each row (usually an `id`),
+      - a **foreign key** points at another table's primary key, forming **relationships** (a book's `author_id` refers to a row in `authors`).
+
+      You talk to it in **SQL**. Python ships with **SQLite**, a complete database that lives in a single file (or in memory), through the `sqlite3` module. It is perfect for learning and for many real applications. (If you followed the PostgreSQL course, SQL here will look familiar. The dialect differs slightly, but the ideas are the same.)
+
+      In this lesson, the databases live in memory inside your browser, and each exercise gets a fresh, empty one.
+
+  - kind: code
+    title: Your first database
+    body: |
+      Run this to create a table, insert rows and query them. Notice the `?` placeholders. Then change the `WHERE` price.
+    code: |
+      import sqlite3
+
+      conn = sqlite3.connect(":memory:")
+      conn.execute("CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT NOT NULL, price REAL)")
+      conn.executemany(
+          "INSERT INTO books (title, price) VALUES (?, ?)",
+          [("Dune", 12.5), ("Emma", 8.0), ("Ulysses", 20.0)],
+      )
+      conn.commit()
+
+      for row in conn.execute("SELECT title, price FROM books WHERE price > ? ORDER BY price", (9,)):
+          print(row)
+
+  - kind: explain
+    title: The five statements you need
+    body: |
+      ```sql
+      SELECT title, price FROM books WHERE price > 10 ORDER BY price DESC;   -- read
+      INSERT INTO books (title, price) VALUES ('Dune', 12.5);                -- create
+      UPDATE books SET price = 9.5 WHERE title = 'Dune';                      -- change
+      DELETE FROM books WHERE price < 5;                                      -- remove
+      ```
+
+      Plus the **JOIN** and **GROUP BY** that combine tables and summarise:
+
+      ```sql
+      SELECT authors.name, COUNT(*) AS books
+      FROM books JOIN authors ON books.author_id = authors.id
+      GROUP BY authors.name
+      ORDER BY books DESC;
+      ```
+
+      Important habits:
+
+      - `UPDATE` and `DELETE` **without `WHERE` change every row.** Run the matching `SELECT` first.
+      - After writing, call **`conn.commit()`** to save (or use the `with conn:` block).
+      - `cursor.fetchall()` gives a list of tuples; `fetchone()` one row; iterating a cursor streams rows. `cursor.lastrowid` is the new row's id; `cursor.rowcount` is how many rows changed.
+
+  - kind: code
+    title: Query with a parameter
+    body: |
+      The connection `conn` already contains a `books(id, title, price)` table (the checker fills it). Write `pricey(conn, minimum)`: return the **titles** of books costing at least `minimum`, most expensive first, as a list of strings.
+
+      Pass the value with a **`?` placeholder**, never by building the SQL string yourself.
+    code: |
+      def pricey(conn, minimum):
+          return []
+    tests:
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, price REAL)')\nconn.executemany('INSERT INTO books (title, price) VALUES (?, ?)', [('Dune', 12.5), ('Emma', 8.0), ('Ulysses', 20.0), ('Odd', 12.5)])\nresult = (pricey(conn, 10), pricey(conn, 100), pricey(conn, 0)[-1])"
+    solution: |
+      def pricey(conn, minimum):
+          rows = conn.execute(
+              "SELECT title FROM books WHERE price >= ? ORDER BY price DESC, title",
+              (minimum,),
+          )
+          return [title for (title,) in rows]
+    hint: "`conn.execute(\"SELECT title FROM books WHERE price >= ? ORDER BY price DESC, title\", (minimum,))`, then take the first column of each row."
+    reject:
+      - |
+        def pricey(conn, minimum):
+            return [title for (title,) in conn.execute("SELECT title FROM books")]
+
+  - kind: code
+    title: Insert and update
+    body: |
+      Write two functions for the `books(id, title, price)` table:
+
+      - `add_book(conn, title, price)`: insert a row (with placeholders) and return the new **id** (`cursor.lastrowid`).
+      - `set_price(conn, title, price)`: update the price of the book with that exact title, and return **how many rows changed** (`cursor.rowcount`).
+
+      Commit inside each function.
+    code: |
+      def add_book(conn, title, price):
+          return 0
+
+
+      def set_price(conn, title, price):
+          return 0
+    tests:
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, price REAL)')\na = add_book(conn, 'Dune', 12.5)\nb = add_book(conn, 'Emma', 8)\nresult = (a, b, conn.execute('SELECT title, price FROM books ORDER BY id').fetchall())"
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, price REAL)')\nadd_book(conn, 'Dune', 12.5)\nresult = (set_price(conn, 'Dune', 9.99), set_price(conn, 'Nope', 1), conn.execute('SELECT price FROM books').fetchall())"
+    solution: |
+      def add_book(conn, title, price):
+          cursor = conn.execute("INSERT INTO books (title, price) VALUES (?, ?)", (title, price))
+          conn.commit()
+          return cursor.lastrowid
+
+
+      def set_price(conn, title, price):
+          cursor = conn.execute("UPDATE books SET price = ? WHERE title = ?", (price, title))
+          conn.commit()
+          return cursor.rowcount
+    hint: "`cursor = conn.execute(...)`, `conn.commit()`, then return `cursor.lastrowid` / `cursor.rowcount`."
+    reject:
+      - |
+        def add_book(conn, title, price):
+            return 1
+
+
+        def set_price(conn, title, price):
+            return 1
+
+  - kind: code
+    title: Join and group
+    body: |
+      There are two tables: `authors(id, name)` and `books(id, title, author_id)`. Write `books_per_author(conn)`: return a list of `(name, count)` pairs for **every author, including those with no books (count 0)**, ordered by count (highest first) and then name.
+
+      A `LEFT JOIN` keeps authors without books, and `COUNT(books.id)` counts only real matches.
+    code: |
+      def books_per_author(conn):
+          return []
+    tests:
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.executescript('''CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, author_id INTEGER REFERENCES authors(id));\nINSERT INTO authors (name) VALUES ('Herbert'), ('Austen'), ('Joyce');\nINSERT INTO books (title, author_id) VALUES ('Dune', 1), ('Emma', 2), ('Persuasion', 2), ('Dune Messiah', 1), ('Ulysses', 3), ('Emma 2', 2);''')\nresult = books_per_author(conn)"
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.executescript('''CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, author_id INTEGER);\nINSERT INTO authors (name) VALUES ('Zed'), ('Amy');\nINSERT INTO books (title, author_id) VALUES ('B', 1);''')\nresult = books_per_author(conn)"
+    solution: |
+      def books_per_author(conn):
+          rows = conn.execute(
+              """
+              SELECT authors.name, COUNT(books.id) AS total
+              FROM authors
+              LEFT JOIN books ON books.author_id = authors.id
+              GROUP BY authors.id
+              ORDER BY total DESC, authors.name
+              """
+          )
+          return rows.fetchall()
+    hint: "`FROM authors LEFT JOIN books ON books.author_id = authors.id GROUP BY authors.id ORDER BY total DESC, authors.name`."
+    reject:
+      - |
+        def books_per_author(conn):
+            return conn.execute("SELECT authors.name, COUNT(*) FROM authors JOIN books ON books.author_id = authors.id GROUP BY authors.name").fetchall()
+
+  - kind: explain
+    title: SQL injection and parameterized queries
+    body: |
+      **SQL injection** is one of the most common and damaging security holes. It happens when you build SQL by pasting user text into a string:
+
+      ```python
+      title = input("Title? ")
+      conn.execute(f"SELECT * FROM books WHERE title = '{title}'")     # DANGEROUS
+      ```
+
+      If the user types `x' OR '1'='1`, the query becomes `... WHERE title = 'x' OR '1'='1'` and returns **every row**. A worse input can delete tables or steal data. (The famous cartoon: a student named `Robert'); DROP TABLE Students;--`.)
+
+      The fix is **parameterized queries**: keep the SQL and the data *separate*, using placeholders, and let the database driver handle the data safely:
+
+      ```python
+      conn.execute("SELECT * FROM books WHERE title = ?", (title,))     # SAFE
+      ```
+
+      The database treats the value strictly as **data**, never as SQL. **Never** build SQL with f-strings, `+` or `%` for values. (Table and column names cannot be parameters, so allow-list them if they must vary.)
+
+  - kind: code
+    title: Fix the injection hole
+    body: |
+      `find_book(conn, title)` builds its SQL from the input, so a crafted title returns every row. Fix it with a **parameterized query**. It should return the list of `(id, title)` rows whose title is **exactly** the given text.
+    code: |
+      def find_book(conn, title):
+          sql = f"SELECT id, title FROM books WHERE title = '{title}'"
+          return conn.execute(sql).fetchall()
+    tests:
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT)')\nconn.executemany('INSERT INTO books (title) VALUES (?)', [('Dune',), ('Emma',), (\"O'Brien\",)])\nresult = (find_book(conn, 'Dune'), find_book(conn, \"x' OR '1'='1\"), find_book(conn, \"O'Brien\"), find_book(conn, 'nope'))"
+    solution: |
+      def find_book(conn, title):
+          return conn.execute("SELECT id, title FROM books WHERE title = ?", (title,)).fetchall()
+    hint: "Replace the f-string with a `?` placeholder and pass `(title,)` as the second argument to `execute`."
+    broken_starter: true
+
+  - kind: explain
+    title: "Transactions: all or nothing"
+    body: |
+      A **transaction** groups statements so they all happen or none do. Transferring money is the classic case: subtract from one account **and** add to the other. If the second step fails, the first must be undone.
+
+      With `sqlite3`, using the connection as a **context manager** does this: it **commits** if the block succeeds and **rolls back** if it raises an exception (Module 28):
+
+      ```python
+      with conn:
+          conn.execute("UPDATE accounts SET balance = balance - ? WHERE id = ?", (50, 1))
+          conn.execute("UPDATE accounts SET balance = balance + ? WHERE id = ?", (50, 2))
+      ```
+
+  - kind: code
+    title: A safe transfer
+    body: |
+      Table `accounts(id, balance)`. Write `transfer(conn, from_id, to_id, amount)`: inside `with conn:`, subtract `amount` from `from_id`, then add it to `to_id`. If the sender's balance would go **below zero**, `raise ValueError("insufficient funds")` **inside the block**, so everything is rolled back.
+    code: |
+      def transfer(conn, from_id, to_id, amount):
+          pass
+    tests:
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE accounts (id INTEGER PRIMARY KEY, balance INTEGER)')\nconn.executemany('INSERT INTO accounts VALUES (?, ?)', [(1, 100), (2, 10)])\nconn.commit()\ntransfer(conn, 1, 2, 30)\nresult = conn.execute('SELECT id, balance FROM accounts ORDER BY id').fetchall()"
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.execute('CREATE TABLE accounts (id INTEGER PRIMARY KEY, balance INTEGER)')\nconn.executemany('INSERT INTO accounts VALUES (?, ?)', [(1, 20), (2, 10)])\nconn.commit()\ntry:\n    transfer(conn, 1, 2, 50)\nexcept ValueError as e:\n    msg = str(e)\nresult = (msg, conn.execute('SELECT id, balance FROM accounts ORDER BY id').fetchall())"
+    solution: |
+      def transfer(conn, from_id, to_id, amount):
+          with conn:
+              conn.execute("UPDATE accounts SET balance = balance - ? WHERE id = ?", (amount, from_id))
+              balance = conn.execute("SELECT balance FROM accounts WHERE id = ?", (from_id,)).fetchone()[0]
+              if balance < 0:
+                  raise ValueError("insufficient funds")
+              conn.execute("UPDATE accounts SET balance = balance + ? WHERE id = ?", (amount, to_id))
+    hint: "Do the subtraction, read the new balance, raise if it is negative. The `with conn:` block rolls the subtraction back."
+    reject:
+      - |
+        def transfer(conn, from_id, to_id, amount):
+            conn.execute("UPDATE accounts SET balance = balance - ? WHERE id = ?", (amount, from_id))
+            conn.execute("UPDATE accounts SET balance = balance + ? WHERE id = ?", (amount, to_id))
+            conn.commit()
+
+  - kind: explain
+    title: "SQLAlchemy 2.0: the ORM"
+    body: |
+      Writing SQL strings by hand gets repetitive. An **ORM** (object-relational mapper) lets you describe tables as **Python classes** and rows as **objects**. **SQLAlchemy** is the standard one:
+
+      ```python
+      from sqlalchemy import String, create_engine, select
+      from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+      class Base(DeclarativeBase):
+          pass
+
+      class Book(Base):
+          __tablename__ = "books"
+          id: Mapped[int] = mapped_column(primary_key=True)
+          title: Mapped[str] = mapped_column(String(100))
+          price: Mapped[float]
+
+      engine = create_engine("sqlite:///:memory:")
+      Base.metadata.create_all(engine)
+
+      with Session(engine) as session:
+          session.add(Book(title="Dune", price=12.5))
+          session.commit()
+          books = session.scalars(select(Book).where(Book.price > 10).order_by(Book.price)).all()
+      ```
+
+      - `Mapped[int]` uses **type hints** (Module 33) to define columns.
+      - A **Session** is a unit of work: `add`, then `commit`.
+      - `select(Book).where(...)` builds a query; `session.scalars(query).all()` returns objects.
+
+      SQLAlchemy also uses parameterized queries for you. It is the same database underneath, just spoken in Python.
+
+  - kind: code
+    title: Query with the ORM
+    body: |
+      The `Book` model is already defined for you. Write `cheapest(session, n)`: return the **titles** of the `n` cheapest books, cheapest first (ties by title), using `select(Book).order_by(...).limit(...)` and `session.scalars`.
+    code: |
+      from sqlalchemy import String, create_engine, select
+      from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+
+      class Base(DeclarativeBase):
+          pass
+
+
+      class Book(Base):
+          __tablename__ = "books"
+          id: Mapped[int] = mapped_column(primary_key=True)
+          title: Mapped[str] = mapped_column(String(100))
+          price: Mapped[float]
+
+
+      def cheapest(session, n):
+          return []
+    tests:
+      - "engine = create_engine('sqlite:///:memory:')\nBase.metadata.create_all(engine)\nwith Session(engine) as s:\n    s.add_all([Book(title='Dune', price=12.5), Book(title='Emma', price=8.0), Book(title='Ulysses', price=20.0), Book(title='Alpha', price=8.0)])\n    s.commit()\n    result = (cheapest(s, 2), cheapest(s, 10), cheapest(s, 0))"
+    solution: |
+      from sqlalchemy import String, create_engine, select
+      from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+
+      class Base(DeclarativeBase):
+          pass
+
+
+      class Book(Base):
+          __tablename__ = "books"
+          id: Mapped[int] = mapped_column(primary_key=True)
+          title: Mapped[str] = mapped_column(String(100))
+          price: Mapped[float]
+
+
+      def cheapest(session, n):
+          query = select(Book).order_by(Book.price, Book.title).limit(n)
+          return [book.title for book in session.scalars(query)]
+    hint: "`select(Book).order_by(Book.price, Book.title).limit(n)`, then read `.title` from each object."
+    reject:
+      - |
+        from sqlalchemy import String, create_engine, select
+        from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+
+        class Base(DeclarativeBase):
+            pass
+
+
+        class Book(Base):
+            __tablename__ = "books"
+            id: Mapped[int] = mapped_column(primary_key=True)
+            title: Mapped[str] = mapped_column(String(100))
+            price: Mapped[float]
+
+
+        def cheapest(session, n):
+            return [book.title for book in session.scalars(select(Book))][:n]
+
+  - kind: info
+    title: "🔹 Migrations with Alembic"
+    body: |
+      When your app changes (a new column, a renamed table), the **existing database** has to change too, without losing data. A **migration** is a small, versioned script that upgrades the database step by step. **Alembic** is SQLAlchemy's migration tool: `alembic revision --autogenerate -m "add price"` writes the script by comparing your models with the database, and `alembic upgrade head` applies it.
+
+      Never edit a production database by hand. Recognise Alembic and use it when a project grows past "throw the file away and start again".
+
+  - kind: mac
+    title: A database file on your Mac
+    body: |
+      SQLite can also live in a real file. This creates one, inserts a row, and reads it back with the `sqlite3` command-line tool that ships with macOS.
+
+      **Checkpoint:** paste the output. It should contain `Dune` and `12.5`.
+    commands: |
+      mkdir -p ~/Desktop/db-practice && cd ~/Desktop/db-practice
+      cat > shop.py <<'PY'
+      import sqlite3
+
+      conn = sqlite3.connect("shop.db")
+      conn.execute("CREATE TABLE IF NOT EXISTS books (id INTEGER PRIMARY KEY, title TEXT, price REAL)")
+      conn.execute("INSERT INTO books (title, price) VALUES (?, ?)", ("Dune", 12.5))
+      conn.commit()
+      print(conn.execute("SELECT title, price FROM books").fetchall())
+      PY
+      uv run shop.py
+      sqlite3 shop.db "SELECT * FROM books;"
+    expect_output:
+      - "Dune"
+      - "12.5"
+
+  - kind: why
+    body: |
+      Almost every real application keeps its data in a database. Knowing SQL, using placeholders for every value, and using transactions for multi-step changes will protect both your data and your users. The ORM is a convenience on top, not a replacement for understanding what the SQL underneath is doing.
+
+  - kind: recap
+    body: |
+      - A relational database: **tables**, **rows**, **columns**, **primary keys**, **foreign keys**. SQLite is built into Python (`sqlite3`).
+      - Core SQL: `SELECT ... WHERE ... ORDER BY`, `INSERT`, `UPDATE`, `DELETE` (always with `WHERE`), `JOIN`, `GROUP BY`. Call `commit()` (or use `with conn:`).
+      - **Always use parameterized queries** (`?` placeholders). Never build SQL from user text: that is **SQL injection**.
+      - `with conn:` makes a **transaction**: commit on success, rollback on error.
+      - **SQLAlchemy 2.0 ORM:** `DeclarativeBase`, `Mapped[...]`, `Session`, `select(Model).where(...)`. 🔹 **Alembic** manages migrations.

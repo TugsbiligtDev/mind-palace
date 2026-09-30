@@ -1,0 +1,4 @@
+title: "Tuples & Sets"
+module: 11
+summary: "Two more containers: tuples for fixed groups of values, and sets for removing duplicates and asking 'is it in there?' very quickly."
+minutes: 55

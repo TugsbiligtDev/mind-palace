@@ -1,0 +1,4 @@
+title: "Dictionaries"
+module: 12
+summary: "Look things up by name instead of by position: create, read, update and delete key-value pairs, loop over them, and nest them like real JSON data."
+minutes: 65

@@ -1,0 +1,59 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class P:
+          def __init__(self, n):
+              self.n = n
+
+          def __repr__(self):
+              return f"P({self.n})"
+
+      print([P(1), P(2)])
+    options: ["[P(1), P(2)]", "[<P object>, <P object>]", "P(1), P(2)", "[1, 2]"]
+    answer: 0
+    explanation: "Lists show their items with `repr`, so a good `__repr__` makes debugging output readable."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from dataclasses import dataclass
+
+      @dataclass
+      class Pt:
+          x: int
+          y: int
+
+      print(Pt(1, 2) == Pt(1, 2), Pt(1, 2))
+    options: ["True Pt(x=1, y=2)", "False Pt(x=1, y=2)", "True <Pt object>", "True (1, 2)"]
+    answer: 0
+    explanation: "A dataclass writes `__eq__` (comparing fields) and a helpful `__repr__` for you."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class T:
+          def __init__(self, c):
+              self._c = c
+
+          @property
+          def f(self):
+              return self._c * 9 / 5 + 32
+
+      print(T(100).f)
+    options: ["212.0", "100", "f", "Error"]
+    answer: 0
+    explanation: "`f` is a property, so `T(100).f` runs the method without brackets and gives 212.0."
+  - type: mcq
+    prompt: Why should a dataclass use `field(default_factory=list)` instead of `= []`?
+    options:
+      - So each object gets its own list instead of all sharing one
+      - It is faster
+      - Python forbids `= []` in every class
+      - It makes the list read-only
+    answer: 0
+    explanation: A mutable default would be shared, just like the default-argument trap. Dataclasses even raise an error for a plain list default.
+  - type: mcq
+    prompt: Which enables `sorted()` on a list of your objects?
+    options: ["Defining __lt__", "Defining __str__", "Defining __len__", "Defining __init__"]
+    answer: 0
+    explanation: "`sorted` compares items with `<`, which calls `__lt__`."

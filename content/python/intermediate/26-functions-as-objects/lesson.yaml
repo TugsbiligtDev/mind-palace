@@ -1,0 +1,329 @@
+steps:
+  - kind: explain
+    title: Functions are values
+    body: |
+      In Python a function is an **object** like a number or a list. You can store it in a variable, put it in a list, pass it *into* another function, and return it *from* one. This is called having **first-class functions**.
+
+      ```python
+      def shout(text):
+          return text.upper() + "!"
+
+      f = shout                    # no brackets: the function itself, not a call
+      print(f("hi"))               # HI!
+
+      def apply_twice(func, value):
+          return func(func(value))
+
+      print(apply_twice(shout, "hey"))     # HEY!!
+      ```
+
+      The difference between `shout` (the function) and `shout("hi")` (calling it and getting a result) is the key idea. Passing a function around lets you write general code that takes the *behaviour* as a parameter.
+
+  - kind: code
+    title: Pass a function in
+    body: |
+      Write `apply_n(func, value, times)`: call `func` on `value`, then on that result, and so on, `times` times, and return the final value. `apply_n(lambda x: x * 2, 1, 3)` is `8`. With `times=0` return `value` unchanged.
+    code: |
+      def apply_n(func, value, times):
+          return value
+    tests:
+      - "apply_n(lambda x: x * 2, 1, 3)"
+      - "apply_n(lambda x: x + 1, 10, 0)"
+      - "apply_n(str.upper, 'hi', 2)"
+      - "apply_n(lambda s: s + '!', 'hey', 3)"
+    solution: |
+      def apply_n(func, value, times):
+          for _ in range(times):
+              value = func(value)
+          return value
+    hint: "Loop `times` times and re-assign `value = func(value)`."
+    reject:
+      - |
+        def apply_n(func, value, times):
+            return func(value)
+
+  - kind: explain
+    title: lambda and key=
+    body: |
+      A **`lambda`** is a tiny one-line anonymous function: `lambda x: x * 2` means "given `x`, return `x * 2`". It is handy where you need a function once.
+
+      The most common use is the **`key=`** argument of `sorted`, `min` and `max`. `key` is a function that turns each item into the value to compare by:
+
+      ```python
+      words = ["banana", "fig", "cherry"]
+      sorted(words, key=len)                      # ['fig', 'banana', 'cherry']
+      max(words, key=lambda w: w[-1])             # 'fig'   (largest last letter)
+
+      players = [{"name": "Ada", "score": 5}, {"name": "Bo", "score": 9}]
+      sorted(players, key=lambda p: p["score"], reverse=True)
+      ```
+
+      To sort by several things, return a **tuple**: `key=lambda p: (-p["score"], p["name"])` means "highest score first, then name A to Z". If a lambda gets complicated, write a normal `def` with a name.
+
+  - kind: code
+    title: Leaderboard
+    body: |
+      Write `leaderboard(players)`. Each player is a dict with `"name"` and `"score"`. Return the list of **names** ordered by score from highest to lowest; players with the same score are ordered by name A to Z.
+    code: |
+      def leaderboard(players):
+          return []
+    tests:
+      - "leaderboard([{'name': 'Ada', 'score': 5}, {'name': 'Bo', 'score': 9}, {'name': 'Cy', 'score': 5}])"
+      - "leaderboard([])"
+      - "leaderboard([{'name': 'Zed', 'score': 1}, {'name': 'Amy', 'score': 1}])"
+    solution: |
+      def leaderboard(players):
+          ordered = sorted(players, key=lambda p: (-p["score"], p["name"]))
+          return [p["name"] for p in ordered]
+    hint: "Sort with `key=lambda p: (-p[\"score\"], p[\"name\"])`, then collect the names."
+    reject:
+      - |
+        def leaderboard(players):
+            return sorted(p["name"] for p in players)
+
+  - kind: code
+    title: Longest and shortest
+    body: |
+      Write `extremes(words)`: return a tuple `(shortest, longest)`, using `min` and `max` with `key=len`. For a tie, `min` and `max` return the first such word. An empty list returns `(None, None)`.
+    code: |
+      def extremes(words):
+          return (None, None)
+    tests:
+      - "extremes(['pear', 'fig', 'banana', 'kiwi'])"
+      - "extremes([])"
+      - "extremes(['a', 'b'])"
+      - "extremes(['ab', 'cd', 'e', 'f'])"
+    solution: |
+      def extremes(words):
+          if not words:
+              return (None, None)
+          return (min(words, key=len), max(words, key=len))
+    hint: "Handle the empty list first. Then `min(words, key=len)` and `max(words, key=len)`."
+    reject:
+      - |
+        def extremes(words):
+            return (min(words), max(words))
+
+  - kind: explain
+    title: map, filter, and comprehensions
+    body: |
+      `map(func, items)` applies a function to every item; `filter(func, items)` keeps items where the function is true. Both are lazy and return iterators:
+
+      ```python
+      list(map(str.upper, ["a", "b"]))             # ['A', 'B']
+      list(filter(lambda n: n > 0, [-1, 2, 3]))    # [2, 3]
+      ```
+
+      They do the same as comprehensions:
+
+      ```python
+      [w.upper() for w in words]        # instead of map
+      [n for n in nums if n > 0]        # instead of filter
+      ```
+
+      **Prefer the comprehension**: it reads more naturally and most Python programmers expect it. `map`/`filter` shine when you already have a named function (`map(int, texts)` is neat).
+
+  - kind: explain
+    title: "Closures: functions that remember"
+    body: |
+      A function defined **inside** another can use the outer function's variables, even after the outer function has finished. This remembering function is called a **closure**.
+
+      ```python
+      def make_multiplier(factor):
+          def multiply(n):
+              return n * factor        # 'factor' is remembered
+          return multiply
+
+      double = make_multiplier(2)
+      triple = make_multiplier(3)
+      double(5)     # 10
+      triple(5)     # 15
+      ```
+
+      Each call to `make_multiplier` makes a new function with its own `factor`. To **change** a remembered variable (not just read it), declare it `nonlocal`:
+
+      ```python
+      def make_counter():
+          count = 0
+          def bump():
+              nonlocal count
+              count += 1
+              return count
+          return bump
+      ```
+
+  - kind: code
+    title: A counter factory
+    body: |
+      Write `make_counter(start=0)` returning a function. Each time you call that function it returns the **next** number: first `start + 1`, then `start + 2`, and so on. Two counters must be independent of each other.
+    code: |
+      def make_counter(start=0):
+          pass
+    tests:
+      - "c = make_counter()\nresult = (c(), c(), c())"
+      - "c = make_counter(10)\nresult = (c(), c())"
+      - "a = make_counter()\nb = make_counter()\na()\na()\nresult = (a(), b())"
+    solution: |
+      def make_counter(start=0):
+          count = start
+
+          def bump():
+              nonlocal count
+              count += 1
+              return count
+
+          return bump
+    hint: "Keep `count` in the outer function and declare `nonlocal count` in the inner one."
+    reject:
+      - |
+        def make_counter(start=0):
+            def bump():
+                return start + 1
+
+            return bump
+
+  - kind: code
+    title: A validator maker
+    body: |
+      Write `between(low, high)` that returns a function. That function takes one number and returns `True` if it is between `low` and `high` inclusive. Then `list(filter(between(1, 5), [0, 3, 6, 5]))` is `[3, 5]`.
+    code: |
+      def between(low, high):
+          pass
+    tests:
+      - "list(filter(between(1, 5), [0, 3, 6, 5]))"
+      - "between(10, 20)(15)"
+      - "between(10, 20)(21)"
+      - "[between(0, 1)(x) for x in (-1, 0, 1, 2)]"
+    solution: |
+      def between(low, high):
+          def check(x):
+              return low <= x <= high
+
+          return check
+    hint: "Return an inner function that uses `low` and `high` from the outside."
+    reject:
+      - |
+        def between(low, high):
+            return lambda x: low < x < high
+
+  - kind: explain
+    title: "functools: partial and caching"
+    body: |
+      The `functools` module has two favourites.
+
+      **`partial`** fixes some arguments of a function in advance, making a new function:
+
+      ```python
+      from functools import partial
+
+      def power(base, exponent):
+          return base ** exponent
+
+      square = partial(power, exponent=2)
+      square(7)         # 49
+      ```
+
+      **`cache`** (and `lru_cache`) remembers results, so the same call is computed only once. It turns slow repeated work into an instant lookup, a trade of memory for speed (**memoization**):
+
+      ```python
+      from functools import cache
+
+      @cache
+      def slow_square(n):
+          ...            # runs once per different n
+      ```
+
+      Only cache functions that are **pure** (same input always gives the same output, no side effects). `lru_cache(maxsize=128)` keeps only the most recently used results.
+
+  - kind: code
+    title: Fix the slow Fibonacci
+    body: |
+      This recursive `fib` recomputes the same values again and again, so `fib(80)` would take longer than the age of the universe. Fix it with **one line**: `@cache` above the function.
+    code: |
+      from functools import cache
+
+
+      def fib(n):
+          if n < 2:
+              return n
+          return fib(n - 1) + fib(n - 2)
+    tests:
+      - "fib(10)"
+      - "fib(80)"
+      - "fib(200)"
+    solution: |
+      from functools import cache
+
+
+      @cache
+      def fib(n):
+          if n < 2:
+              return n
+          return fib(n - 1) + fib(n - 2)
+    hint: "Put `@cache` on the line directly above `def fib(n):`."
+    broken_starter: true
+
+  - kind: code
+    title: Pre-filled arguments
+    body: |
+      `format_price(currency, amount)` is given. Use `functools.partial` to make `dollars` and `euros`: functions that only need the `amount`. `dollars(5)` is `"USD 5.00"`, `euros(7.5)` is `"EUR 7.50"`.
+    code: |
+      from functools import partial
+
+
+      def format_price(currency, amount):
+          return f"{currency} {amount:.2f}"
+
+
+      dollars = None
+      euros = None
+    tests:
+      - "dollars(5)"
+      - "euros(7.5)"
+      - "dollars(0.5)"
+    solution: |
+      from functools import partial
+
+
+      def format_price(currency, amount):
+          return f"{currency} {amount:.2f}"
+
+
+      dollars = partial(format_price, "USD")
+      euros = partial(format_price, "EUR")
+    hint: "`partial(format_price, \"USD\")` fixes the first argument."
+    reject:
+      - |
+        from functools import partial
+
+
+        def format_price(currency, amount):
+            return f"{currency} {amount:.2f}"
+
+
+        dollars = lambda amount: format_price("EUR", amount)
+        euros = lambda amount: format_price("EUR", amount)
+
+  - kind: info
+    title: "🔹 reduce"
+    body: |
+      `functools.reduce(func, items, start)` folds a list into one value by repeatedly combining the running result with the next item:
+
+      ```python
+      from functools import reduce
+      reduce(lambda a, b: a * b, [2, 3, 4], 1)   # 24
+      ```
+
+      It is powerful but cryptic. For sums use `sum`, for products `math.prod`, and for anything else a plain `for` loop is usually clearer. Recognise it; rarely reach for it.
+
+  - kind: why
+    body: |
+      Passing behaviour as a value is how sorting, callbacks, decorators (next lesson), event handlers and most libraries work. Closures give you private, remembered state without a class, and `cache` can turn an impossible computation into an instant one with a single line.
+
+  - kind: recap
+    body: |
+      - Functions are **objects**: store them, pass them, return them. `f` is the function; `f(x)` calls it.
+      - `lambda x: ...` is a one-line function; `key=` in `sorted`, `min`, `max` picks what to compare (return a tuple for multiple keys).
+      - Prefer **comprehensions** over `map`/`filter`.
+      - A **closure** remembers variables from the function that made it (`nonlocal` to change them).
+      - `functools.partial` pre-fills arguments; `@cache`/`@lru_cache` memoize pure functions. 🔹 `reduce` folds a list.

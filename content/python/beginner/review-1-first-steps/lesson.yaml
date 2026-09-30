@@ -1,0 +1,182 @@
+steps:
+  - kind: explain
+    title: The first case files
+    body: |
+      This review covers Modules 1 to 3. Each editor starts nearly empty, and the question never tells you which tool to use. Think about what you learned: binary, paths, `Path`, `startswith`, `split`, `int`, `print`, and reading error messages.
+
+      For each case:
+
+      1. Say in words what goes in and what should come out.
+      2. Write the plainest code that works.
+      3. Press **Run**. If it fails, read the message: it names the first test that went wrong.
+
+      After a wrong attempt you can ask for a hint, and after three you can see one working answer. Try hard before you look.
+
+  - kind: code
+    title: "1. The vault code"
+    body: |
+      Moth found a vault whose lock takes a **binary** code. The code is the sum of two door numbers. Write `vault_code(a, b)`: add the two numbers and return the total written in binary, as text.
+
+      `vault_code(2, 3)` is `"101"`.
+    code: |
+      def vault_code(a, b):
+          # your code
+          pass
+    tests:
+      - "vault_code(2, 3)"
+      - "vault_code(0, 0)"
+      - "vault_code(10, 5)"
+      - "vault_code(100, 27)"
+    solution: |
+      def vault_code(a, b):
+          return format(a + b, "b")
+    hint: Add first, then convert the total with `format(total, "b")`.
+    reject:
+      - |
+        def vault_code(a, b):
+            return format(a, "b") + format(b, "b")
+
+  - kind: code
+    title: "2. What kind of file?"
+    body: |
+      A pile of evidence files has no labels. Write `file_type(path)`: return the file's extension **without the dot**, for example `"txt"` for `"/evidence/note.txt"`.
+
+      A `Path` object has `.suffix`, which gives `".txt"` (with the dot). You will need to remove that first character. `"abc"[1:]` gives `"bc"`.
+    code: |
+      from pathlib import Path
+
+
+      def file_type(path):
+          # your code
+          pass
+    tests:
+      - "file_type('/evidence/note.txt')"
+      - "file_type('/photos/scene.jpg')"
+      - "file_type('/a/b/report.pdf')"
+      - "file_type('run.py')"
+    solution: |
+      from pathlib import Path
+
+
+      def file_type(path):
+          return Path(path).suffix[1:]
+    hint: "`Path(path).suffix[1:]` drops the first character (the dot)."
+    reject:
+      - |
+        from pathlib import Path
+
+
+        def file_type(path):
+            return Path(path).suffix
+
+  - kind: code
+    title: "3. Safe to run?"
+    body: |
+      Before running a command from the internet, Inspector Bold checks it. Write `is_safe(command)`: return `True` unless the command **starts with** `rm`, in which case return `False`.
+
+      `is_safe("ls")` is `True`; `is_safe("rm -rf /")` is `False`.
+    code: |
+      def is_safe(command):
+          # your code
+          pass
+    tests:
+      - "is_safe('ls')"
+      - "is_safe('rm -rf /')"
+      - "is_safe('mkdir rooms')"
+      - "is_safe('rm notes.txt')"
+    solution: |
+      def is_safe(command):
+          return not command.startswith("rm")
+    hint: "`not` flips `True` and `False`. `not command.startswith(\"rm\")`."
+    reject:
+      - |
+        def is_safe(command):
+            return True
+
+  - kind: code
+    title: "4. Old Python or new?"
+    body: |
+      The agency's tools need **Python 3.10 or newer**. Write `is_modern(version)`: given text like `"3.14.2"` or `"3.9.18"`, return `True` if the major number is 3 **and** the minor number is at least 10, otherwise `False`.
+
+      `and` needs both sides to be true. Hint: `text.split(".")` cuts the version into pieces, and `int(...)` makes a number.
+    code: |
+      def is_modern(version):
+          # your code
+          pass
+    tests:
+      - "is_modern('3.14.2')"
+      - "is_modern('3.9.18')"
+      - "is_modern('3.10.0')"
+      - "is_modern('2.7.18')"
+      - "is_modern('4.0.0')"
+      - "is_modern('4.11.0')"
+    solution: |
+      def is_modern(version):
+          major, minor, patch = version.split(".")
+          return int(major) == 3 and int(minor) >= 10
+    hint: "Split into `major, minor, patch`, then `int(major) == 3 and int(minor) >= 10`. (`4.11.0` has a big minor number but is not major 3, so it must fail.)"
+    reject:
+      - |
+        def is_modern(version):
+            major, minor, patch = version.split(".")
+            return int(minor) >= 10
+
+  - kind: code
+    title: "5. The receipt"
+    body: |
+      Write `receipt(item, price)` so it **prints** two lines:
+
+      ```
+      Item: Mystery Novel
+      Price: 12
+      ```
+
+      (for `receipt("Mystery Novel", 12)`). The word before the colon never changes. Printing several values in one `print` separates them with a space, so `print("Item:", item)` gives `Item: Mystery Novel`.
+    code: |
+      def receipt(item, price):
+          # your code
+          pass
+    tests:
+      - "given_input([], lambda: receipt('Mystery Novel', 12))"
+      - "given_input([], lambda: receipt('Atlas', 30))"
+      - "given_input([], lambda: receipt('Pen', 2))"
+    solution: |
+      def receipt(item, price):
+          print("Item:", item)
+          print("Price:", price)
+    hint: Two `print` calls, each with a label and then the value.
+    reject:
+      - |
+        def receipt(item, price):
+            print("Item:", item, "Price:", price)
+
+  - kind: code
+    title: "6. Repair the broken script"
+    body: |
+      Someone left this function half-finished. It has a syntax error and a misspelled name. Fix every problem so `total_cost(3, 4)` returns `12`.
+    code: |
+      def total_cost(quantity, unit_price):
+          total = quantity * unit_price
+          return totall
+      print(total_cost(3, 4)
+    tests:
+      - "total_cost(3, 4)"
+      - "total_cost(0, 9)"
+      - "total_cost(10, 10)"
+    solution: |
+      def total_cost(quantity, unit_price):
+          total = quantity * unit_price
+          return total
+      print(total_cost(3, 4))
+    hint: Read the first error. Close the bracket on the last line, then run it again and read the next error.
+    broken_starter: true
+
+  - kind: why
+    body: |
+      None of these needed new ideas. They needed you to *choose* the right small tool, and to read your own error messages. That is the real skill you are building.
+
+  - kind: recap
+    body: |
+      - You converted to binary, picked apart paths, checked for dangerous commands and read version numbers.
+      - You printed multi-line output and fixed a script by reading tracebacks.
+      - The Part 1 checkpoint (your about-me card and a deliberate error) is in Module 3, on your Mac.

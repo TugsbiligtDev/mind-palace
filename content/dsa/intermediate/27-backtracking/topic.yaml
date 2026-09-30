@@ -1,0 +1,4 @@
+title: Backtracking
+module: 27
+summary: "Explore choices with choose, explore, un-choose: subsets, permutations, combinations, skipping duplicates, pruning, word search on a grid and N-Queens."
+minutes: 80

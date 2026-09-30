@@ -1,0 +1,312 @@
+steps:
+  - kind: explain
+    title: The range-sum problem
+    body: |
+      You have an array and many questions of the form *"what is the sum of `nums[l]` through `nums[r]`?"* Adding the numbers each time costs O(n) per question. With thousands of questions, that is too slow.
+
+      Do the work **once** up front, and every question becomes O(1).
+
+  - kind: explain
+    title: Prefix sums
+    body: |
+      A **prefix sum** array stores running totals:
+
+      ```
+      nums   = [3, 1, 4, 1, 5]
+      prefix = [0, 3, 4, 8, 9, 14]      // prefix[i] = sum of the first i numbers
+      ```
+
+      `prefix[0]` is `0` (the sum of nothing). Now the sum of `nums[l..r]` is the total up to `r` minus the total *before* `l`:
+
+      **sum(l, r) = prefix[r + 1] − prefix[l]**
+
+      For `l = 1, r = 3`: `prefix[4] − prefix[1] = 9 − 3 = 6` (that is `1 + 4 + 1`). Building `prefix` costs O(n) once, and each question then costs O(1).
+
+  - kind: code
+    title: A class that answers range sums
+    body: |
+      Finish `NumArray`. The constructor receives `nums` and builds the prefix sums. `sumRange(left, right)` returns the sum from `left` to `right`, both included.
+    code: |
+      class NumArray {
+        constructor(nums) {
+          this.prefix = [0];
+        }
+        sumRange(left, right) {
+          return 0;
+        }
+      }
+    tests:
+      - "(() => { const a = new NumArray([-2, 0, 3, -5, 2, -1]); return [a.sumRange(0, 2), a.sumRange(2, 5), a.sumRange(0, 5)]; })()"
+      - "(() => { const a = new NumArray([5]); return [a.sumRange(0, 0)]; })()"
+      - "(() => { const a = new NumArray([1, 1, 1, 1]); return [a.sumRange(1, 2), a.sumRange(3, 3)]; })()"
+    solution: |
+      class NumArray {
+        constructor(nums) {
+          this.prefix = [0];
+          for (const n of nums) {
+            this.prefix.push(this.prefix[this.prefix.length - 1] + n);
+          }
+        }
+        sumRange(left, right) {
+          return this.prefix[right + 1] - this.prefix[left];
+        }
+      }
+    hint: Each prefix value is the previous prefix value plus the next number. The answer is `prefix[right + 1] - prefix[left]`.
+    reject:
+      - |
+        class NumArray {
+          constructor(nums) { this.nums = nums; this.prefix = [0]; }
+          sumRange(left, right) { return this.nums[left] + this.nums[right]; }
+        }
+
+  - kind: explain
+    title: Prefix products, and "everything except me"
+    body: |
+      The same idea works for other running operations. *For each position, the product of all the **other** numbers, without using division.*
+
+      - `left[i]` = the product of everything **before** `i`,
+      - `right[i]` = the product of everything **after** `i`,
+      - the answer at `i` is `left[i] × right[i]`.
+
+      Both come from one left-to-right pass and one right-to-left pass: O(n) time.
+
+  - kind: code
+    title: Product of array except self
+    body: |
+      Write `productExceptSelf(nums)`: an array where position `i` holds the product of all numbers except `nums[i]`. Do not use division. `[1, 2, 3, 4]` gives `[24, 12, 8, 6]`.
+    code: |
+      function productExceptSelf(nums) {
+        return nums.map(() => 0);
+      }
+    tests:
+      - "productExceptSelf([1, 2, 3, 4])"
+      - "productExceptSelf([-1, 1, 0, -3, 3])"
+      - "productExceptSelf([2, 3])"
+      - "productExceptSelf([5])"
+      - "productExceptSelf([1, 1, 1])"
+    solution: |
+      function productExceptSelf(nums) {
+        const n = nums.length;
+        const result = Array(n).fill(1);
+        let before = 1;
+        for (let i = 0; i < n; i++) {
+          result[i] = before;
+          before *= nums[i];
+        }
+        let after = 1;
+        for (let i = n - 1; i >= 0; i--) {
+          result[i] *= after;
+          after *= nums[i];
+        }
+        return result;
+      }
+    hint: "First pass: store the product of everything *before* each index. Second pass, from the right: multiply in the product of everything *after* it."
+    reject:
+      - |
+        function productExceptSelf(nums) {
+          const total = nums.reduce((a, b) => a * b, 1);
+          return nums.map((x) => total / x);
+        }
+
+  - kind: explain
+    title: Prefix sums plus a hash map
+    body: |
+      *How many subarrays add up to exactly `k`?* (Numbers may be negative, so sliding windows do not work.)
+
+      A subarray from `i+1` to `j` sums to `k` exactly when `prefix[j] − prefix[i] = k`, that is, when an earlier prefix equals `prefix[j] − k`.
+
+      So while you walk along keeping the running total, ask a Map: **"how many earlier prefixes equal `total − k`?"** That count is the number of subarrays ending here.
+
+      Start the map with `{0: 1}`: the "empty prefix" before the array begins. Forgetting that is the classic bug.
+
+  - kind: code
+    title: "Find the bug: the missing starting prefix"
+    body: |
+      `subarraySum(nums, k)` counts the subarrays whose sum equals `k`. It misses the ones that start at position 0. Fix it.
+    code: |
+      function subarraySum(nums, k) {
+        const seen = new Map();
+        let total = 0;
+        let count = 0;
+        for (const n of nums) {
+          total += n;
+          count += seen.get(total - k) || 0;
+          seen.set(total, (seen.get(total) || 0) + 1);
+        }
+        return count;
+      }
+    tests:
+      - "subarraySum([1, 1, 1], 2)"
+      - "subarraySum([1, 2, 3], 3)"
+      - "subarraySum([5], 5)"
+      - "subarraySum([1, -1, 0], 0)"
+      - "subarraySum([3, 4, 7, 2, -3, 1, 4, 2], 7)"
+    solution: |
+      function subarraySum(nums, k) {
+        const seen = new Map([[0, 1]]);
+        let total = 0;
+        let count = 0;
+        for (const n of nums) {
+          total += n;
+          count += seen.get(total - k) || 0;
+          seen.set(total, (seen.get(total) || 0) + 1);
+        }
+        return count;
+      }
+    hint: A subarray that starts at position 0 has "prefix before it" equal to 0. Put `0` in the map with a count of 1 before the loop.
+    broken_starter: true
+    reject:
+      - |
+        function subarraySum(nums, k) {
+          const seen = new Map();
+          let total = 0;
+          let count = 0;
+          for (const n of nums) {
+            total += n;
+            count += seen.get(total - k) || 0;
+            seen.set(total, (seen.get(total) || 0) + 1);
+          }
+          return count;
+        }
+
+  - kind: explain
+    title: Difference arrays, many updates cheaply
+    body: |
+      The opposite problem: instead of many *queries*, you have many **updates**. *"Add 5 to every position from `l` to `r`"*, repeated thousands of times, then read the final array.
+
+      Adding to each position costs O(n) per update. The trick: record only the **edges** of each update in a **difference array** `diff`:
+
+      - `diff[l] += v`  (the increase starts here)
+      - `diff[r + 1] -= v`  (the increase stops after `r`)
+
+      At the end, a single running total over `diff` gives the final array. Each update costs **O(1)**, plus one O(n) pass at the end.
+
+  - kind: code
+    title: Apply range updates
+    body: |
+      Write `applyUpdates(n, updates)`: start with `n` zeros. Each update is `[l, r, v]`: add `v` to every position from `l` to `r`. Return the final array.
+    code: |
+      function applyUpdates(n, updates) {
+        return Array(n).fill(0);
+      }
+    tests:
+      - "applyUpdates(5, [[1, 3, 2], [2, 4, 3], [0, 2, -2]])"
+      - "applyUpdates(3, [])"
+      - "applyUpdates(4, [[0, 3, 1]])"
+      - "applyUpdates(1, [[0, 0, 9], [0, 0, 1]])"
+    solution: |
+      function applyUpdates(n, updates) {
+        const diff = Array(n + 1).fill(0);
+        for (const [l, r, v] of updates) {
+          diff[l] += v;
+          diff[r + 1] -= v;
+        }
+        const result = [];
+        let running = 0;
+        for (let i = 0; i < n; i++) {
+          running += diff[i];
+          result.push(running);
+        }
+        return result;
+      }
+    hint: Make `diff` one longer than `n` so `diff[r + 1]` is always valid. Then take a running total.
+    reject:
+      - |
+        function applyUpdates(n, updates) {
+          return Array(n).fill(0);
+        }
+
+  - kind: code
+    title: Car pooling
+    body: |
+      A car has `capacity` seats. Each trip is `[passengers, from, to]`: the passengers get in at `from` and out at `to`. Write `carPooling(trips, capacity)`: `true` if the car never holds more than `capacity` people at once.
+
+      Add `+passengers` at `from` and `-passengers` at `to` in a difference array, then keep a running total.
+    code: |
+      function carPooling(trips, capacity) {
+        return true;
+      }
+    tests:
+      - "carPooling([[2, 1, 5], [3, 3, 7]], 4)"
+      - "carPooling([[2, 1, 5], [3, 3, 7]], 5)"
+      - "carPooling([[3, 2, 7], [3, 7, 9], [8, 3, 9]], 11)"
+      - "carPooling([], 1)"
+      - "carPooling([[5, 0, 1]], 4)"
+    solution: |
+      function carPooling(trips, capacity) {
+        const diff = Array(1002).fill(0);
+        for (const [passengers, from, to] of trips) {
+          diff[from] += passengers;
+          diff[to] -= passengers;
+        }
+        let onBoard = 0;
+        for (const change of diff) {
+          onBoard += change;
+          if (onBoard > capacity) return false;
+        }
+        return true;
+      }
+    hint: Passengers leave at `to`, so `diff[to] -= passengers` and a person getting off at the same stop as another gets on does not overlap.
+    reject:
+      - |
+        function carPooling(trips, capacity) {
+          return true;
+        }
+
+  - kind: code
+    title: "🔹 2D prefix sums"
+    body: |
+      The idea extends to grids: `prefix[r][c]` is the sum of the rectangle from the top-left corner to `(r-1, c-1)`. A rectangle's sum comes from four prefix values (add the big one, subtract two, add back the overlap).
+
+      Finish `NumMatrix` with `sumRegion(r1, c1, r2, c2)`, the sum of the rectangle with corners `(r1, c1)` and `(r2, c2)` (both included).
+    code: |
+      class NumMatrix {
+        constructor(matrix) {
+          this.prefix = [];
+        }
+        sumRegion(r1, c1, r2, c2) {
+          return 0;
+        }
+      }
+    tests:
+      - "(() => { const m = new NumMatrix([[3, 0, 1, 4, 2], [5, 6, 3, 2, 1], [1, 2, 0, 1, 5], [4, 1, 0, 1, 7], [1, 0, 3, 0, 5]]); return [m.sumRegion(2, 1, 4, 3), m.sumRegion(1, 1, 2, 2), m.sumRegion(1, 2, 2, 4)]; })()"
+      - "(() => { const m = new NumMatrix([[7]]); return m.sumRegion(0, 0, 0, 0); })()"
+    solution: |
+      class NumMatrix {
+        constructor(matrix) {
+          const rows = matrix.length;
+          const cols = rows === 0 ? 0 : matrix[0].length;
+          this.prefix = Array.from({ length: rows + 1 }, () => Array(cols + 1).fill(0));
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              this.prefix[r + 1][c + 1] =
+                matrix[r][c] + this.prefix[r][c + 1] + this.prefix[r + 1][c] - this.prefix[r][c];
+            }
+          }
+        }
+        sumRegion(r1, c1, r2, c2) {
+          const p = this.prefix;
+          return p[r2 + 1][c2 + 1] - p[r1][c2 + 1] - p[r2 + 1][c1] + p[r1][c1];
+        }
+      }
+    hint: "`prefix[r+1][c+1] = cell + above + left - overlap`. A region is `big − above − left + overlap`, using the corners."
+    reject:
+      - |
+        class NumMatrix {
+          constructor(matrix) { this.m = matrix; this.prefix = []; }
+          sumRegion(r1, c1, r2, c2) { return this.m[r1][c1] + this.m[r2][c2]; }
+        }
+
+  - kind: why
+    body: |
+      Prefix sums are "precomputation": spend O(n) once so every later question is O(1). Difference arrays are the mirror image: record changes cheaply, and resolve them once at the end.
+
+      Together they show a big lesson of algorithm design: if you will ask the same kind of question many times, **do the shared work first**.
+
+  - kind: recap
+    body: |
+      - `prefix[i]` is the sum of the first `i` numbers. **sum(l, r) = prefix[r + 1] − prefix[l]**, in O(1).
+      - Prefix sums (and prefix products) also answer "everything except me" style questions.
+      - **Prefix sum + hash map** counts subarrays with sum `k`, even with negatives. Start the map with `{0: 1}`.
+      - A **difference array** turns "add v to a range" into two O(1) edits, and one running total rebuilds the result.
+      - 🔹 2D prefix sums give rectangle sums from four corner values.

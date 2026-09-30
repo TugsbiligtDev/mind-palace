@@ -1,0 +1,4 @@
+title: Hash Maps & Sets
+module: 7
+summary: "How hashing gives O(1) lookups, and the four jobs a hash map does: count things, remember what you have seen, group items, and find a complement."
+minutes: 55

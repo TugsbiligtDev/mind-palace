@@ -70,6 +70,26 @@ const step = z.discriminatedUnion("kind", [
     // A "fix this" exercise: the starter SQL is deliberately broken.
     broken_starter: z.boolean().default(false),
   }),
+  // The JavaScript version of "try". `tests` are expressions such as "twoSum([2, 7], 9)" that
+  // are run against both the learner's code and `solution`; the results must match.
+  // Without tests and solution the step is a plain "run it and read the output" step.
+  z.object({
+    kind: z.literal("code"),
+    title: z.string(),
+    body: md,
+    code: z.string(),
+    tests: z.array(z.string()).default([]),
+    solution: z.string().optional(),
+    // True when the order of items in arrays and sets doesn't matter for the answer.
+    unordered: z.boolean().default(false),
+    hint: md.optional(),
+    // Known wrong answers. The content check proves each one is rejected by the grader.
+    reject: z.array(z.string()).default([]),
+    // A "find the bug" exercise: the starter code is deliberately wrong.
+    broken_starter: z.boolean().default(false),
+    // Python only: the typed answers handed to input() when the code runs.
+    stdin: z.array(z.string()).default([]),
+  }),
   z.object({ kind: z.literal("info"), title: z.string(), body: md }),
   z.object({
     kind: z.literal("mac"),
@@ -98,6 +118,8 @@ const question = z.discriminatedUnion("type", [
     type: z.literal("predict"),
     prompt: md,
     code: z.string(),
+    // Python only: typed answers handed to input().
+    stdin: z.array(z.string()).default([]),
     options: z.array(z.string()).min(2).max(5),
     answer: z.number().int(),
     explanation: md,
@@ -110,6 +132,7 @@ const question = z.discriminatedUnion("type", [
     accept: z.array(z.string()).default([]),
     // Checked by running `code` with the blank filled in.
     runnable: z.boolean().default(true),
+    stdin: z.array(z.string()).default([]),
     explanation: md,
   }),
 ]);
@@ -139,6 +162,16 @@ export const caseSchema = z.object({
   check: z.discriminatedUnion("mode", [
     z.object({ mode: z.literal("result"), solution: z.string(), ordered: z.boolean().default(false) }),
     z.object({ mode: z.literal("state"), solution: z.string(), state_query: z.string() }),
+    // JavaScript cases: `starter` is code, `tests` are calls run on the learner's code and the solution.
+    z.object({ mode: z.literal("js"), solution: z.string(), tests: z.array(z.string()).min(1), unordered: z.boolean().default(false) }),
+    // Python cases: the same idea. `stdin` is what input() receives when the code runs.
+    z.object({
+      mode: z.literal("py"),
+      solution: z.string(),
+      tests: z.array(z.string()).min(1),
+      unordered: z.boolean().default(false),
+      stdin: z.array(z.string()).default([]),
+    }),
   ]),
   hints: z.array(md).length(3),
   reveal: md,

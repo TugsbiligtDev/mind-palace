@@ -1,0 +1,52 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from pydantic import BaseModel
+
+      class P(BaseModel):
+          x: int
+
+      print(P(x="42").x + 1)
+    options: ["43", "421", "Error", "42"]
+    answer: 0
+    explanation: "Pydantic converts the text `\"42\"` to the integer 42 in its default (lax) mode."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from pydantic import BaseModel, ValidationError
+
+      class P(BaseModel):
+          x: int
+
+      try:
+          P(x="abc")
+      except ValidationError as e:
+          print(e.errors()[0]["type"])
+    options: ["int_parsing", "value_error", "missing", "type_error"]
+    answer: 0
+    explanation: "Text that cannot be read as an integer gives the error type `int_parsing`."
+  - type: mcq
+    prompt: Which is the Pydantic v2 way to read a model from JSON text?
+    options: ["Model.model_validate_json(text)", "Model.parse_raw(text)", "json.loads(text) only", "Model.from_json(text)"]
+    answer: 0
+    explanation: "`parse_raw` and `parse_obj` are the older v1 names."
+  - type: mcq
+    prompt: Why validate data "at the edge" of your program?
+    options:
+      - Bad data is caught immediately with a clear message, and the rest of the code can trust it
+      - It makes the program faster
+      - Python needs it
+      - It removes the need for tests
+    answer: 0
+    explanation: Otherwise bad data causes confusing failures far from the real cause.
+  - type: mcq
+    prompt: How does pydantic-settings get a value for a field called `api_key`?
+    options:
+      - From the environment variable API_KEY (or a .env file)
+      - From a random number
+      - Only from a Python file
+      - From the internet
+    answer: 0
+    explanation: Field names are matched case-insensitively with environment variables.

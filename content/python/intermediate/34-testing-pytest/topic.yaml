@@ -1,0 +1,4 @@
+title: "Testing with pytest"
+module: 34
+summary: "Prove your code works and keep it working: plain-assert tests, fixtures, parametrize, pytest.raises, mocking with unittest.mock, coverage, and test-driven development. Real pytest runs in your browser."
+minutes: 110

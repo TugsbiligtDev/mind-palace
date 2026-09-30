@@ -1,0 +1,412 @@
+steps:
+  - kind: explain
+    title: The archive maze
+    body: |
+      The Inkwell archive is a maze of shelving. Moth left a map as a text file: `S` is the start, `E` is the exit, `#` is a wall and `.` is open floor.
+
+      ```
+      S.#....
+      ..#.##.
+      ....#..
+      ##.##.#
+      ......E
+      ```
+
+      This is the **Part 8 checkpoint**: a maze solver that reads the map from a file, finds the **shortest path with BFS**, prints the maze with the route marked, and **compares BFS with DFS** on the same map. A path is a list of `(row, column)` pairs from `S` to `E`. Five cases build it up.
+
+  - kind: code
+    title: "1. Load the maze"
+    body: |
+      Write `load_maze(path)`: read the text file and return the maze as a **list of strings**, one per line, with the trailing newline removed and **blank lines ignored**.
+
+      Raise `ValueError("uneven rows")` if the lines have different lengths, and `ValueError("needs one S and one E")` unless the maze contains exactly one `S` and exactly one `E`.
+    code: |
+      def load_maze(path):
+          pass
+    tests:
+      - "open('m.txt', 'w').write('S.#\\n..E\\n')\nresult = load_maze('m.txt')"
+      - "open('b.txt', 'w').write('\\nS.E\\n\\n#.#\\n')\nresult = load_maze('b.txt')"
+      - "open('u.txt', 'w').write('S.\\n..E\\n')\ntry:\n    load_maze('u.txt')\nexcept ValueError as e:\n    result = str(e)"
+      - "open('n.txt', 'w').write('S..\\n...\\n')\ntry:\n    load_maze('n.txt')\nexcept ValueError as e:\n    result = str(e)"
+      - "open('t.txt', 'w').write('SS.\\n..E\\n')\ntry:\n    load_maze('t.txt')\nexcept ValueError as e:\n    result = str(e)"
+    solution: |
+      def load_maze(path):
+          with open(path, encoding="utf-8") as f:
+              rows = [line.rstrip("\n") for line in f if line.strip()]
+          if len({len(row) for row in rows}) > 1:
+              raise ValueError("uneven rows")
+          text = "".join(rows)
+          if text.count("S") != 1 or text.count("E") != 1:
+              raise ValueError("needs one S and one E")
+          return rows
+    hint: "Read the lines, keep the non-blank ones. Check the set of row lengths, then count `S` and `E` in the joined text."
+    reject:
+      - |
+        def load_maze(path):
+            with open(path, encoding="utf-8") as f:
+                return f.read().splitlines()
+
+  - kind: code
+    title: "2. Where is S?"
+    body: |
+      Write `find(maze, char)`: return the `(row, column)` of the first cell equal to `char`, or `None` if it is not there. Also write `neighbours(maze, cell)`: the list of open cells (not `#`, inside the maze) next to `cell`, in the order **down, up, right, left**.
+    code: |
+      def find(maze, char):
+          pass
+
+
+      def neighbours(maze, cell):
+          pass
+    tests:
+      - "find(['S.#', '..E'], 'E')"
+      - "find(['S.#', '..E'], 'S')"
+      - "find(['S.#'], 'X')"
+      - "neighbours(['S.#', '..E'], (0, 0))"
+      - "neighbours(['S.#', '..E'], (1, 1))"
+      - "neighbours(['#.#', '#S#', '#.#'], (1, 1))"
+    solution: |
+      def find(maze, char):
+          for r, row in enumerate(maze):
+              for c, ch in enumerate(row):
+                  if ch == char:
+                      return (r, c)
+          return None
+
+
+      def neighbours(maze, cell):
+          r, c = cell
+          found = []
+          for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+              nr, nc = r + dr, c + dc
+              if 0 <= nr < len(maze) and 0 <= nc < len(maze[0]) and maze[nr][nc] != "#":
+                  found.append((nr, nc))
+          return found
+    hint: "Loop over rows with `enumerate`. For neighbours use the four offsets in the order given and check the bounds."
+    reject:
+      - |
+        def find(maze, char):
+            return (0, 0)
+
+
+        def neighbours(maze, cell):
+            return []
+
+  - kind: code
+    title: "3. BFS: the shortest path"
+    body: |
+      Write `solve_bfs(maze)`: the **shortest** path from `S` to `E` as a list of `(row, column)` cells including both, or `None` if the exit is unreachable. The helpers `find` and `neighbours` are provided. Use a `deque` and a `parents` dict to rebuild the path.
+    code: |
+      from collections import deque
+
+
+      def find(maze, char):
+          for r, row in enumerate(maze):
+              for c, ch in enumerate(row):
+                  if ch == char:
+                      return (r, c)
+          return None
+
+
+      def neighbours(maze, cell):
+          r, c = cell
+          found = []
+          for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+              nr, nc = r + dr, c + dc
+              if 0 <= nr < len(maze) and 0 <= nc < len(maze[0]) and maze[nr][nc] != "#":
+                  found.append((nr, nc))
+          return found
+
+
+      def solve_bfs(maze):
+          return None
+    tests:
+      - "len(solve_bfs(['S.#....', '..#.##.', '....#..', '##.##.#', '......E']))"
+      - "solve_bfs(['S#E'])"
+      - "solve_bfs(['SE'])"
+      - "p = solve_bfs(['S..', '#.#', 'E..'])\nresult = (p[0], p[-1], len(p))"
+      - "len(solve_bfs(['S' + '.' * 400 + 'E']))"
+    solution: |
+      from collections import deque
+
+
+      def find(maze, char):
+          for r, row in enumerate(maze):
+              for c, ch in enumerate(row):
+                  if ch == char:
+                      return (r, c)
+          return None
+
+
+      def neighbours(maze, cell):
+          r, c = cell
+          found = []
+          for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+              nr, nc = r + dr, c + dc
+              if 0 <= nr < len(maze) and 0 <= nc < len(maze[0]) and maze[nr][nc] != "#":
+                  found.append((nr, nc))
+          return found
+
+
+      def solve_bfs(maze):
+          start, end = find(maze, "S"), find(maze, "E")
+          parents = {start: None}
+          queue = deque([start])
+          while queue:
+              cell = queue.popleft()
+              if cell == end:
+                  path = []
+                  while cell is not None:
+                      path.append(cell)
+                      cell = parents[cell]
+                  return path[::-1]
+              for n in neighbours(maze, cell):
+                  if n not in parents:
+                      parents[n] = cell
+                      queue.append(n)
+          return None
+    hint: "Record each cell's `parent` when you first reach it. At the end, walk back from `E` through the parents and reverse the list."
+    reject:
+      - |
+        from collections import deque
+
+
+        def find(maze, char):
+            for r, row in enumerate(maze):
+                for c, ch in enumerate(row):
+                    if ch == char:
+                        return (r, c)
+
+
+        def neighbours(maze, cell):
+            r, c = cell
+            found = []
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < len(maze) and 0 <= nc < len(maze[0]) and maze[nr][nc] != "#":
+                    found.append((nr, nc))
+            return found
+
+
+        def solve_bfs(maze):
+            return None
+
+  - kind: code
+    title: "4. DFS: any path"
+    body: |
+      Write `solve_dfs(maze)` using an explicit **stack** (a list). It returns *a* path from `S` to `E` (not necessarily the shortest) or `None`. Neighbours are pushed in the order `neighbours` gives; because a stack pops the **last** pushed first, the search dives in the *reverse* of that order. Use the same `parents` idea to rebuild the path.
+
+      The point is to **compare** it with BFS: DFS finds a route, BFS finds the best one.
+    code: |
+      def find(maze, char):
+          for r, row in enumerate(maze):
+              for c, ch in enumerate(row):
+                  if ch == char:
+                      return (r, c)
+          return None
+
+
+      def neighbours(maze, cell):
+          r, c = cell
+          found = []
+          for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+              nr, nc = r + dr, c + dc
+              if 0 <= nr < len(maze) and 0 <= nc < len(maze[0]) and maze[nr][nc] != "#":
+                  found.append((nr, nc))
+          return found
+
+
+      def solve_dfs(maze):
+          return None
+    tests:
+      - "p = solve_dfs(['S.#....', '..#.##.', '....#..', '##.##.#', '......E'])\nresult = (p[0], p[-1], all(abs(a[0]-b[0]) + abs(a[1]-b[1]) == 1 for a, b in zip(p, p[1:])))"
+      - "solve_dfs(['S#E'])"
+      - "p = solve_dfs(['SE'])\nresult = p"
+      - "p = solve_dfs(['S' + '.' * 3000 + 'E'])\nresult = len(p)"
+    solution: |
+      def find(maze, char):
+          for r, row in enumerate(maze):
+              for c, ch in enumerate(row):
+                  if ch == char:
+                      return (r, c)
+          return None
+
+
+      def neighbours(maze, cell):
+          r, c = cell
+          found = []
+          for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+              nr, nc = r + dr, c + dc
+              if 0 <= nr < len(maze) and 0 <= nc < len(maze[0]) and maze[nr][nc] != "#":
+                  found.append((nr, nc))
+          return found
+
+
+      def solve_dfs(maze):
+          start, end = find(maze, "S"), find(maze, "E")
+          parents = {start: None}
+          stack = [start]
+          while stack:
+              cell = stack.pop()
+              if cell == end:
+                  path = []
+                  while cell is not None:
+                      path.append(cell)
+                      cell = parents[cell]
+                  return path[::-1]
+              for n in neighbours(maze, cell):
+                  if n not in parents:
+                      parents[n] = cell
+                      stack.append(n)
+          return None
+    hint: "The same as BFS but with a list used as a stack: `stack.pop()` instead of `queue.popleft()`."
+    reject:
+      - |
+        def find(maze, char):
+            return (0, 0)
+
+
+        def neighbours(maze, cell):
+            return []
+
+
+        def solve_dfs(maze):
+            return None
+
+  - kind: code
+    title: "5. Draw it and compare"
+    body: |
+      Two last functions:
+
+      - `render(maze, path)`: return the maze as one text with rows joined by newlines, with every cell of `path` drawn as `*`, **except** `S` and `E` which stay as they are. If `path` is `None`, return the maze unchanged.
+      - `compare(bfs_path, dfs_path)`: return a text like `"BFS: 8 moves, DFS: 12 moves"` (moves = cells - 1), or `"no route"` if `bfs_path` is `None`.
+    code: |
+      def render(maze, path):
+          pass
+
+
+      def compare(bfs_path, dfs_path):
+          pass
+    tests:
+      - "render(['S..', '.#E'], [(0, 0), (0, 1), (0, 2), (1, 2)])"
+      - "render(['S#E'], None)"
+      - "render(['SE'], [(0, 0), (0, 1)])"
+      - "compare([(0, 0), (0, 1), (0, 2)], [(0, 0), (1, 0), (1, 1), (1, 2), (0, 2)])"
+      - "compare(None, None)"
+    solution: |
+      def render(maze, path):
+          if path is None:
+              return "\n".join(maze)
+          on_path = set(path)
+          lines = []
+          for r, row in enumerate(maze):
+              line = ""
+              for c, ch in enumerate(row):
+                  line += "*" if (r, c) in on_path and ch == "." else ch
+              lines.append(line)
+          return "\n".join(lines)
+
+
+      def compare(bfs_path, dfs_path):
+          if bfs_path is None:
+              return "no route"
+          return f"BFS: {len(bfs_path) - 1} moves, DFS: {len(dfs_path) - 1} moves"
+    hint: "Turn the path into a `set` for quick lookups. Only replace `.` cells (so `S` and `E` stay), then join rows with `\"\\n\"`."
+    reject:
+      - |
+        def render(maze, path):
+            return "\n".join(maze)
+
+
+        def compare(bfs_path, dfs_path):
+            return "no route"
+
+  - kind: mac
+    title: Solve a maze from a file
+    body: |
+      Put your functions in `maze.py` with a `main()` that loads `maze.txt`, prints the BFS route drawn on the maze, and prints the `compare` line. The command below builds a compact version so you can watch it work. Then make your own maze file, bigger, and see how the two searches differ.
+
+      **Checkpoint:** paste the output. It should contain `BFS:` and a `*` route.
+    commands: |
+      mkdir -p ~/Desktop/maze && cd ~/Desktop/maze
+      cat > maze.txt <<'TXT'
+      S.#....
+      ..#.##.
+      ....#..
+      ##.##.#
+      ......E
+      TXT
+      cat > maze.py <<'PY'
+      import sys
+      from collections import deque
+
+      MOVES = ((1, 0), (-1, 0), (0, 1), (0, -1))
+
+
+      def load_maze(path):
+          with open(path, encoding="utf-8") as f:
+              return [line.rstrip("\n") for line in f if line.strip()]
+
+
+      def find(maze, char):
+          for r, row in enumerate(maze):
+              for c, ch in enumerate(row):
+                  if ch == char:
+                      return (r, c)
+
+
+      def neighbours(maze, cell):
+          r, c = cell
+          for dr, dc in MOVES:
+              nr, nc = r + dr, c + dc
+              if 0 <= nr < len(maze) and 0 <= nc < len(maze[0]) and maze[nr][nc] != "#":
+                  yield (nr, nc)
+
+
+      def solve(maze, take):
+          start, end = find(maze, "S"), find(maze, "E")
+          parents = {start: None}
+          frontier = deque([start])
+          while frontier:
+              cell = take(frontier)
+              if cell == end:
+                  path = []
+                  while cell is not None:
+                      path.append(cell)
+                      cell = parents[cell]
+                  return path[::-1]
+              for n in neighbours(maze, cell):
+                  if n not in parents:
+                      parents[n] = cell
+                      frontier.append(n)
+
+
+      def render(maze, path):
+          on_path = set(path or [])
+          return "\n".join("".join("*" if (r, c) in on_path and ch == "." else ch for c, ch in enumerate(row)) for r, row in enumerate(maze))
+
+
+      def main():
+          maze = load_maze(sys.argv[1] if len(sys.argv) > 1 else "maze.txt")
+          bfs = solve(maze, deque.popleft)
+          dfs = solve(maze, deque.pop)
+          print(render(maze, bfs))
+          print(f"BFS: {len(bfs) - 1} moves, DFS: {len(dfs) - 1} moves")
+
+
+      if __name__ == "__main__":
+          main()
+      PY
+      uv run maze.py
+    expect_output:
+      - "BFS:"
+      - "*"
+
+  - kind: why
+    body: |
+      One small map showed you the whole story of search: both algorithms explore the same graph, but the **data structure** you choose (a queue or a stack) changes which route you find. BFS guarantees the shortest; DFS is simpler and uses less memory in some shapes but can wander. The same skeleton solves routing, puzzles, dependency ordering and game AI.
+
+  - kind: recap
+    body: |
+      - The **Part 8 checkpoint**: load a maze from a file, solve it with **BFS** (queue: shortest path), solve it with **DFS** (stack: any path), draw the route and compare them.
+      - Rebuild a path by storing each cell's **parent**, then walking back from the goal.
+      - A grid is an implicit graph: generate neighbours with direction offsets, check bounds and walls.

@@ -1,0 +1,275 @@
+steps:
+  - kind: explain
+    title: Batteries included
+    body: |
+      Python ships with a huge toolbox called the **standard library**: maths, dates, random numbers, files, JSON, and much more. Each part is a **module**, just a file of Python code. To use one, **import** it:
+
+      ```python
+      import math
+      print(math.sqrt(16))        # 4.0
+      ```
+
+      Three ways to import:
+
+      ```python
+      import math                    # use as math.sqrt(...)
+      from math import sqrt, pi      # use directly: sqrt(...)
+      import datetime as dt          # give it a short alias: dt.date(...)
+      ```
+
+      Prefer `import module` in most code: it is clear where a name comes from. Put imports at the **top** of the file. Never use `from module import *`, which floods your file with unknown names.
+
+  - kind: code
+    title: Try math and random
+    body: |
+      Run this. `random` gives different numbers each time. That is the point!
+    code: |
+      import math
+      import random
+
+      print(math.sqrt(16))
+      print(math.pi)
+      print(math.ceil(4.2), math.floor(4.8))
+      print(random.randint(1, 6))
+      print(random.choice(["red", "green", "blue"]))
+
+  - kind: code
+    title: The long way across
+    body: |
+      Finish `diagonal(width, height)`: the length of the diagonal of a rectangle, rounded to 2 decimals. It is the square root of `width² + height²`. `diagonal(3, 4)` is `5.0`.
+
+      Use `math.sqrt`.
+    code: |
+      import math
+
+
+      def diagonal(width, height):
+          return 0
+    tests:
+      - "diagonal(3, 4)"
+      - "diagonal(1, 1)"
+      - "diagonal(5, 12)"
+      - "diagonal(0, 7)"
+    solution: |
+      import math
+
+
+      def diagonal(width, height):
+          return round(math.sqrt(width ** 2 + height ** 2), 2)
+    hint: "`round(math.sqrt(width ** 2 + height ** 2), 2)`."
+    reject:
+      - |
+        import math
+
+
+        def diagonal(width, height):
+            return round(width + height, 2)
+
+  - kind: code
+    title: A repeatable pick
+    body: |
+      Random results are hard to test, so programmers use a **seed**: the same seed always gives the same "random" sequence. Finish `lucky(items, seed)`: create `random.Random(seed)`, and return `.choice(items)` from it. Given the same seed the answer never changes.
+    code: |
+      import random
+
+
+      def lucky(items, seed):
+          return items[0]
+    tests:
+      - "lucky(['a', 'b', 'c', 'd', 'e'], 1)"
+      - "lucky(['a', 'b', 'c', 'd', 'e'], 2)"
+      - "lucky(list(range(100)), 7)"
+      - "lucky(list(range(100)), 8)"
+    solution: |
+      import random
+
+
+      def lucky(items, seed):
+          rng = random.Random(seed)
+          return rng.choice(items)
+    hint: "`random.Random(seed).choice(items)`."
+    reject:
+      - |
+        import random
+
+
+        def lucky(items, seed):
+            return items[seed % len(items)]
+
+  - kind: explain
+    title: Dates with datetime
+    body: |
+      ```python
+      from datetime import date, timedelta
+
+      d = date(2026, 9, 30)
+      print(d.year, d.month, d.day)         # 2026 9 30
+      print(d.strftime("%A"))               # Wednesday
+      print(d + timedelta(days=7))          # 2026-10-07
+      print(date.fromisoformat("2026-12-25") - d)   # 86 days, 0:00:00
+      ```
+
+      - `date(y, m, d)` makes a date; `date.today()` is today.
+      - Subtracting two dates gives a `timedelta`; `.days` is the number of days.
+      - `strftime` formats a date as text (`%A` weekday name, `%B` month name, `%Y-%m-%d`).
+      - `date.fromisoformat("2026-12-25")` reads `YYYY-MM-DD` text.
+
+  - kind: code
+    title: Days until
+    body: |
+      Finish `days_between(start, end)`: both are text like `"2026-09-30"`. Return the number of days from `start` to `end` as a whole number (negative if `end` is earlier).
+    code: |
+      from datetime import date
+
+
+      def days_between(start, end):
+          return 0
+    tests:
+      - "days_between('2026-09-30', '2026-12-25')"
+      - "days_between('2026-01-01', '2026-01-01')"
+      - "days_between('2026-03-01', '2026-02-01')"
+      - "days_between('2024-02-28', '2024-03-01')"
+    solution: |
+      from datetime import date
+
+
+      def days_between(start, end):
+          return (date.fromisoformat(end) - date.fromisoformat(start)).days
+    hint: "Convert both with `date.fromisoformat`, subtract, and take `.days`."
+    reject:
+      - |
+        from datetime import date
+
+
+        def days_between(start, end):
+            return (date.fromisoformat(start) - date.fromisoformat(end)).days
+
+  - kind: code
+    title: What day of the week?
+    body: |
+      Finish `weekday_name(text)`: given `"2026-12-25"` return the name of that weekday, like `"Friday"`.
+    code: |
+      from datetime import date
+
+
+      def weekday_name(text):
+          return ""
+    tests:
+      - "weekday_name('2026-12-25')"
+      - "weekday_name('2026-09-30')"
+      - "weekday_name('2000-01-01')"
+    solution: |
+      from datetime import date
+
+
+      def weekday_name(text):
+          return date.fromisoformat(text).strftime("%A")
+    hint: "`.strftime(\"%A\")` gives the weekday name."
+    reject:
+      - |
+        from datetime import date
+
+
+        def weekday_name(text):
+            return date.fromisoformat(text).strftime("%B")
+
+  - kind: explain
+    title: Your own modules, and __main__
+    body: |
+      Any `.py` file is a module. If you have a file `helpers.py`:
+
+      ```python
+      # helpers.py
+      def double(n):
+          return n * 2
+      ```
+
+      then another file in the same folder can use it: `import helpers`, `helpers.double(4)`. That is how you split a growing program across files.
+
+      **`if __name__ == "__main__":`** appears at the bottom of many files. When you *run* a file directly, Python sets its `__name__` to `"__main__"`. When another file *imports* it, `__name__` is the module's name. So this block runs only on direct runs and not on import:
+
+      ```python
+      def main():
+          print("running the program")
+
+      if __name__ == "__main__":
+          main()
+      ```
+
+      Use it so a file can be both a program and a reusable module.
+
+  - kind: code
+    title: Split code across files
+    body: |
+      In this editor your code can write files, then import them, just like a real project folder. This function saves a module `shapes.py`, imports it, and uses it. Finish the module text so `square_area(3)` is `9`.
+
+      Run it, then change the module and see the answer change.
+    code: |
+      def demo():
+          module_text = """
+      def square_area(side):
+          return 0
+      """
+          with open("shapes.py", "w") as f:
+              f.write(module_text)
+          import shapes
+          return shapes.square_area(3)
+    tests:
+      - "demo()"
+    solution: |
+      def demo():
+          module_text = """
+      def square_area(side):
+          return side * side
+      """
+          with open("shapes.py", "w") as f:
+              f.write(module_text)
+          import shapes
+          return shapes.square_area(3)
+    hint: "Replace the `0` in the module text with `side * side`."
+
+  - kind: explain
+    title: More of the library, and the docs
+    body: |
+      Modules you will meet again and again:
+
+      | Module | For |
+      |---|---|
+      | `pathlib` | files and folders (`Path("data") / "notes.txt"`) |
+      | `os` | the operating system: `os.getcwd()` current folder, `os.environ` settings |
+      | `sys` | Python itself: `sys.argv` (command-line arguments), `sys.version_info` |
+      | `json`, `csv` | reading and writing data files (Module 17) |
+      | `collections`, `itertools`, `functools` | extra data-structure and function tools (Intermediate) |
+
+      **Reading the documentation** is a core skill. Go to **docs.python.org**, use the search box, and open the *Library Reference* page for the module. Look for the *examples* first, then the function list. In a terminal, `help(math.sqrt)` shows the same text.
+
+  - kind: code
+    title: Is Python new enough?
+    body: |
+      Finish `is_new_enough()`: return `True` if the running Python is **3.10 or newer**. `sys.version_info` compares to a tuple: `sys.version_info >= (3, 10)`.
+    code: |
+      import sys
+
+
+      def is_new_enough():
+          return False
+    tests:
+      - "is_new_enough()"
+    solution: |
+      import sys
+
+
+      def is_new_enough():
+          return sys.version_info >= (3, 10)
+    hint: "`sys.version_info >= (3, 10)`."
+
+  - kind: why
+    body: |
+      Good programmers write less code, not more. Before writing a helper, check whether the standard library already has it, because it is faster, better tested and known to every Python programmer. And splitting your code into modules is what lets a project grow past one screen.
+
+  - kind: recap
+    body: |
+      - `import module`, `from module import name`, `import module as alias`. Imports go at the top; avoid `import *`.
+      - The **standard library** is huge: `math`, `random` (seed for repeatable results), `datetime`, `pathlib`, `os`, `sys`.
+      - Any `.py` file is a module you can import. `if __name__ == "__main__":` runs only when the file is run directly.
+      - Read the docs at **docs.python.org**; `help(thing)` works in the REPL.

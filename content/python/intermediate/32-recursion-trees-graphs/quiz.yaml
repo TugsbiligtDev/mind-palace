@@ -1,0 +1,52 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def count(n):
+          if n == 0:
+              return 0
+          return 1 + count(n - 1)
+
+      print(count(5))
+    options: ["5", "0", "6", "15"]
+    answer: 0
+    explanation: "Each call adds 1 and hands a smaller problem to the next, until the base case `n == 0` returns 0."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from collections import deque
+      graph = {"A": ["B", "C"], "B": ["D"], "C": [], "D": []}
+      queue = deque(["A"])
+      order = []
+      while queue:
+          node = queue.popleft()
+          order.append(node)
+          queue.extend(graph[node])
+      print(order)
+    options: ["['A', 'B', 'C', 'D']", "['A', 'B', 'D', 'C']", "['D', 'C', 'B', 'A']", "['A', 'C', 'B', 'D']"]
+    answer: 0
+    explanation: "BFS visits in rings: A, then its neighbours B and C, then D."
+  - type: mcq
+    prompt: Which structure does breadth-first search use to decide which node to visit next?
+    options: ["A queue", "A stack", "A set only", "A heap"]
+    answer: 0
+    explanation: "A queue (first in, first out) gives ring-by-ring order and therefore shortest paths in unweighted graphs."
+  - type: mcq
+    prompt: Why does a graph search need a `visited` set?
+    options:
+      - Graphs can contain loops, so without it the search could go round forever
+      - To make the search faster only
+      - Because dictionaries need it
+      - It is optional and never matters
+    answer: 0
+    explanation: "A → B → A is a loop. Remembering visited nodes stops repeated work and infinite loops."
+  - type: mcq
+    prompt: What does adding `@cache` to a recursive function change?
+    options:
+      - Each distinct call is computed once and remembered, so repeated sub-problems are instant
+      - It converts recursion into a loop
+      - It removes the base case
+      - It makes the function private
+    answer: 0
+    explanation: Memoization stores results, turning exponential repeated work into linear work.

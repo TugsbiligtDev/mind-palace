@@ -1,0 +1,4 @@
+title: "Packages & Environments with uv"
+module: 19
+summary: "Use libraries other people wrote: what PyPI and packages are, why each project needs its own environment, and how uv creates projects, adds packages and keeps everything reproducible."
+minutes: 70

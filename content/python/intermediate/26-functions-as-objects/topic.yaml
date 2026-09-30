@@ -1,0 +1,4 @@
+title: "Functions as Objects"
+module: 26
+summary: "Treat functions like any other value: pass them around, use lambda and key=, build closures, and use functools (partial, cache) to write flexible, fast code."
+minutes: 75

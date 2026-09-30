@@ -1,0 +1,331 @@
+steps:
+  - kind: explain
+    title: The prefix problem
+    body: |
+      You type "app" into a search box and it suggests "apple", "application", "apply". Behind that is a question: *which stored words **start with** this text?*
+
+      A hash `Set` answers "is this exact word stored?" but not "which words start with this?" without checking every word.
+
+      A **trie** (say "try") stores words so that **shared beginnings are stored once**, and a prefix lookup costs only the length of the prefix.
+
+  - kind: explain
+    title: How a trie is built
+    body: |
+      A trie is a tree where each **edge is a letter**. A word is a path from the root, and a flag marks where a word **ends**.
+
+      ```
+      words: app, apple, bat
+
+               (root)
+              /      \
+             a        b
+             |        |
+             p        a
+             |        |
+             p*       t*
+             |
+             l
+             |
+             e*        (* = a word ends here)
+      ```
+
+      Each node holds:
+      - `children`: a `Map` from a letter to the next node (or an array of 26 slots for lowercase letters),
+      - `isEnd`: `true` if a word ends at this node.
+
+      Insert, search and prefix check all cost **O(L)** where `L` is the length of the word, no matter how many words are stored.
+
+  - kind: code
+    title: "Find the bug: a prefix is not a word"
+    body: |
+      This `Trie` should support `insert(word)`, `search(word)` (is this **exact word** stored?) and `startsWith(prefix)`. But `search("app")` returns `true` even when only `"apple"` was inserted, because it forgets the end-of-word flag. Fix `search`.
+    code: |
+      class TrieNode {
+        constructor() {
+          this.children = new Map();
+          this.isEnd = false;
+        }
+      }
+
+      class Trie {
+        constructor() {
+          this.root = new TrieNode();
+        }
+        insert(word) {
+          let node = this.root;
+          for (const ch of word) {
+            if (!node.children.has(ch)) node.children.set(ch, new TrieNode());
+            node = node.children.get(ch);
+          }
+          node.isEnd = true;
+        }
+        search(word) {
+          let node = this.root;
+          for (const ch of word) {
+            if (!node.children.has(ch)) return false;
+            node = node.children.get(ch);
+          }
+          return true;
+        }
+        startsWith(prefix) {
+          let node = this.root;
+          for (const ch of prefix) {
+            if (!node.children.has(ch)) return false;
+            node = node.children.get(ch);
+          }
+          return true;
+        }
+      }
+    tests:
+      - "(() => { const t = new Trie(); t.insert('apple'); return [t.search('apple'), t.search('app'), t.startsWith('app')]; })()"
+      - "(() => { const t = new Trie(); t.insert('apple'); t.insert('app'); return [t.search('app'), t.search('ap')]; })()"
+      - "(() => { const t = new Trie(); return [t.search('a'), t.startsWith('a')]; })()"
+      - "(() => { const t = new Trie(); t.insert('bat'); return [t.search('bats'), t.startsWith('ba'), t.startsWith('bar')]; })()"
+    solution: |
+      class TrieNode {
+        constructor() {
+          this.children = new Map();
+          this.isEnd = false;
+        }
+      }
+
+      class Trie {
+        constructor() {
+          this.root = new TrieNode();
+        }
+        insert(word) {
+          let node = this.root;
+          for (const ch of word) {
+            if (!node.children.has(ch)) node.children.set(ch, new TrieNode());
+            node = node.children.get(ch);
+          }
+          node.isEnd = true;
+        }
+        search(word) {
+          let node = this.root;
+          for (const ch of word) {
+            if (!node.children.has(ch)) return false;
+            node = node.children.get(ch);
+          }
+          return node.isEnd;
+        }
+        startsWith(prefix) {
+          let node = this.root;
+          for (const ch of prefix) {
+            if (!node.children.has(ch)) return false;
+            node = node.children.get(ch);
+          }
+          return true;
+        }
+      }
+    hint: "Reaching the last letter's node is not enough. Return `node.isEnd`."
+    broken_starter: true
+    reject:
+      - |
+        class TrieNode { constructor() { this.children = new Map(); this.isEnd = false; } }
+        class Trie {
+          constructor() { this.root = new TrieNode(); }
+          insert(word) {
+            let node = this.root;
+            for (const ch of word) {
+              if (!node.children.has(ch)) node.children.set(ch, new TrieNode());
+              node = node.children.get(ch);
+            }
+            node.isEnd = true;
+          }
+          search(word) {
+            let node = this.root;
+            for (const ch of word) {
+              if (!node.children.has(ch)) return false;
+              node = node.children.get(ch);
+            }
+            return true;
+          }
+          startsWith(prefix) { return this.search(prefix); }
+        }
+
+  - kind: explain
+    title: Autocomplete
+    body: |
+      To list every word that starts with a prefix:
+
+      1. **Walk** down the trie following the prefix's letters. If you fall off, there are no matches.
+      2. From that node, do a **depth-first search** through its whole subtree, building the word as you go, and collect a word whenever `isEnd` is true.
+
+      Visiting the children **in alphabetical order** gives the words already sorted.
+
+  - kind: code
+    title: An autocomplete box
+    body: |
+      Finish `AutoComplete`. `add(word)` stores a word. `complete(prefix)` returns **every stored word starting with `prefix`, in alphabetical order** (the prefix itself counts if it is a stored word). Use a trie, and sort each node's letters when you explore.
+    code: |
+      class AutoComplete {
+        constructor() {
+          this.root = { children: new Map(), isEnd: false };
+        }
+        add(word) {}
+        complete(prefix) {
+          return [];
+        }
+      }
+    tests:
+      - "(() => { const a = new AutoComplete(); ['apple', 'app', 'apply', 'bat', 'application'].forEach((w) => a.add(w)); return [a.complete('app'), a.complete('b'), a.complete('x')]; })()"
+      - "(() => { const a = new AutoComplete(); a.add('cat'); a.add('car'); a.add('cart'); return a.complete('car'); })()"
+      - "(() => { const a = new AutoComplete(); a.add('a'); return [a.complete(''), a.complete('a'), a.complete('ab')]; })()"
+      - "new AutoComplete().complete('a')"
+    solution: |
+      class AutoComplete {
+        constructor() {
+          this.root = { children: new Map(), isEnd: false };
+        }
+        add(word) {
+          let node = this.root;
+          for (const ch of word) {
+            if (!node.children.has(ch)) node.children.set(ch, { children: new Map(), isEnd: false });
+            node = node.children.get(ch);
+          }
+          node.isEnd = true;
+        }
+        complete(prefix) {
+          let node = this.root;
+          for (const ch of prefix) {
+            if (!node.children.has(ch)) return [];
+            node = node.children.get(ch);
+          }
+          const results = [];
+          const walk = (current, word) => {
+            if (current.isEnd) results.push(word);
+            for (const ch of [...current.children.keys()].sort()) {
+              walk(current.children.get(ch), word + ch);
+            }
+          };
+          walk(node, prefix);
+          return results;
+        }
+      }
+    hint: First walk to the prefix's node, then recurse through its children (sorted), adding `word` whenever `isEnd` is true.
+    reject:
+      - |
+        class AutoComplete {
+          constructor() { this.words = []; this.root = null; }
+          add(word) { this.words.push(word); }
+          complete(prefix) { return this.words.filter((w) => w.startsWith(prefix)); }
+        }
+
+  - kind: explain
+    title: Wildcard search
+    body: |
+      A dictionary where you can search with a **wildcard**: `.` matches any single letter. `"b.t"` matches "bat", "bit", "bot".
+
+      A normal letter follows one edge. A `.` must try **every child** (branch), so the search becomes a recursive depth-first search: if any branch finds a word, the answer is yes.
+
+  - kind: code
+    title: Add and search words with a dot
+    body: |
+      Finish `WordDictionary`. `addWord(word)` stores a word. `search(pattern)` is `true` if some stored word matches the pattern, where each `.` matches any one letter and every other character matches itself.
+    code: |
+      class WordDictionary {
+        constructor() {
+          this.root = { children: new Map(), isEnd: false };
+        }
+        addWord(word) {}
+        search(pattern) {
+          return false;
+        }
+      }
+    tests:
+      - "(() => { const d = new WordDictionary(); ['bad', 'dad', 'mad'].forEach((w) => d.addWord(w)); return ['pad', 'bad', '.ad', 'b..', 'b...', '...', '..'].map((p) => d.search(p)); })()"
+      - "(() => { const d = new WordDictionary(); return [d.search('a'), d.search('.')]; })()"
+      - "(() => { const d = new WordDictionary(); d.addWord('a'); d.addWord('ab'); return ['a', 'a.', '.b', 'ab.', '.', '..'].map((p) => d.search(p)); })()"
+    solution: |
+      class WordDictionary {
+        constructor() {
+          this.root = { children: new Map(), isEnd: false };
+        }
+        addWord(word) {
+          let node = this.root;
+          for (const ch of word) {
+            if (!node.children.has(ch)) node.children.set(ch, { children: new Map(), isEnd: false });
+            node = node.children.get(ch);
+          }
+          node.isEnd = true;
+        }
+        search(pattern) {
+          const walk = (node, i) => {
+            if (i === pattern.length) return node.isEnd;
+            const ch = pattern[i];
+            if (ch === ".") {
+              for (const child of node.children.values()) {
+                if (walk(child, i + 1)) return true;
+              }
+              return false;
+            }
+            return node.children.has(ch) && walk(node.children.get(ch), i + 1);
+          };
+          return walk(this.root, 0);
+        }
+      }
+    hint: For a `.`, try every child and return `true` if any works. For a normal letter, follow only that letter's edge. At the end of the pattern, the node must be a word end.
+    reject:
+      - |
+        class WordDictionary {
+          constructor() { this.words = new Set(); }
+          addWord(word) { this.words.add(word); }
+          search(pattern) { return this.words.has(pattern); }
+        }
+
+  - kind: code
+    title: Search suggestions
+    body: |
+      A shop's search box suggests products as you type. Write `suggestedProducts(products, searchWord)`: for each prefix of `searchWord` (its first 1 letter, first 2 letters, and so on), return **up to three** product names starting with that prefix, in alphabetical order.
+
+      `(["mobile", "mouse", "moneypot", "monitor", "mousepad"], "mouse")` gives `[["mobile","moneypot","monitor"],["mobile","moneypot","monitor"],["mouse","mousepad"],["mouse","mousepad"],["mouse","mousepad"]]`.
+
+      A trie works. So does sorting once and using binary search for each prefix. Choose either.
+    code: |
+      function suggestedProducts(products, searchWord) {
+        return [];
+      }
+    tests:
+      - "suggestedProducts(['mobile', 'mouse', 'moneypot', 'monitor', 'mousepad'], 'mouse')"
+      - "suggestedProducts(['havana'], 'havana')"
+      - "suggestedProducts(['bags', 'baggage', 'banner', 'box', 'cloths'], 'bags')"
+      - "suggestedProducts(['havana'], 'tatiana')"
+      - "suggestedProducts([], 'a')"
+    solution: |
+      function suggestedProducts(products, searchWord) {
+        const sorted = [...products].sort();
+        const result = [];
+        let prefix = "";
+        for (const ch of searchWord) {
+          prefix += ch;
+          result.push(sorted.filter((p) => p.startsWith(prefix)).slice(0, 3));
+        }
+        return result;
+      }
+    hint: Sort the products once. For each growing prefix, take the first three sorted products that start with it.
+    reject:
+      - |
+        function suggestedProducts(products, searchWord) {
+          return [...searchWord].map(() => products.slice(0, 3));
+        }
+
+  - kind: info
+    title: A trie plus backtracking (later)
+    body: |
+      Tries combine beautifully with **backtracking**: to find which dictionary words hide inside a letter grid (the "Word Search II" problem), you walk the grid and the trie together, and stop a path as soon as no word can continue it. You will meet this after Module 27, where backtracking is introduced.
+
+  - kind: why
+    body: |
+      A trie trades memory for speed: every prefix operation costs only the length of the prefix, whatever the size of the dictionary. That is why tries sit behind autocomplete, spell checkers, IP routing tables and word games.
+
+      When a problem talks about **prefixes**, **many words sharing beginnings**, or **wildcards over letters**, a trie is the tool to try first.
+
+  - kind: recap
+    body: |
+      - A **trie** is a tree where each edge is a letter and a flag marks the end of a word. Shared prefixes are stored once.
+      - **Insert, search and startsWith** cost **O(L)**, the word length, regardless of the number of words.
+      - `search` must check the **end-of-word flag**. `startsWith` does not.
+      - **Autocomplete:** walk to the prefix's node, then depth-first search its subtree (children in sorted order).
+      - **Wildcards:** a `.` branches into all children, so use recursion.
+      - Tries pair well with **backtracking** for grid word searches (after Module 27).

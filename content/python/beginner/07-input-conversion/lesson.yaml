@@ -1,0 +1,186 @@
+steps:
+  - kind: explain
+    title: Asking a question
+    body: |
+      `input("question")` shows the question, waits for the person to type something and press Enter, and **gives back what they typed**:
+
+      ```python
+      name = input("What is your name? ")
+      print("Hello,", name)
+      ```
+
+      In a real terminal the program pauses and waits. A web page cannot pause like that, so in this course's editor **the answers are typed for you**: the little grey note above the editor lists the answers Python will receive, in order. The first `input()` gets the first answer, the second gets the second, and so on.
+
+  - kind: code
+    title: Your first input()
+    body: |
+      Run this. The note above the editor shows the answer that `input()` receives. Look at how the question and the answer appear in the output.
+    code: |
+      name = input("What is your name? ")
+      print("Hello,", name)
+    stdin: ["Ada"]
+
+  - kind: explain
+    title: input() always gives text
+    body: |
+      This is the number-one beginner trap. **`input()` always returns a `str`**, even if the person types digits:
+
+      ```python
+      age = input("Age? ")     # the person types 30
+      print(age + 1)           # TypeError: can only concatenate str (not "int") to str
+      ```
+
+      `"30"` (text) and `30` (a number) are different things. You have to **convert**.
+
+      | Function | Converts to | Example |
+      |---|---|---|
+      | `int(x)` | whole number | `int("30")` → `30` |
+      | `float(x)` | decimal number | `float("2.5")` → `2.5` |
+      | `str(x)` | text | `str(30)` → `"30"` |
+      | `bool(x)` | True/False | `bool("hi")` → `True` |
+
+      If the text cannot be converted, such as `int("hello")`, Python raises a **ValueError**. In Module 16 you will learn to catch that; for now, just know it exists.
+
+  - kind: code
+    title: Text in, number out
+    body: |
+      Finish `double(text)`. It receives text like `"21"` (as if from `input()`) and returns the number doubled **as a number**: `double("21")` is `42`.
+    code: |
+      def double(text):
+          return text * 2
+    tests:
+      - "double('21')"
+      - "double('0')"
+      - "double('-5')"
+      - "double('100')"
+    solution: |
+      def double(text):
+          return int(text) * 2
+    hint: "Convert first with `int(text)`. Multiplying *text* by 2 repeats it (`\"21\" * 2` is `\"2121\"`)."
+    broken_starter: true
+    reject:
+      - |
+        def double(text):
+            return text + text
+
+  - kind: code
+    title: Read two numbers
+    body: |
+      Finish `add_two()`. It asks for two whole numbers with `input()`, adds them, and **prints** the total. With the answers `"3"` and `"4"` it prints `7`.
+    code: |
+      def add_two():
+          first = input("First number? ")
+          second = input("Second number? ")
+          print("")
+    stdin: ["3", "4"]
+    tests:
+      - "given_input(['3', '4'], add_two)"
+      - "given_input(['10', '-2'], add_two)"
+      - "given_input(['0', '0'], add_two)"
+    solution: |
+      def add_two():
+          first = input("First number? ")
+          second = input("Second number? ")
+          print(int(first) + int(second))
+    hint: "Convert both with `int(...)` before adding. (Adding the two texts would glue them: `\"3\" + \"4\"` is `\"34\"`.)"
+    reject:
+      - |
+        def add_two():
+            first = input("First number? ")
+            second = input("Second number? ")
+            print(first + second)
+
+  - kind: code
+    title: Prices with decimals
+    body: |
+      People type prices like `"$12.50"`. Finish `parse_price(text)`: remove the `$` sign, then convert to a float. `parse_price("$12.50")` is `12.5`.
+
+      `text.replace("$", "")` removes the dollar sign.
+    code: |
+      def parse_price(text):
+          return 0.0
+    tests:
+      - "parse_price('$12.50')"
+      - "parse_price('$0.99')"
+      - "parse_price('7')"
+      - "parse_price('$100')"
+    solution: |
+      def parse_price(text):
+          return float(text.replace("$", ""))
+    hint: "`float(text.replace(\"$\", \"\"))`."
+    reject:
+      - |
+        def parse_price(text):
+            return int(text.replace("$", ""))
+
+  - kind: code
+    title: How old next year?
+    body: |
+      Finish `next_year()`. It asks `"How old are you? "`, then prints `Next year you will be 31` (using the number they typed plus one).
+
+      Use an f-string, and remember `input()` gives text.
+    code: |
+      def next_year():
+          age = input("How old are you? ")
+          print("")
+    stdin: ["30"]
+    tests:
+      - "given_input(['30'], next_year)"
+      - "given_input(['0'], next_year)"
+      - "given_input(['99'], next_year)"
+    solution: |
+      def next_year():
+          age = input("How old are you? ")
+          print(f"Next year you will be {int(age) + 1}")
+    hint: "`int(age) + 1` inside the f-string braces."
+    reject:
+      - |
+        def next_year():
+            age = input("How old are you? ")
+            print(f"Next year you will be {age}1")
+
+  - kind: explain
+    title: The bool() surprise
+    body: |
+      `bool(x)` is `False` for "empty" values and `True` for everything else. Empty text `""` and the number `0` are false. But watch out:
+
+      ```python
+      bool("")        # False
+      bool("False")   # True  !!  the text "False" is not empty
+      bool("no")      # True
+      ```
+
+      Never convert a typed yes/no answer with `bool()`. Compare the text instead: `answer.lower() == "yes"`.
+
+  - kind: code
+    title: Yes or no?
+    body: |
+      Finish `is_yes(answer)`: `True` if the text, ignoring spaces and capital letters, is `"y"` or `"yes"`. Otherwise `False`. So `" YES "` is `True`, and `"nope"` is `False`.
+    code: |
+      def is_yes(answer):
+          return bool(answer)
+    tests:
+      - "is_yes('yes')"
+      - "is_yes(' YES ')"
+      - "is_yes('y')"
+      - "is_yes('no')"
+      - "is_yes('nope')"
+      - "is_yes('')"
+    solution: |
+      def is_yes(answer):
+          cleaned = answer.strip().lower()
+          return cleaned == "y" or cleaned == "yes"
+    hint: "Clean the text first with `.strip().lower()`, then compare with `==`."
+    broken_starter: true
+
+  - kind: why
+    body: |
+      Every interactive program, from a guessing game to a bank form, starts with something typed as **text** that you must turn into the right type. Forgetting this gives silent wrong answers (`"3" + "4"` is `"34"`) or crashes. Convert early, and treat the outside world's data as text until you have checked it.
+
+  - kind: recap
+    body: |
+      - `input("question")` waits for typing and returns it.
+      - **`input()` always returns a string.** Convert with `int()`, `float()`, `str()`, `bool()`.
+      - `int("abc")` raises a **ValueError** (handled in Module 16).
+      - `bool("False")` is `True`. Compare text with `==` instead.
+      - In this course's editor, the answers `input()` receives are listed above the editor.

@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What is the time complexity of this code?
+    code: |
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          count++;
+        }
+      }
+    options: ["O(n)", "O(n log n)", "O(n²)", "O(2ⁿ)"]
+    answer: 2
+    explanation: The inner loop runs `n` times for each of the `n` outer rounds, so `n × n` steps.
+  - type: mcq
+    prompt: What is the time complexity of this code?
+    code: |
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < 10; j++) {
+          count++;
+        }
+      }
+    options: ["O(n²)", "O(n)", "O(10)", "O(log n)"]
+    answer: 1
+    explanation: The inner loop always runs 10 times, a constant, so the total is `10n`, which is O(n).
+  - type: predict
+    prompt: What does this print?
+    code: |
+      let steps = 0;
+      let n = 64;
+      while (n > 1) {
+        n = Math.floor(n / 2);
+        steps++;
+      }
+      console.log(steps);
+    options: ["6", "8", "32", "64"]
+    answer: 0
+    explanation: "64 → 32 → 16 → 8 → 4 → 2 → 1 is 6 halvings, which is log₂ 64."
+  - type: mcq
+    prompt: A problem says `n ≤ 100 000`. Which solution will most likely be fast enough?
+    options: ["O(n²)", "O(2ⁿ)", "O(n log n)", "O(n!)"]
+    answer: 2
+    explanation: n² would be 10¹⁰ steps, far more than a computer does in a second. O(n log n) is about 1.7 million.
+  - type: mcq
+    prompt: A function calls itself `n` levels deep and creates no arrays. What is its space complexity?
+    options: ["O(1)", "O(n)", "O(n²)", "O(log n)"]
+    answer: 1
+    explanation: Each unfinished call is kept on the call stack, so `n` levels use O(n) space.

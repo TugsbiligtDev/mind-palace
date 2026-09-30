@@ -1,0 +1,4 @@
+title: "Recursion, Trees & Graphs"
+module: 32
+summary: "Recursion in depth, memoization with @cache, trees and their traversals, graphs as adjacency lists, breadth-first and depth-first search, and shortest paths on a grid."
+minutes: 100

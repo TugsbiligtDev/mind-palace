@@ -1,0 +1,26 @@
+pass: 2
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(format(2 + 5, "b"))
+    options: ["111", "7", "101", "10"]
+    answer: 0
+    explanation: 2 + 5 is 7, and 7 in binary is 111 (4 + 2 + 1).
+  - type: mcq
+    prompt: You typed a command and got "No such file or directory", but you are sure the file exists. What is the most likely cause?
+    options:
+      - The file is corrupted
+      - You are standing in a different folder
+      - Python is too old
+      - The terminal is broken
+    answer: 1
+    explanation: Relative paths depend on the current folder. Run `pwd` and `ls` first.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      version = "3.14.2"
+      print(version.split(".")[1])
+    options: ["14", "3", "2", "3.14"]
+    answer: 0
+    explanation: "`split` cuts at the dots into `['3', '14', '2']`, and index 1 is the second piece."

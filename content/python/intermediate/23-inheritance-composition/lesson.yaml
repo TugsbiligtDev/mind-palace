@@ -1,0 +1,450 @@
+steps:
+  - kind: explain
+    title: "Inheritance: a class built on another"
+    body: |
+      **Inheritance** lets a new class start from an existing one and then add or change things. The existing class is the **parent** (or *base class*); the new one is the **child** (*subclass*).
+
+      ```python
+      class Shape:
+          def __init__(self, name):
+              self.name = name
+
+          def describe(self):
+              return f"{self.name} with area {self.area()}"
+
+          def area(self):
+              return 0
+
+      class Square(Shape):
+          def __init__(self, side):
+              super().__init__("square")     # run the parent's __init__
+              self.side = side
+
+          def area(self):                    # override the parent's version
+              return self.side ** 2
+      ```
+
+      - `class Square(Shape):` means "a Square **is a** Shape". It gets all of Shape's methods for free.
+      - **`super()`** gives access to the parent, most often to run its `__init__`.
+      - **Overriding**: defining a method with the same name in the child replaces the parent's. Notice that `describe()` (inherited) calls `self.area()`, and Python picks the **Square's** version. The parent's code adapts to the child.
+
+  - kind: code
+    title: Try inheritance
+    body: |
+      Run this and follow which `area` is used. Add a `Rectangle(width, height)` subclass.
+    code: |
+      class Shape:
+          def __init__(self, name):
+              self.name = name
+
+          def describe(self):
+              return f"{self.name} with area {self.area()}"
+
+          def area(self):
+              return 0
+
+
+      class Square(Shape):
+          def __init__(self, side):
+              super().__init__("square")
+              self.side = side
+
+          def area(self):
+              return self.side ** 2
+
+
+      print(Shape("blob").describe())
+      print(Square(3).describe())
+
+  - kind: code
+    title: Shapes
+    body: |
+      Given the `Shape` base class below (already written), write two subclasses:
+
+      - `Rectangle(width, height)` with name `"rectangle"`; `area()` is width × height.
+      - `Circle(radius)` with name `"circle"`; `area()` is `round(3.14159 * radius ** 2, 2)`.
+
+      Both should use `super().__init__(...)`.
+    code: |
+      class Shape:
+          def __init__(self, name):
+              self.name = name
+
+          def describe(self):
+              return f"{self.name} with area {self.area()}"
+
+          def area(self):
+              return 0
+    tests:
+      - "Rectangle(3, 4).describe()"
+      - "Circle(2).describe()"
+      - "Circle(1).area()"
+      - "isinstance(Rectangle(1, 1), Shape)"
+      - "Rectangle(2, 5).name"
+    solution: |
+      class Shape:
+          def __init__(self, name):
+              self.name = name
+
+          def describe(self):
+              return f"{self.name} with area {self.area()}"
+
+          def area(self):
+              return 0
+
+
+      class Rectangle(Shape):
+          def __init__(self, width, height):
+              super().__init__("rectangle")
+              self.width = width
+              self.height = height
+
+          def area(self):
+              return self.width * self.height
+
+
+      class Circle(Shape):
+          def __init__(self, radius):
+              super().__init__("circle")
+              self.radius = radius
+
+          def area(self):
+              return round(3.14159 * self.radius ** 2, 2)
+    hint: "`class Rectangle(Shape):` then `super().__init__(\"rectangle\")` in its `__init__`, and override `area`."
+    reject:
+      - |
+        class Shape:
+            def __init__(self, name):
+                self.name = name
+
+            def describe(self):
+                return f"{self.name} with area {self.area()}"
+
+            def area(self):
+                return 0
+
+
+        class Rectangle(Shape):
+            def __init__(self, width, height):
+                super().__init__("rectangle")
+
+        class Circle(Shape):
+            def __init__(self, radius):
+                super().__init__("circle")
+
+  - kind: explain
+    title: isinstance() and issubclass()
+    body: |
+      `isinstance(obj, SomeClass)` asks "is this object an instance of that class, **or of any subclass**?".
+
+      ```python
+      isinstance(Square(2), Square)    # True
+      isinstance(Square(2), Shape)     # True   (a Square is a Shape)
+      isinstance(Shape("x"), Square)   # False
+      isinstance(5, (int, float))      # True   (a tuple means "any of these")
+      ```
+
+      Prefer `isinstance` over comparing `type(x) == Square`, because `isinstance` respects inheritance. And `issubclass(Square, Shape)` asks the same about classes.
+
+      Even better than checking types is to just **call the method** and let each class do its own thing (that is *polymorphism*: "many shapes, one interface"). Only check types when you truly must treat a case differently.
+
+  - kind: code
+    title: Who is who?
+    body: |
+      Using the classes below (already defined), write `kind_of(obj)` returning `"square"` if the object is a `Square`, `"shape"` if it is any other `Shape`, and `"not a shape"` otherwise. Check `Square` **before** `Shape`, because every Square is also a Shape.
+    code: |
+      class Shape:
+          pass
+
+
+      class Square(Shape):
+          pass
+
+
+      def kind_of(obj):
+          return ""
+    tests:
+      - "kind_of(Square())"
+      - "kind_of(Shape())"
+      - "kind_of(42)"
+      - "kind_of('square')"
+    solution: |
+      class Shape:
+          pass
+
+
+      class Square(Shape):
+          pass
+
+
+      def kind_of(obj):
+          if isinstance(obj, Square):
+              return "square"
+          if isinstance(obj, Shape):
+              return "shape"
+          return "not a shape"
+    hint: "Two `isinstance` checks, most specific first."
+    reject:
+      - |
+        class Shape:
+            pass
+
+
+        class Square(Shape):
+            pass
+
+
+        def kind_of(obj):
+            if isinstance(obj, Shape):
+                return "shape"
+            if isinstance(obj, Square):
+                return "square"
+            return "not a shape"
+
+  - kind: explain
+    title: "Composition: has-a beats is-a"
+    body: |
+      Inheritance says **"is a"** (a Dog *is an* Animal). **Composition** says **"has a"**: an object *contains* other objects and hands work to them.
+
+      ```python
+      class Engine:
+          def start(self):
+              return "vroom"
+
+      class Car:
+          def __init__(self):
+              self.engine = Engine()       # a Car HAS an Engine
+
+          def start(self):
+              return self.engine.start()   # delegate the work
+      ```
+
+      A Car is not a kind of Engine, so `class Car(Engine)` would be wrong (and confusing). The famous advice is **"favour composition over inheritance"**:
+
+      - Inheritance ties the child tightly to the parent: change the parent and every child may break.
+      - Deep inheritance trees are hard to follow.
+      - Composition is flexible: you can swap the engine, or give a Car two.
+
+      Reach for inheritance for a true, stable "is-a" with shared behaviour, and for composition almost everywhere else.
+
+  - kind: code
+    title: A car has an engine
+    body: |
+      Write two classes using **composition**:
+
+      - `Engine(power)` has `start()` returning `"vroom"` if `power > 0`, otherwise `"silence"`.
+      - `Car(name, engine)` stores both. `start()` returns `f"{name}: {engine.start()}"`, by asking its engine.
+
+      A Car must *contain* the engine, not inherit from it.
+    code: |
+      class Engine:
+          pass
+
+
+      class Car:
+          pass
+    tests:
+      - "Car('Mini', Engine(60)).start()"
+      - "Car('Ghost', Engine(0)).start()"
+      - "isinstance(Car('x', Engine(1)), Engine)"
+      - "Car('Twin', Engine(5)).engine.power"
+    solution: |
+      class Engine:
+          def __init__(self, power):
+              self.power = power
+
+          def start(self):
+              return "vroom" if self.power > 0 else "silence"
+
+
+      class Car:
+          def __init__(self, name, engine):
+              self.name = name
+              self.engine = engine
+
+          def start(self):
+              return f"{self.name}: {self.engine.start()}"
+    hint: "`Car.__init__` stores `self.engine = engine`; `Car.start` calls `self.engine.start()`."
+    reject:
+      - |
+        class Engine:
+            def __init__(self, power):
+                self.power = power
+
+            def start(self):
+                return "vroom" if self.power > 0 else "silence"
+
+
+        class Car(Engine):
+            def __init__(self, name, engine):
+                super().__init__(engine.power)
+                self.name = name
+                self.engine = engine
+
+            def start(self):
+                return f"{self.name}: {self.engine.start()}"
+
+  - kind: explain
+    title: Abstract base classes
+    body: |
+      Sometimes a parent class should not be used directly. It only says **what every child must be able to do**. An **abstract base class** does that, using the `abc` module:
+
+      ```python
+      from abc import ABC, abstractmethod
+
+      class Notifier(ABC):
+          @abstractmethod
+          def send(self, message):
+              """Deliver the message."""
+
+      class EmailNotifier(Notifier):
+          def send(self, message):
+              return f"email: {message}"
+      ```
+
+      - You **cannot create** a `Notifier()`. Python raises `TypeError`.
+      - A subclass **must** implement every `@abstractmethod`, or it cannot be created either.
+      - Any code can now rely on "anything that is a Notifier has `send`".
+
+      It is a contract that Python enforces at the moment of creation, not later in the middle of a run.
+
+  - kind: code
+    title: A notifier contract
+    body: |
+      Write:
+
+      - `Notifier` an abstract base class with abstract method `send(self, message)` and a normal method `shout(self, message)` returning `self.send(message.upper())`.
+      - `EmailNotifier`, whose `send` returns `f"email: {message}"`.
+      - `SmsNotifier`, whose `send` returns `f"sms: {message[:10]}"` (only the first 10 characters).
+    code: |
+      from abc import ABC, abstractmethod
+    tests:
+      - "EmailNotifier().send('hello')"
+      - "SmsNotifier().send('a very long message')"
+      - "EmailNotifier().shout('hi')"
+      - "try:\n    Notifier()\nexcept TypeError:\n    result = 'TypeError'\nelse:\n    result = 'created'"
+      - "isinstance(SmsNotifier(), Notifier)"
+    solution: |
+      from abc import ABC, abstractmethod
+
+
+      class Notifier(ABC):
+          @abstractmethod
+          def send(self, message):
+              """Deliver the message."""
+
+          def shout(self, message):
+              return self.send(message.upper())
+
+
+      class EmailNotifier(Notifier):
+          def send(self, message):
+              return f"email: {message}"
+
+
+      class SmsNotifier(Notifier):
+          def send(self, message):
+              return f"sms: {message[:10]}"
+    hint: "`class Notifier(ABC):` with `@abstractmethod` on `send`. The subclasses override it."
+    reject:
+      - |
+        from abc import ABC, abstractmethod
+
+
+        class Notifier:
+            def send(self, message):
+                return message
+
+            def shout(self, message):
+                return self.send(message.upper())
+
+
+        class EmailNotifier(Notifier):
+            def send(self, message):
+                return f"email: {message}"
+
+
+        class SmsNotifier(Notifier):
+            def send(self, message):
+                return f"sms: {message[:10]}"
+
+  - kind: code
+    title: Extend a parent's init
+    body: |
+      `Person(name)` is given. Write `Employee(name, salary)` as a subclass. It calls the parent's initialiser with `super()`, stores `salary`, and has `raise_by(percent)` which increases the salary by that percent, **rounded to a whole number**. `describe()` from Person is inherited.
+    code: |
+      class Person:
+          def __init__(self, name):
+              self.name = name
+
+          def describe(self):
+              return f"I am {self.name}"
+    tests:
+      - "e = Employee('Ada', 1000)\ne.raise_by(10)\nresult = (e.salary, e.describe())"
+      - "Employee('Bo', 500).name"
+      - "isinstance(Employee('x', 1), Person)"
+      - "e = Employee('C', 999)\ne.raise_by(50)\nresult = e.salary"
+    solution: |
+      class Person:
+          def __init__(self, name):
+              self.name = name
+
+          def describe(self):
+              return f"I am {self.name}"
+
+
+      class Employee(Person):
+          def __init__(self, name, salary):
+              super().__init__(name)
+              self.salary = salary
+
+          def raise_by(self, percent):
+              self.salary = round(self.salary * (1 + percent / 100))
+    hint: "`super().__init__(name)`, then `self.salary = salary`. `round(self.salary * (1 + percent / 100))`."
+    reject:
+      - |
+        class Person:
+            def __init__(self, name):
+                self.name = name
+
+            def describe(self):
+                return f"I am {self.name}"
+
+
+        class Employee(Person):
+            def __init__(self, name, salary):
+                self.salary = salary
+
+            def raise_by(self, percent):
+                self.salary = round(self.salary * (1 + percent / 100))
+
+  - kind: info
+    title: "🔹 Multiple inheritance and MRO"
+    body: |
+      A class can have **more than one parent**: `class C(A, B):`. When both parents define the same method, Python needs a rule for which one wins. It is the **method resolution order (MRO)**: a fixed left-to-right, parents-before-grandparents list you can print with `C.__mro__`.
+
+      ```python
+      class A:
+          def hello(self): return "A"
+      class B:
+          def hello(self): return "B"
+      class C(A, B):
+          pass
+
+      C().hello()                      # "A": A comes first
+      [k.__name__ for k in C.__mro__]  # ['C', 'A', 'B', 'object']
+      ```
+
+      Multiple inheritance is powerful and confusing. It is safest for small **mixin** classes that add one capability. Recognise it; prefer composition.
+
+  - kind: why
+    body: |
+      Real programs grow. Inheritance and composition are your two tools for growing code *without copying it*. Knowing when to use which (is-a vs has-a), and using abstract classes to state a contract, keeps a large program understandable as it changes.
+
+  - kind: recap
+    body: |
+      - `class Child(Parent):` inherits everything; **override** methods by redefining them; **`super()`** reaches the parent.
+      - `isinstance(x, Class)` is true for the class **and its subclasses**; test the most specific class first.
+      - **Composition** ("has a") stores other objects and delegates to them. **Favour composition over inheritance.**
+      - **`ABC` + `@abstractmethod`** define a contract that subclasses must fulfil; the abstract class cannot be created directly.
+      - 🔹 Multiple inheritance follows the **MRO** (`Class.__mro__`).

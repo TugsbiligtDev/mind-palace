@@ -1,0 +1,4 @@
+title: Graph Traversal
+module: 23
+summary: "Depth-first and breadth-first search, the visited set, connected components, islands and flood fill, cycle detection and bipartite checks."
+minutes: 75

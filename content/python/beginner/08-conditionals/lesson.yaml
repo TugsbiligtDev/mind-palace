@@ -1,0 +1,275 @@
+steps:
+  - kind: explain
+    title: if, elif, else
+    body: |
+      Until now every line ran, top to bottom. A **conditional** lets the program choose:
+
+      ```python
+      score = 72
+      if score >= 90:
+          print("A")
+      elif score >= 70:
+          print("B")
+      else:
+          print("Keep practising")
+      ```
+
+      How it reads:
+
+      - `if` checks a condition. If it is `True`, the **indented block** under it runs.
+      - `elif` ("else if") is tried only if everything above was false.
+      - `else` runs if nothing above was true.
+      - Every `if`, `elif` and `else` line ends with a **colon `:`**, and the block under it is **indented** (Module 3).
+
+      Python checks from the top and stops at the **first** true branch. So order matters: put the strictest test first.
+
+  - kind: code
+    title: Try a decision
+    body: |
+      Run this with `score = 72`. Then change the score to 95, then to 30, and predict each result before you run it.
+    code: |
+      score = 72
+      if score >= 90:
+          print("A")
+      elif score >= 70:
+          print("B")
+      else:
+          print("Keep practising")
+
+  - kind: code
+    title: Letter grades
+    body: |
+      Finish `grade(score)`: `90` and above is `"A"`, `80`–`89` is `"B"`, `70`–`79` is `"C"`, anything lower is `"F"`.
+
+      Use `if`, `elif` and `else`. Remember: the **first** true branch wins, so you do not need to test the upper limits.
+    code: |
+      def grade(score):
+          return "F"
+    tests:
+      - "grade(95)"
+      - "grade(90)"
+      - "grade(89)"
+      - "grade(80)"
+      - "grade(79)"
+      - "grade(70)"
+      - "grade(69)"
+      - "grade(0)"
+    solution: |
+      def grade(score):
+          if score >= 90:
+              return "A"
+          elif score >= 80:
+              return "B"
+          elif score >= 70:
+              return "C"
+          else:
+              return "F"
+    hint: "Start with `if score >= 90`, then `elif score >= 80`, and so on."
+    reject:
+      - |
+        def grade(score):
+            if score > 90:
+                return "A"
+            elif score > 80:
+                return "B"
+            elif score > 70:
+                return "C"
+            else:
+                return "F"
+
+  - kind: explain
+    title: "Truthiness: what counts as false?"
+    body: |
+      An `if` does not need a comparison. Python can ask any value "are you true?". These are treated as **false** ("falsy"):
+
+      `False` · `None` · `0` · `0.0` · `""` (empty text) · `[]` (empty list) · `{}` (empty dict)
+
+      **Everything else is true.** That gives a neat shortcut:
+
+      ```python
+      name = ""
+      if name:                # same as "if name is not empty"
+          print("Hello", name)
+      else:
+          print("No name given")
+      ```
+
+      Careful though: `0` is falsy, so `if count:` is false when the count is zero. If zero is a valid answer, test explicitly: `if count is not None`.
+
+  - kind: code
+    title: Empty or not?
+    body: |
+      Finish `label(value)`. Return `"empty"` if the value is falsy (`0`, `""`, `None`, `False`, an empty list…) and `"has something"` otherwise.
+    code: |
+      def label(value):
+          return "has something"
+    tests:
+      - "label('')"
+      - "label('hi')"
+      - "label(0)"
+      - "label(7)"
+      - "label(None)"
+      - "label([])"
+      - "label([0])"
+    solution: |
+      def label(value):
+          if value:
+              return "has something"
+          return "empty"
+    hint: "`if value:` is true for anything non-empty and non-zero."
+    reject:
+      - |
+        def label(value):
+            if value is None:
+                return "empty"
+            return "has something"
+
+  - kind: explain
+    title: "== or is?"
+    body: |
+      - **`==`** asks: *do these have the same value?* `"ab" == "ab"` is `True`.
+      - **`is`** asks: *are these the very same object in memory?* That is a different question, and it can surprise you.
+
+      **The rule:** use `is` (and `is not`) **only for `None`**. Use `==` for everything else.
+
+      ```python
+      if result is None:      # correct
+      if result == None:      # works, but frowned upon
+      ```
+
+      For lists, `[1, 2] == [1, 2]` is `True` but `[1, 2] is [1, 2]` is `False`: two separate lists that happen to look alike.
+
+  - kind: code
+    title: FizzBuzz
+    body: |
+      The classic! Finish `fizz_buzz(n)`:
+
+      - if `n` is divisible by **both** 3 and 5, return `"FizzBuzz"`,
+      - else if divisible by 3, return `"Fizz"`,
+      - else if divisible by 5, return `"Buzz"`,
+      - otherwise return the number itself as text (`"7"`).
+
+      Test the both-case **first**, or `"Fizz"` would win.
+    code: |
+      def fizz_buzz(n):
+          return str(n)
+    tests:
+      - "fizz_buzz(15)"
+      - "fizz_buzz(3)"
+      - "fizz_buzz(5)"
+      - "fizz_buzz(7)"
+      - "fizz_buzz(30)"
+      - "fizz_buzz(1)"
+    solution: |
+      def fizz_buzz(n):
+          if n % 15 == 0:
+              return "FizzBuzz"
+          elif n % 3 == 0:
+              return "Fizz"
+          elif n % 5 == 0:
+              return "Buzz"
+          return str(n)
+    hint: "Divisible by 3 and 5 means `n % 15 == 0` (or `n % 3 == 0 and n % 5 == 0`). Check it before the others."
+    reject:
+      - |
+        def fizz_buzz(n):
+            if n % 3 == 0:
+                return "Fizz"
+            elif n % 5 == 0:
+                return "Buzz"
+            elif n % 15 == 0:
+                return "FizzBuzz"
+            return str(n)
+
+  - kind: explain
+    title: Early returns beat deep nesting
+    body: |
+      When a function has several conditions, you can pile `if` inside `if` inside `if`:
+
+      ```python
+      def can_enter(age, has_ticket):
+          if age >= 18:
+              if has_ticket:
+                  return True
+              else:
+                  return False
+          else:
+              return False
+      ```
+
+      It works, but it drifts to the right and is hard to read. The flatter style handles the **bad cases first and leaves early**:
+
+      ```python
+      def can_enter(age, has_ticket):
+          if age < 18:
+              return False
+          if not has_ticket:
+              return False
+          return True
+      ```
+
+      Each `return` ends the function immediately, so later lines only run when the earlier checks passed. This is called a **guard clause**.
+
+  - kind: code
+    title: Flatten the nesting
+    body: |
+      Write `can_open_vault(is_staff, code, is_locked_down)` with early returns:
+
+      - if `is_locked_down` is true, return `False`,
+      - if the person is **not** staff, return `False`,
+      - if the `code` is not `"4711"`, return `False`,
+      - otherwise return `True`.
+    code: |
+      def can_open_vault(is_staff, code, is_locked_down):
+          return False
+    tests:
+      - "can_open_vault(True, '4711', False)"
+      - "can_open_vault(True, '4711', True)"
+      - "can_open_vault(False, '4711', False)"
+      - "can_open_vault(True, '0000', False)"
+      - "can_open_vault(False, '0000', True)"
+    solution: |
+      def can_open_vault(is_staff, code, is_locked_down):
+          if is_locked_down:
+              return False
+          if not is_staff:
+              return False
+          if code != "4711":
+              return False
+          return True
+    hint: "Three `if` guards that each `return False`, then a final `return True`."
+    reject:
+      - |
+        def can_open_vault(is_staff, code, is_locked_down):
+            return True
+
+  - kind: code
+    title: Divide safely
+    body: |
+      Finish `safe_divide(a, b)`. Dividing by zero crashes, so if `b` is `0` return `None` (Python's "no answer"). Otherwise return `a / b`.
+    code: |
+      def safe_divide(a, b):
+          return a / b
+    tests:
+      - "safe_divide(6, 3)"
+      - "safe_divide(1, 0)"
+      - "safe_divide(0, 5)"
+      - "safe_divide(7, 2)"
+    solution: |
+      def safe_divide(a, b):
+          if b == 0:
+              return None
+          return a / b
+    hint: "Guard first: `if b == 0: return None`."
+    broken_starter: true
+
+  - kind: why
+    body: |
+      Decisions are what make a program feel smart: check a password, decide a price, pick the next step in a game. Getting comfortable with truthiness and guard clauses keeps your code short and readable, and most "weird" bugs in beginner programs are a wrong `==`, a wrong order of branches, or a value that was unexpectedly falsy.
+
+  - kind: recap
+    body: |
+      - `if` / `elif` / `else` end in `:` and use an indented block. The **first** true branch runs.
+      - **Falsy** values: `False`, `None`, `0`, `0.0`, `""`, `[]`, `{}`. Everything else is truthy.
+      - Use `==` to compare values, and **`is` only for `None`**.
+      - Prefer **early returns** (guard clauses) over deeply nested `if`s.

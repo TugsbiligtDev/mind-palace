@@ -1,0 +1,46 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What does looking up a word of length L in a trie cost?
+    options: ["O(1)", "O(L)", "O(number of words)", "O(L × number of words)"]
+    answer: 1
+    explanation: You follow one edge per letter, so the cost depends only on the word's length.
+  - type: predict
+    prompt: What does this print? (`isEnd` marks where a stored word finishes.)
+    code: |
+      const trie = { children: new Map(), isEnd: false };
+      let node = trie;
+      for (const ch of "apple") {
+        node.children.set(ch, { children: new Map(), isEnd: false });
+        node = node.children.get(ch);
+      }
+      node.isEnd = true;
+      let probe = trie;
+      for (const ch of "app") probe = probe.children.get(ch);
+      console.log(probe.isEnd, probe.children.has("l"));
+    options: ["false true", "true true", "false false", "true false"]
+    answer: 0
+    explanation: The path for "app" exists, but no word ends there, and the node still has an "l" child for "apple".
+  - type: mcq
+    prompt: How does a trie handle the wildcard `.` in a search pattern?
+    options:
+      - It ignores it
+      - It tries every child at that position and succeeds if any branch matches
+      - It fails immediately
+      - It replaces it with "a"
+    answer: 1
+    explanation: A wildcard can match any letter, so the search has to explore all children with recursion.
+  - type: mcq
+    prompt: A `Set` of words cannot easily answer which question that a trie can?
+    options: ["Is this exact word stored?", "Which stored words start with this prefix?", "How many words are stored?", "Is the set empty?"]
+    answer: 1
+    explanation: A Set only answers exact membership. Finding prefixes would mean checking every word.
+  - type: mcq
+    prompt: Why must `search("app")` return false if only "apple" was inserted?
+    options:
+      - The word is too short
+      - "\"app\" is only a prefix. No word ends at that node"
+      - Tries do not store short words
+      - It should return true
+    answer: 1
+    explanation: The path exists, but only the end-of-word flag tells you that a full word finishes there.

@@ -1,0 +1,4 @@
+title: Shortest Paths & Ordering
+module: 24
+summary: "BFS for the shortest path in unweighted graphs, multi-source BFS, topological sort with Kahn's algorithm, and Dijkstra's algorithm using your heap."
+minutes: 80

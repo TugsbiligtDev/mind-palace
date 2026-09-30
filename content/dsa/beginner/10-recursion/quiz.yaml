@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      function f(n) {
+        if (n === 0) return;
+        f(n - 1);
+        console.log(n);
+      }
+      f(3);
+    options: ["1\n2\n3", "3\n2\n1", "0\n1\n2\n3", "3"]
+    answer: 0
+    explanation: The print happens *after* the recursive call returns, so the deepest call (n = 1) prints first as the stack unwinds.
+  - type: mcq
+    prompt: A recursive function has no base case. What happens when you call it?
+    options:
+      - It returns `undefined`
+      - It calls itself until the stack overflows and throws a RangeError
+      - It runs once
+      - JavaScript stops it silently and returns 0
+    answer: 1
+    explanation: Nothing ever stops the calls, so they pile up on the call stack until it is full.
+  - type: mcq
+    prompt: About how many calls does the naive `fib(n)` make?
+    options: ["About n", "About n²", "About 2ⁿ", "About log n"]
+    answer: 2
+    explanation: Every call makes two more, so each level of the recursion tree doubles the count.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      function count(arr) {
+        let total = 0;
+        for (const x of arr) {
+          total += Array.isArray(x) ? count(x) : 1;
+        }
+        return total;
+      }
+      console.log(count([1, [2, 3], [[4]]]));
+    options: ["4", "3", "6", "2"]
+    answer: 0
+    explanation: "It counts every non-array item at any depth: 1, 2, 3 and 4."
+  - type: mcq
+    prompt: What is the space complexity of `factorial(n)` written recursively?
+    options: ["O(1)", "O(n)", "O(n²)", "O(log n)"]
+    answer: 1
+    explanation: There are `n` unfinished calls on the call stack at the deepest point.

@@ -1,0 +1,4 @@
+title: "Data Validation with Pydantic"
+module: 39
+summary: "Turn untrusted data into trusted, typed objects: Pydantic v2 models and fields, validation errors, parsing JSON, custom validators, nested models, and settings from the environment."
+minutes: 90

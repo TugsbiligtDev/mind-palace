@@ -1,0 +1,442 @@
+steps:
+  - kind: explain
+    title: "Dunder methods: teach Python your type"
+    body: |
+      Methods with double underscores on both sides (`__init__`, `__str__`) are **special methods**, nicknamed **"dunder"** (double-under) methods. Python calls them for you when you use operators and built-in functions on your objects:
+
+      | You write | Python calls | For |
+      |---|---|---|
+      | `print(x)`, `str(x)` | `x.__str__()` | a friendly text version |
+      | (in the REPL, debugging) `repr(x)` | `x.__repr__()` | an unambiguous developer version |
+      | `a == b` | `a.__eq__(b)` | equality |
+      | `a < b` | `a.__lt__(b)` | ordering (enables `sorted`) |
+      | `a + b` | `a.__add__(b)` | addition |
+      | `len(x)` | `x.__len__()` | size |
+      | `for i in x` | `x.__iter__()` | looping |
+      | `i in x` | `x.__contains__(i)` | membership |
+
+      **`__str__` vs `__repr__`:** `__str__` is for *users*, `__repr__` is for *programmers*. Good `__repr__` looks like the code that would rebuild the object: `Money(250)`. If you define only one, define `__repr__`; `print` falls back to it.
+
+  - kind: code
+    title: Try dunder methods
+    body: |
+      Run this. Without the dunder methods, `print(price)` would show something like `<__main__.Money object at 0x7f...>`. Try `print(sorted([Money(300), Money(150)]))`.
+    code: |
+      class Money:
+          def __init__(self, cents):
+              self.cents = cents
+
+          def __repr__(self):
+              return f"Money({self.cents})"
+
+          def __str__(self):
+              return f"${self.cents // 100}.{self.cents % 100:02d}"
+
+          def __eq__(self, other):
+              return self.cents == other.cents
+
+          def __lt__(self, other):
+              return self.cents < other.cents
+
+          def __add__(self, other):
+              return Money(self.cents + other.cents)
+
+
+      a = Money(250)
+      b = Money(199)
+      print(a, repr(a))
+      print(a + b)
+      print(a > b, a == Money(250))
+      print(sorted([a, b]))
+
+  - kind: code
+    title: A Version type
+    body: |
+      Write a class `Version(major, minor)`.
+
+      - `__repr__` gives `Version(3, 14)`.
+      - `__str__` gives `"3.14"`.
+      - `__eq__` compares both numbers (if `other` is not a `Version`, return `NotImplemented`).
+      - `__lt__` orders by major, then minor.
+
+      With `__lt__` in place, `sorted` and `max` work on versions.
+    code: |
+      class Version:
+          pass
+    tests:
+      - "repr(Version(3, 14))"
+      - "str(Version(3, 9))"
+      - "Version(3, 14) == Version(3, 14)"
+      - "Version(3, 14) == Version(3, 9)"
+      - "Version(3, 9) < Version(3, 14)"
+      - "Version(2, 99) < Version(3, 0)"
+      - "sorted([Version(3, 14), Version(2, 7), Version(3, 9)])"
+      - "max([Version(3, 9), Version(3, 14)])"
+      - "Version(3, 1) == 'x'"
+    solution: |
+      class Version:
+          def __init__(self, major, minor):
+              self.major = major
+              self.minor = minor
+
+          def __repr__(self):
+              return f"Version({self.major}, {self.minor})"
+
+          def __str__(self):
+              return f"{self.major}.{self.minor}"
+
+          def __eq__(self, other):
+              if not isinstance(other, Version):
+                  return NotImplemented
+              return (self.major, self.minor) == (other.major, other.minor)
+
+          def __lt__(self, other):
+              return (self.major, self.minor) < (other.major, other.minor)
+    hint: "Tuples compare element by element, so `(self.major, self.minor) < (other.major, other.minor)` orders correctly."
+    reject:
+      - |
+        class Version:
+            def __init__(self, major, minor):
+                self.major = major
+                self.minor = minor
+
+            def __repr__(self):
+                return f"Version({self.major}, {self.minor})"
+
+            def __str__(self):
+                return f"{self.major}.{self.minor}"
+
+            def __eq__(self, other):
+                return self.minor == other.minor
+
+            def __lt__(self, other):
+                return self.minor < other.minor
+
+  - kind: explain
+    title: "Containers: __len__, __iter__, __contains__"
+    body: |
+      Give your class these and it behaves like a built-in collection:
+
+      ```python
+      class Shelf:
+          def __init__(self, books):
+              self._books = list(books)
+
+          def __len__(self):
+              return len(self._books)
+
+          def __iter__(self):
+              return iter(self._books)
+
+          def __contains__(self, title):
+              return title in self._books
+      ```
+
+      Now `len(shelf)`, `for b in shelf`, `"Dune" in shelf` and even `list(shelf)` all work. The single leading underscore in `_books` is a **convention** meaning "internal: please don't touch it from outside".
+
+  - kind: code
+    title: A shelf that acts like a list
+    body: |
+      Write `Shelf(titles)`. Support `len(shelf)`, looping (`for title in shelf`), and `x in shelf`. Also add `add(title)` to append a title. Store a **copy** of the input list so the caller's list is not shared.
+    code: |
+      class Shelf:
+          pass
+    tests:
+      - "s = Shelf(['Dune', 'Emma'])\nresult = (len(s), 'Dune' in s, 'Zed' in s)"
+      - "s = Shelf(['a', 'b'])\ns.add('c')\nresult = list(s)"
+      - "titles = ['x']\ns = Shelf(titles)\ns.add('y')\nresult = titles"
+      - "s = Shelf([])\nresult = (len(s), [t for t in s])"
+    solution: |
+      class Shelf:
+          def __init__(self, titles):
+              self._titles = list(titles)
+
+          def add(self, title):
+              self._titles.append(title)
+
+          def __len__(self):
+              return len(self._titles)
+
+          def __iter__(self):
+              return iter(self._titles)
+
+          def __contains__(self, title):
+              return title in self._titles
+    hint: "Keep `self._titles = list(titles)`. Then `__len__`, `__iter__` (return `iter(self._titles)`) and `__contains__`."
+    reject:
+      - |
+        class Shelf:
+            def __init__(self, titles):
+                self._titles = titles
+
+            def add(self, title):
+                self._titles.append(title)
+
+            def __len__(self):
+                return len(self._titles)
+
+            def __iter__(self):
+                return iter(self._titles)
+
+            def __contains__(self, title):
+                return title in self._titles
+
+  - kind: explain
+    title: "@property: attributes with rules"
+    body: |
+      A **property** looks like a plain attribute from outside, but runs code, so you can **compute** a value or **validate** a change:
+
+      ```python
+      class Temperature:
+          def __init__(self, celsius):
+              self.celsius = celsius            # goes through the setter below
+
+          @property
+          def celsius(self):
+              return self._celsius
+
+          @celsius.setter
+          def celsius(self, value):
+              if value < -273.15:
+                  raise ValueError("below absolute zero")
+              self._celsius = value
+
+          @property
+          def fahrenheit(self):                 # computed, read-only
+              return self._celsius * 9 / 5 + 32
+      ```
+
+      `t.celsius = 30` triggers the setter (with validation); `t.fahrenheit` looks like data but is calculated. Start with a plain attribute and switch to a property only when you need a rule: callers do not have to change.
+
+  - kind: code
+    title: A checked temperature
+    body: |
+      Write `Temperature(celsius)` as above: a validated `celsius` property (raise `ValueError("below absolute zero")` for anything below `-273.15`, including in `__init__`) and a read-only computed `fahrenheit` property (`celsius * 9 / 5 + 32`).
+    code: |
+      class Temperature:
+          pass
+    tests:
+      - "Temperature(100).fahrenheit"
+      - "Temperature(0).fahrenheit"
+      - "t = Temperature(10)\nt.celsius = 20\nresult = (t.celsius, t.fahrenheit)"
+      - "try:\n    Temperature(-300)\nexcept ValueError as e:\n    result = str(e)"
+      - "t = Temperature(5)\ntry:\n    t.celsius = -500\nexcept ValueError:\n    result = t.celsius"
+      - "t = Temperature(5)\ntry:\n    t.fahrenheit = 1\nexcept AttributeError:\n    result = 'read-only'"
+    solution: |
+      class Temperature:
+          def __init__(self, celsius):
+              self.celsius = celsius
+
+          @property
+          def celsius(self):
+              return self._celsius
+
+          @celsius.setter
+          def celsius(self, value):
+              if value < -273.15:
+                  raise ValueError("below absolute zero")
+              self._celsius = value
+
+          @property
+          def fahrenheit(self):
+              return self._celsius * 9 / 5 + 32
+    hint: "Store the real value in `self._celsius`. The `@celsius.setter` does the check. `fahrenheit` has only a getter, so it is read-only."
+    reject:
+      - |
+        class Temperature:
+            def __init__(self, celsius):
+                self.celsius = celsius
+
+            @property
+            def fahrenheit(self):
+                return self.celsius * 9 / 5 + 32
+
+  - kind: explain
+    title: "@dataclass: less boilerplate"
+    body: |
+      Many classes just hold data, and writing `__init__`, `__repr__` and `__eq__` by hand every time is dull. `@dataclass` writes them for you from **type-annotated fields**:
+
+      ```python
+      from dataclasses import dataclass, field
+
+      @dataclass
+      class Item:
+          name: str
+          price: float
+          tags: list[str] = field(default_factory=list)   # a fresh list per object!
+      ```
+
+      You get `Item("pen", 2.5)`, a readable `repr`, and `==` comparing all fields.
+
+      Options worth knowing:
+
+      - `@dataclass(frozen=True)`: objects are **immutable** (assigning to a field raises an error), and become hashable, so usable as dict keys.
+      - `@dataclass(order=True)`: adds `<`, `>` etc., comparing the fields in order.
+      - `field(default_factory=list)`: the safe way to give a mutable default (the same rule as Module 14).
+
+      Fields with defaults must come after those without.
+
+  - kind: code
+    title: A dataclass for books
+    body: |
+      Write a **dataclass** `Book` with fields `title: str`, `author: str`, `year: int`, and `tags: list` that defaults to a **fresh empty list** for each book. Add a method `is_classic()` that is `True` if the year is before 1970.
+    code: |
+      from dataclasses import dataclass, field
+    tests:
+      - "Book('Dune', 'Herbert', 1965)"
+      - "Book('Dune', 'Herbert', 1965) == Book('Dune', 'Herbert', 1965)"
+      - "Book('Dune', 'Herbert', 1965).is_classic()"
+      - "Book('New', 'Me', 2020).is_classic()"
+      - "a = Book('A', 'x', 1)\nb = Book('B', 'y', 2)\na.tags.append('t')\nresult = (a.tags, b.tags)"
+    solution: |
+      from dataclasses import dataclass, field
+
+
+      @dataclass
+      class Book:
+          title: str
+          author: str
+          year: int
+          tags: list = field(default_factory=list)
+
+          def is_classic(self):
+              return self.year < 1970
+    hint: "`tags: list = field(default_factory=list)`. Methods go inside a dataclass just like any class."
+    reject:
+      - |
+        from dataclasses import dataclass, field
+
+
+        @dataclass
+        class Book:
+            title: str
+            author: str
+            year: int
+            tags: list = None
+
+            def is_classic(self):
+                return self.year < 1970
+
+  - kind: code
+    title: Frozen and ordered
+    body: |
+      Write a dataclass `Point` with `x: int` and `y: int`, **frozen** (cannot change after creation) and **ordered** (so `Point(1, 2) < Point(1, 3)` works, comparing `x` then `y`). Because it is frozen it can be a dictionary key or set member.
+    code: |
+      from dataclasses import dataclass
+    tests:
+      - "Point(1, 2) < Point(1, 3)"
+      - "sorted([Point(2, 0), Point(1, 5), Point(1, 2)])"
+      - "{Point(1, 1): 'home'}[Point(1, 1)]"
+      - "p = Point(1, 1)\ntry:\n    p.x = 5\nexcept Exception as e:\n    result = type(e).__name__"
+      - "len({Point(0, 0), Point(0, 0), Point(1, 0)})"
+    solution: |
+      from dataclasses import dataclass
+
+
+      @dataclass(frozen=True, order=True)
+      class Point:
+          x: int
+          y: int
+    hint: "`@dataclass(frozen=True, order=True)`."
+    reject:
+      - |
+        from dataclasses import dataclass
+
+
+        @dataclass(order=True)
+        class Point:
+            x: int
+            y: int
+
+  - kind: explain
+    title: "enum: a fixed set of named choices"
+    body: |
+      When a value must be one of a few known options, don't use loose strings like `"pending"` (typos!). Use an **Enum**:
+
+      ```python
+      from enum import Enum
+
+      class Status(Enum):
+          PENDING = "pending"
+          SHIPPED = "shipped"
+          DELIVERED = "delivered"
+
+      order_status = Status.SHIPPED
+      order_status.name        # "SHIPPED"
+      order_status.value       # "shipped"
+      Status("pending")        # Status.PENDING  (look up by value)
+      ```
+
+      A typo like `Status.SHIPED` fails immediately with `AttributeError`, instead of quietly being a different string. You can loop over all options with `for s in Status`.
+
+  - kind: code
+    title: Order status flow
+    body: |
+      Given the `Status` enum below, write `next_status(status)` returning the next step: `PENDING` → `SHIPPED` → `DELIVERED`. After `DELIVERED` there is no next step: return `None`.
+    code: |
+      from enum import Enum
+
+
+      class Status(Enum):
+          PENDING = "pending"
+          SHIPPED = "shipped"
+          DELIVERED = "delivered"
+
+
+      def next_status(status):
+          return None
+    tests:
+      - "next_status(Status.PENDING)"
+      - "next_status(Status.SHIPPED)"
+      - "next_status(Status.DELIVERED)"
+      - "[s.name for s in Status]"
+    solution: |
+      from enum import Enum
+
+
+      class Status(Enum):
+          PENDING = "pending"
+          SHIPPED = "shipped"
+          DELIVERED = "delivered"
+
+
+      def next_status(status):
+          order = list(Status)
+          i = order.index(status)
+          if i + 1 < len(order):
+              return order[i + 1]
+          return None
+    hint: "`list(Status)` gives the members in order. Find the position with `.index(status)` and return the following one, if there is one."
+    reject:
+      - |
+        from enum import Enum
+
+
+        class Status(Enum):
+            PENDING = "pending"
+            SHIPPED = "shipped"
+            DELIVERED = "delivered"
+
+
+        def next_status(status):
+            return Status.SHIPPED
+
+  - kind: info
+    title: "🔹 __slots__ and namedtuple"
+    body: |
+      Two more tools you may see:
+
+      - **`__slots__`**: `class P: __slots__ = ("x", "y")` fixes the allowed attributes, so objects use less memory and cannot gain surprise attributes. Useful when you create millions of tiny objects.
+      - **`collections.namedtuple`**: an older, lightweight way to make an immutable record: `Point = namedtuple("Point", "x y")`. Dataclasses (or `typing.NamedTuple`) are the modern equivalents and read better.
+
+  - kind: why
+    body: |
+      Dunder methods make your own types feel native (you can print, compare, sort and loop over them), and `@dataclass`, `@property` and `Enum` remove hundreds of lines of boilerplate while making code safer. Good Python classes are small, readable and let the language do the routine work.
+
+  - kind: recap
+    body: |
+      - `__str__` (users), `__repr__` (developers), `__eq__`, `__lt__`, `__add__`, `__len__`, `__iter__`, `__contains__` teach Python how your type behaves.
+      - `@property` adds computed or validated attributes without changing how callers use them.
+      - `@dataclass` writes `__init__`, `__repr__`, `__eq__` for you; `frozen=True` (immutable, hashable), `order=True` (sortable), `field(default_factory=list)` for mutable defaults.
+      - `enum.Enum` models a fixed set of named choices.
+      - 🔹 `__slots__` saves memory; `namedtuple` is an older record type.

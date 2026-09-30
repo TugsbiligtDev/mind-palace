@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(sorted(set([4, 1, 4, 2, 1])))
+    options: ["[1, 2, 4]", "[4, 1, 4, 2, 1]", "{1, 2, 4}", "[1, 1, 2, 4, 4]"]
+    answer: 0
+    explanation: "`set` removes repeats, and `sorted` returns a sorted list."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      a = {1, 2, 3}
+      b = {3, 4}
+      print(sorted(a & b), sorted(a - b))
+    options: ["[3] [1, 2]", "[1, 2, 3, 4] [3]", "[3] [4]", "[1, 2] [3]"]
+    answer: 0
+    explanation: "`&` keeps items in both: 3. `-` keeps items only in `a`: 1 and 2."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(type({}).__name__, type(set()).__name__)
+    options: ["dict set", "set set", "dict dict", "set dict"]
+    answer: 0
+    explanation: "`{}` makes an empty dictionary. Only `set()` makes an empty set."
+  - type: mcq
+    prompt: What happens with `point = (3, 4)` then `point[0] = 9`?
+    options: ["A TypeError, because tuples cannot be changed", "point becomes (9, 4)", "It creates a new tuple", "Nothing"]
+    answer: 0
+    explanation: Tuples are immutable. You would have to build a new tuple.
+  - type: fill
+    prompt: Complete the code to make an empty set.
+    code: |
+      seen = ____()
+      seen.add(5)
+      print(seen)
+    answer: set
+    explanation: "`set()` creates an empty set; `{}` would make a dictionary."

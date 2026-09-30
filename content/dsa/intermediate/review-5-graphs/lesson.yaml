@@ -1,0 +1,309 @@
+steps:
+  - kind: explain
+    title: Model it, then pick the algorithm
+    body: |
+      Each question hides a graph. Before coding, answer:
+
+      1. **What are the vertices, and what are the edges?** (Cells? People? Towns?)
+      2. **Is it about reaching, counting groups, shortest distance, ordering, or merging?**
+      3. Choose: DFS or BFS for reaching and counting, BFS for fewest steps, Dijkstra for weighted costs, Kahn for ordering, union-find for merging groups.
+
+      A working `MinHeap` is in the editor when a question could use one.
+
+  - kind: code
+    title: "1. Can I get there?"
+    body: |
+      Write `validPath(n, edges, source, destination)`: `true` if there is a path from `source` to `destination` in an undirected graph with vertices `0 … n-1`.
+    code: |
+      function validPath(n, edges, source, destination) {
+        // your code
+        return false;
+      }
+    tests:
+      - "validPath(3, [[0, 1], [1, 2], [2, 0]], 0, 2)"
+      - "validPath(6, [[0, 1], [0, 2], [3, 5], [5, 4], [4, 3]], 0, 5)"
+      - "validPath(1, [], 0, 0)"
+      - "validPath(4, [[0, 1], [2, 3]], 1, 3)"
+      - "validPath(2, [[0, 1]], 1, 0)"
+    solution: |
+      function validPath(n, edges, source, destination) {
+        const graph = Array.from({ length: n }, () => []);
+        for (const [u, v] of edges) {
+          graph[u].push(v);
+          graph[v].push(u);
+        }
+        const visited = new Set([source]);
+        const stack = [source];
+        while (stack.length > 0) {
+          const v = stack.pop();
+          if (v === destination) return true;
+          for (const next of graph[v]) {
+            if (!visited.has(next)) {
+              visited.add(next);
+              stack.push(next);
+            }
+          }
+        }
+        return false;
+      }
+    hint: Build the adjacency list and explore from `source` with a visited set. Report `true` if you ever reach `destination`.
+    reject:
+      - |
+        function validPath(n, edges, source, destination) {
+          return true;
+        }
+
+  - kind: code
+    title: "2. The biggest island"
+    body: |
+      A grid holds `1` (land) and `0` (water). Write `maxAreaOfIsland(grid)`: the number of cells in the **largest** island (up, down, left, right). `0` if there is no land.
+    code: |
+      function maxAreaOfIsland(grid) {
+        // your code
+        return 0;
+      }
+    tests:
+      - "maxAreaOfIsland([[0, 1, 0, 1, 1], [1, 1, 0, 0, 1], [0, 0, 0, 1, 0]])"
+      - "maxAreaOfIsland([[0, 0], [0, 0]])"
+      - "maxAreaOfIsland([[1]])"
+      - "maxAreaOfIsland([[1, 1], [1, 1]])"
+      - "maxAreaOfIsland([[1, 0, 1], [0, 1, 0], [1, 0, 1]])"
+    solution: |
+      function maxAreaOfIsland(grid) {
+        const rows = grid.length;
+        const cols = rows === 0 ? 0 : grid[0].length;
+        const seen = grid.map((row) => row.map(() => false));
+        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        let best = 0;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (grid[r][c] !== 1 || seen[r][c]) continue;
+            let area = 0;
+            const stack = [[r, c]];
+            seen[r][c] = true;
+            while (stack.length > 0) {
+              const [cr, cc] = stack.pop();
+              area++;
+              for (const [dr, dc] of dirs) {
+                const nr = cr + dr;
+                const nc = cc + dc;
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] === 1 && !seen[nr][nc]) {
+                  seen[nr][nc] = true;
+                  stack.push([nr, nc]);
+                }
+              }
+            }
+            best = Math.max(best, area);
+          }
+        }
+        return best;
+      }
+    hint: Like counting islands, but count the cells you visit in each traversal and keep the maximum.
+    reject:
+      - |
+        function maxAreaOfIsland(grid) {
+          return grid.flat().filter((x) => x === 1).length;
+        }
+
+  - kind: code
+    title: "3. Distance to the nearest zero"
+    body: |
+      Write `nearestZero(matrix)`: for every cell of a matrix of `0`s and `1`s, the distance to the **nearest `0`** (moving up, down, left, right, one step at a time). Cells that are `0` have distance `0`.
+    code: |
+      function nearestZero(matrix) {
+        // your code
+        return [];
+      }
+    tests:
+      - "nearestZero([[0, 0, 0], [0, 1, 0], [1, 1, 1]])"
+      - "nearestZero([[0]])"
+      - "nearestZero([[0, 1, 1, 1]])"
+      - "nearestZero([[1, 1], [1, 0]])"
+    solution: |
+      function nearestZero(matrix) {
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        const dist = matrix.map((row) => row.map(() => -1));
+        let queue = [];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (matrix[r][c] === 0) {
+              dist[r][c] = 0;
+              queue.push([r, c]);
+            }
+          }
+        }
+        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        for (let head = 0; head < queue.length; head++) {
+          const [r, c] = queue[head];
+          for (const [dr, dc] of dirs) {
+            const nr = r + dr;
+            const nc = c + dc;
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && dist[nr][nc] === -1) {
+              dist[nr][nc] = dist[r][c] + 1;
+              queue.push([nr, nc]);
+            }
+          }
+        }
+        return dist;
+      }
+    hint: Start the BFS from **all zeros at once** (multi-source). Each cell's first discovery gives its shortest distance.
+    reject:
+      - |
+        function nearestZero(matrix) {
+          return matrix;
+        }
+
+  - kind: code
+    title: "4. Two teams"
+    body: |
+      `n` people, and `dislikes` is a list of pairs `[a, b]` (people numbered `1 … n`) who will not be on the same team. Write `possibleBipartition(n, dislikes)`: can everyone be split into **two teams** so no disliking pair shares a team?
+    code: |
+      function possibleBipartition(n, dislikes) {
+        // your code
+        return true;
+      }
+    tests:
+      - "possibleBipartition(4, [[1, 2], [1, 3], [2, 4]])"
+      - "possibleBipartition(3, [[1, 2], [1, 3], [2, 3]])"
+      - "possibleBipartition(5, [[1, 2], [2, 3], [3, 4], [4, 5], [1, 5]])"
+      - "possibleBipartition(1, [])"
+      - "possibleBipartition(2, [[1, 2]])"
+    solution: |
+      function possibleBipartition(n, dislikes) {
+        const graph = Array.from({ length: n + 1 }, () => []);
+        for (const [a, b] of dislikes) {
+          graph[a].push(b);
+          graph[b].push(a);
+        }
+        const color = Array(n + 1).fill(-1);
+        for (let start = 1; start <= n; start++) {
+          if (color[start] !== -1) continue;
+          color[start] = 0;
+          const queue = [start];
+          for (let head = 0; head < queue.length; head++) {
+            const v = queue[head];
+            for (const next of graph[v]) {
+              if (color[next] === -1) {
+                color[next] = 1 - color[v];
+                queue.push(next);
+              } else if (color[next] === color[v]) {
+                return false;
+              }
+            }
+          }
+        }
+        return true;
+      }
+    hint: This is a bipartite check. People are vertices, "dislikes" are edges, and the two teams are the two colours.
+    reject:
+      - |
+        function possibleBipartition(n, dislikes) {
+          return true;
+        }
+
+  - kind: code
+    title: "5. Is it a tree?"
+    body: |
+      Write `validTree(n, edges)`: `true` if the undirected graph with vertices `0 … n-1` and these edges is a **tree**: connected and with no cycle.
+    code: |
+      function validTree(n, edges) {
+        // your code
+        return false;
+      }
+    tests:
+      - "validTree(5, [[0, 1], [0, 2], [0, 3], [1, 4]])"
+      - "validTree(5, [[0, 1], [1, 2], [2, 3], [1, 3], [1, 4]])"
+      - "validTree(4, [[0, 1], [2, 3]])"
+      - "validTree(1, [])"
+      - "validTree(2, [])"
+      - "validTree(4, [[0, 1], [1, 2], [0, 2]])"
+    solution: |
+      function validTree(n, edges) {
+        if (edges.length !== n - 1) return false;
+        const parent = Array.from({ length: n }, (_, i) => i);
+        const find = (x) => {
+          while (parent[x] !== x) {
+            parent[x] = parent[parent[x]];
+            x = parent[x];
+          }
+          return x;
+        };
+        for (const [a, b] of edges) {
+          const rootA = find(a);
+          const rootB = find(b);
+          if (rootA === rootB) return false;
+          parent[rootA] = rootB;
+        }
+        return true;
+      }
+    hint: A tree on `n` vertices has exactly `n - 1` edges. If that holds, it is a tree exactly when no edge closes a cycle.
+    reject:
+      - |
+        function validTree(n, edges) {
+          return edges.length === n - 1;
+        }
+
+  - kind: code
+    title: "6. Cheapest cable"
+    body: |
+      Points are towns on a map as `[x, y]`. Connecting two towns costs their **Manhattan distance** `|x1 − x2| + |y1 − y2|`. Write `minCostConnectPoints(points)`: the least total cost to connect **all** the towns so any town can reach any other.
+    code: |
+      function minCostConnectPoints(points) {
+        // your code
+        return 0;
+      }
+    tests:
+      - "minCostConnectPoints([[0, 0], [2, 2], [3, 10], [5, 2], [7, 0]])"
+      - "minCostConnectPoints([[3, 12], [-2, 5], [-4, 1]])"
+      - "minCostConnectPoints([[0, 0]])"
+      - "minCostConnectPoints([[0, 0], [1, 1]])"
+      - "minCostConnectPoints([[0, 0], [0, 1], [0, 2], [0, 3]])"
+    solution: |
+      function minCostConnectPoints(points) {
+        const n = points.length;
+        const edges = [];
+        for (let i = 0; i < n; i++) {
+          for (let j = i + 1; j < n; j++) {
+            const cost = Math.abs(points[i][0] - points[j][0]) + Math.abs(points[i][1] - points[j][1]);
+            edges.push([i, j, cost]);
+          }
+        }
+        edges.sort((a, b) => a[2] - b[2]);
+        const parent = Array.from({ length: n }, (_, i) => i);
+        const find = (x) => {
+          while (parent[x] !== x) {
+            parent[x] = parent[parent[x]];
+            x = parent[x];
+          }
+          return x;
+        };
+        let total = 0;
+        for (const [i, j, cost] of edges) {
+          const a = find(i);
+          const b = find(j);
+          if (a !== b) {
+            parent[a] = b;
+            total += cost;
+          }
+        }
+        return total;
+      }
+    hint: Every pair of towns is a possible edge with a cost. This is a minimum spanning tree, so use Kruskal with union-find.
+    reject:
+      - |
+        function minCostConnectPoints(points) {
+          return 0;
+        }
+
+  - kind: why
+    body: |
+      Notice how much of the work was *modelling*: cells became vertices, "dislikes" became edges, towns became a complete graph. Once the graph was clear, each answer was a standard algorithm with a small twist.
+
+  - kind: recap
+    body: |
+      - Reaching and counting groups: **DFS or BFS with a visited set**.
+      - Nearest source for every cell: **multi-source BFS**.
+      - "Split into two groups without conflicts": **bipartite colouring**.
+      - "Is it a tree?": `n - 1` edges and no cycle (**union-find**).
+      - "Cheapest way to connect everything": **minimum spanning tree** (Kruskal).

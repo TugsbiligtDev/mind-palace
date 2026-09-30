@@ -1,0 +1,4 @@
+title: "Input & Type Conversion"
+module: 7
+summary: "Ask the user a question with input(), and convert the text they type into numbers with int() and float(). Learn why input() always gives text."
+minutes: 45

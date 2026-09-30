@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What is the preorder traversal (node, left, right) of the tree `[1, 2, 3, 4, 5]`?
+    options: ["1 2 4 5 3", "4 2 5 1 3", "4 5 2 3 1", "1 2 3 4 5"]
+    answer: 0
+    explanation: Visit 1 first, then go left (2, then its children 4 and 5), then right (3).
+  - type: predict
+    prompt: What does this print?
+    code: |
+      function depth(node) {
+        if (node === null) return 0;
+        return 1 + Math.max(depth(node.left), depth(node.right));
+      }
+      const tree = { val: 1, left: { val: 2, left: { val: 3, left: null, right: null }, right: null }, right: null };
+      console.log(depth(tree));
+    options: ["3", "1", "2", "0"]
+    answer: 0
+    explanation: "The longest path is 1 → 2 → 3, which has 3 nodes."
+  - type: mcq
+    prompt: Which data structure does breadth-first (level-order) traversal use?
+    options: ["A stack", "A queue", "A hash map", "A heap"]
+    answer: 1
+    explanation: A queue processes nodes in the order they were discovered, so each level is finished before the next begins.
+  - type: mcq
+    prompt: The recursive base case for most tree functions is...
+    options: ["The root", "When the node is `null`", "When the node is a leaf only", "When the value is 0"]
+    answer: 1
+    explanation: An empty subtree is the smallest problem. Handling `null` covers leaves too, because their children are `null`.
+  - type: mcq
+    prompt: In `pathSums`, why do you save `[...path]` instead of `path`?
+    options:
+      - It is faster
+      - The path array keeps changing as you backtrack, so a copy is needed to remember the moment
+      - Arrays cannot be saved
+      - It sorts the path
+    answer: 1
+    explanation: Saving the same array object would show the final, emptied state, because every saved result points at the one shared array.

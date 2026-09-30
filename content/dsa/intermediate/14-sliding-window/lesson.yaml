@@ -1,0 +1,329 @@
+steps:
+  - kind: explain
+    title: What is a sliding window?
+    body: |
+      Many problems ask about a **contiguous piece** (a *subarray* or *substring*): the best window of length `k`, the longest piece with no repeats, the shortest piece with a given sum.
+
+      The brute force checks every piece: O(n²) pieces (or worse). The **sliding window** keeps one piece `[left … right]` and slides it along, updating the answer from what changes at the edges. Each item enters the window once and leaves once, so the whole thing is **O(n)**.
+
+  - kind: explain
+    title: Fixed-size windows
+    body: |
+      When the window length is fixed at `k`, you slide it one step at a time: **add the new item on the right, remove the old item on the left**. Do not recompute the whole window each time.
+
+      ```js
+      let sum = 0;
+      for (let i = 0; i < k; i++) sum += nums[i];   // the first window
+      for (let i = k; i < nums.length; i++) {
+        sum += nums[i] - nums[i - k];               // slide by one
+        best = Math.max(best, sum);
+      }
+      ```
+
+  - kind: code
+    title: Best window of length k
+    body: |
+      Write `maxWindowSum(nums, k)`: the largest sum of any `k` consecutive numbers. `k` is at least 1 and at most `nums.length`.
+    code: |
+      function maxWindowSum(nums, k) {
+        return 0;
+      }
+    tests:
+      - "maxWindowSum([1, 12, -5, -6, 50, 3], 4)"
+      - "maxWindowSum([5], 1)"
+      - "maxWindowSum([-3, -1, -2], 2)"
+      - "maxWindowSum([2, 3, 4, 1, 5], 5)"
+      - "maxWindowSum([1, 1, 1, 1], 2)"
+    solution: |
+      function maxWindowSum(nums, k) {
+        let sum = 0;
+        for (let i = 0; i < k; i++) sum += nums[i];
+        let best = sum;
+        for (let i = k; i < nums.length; i++) {
+          sum += nums[i] - nums[i - k];
+          best = Math.max(best, sum);
+        }
+        return best;
+      }
+    hint: Build the first window's sum, then for each new index add `nums[i]` and subtract `nums[i - k]`.
+    reject:
+      - |
+        function maxWindowSum(nums, k) {
+          return Math.max(...nums) * k;
+        }
+
+  - kind: explain
+    title: Variable-size windows, expand and shrink
+    body: |
+      Often the window size is *not* fixed: "the longest piece that satisfies a rule". Use two pointers and a template:
+
+      ```js
+      let left = 0;
+      for (let right = 0; right < n; right++) {
+        // 1. EXPAND: add nums[right] to the window's state
+        while (/* the window breaks the rule */) {
+          // 2. SHRINK: remove nums[left] from the state
+          left++;
+        }
+        // 3. The window [left..right] is valid now: record the answer
+      }
+      ```
+
+      The state is usually a **Map of counts** (or a sum). `right` only moves forward, and `left` only moves forward, so each moves at most `n` times: **O(n)** in total.
+
+  - kind: code
+    title: Longest substring without repeats
+    body: |
+      Write `lengthOfLongest(s)`: the length of the longest piece of `s` in which **no character repeats**. `"abcabcbb"` gives `3` (`"abc"`).
+
+      Keep a `Map` of characters to counts. When the new character makes a count go above 1, shrink from the left until it is fine again.
+    code: |
+      function lengthOfLongest(s) {
+        return 0;
+      }
+    tests:
+      - "lengthOfLongest('abcabcbb')"
+      - "lengthOfLongest('bbbbb')"
+      - "lengthOfLongest('pwwkew')"
+      - "lengthOfLongest('')"
+      - "lengthOfLongest('a')"
+      - "lengthOfLongest('dvdf')"
+    solution: |
+      function lengthOfLongest(s) {
+        const counts = new Map();
+        let left = 0;
+        let best = 0;
+        for (let right = 0; right < s.length; right++) {
+          const ch = s[right];
+          counts.set(ch, (counts.get(ch) || 0) + 1);
+          while (counts.get(ch) > 1) {
+            const out = s[left];
+            counts.set(out, counts.get(out) - 1);
+            left++;
+          }
+          best = Math.max(best, right - left + 1);
+        }
+        return best;
+      }
+    hint: After shrinking, the window `[left … right]` has no repeats, so its length is `right - left + 1`.
+    reject:
+      - |
+        function lengthOfLongest(s) {
+          return new Set(s).size;
+        }
+
+  - kind: code
+    title: "Find the bug: record it at the right moment"
+    body: |
+      `minSubArrayLen(target, nums)` should return the **shortest** run of consecutive numbers whose sum is **at least** `target` (or `0` if none). All numbers are positive. `([2, 3, 1, 2, 4, 3], 7)` gives `2` (`4 + 3`).
+
+      This version measures the window **after** it has already shrunk too far. The answer must be recorded **inside** the shrink loop, while the window is still valid. Fix it.
+    code: |
+      function minSubArrayLen(target, nums) {
+        let best = Infinity;
+        let left = 0;
+        let sum = 0;
+        for (let right = 0; right < nums.length; right++) {
+          sum += nums[right];
+          while (sum >= target) {
+            sum -= nums[left];
+            left++;
+          }
+          best = Math.min(best, right - left + 1);
+        }
+        return best === Infinity ? 0 : best;
+      }
+    tests:
+      - "minSubArrayLen(7, [2, 3, 1, 2, 4, 3])"
+      - "minSubArrayLen(4, [1, 4, 4])"
+      - "minSubArrayLen(11, [1, 1, 1, 1, 1, 1, 1, 1])"
+      - "minSubArrayLen(3, [1, 1, 1])"
+      - "minSubArrayLen(5, [5])"
+    solution: |
+      function minSubArrayLen(target, nums) {
+        let best = Infinity;
+        let left = 0;
+        let sum = 0;
+        for (let right = 0; right < nums.length; right++) {
+          sum += nums[right];
+          while (sum >= target) {
+            best = Math.min(best, right - left + 1);
+            sum -= nums[left];
+            left++;
+          }
+        }
+        return best === Infinity ? 0 : best;
+      }
+    hint: Move the `best = Math.min(...)` line inside the `while`, before you remove `nums[left]`.
+    broken_starter: true
+    reject:
+      - |
+        function minSubArrayLen(target, nums) {
+          let best = Infinity;
+          let left = 0;
+          let sum = 0;
+          for (let right = 0; right < nums.length; right++) {
+            sum += nums[right];
+            while (sum >= target) {
+              sum -= nums[left];
+              left++;
+            }
+            best = Math.min(best, right - left + 1);
+          }
+          return best === Infinity ? 0 : best;
+        }
+
+  - kind: code
+    title: Longest repeating character replacement
+    body: |
+      You may change **at most `k`** characters of `s` to any letter. Write `characterReplacement(s, k)`: the length of the longest piece you can make from one repeated letter.
+
+      The window `[left … right]` is fine when `(window length) − (count of its most common letter) <= k`. Track that biggest count as you go.
+    code: |
+      function characterReplacement(s, k) {
+        return 0;
+      }
+    tests:
+      - "characterReplacement('ABAB', 2)"
+      - "characterReplacement('AABABBA', 1)"
+      - "characterReplacement('AAAA', 0)"
+      - "characterReplacement('ABCDE', 1)"
+      - "characterReplacement('', 3)"
+    solution: |
+      function characterReplacement(s, k) {
+        const counts = new Map();
+        let left = 0;
+        let maxCount = 0;
+        let best = 0;
+        for (let right = 0; right < s.length; right++) {
+          const ch = s[right];
+          counts.set(ch, (counts.get(ch) || 0) + 1);
+          maxCount = Math.max(maxCount, counts.get(ch));
+          while (right - left + 1 - maxCount > k) {
+            const out = s[left];
+            counts.set(out, counts.get(out) - 1);
+            left++;
+          }
+          best = Math.max(best, right - left + 1);
+        }
+        return best;
+      }
+    hint: The letters that must change are `window length − maxCount`. Shrink while that is more than `k`.
+    reject:
+      - |
+        function characterReplacement(s, k) {
+          return Math.min(s.length, k + 1);
+        }
+
+  - kind: explain
+    title: Matching a window against a target
+    body: |
+      Some problems ask whether a window **matches a target** made of letter counts, like "is some piece of `s2` an anagram of `s1`?" Keep two count maps (or 26-slot arrays) and a small counter of how many letters currently match. As the window slides by one, only two counts change, so you update the "matched" number in O(1).
+
+      For a **fixed** window length `s1.length`, that is a fixed-size window with a count array, and it is O(n).
+
+  - kind: code
+    title: Permutation in a string
+    body: |
+      Write `checkInclusion(s1, s2)`: `true` if some piece of `s2` is a rearrangement of `s1` (for lowercase letters), else `false`.
+    code: |
+      function checkInclusion(s1, s2) {
+        return false;
+      }
+    tests:
+      - "checkInclusion('ab', 'eidbaooo')"
+      - "checkInclusion('ab', 'eidboaoo')"
+      - "checkInclusion('a', 'a')"
+      - "checkInclusion('abc', 'ab')"
+      - "checkInclusion('adc', 'dcda')"
+      - "checkInclusion('', 'abc')"
+    solution: |
+      function checkInclusion(s1, s2) {
+        const k = s1.length;
+        if (k > s2.length) return false;
+        const need = Array(26).fill(0);
+        const have = Array(26).fill(0);
+        for (const ch of s1) need[ch.charCodeAt(0) - 97]++;
+        const same = () => need.every((c, i) => c === have[i]);
+        for (let i = 0; i < s2.length; i++) {
+          have[s2.charCodeAt(i) - 97]++;
+          if (i >= k) have[s2.charCodeAt(i - k) - 97]--;
+          if (i >= k - 1 && same()) return true;
+        }
+        return false;
+      }
+    hint: Slide a window of length `s1.length` over `s2`, adding the new letter and removing the old one, and compare the two 26-slot arrays.
+    reject:
+      - |
+        function checkInclusion(s1, s2) {
+          return s2.includes(s1);
+        }
+
+  - kind: code
+    title: Minimum window substring
+    body: |
+      The hardest classic. Write `minWindow(s, t)`: the **shortest** piece of `s` that contains every character of `t` (with the right multiplicity). Return the piece itself, or `""` if none exists.
+
+      Expand `right` until the window has everything. Then shrink `left` as far as it stays valid, recording the best piece each time.
+    code: |
+      function minWindow(s, t) {
+        return "";
+      }
+    tests:
+      - "minWindow('ADOBECODEBANC', 'ABC')"
+      - "minWindow('a', 'a')"
+      - "minWindow('a', 'aa')"
+      - "minWindow('ab', 'b')"
+      - "minWindow('aa', 'aa')"
+      - "minWindow('abc', '')"
+    solution: |
+      function minWindow(s, t) {
+        if (t.length === 0) return "";
+        const need = new Map();
+        for (const ch of t) need.set(ch, (need.get(ch) || 0) + 1);
+        let missing = t.length;
+        let left = 0;
+        let bestStart = 0;
+        let bestLen = Infinity;
+        for (let right = 0; right < s.length; right++) {
+          const ch = s[right];
+          if (need.has(ch)) {
+            if (need.get(ch) > 0) missing--;
+            need.set(ch, need.get(ch) - 1);
+          }
+          while (missing === 0) {
+            if (right - left + 1 < bestLen) {
+              bestLen = right - left + 1;
+              bestStart = left;
+            }
+            const out = s[left];
+            if (need.has(out)) {
+              need.set(out, need.get(out) + 1);
+              if (need.get(out) > 0) missing++;
+            }
+            left++;
+          }
+        }
+        return bestLen === Infinity ? "" : s.slice(bestStart, bestStart + bestLen);
+      }
+    hint: Keep a count of how many required characters are still `missing`. Record the best window inside the shrink loop, while `missing === 0`.
+    reject:
+      - |
+        function minWindow(s, t) {
+          return s;
+        }
+
+  - kind: why
+    body: |
+      Sliding window turns "look at every piece" into "walk along once, adding on the right and removing on the left". The maths is the same trick as amortized cost in Module 3: each element is added once and removed once.
+
+      The recurring bug is *when* you record the answer. Record it when the window is **valid**: inside the shrink loop for "shortest" problems, and after shrinking for "longest" problems.
+
+  - kind: recap
+    body: |
+      - A **sliding window** keeps a contiguous piece `[left … right]` and updates it as the edges move: **O(n)**.
+      - **Fixed size:** add the new item, remove the one that fell off.
+      - **Variable size (template):** expand `right`, shrink `left` while the window is invalid, record the answer.
+      - The window's state is a sum or a **Map of counts**.
+      - "Shortest" problems record inside the shrink loop. "Longest" problems record after it.
+      - For anagram-style matching, compare count arrays and update the match in O(1) per step.

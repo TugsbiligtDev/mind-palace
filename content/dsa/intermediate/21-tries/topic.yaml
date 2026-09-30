@@ -1,0 +1,4 @@
+title: Tries
+module: 21
+summary: "A tree of letters for prefix problems: insert, search and startsWith, wildcard search, autocomplete and search suggestions."
+minutes: 60

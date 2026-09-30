@@ -1,0 +1,4 @@
+title: JavaScript's Built-ins Through a DSA Lens
+module: 4
+summary: "What arrays, strings, sort, Map and Set really cost, and the traps that bite: default sort, shared references, and what JavaScript does not have."
+minutes: 45

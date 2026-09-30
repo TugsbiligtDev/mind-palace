@@ -1,0 +1,246 @@
+steps:
+  - kind: explain
+    title: A list is an ordered, changeable collection
+    body: |
+      A **list** holds many values in order, inside square brackets:
+
+      ```python
+      suspects = ["Reed", "Mori", "Novak"]
+      numbers = [4, 8, 15, 16]
+      mixed = ["Ada", 34, True]      # any types, even mixed
+      empty = []
+      ```
+
+      Lists work like strings in one way: **indexing** and **slicing** use the same rules (start at `0`, negative counts from the end, the slice stop is not included).
+
+      ```python
+      suspects[0]        # "Reed"
+      suspects[-1]       # "Novak"
+      suspects[1:]       # ["Mori", "Novak"]
+      len(suspects)      # 3
+      ```
+
+      Unlike strings, lists are **mutable**: you can change them in place. `suspects[0] = "Bold"` works.
+
+  - kind: code
+    title: Try a list
+    body: |
+      Run this and read each result. Then add your own line to change an item.
+    code: |
+      suspects = ["Reed", "Mori", "Novak"]
+      print(suspects[0], suspects[-1])
+      print(suspects[1:])
+      print(len(suspects))
+      suspects[0] = "Bold"
+      print(suspects)
+      print("Mori" in suspects)
+
+  - kind: explain
+    title: Changing a list
+    body: |
+      | Method | What it does |
+      |---|---|
+      | `items.append(x)` | add `x` to the **end** |
+      | `items.extend(other)` | add **every item** of `other` to the end |
+      | `items.insert(i, x)` | put `x` at position `i`, shifting the rest right |
+      | `items.pop()` | remove and **return** the last item (`pop(i)` for position `i`) |
+      | `items.remove(x)` | remove the **first** item equal to `x` |
+      | `items.index(x)` | position of the first `x` |
+      | `items.sort()` | sort **in place** (returns `None`!) |
+
+      Two easy mix-ups:
+
+      - `append` adds one thing; `extend` adds many. `[1].append([2, 3])` gives `[1, [2, 3]]`, a list inside a list. `[1].extend([2, 3])` gives `[1, 2, 3]`.
+      - `items.sort()` **changes** the list and returns `None`. So `items = items.sort()` destroys your data. If you want a new sorted list and to keep the original, use **`sorted(items)`**.
+
+      Test membership with `in`: `"Mori" in suspects` is `True`.
+
+  - kind: code
+    title: Sort without changing the original
+    body: |
+      Finish `sort_desc(numbers)`: return a **new** list with the numbers sorted from **largest to smallest**, and leave the original list untouched. `sort_desc([3, 9, 1])` is `[9, 3, 1]`.
+
+      `sorted(numbers, reverse=True)` does exactly that.
+    code: |
+      def sort_desc(numbers):
+          numbers.sort()
+          return numbers
+    tests:
+      - "sort_desc([3, 9, 1])"
+      - "sort_desc([])"
+      - "sort_desc([5, 5, 2])"
+      - "(lambda nums: (sort_desc(nums), nums))([2, 8, 4])"
+    solution: |
+      def sort_desc(numbers):
+          return sorted(numbers, reverse=True)
+    hint: "`sorted(...)` returns a new list and does not touch the original."
+    broken_starter: true
+
+  - kind: code
+    title: Move to the front
+    body: |
+      Finish `move_to_front(items, x)`: if `x` is in the list, take it out and put it at the **front**, then return the list. If `x` is not in the list, return it unchanged. `move_to_front(["a", "b", "c"], "c")` is `["c", "a", "b"]`.
+    code: |
+      def move_to_front(items, x):
+          return items
+    tests:
+      - "move_to_front(['a', 'b', 'c'], 'c')"
+      - "move_to_front(['a', 'b', 'c'], 'a')"
+      - "move_to_front(['a', 'b', 'c'], 'z')"
+      - "move_to_front([], 'a')"
+      - "move_to_front([1, 2, 1], 1)"
+    solution: |
+      def move_to_front(items, x):
+          if x in items:
+              items.remove(x)
+              items.insert(0, x)
+          return items
+    hint: "`if x in items:` then `items.remove(x)` and `items.insert(0, x)`."
+    reject:
+      - |
+        def move_to_front(items, x):
+            items.insert(0, x)
+            return items
+
+  - kind: code
+    title: Trim the ends
+    body: |
+      A list of readings has a bad first and last value. Finish `trim_ends(items)`: return a **new** list without the first and last item. Lists with fewer than 3 items give `[]`. `trim_ends([1, 2, 3, 4])` is `[2, 3]`.
+
+      A slice does it: `items[1:-1]`.
+    code: |
+      def trim_ends(items):
+          return items
+    tests:
+      - "trim_ends([1, 2, 3, 4])"
+      - "trim_ends([1, 2, 3])"
+      - "trim_ends([1, 2])"
+      - "trim_ends([])"
+    solution: |
+      def trim_ends(items):
+          return items[1:-1]
+    hint: "`items[1:-1]` starts at the second item and stops before the last."
+    reject:
+      - |
+        def trim_ends(items):
+            return items[1:]
+
+  - kind: explain
+    title: Unpacking and nested lists
+    body: |
+      You can pull a list apart into names in one go:
+
+      ```python
+      a, b = ["x", "y"]              # a = "x", b = "y"
+      first, *rest = [1, 2, 3, 4]    # first = 1, rest = [2, 3, 4]
+      *start, last = [1, 2, 3, 4]    # start = [1, 2, 3], last = 4
+      ```
+
+      The `*` name collects "everything else" into a list.
+
+      A list can hold lists, giving a table (a **nested list**):
+
+      ```python
+      grid = [[1, 2, 3],
+              [4, 5, 6]]
+      grid[1][2]      # 6: row 1, then column 2
+      ```
+
+  - kind: code
+    title: Rotate left
+    body: |
+      Finish `rotate_left(items)`: move the first item to the end and return the new list. `rotate_left([1, 2, 3])` is `[2, 3, 1]`, and an empty list stays `[]`.
+
+      Use unpacking: `first, *rest = items` fails on an empty list, so handle that first.
+    code: |
+      def rotate_left(items):
+          return items
+    tests:
+      - "rotate_left([1, 2, 3])"
+      - "rotate_left([])"
+      - "rotate_left([9])"
+      - "rotate_left(['a', 'b'])"
+    solution: |
+      def rotate_left(items):
+          if not items:
+              return []
+          first, *rest = items
+          return rest + [first]
+    hint: "`rest + [first]` glues two lists together."
+    reject:
+      - |
+        def rotate_left(items):
+            if not items:
+                return []
+            *rest, last = items
+            return [last] + rest
+
+  - kind: code
+    title: Add up a table
+    body: |
+      Finish `grid_total(grid)`: the sum of every number in a list of rows. `grid_total([[1, 2, 3], [4, 5, 6]])` is `21`. Loop over the rows, then over each row.
+    code: |
+      def grid_total(grid):
+          return 0
+    tests:
+      - "grid_total([[1, 2, 3], [4, 5, 6]])"
+      - "grid_total([])"
+      - "grid_total([[10]])"
+      - "grid_total([[], [1], [2, 3]])"
+    solution: |
+      def grid_total(grid):
+          total = 0
+          for row in grid:
+              for n in row:
+                  total += n
+          return total
+    hint: "A loop inside a loop: `for row in grid:` then `for n in row:`."
+    reject:
+      - |
+        def grid_total(grid):
+            total = 0
+            for row in grid:
+                total += len(row)
+            return total
+
+  - kind: code
+    title: Any repeats?
+    body: |
+      Finish `has_repeats(items)`: `True` if any value appears **more than once**. Keep a list `seen`. For each item, if it is already `in seen`, you found a repeat; otherwise append it.
+
+      `has_repeats([1, 2, 3, 2])` is `True`.
+    code: |
+      def has_repeats(items):
+          seen = []
+          return False
+    tests:
+      - "has_repeats([1, 2, 3, 2])"
+      - "has_repeats([1, 2, 3])"
+      - "has_repeats([])"
+      - "has_repeats(['a', 'b', 'a'])"
+      - "has_repeats([7, 7])"
+    solution: |
+      def has_repeats(items):
+          seen = []
+          for item in items:
+              if item in seen:
+                  return True
+              seen.append(item)
+          return False
+    hint: "Check `item in seen` before you `append` it."
+    reject:
+      - |
+        def has_repeats(items):
+            return len(items) > 1
+
+  - kind: why
+    body: |
+      Lists are Python's everyday container: rows from a file, search results, names typed in, steps in a plan. Knowing which methods change the list (`append`, `sort`, `remove`) and which return a new one (`sorted`, slicing) prevents the most common data-corrupting bugs.
+
+  - kind: recap
+    body: |
+      - A **list** `[a, b, c]` is ordered and **mutable**. Index from 0; slices copy a piece.
+      - `append` (one), `extend` (many), `insert(i, x)`, `pop()`, `remove(x)`, `index(x)`, `x in items`.
+      - `.sort()` changes the list and returns `None`; `sorted(items)` returns a new list.
+      - **Unpacking:** `a, b = pair`, `first, *rest = items`.
+      - Lists can be nested: `grid[row][column]`.

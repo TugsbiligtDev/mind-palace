@@ -1,0 +1,255 @@
+steps:
+  - kind: explain
+    title: Packages and PyPI
+    body: |
+      The standard library (Module 15) is only the start. Millions of extra libraries, called **packages**, are shared on **PyPI**, the *Python Package Index*, at pypi.org. Need to read Excel files, call a web API, or draw a chart? Somebody has probably written a package.
+
+      A package must be **installed** before you can `import` it. The tool that does that is your **package manager**. This course uses **uv**: it installs Python itself, creates the project, adds packages, and runs your code.
+
+      Be careful what you install: packages are code from strangers that runs on your computer. Prefer well-known, widely used packages, and check the name (typos such as `reqeusts` are a real attack).
+
+  - kind: explain
+    title: Why virtual environments exist
+    body: |
+      Imagine two projects. One needs `requests` version 2.0, another needs version 3.0. If both were installed in one shared place, they would fight.
+
+      A **virtual environment** is a private folder, usually **`.venv`**, that holds *one project's* Python and packages. Every project gets its own, so nothing clashes, and you can delete it and rebuild it at any time.
+
+      **Never install into the macOS system Python.** It belongs to the operating system. Installing packages there can break tools your Mac itself relies on. With `uv` you do not need to think about it, because it creates and uses `.venv` for you.
+
+  - kind: code
+    title: Am I inside an environment?
+    body: |
+      Python can tell whether it is running inside a virtual environment: `sys.prefix` (where the current Python lives) differs from `sys.base_prefix` (the original install) when a venv is active.
+
+      Finish `in_venv(prefix, base_prefix)`: return `True` when the two differ. (The checker passes the values in, so you can test both cases.)
+    code: |
+      def in_venv(prefix, base_prefix):
+          return False
+    tests:
+      - "in_venv('/proj/.venv', '/usr/local')"
+      - "in_venv('/usr/local', '/usr/local')"
+      - "in_venv('', '')"
+    solution: |
+      def in_venv(prefix, base_prefix):
+          return prefix != base_prefix
+    hint: "Just compare with `!=`."
+    reject:
+      - |
+        def in_venv(prefix, base_prefix):
+            return True
+
+  - kind: mac
+    title: Start a uv project
+    body: |
+      `uv init` creates a project folder with a `pyproject.toml`, a `main.py` and a `.python-version` file. `uv run` runs code inside its environment, creating `.venv` the first time.
+
+      **Checkpoint:** paste the output. It should contain `Hello from`.
+    commands: |
+      cd ~/Desktop
+      uv init case-tools
+      cd case-tools
+      ls -a
+      uv run main.py
+    expect_output:
+      - "Hello from"
+
+  - kind: explain
+    title: The uv commands
+    body: |
+      | Command | What it does |
+      |---|---|
+      | `uv init name` | create a new project |
+      | `uv add requests` | install a package **and** record it in `pyproject.toml` |
+      | `uv remove requests` | uninstall it and remove it from the record |
+      | `uv run main.py` | run a script inside the project's environment |
+      | `uv sync` | make `.venv` match the project files (on a new machine, after `git clone`) |
+      | `uv python install 3.14` | download a specific Python version |
+
+      Two files matter:
+
+      - **`pyproject.toml`**: *what you asked for*: the Python version, and your dependencies (`requests>=2.32`).
+      - **`uv.lock`**: *exactly what was installed*, every package and version. Commit **both** to Git. A teammate runs `uv sync` and gets an identical setup.
+
+      You do **not** commit `.venv/` (it goes in `.gitignore`), because it can always be rebuilt.
+
+  - kind: code
+    title: Translate from pip
+    body: |
+      Older tutorials say `pip install`. Finish `to_uv(command)` to translate a command into its `uv` equivalent:
+
+      - `"pip install X"` becomes `"uv add X"`,
+      - `"pip uninstall X"` becomes `"uv remove X"`,
+      - `"python FILE"` (or `python3 FILE`) becomes `"uv run FILE"`,
+      - anything else is returned unchanged.
+
+      Here `X` and `FILE` can be anything after the first two words.
+    code: |
+      def to_uv(command):
+          return command
+    tests:
+      - "to_uv('pip install requests')"
+      - "to_uv('pip uninstall requests')"
+      - "to_uv('python main.py')"
+      - "to_uv('python3 app.py --verbose')"
+      - "to_uv('ls -la')"
+      - "to_uv('pip install rich httpx')"
+    solution: |
+      def to_uv(command):
+          if command.startswith("pip install "):
+              return "uv add " + command[len("pip install "):]
+          if command.startswith("pip uninstall "):
+              return "uv remove " + command[len("pip uninstall "):]
+          for prefix in ("python3 ", "python "):
+              if command.startswith(prefix):
+                  return "uv run " + command[len(prefix):]
+          return command
+    hint: "Check `command.startswith(...)` for each prefix, and slice off the prefix with `command[len(prefix):]`."
+    reject:
+      - |
+        def to_uv(command):
+            return command.replace("pip", "uv")
+
+  - kind: mac
+    title: Add a package
+    body: |
+      Add the popular `rich` package (it prints colourful text), use it in a script, and look at what `uv` recorded.
+
+      **Checkpoint:** paste the output. It should contain `rich` (in `pyproject.toml`) and `Detective`.
+    commands: |
+      cd ~/Desktop/case-tools
+      uv add rich
+      cat > main.py <<'PY'
+      from rich import print
+
+      print("[bold green]Detective[/bold green] tools ready")
+      PY
+      uv run main.py
+      cat pyproject.toml
+      ls
+    expect_output:
+      - "rich"
+      - "Detective"
+
+  - kind: explain
+    title: pyproject.toml is data you can read
+    body: |
+      `pyproject.toml` is written in **TOML**, a simple settings format. Python 3.11+ can read it with the built-in `tomllib`:
+
+      ```python
+      import tomllib
+
+      text = """
+      [project]
+      name = "case-tools"
+      requires-python = ">=3.14"
+      dependencies = ["rich>=14.0", "httpx"]
+      """
+      data = tomllib.loads(text)
+      data["project"]["dependencies"]     # ['rich>=14.0', 'httpx']
+      ```
+
+      Each dependency is a **requirement string**: the package name, optionally followed by a version rule: `==2.31.0` (exactly), `>=2.31` (at least), or nothing (any version).
+
+  - kind: code
+    title: List the dependencies
+    body: |
+      Finish `dependency_names(toml_text)`: read the project file text with `tomllib` and return a **sorted list of the package names** only, with the version rules removed. For `["rich>=14.0", "httpx"]` return `["httpx", "rich"]`. If there are no dependencies, return `[]`.
+
+      A name ends at the first of the characters `< > = ! ~ [ ;` or a space. `re.split(r"[<>=!~\[; ]", spec)[0]` cuts it off.
+    code: |
+      import re
+      import tomllib
+
+
+      def dependency_names(toml_text):
+          return []
+    tests:
+      - "dependency_names('[project]\\nname = \"x\"\\ndependencies = [\"rich>=14.0\", \"httpx\"]\\n')"
+      - "dependency_names('[project]\\nname = \"x\"\\n')"
+      - "dependency_names('[project]\\ndependencies = [\"requests==2.31.0\", \"pydantic[email]>=2\", \"Rich\"]\\n')"
+    solution: |
+      import re
+      import tomllib
+
+
+      def dependency_names(toml_text):
+          data = tomllib.loads(toml_text)
+          specs = data.get("project", {}).get("dependencies", [])
+          return sorted(re.split(r"[<>=!~\[; ]", spec)[0] for spec in specs)
+    hint: "`data[\"project\"][\"dependencies\"]` may be missing, so use `.get(..., [])` at each level."
+    reject:
+      - |
+        import re
+        import tomllib
+
+
+        def dependency_names(toml_text):
+            data = tomllib.loads(toml_text)
+            return data["project"]["dependencies"]
+
+  - kind: code
+    title: How strict is the rule?
+    body: |
+      Finish `pin_kind(spec)`: classify a requirement string as `"exact"` if it contains `==`, `"minimum"` if it contains `>=`, `"unpinned"` if it has no version rule at all, and `"other"` for anything else (`<`, `~=`, and so on).
+    code: |
+      def pin_kind(spec):
+          return "unpinned"
+    tests:
+      - "pin_kind('requests==2.31.0')"
+      - "pin_kind('requests>=2.31')"
+      - "pin_kind('requests')"
+      - "pin_kind('requests<3')"
+      - "pin_kind('requests~=2.31')"
+    solution: |
+      def pin_kind(spec):
+          if "==" in spec:
+              return "exact"
+          if ">=" in spec:
+              return "minimum"
+          if not any(ch in spec for ch in "<>=!~"):
+              return "unpinned"
+          return "other"
+    hint: "Check `==` first, then `>=`. If none of the characters `<>=!~` appear, there is no rule."
+    reject:
+      - |
+        def pin_kind(spec):
+            return "minimum"
+
+  - kind: mac
+    title: Rebuild from the lock file
+    body: |
+      Delete the environment and rebuild it exactly from `pyproject.toml` and `uv.lock`, as a teammate would after `git clone`. Then ask `uv` which Pythons it can use.
+
+      **Checkpoint:** paste the output. It should contain `Detective` and a Python version line.
+    commands: |
+      cd ~/Desktop/case-tools
+      rm -rf .venv
+      uv sync
+      uv run main.py
+      uv python list --only-installed
+    expect_output:
+      - "Detective"
+      - "cpython"
+
+  - kind: info
+    title: "🔹 Older tools: pip, venv, requirements.txt and conda"
+    body: |
+      You will meet these in older projects:
+
+      - **`pip`** + **`python -m venv .venv`**: the classic way. `pip install requests` installs into the active environment, and `pip freeze > requirements.txt` records the versions. Someone else recreates it with `pip install -r requirements.txt`. It works, but has no lock file and is several steps.
+      - **conda**: another package manager, popular in data science because it also installs non-Python software.
+
+      `uv` does all of this faster and in one tool. If a project has a `requirements.txt`, you can still use it: `uv pip install -r requirements.txt`.
+
+  - kind: why
+    body: |
+      "It works on my machine" is the oldest problem in programming. A project with a `pyproject.toml`, a `uv.lock` and its own `.venv` works the same for you, your teammate and a server, and it never touches your Mac's system Python. This is the foundation of every project you will build from here on.
+
+  - kind: recap
+    body: |
+      - **PyPI** hosts packages; a **package manager** installs them. Install only trusted packages.
+      - A **virtual environment** (`.venv`) gives each project its own packages. Never install into the macOS system Python.
+      - `uv init`, `uv add`, `uv remove`, `uv run`, `uv sync`, `uv python install`.
+      - **`pyproject.toml`** = what you want; **`uv.lock`** = exactly what you got. Commit both, not `.venv/`.
+      - 🔹 `pip`, `venv`, `requirements.txt` and `conda` are older or specialised alternatives.

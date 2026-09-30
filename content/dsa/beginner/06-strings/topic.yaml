@@ -1,0 +1,4 @@
+title: Strings
+module: 6
+summary: "Character codes, counting letters with a 26-slot array, palindromes and anagrams, what string operations cost, and the emoji length trap."
+minutes: 50

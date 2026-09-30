@@ -1,0 +1,40 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const n = 3;
+      const edges = [[0, 1], [1, 2]];
+      const graph = Array.from({ length: n }, () => []);
+      for (const [u, v] of edges) {
+        graph[u].push(v);
+        graph[v].push(u);
+      }
+      console.log(graph);
+    options: ["[ [ 1 ], [ 0, 2 ], [ 1 ] ]", "[ [ 1 ], [ 2 ], [] ]", "[ [ 0 ], [ 1 ], [ 2 ] ]", "[ [], [], [] ]"]
+    answer: 0
+    explanation: Each undirected edge is stored in both lists, so vertex 1 knows both 0 and 2.
+  - type: mcq
+    prompt: A graph has 1 000 000 vertices and only 3 000 000 edges. Which representation is sensible?
+    options: ["An adjacency matrix", "An adjacency list", "A 2D array of strings", "A stack"]
+    answer: 1
+    explanation: A matrix needs 10¹² cells. An adjacency list stores only the 3 000 000 real edges, plus the vertices.
+  - type: mcq
+    prompt: Which is the neighbours-of-a-cell direction array for up, down, left, right?
+    options: ["`[[-1, 0], [1, 0], [0, -1], [0, 1]]`", "`[[1, 1], [-1, -1]]`", "`[[0, 0]]`", "`[[2, 0], [0, 2]]`"]
+    answer: 0
+    explanation: Each pair is a change in row and column. Up subtracts one row, down adds one, and so on.
+  - type: mcq
+    prompt: What does "degree" mean for a vertex in an undirected graph?
+    options: ["Its distance from the start", "The number of edges touching it", "Its value", "The number of vertices in the graph"]
+    answer: 1
+    explanation: Count how many edges have that vertex as an endpoint.
+  - type: mcq
+    prompt: Why is a grid described as an "implicit" graph?
+    options:
+      - It has no vertices
+      - The vertices and neighbours are defined by the cell positions, so you compute neighbours on the fly
+      - It cannot be traversed
+      - It is always directed
+    answer: 1
+    explanation: You never build an adjacency list. The row/column rule tells you who the neighbours are.

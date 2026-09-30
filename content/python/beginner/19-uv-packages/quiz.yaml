@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Why does each project get its own virtual environment?
+    options:
+      - So projects can use different versions of the same package without clashing
+      - It makes Python run faster
+      - Python refuses to run without one
+      - To save disk space
+    answer: 0
+    explanation: Separate environments keep one project's packages from breaking another's.
+  - type: mcq
+    prompt: Which command adds the package `httpx` to a uv project and records it?
+    options: ["uv add httpx", "uv run httpx", "pip install httpx into the system Python", "uv sync httpx"]
+    answer: 0
+    explanation: "`uv add` installs the package and updates `pyproject.toml` and `uv.lock`."
+  - type: mcq
+    prompt: Which of these should you NOT commit to Git?
+    options: [".venv/", "pyproject.toml", "uv.lock", "main.py"]
+    answer: 0
+    explanation: "`.venv/` can be rebuilt with `uv sync`. The other files describe the project and should be committed."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      import tomllib
+      data = tomllib.loads('[project]\nname = "demo"\nversion = "0.1.0"\n')
+      print(data["project"]["name"])
+    options: ["demo", "project", "0.1.0", "Error"]
+    answer: 0
+    explanation: "`tomllib.loads` turns TOML text into a dictionary; `[project]` becomes the key `project`."
+  - type: mcq
+    prompt: What is the difference between pyproject.toml and uv.lock?
+    options:
+      - pyproject.toml lists what you asked for; uv.lock records exactly what was installed
+      - They are identical
+      - uv.lock is for Windows only
+      - pyproject.toml holds passwords
+    answer: 0
+    explanation: The lock file pins exact versions so everyone gets the same setup.

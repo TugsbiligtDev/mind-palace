@@ -1,0 +1,4 @@
+title: "Errors & Exceptions"
+module: 16
+summary: "Handle things going wrong without crashing: try, except, else and finally, catching specific errors, raising your own, and finding bugs with print and the debugger."
+minutes: 70

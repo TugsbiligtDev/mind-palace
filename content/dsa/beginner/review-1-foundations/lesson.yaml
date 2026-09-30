@@ -1,0 +1,277 @@
+steps:
+  - kind: explain
+    title: No more hand-holding
+    body: |
+      Until now, every exercise told you which idea to use. Real problems do not.
+
+      This review has **eight questions**. Each editor starts nearly empty, with just the function name. For each one:
+
+      1. Write two or three examples and an edge case on paper (or in a comment).
+      2. Decide on a plan. Brute force is fine.
+      3. Write it, run it, and read what comes back.
+
+      After a wrong attempt you can ask for a hint, and after three you can see one working answer. Try hard before you look. The struggle is what makes it stick.
+
+  - kind: code
+    title: "1. The runner-up"
+    body: |
+      Write `secondLargest(nums)`: the second-largest **distinct** value, or `null` if there are fewer than two distinct values.
+
+      `[4, 9, 9, 2]` → `4`, and `[5, 5]` → `null`.
+    code: |
+      function secondLargest(nums) {
+        // your code
+      }
+    tests:
+      - "secondLargest([4, 9, 9, 2])"
+      - "secondLargest([5, 5])"
+      - "secondLargest([])"
+      - "secondLargest([-3, -1, -2])"
+      - "secondLargest([1, 2])"
+    solution: |
+      function secondLargest(nums) {
+        let first = -Infinity;
+        let second = -Infinity;
+        for (const n of nums) {
+          if (n > first) {
+            second = first;
+            first = n;
+          } else if (n > second && n < first) {
+            second = n;
+          }
+        }
+        return second === -Infinity ? null : second;
+      }
+    hint: Track the biggest and second-biggest values. An equal value must not replace the second.
+    reject:
+      - |
+        function secondLargest(nums) {
+          const sorted = [...nums].sort((a, b) => b - a);
+          return sorted.length > 1 ? sorted[1] : null;
+        }
+
+  - kind: code
+    title: "2. Digits add up"
+    body: |
+      Write `digitSum(n)`: the sum of the digits of a non-negative whole number. `digitSum(1234)` is `10`.
+
+      Use `%` and `Math.floor`, not string conversion.
+    code: |
+      function digitSum(n) {
+        // your code
+      }
+    tests:
+      - "digitSum(1234)"
+      - "digitSum(0)"
+      - "digitSum(9)"
+      - "digitSum(1000000)"
+      - "digitSum(987654321)"
+    solution: |
+      function digitSum(n) {
+        let total = 0;
+        while (n > 0) {
+          total += n % 10;
+          n = Math.floor(n / 10);
+        }
+        return total;
+      }
+    hint: "`n % 10` is the last digit. `Math.floor(n / 10)` removes it."
+    reject:
+      - |
+        function digitSum(n) {
+          return n % 10;
+        }
+
+  - kind: code
+    title: "3. Even, even for negatives"
+    body: |
+      Write `isEven(n)`. It must work for negative numbers too: `isEven(-4)` is `true` and `isEven(-3)` is `false`.
+    code: |
+      function isEven(n) {
+        // your code
+      }
+    tests:
+      - "isEven(4)"
+      - "isEven(-4)"
+      - "isEven(-3)"
+      - "isEven(0)"
+      - "isEven(7)"
+    solution: |
+      function isEven(n) {
+        return n % 2 === 0;
+      }
+    hint: "Remember that `-3 % 2` is `-1` in JavaScript. What test works for both `1` and `-1`?"
+    reject:
+      - |
+        function isEven(n) {
+          return n % 2 !== 1;
+        }
+
+  - kind: code
+    title: "4. Shortest first, gently"
+    body: |
+      Write `sortByLength(words)`: a **new** array of the words sorted from shortest to longest. Words of the same length must keep their **original order**. The input array must not change.
+    code: |
+      function sortByLength(words) {
+        // your code
+      }
+    tests:
+      - "sortByLength(['pear', 'fig', 'apple', 'kiwi', 'plum'])"
+      - "sortByLength([])"
+      - "sortByLength(['b', 'a'])"
+      - "(() => { const w = ['ccc', 'a']; sortByLength(w); return w; })()"
+    solution: |
+      function sortByLength(words) {
+        return [...words].sort((a, b) => a.length - b.length);
+      }
+    hint: "`sort` is stable, so equal lengths stay in order by themselves. Copy first."
+    reject:
+      - |
+        function sortByLength(words) {
+          return words.sort((a, b) => a.length - b.length);
+        }
+
+  - kind: code
+    title: "5. Independent buckets"
+    body: |
+      Write `makeBuckets(n)`: an array of `n` empty arrays that are **independent** of each other. Pushing into `buckets[0]` must not affect the others.
+    code: |
+      function makeBuckets(n) {
+        // your code
+      }
+    tests:
+      - "makeBuckets(3)"
+      - "(() => { const b = makeBuckets(3); b[0].push('x'); return b; })()"
+      - "makeBuckets(0)"
+    solution: |
+      function makeBuckets(n) {
+        return Array.from({ length: n }, () => []);
+      }
+    hint: "`fill` reuses one array. What builds a new one per slot?"
+    reject:
+      - |
+        function makeBuckets(n) {
+          return Array(n).fill([]);
+        }
+
+  - kind: code
+    title: "6. The most common word"
+    body: |
+      Write `mostCommon(words)`: the word that appears most often. If two words tie, return the one that **appeared first** in the list. Return `null` for an empty list.
+    code: |
+      function mostCommon(words) {
+        // your code
+      }
+    tests:
+      - "mostCommon(['a', 'b', 'a', 'c', 'b', 'a'])"
+      - "mostCommon(['x', 'y', 'y', 'x'])"
+      - "mostCommon([])"
+      - "mostCommon(['solo'])"
+      - "mostCommon(['constructor', 'constructor', 'a'])"
+    solution: |
+      function mostCommon(words) {
+        const counts = new Map();
+        for (const w of words) counts.set(w, (counts.get(w) || 0) + 1);
+        let best = null;
+        let bestCount = 0;
+        for (const [w, c] of counts) {
+          if (c > bestCount) {
+            best = w;
+            bestCount = c;
+          }
+        }
+        return best;
+      }
+    hint: A `Map` remembers insertion order, and only replacing the best on a *strictly larger* count keeps the earlier word on ties.
+    reject:
+      - |
+        function mostCommon(words) {
+          const counts = new Map();
+          for (const w of words) counts.set(w, (counts.get(w) || 0) + 1);
+          let best = null;
+          let bestCount = 0;
+          for (const [w, c] of counts) {
+            if (c >= bestCount) {
+              best = w;
+              bestCount = c;
+            }
+          }
+          return best;
+        }
+
+  - kind: code
+    title: "7. Pairs that add up"
+    body: |
+      Write `countPairs(nums, target)`: how many pairs of positions `i < j` have `nums[i] + nums[j] === target`. Brute force is fine.
+    code: |
+      function countPairs(nums, target) {
+        // your code
+      }
+    tests:
+      - "countPairs([1, 2, 3, 4], 5)"
+      - "countPairs([2, 2, 2], 4)"
+      - "countPairs([], 3)"
+      - "countPairs([1], 2)"
+      - "countPairs([-1, 1, 0, 0], 0)"
+    solution: |
+      function countPairs(nums, target) {
+        let count = 0;
+        for (let i = 0; i < nums.length; i++) {
+          for (let j = i + 1; j < nums.length; j++) {
+            if (nums[i] + nums[j] === target) count++;
+          }
+        }
+        return count;
+      }
+    hint: Two loops, with `j` starting at `i + 1`. Add 1 for every pair that hits the target.
+    reject:
+      - |
+        function countPairs(nums, target) {
+          let count = 0;
+          for (let i = 0; i < nums.length; i++)
+            for (let j = 0; j < nums.length; j++)
+              if (i !== j && nums[i] + nums[j] === target) count++;
+          return count;
+        }
+
+  - kind: code
+    title: "8. The safe average"
+    body: |
+      Write `average(nums)`: the mean of the numbers, or `null` for an empty array.
+
+      `average([1, 2])` is `1.5`.
+    code: |
+      function average(nums) {
+        // your code
+      }
+    tests:
+      - "average([1, 2])"
+      - "average([])"
+      - "average([10])"
+      - "average([-2, 2])"
+      - "average([1, 2, 3, 4])"
+    solution: |
+      function average(nums) {
+        if (nums.length === 0) return null;
+        let total = 0;
+        for (const n of nums) total += n;
+        return total / nums.length;
+      }
+    hint: Dividing by `0` gives `NaN`. Handle the empty case first.
+    reject:
+      - |
+        function average(nums) {
+          let total = 0;
+          for (const n of nums) total += n;
+          return total / nums.length;
+        }
+
+  - kind: why
+    body: |
+      None of these needed a clever trick. They needed the habits from this level: check the edge cases, know what each built-in costs, and pick the plain approach first.
+
+  - kind: recap
+    body: |
+      - Edge cases (empty, one item, ties, negatives) decide most wrong answers.
+      - `%` with negatives, `sort` without a comparator, `fill([])`, and plain-object keys are the four classic JavaScript traps.
+      - Copy before you change data you were handed, unless the problem says to change it in place.

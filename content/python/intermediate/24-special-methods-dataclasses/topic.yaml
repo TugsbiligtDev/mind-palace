@@ -1,0 +1,4 @@
+title: "Special Methods & Data Classes"
+module: 24
+summary: "Make your objects behave like Python's own: __str__, __repr__, ==, <, len() and for-loops via dunder methods, plus @property, @dataclass and enums to write far less boilerplate."
+minutes: 80

@@ -1,0 +1,54 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which of these is an **algorithm** rather than a data structure?
+    options:
+      - A stack of plates
+      - A phone book sorted by name
+      - "Look at every number and remember the biggest"
+      - An array
+    answer: 2
+    explanation: An algorithm is a *method* (a series of steps). The others are ways of storing data.
+  - type: mcq
+    prompt: You have to solve a problem and you cannot see the clever solution. What is the best first move?
+    options:
+      - Wait until the clever idea comes
+      - Write the simple brute-force solution and make it correct
+      - Copy a solution you do not understand
+      - Start with the fastest data structure you know
+    answer: 1
+    explanation: A correct brute-force solution gives you a baseline to test against, and it often shows where the wasted work is.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      function largest(nums) {
+        let best = nums[0];
+        for (const n of nums) {
+          if (n > best) best = n;
+        }
+        return best;
+      }
+      console.log(largest([-5, -2, -9]));
+    options: ["-2", "0", "-9", "null"]
+    answer: 0
+    explanation: It starts from the first element, so an all-negative array works, and `-2` is the largest of the three.
+  - type: mcq
+    prompt: A problem says `0 <= nums.length <= 10^5`. Which edge case should you test?
+    options:
+      - Only arrays with 100 000 items
+      - The empty array `[]`
+      - Only negative numbers
+      - Arrays with strings in them
+    answer: 1
+    explanation: The lower limit of 0 means the empty array is allowed, so your code must handle it.
+  - type: fill
+    prompt: To hand an answer back from a function so the caller can use it, you write `____ total;`.
+    code: |
+      function sumTo(n) {
+        let total = 0;
+        for (let i = 1; i <= n; i++) total += i;
+        ____ total;
+      }
+      console.log(sumTo(3));
+    answer: return
+    explanation: "`return` sends the value back to the caller. `console.log` would only print it."

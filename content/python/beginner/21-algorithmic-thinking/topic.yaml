@@ -1,0 +1,4 @@
+title: "Algorithmic Thinking"
+module: 21
+summary: "Why some code is fast and some is slow: what an algorithm is, Big-O in everyday terms, linear vs. binary search, writing a sort once, why sets beat lists for lookups, and recursion."
+minutes: 85

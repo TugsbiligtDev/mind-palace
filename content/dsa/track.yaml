@@ -1,0 +1,8 @@
+id: dsa
+title: Data Structures & Algorithms
+tagline: Think like a problem solver, in JavaScript.
+color: "#7c3aed"
+engine: javascript
+engine_version: "ES2024"
+last_reviewed: "2026-09-30"
+levels: [beginner, intermediate, advanced]

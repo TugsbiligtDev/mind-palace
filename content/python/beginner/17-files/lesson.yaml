@@ -1,0 +1,309 @@
+steps:
+  - kind: explain
+    title: Programs forget, files remember
+    body: |
+      Variables live in RAM and vanish when the program ends (Module 1). To keep data, write it to a **file** on storage and read it back next time.
+
+      The tool is `open()`, and the safe way to use it is the **`with`** statement, which closes the file for you, even if an error happens:
+
+      ```python
+      with open("notes.txt", "w", encoding="utf-8") as f:
+          f.write("first line\n")
+
+      with open("notes.txt", "r", encoding="utf-8") as f:
+          text = f.read()
+      ```
+
+      The second argument is the **mode**:
+
+      | Mode | Meaning |
+      |---|---|
+      | `"r"` | read (the default). Error if the file does not exist |
+      | `"w"` | write. **Erases** an existing file first! |
+      | `"a"` | append. Adds to the end |
+
+      Always add **`encoding="utf-8"`**. It makes accents, emoji and non-English names work the same on every computer.
+
+      In this course's editor, files live in a temporary folder that is emptied after each run. That is fine for practice; on your Mac they are real.
+
+  - kind: code
+    title: Write then read
+    body: |
+      Run this. Notice `f.write` does **not** add a new line for you, so `\n` does. Then try changing `"w"` to `"a"` and running twice.
+    code: |
+      with open("notes.txt", "w", encoding="utf-8") as f:
+          f.write("first line\n")
+          f.write("second line\n")
+
+      with open("notes.txt", "r", encoding="utf-8") as f:
+          print(f.read())
+
+      with open("notes.txt", encoding="utf-8") as f:
+          for line in f:
+              print(repr(line.strip()))
+
+  - kind: code
+    title: Save and load a list
+    body: |
+      Write two functions.
+
+      - `save_lines(path, lines)`: write each string in `lines` to the file, one per line.
+      - `load_lines(path)`: read the file back and return the list of lines **without** the trailing newline characters.
+
+      `f.read().splitlines()` turns text into a list of lines without the `\n`.
+    code: |
+      def save_lines(path, lines):
+          pass
+
+
+      def load_lines(path):
+          return []
+    tests:
+      - "(save_lines('a.txt', ['x', 'y']), load_lines('a.txt'))[1]"
+      - "(save_lines('b.txt', []), load_lines('b.txt'))[1]"
+      - "(save_lines('c.txt', ['café', 'naïve']), load_lines('c.txt'))[1]"
+    solution: |
+      def save_lines(path, lines):
+          with open(path, "w", encoding="utf-8") as f:
+              for line in lines:
+                  f.write(line + "\n")
+
+
+      def load_lines(path):
+          with open(path, "r", encoding="utf-8") as f:
+              return f.read().splitlines()
+    hint: "Open with `\"w\"` and write `line + \"\\n\"` for each one. To read, `f.read().splitlines()`."
+    reject:
+      - |
+        def save_lines(path, lines):
+            with open(path, "w") as f:
+                f.write("")
+
+
+        def load_lines(path):
+            return []
+
+  - kind: code
+    title: Keep a log
+    body: |
+      Finish `log_event(path, message)`: **append** the message as a new line at the end of the file, without erasing what is already there. Calling it twice with `"a"` then `"b"` leaves two lines.
+    code: |
+      def log_event(path, message):
+          with open(path, "w", encoding="utf-8") as f:
+              f.write(message + "\n")
+    tests:
+      - "(log_event('log.txt', 'a'), log_event('log.txt', 'b'), open('log.txt').read())[2]"
+      - "(log_event('l2.txt', 'x'), open('l2.txt').read())[1]"
+    solution: |
+      def log_event(path, message):
+          with open(path, "a", encoding="utf-8") as f:
+              f.write(message + "\n")
+    hint: "Mode `\"a\"` adds to the end. Mode `\"w\"` erases first."
+    broken_starter: true
+
+  - kind: explain
+    title: pathlib and where you run the script
+    body: |
+      `pathlib.Path` is the modern, friendlier way to handle paths (Module 1 gave you a first taste):
+
+      ```python
+      from pathlib import Path
+
+      p = Path("data") / "notes.txt"
+      p.exists()                       # True or False
+      p.write_text("hello", encoding="utf-8")
+      p.read_text(encoding="utf-8")
+      p.parent.mkdir(exist_ok=True)    # make the folder first
+      ```
+
+      `Path` is preferred over the older `os.path` because `/` joins pieces and the methods are on the object.
+
+      **The relative-path trap.** `open("data.txt")` looks in the folder where you **ran** the program (Module 2), *not* the folder the script is saved in. Running from a different folder gives `FileNotFoundError` even though the file exists. To be safe, build the path from the script's own location: `Path(__file__).parent / "data.txt"`.
+
+  - kind: code
+    title: Missing file? Use a default
+    body: |
+      Finish `read_or_default(path, default)`: return the text of the file at `path`, but if the file does not exist return `default`. Use `pathlib.Path`, `try`, and `except FileNotFoundError`.
+    code: |
+      from pathlib import Path
+
+
+      def read_or_default(path, default):
+          return Path(path).read_text(encoding="utf-8")
+    tests:
+      - "read_or_default('nothing-here.txt', 'empty')"
+      - "(Path('x.txt').write_text('hi', encoding='utf-8'), read_or_default('x.txt', 'empty'))[1]"
+    solution: |
+      from pathlib import Path
+
+
+      def read_or_default(path, default):
+          try:
+              return Path(path).read_text(encoding="utf-8")
+          except FileNotFoundError:
+              return default
+    hint: "Wrap the read in `try` and return `default` in `except FileNotFoundError`."
+    broken_starter: true
+
+  - kind: explain
+    title: "CSV: spreadsheets as text"
+    body: |
+      A **CSV** file ("comma-separated values") is a spreadsheet saved as plain text:
+
+      ```
+      name,price
+      Dune,12.5
+      Emma,8
+      ```
+
+      Python's `csv` module reads and writes it, handling quotes and commas inside values for you:
+
+      ```python
+      import csv
+
+      with open("books.csv", newline="", encoding="utf-8") as f:
+          for row in csv.DictReader(f):      # each row is a dict
+              print(row["name"], row["price"])
+      ```
+
+      Remember: everything read from a file is **text**. `row["price"]` is `"12.5"`, so convert with `float(...)`. Use `newline=""` when opening CSV files.
+
+  - kind: code
+    title: Total a CSV column
+    body: |
+      Finish `sum_column(path, column)`: read the CSV file with `csv.DictReader` and return the total of the named column as a **float**. The checker creates the file for you.
+    code: |
+      import csv
+
+
+      def sum_column(path, column):
+          return 0.0
+    tests:
+      - "(open('p.csv', 'w').write('name,price\\nDune,12.5\\nEmma,8\\n'), sum_column('p.csv', 'price'))[1]"
+      - "(open('q.csv', 'w').write('a,b\\n1,2\\n3,4\\n'), sum_column('q.csv', 'b'))[1]"
+      - "(open('r.csv', 'w').write('x\\n'), sum_column('r.csv', 'x'))[1]"
+    solution: |
+      import csv
+
+
+      def sum_column(path, column):
+          total = 0.0
+          with open(path, newline="", encoding="utf-8") as f:
+              for row in csv.DictReader(f):
+                  total += float(row[column])
+          return total
+    hint: "Loop over `csv.DictReader(f)`, and add `float(row[column])` each time."
+    reject:
+      - |
+        import csv
+
+
+        def sum_column(path, column):
+            return 0.0
+
+  - kind: explain
+    title: "JSON: saving structured data"
+    body: |
+      **JSON** stores dictionaries and lists as text. It is the standard way to save settings, and to exchange data with the web. Python dictionaries and JSON look almost identical:
+
+      ```python
+      import json
+
+      data = {"name": "Ada", "clues": [1, 2, 3]}
+
+      with open("case.json", "w", encoding="utf-8") as f:
+          json.dump(data, f, indent=2)          # write
+
+      with open("case.json", encoding="utf-8") as f:
+          loaded = json.load(f)                 # read
+      ```
+
+      JSON has fewer types: text, numbers, `true/false`, `null` (Python's `None`), lists, and objects (dicts with **text keys**). Tuples come back as lists. And reading a JSON file that is empty or damaged raises `json.JSONDecodeError`, a kind of `ValueError`.
+
+  - kind: code
+    title: A JSON store
+    body: |
+      Write two functions:
+
+      - `save_json(path, data)`: write `data` to the file as JSON.
+      - `load_json(path, default)`: return the data from the file, or `default` if the file is missing **or** contains invalid JSON.
+    code: |
+      import json
+
+
+      def save_json(path, data):
+          pass
+
+
+      def load_json(path, default):
+          return default
+    tests:
+      - "(save_json('a.json', {'name': 'Ada', 'clues': [1, 2]}), load_json('a.json', {}))[1]"
+      - "load_json('missing.json', [])"
+      - "(open('bad.json', 'w').write('{oops'), load_json('bad.json', 'fallback'))[1]"
+      - "(save_json('t.json', [1, 'two', None, True]), load_json('t.json', 0))[1]"
+    solution: |
+      import json
+
+
+      def save_json(path, data):
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2)
+
+
+      def load_json(path, default):
+          try:
+              with open(path, encoding="utf-8") as f:
+                  return json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              return default
+    hint: "Catch `FileNotFoundError` and `json.JSONDecodeError` in one `except (...)`."
+    reject:
+      - |
+        import json
+
+
+        def save_json(path, data):
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+
+
+        def load_json(path, default):
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+
+  - kind: mac
+    title: Files on your Mac
+    body: |
+      Now see that a real file survives after the program ends. This writes a JSON file, reads it back, then runs the reading script *from a different folder* to show the relative-path trap.
+
+      **Checkpoint:** paste the output. It should contain `"Ada"` and later a `FileNotFoundError`.
+    commands: |
+      mkdir -p ~/Desktop/python-practice && cd ~/Desktop/python-practice
+      cat > save_it.py <<'PY'
+      import json
+      with open("case.json", "w", encoding="utf-8") as f:
+          json.dump({"name": "Ada"}, f)
+      PY
+      cat > read_it.py <<'PY'
+      print(open("case.json").read())
+      PY
+      uv run save_it.py
+      uv run read_it.py
+      cd ..
+      uv run python-practice/read_it.py
+    expect_output:
+      - "Ada"
+      - "FileNotFoundError"
+
+  - kind: why
+    body: |
+      A program that cannot remember is a toy. Files, CSV and JSON are how programs keep and share data. And handling the *missing file* and *damaged file* cases gracefully is the difference between a script that works on your desk and one you can hand to someone else.
+
+  - kind: recap
+    body: |
+      - Use `with open(path, mode, encoding="utf-8") as f:`. Modes: `"r"` read, `"w"` write (erases!), `"a"` append.
+      - `pathlib.Path` (`/` to join, `.read_text()`, `.write_text()`, `.exists()`) is preferred over `os.path`.
+      - Relative paths depend on **where you run** the script; use `Path(__file__).parent` to be safe.
+      - `csv` reads and writes spreadsheets (values are text). `json` saves dicts and lists.
+      - Handle `FileNotFoundError` and bad JSON without crashing.

@@ -1,0 +1,4 @@
+title: "Linting, Formatting & Style"
+module: 35
+summary: "Make code consistent and catch mistakes automatically: PEP 8, Ruff as linter and formatter, configuring it in pyproject.toml, pre-commit hooks, docstring styles, and naming for readability."
+minutes: 85

@@ -1,0 +1,200 @@
+steps:
+  - kind: explain
+    title: The contact book
+    body: |
+      Moth needs a contact book for the agency, kept in memory. It is a **list of dictionaries**, one per person:
+
+      ```python
+      book = [
+          {"name": "Ada Lovelace", "phone": "555-0101"},
+          {"name": "Odval Bold", "phone": "555-0102"},
+      ]
+      ```
+
+      This review (the **Part 3 checkpoint**) builds the book one function at a time: add, find, update, delete, list sorted by name, and a lookup by phone. Each case starts almost empty. Think about which container fits each job.
+
+      A note on style: functions that *change* the book (add, update, delete) change the list you pass in. Functions that only *read* it must leave it untouched.
+
+  - kind: code
+    title: "1. Add a contact"
+    body: |
+      Write `add_contact(book, name, phone)`. Append a new dictionary with keys `"name"` and `"phone"` to `book`, and return the book.
+    code: |
+      def add_contact(book, name, phone):
+          # your code
+          pass
+    tests:
+      - "add_contact([], 'Ada', '555-1')"
+      - "add_contact([{'name': 'Ada', 'phone': '1'}], 'Bold', '2')"
+    solution: |
+      def add_contact(book, name, phone):
+          book.append({"name": name, "phone": phone})
+          return book
+    hint: "`book.append({...})`, then `return book`."
+    reject:
+      - |
+        def add_contact(book, name, phone):
+            return book
+
+  - kind: code
+    title: "2. Find a contact"
+    body: |
+      Write `find_contact(book, name)`: return the **dictionary** of the first contact whose name matches, ignoring capital letters, or `None` if nobody matches. `find_contact(book, "ada lovelace")` finds `Ada Lovelace`.
+    code: |
+      def find_contact(book, name):
+          # your code
+          pass
+    tests:
+      - "find_contact([{'name': 'Ada Lovelace', 'phone': '1'}], 'ada lovelace')"
+      - "find_contact([{'name': 'Ada', 'phone': '1'}], 'Bold')"
+      - "find_contact([], 'Ada')"
+      - "find_contact([{'name': 'A', 'phone': '1'}, {'name': 'a', 'phone': '2'}], 'A')"
+    solution: |
+      def find_contact(book, name):
+          for contact in book:
+              if contact["name"].lower() == name.lower():
+                  return contact
+          return None
+    hint: "Loop over the book, compare `.lower()` of both names, and return the contact as soon as it matches."
+    reject:
+      - |
+        def find_contact(book, name):
+            for contact in book:
+                if contact["name"] == name:
+                    return contact
+            return None
+
+  - kind: code
+    title: "3. Change a phone number"
+    body: |
+      Write `update_phone(book, name, phone)`. Find the contact (ignoring capitals) and change its `"phone"`. Return `True` if you changed one, or `False` if the name was not found.
+    code: |
+      def update_phone(book, name, phone):
+          # your code
+          pass
+    tests:
+      - "(lambda b: (update_phone(b, 'ada', '9'), b))([{'name': 'Ada', 'phone': '1'}])"
+      - "update_phone([{'name': 'Ada', 'phone': '1'}], 'Bold', '9')"
+      - "update_phone([], 'Ada', '9')"
+    solution: |
+      def update_phone(book, name, phone):
+          for contact in book:
+              if contact["name"].lower() == name.lower():
+                  contact["phone"] = phone
+                  return True
+          return False
+    hint: "Because a contact is a dictionary, `contact[\"phone\"] = phone` changes it inside the list."
+    reject:
+      - |
+        def update_phone(book, name, phone):
+            return False
+
+  - kind: code
+    title: "4. Delete a contact"
+    body: |
+      Write `delete_contact(book, name)`. Remove the first contact with that name (ignoring capitals) from the list. Return `True` if one was removed, otherwise `False`.
+
+      Remember Module 9: do not remove items while looping normally. Find the **position** with `enumerate`, then `pop` it and return straight away.
+    code: |
+      def delete_contact(book, name):
+          # your code
+          pass
+    tests:
+      - "(lambda b: (delete_contact(b, 'ADA'), b))([{'name': 'Ada', 'phone': '1'}, {'name': 'Bold', 'phone': '2'}])"
+      - "delete_contact([{'name': 'Ada', 'phone': '1'}], 'Reed')"
+      - "(lambda b: (delete_contact(b, 'a'), b))([{'name': 'a', 'phone': '1'}, {'name': 'a', 'phone': '2'}])"
+    solution: |
+      def delete_contact(book, name):
+          for i, contact in enumerate(book):
+              if contact["name"].lower() == name.lower():
+                  book.pop(i)
+                  return True
+          return False
+    hint: "`for i, contact in enumerate(book):` then `book.pop(i)` and `return True` immediately."
+    reject:
+      - |
+        def delete_contact(book, name):
+            book.clear()
+            return True
+
+  - kind: code
+    title: "5. Sorted list of names"
+    body: |
+      Write `sorted_names(book)`: a list of all the names, sorted alphabetically **ignoring capitals**. Do not change `book`.
+
+      `sorted(names, key=str.lower)` sorts text ignoring case.
+    code: |
+      def sorted_names(book):
+          # your code
+          pass
+    tests:
+      - "sorted_names([{'name': 'bold', 'phone': '2'}, {'name': 'Ada', 'phone': '1'}, {'name': 'Cole', 'phone': '3'}])"
+      - "sorted_names([])"
+      - "(lambda b: (sorted_names(b), b))([{'name': 'z', 'phone': '1'}, {'name': 'a', 'phone': '2'}])"
+    solution: |
+      def sorted_names(book):
+          names = [contact["name"] for contact in book]
+          return sorted(names, key=str.lower)
+    hint: "First collect the names with a list comprehension, then `sorted(names, key=str.lower)`."
+    reject:
+      - |
+        def sorted_names(book):
+            names = [contact["name"] for contact in book]
+            return sorted(names)
+
+  - kind: code
+    title: "6. A phone index"
+    body: |
+      Looking up by phone in a list means checking every contact. Build an **index**: write `phone_index(book)` returning a dictionary from each phone number to the contact's **name**. `phone_index([{"name": "Ada", "phone": "1"}])` is `{"1": "Ada"}`.
+    code: |
+      def phone_index(book):
+          # your code
+          pass
+    tests:
+      - "phone_index([{'name': 'Ada', 'phone': '1'}, {'name': 'Bold', 'phone': '2'}])"
+      - "phone_index([])"
+    solution: |
+      def phone_index(book):
+          return {contact["phone"]: contact["name"] for contact in book}
+    hint: "A dictionary comprehension: `{contact[\"phone\"]: contact[\"name\"] for contact in book}`."
+    reject:
+      - |
+        def phone_index(book):
+            return {contact["name"]: contact["phone"] for contact in book}
+
+  - kind: code
+    title: "7. Remove duplicate phones"
+    body: |
+      The book has duplicates. Write `unique_by_phone(book)`: return a **new** list that keeps only the **first** contact for each phone number, in the original order. Use a `set` of phones you have already seen.
+    code: |
+      def unique_by_phone(book):
+          # your code
+          pass
+    tests:
+      - "unique_by_phone([{'name': 'Ada', 'phone': '1'}, {'name': 'Ada2', 'phone': '1'}, {'name': 'Bold', 'phone': '2'}])"
+      - "unique_by_phone([])"
+      - "(lambda b: (unique_by_phone(b), len(b)))([{'name': 'a', 'phone': '1'}, {'name': 'b', 'phone': '1'}])"
+    solution: |
+      def unique_by_phone(book):
+          seen = set()
+          result = []
+          for contact in book:
+              if contact["phone"] not in seen:
+                  seen.add(contact["phone"])
+                  result.append(contact)
+          return result
+    hint: "Check `contact[\"phone\"] not in seen` before appending, and add the phone to `seen`."
+    reject:
+      - |
+        def unique_by_phone(book):
+            return list(book)
+
+  - kind: why
+    body: |
+      A list of dictionaries is the shape of almost all real data, from spreadsheets to web APIs. You used loops to search, methods to change, a comprehension to index and a set to dedupe. In Part 4 you will turn this into a proper program: functions, files and error handling.
+
+  - kind: recap
+    body: |
+      - The **Part 3 checkpoint**: a contact book as a list of dicts, with add, find, update, delete, sort and a phone index.
+      - Changing a dict inside a list changes it everywhere it is referenced.
+      - `enumerate` + `pop` deletes safely; a `set` of seen values removes duplicates; a dict comprehension builds an index.

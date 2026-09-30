@@ -1,0 +1,4 @@
+title: Sliding Window
+module: 14
+summary: "A window that slides over an array or string: fixed size, variable size with a Map of counts, the expand-and-shrink template, and when to record the answer."
+minutes: 65

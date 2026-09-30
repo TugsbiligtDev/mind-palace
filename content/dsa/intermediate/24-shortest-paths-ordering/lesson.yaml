@@ -1,0 +1,483 @@
+steps:
+  - kind: explain
+    title: BFS finds shortest paths
+    body: |
+      In an **unweighted** graph (every edge counts as 1 step), **BFS gives the shortest path**. It explores in rings: all vertices 1 step away, then all 2 steps away, and so on. The first time it reaches a vertex, it took the fewest possible steps.
+
+      To measure the distance, keep it with each queue entry (or process level by level and count the levels).
+
+  - kind: code
+    title: Shortest path between two vertices
+    body: |
+      Write `shortestPath(graph, source, target)`: the **number of edges** on the shortest path from `source` to `target` in an undirected graph given as an adjacency list, or `-1` if there is no path.
+    code: |
+      function shortestPath(graph, source, target) {
+        return -1;
+      }
+    tests:
+      - "shortestPath([[1, 2], [0, 3], [0, 3], [1, 2]], 0, 3)"
+      - "shortestPath([[1], [0], [3], [2]], 0, 3)"
+      - "shortestPath([[]], 0, 0)"
+      - "shortestPath([[1], [0, 2], [1, 3], [2, 4], [3]], 0, 4)"
+      - "shortestPath([[1, 2], [0, 2], [0, 1]], 0, 2)"
+    solution: |
+      function shortestPath(graph, source, target) {
+        if (source === target) return 0;
+        const dist = new Map([[source, 0]]);
+        const queue = [source];
+        for (let head = 0; head < queue.length; head++) {
+          const v = queue[head];
+          for (const next of graph[v]) {
+            if (!dist.has(next)) {
+              dist.set(next, dist.get(v) + 1);
+              if (next === target) return dist.get(next);
+              queue.push(next);
+            }
+          }
+        }
+        return -1;
+      }
+    hint: Store each vertex's distance when you first discover it (one more than the vertex it came from). Return it as soon as you reach `target`.
+    reject:
+      - |
+        function shortestPath(graph, source, target) {
+          return source === target ? 0 : -1;
+        }
+
+  - kind: explain
+    title: Multi-source BFS
+    body: |
+      What if many places start at once? *A fire starts in several rooms at the same time. When does it reach everything?* Put **all the sources into the queue at the start** with distance 0, then run BFS as usual. The rings spread out from every source together, so each cell gets the distance to its **nearest** source.
+
+      This turns "for each cell, find the nearest X" from O(n²) into a single O(V + E) pass.
+
+  - kind: code
+    title: Rotting oranges
+    body: |
+      A grid holds `0` (empty), `1` (a fresh orange) and `2` (a rotten orange). Each minute, every fresh orange next to a rotten one (up, down, left, right) rots. Write `orangesRotting(grid)`: the minutes until **no fresh orange remains**, or `-1` if some can never rot. Do not change the input grid.
+    code: |
+      function orangesRotting(grid) {
+        return -1;
+      }
+    tests:
+      - "orangesRotting([[2, 1, 1], [1, 1, 0], [0, 1, 1]])"
+      - "orangesRotting([[2, 1, 1], [0, 1, 1], [1, 0, 1]])"
+      - "orangesRotting([[0, 2]])"
+      - "orangesRotting([[0]])"
+      - "orangesRotting([[1]])"
+      - "orangesRotting([[2, 2], [1, 1]])"
+    solution: |
+      function orangesRotting(grid) {
+        const rows = grid.length;
+        const cols = rows === 0 ? 0 : grid[0].length;
+        const state = grid.map((row) => [...row]);
+        let queue = [];
+        let fresh = 0;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (state[r][c] === 2) queue.push([r, c]);
+            else if (state[r][c] === 1) fresh++;
+          }
+        }
+        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        let minutes = 0;
+        while (queue.length > 0 && fresh > 0) {
+          const next = [];
+          for (const [r, c] of queue) {
+            for (const [dr, dc] of dirs) {
+              const nr = r + dr;
+              const nc = c + dc;
+              if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && state[nr][nc] === 1) {
+                state[nr][nc] = 2;
+                fresh--;
+                next.push([nr, nc]);
+              }
+            }
+          }
+          queue = next;
+          minutes++;
+        }
+        return fresh === 0 ? minutes : -1;
+      }
+    hint: Put every rotten orange in the queue first. Each round of the loop is one minute. Count fresh oranges and compare at the end.
+    reject:
+      - |
+        function orangesRotting(grid) {
+          return 0;
+        }
+
+  - kind: code
+    title: Shortest path in a maze with diagonals
+    body: |
+      A square grid holds `0` (open) and `1` (blocked). You start at the top-left and want the bottom-right, moving in **8 directions** (diagonals too) through open cells. Write `shortestPathBinaryMatrix(grid)`: the number of **cells** on the shortest path (start and end included), or `-1` if there is none.
+    code: |
+      function shortestPathBinaryMatrix(grid) {
+        return -1;
+      }
+    tests:
+      - "shortestPathBinaryMatrix([[0, 1], [1, 0]])"
+      - "shortestPathBinaryMatrix([[0, 0, 0], [1, 1, 0], [1, 1, 0]])"
+      - "shortestPathBinaryMatrix([[1, 0, 0], [1, 1, 0], [1, 1, 0]])"
+      - "shortestPathBinaryMatrix([[0]])"
+      - "shortestPathBinaryMatrix([[0, 0], [0, 0]])"
+      - "shortestPathBinaryMatrix([[0, 0, 0], [0, 1, 0], [0, 0, 0]])"
+    solution: |
+      function shortestPathBinaryMatrix(grid) {
+        const n = grid.length;
+        if (grid[0][0] === 1 || grid[n - 1][n - 1] === 1) return -1;
+        const dirs = [];
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr !== 0 || dc !== 0) dirs.push([dr, dc]);
+          }
+        }
+        const seen = grid.map((row) => row.map(() => false));
+        let queue = [[0, 0]];
+        seen[0][0] = true;
+        let length = 1;
+        while (queue.length > 0) {
+          const next = [];
+          for (const [r, c] of queue) {
+            if (r === n - 1 && c === n - 1) return length;
+            for (const [dr, dc] of dirs) {
+              const nr = r + dr;
+              const nc = c + dc;
+              if (nr >= 0 && nr < n && nc >= 0 && nc < n && grid[nr][nc] === 0 && !seen[nr][nc]) {
+                seen[nr][nc] = true;
+                next.push([nr, nc]);
+              }
+            }
+          }
+          queue = next;
+          length++;
+        }
+        return -1;
+      }
+    hint: BFS by levels. Each level is one more cell on the path. Return the level number when you reach the bottom-right cell.
+    reject:
+      - |
+        function shortestPathBinaryMatrix(grid) {
+          return grid.length;
+        }
+
+  - kind: explain
+    title: Topological sort, ordering with dependencies
+    body: |
+      Courses have **prerequisites**: to take C you must first take A and B. Model it as a **directed graph** with an edge `A → C`. A **topological order** lists every vertex so that **every edge points forward** (each course after its prerequisites). It exists only if the graph has **no cycle**.
+
+      **Kahn's algorithm** builds the order using **in-degrees** (how many arrows point at each vertex):
+
+      1. Put every vertex with in-degree **0** (no prerequisites) into a queue.
+      2. Take one out and add it to the order. For each vertex it points to, **reduce its in-degree by 1**. If that reaches 0, add it to the queue.
+      3. If the order ends up shorter than the number of vertices, some vertices were stuck in a **cycle**.
+
+  - kind: code
+    title: "Find the bug: cycles slip through"
+    body: |
+      `canFinish(numCourses, prerequisites)` says whether all courses can be completed. Each prerequisite is `[course, pre]`, meaning you need `pre` before `course`. This implementation of Kahn's algorithm never checks whether it managed to process **every** course, so it says `true` even when there is a cycle. Fix it.
+    code: |
+      function canFinish(numCourses, prerequisites) {
+        const graph = Array.from({ length: numCourses }, () => []);
+        const indegree = Array(numCourses).fill(0);
+        for (const [course, pre] of prerequisites) {
+          graph[pre].push(course);
+          indegree[course]++;
+        }
+        const queue = [];
+        for (let i = 0; i < numCourses; i++) if (indegree[i] === 0) queue.push(i);
+        for (let head = 0; head < queue.length; head++) {
+          for (const next of graph[queue[head]]) {
+            indegree[next]--;
+            if (indegree[next] === 0) queue.push(next);
+          }
+        }
+        return true;
+      }
+    tests:
+      - "canFinish(2, [[1, 0]])"
+      - "canFinish(2, [[1, 0], [0, 1]])"
+      - "canFinish(4, [[1, 0], [2, 0], [3, 1], [3, 2]])"
+      - "canFinish(3, [[0, 1], [1, 2], [2, 0]])"
+      - "canFinish(1, [])"
+      - "canFinish(3, [[1, 0], [2, 1]])"
+    solution: |
+      function canFinish(numCourses, prerequisites) {
+        const graph = Array.from({ length: numCourses }, () => []);
+        const indegree = Array(numCourses).fill(0);
+        for (const [course, pre] of prerequisites) {
+          graph[pre].push(course);
+          indegree[course]++;
+        }
+        const queue = [];
+        for (let i = 0; i < numCourses; i++) if (indegree[i] === 0) queue.push(i);
+        for (let head = 0; head < queue.length; head++) {
+          for (const next of graph[queue[head]]) {
+            indegree[next]--;
+            if (indegree[next] === 0) queue.push(next);
+          }
+        }
+        return queue.length === numCourses;
+      }
+    hint: Every course that gets processed ends up in `queue`. If the queue is shorter than `numCourses`, the rest were stuck in a cycle.
+    broken_starter: true
+    reject:
+      - |
+        function canFinish(numCourses, prerequisites) {
+          return true;
+        }
+
+  - kind: code
+    title: Course schedule order
+    body: |
+      Write `findOrder(numCourses, prerequisites)`: a valid order to take all the courses (an array of course numbers), or `[]` if it is impossible. Any valid order is accepted. Prerequisites are `[course, pre]`.
+    code: |
+      function findOrder(numCourses, prerequisites) {
+        return [];
+      }
+    tests:
+      - "(() => { const pre = [[1, 0], [2, 0], [3, 1], [3, 2]]; const order = findOrder(4, pre); const pos = new Map(order.map((c, i) => [c, i])); return order.length === 4 && pre.every(([a, b]) => pos.get(b) < pos.get(a)); })()"
+      - "findOrder(2, [[0, 1], [1, 0]])"
+      - "findOrder(1, [])"
+      - "(() => { const order = findOrder(3, []); return [...order].sort((a, b) => a - b); })()"
+      - "(() => { const pre = [[1, 0]]; const order = findOrder(2, pre); return order; })()"
+    solution: |
+      function findOrder(numCourses, prerequisites) {
+        const graph = Array.from({ length: numCourses }, () => []);
+        const indegree = Array(numCourses).fill(0);
+        for (const [course, pre] of prerequisites) {
+          graph[pre].push(course);
+          indegree[course]++;
+        }
+        const order = [];
+        for (let i = 0; i < numCourses; i++) if (indegree[i] === 0) order.push(i);
+        for (let head = 0; head < order.length; head++) {
+          for (const next of graph[order[head]]) {
+            indegree[next]--;
+            if (indegree[next] === 0) order.push(next);
+          }
+        }
+        return order.length === numCourses ? order : [];
+      }
+    hint: Kahn's algorithm again. The `order` array itself can be the queue. If it is shorter than `numCourses` at the end, return `[]`.
+    reject:
+      - |
+        function findOrder(numCourses, prerequisites) {
+          return [];
+        }
+
+  - kind: explain
+    title: Dijkstra, shortest paths with weights
+    body: |
+      With **weighted** edges (positive weights), BFS is not enough: a path with fewer edges may cost more. **Dijkstra's algorithm** handles it with a **priority queue** (your heap from Module 20):
+
+      1. `dist[source] = 0`, everything else is `Infinity`. Push `[0, source]` onto a min-heap of `[distance, vertex]`.
+      2. **Pop** the entry with the smallest distance. If it is **stale** (bigger than the best known distance for that vertex), skip it.
+      3. For each neighbour, compute `newDist = dist[v] + weight`. If it beats `dist[neighbour]`, update it and push it.
+      4. When the heap is empty, `dist` holds the shortest distance to every vertex.
+
+      Time: **O((V + E) log V)**. It requires **no negative weights**.
+
+  - kind: code
+    title: Network delay time
+    body: |
+      A signal starts at node `k` and travels along directed edges. `times` holds `[from, to, time]` triples for nodes numbered `1 … n`. Write `networkDelay(times, n, k)`: the time until **every** node has received the signal, or `-1` if some node never does.
+
+      A working `MinHeap` (with a comparator) is provided. Use Dijkstra.
+    code: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function networkDelay(times, n, k) {
+        return -1;
+      }
+    tests:
+      - "networkDelay([[2, 1, 1], [2, 3, 1], [3, 4, 1]], 4, 2)"
+      - "networkDelay([[1, 2, 1]], 2, 1)"
+      - "networkDelay([[1, 2, 1]], 2, 2)"
+      - "networkDelay([[1, 2, 5], [1, 3, 1], [3, 2, 1]], 3, 1)"
+      - "networkDelay([], 1, 1)"
+      - "networkDelay([[1, 2, 1], [2, 3, 2], [1, 3, 4]], 3, 1)"
+    solution: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function networkDelay(times, n, k) {
+        const graph = Array.from({ length: n + 1 }, () => []);
+        for (const [u, v, w] of times) graph[u].push([v, w]);
+        const dist = Array(n + 1).fill(Infinity);
+        dist[k] = 0;
+        const heap = new MinHeap((a, b) => a[0] - b[0]);
+        heap.push([0, k]);
+        while (heap.size() > 0) {
+          const [d, v] = heap.pop();
+          if (d > dist[v]) continue;
+          for (const [next, w] of graph[v]) {
+            if (d + w < dist[next]) {
+              dist[next] = d + w;
+              heap.push([dist[next], next]);
+            }
+          }
+        }
+        let answer = 0;
+        for (let v = 1; v <= n; v++) answer = Math.max(answer, dist[v]);
+        return answer === Infinity ? -1 : answer;
+      }
+    hint: The answer is the largest shortest-distance. If any node still has `Infinity`, it was never reached.
+    reject:
+      - |
+        class MinHeap {
+          constructor(compare = (a, b) => a - b) {
+            this.data = [];
+            this.compare = compare;
+          }
+          size() {
+            return this.data.length;
+          }
+          peek() {
+            return this.data[0];
+          }
+          push(x) {
+            const d = this.data;
+            d.push(x);
+            let i = d.length - 1;
+            while (i > 0) {
+              const p = (i - 1) >> 1;
+              if (this.compare(d[i], d[p]) >= 0) break;
+              [d[i], d[p]] = [d[p], d[i]];
+              i = p;
+            }
+          }
+          pop() {
+            const d = this.data;
+            if (d.length === 0) return undefined;
+            const top = d[0];
+            const last = d.pop();
+            if (d.length > 0) {
+              d[0] = last;
+              let i = 0;
+              for (;;) {
+                const l = 2 * i + 1;
+                const r = l + 1;
+                let m = i;
+                if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+                if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+                if (m === i) break;
+                [d[i], d[m]] = [d[m], d[i]];
+                i = m;
+              }
+            }
+            return top;
+          }
+        }
+
+
+        function networkDelay(times, n, k) {
+          return times.length;
+        }
+
+  - kind: info
+    title: "🔹 Negative edges and 0-1 BFS"
+    body: |
+      **Bellman-Ford** handles graphs with **negative** edge weights (Dijkstra cannot). It relaxes every edge `V - 1` times, in O(V × E), and can also detect a negative cycle. It is slower, so use it only when negative weights really exist.
+
+      **0-1 BFS** solves shortest paths when every edge weighs 0 or 1, in O(V + E), using a **deque**: push weight-0 neighbours to the **front** and weight-1 neighbours to the **back**.
+
+  - kind: why
+    body: |
+      Routing, maps, scheduling, game AI and network design all reduce to "shortest path" or "a valid order". BFS is Dijkstra for unweighted graphs, Dijkstra is BFS with a priority queue, and topological sort is what build tools and package managers run every time you install something.
+
+      In the capstone you will use Dijkstra with your own heap to build a route planner.
+
+  - kind: recap
+    body: |
+      - **BFS** gives the shortest path (fewest edges) in an unweighted graph. Record the distance when a vertex is first discovered.
+      - **Multi-source BFS** starts with all the sources in the queue at once.
+      - **Topological sort (Kahn):** repeatedly take vertices with in-degree 0. If the result is shorter than V, there is a cycle.
+      - **Dijkstra:** a min-heap of `[distance, vertex]`, skip stale entries, relax neighbours. O((V + E) log V). No negative weights.
+      - 🔹 **Bellman-Ford** copes with negative edges. **0-1 BFS** uses a deque.

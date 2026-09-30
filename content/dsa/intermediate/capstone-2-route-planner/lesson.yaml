@@ -1,0 +1,694 @@
+steps:
+  - kind: explain
+    title: The brief
+    body: |
+      A travel company wants a small tool for planning road trips. A person types two city names, even just the first letters, and the tool prints the shortest route and its length.
+
+      It uses the big ideas from this level:
+
+      | Piece | Idea from | Job |
+      |---|---|---|
+      | `buildRoadMap` | graphs (Module 22) | turn JSON into a weighted adjacency list |
+      | `shortestRoute` | Dijkstra + heap (Modules 20, 24) | the cheapest path and its length |
+      | `suggestCities` | tries (Module 21) | autocomplete city names |
+      | `planRoute` | all of them | the finished tool |
+
+      The first four steps are graded in the browser. The last step runs the finished planner on your Mac.
+
+  - kind: explain
+    title: The map file
+    body: |
+      The map arrives as JSON text:
+
+      ```json
+      {
+        "cities": ["Ulaanbaatar", "Darkhan", "Erdenet"],
+        "roads": [
+          ["Ulaanbaatar", "Darkhan", 220],
+          ["Darkhan", "Erdenet", 150]
+        ]
+      }
+      ```
+
+      `roads` are `[cityA, cityB, kilometres]`, and every road works **both ways**. `JSON.parse(text)` turns the text into a normal JavaScript object. A city may have no roads at all.
+
+      You wrote a `MinHeap` in Module 20. In the browser exercises, a working copy is provided so you can focus on the new ideas. On your Mac, use your own.
+
+  - kind: code
+    title: "1. buildRoadMap"
+    body: |
+      Write `buildRoadMap(json)`: parse the JSON text and return a `Map` from each city name to an array of `[neighbourCity, kilometres]` pairs. Every city in `cities` must be a key, even one with no roads. Roads are two-way.
+    code: |
+      function buildRoadMap(json) {
+        return new Map();
+      }
+    tests:
+      - "Array.from(buildRoadMap(JSON.stringify({ cities: ['A', 'B', 'C'], roads: [['A', 'B', 5], ['B', 'C', 2]] })))"
+      - "Array.from(buildRoadMap(JSON.stringify({ cities: ['X'], roads: [] })))"
+      - "Array.from(buildRoadMap(JSON.stringify({ cities: ['A', 'B', 'C'], roads: [['A', 'B', 5]] })))"
+      - "Array.from(buildRoadMap(JSON.stringify({ cities: [], roads: [] })))"
+    solution: |
+      function buildRoadMap(json) {
+        const data = JSON.parse(json);
+        const map = new Map();
+        for (const city of data.cities) map.set(city, []);
+        for (const [a, b, km] of data.roads) {
+          map.get(a).push([b, km]);
+          map.get(b).push([a, km]);
+        }
+        return map;
+      }
+
+    hint: "Start every city with an empty array. For each road, push `[b, km]` onto `a`'s list and `[a, km]` onto `b`'s list."
+    reject:
+      - |
+        function buildRoadMap(json) {
+          const data = JSON.parse(json);
+          const map = new Map();
+          for (const city of data.cities) map.set(city, []);
+          for (const [a, b, km] of data.roads) map.get(a).push([b, km]);
+          return map;
+        }
+
+  - kind: code
+    title: "2. shortestRoute"
+    body: |
+      Write `shortestRoute(map, from, to)` using **Dijkstra's algorithm**. Return `{ distance, path }`, where `path` is the array of city names from `from` to `to`, or `null` if there is no route. A trip from a city to itself has distance `0` and a path of just that city.
+
+      To rebuild the path, remember for each city **which city you came from** (`previous`), then walk backwards from `to`. A working `buildRoadMap` and `MinHeap` are provided.
+    code: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function buildRoadMap(json) {
+        const data = JSON.parse(json);
+        const map = new Map();
+        for (const city of data.cities) map.set(city, []);
+        for (const [a, b, km] of data.roads) {
+          map.get(a).push([b, km]);
+          map.get(b).push([a, km]);
+        }
+        return map;
+      }
+
+
+      function shortestRoute(map, from, to) {
+        return null;
+      }
+    tests:
+      - "(() => { const m = buildRoadMap(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] })); return shortestRoute(m, 'Ulaanbaatar', 'Erdenet'); })()"
+      - "(() => { const m = buildRoadMap(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] })); return shortestRoute(m, 'Erdenet', 'Sukhbaatar'); })()"
+      - "(() => { const m = buildRoadMap(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] })); return shortestRoute(m, 'Darkhan', 'Khovd'); })()"
+      - "(() => { const m = buildRoadMap(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] })); return shortestRoute(m, 'Darkhan', 'Darkhan'); })()"
+      - "(() => { const m = buildRoadMap(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] })); return shortestRoute(m, 'Choibalsan', 'Sukhbaatar'); })()"
+    solution: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function buildRoadMap(json) {
+        const data = JSON.parse(json);
+        const map = new Map();
+        for (const city of data.cities) map.set(city, []);
+        for (const [a, b, km] of data.roads) {
+          map.get(a).push([b, km]);
+          map.get(b).push([a, km]);
+        }
+        return map;
+      }
+
+
+      function shortestRoute(map, from, to) {
+        const dist = new Map([[from, 0]]);
+        const previous = new Map();
+        const heap = new MinHeap((a, b) => a[0] - b[0]);
+        heap.push([0, from]);
+        while (heap.size() > 0) {
+          const [d, city] = heap.pop();
+          if (d > dist.get(city)) continue;
+          if (city === to) break;
+          for (const [next, km] of map.get(city)) {
+            const nd = d + km;
+            if (!dist.has(next) || nd < dist.get(next)) {
+              dist.set(next, nd);
+              previous.set(next, city);
+              heap.push([nd, next]);
+            }
+          }
+        }
+        if (!dist.has(to)) return null;
+        const path = [to];
+        while (path[path.length - 1] !== from) path.push(previous.get(path[path.length - 1]));
+        return { distance: dist.get(to), path: path.reverse() };
+      }
+
+    hint: Keep `dist` and `previous` Maps. Skip stale heap entries (`d > dist.get(city)`). After the search, walk `previous` back from `to` and reverse the path.
+    reject:
+      - |
+        class MinHeap {
+          constructor(compare = (a, b) => a - b) {
+            this.data = [];
+            this.compare = compare;
+          }
+          size() {
+            return this.data.length;
+          }
+          peek() {
+            return this.data[0];
+          }
+          push(x) {
+            const d = this.data;
+            d.push(x);
+            let i = d.length - 1;
+            while (i > 0) {
+              const p = (i - 1) >> 1;
+              if (this.compare(d[i], d[p]) >= 0) break;
+              [d[i], d[p]] = [d[p], d[i]];
+              i = p;
+            }
+          }
+          pop() {
+            const d = this.data;
+            if (d.length === 0) return undefined;
+            const top = d[0];
+            const last = d.pop();
+            if (d.length > 0) {
+              d[0] = last;
+              let i = 0;
+              for (;;) {
+                const l = 2 * i + 1;
+                const r = l + 1;
+                let m = i;
+                if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+                if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+                if (m === i) break;
+                [d[i], d[m]] = [d[m], d[i]];
+                i = m;
+              }
+            }
+            return top;
+          }
+        }
+
+
+        function buildRoadMap(json) {
+          const data = JSON.parse(json);
+          const map = new Map();
+          for (const city of data.cities) map.set(city, []);
+          for (const [a, b, km] of data.roads) {
+            map.get(a).push([b, km]);
+            map.get(b).push([a, km]);
+          }
+          return map;
+        }
+
+
+        function shortestRoute(map, from, to) {
+          // breadth-first: fewest roads, not fewest kilometres
+          if (from === to) return { distance: 0, path: [from] };
+          const previous = new Map([[from, null]]);
+          const queue = [from];
+          for (let head = 0; head < queue.length; head++) {
+            const city = queue[head];
+            for (const [next] of map.get(city)) {
+              if (!previous.has(next)) {
+                previous.set(next, city);
+                queue.push(next);
+              }
+            }
+          }
+          if (!previous.has(to)) return null;
+          const path = [to];
+          while (path[path.length - 1] !== from) path.push(previous.get(path[path.length - 1]));
+          path.reverse();
+          let distance = 0;
+          for (let i = 0; i + 1 < path.length; i++) distance += map.get(path[i]).find(([c]) => c === path[i + 1])[1];
+          return { distance, path };
+        }
+
+  - kind: code
+    title: "3. suggestCities"
+    body: |
+      Write `suggestCities(cities, prefix)`: the city names that start with `prefix`, **ignoring upper and lower case**, sorted alphabetically (ignoring case), and at most **5** of them. An empty prefix gives `[]`. Build a **trie** so the cost depends on the prefix, not on the number of cities.
+
+      Tip: in each trie node, keep a list of the original names that pass through it. Then the answer is one lookup away.
+    code: |
+      function suggestCities(cities, prefix) {
+        return [];
+      }
+    tests:
+      - "suggestCities(['Darkhan', 'Dalanzadgad', 'Erdenet', 'Dornod', 'Choibalsan'], 'd')"
+      - "suggestCities(['Darkhan', 'Dalanzadgad', 'Erdenet', 'Dornod', 'Choibalsan'], 'DA')"
+      - "suggestCities(['Darkhan', 'Dalanzadgad', 'Erdenet', 'Dornod', 'Choibalsan'], 'x')"
+      - "suggestCities(['Darkhan'], '')"
+      - "suggestCities(['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7'], 'a')"
+      - "suggestCities([], 'a')"
+    solution: |
+      function suggestCities(cities, prefix) {
+        const root = { children: new Map(), names: [] };
+        for (const name of cities) {
+          let node = root;
+          for (const ch of name.toLowerCase()) {
+            if (!node.children.has(ch)) node.children.set(ch, { children: new Map(), names: [] });
+            node = node.children.get(ch);
+            node.names.push(name);
+          }
+        }
+        let node = root;
+        for (const ch of prefix.toLowerCase()) {
+          node = node.children.get(ch);
+          if (!node) return [];
+        }
+        return [...node.names]
+          .sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0))
+          .slice(0, 5);
+      }
+    hint: Lower-case every letter as you walk. Return `[]` as soon as a letter of the prefix is missing. Sort and keep 5 at the end.
+    reject:
+      - |
+        function suggestCities(cities, prefix) {
+          return cities.filter((c) => c.startsWith(prefix)).slice(0, 5);
+        }
+
+  - kind: code
+    title: "4. planRoute"
+    body: |
+      Put it together. Write `planRoute(json, fromText, toText)` and return a message string.
+
+      - Each city text is resolved to a real city: an **exact** match (ignoring case) wins. Otherwise, if **exactly one** city starts with the text (ignoring case), use it. An empty text or an ambiguous text is unknown.
+      - Unknown city: `"Unknown city: <the text you were given>"` (check the *from* city first).
+      - No route: `"No route from <from> to <to>"`.
+      - Otherwise: `"Ulaanbaatar -> Darkhan -> Erdenet (370 km)"`, city names joined by `" -> "` then the distance in `km`.
+
+      Working `buildRoadMap`, `MinHeap` and `shortestRoute` are provided.
+    code: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function buildRoadMap(json) {
+        const data = JSON.parse(json);
+        const map = new Map();
+        for (const city of data.cities) map.set(city, []);
+        for (const [a, b, km] of data.roads) {
+          map.get(a).push([b, km]);
+          map.get(b).push([a, km]);
+        }
+        return map;
+      }
+
+
+      function shortestRoute(map, from, to) {
+        const dist = new Map([[from, 0]]);
+        const previous = new Map();
+        const heap = new MinHeap((a, b) => a[0] - b[0]);
+        heap.push([0, from]);
+        while (heap.size() > 0) {
+          const [d, city] = heap.pop();
+          if (d > dist.get(city)) continue;
+          if (city === to) break;
+          for (const [next, km] of map.get(city)) {
+            const nd = d + km;
+            if (!dist.has(next) || nd < dist.get(next)) {
+              dist.set(next, nd);
+              previous.set(next, city);
+              heap.push([nd, next]);
+            }
+          }
+        }
+        if (!dist.has(to)) return null;
+        const path = [to];
+        while (path[path.length - 1] !== from) path.push(previous.get(path[path.length - 1]));
+        return { distance: dist.get(to), path: path.reverse() };
+      }
+
+
+      function planRoute(json, fromText, toText) {
+        return "";
+      }
+    tests:
+      - "planRoute(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] }), 'Ulaanbaatar', 'Erdenet')"
+      - "planRoute(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] }), 'ulaan', 'SUKH')"
+      - "planRoute(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] }), 'Darkhan', 'Khovd')"
+      - "planRoute(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] }), 'Paris', 'Darkhan')"
+      - "planRoute(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] }), 'Darkhan', 'S')"
+      - "planRoute(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] }), 'darkhan', 'DARKHAN')"
+      - "planRoute(JSON.stringify({ cities: ['Ulaanbaatar', 'Darkhan', 'Erdenet', 'Sukhbaatar', 'Choibalsan', 'Khovd', 'Sainshand'], roads: [['Ulaanbaatar', 'Darkhan', 220], ['Ulaanbaatar', 'Erdenet', 400], ['Darkhan', 'Erdenet', 150], ['Darkhan', 'Sukhbaatar', 120], ['Ulaanbaatar', 'Choibalsan', 660]] }), '', 'Darkhan')"
+    solution: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function buildRoadMap(json) {
+        const data = JSON.parse(json);
+        const map = new Map();
+        for (const city of data.cities) map.set(city, []);
+        for (const [a, b, km] of data.roads) {
+          map.get(a).push([b, km]);
+          map.get(b).push([a, km]);
+        }
+        return map;
+      }
+
+
+      function shortestRoute(map, from, to) {
+        const dist = new Map([[from, 0]]);
+        const previous = new Map();
+        const heap = new MinHeap((a, b) => a[0] - b[0]);
+        heap.push([0, from]);
+        while (heap.size() > 0) {
+          const [d, city] = heap.pop();
+          if (d > dist.get(city)) continue;
+          if (city === to) break;
+          for (const [next, km] of map.get(city)) {
+            const nd = d + km;
+            if (!dist.has(next) || nd < dist.get(next)) {
+              dist.set(next, nd);
+              previous.set(next, city);
+              heap.push([nd, next]);
+            }
+          }
+        }
+        if (!dist.has(to)) return null;
+        const path = [to];
+        while (path[path.length - 1] !== from) path.push(previous.get(path[path.length - 1]));
+        return { distance: dist.get(to), path: path.reverse() };
+      }
+
+
+      function planRoute(json, fromText, toText) {
+        const map = buildRoadMap(json);
+        const cities = [...map.keys()];
+        const resolve = (text) => {
+          const lower = text.toLowerCase();
+          const exact = cities.find((c) => c.toLowerCase() === lower);
+          if (exact) return exact;
+          const matches = cities.filter((c) => c.toLowerCase().startsWith(lower));
+          return lower !== "" && matches.length === 1 ? matches[0] : null;
+        };
+        const from = resolve(fromText);
+        if (from === null) return `Unknown city: ${fromText}`;
+        const to = resolve(toText);
+        if (to === null) return `Unknown city: ${toText}`;
+        const route = shortestRoute(map, from, to);
+        if (route === null) return `No route from ${from} to ${to}`;
+        return `${route.path.join(" -> ")} (${route.distance} km)`;
+      }
+    hint: Write a small `resolve(text)` helper first. Then build the map, resolve both cities, run `shortestRoute`, and format the message.
+    reject:
+      - |
+        class MinHeap {
+          constructor(compare = (a, b) => a - b) {
+            this.data = [];
+            this.compare = compare;
+          }
+          size() {
+            return this.data.length;
+          }
+          peek() {
+            return this.data[0];
+          }
+          push(x) {
+            const d = this.data;
+            d.push(x);
+            let i = d.length - 1;
+            while (i > 0) {
+              const p = (i - 1) >> 1;
+              if (this.compare(d[i], d[p]) >= 0) break;
+              [d[i], d[p]] = [d[p], d[i]];
+              i = p;
+            }
+          }
+          pop() {
+            const d = this.data;
+            if (d.length === 0) return undefined;
+            const top = d[0];
+            const last = d.pop();
+            if (d.length > 0) {
+              d[0] = last;
+              let i = 0;
+              for (;;) {
+                const l = 2 * i + 1;
+                const r = l + 1;
+                let m = i;
+                if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+                if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+                if (m === i) break;
+                [d[i], d[m]] = [d[m], d[i]];
+                i = m;
+              }
+            }
+            return top;
+          }
+        }
+
+
+        function buildRoadMap(json) {
+          const data = JSON.parse(json);
+          const map = new Map();
+          for (const city of data.cities) map.set(city, []);
+          for (const [a, b, km] of data.roads) {
+            map.get(a).push([b, km]);
+            map.get(b).push([a, km]);
+          }
+          return map;
+        }
+
+
+        function shortestRoute(map, from, to) {
+          const dist = new Map([[from, 0]]);
+          const previous = new Map();
+          const heap = new MinHeap((a, b) => a[0] - b[0]);
+          heap.push([0, from]);
+          while (heap.size() > 0) {
+            const [d, city] = heap.pop();
+            if (d > dist.get(city)) continue;
+            if (city === to) break;
+            for (const [next, km] of map.get(city)) {
+              const nd = d + km;
+              if (!dist.has(next) || nd < dist.get(next)) {
+                dist.set(next, nd);
+                previous.set(next, city);
+                heap.push([nd, next]);
+              }
+            }
+          }
+          if (!dist.has(to)) return null;
+          const path = [to];
+          while (path[path.length - 1] !== from) path.push(previous.get(path[path.length - 1]));
+          return { distance: dist.get(to), path: path.reverse() };
+        }
+
+
+        function planRoute(json, fromText, toText) {
+          const map = buildRoadMap(json);
+          const route = shortestRoute(map, fromText, toText);
+          if (route === null) return `No route from ${fromText} to ${toText}`;
+          return `${route.path.join(" -> ")} (${route.distance} km)`;
+        }
+
+  - kind: mac
+    title: Run your planner in the terminal
+    body: |
+      Now turn it into a real command-line tool on your Mac.
+
+      1. In a new folder, save the map as `cities.json` (any cities you like, or the example from the brief).
+      2. Save all your pieces (`MinHeap`, `buildRoadMap`, `shortestRoute`, `suggestCities`, `planRoute`) in `planner.js`, and add this at the bottom:
+
+      ```js
+      const fs = require("node:fs");
+      const [from, to] = process.argv.slice(2);
+      const json = fs.readFileSync("cities.json", "utf8");
+      console.log(planRoute(json, from, to));
+      ```
+
+      3. Run it and paste the printed line below. Because of the autocomplete, short names work:
+
+      Not on your Mac right now? Choose **Skip for now**.
+    commands: |
+      node planner.js Ulaan Erden
+    expect_output:
+      - "km"
+
+  - kind: why
+    body: |
+      This small tool is the same shape as a real map service: parse data, build a graph, run a shortest-path algorithm, and wrap it in a friendly interface. Each piece is something you built and understand: a heap for the priority queue, Dijkstra for the routes, and a trie for the typing.
+
+      Real systems add more data and more speed tricks, but the core ideas are exactly these.
+
+  - kind: recap
+    body: |
+      - `JSON.parse` turns map text into data, and `buildRoadMap` makes a weighted adjacency list. Roads work both ways.
+      - **Dijkstra with a MinHeap** finds the cheapest route. Keep a `previous` map to rebuild the path.
+      - A **trie** with a list of names in each node gives fast, case-insensitive autocomplete.
+      - `planRoute` combines resolving names, routing and formatting the result.
+      - The Intermediate level is complete: you can recognise the major patterns and model real problems as graphs and trees.

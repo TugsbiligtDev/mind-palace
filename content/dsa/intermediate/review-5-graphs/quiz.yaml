@@ -1,0 +1,31 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "\"Find the fewest moves for a knight to reach a square on a chessboard.\" What are the vertices, and which algorithm?"
+    options: ["Squares, BFS", "Moves, DFS", "Pieces, Dijkstra", "Rows, binary search"]
+    answer: 0
+    explanation: Each square is a vertex, and a knight move is an edge of cost 1, so BFS finds the fewest moves.
+  - type: mcq
+    prompt: A graph with V vertices has V − 1 edges and no cycle. What is it?
+    options: ["Bipartite", "A tree", "Weighted", "Directed"]
+    answer: 1
+    explanation: A connected graph with no cycle is a tree, and it always has exactly V − 1 edges.
+  - type: mcq
+    prompt: You need the cheapest way to connect a set of towns so every town can reach every other. Which idea fits?
+    options: ["Topological sort", "Minimum spanning tree", "Two-colouring", "Binary search"]
+    answer: 1
+    explanation: The MST connects everything with the lowest total edge cost.
+  - type: predict
+    prompt: What does this print? (Manhattan distance between two points.)
+    code: |
+      const [x1, y1] = [0, 0];
+      const [x2, y2] = [3, -4];
+      console.log(Math.abs(x1 - x2) + Math.abs(y1 - y2));
+    options: ["7", "5", "1", "12"]
+    answer: 0
+    explanation: "|0 − 3| + |0 − (−4)| = 3 + 4 = 7."
+  - type: mcq
+    prompt: Which algorithm gives the distance from EVERY cell to its nearest special cell in one pass?
+    options: ["Binary search", "Multi-source BFS", "Sorting", "Recursion without memory"]
+    answer: 1
+    explanation: Starting BFS from all special cells at once means each cell is first reached from its nearest one.

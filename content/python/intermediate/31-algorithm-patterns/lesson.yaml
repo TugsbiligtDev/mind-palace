@@ -1,0 +1,411 @@
+steps:
+  - kind: explain
+    title: Patterns, not tricks
+    body: |
+      Many problems that look different are really the *same shape*. If you learn the shapes, you can recognise them and reach for the right tool. This lesson collects the most useful patterns, each with its cost in **Big-O** (Module 21).
+
+      | Need | Tool | Cost |
+      |---|---|---|
+      | last-in, first-out (undo, matching brackets) | a **list** as a stack (`append`, `pop`) | O(1) each |
+      | first-in, first-out (a waiting line) | **`collections.deque`** (`append`, `popleft`) | O(1) each |
+      | always give me the smallest item next | **`heapq`** (a priority queue) | O(log n) per push/pop |
+      | count, group, dedupe, look up by key | **dict / set / Counter** | O(1) average |
+      | scan a sorted list from both ends | **two pointers** | O(n) |
+      | best/longest run of consecutive items | **sliding window** | O(n) |
+      | search a sorted list | **`bisect`** (binary search) | O(log n) |
+
+      *Never use `list.pop(0)` as a queue*: it shifts every item, so it is O(n). Use a `deque`.
+
+  - kind: explain
+    title: "Stacks: matching brackets"
+    body: |
+      A stack is "last in, first out". A list does it perfectly: `append` to push, `pop()` to take the top.
+
+      **Pattern:** when the most recent unfinished thing must be resolved first (brackets, nested tags, undo), use a stack.
+
+      ```python
+      stack = []
+      for ch in "([])":
+          if ch in "([":
+              stack.append(ch)          # remember the opener
+          else:
+              opener = stack.pop()      # the most recent opener must match this closer
+      ```
+
+  - kind: code
+    title: Balanced brackets
+    body: |
+      Write `balanced(text)`: `True` if every `(`, `[` and `{` is closed by the right kind in the right order, else `False`. Ignore all other characters. `"([]{})"` is balanced; `"(]"`, `"(("` and `")("` are not. The empty string is balanced.
+    code: |
+      def balanced(text):
+          return True
+    tests:
+      - "balanced('([]{})')"
+      - "balanced('(]')"
+      - "balanced('((')"
+      - "balanced(')(')"
+      - "balanced('')"
+      - "balanced('a(b[c]d)e')"
+      - "balanced('{[}]')"
+    solution: |
+      def balanced(text):
+          pairs = {")": "(", "]": "[", "}": "{"}
+          stack = []
+          for ch in text:
+              if ch in "([{":
+                  stack.append(ch)
+              elif ch in pairs:
+                  if not stack or stack.pop() != pairs[ch]:
+                      return False
+          return not stack
+    hint: "On an opener, push. On a closer, the stack must be non-empty and its top must be the matching opener. At the end the stack must be empty."
+    reject:
+      - |
+        def balanced(text):
+            return text.count("(") == text.count(")")
+
+  - kind: explain
+    title: "Hash maps: count, group, look up"
+    body: |
+      When you keep asking "have I seen this?" or "what goes with this?", a dict or set turns an O(n) search into O(1).
+
+      **Complement lookup (two-sum):** to find two numbers adding to a target, remember each number you have seen; for each new number, check whether `target - number` is already remembered.
+
+      ```python
+      seen = {}
+      for i, n in enumerate(nums):
+          if target - n in seen:
+              return seen[target - n], i
+          seen[n] = i
+      ```
+
+      **Grouping:** items with the same *key* go together. Anagrams share the same **sorted letters**, so `"".join(sorted(word))` makes a perfect key.
+
+  - kind: code
+    title: Group the anagrams
+    body: |
+      Write `group_anagrams(words)`: return a list of groups (lists of words that are anagrams of each other). Keep the words in each group in their original order, and order the groups by **the first appearance** of any member. `["eat", "tea", "tan", "ate", "nat", "bat"]` gives `[["eat", "tea", "ate"], ["tan", "nat"], ["bat"]]`.
+    code: |
+      def group_anagrams(words):
+          return []
+    tests:
+      - "group_anagrams(['eat', 'tea', 'tan', 'ate', 'nat', 'bat'])"
+      - "group_anagrams([])"
+      - "group_anagrams(['a'])"
+      - "group_anagrams(['ab', 'ba', 'abc', 'cab', 'bca'])"
+    solution: |
+      def group_anagrams(words):
+          groups = {}
+          for word in words:
+              key = "".join(sorted(word))
+              groups.setdefault(key, []).append(word)
+          return list(groups.values())
+    hint: "Use the sorted letters as a dict key and append each word to that key's list. Dicts keep insertion order."
+    reject:
+      - |
+        def group_anagrams(words):
+            return [[w] for w in words]
+
+  - kind: explain
+    title: Two pointers and sliding windows
+    body: |
+      **Two pointers.** On a **sorted** list, put one pointer at each end and move them toward each other, deciding by comparison. It solves "find a pair" in O(n) with no extra memory.
+
+      ```python
+      i, j = 0, len(nums) - 1
+      while i < j:
+          total = nums[i] + nums[j]
+          if total == target: return (i, j)
+          if total < target: i += 1     # need a bigger sum
+          else: j -= 1                  # need a smaller sum
+      ```
+
+      **Sliding window.** For "the best run of consecutive items", keep a window and *slide* it: add the new item on the right, drop the old one on the left. Each item enters and leaves once, so it is O(n) instead of recomputing every window (O(n·k)).
+
+      ```python
+      window = sum(nums[:k])
+      for i in range(k, len(nums)):
+          window += nums[i] - nums[i - k]     # add the new, drop the old
+      ```
+
+  - kind: code
+    title: Pair in a sorted list
+    body: |
+      Write `pair_with_sum(nums, target)` for a **sorted** list: return the pair `(i, j)` of indexes with `i < j` and `nums[i] + nums[j] == target`, or `None` if there is none. Use two pointers (do not loop over all pairs).
+    code: |
+      def pair_with_sum(nums, target):
+          return None
+    tests:
+      - "pair_with_sum([1, 2, 4, 7, 11, 15], 15)"
+      - "pair_with_sum([1, 2, 3], 100)"
+      - "pair_with_sum([], 3)"
+      - "pair_with_sum([2, 2], 4)"
+      - "pair_with_sum(list(range(1, 200001)), 399999)"
+    solution: |
+      def pair_with_sum(nums, target):
+          i, j = 0, len(nums) - 1
+          while i < j:
+              total = nums[i] + nums[j]
+              if total == target:
+                  return (i, j)
+              if total < target:
+                  i += 1
+              else:
+                  j -= 1
+          return None
+    hint: "Start `i` at 0 and `j` at the end. Too small: move `i` right. Too big: move `j` left."
+    reject:
+      - |
+        def pair_with_sum(nums, target):
+            for i in range(len(nums)):
+                for j in range(i + 1, len(nums)):
+                    if nums[i] + nums[j] == target:
+                        return (i, j)
+            return None
+
+  - kind: code
+    title: Best window
+    body: |
+      Write `best_window(nums, k)`: the **largest sum of any `k` consecutive numbers**. If there are fewer than `k` numbers, return `None`. Use a sliding window: it must handle 200,000 numbers quickly.
+    code: |
+      def best_window(nums, k):
+          return None
+    tests:
+      - "best_window([1, 4, 2, 10, 2, 3, 1, 0, 20], 4)"
+      - "best_window([5], 1)"
+      - "best_window([1, 2], 3)"
+      - "best_window([-1, -2, -3], 2)"
+      - "best_window(list(range(200000)), 100000)"
+    solution: |
+      def best_window(nums, k):
+          if len(nums) < k or k <= 0:
+              return None
+          window = sum(nums[:k])
+          best = window
+          for i in range(k, len(nums)):
+              window += nums[i] - nums[i - k]
+              best = max(best, window)
+          return best
+    hint: "Sum the first `k`, then for each next index add `nums[i]` and subtract `nums[i - k]`, keeping the maximum."
+    reject:
+      - |
+        def best_window(nums, k):
+            if len(nums) < k:
+                return None
+            return max(sum(nums[i:i + k]) for i in range(len(nums) - k + 1))
+
+  - kind: code
+    title: Longest run without repeats
+    body: |
+      Write `longest_unique(text)`: the length of the longest **substring** (consecutive characters) with no repeated character. `"abcabcbb"` gives `3` (`abc`), `"bbbb"` gives `1`, `""` gives `0`.
+
+      Slide a window: keep a dict `last` of each character's most recent index, and a `start` for the window's left edge. When you see a repeat inside the window, jump `start` past its previous position.
+    code: |
+      def longest_unique(text):
+          return 0
+    tests:
+      - "longest_unique('abcabcbb')"
+      - "longest_unique('bbbb')"
+      - "longest_unique('')"
+      - "longest_unique('pwwkew')"
+      - "longest_unique('abba')"
+      - "longest_unique('abcdefghij' * 20000)"
+    solution: |
+      def longest_unique(text):
+          last = {}
+          start = 0
+          best = 0
+          for i, ch in enumerate(text):
+              if ch in last and last[ch] >= start:
+                  start = last[ch] + 1
+              last[ch] = i
+              best = max(best, i - start + 1)
+          return best
+    hint: "The window is `text[start..i]`. If `ch` appeared inside it (`last[ch] >= start`), move `start` to `last[ch] + 1`."
+    reject:
+      - |
+        def longest_unique(text):
+            return len(set(text))
+
+  - kind: explain
+    title: "heapq: always the smallest next"
+    body: |
+      A **heap** keeps a collection so the **smallest** item is always instantly available. Python's `heapq` works on an ordinary list:
+
+      ```python
+      import heapq
+
+      h = []
+      heapq.heappush(h, (3, "write report"))
+      heapq.heappush(h, (1, "fix bug"))
+      heapq.heappush(h, (2, "reply"))
+      heapq.heappop(h)          # (1, 'fix bug'), the smallest tuple
+      heapq.nlargest(2, [5, 1, 9, 3])     # [9, 5]
+      heapq.nsmallest(2, [5, 1, 9, 3])    # [1, 3]
+      ```
+
+      Push and pop cost O(log n). Use it for **priority queues** (always work on the most urgent task), for "the k biggest/smallest" (`nlargest`), and for merging sorted streams. Tuples compare element by element, so `(priority, name)` orders by priority then name. For a max-heap, push **negated** numbers.
+
+  - kind: code
+    title: Task scheduler
+    body: |
+      Write `run_order(tasks)`. `tasks` is a list of `(priority, name)` pairs; **lower number means more urgent**. Return the list of names in the order they should be done, by priority, ties broken by name A to Z. Use a heap: push everything, then pop until empty.
+    code: |
+      import heapq
+
+
+      def run_order(tasks):
+          return []
+    tests:
+      - "run_order([(3, 'report'), (1, 'bug'), (2, 'reply'), (1, 'alert')])"
+      - "run_order([])"
+      - "run_order([(5, 'x')])"
+    solution: |
+      import heapq
+
+
+      def run_order(tasks):
+          heap = []
+          for task in tasks:
+              heapq.heappush(heap, task)
+          order = []
+          while heap:
+              order.append(heapq.heappop(heap)[1])
+          return order
+    hint: "`heapq.heappush(heap, task)` for each pair; then `heapq.heappop(heap)` repeatedly and collect `[1]`."
+    reject:
+      - |
+        import heapq
+
+
+        def run_order(tasks):
+            return [name for priority, name in tasks]
+
+  - kind: code
+    title: The k biggest
+    body: |
+      Write `top_k(nums, k)`: the `k` largest numbers, largest first. Use `heapq.nlargest`. It must be fast on a million numbers (do not sort everything).
+    code: |
+      import heapq
+
+
+      def top_k(nums, k):
+          return []
+    tests:
+      - "top_k([5, 1, 9, 3, 7], 3)"
+      - "top_k([], 2)"
+      - "top_k([4, 4, 1], 5)"
+      - "top_k(list(range(1_000_000)), 2)"
+    solution: |
+      import heapq
+
+
+      def top_k(nums, k):
+          return heapq.nlargest(k, nums)
+    hint: "`heapq.nlargest(k, nums)`."
+    reject:
+      - |
+        import heapq
+
+
+        def top_k(nums, k):
+            return heapq.nsmallest(k, nums)
+
+  - kind: explain
+    title: "bisect: binary search for free"
+    body: |
+      On a **sorted** list, `bisect` finds positions in O(log n):
+
+      ```python
+      import bisect
+
+      nums = [10, 20, 20, 30]
+      bisect.bisect_left(nums, 20)     # 1  (first position where 20 could go)
+      bisect.bisect_right(nums, 20)    # 3  (just after the last 20)
+      bisect.insort(nums, 25)          # inserts and keeps the list sorted
+      ```
+
+      The number of items in a range `[lo, hi]` is therefore `bisect_right(nums, hi) - bisect_left(nums, lo)`. It also answers "does x exist?": check `nums[pos] == x` at `pos = bisect_left(nums, x)` (and that `pos < len(nums)`).
+
+  - kind: code
+    title: Count in a range
+    body: |
+      Write `count_in_range(sorted_nums, lo, hi)`: how many numbers are between `lo` and `hi` **inclusive**, in a **sorted** list. It must take O(log n) per call, so use `bisect`.
+    code: |
+      import bisect
+
+
+      def count_in_range(sorted_nums, lo, hi):
+          return 0
+    tests:
+      - "count_in_range([1, 3, 3, 5, 8, 13], 3, 8)"
+      - "count_in_range([1, 2, 3], 10, 20)"
+      - "count_in_range([], 0, 1)"
+      - "count_in_range([5, 5, 5], 5, 5)"
+      - "count_in_range(list(range(1_000_000)), 100, 199_999)"
+    solution: |
+      import bisect
+
+
+      def count_in_range(sorted_nums, lo, hi):
+          return bisect.bisect_right(sorted_nums, hi) - bisect.bisect_left(sorted_nums, lo)
+    hint: "`bisect_right(nums, hi) - bisect_left(nums, lo)`."
+    reject:
+      - |
+        import bisect
+
+
+        def count_in_range(sorted_nums, lo, hi):
+            return bisect.bisect_left(sorted_nums, hi) - bisect.bisect_left(sorted_nums, lo)
+
+  - kind: code
+    title: A real queue
+    body: |
+      Write `hot_potato(names, n)`, a party game. The names stand in a circle; the potato passes `n` places, and whoever holds it is out. Repeat until one person is left, and return that name. Use a `deque` and `rotate` (or `popleft`/`append`). `hot_potato(["a", "b", "c", "d"], 2)` is `"c"`.
+
+      Rotate the deque `-n` steps... then pop from the front. (Take care of which end counts as "front".)
+    code: |
+      from collections import deque
+
+
+      def hot_potato(names, n):
+          return names[0] if names else None
+    tests:
+      - "hot_potato(['a', 'b', 'c', 'd'], 2)"
+      - "hot_potato(['a'], 5)"
+      - "hot_potato(['a', 'b', 'c'], 1)"
+      - "hot_potato([], 3)"
+      - "hot_potato(list('abcdefgh'), 3)"
+    solution: |
+      from collections import deque
+
+
+      def hot_potato(names, n):
+          if not names:
+              return None
+          circle = deque(names)
+          while len(circle) > 1:
+              for _ in range(n):
+                  circle.append(circle.popleft())
+              circle.popleft()
+          return circle[0]
+    hint: "Pass the potato by moving the front person to the back `n` times, then remove whoever is now at the front (`popleft`)."
+    reject:
+      - |
+        from collections import deque
+
+
+        def hot_potato(names, n):
+            return names[-1] if names else None
+
+  - kind: why
+    body: |
+      When you meet a new problem, ask "which pattern is this?" before you write code. Is it about the most recent thing (stack), waiting in line (queue), the most urgent (heap), "seen before?" (set/dict), a pair in a sorted list (two pointers), a best stretch (sliding window), or searching sorted data (bisect)? Choosing the pattern is 80% of solving it, and each one turns a slow O(n²) idea into a fast O(n) or O(n log n) one.
+
+  - kind: recap
+    body: |
+      - **Stack** = list (`append`/`pop`); **queue** = `deque` (`append`/`popleft`); never `pop(0)` a list.
+      - **`heapq`**: `heappush`/`heappop` in O(log n); `nlargest`/`nsmallest`; push tuples `(priority, item)`.
+      - **Hash maps**: counting, grouping (by a canonical key such as sorted letters), deduplication, complement lookup.
+      - **Two pointers** on sorted data; **sliding window** for consecutive runs (add the new, drop the old).
+      - **`bisect`**: `bisect_left`, `bisect_right`, `insort` on sorted lists in O(log n).

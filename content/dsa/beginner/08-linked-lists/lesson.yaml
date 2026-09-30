@@ -1,0 +1,740 @@
+steps:
+  - kind: explain
+    title: Nodes joined by pointers
+    body: |
+      An array keeps its items side by side. A **linked list** does the opposite: each item lives in its own small object called a **node**, and each node holds a **pointer** (a reference) to the next one.
+
+      ```
+      head → [1 | •] → [2 | •] → [3 | null]
+      ```
+
+      A node has two fields: a **value** (`val`) and the **next** node (`next`). The last node's `next` is `null`. You hold on to only the first node, the **head**, and reach everything else by following `next`.
+
+      Trade-offs against an array:
+      - **Insert or delete at a known spot: O(1)**. Change a couple of pointers. No shifting.
+      - **Reach the k-th item: O(k)**. You must walk from the head.
+
+  - kind: code
+    title: Build a list by hand and walk it
+    body: |
+      Run this. It creates three nodes, links them, then walks the list with a `while` loop until it reaches `null`.
+
+      Change the values, then add a fourth node.
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      const head = new ListNode(1, new ListNode(2, new ListNode(3)));
+
+      let node = head;
+      while (node !== null) {
+        console.log(node.val);
+        node = node.next;
+      }
+
+  - kind: explain
+    title: The helpers used in this lesson
+    body: |
+      To test list code we need an easy way to build a list and read one back. Two small helpers do it. **They are already written in the editor**, so you don't have to write them.
+
+      - `fromArray([1, 2, 3])` builds the list `1 → 2 → 3` and returns its head.
+      - `toArray(head)` walks a list and returns its values as an array.
+
+      For an empty list, the head is simply `null`.
+
+  - kind: explain
+    title: Reversing a list
+    body: |
+      To reverse a list you flip every pointer so it points backwards. Walk the list with three variables:
+
+      - `prev`: the already-reversed part (starts as `null`),
+      - `curr`: the node you are looking at (starts at `head`),
+      - `next`: saved *before* you overwrite `curr.next`.
+
+      Each step:
+
+      ```
+      next = curr.next      // 1. remember what comes after
+      curr.next = prev      // 2. flip the pointer
+      prev = curr           // 3. move prev forward
+      curr = next           // 4. move curr forward
+      ```
+
+      When `curr` is `null`, `prev` is the new head. **The classic mistake** is flipping `curr.next` without saving it first: you lose the rest of the list.
+
+  - kind: code
+    title: Reverse a linked list
+    body: |
+      Write `reverseList(head)` and return the new head. The helpers `ListNode`, `fromArray` and `toArray` are provided.
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function reverseList(head) {
+        return head;
+      }
+    tests:
+      - "toArray(reverseList(fromArray([1, 2, 3, 4, 5])))"
+      - "toArray(reverseList(fromArray([1, 2])))"
+      - "toArray(reverseList(fromArray([7])))"
+      - "toArray(reverseList(fromArray([])))"
+    solution: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function reverseList(head) {
+        let prev = null;
+        let curr = head;
+        while (curr !== null) {
+          const next = curr.next;
+          curr.next = prev;
+          prev = curr;
+          curr = next;
+        }
+        return prev;
+      }
+    hint: Follow the four lines from the explanation, in that order, and return `prev` at the end.
+    reject:
+      - |
+        class ListNode {
+          constructor(val, next = null) {
+            this.val = val;
+            this.next = next;
+          }
+        }
+
+        function fromArray(values) {
+          const dummy = new ListNode(0);
+          let tail = dummy;
+          for (const v of values) {
+            tail.next = new ListNode(v);
+            tail = tail.next;
+          }
+          return dummy.next;
+        }
+
+        function toArray(head) {
+          const out = [];
+          for (let n = head; n !== null; n = n.next) out.push(n.val);
+          return out;
+        }
+
+        function reverseList(head) {
+          return head;
+        }
+
+  - kind: explain
+    title: Fast and slow pointers
+    body: |
+      A great trick: walk **two pointers** at different speeds. `slow` moves one step at a time and `fast` moves two.
+
+      - **Middle of a list:** when `fast` reaches the end, `slow` is halfway. One pass, no need to know the length.
+      - **Cycle detection (Floyd's algorithm):** if the list loops back on itself, `fast` eventually laps `slow` and they meet. If there is no cycle, `fast` hits `null`.
+
+      Both run in **O(n) time and O(1) space**.
+
+      ```js
+      let slow = head, fast = head;
+      while (fast !== null && fast.next !== null) {
+        slow = slow.next;
+        fast = fast.next.next;
+      }
+      // slow is now at the middle
+      ```
+
+  - kind: code
+    title: Find the middle
+    body: |
+      Write `middleNode(head)` that returns the middle **node**. When there are two middles (an even length), return the **second** one. `1 → 2 → 3 → 4 → 5` has middle `3`, and `1 → 2 → 3 → 4` has middle `3`.
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function middleNode(head) {
+        return head;
+      }
+    tests:
+      - "middleNode(fromArray([1, 2, 3, 4, 5])).val"
+      - "middleNode(fromArray([1, 2, 3, 4])).val"
+      - "middleNode(fromArray([1])).val"
+      - "middleNode(fromArray([1, 2])).val"
+      - "middleNode(fromArray([1, 2, 3, 4, 5, 6])).val"
+    solution: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function middleNode(head) {
+        let slow = head;
+        let fast = head;
+        while (fast !== null && fast.next !== null) {
+          slow = slow.next;
+          fast = fast.next.next;
+        }
+        return slow;
+      }
+    hint: "Loop while `fast !== null && fast.next !== null`. Both checks matter, one for even lengths and one for odd."
+    reject:
+      - |
+        class ListNode {
+          constructor(val, next = null) {
+            this.val = val;
+            this.next = next;
+          }
+        }
+
+        function fromArray(values) {
+          const dummy = new ListNode(0);
+          let tail = dummy;
+          for (const v of values) {
+            tail.next = new ListNode(v);
+            tail = tail.next;
+          }
+          return dummy.next;
+        }
+
+        function toArray(head) {
+          const out = [];
+          for (let n = head; n !== null; n = n.next) out.push(n.val);
+          return out;
+        }
+
+        function middleNode(head) {
+          return head;
+        }
+
+  - kind: code
+    title: Detect a cycle
+    body: |
+      Write `hasCycle(head)`: return `true` if following `next` pointers ever loops back, `false` if it reaches `null`. Use fast and slow pointers.
+
+      The tests build a cycle by pointing the last node back at an earlier one.
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function hasCycle(head) {
+        return false;
+      }
+    tests:
+      - "(() => { const h = fromArray([1, 2, 3]); h.next.next.next = h.next; return hasCycle(h); })()"
+      - "hasCycle(fromArray([1, 2, 3]))"
+      - "hasCycle(null)"
+      - "(() => { const h = fromArray([1]); h.next = h; return hasCycle(h); })()"
+      - "hasCycle(fromArray([1]))"
+      - "(() => { const h = fromArray([1, 2, 3, 4]); h.next.next.next.next = h; return hasCycle(h); })()"
+    solution: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function hasCycle(head) {
+        let slow = head;
+        let fast = head;
+        while (fast !== null && fast.next !== null) {
+          slow = slow.next;
+          fast = fast.next.next;
+          if (slow === fast) return true;
+        }
+        return false;
+      }
+    hint: Move `slow` by one and `fast` by two. If they are ever the same node, there is a cycle.
+    reject:
+      - |
+        class ListNode {
+          constructor(val, next = null) {
+            this.val = val;
+            this.next = next;
+          }
+        }
+
+        function fromArray(values) {
+          const dummy = new ListNode(0);
+          let tail = dummy;
+          for (const v of values) {
+            tail.next = new ListNode(v);
+            tail = tail.next;
+          }
+          return dummy.next;
+        }
+
+        function toArray(head) {
+          const out = [];
+          for (let n = head; n !== null; n = n.next) out.push(n.val);
+          return out;
+        }
+
+        function hasCycle(head) {
+          return false;
+        }
+
+  - kind: explain
+    title: The dummy node trick
+    body: |
+      Many list problems have an annoying special case: **what if the head itself changes?** (Deleting the first node, or merging where either list might start.)
+
+      The fix: put a throwaway **dummy** node in front, and attach the real list after it.
+
+      ```js
+      const dummy = new ListNode(0, head);
+      // ...work with `curr` starting at dummy...
+      return dummy.next;   // the real head, whatever it became
+      ```
+
+      Now every real node has a node *before* it, so the same code works for the head and for the rest.
+
+  - kind: code
+    title: Merge two sorted lists
+    body: |
+      Write `mergeSorted(a, b)`: merge two **sorted** lists into one sorted list by relinking the existing nodes. Use a dummy node and a `tail` pointer, and repeatedly attach the smaller front node.
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function mergeSorted(a, b) {
+        return null;
+      }
+    tests:
+      - "toArray(mergeSorted(fromArray([1, 2, 4]), fromArray([1, 3, 4])))"
+      - "toArray(mergeSorted(fromArray([]), fromArray([])))"
+      - "toArray(mergeSorted(fromArray([]), fromArray([0])))"
+      - "toArray(mergeSorted(fromArray([5]), fromArray([])))"
+      - "toArray(mergeSorted(fromArray([1, 2, 3]), fromArray([4, 5, 6])))"
+      - "toArray(mergeSorted(fromArray([2, 4, 6]), fromArray([1, 3, 5])))"
+    solution: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function mergeSorted(a, b) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        while (a !== null && b !== null) {
+          if (a.val <= b.val) {
+            tail.next = a;
+            a = a.next;
+          } else {
+            tail.next = b;
+            b = b.next;
+          }
+          tail = tail.next;
+        }
+        tail.next = a !== null ? a : b;
+        return dummy.next;
+      }
+    hint: "When one list runs out, attach whatever remains of the other in one go, with `tail.next = a !== null ? a : b`."
+    reject:
+      - |
+        class ListNode {
+          constructor(val, next = null) {
+            this.val = val;
+            this.next = next;
+          }
+        }
+
+        function fromArray(values) {
+          const dummy = new ListNode(0);
+          let tail = dummy;
+          for (const v of values) {
+            tail.next = new ListNode(v);
+            tail = tail.next;
+          }
+          return dummy.next;
+        }
+
+        function toArray(head) {
+          const out = [];
+          for (let n = head; n !== null; n = n.next) out.push(n.val);
+          return out;
+        }
+
+        function mergeSorted(a, b) {
+          return a;
+        }
+
+  - kind: code
+    title: Remove every node with a value
+    body: |
+      Write `removeValue(head, val)` that removes **all** nodes whose value equals `val` and returns the new head. The dummy node makes removing the head painless.
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function removeValue(head, val) {
+        return head;
+      }
+    tests:
+      - "toArray(removeValue(fromArray([1, 2, 6, 3, 6]), 6))"
+      - "toArray(removeValue(fromArray([7, 7, 7]), 7))"
+      - "toArray(removeValue(fromArray([]), 1))"
+      - "toArray(removeValue(fromArray([1, 2, 3]), 9))"
+      - "toArray(removeValue(fromArray([5, 1, 2]), 5))"
+    solution: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function removeValue(head, val) {
+        const dummy = new ListNode(0, head);
+        let curr = dummy;
+        while (curr.next !== null) {
+          if (curr.next.val === val) curr.next = curr.next.next;
+          else curr = curr.next;
+        }
+        return dummy.next;
+      }
+    hint: Look one node ahead. If `curr.next` has the value, skip it (`curr.next = curr.next.next`) and do **not** move `curr` yet.
+    reject:
+      - |
+        class ListNode {
+          constructor(val, next = null) {
+            this.val = val;
+            this.next = next;
+          }
+        }
+
+        function fromArray(values) {
+          const dummy = new ListNode(0);
+          let tail = dummy;
+          for (const v of values) {
+            tail.next = new ListNode(v);
+            tail = tail.next;
+          }
+          return dummy.next;
+        }
+
+        function toArray(head) {
+          const out = [];
+          for (let n = head; n !== null; n = n.next) out.push(n.val);
+          return out;
+        }
+
+        function removeValue(head, val) {
+          return head;
+        }
+
+  - kind: code
+    title: "Find the bug: the empty list"
+    body: |
+      `appendNode(head, val)` should add a new node with `val` at the **end** of the list and return the head. It crashes when the list is empty (`head` is `null`). Fix it.
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function appendNode(head, val) {
+        let curr = head;
+        while (curr.next !== null) curr = curr.next;
+        curr.next = new ListNode(val);
+        return head;
+      }
+    tests:
+      - "toArray(appendNode(fromArray([1, 2]), 3))"
+      - "toArray(appendNode(null, 5))"
+      - "toArray(appendNode(fromArray([9]), 10))"
+    solution: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      function appendNode(head, val) {
+        if (head === null) return new ListNode(val);
+        let curr = head;
+        while (curr.next !== null) curr = curr.next;
+        curr.next = new ListNode(val);
+        return head;
+      }
+    hint: When there is no head, the new node *is* the whole list.
+    broken_starter: true
+    reject:
+      - |
+        class ListNode {
+          constructor(val, next = null) {
+            this.val = val;
+            this.next = next;
+          }
+        }
+
+        function fromArray(values) {
+          const dummy = new ListNode(0);
+          let tail = dummy;
+          for (const v of values) {
+            tail.next = new ListNode(v);
+            tail = tail.next;
+          }
+          return dummy.next;
+        }
+
+        function toArray(head) {
+          const out = [];
+          for (let n = head; n !== null; n = n.next) out.push(n.val);
+          return out;
+        }
+
+        function appendNode(head, val) {
+          return head;
+        }
+
+  - kind: explain
+    title: Singly vs doubly linked
+    body: |
+      What we built is a **singly linked** list: each node knows only what comes next. A **doubly linked** list also keeps a `prev` pointer, so you can walk backwards and delete a node in O(1) when you already hold it.
+
+      ```
+      null ← [1] ⇄ [2] ⇄ [3] → null
+      ```
+
+      The cost: one more pointer per node, and twice as many pointers to update on every insert or delete. In Module 35 a doubly linked list powers the LRU cache.
+
+  - kind: why
+    body: |
+      Linked lists are rarely the best choice in everyday JavaScript, because arrays are fast and simple. But the *ideas* are everywhere: pointers that follow references, changing links in place, fast and slow pointers, and the dummy node. Trees, graphs and hash-map buckets all use nodes and pointers.
+
+      They are also a favourite interview topic precisely because a single missed `null` check or lost `next` breaks the code.
+
+  - kind: recap
+    body: |
+      - A linked list is **nodes** with a `val` and a `next` pointer. You hold the **head**. The end is `null`.
+      - Insert or delete at a known spot is O(1), but reaching the k-th item is O(k).
+      - **Reverse** with `prev`, `curr`, and a saved `next`. Never overwrite `curr.next` before saving it.
+      - **Fast and slow pointers** find the middle and detect cycles in O(n) time and O(1) space.
+      - A **dummy node** removes the special case for changing the head.
+      - Always guard against `null`: an empty list, and running off the end.

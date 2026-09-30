@@ -1,0 +1,5 @@
+title: "Reading tracker"
+module: 40
+kind: capstone
+summary: "The Part 10 checkpoint and Intermediate capstone: fetch book data from an API, validate it with Pydantic, store it in SQLite, track reading progress, and prove it with pytest and mocked HTTP."
+minutes: 120

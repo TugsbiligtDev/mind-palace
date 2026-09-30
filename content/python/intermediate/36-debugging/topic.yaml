@@ -1,0 +1,4 @@
+title: "Debugging in Depth"
+module: 36
+summary: "A systematic way to find bugs: breakpoint() and pdb, the VS Code debugger, logging for diagnosis, shrinking a bug to a minimal reproducible example, and reading library source code."
+minutes: 85

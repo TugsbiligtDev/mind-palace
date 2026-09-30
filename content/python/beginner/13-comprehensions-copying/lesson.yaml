@@ -1,0 +1,232 @@
+steps:
+  - kind: explain
+    title: "Comprehensions: a loop in one line"
+    body: |
+      Building a list with a loop takes four lines:
+
+      ```python
+      squares = []
+      for n in range(5):
+          squares.append(n * n)
+      ```
+
+      A **list comprehension** says the same in one:
+
+      ```python
+      squares = [n * n for n in range(5)]      # [0, 1, 4, 9, 16]
+      ```
+
+      Read it aloud: *"n times n, for each n in range 5."* The pattern is `[expression for name in sequence]`.
+
+      Add `if` at the end to **filter**:
+
+      ```python
+      evens = [n for n in range(10) if n % 2 == 0]     # [0, 2, 4, 6, 8]
+      ```
+
+      The same idea builds a **dictionary** (`{k: v for ...}`) and a **set** (`{x for ...}`).
+
+  - kind: code
+    title: Try comprehensions
+    body: |
+      Run this. Then write your own comprehension that gives the cubes (`n ** 3`) of 1 to 5.
+    code: |
+      words = ["detective", "moth", "case", "ledger"]
+
+      print([len(w) for w in words])
+      print([w.upper() for w in words if len(w) > 4])
+      print({w: len(w) for w in words})
+      print({len(w) for w in words})
+
+  - kind: code
+    title: Shout the long words
+    body: |
+      Finish `shout_long(words, n)`: return a list of the words **longer than `n` letters**, in capital letters, in the same order. `shout_long(["hi", "hello", "yo"], 2)` is `["HELLO"]`.
+
+      Do it in **one list comprehension**.
+    code: |
+      def shout_long(words, n):
+          return []
+    tests:
+      - "shout_long(['hi', 'hello', 'yo'], 2)"
+      - "shout_long([], 3)"
+      - "shout_long(['cat', 'dog'], 3)"
+      - "shout_long(['moth', 'bold', 'ada'], 2)"
+    solution: |
+      def shout_long(words, n):
+          return [w.upper() for w in words if len(w) > n]
+    hint: "`[w.upper() for w in words if len(w) > n]`."
+    reject:
+      - |
+        def shout_long(words, n):
+            return [w.upper() for w in words if len(w) >= n]
+
+  - kind: code
+    title: Flip a dictionary
+    body: |
+      Finish `flip(d)`: swap keys and values. `flip({"a": 1, "b": 2})` is `{1: "a", 2: "b"}`. Assume all the values are different. Use a **dict comprehension**: `{value: key for key, value in d.items()}`.
+    code: |
+      def flip(d):
+          return d
+    tests:
+      - "flip({'a': 1, 'b': 2})"
+      - "flip({})"
+      - "flip({'x': 'y'})"
+    solution: |
+      def flip(d):
+          return {value: key for key, value in d.items()}
+    hint: "Loop over `d.items()` and write `value: key`."
+    reject:
+      - |
+        def flip(d):
+            return {key: key for key in d}
+
+  - kind: explain
+    title: When a comprehension is too much
+    body: |
+      Comprehensions are for **simple** "transform and/or filter" jobs. If it needs two conditions, a nested loop, and a clever trick, a normal `for` loop is kinder to the next reader (that is you).
+
+      ```python
+      # Too dense: hard to read
+      result = [f(x) if x > 0 else g(x) for row in grid for x in row if x != 5]
+
+      # Clearer as a loop
+      result = []
+      for row in grid:
+          for x in row:
+              if x == 5:
+                  continue
+              result.append(f(x) if x > 0 else g(x))
+      ```
+
+      A good rule: if it does not fit comfortably on one line, or you need a second read to understand it, use a loop.
+
+  - kind: explain
+    title: Two names, one list
+    body: |
+      Remember: a variable is a **name tag** on a value. Copying a *name* does not copy the *value*:
+
+      ```python
+      a = [1, 2, 3]
+      b = a            # b is a second tag on the SAME list
+      b.append(4)
+      print(a)         # [1, 2, 3, 4]  !!  a changed too
+      ```
+
+      This is called **aliasing**. It happens with any mutable value (lists, dicts, sets). With numbers and text it is harmless because they cannot change.
+
+      The same thing happens when you pass a list into a function: the function receives the *same* list, and if it changes it, the caller's list changes too.
+
+  - kind: code
+    title: Don't change my list
+    body: |
+      `with_clue(clues, new_clue)` should return a **new** list with the clue added at the end, and leave the caller's list alone. The starter changes the original. Fix it, without using `.append` on the original.
+
+      `clues + [new_clue]` builds a new list.
+    code: |
+      def with_clue(clues, new_clue):
+          clues.append(new_clue)
+          return clues
+    tests:
+      - "with_clue(['a', 'b'], 'c')"
+      - "with_clue([], 'x')"
+      - "(lambda c: (with_clue(c, 'z'), c))(['a'])"
+    solution: |
+      def with_clue(clues, new_clue):
+          return clues + [new_clue]
+    hint: "`clues + [new_clue]` makes a fresh list. The original never changes."
+    broken_starter: true
+
+  - kind: explain
+    title: Shallow vs. deep copy
+    body: |
+      To really copy a list, make a new one:
+
+      ```python
+      b = a.copy()     # or list(a) or a[:]
+      ```
+
+      But that is a **shallow copy**: it copies the outer list, while the items inside are still shared. That only matters when the items are mutable (lists inside a list):
+
+      ```python
+      grid = [[1, 2], [3, 4]]
+      shallow = grid.copy()
+      shallow[0].append(99)
+      print(grid)          # [[1, 2, 99], [3, 4]]  the inner list is shared!
+      ```
+
+      For a **deep copy**, which copies everything inside as well, use the `copy` module:
+
+      ```python
+      import copy
+      deep = copy.deepcopy(grid)
+      ```
+
+  - kind: code
+    title: A safe copy of a grid
+    body: |
+      Finish `copy_grid(grid)`: return a completely independent copy of a list of lists, so changing the copy never changes the original.
+
+      Import `copy` and use `copy.deepcopy`.
+    code: |
+      def copy_grid(grid):
+          return grid.copy()
+    tests:
+      - "copy_grid([[1, 2], [3, 4]])"
+      - "(lambda g: (copy_grid(g)[0].append(99), g)[1])([[1], [2]])"
+      - "(lambda g: copy_grid(g) is g)([[1]])"
+    solution: |
+      import copy
+
+
+      def copy_grid(grid):
+          return copy.deepcopy(grid)
+    hint: "`copy.deepcopy(grid)`."
+    broken_starter: true
+
+  - kind: explain
+    title: "The classic bug: [[0] * 3] * 3"
+    body: |
+      You want a 3×3 grid of zeros. This looks right and is wrong:
+
+      ```python
+      grid = [[0] * 3] * 3
+      grid[0][0] = 1
+      print(grid)      # [[1, 0, 0], [1, 0, 0], [1, 0, 0]]  every row changed!
+      ```
+
+      `[row] * 3` does not make three rows. It puts **the same row** three times, so all three names point at one list. The fix is a comprehension that builds a **fresh row each time**:
+
+      ```python
+      grid = [[0] * 3 for _ in range(3)]
+      ```
+
+      (`_` is the conventional name for "a loop variable I don't use".)
+
+  - kind: code
+    title: Make a real grid
+    body: |
+      Finish `make_grid(rows, cols)`: a list of `rows` rows, each a list of `cols` zeros, where every row is its **own** list. Changing one cell must not change other rows.
+    code: |
+      def make_grid(rows, cols):
+          return [[0] * cols] * rows
+    tests:
+      - "make_grid(2, 3)"
+      - "(lambda g: (g[0].__setitem__(0, 9), g)[1])(make_grid(3, 2))"
+      - "make_grid(0, 5)"
+    solution: |
+      def make_grid(rows, cols):
+          return [[0] * cols for _ in range(rows)]
+    hint: "Build each row inside a comprehension: `[[0] * cols for _ in range(rows)]`."
+    broken_starter: true
+
+  - kind: why
+    body: |
+      "I changed one list and another one changed too" is among the most confusing bugs for new programmers, and it all comes from one rule: **assignment copies the name tag, not the value**. Once you see that, aliasing, function side effects and the grid bug all make sense, and comprehensions give you a tidy way to build new data instead of changing old data.
+
+  - kind: recap
+    body: |
+      - Comprehensions: `[expr for x in seq if cond]`, `{k: v for ...}`, `{x for ...}`. Use a plain loop when it gets complicated.
+      - **Aliasing:** `b = a` gives two names for one mutable object; changes show through both.
+      - Copy with `a.copy()` (shallow) or `copy.deepcopy(a)` (everything inside).
+      - `[[0] * 3] * 3` repeats one row. Use `[[0] * 3 for _ in range(3)]`.

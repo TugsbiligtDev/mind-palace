@@ -1,0 +1,40 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(17 // 5, 17 % 5)
+    options: ["3 2", "3.4 2", "2 3", "3 3"]
+    answer: 0
+    explanation: "5 goes into 17 three times (`//` gives 3) with 2 left over (`%` gives 2)."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(2 + 3 * 4 ** 2)
+    options: ["50", "80", "400", "26"]
+    answer: 0
+    explanation: "`**` first: 4 ** 2 = 16. Then `*`: 3 * 16 = 48. Then `+`: 2 + 48 = 50."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(6 / 3)
+    options: ["2.0", "2", "3", "0.5"]
+    answer: 0
+    explanation: "`/` always gives a float, even when the result is a whole number."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      x = 4
+      print(1 < x < 10 and not x == 4)
+    options: ["False", "True", "4", "Error"]
+    answer: 0
+    explanation: "`1 < x < 10` is True, but `not x == 4` is `not True`, which is False. True and False is False."
+  - type: fill
+    prompt: Complete the line so `count` grows by 5.
+    code: |
+      count = 10
+      count ____ 5
+      print(count)
+    answer: "+="
+    accept: ["+ ="]
+    explanation: "`count += 5` means `count = count + 5`, so it prints 15."

@@ -1,0 +1,4 @@
+title: "Conditionals"
+module: 8
+summary: "Make your program decide: if, elif and else, what Python treats as true or false, when to use == and when to use is, and how early returns keep code flat."
+minutes: 60

@@ -1,0 +1,342 @@
+steps:
+  - kind: explain
+    title: Server logs on the desk
+    body: |
+      Inkwell's website writes a log line for every event, and last night's log is **huge**. The agency wants to know which parts of the system logged the most **errors**. This is the **Part 7 checkpoint**: a log analyzer that
+
+      - **streams** the file with a **generator** (never loading it all),
+      - **parses** each line with a **regex**,
+      - **counts** errors by source with **`Counter`**,
+      - **times** itself with a **decorator**,
+      - and takes its options with **`argparse`**.
+
+      A log line looks like `2026-09-30 12:01:02 ERROR db: connection timeout`. Lines that do not fit this shape are ignored. Five cases build the pieces, and each starter includes the earlier work.
+
+  - kind: code
+    title: "1. Stream the file"
+    body: |
+      Write a **generator** `read_lines(path)` that opens the file and yields each line **without** its trailing newline, one at a time. It must be lazy: the checker asks for only the first line of a file and expects the rest not to be read into a list.
+    code: |
+      def read_lines(path):
+          pass
+    tests:
+      - "open('a.log', 'w').write('one\\ntwo\\nthree\\n')\nresult = list(read_lines('a.log'))"
+      - "open('b.log', 'w').write('first\\nsecond\\n')\ng = read_lines('b.log')\nresult = (type(g).__name__, next(g))"
+      - "open('c.log', 'w').write('')\nresult = list(read_lines('c.log'))"
+    solution: |
+      def read_lines(path):
+          with open(path, encoding="utf-8") as f:
+              for line in f:
+                  yield line.rstrip("\n")
+    hint: "Open with `with`, loop `for line in f:` and `yield line.rstrip(\"\\n\")`. A file object is already lazy."
+    reject:
+      - |
+        def read_lines(path):
+            with open(path, encoding="utf-8") as f:
+                return f.read().splitlines()
+
+  - kind: code
+    title: "2. Parse with a regex"
+    body: |
+      The pattern is given. Write a generator `parse_lines(lines)` that takes any iterable of lines and **yields a dictionary** (`date`, `time`, `level`, `source`, `message`) for each line that fully matches, silently skipping the ones that do not.
+    code: |
+      import re
+
+      PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([A-Z]+) (\w+): (.*)")
+
+
+      def parse_lines(lines):
+          pass
+    tests:
+      - "list(parse_lines(['2026-09-30 12:01:02 ERROR db: timeout', 'garbage', '2026-09-30 12:01:03 INFO web: ok']))"
+      - "list(parse_lines([]))"
+      - "next(parse_lines(('2026-09-30 00:00:00 INFO x: y' if i % 2 else 'bad' for i in range(10**9))))"
+    solution: |
+      import re
+
+      PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([A-Z]+) (\w+): (.*)")
+
+
+      def parse_lines(lines):
+          for line in lines:
+              m = PATTERN.fullmatch(line)
+              if m:
+                  date, time, level, source, message = m.groups()
+                  yield {"date": date, "time": time, "level": level, "source": source, "message": message}
+    hint: "`for line in lines:` then `PATTERN.fullmatch(line)`. If it matched, `yield` the dict. Do not build a list."
+    reject:
+      - |
+        import re
+
+        PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([A-Z]+) (\w+): (.*)")
+
+
+        def parse_lines(lines):
+            out = []
+            for line in lines:
+                m = PATTERN.fullmatch(line)
+                if m:
+                    out.append(dict(zip(("date", "time", "level", "source", "message"), m.groups())))
+            return out
+
+  - kind: code
+    title: "3. Count the errors"
+    body: |
+      Write `count_errors(records)`: given any iterable of parsed dictionaries, return a `Counter` of **source** names for the records whose `level` is `"ERROR"`. Then write `top_errors(records, n)` returning the `n` biggest as `(source, count)` pairs, with ties ordered alphabetically by source.
+    code: |
+      from collections import Counter
+    tests:
+      - "recs = [{'level': 'ERROR', 'source': 'db'}, {'level': 'INFO', 'source': 'db'}, {'level': 'ERROR', 'source': 'web'}, {'level': 'ERROR', 'source': 'db'}]\nresult = dict(count_errors(recs))"
+      - "recs = [{'level': 'ERROR', 'source': 'web'}, {'level': 'ERROR', 'source': 'db'}, {'level': 'ERROR', 'source': 'db'}, {'level': 'ERROR', 'source': 'auth'}, {'level': 'ERROR', 'source': 'auth'}]\nresult = top_errors(recs, 2)"
+      - "result = top_errors([], 3)"
+      - "result = type(count_errors([])).__name__"
+    solution: |
+      from collections import Counter
+
+
+      def count_errors(records):
+          return Counter(r["source"] for r in records if r["level"] == "ERROR")
+
+
+      def top_errors(records, n):
+          counts = count_errors(records)
+          ordered = sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))
+          return ordered[:n]
+    hint: "`Counter(r[\"source\"] for r in records if r[\"level\"] == \"ERROR\")`, then sort the items by `(-count, source)`."
+    reject:
+      - |
+        from collections import Counter
+
+
+        def count_errors(records):
+            return Counter(r["source"] for r in records)
+
+
+        def top_errors(records, n):
+            return count_errors(records).most_common(n)
+
+  - kind: code
+    title: "4. Time it with a decorator"
+    body: |
+      Write a decorator `timed`. The decorated function works as normal (keeping its name with `@wraps`), and after each call the decorator stores how long it took, in seconds as a float, in the attribute `last_seconds` of the wrapper. Use `time.perf_counter()`.
+    code: |
+      import time
+      from functools import wraps
+
+
+      def timed(func):
+          return func
+    tests:
+      - "@timed\ndef add(a, b):\n    return a + b\n\nvalue = add(1, 2)\nresult = (value, add.__name__, isinstance(add.last_seconds, float), add.last_seconds >= 0)"
+      - "@timed\ndef slow():\n    return sum(range(200000))\n\nslow()\nfirst = slow.last_seconds\nslow()\nresult = (isinstance(first, float), slow.last_seconds != first or True)"
+      - "@timed\ndef boom():\n    raise ValueError('x')\n\ntry:\n    boom()\nexcept ValueError:\n    result = 'raised'"
+    solution: |
+      import time
+      from functools import wraps
+
+
+      def timed(func):
+          @wraps(func)
+          def wrapper(*args, **kwargs):
+              start = time.perf_counter()
+              try:
+                  return func(*args, **kwargs)
+              finally:
+                  wrapper.last_seconds = time.perf_counter() - start
+
+          return wrapper
+    hint: "Record `start`, call the function inside `try`, and set `wrapper.last_seconds` in a `finally`."
+    reject:
+      - |
+        import time
+        from functools import wraps
+
+
+        def timed(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+
+            return wrapper
+
+  - kind: code
+    title: "5. The command-line tool"
+    body: |
+      Put it together. Write `main(argv)`:
+
+      - options: positional `path`; `--top` (integer, default 3); `--level` (default `"ERROR"`).
+      - stream the file, parse the lines, count records at the chosen level by source, and **return a list of report lines**: `"<source>: <count>"` for the top `--top` sources (biggest first, ties alphabetical), or `["no matching lines"]` when there are none.
+
+      Reuse the helpers below (they are provided this time).
+    code: |
+      import argparse
+      import re
+      from collections import Counter
+
+      PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([A-Z]+) (\w+): (.*)")
+
+
+      def read_lines(path):
+          with open(path, encoding="utf-8") as f:
+              for line in f:
+                  yield line.rstrip("\n")
+
+
+      def parse_lines(lines):
+          for line in lines:
+              m = PATTERN.fullmatch(line)
+              if m:
+                  date, time, level, source, message = m.groups()
+                  yield {"date": date, "time": time, "level": level, "source": source, "message": message}
+
+
+      def main(argv):
+          return []
+    tests:
+      - "open('x.log', 'w').write('2026-09-30 12:00:00 ERROR db: a\\n2026-09-30 12:00:01 ERROR web: b\\nbad line\\n2026-09-30 12:00:02 ERROR db: c\\n2026-09-30 12:00:03 INFO web: d\\n')\nresult = main(['x.log'])"
+      - "open('y.log', 'w').write('2026-09-30 12:00:00 INFO db: a\\n2026-09-30 12:00:01 INFO web: b\\n2026-09-30 12:00:02 INFO web: c\\n')\nresult = main(['y.log', '--level', 'INFO', '--top', '1'])"
+      - "open('z.log', 'w').write('2026-09-30 12:00:00 INFO db: a\\n')\nresult = main(['z.log'])"
+      - "open('w.log', 'w').write('')\nresult = main(['w.log', '--top', '5'])"
+    solution: |
+      import argparse
+      import re
+      from collections import Counter
+
+      PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([A-Z]+) (\w+): (.*)")
+
+
+      def read_lines(path):
+          with open(path, encoding="utf-8") as f:
+              for line in f:
+                  yield line.rstrip("\n")
+
+
+      def parse_lines(lines):
+          for line in lines:
+              m = PATTERN.fullmatch(line)
+              if m:
+                  date, time, level, source, message = m.groups()
+                  yield {"date": date, "time": time, "level": level, "source": source, "message": message}
+
+
+      def main(argv):
+          parser = argparse.ArgumentParser(prog="analyze")
+          parser.add_argument("path")
+          parser.add_argument("--top", type=int, default=3)
+          parser.add_argument("--level", default="ERROR")
+          args = parser.parse_args(argv)
+
+          counts = Counter(r["source"] for r in parse_lines(read_lines(args.path)) if r["level"] == args.level)
+          if not counts:
+              return ["no matching lines"]
+          ordered = sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))
+          return [f"{source}: {count}" for source, count in ordered[: args.top]]
+    hint: "Parse the options, then `Counter(...)` over `parse_lines(read_lines(args.path))` filtered by level. Sort by `(-count, source)` and format the top few."
+    reject:
+      - |
+        import argparse
+        import re
+        from collections import Counter
+
+        PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([A-Z]+) (\w+): (.*)")
+
+
+        def read_lines(path):
+            with open(path, encoding="utf-8") as f:
+                for line in f:
+                    yield line.rstrip("\n")
+
+
+        def parse_lines(lines):
+            for line in lines:
+                m = PATTERN.fullmatch(line)
+                if m:
+                    date, time, level, source, message = m.groups()
+                    yield {"date": date, "time": time, "level": level, "source": source, "message": message}
+
+
+        def main(argv):
+            return ["no matching lines"]
+
+  - kind: mac
+    title: Run the analyzer on your Mac
+    body: |
+      Assemble your pieces into `analyze.py` with an `if __name__ == "__main__":` block that calls `main(sys.argv[1:])`, prints each line, and shows the time with your `timed` decorator. The commands below use a compact version so you can see the whole tool run on a sample log.
+
+      **Checkpoint:** paste the output. It should contain `db: 2`.
+    commands: |
+      mkdir -p ~/Desktop/log-analyzer && cd ~/Desktop/log-analyzer
+      cat > sample.log <<'LOG'
+      2026-09-30 12:00:00 ERROR db: connection timeout
+      2026-09-30 12:00:01 ERROR web: bad gateway
+      2026-09-30 12:00:02 ERROR db: deadlock
+      2026-09-30 12:00:03 INFO web: request ok
+      not a log line
+      LOG
+      cat > analyze.py <<'PY'
+      import argparse
+      import re
+      import sys
+      import time
+      from collections import Counter
+      from functools import wraps
+
+      PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([A-Z]+) (\w+): (.*)")
+
+
+      def timed(func):
+          @wraps(func)
+          def wrapper(*args, **kwargs):
+              start = time.perf_counter()
+              try:
+                  return func(*args, **kwargs)
+              finally:
+                  wrapper.last_seconds = time.perf_counter() - start
+          return wrapper
+
+
+      def read_lines(path):
+          with open(path, encoding="utf-8") as f:
+              for line in f:
+                  yield line.rstrip("\n")
+
+
+      def parse_lines(lines):
+          for line in lines:
+              m = PATTERN.fullmatch(line)
+              if m:
+                  yield dict(zip(("date", "time", "level", "source", "message"), m.groups()))
+
+
+      @timed
+      def main(argv):
+          parser = argparse.ArgumentParser(prog="analyze")
+          parser.add_argument("path")
+          parser.add_argument("--top", type=int, default=3)
+          parser.add_argument("--level", default="ERROR")
+          args = parser.parse_args(argv)
+          counts = Counter(r["source"] for r in parse_lines(read_lines(args.path)) if r["level"] == args.level)
+          ordered = sorted(counts.items(), key=lambda p: (-p[1], p[0]))
+          return [f"{s}: {c}" for s, c in ordered[: args.top]] or ["no matching lines"]
+
+
+      if __name__ == "__main__":
+          for line in main(sys.argv[1:]):
+              print(line)
+          print(f"took {main.last_seconds:.4f}s")
+      PY
+      uv run analyze.py sample.log
+      uv run analyze.py sample.log --level INFO
+      uv run analyze.py --help
+    expect_output:
+      - "db: 2"
+
+  - kind: why
+    body: |
+      Every piece here scales: a generator pipeline handles a 50 GB log with a few kilobytes of memory, and the same structure (read, parse, aggregate, report) powers real monitoring and data tools. You also practised what makes a good command-line program: clear options, help text, and a reusable `main` you can test.
+
+  - kind: recap
+    body: |
+      - The **Part 7 checkpoint**: generator (`read_lines`, `parse_lines`) → regex → `Counter` → decorator (`timed`) → `argparse`.
+      - Generators chained together process data one item at a time, whatever the file size.
+      - Make `main(argv)` return data and print in the `if __name__ == "__main__":` block: it is then easy to test.

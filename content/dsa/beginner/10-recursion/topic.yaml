@@ -1,0 +1,4 @@
+title: Recursion
+module: 10
+summary: "A function that calls itself: base case, recursive case, the call stack, recursion trees, stack overflow, and turning recursion into a loop with an explicit stack."
+minutes: 55

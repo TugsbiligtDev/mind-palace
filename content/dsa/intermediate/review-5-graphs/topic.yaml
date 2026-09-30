@@ -1,0 +1,5 @@
+title: "Graphs"
+module: 25
+kind: review
+summary: Six graph questions on traversal, shortest paths, colouring and union-find. Model the problem as a graph first, then choose the algorithm.
+minutes: 55

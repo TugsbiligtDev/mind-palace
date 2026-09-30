@@ -1,0 +1,1159 @@
+steps:
+  - kind: explain
+    title: The BST rule
+    body: |
+      A **binary search tree** (BST) is a binary tree with one extra rule at **every** node:
+
+      - everything in the **left** subtree is **smaller** than the node,
+      - everything in the **right** subtree is **bigger**.
+
+      ```
+              8
+             / \
+            3   10
+           / \    \
+          1   6    14
+      ```
+
+      This is binary search turned into a shape. To find a value, compare with the node: smaller → go left, bigger → go right. Each step throws away a whole subtree.
+
+      In a **balanced** tree that is **O(log n)** for search, insert and delete. In a lopsided tree (say you insert 1, 2, 3, 4, 5 in order, giving a chain), it degrades to **O(n)**.
+
+  - kind: code
+    title: Search a BST
+    body: |
+      Write `searchBST(root, val)`: return the **node** whose value is `val` (the whole subtree under it comes along), or `null` if it is not there. Compare and go left or right. No need to visit both sides.
+    code: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function searchBST(root, val) {
+        return null;
+      }
+    tests:
+      - "treeToArray(searchBST(buildTree([4, 2, 7, 1, 3]), 2))"
+      - "treeToArray(searchBST(buildTree([4, 2, 7, 1, 3]), 5))"
+      - "treeToArray(searchBST(buildTree([]), 1))"
+      - "treeToArray(searchBST(buildTree([4, 2, 7, 1, 3]), 4))"
+      - "treeToArray(searchBST(buildTree([8, 3, 10, 1, 6, null, 14]), 6))"
+    solution: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function searchBST(root, val) {
+        let node = root;
+        while (node !== null && node.val !== val) {
+          node = val < node.val ? node.left : node.right;
+        }
+        return node;
+      }
+    hint: Loop while the node exists and is not the one you want, moving left when `val` is smaller and right otherwise.
+    reject:
+      - |
+        class TreeNode {
+          constructor(val, left = null, right = null) {
+            this.val = val;
+            this.left = left;
+            this.right = right;
+          }
+        }
+
+        // Builds a tree from LeetCode's level-order array, where null means "no node".
+        function buildTree(values) {
+          if (values.length === 0 || values[0] === null) return null;
+          const root = new TreeNode(values[0]);
+          const queue = [root];
+          let i = 1;
+          for (let h = 0; h < queue.length && i < values.length; h++) {
+            const node = queue[h];
+            if (i < values.length && values[i] !== null) {
+              node.left = new TreeNode(values[i]);
+              queue.push(node.left);
+            }
+            i++;
+            if (i < values.length && values[i] !== null) {
+              node.right = new TreeNode(values[i]);
+              queue.push(node.right);
+            }
+            i++;
+          }
+          return root;
+        }
+
+        // The reverse: a tree back into a level-order array.
+        function treeToArray(root) {
+          const out = [];
+          const queue = [root];
+          for (let h = 0; h < queue.length; h++) {
+            const node = queue[h];
+            if (node) {
+              out.push(node.val);
+              queue.push(node.left, node.right);
+            } else {
+              out.push(null);
+            }
+          }
+          while (out.length > 0 && out[out.length - 1] === null) out.pop();
+          return out;
+        }
+
+
+        function searchBST(root, val) {
+          return root;
+        }
+
+  - kind: code
+    title: Insert into a BST
+    body: |
+      Write `insertBST(root, val)`: insert `val` (not already present) in its correct place as a **new leaf**, and return the root. Inserting into an empty tree returns the new node.
+    code: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function insertBST(root, val) {
+        return root;
+      }
+    tests:
+      - "treeToArray(insertBST(buildTree([4, 2, 7, 1, 3]), 5))"
+      - "treeToArray(insertBST(buildTree([]), 5))"
+      - "treeToArray(insertBST(buildTree([4, 2, 7, 1, 3]), 0))"
+      - "treeToArray(insertBST(buildTree([4, 2, 7, 1, 3]), 9))"
+      - "treeToArray(insertBST(buildTree([5]), 3))"
+    solution: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function insertBST(root, val) {
+        if (root === null) return new TreeNode(val);
+        if (val < root.val) root.left = insertBST(root.left, val);
+        else root.right = insertBST(root.right, val);
+        return root;
+      }
+    hint: "If the spot is empty, create the node. Otherwise recurse into the correct side and reattach the result: `root.left = insertBST(root.left, val)`."
+    reject:
+      - |
+        class TreeNode {
+          constructor(val, left = null, right = null) {
+            this.val = val;
+            this.left = left;
+            this.right = right;
+          }
+        }
+
+        // Builds a tree from LeetCode's level-order array, where null means "no node".
+        function buildTree(values) {
+          if (values.length === 0 || values[0] === null) return null;
+          const root = new TreeNode(values[0]);
+          const queue = [root];
+          let i = 1;
+          for (let h = 0; h < queue.length && i < values.length; h++) {
+            const node = queue[h];
+            if (i < values.length && values[i] !== null) {
+              node.left = new TreeNode(values[i]);
+              queue.push(node.left);
+            }
+            i++;
+            if (i < values.length && values[i] !== null) {
+              node.right = new TreeNode(values[i]);
+              queue.push(node.right);
+            }
+            i++;
+          }
+          return root;
+        }
+
+        // The reverse: a tree back into a level-order array.
+        function treeToArray(root) {
+          const out = [];
+          const queue = [root];
+          for (let h = 0; h < queue.length; h++) {
+            const node = queue[h];
+            if (node) {
+              out.push(node.val);
+              queue.push(node.left, node.right);
+            } else {
+              out.push(null);
+            }
+          }
+          while (out.length > 0 && out[out.length - 1] === null) out.pop();
+          return out;
+        }
+
+
+        function insertBST(root, val) {
+          return root;
+        }
+
+  - kind: explain
+    title: Inorder gives sorted order
+    body: |
+      Read a BST **left, node, right** (inorder) and you get the values **in ascending order**. The rule guarantees it: everything smaller comes first, then the node, then everything bigger.
+
+      This makes several problems easy:
+
+      - **Sorted list** of a BST: run inorder.
+      - **k-th smallest**: run inorder and stop at the k-th value.
+      - **Validate a BST**: inorder must be strictly increasing (or check bounds).
+
+  - kind: code
+    title: "Find the bug: checking only the children"
+    body: |
+      `isValidBST(root)` should return `true` only if the tree obeys the BST rule at **every** node, across all levels. This version only compares each node with its **direct** children, so it accepts `[5, 1, 4, null, null, 3, 6]`, where `3` sits in the right side of `5` even though it is smaller. Fix it by passing down the allowed range.
+    code: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function isValidBST(root) {
+        if (root === null) return true;
+        if (root.left !== null && root.left.val >= root.val) return false;
+        if (root.right !== null && root.right.val <= root.val) return false;
+        return isValidBST(root.left) && isValidBST(root.right);
+      }
+    tests:
+      - "isValidBST(buildTree([2, 1, 3]))"
+      - "isValidBST(buildTree([5, 1, 4, null, null, 3, 6]))"
+      - "isValidBST(buildTree([]))"
+      - "isValidBST(buildTree([1, 1]))"
+      - "isValidBST(buildTree([5, 4, 6, null, null, 3, 7]))"
+      - "isValidBST(buildTree([8, 3, 10, 1, 6, null, 14]))"
+    solution: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function isValidBST(root) {
+        function check(node, low, high) {
+          if (node === null) return true;
+          if (node.val <= low || node.val >= high) return false;
+          return check(node.left, low, node.val) && check(node.right, node.val, high);
+        }
+        return check(root, -Infinity, Infinity);
+      }
+    hint: "Every node has an allowed range `(low, high)`. Going left, the new `high` is the node's value. Going right, the new `low` is the node's value."
+    broken_starter: true
+    reject:
+      - |
+        class TreeNode {
+          constructor(val, left = null, right = null) {
+            this.val = val;
+            this.left = left;
+            this.right = right;
+          }
+        }
+
+        // Builds a tree from LeetCode's level-order array, where null means "no node".
+        function buildTree(values) {
+          if (values.length === 0 || values[0] === null) return null;
+          const root = new TreeNode(values[0]);
+          const queue = [root];
+          let i = 1;
+          for (let h = 0; h < queue.length && i < values.length; h++) {
+            const node = queue[h];
+            if (i < values.length && values[i] !== null) {
+              node.left = new TreeNode(values[i]);
+              queue.push(node.left);
+            }
+            i++;
+            if (i < values.length && values[i] !== null) {
+              node.right = new TreeNode(values[i]);
+              queue.push(node.right);
+            }
+            i++;
+          }
+          return root;
+        }
+
+        // The reverse: a tree back into a level-order array.
+        function treeToArray(root) {
+          const out = [];
+          const queue = [root];
+          for (let h = 0; h < queue.length; h++) {
+            const node = queue[h];
+            if (node) {
+              out.push(node.val);
+              queue.push(node.left, node.right);
+            } else {
+              out.push(null);
+            }
+          }
+          while (out.length > 0 && out[out.length - 1] === null) out.pop();
+          return out;
+        }
+
+
+        function isValidBST(root) {
+          if (root === null) return true;
+          if (root.left !== null && root.left.val >= root.val) return false;
+          if (root.right !== null && root.right.val <= root.val) return false;
+          return isValidBST(root.left) && isValidBST(root.right);
+        }
+
+  - kind: code
+    title: The k-th smallest
+    body: |
+      Write `kthSmallest(root, k)`: the `k`-th smallest value in a BST (`k = 1` is the smallest). Use an iterative inorder walk and stop as soon as you reach the `k`-th value.
+    code: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function kthSmallest(root, k) {
+        return null;
+      }
+    tests:
+      - "kthSmallest(buildTree([3, 1, 4, null, 2]), 1)"
+      - "kthSmallest(buildTree([5, 3, 6, 2, 4, null, null, 1]), 3)"
+      - "kthSmallest(buildTree([5, 3, 6, 2, 4, null, null, 1]), 6)"
+      - "kthSmallest(buildTree([1]), 1)"
+      - "kthSmallest(buildTree([8, 3, 10, 1, 6, null, 14]), 4)"
+    solution: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function kthSmallest(root, k) {
+        const stack = [];
+        let node = root;
+        while (node !== null || stack.length > 0) {
+          while (node !== null) {
+            stack.push(node);
+            node = node.left;
+          }
+          node = stack.pop();
+          k--;
+          if (k === 0) return node.val;
+          node = node.right;
+        }
+        return null;
+      }
+    hint: It is the stack-based inorder from the last module, with a countdown. Return as soon as `k` reaches 0.
+    reject:
+      - |
+        class TreeNode {
+          constructor(val, left = null, right = null) {
+            this.val = val;
+            this.left = left;
+            this.right = right;
+          }
+        }
+
+        // Builds a tree from LeetCode's level-order array, where null means "no node".
+        function buildTree(values) {
+          if (values.length === 0 || values[0] === null) return null;
+          const root = new TreeNode(values[0]);
+          const queue = [root];
+          let i = 1;
+          for (let h = 0; h < queue.length && i < values.length; h++) {
+            const node = queue[h];
+            if (i < values.length && values[i] !== null) {
+              node.left = new TreeNode(values[i]);
+              queue.push(node.left);
+            }
+            i++;
+            if (i < values.length && values[i] !== null) {
+              node.right = new TreeNode(values[i]);
+              queue.push(node.right);
+            }
+            i++;
+          }
+          return root;
+        }
+
+        // The reverse: a tree back into a level-order array.
+        function treeToArray(root) {
+          const out = [];
+          const queue = [root];
+          for (let h = 0; h < queue.length; h++) {
+            const node = queue[h];
+            if (node) {
+              out.push(node.val);
+              queue.push(node.left, node.right);
+            } else {
+              out.push(null);
+            }
+          }
+          while (out.length > 0 && out[out.length - 1] === null) out.pop();
+          return out;
+        }
+
+
+        function kthSmallest(root, k) {
+          return root === null ? null : root.val;
+        }
+
+  - kind: explain
+    title: Deleting a node
+    body: |
+      Deletion has three cases for the node to remove:
+
+      1. **A leaf**: just remove it.
+      2. **One child**: replace the node with that child.
+      3. **Two children**: find its **inorder successor** (the smallest value in its right subtree), copy that value into the node, then delete the successor from the right subtree.
+
+      Case 3 keeps the BST rule, because the successor is the next value in sorted order: bigger than everything on the left, and smaller than the rest of the right.
+
+  - kind: code
+    title: Delete a node
+    body: |
+      Write `deleteNode(root, key)`: remove the node with value `key` (if it exists) and return the root. The tests compare the **sorted values** left, so any correct approach works.
+    code: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function inorder(node, out = []) {
+        if (node === null) return out;
+        inorder(node.left, out);
+        out.push(node.val);
+        inorder(node.right, out);
+        return out;
+      }
+
+      function deleteNode(root, key) {
+        return root;
+      }
+    tests:
+      - "inorder(deleteNode(buildTree([5, 3, 6, 2, 4, null, 7]), 3))"
+      - "inorder(deleteNode(buildTree([5, 3, 6, 2, 4, null, 7]), 5))"
+      - "inorder(deleteNode(buildTree([5, 3, 6, 2, 4, null, 7]), 2))"
+      - "inorder(deleteNode(buildTree([5, 3, 6, 2, 4, null, 7]), 99))"
+      - "inorder(deleteNode(buildTree([1]), 1))"
+      - "inorder(deleteNode(buildTree([]), 1))"
+    solution: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function inorder(node, out = []) {
+        if (node === null) return out;
+        inorder(node.left, out);
+        out.push(node.val);
+        inorder(node.right, out);
+        return out;
+      }
+
+      function deleteNode(root, key) {
+        if (root === null) return null;
+        if (key < root.val) {
+          root.left = deleteNode(root.left, key);
+        } else if (key > root.val) {
+          root.right = deleteNode(root.right, key);
+        } else {
+          if (root.left === null) return root.right;
+          if (root.right === null) return root.left;
+          let successor = root.right;
+          while (successor.left !== null) successor = successor.left;
+          root.val = successor.val;
+          root.right = deleteNode(root.right, successor.val);
+        }
+        return root;
+      }
+    hint: For two children, copy the smallest value of the right subtree into this node, then delete that value from the right subtree.
+    reject:
+      - |
+        class TreeNode {
+          constructor(val, left = null, right = null) {
+            this.val = val;
+            this.left = left;
+            this.right = right;
+          }
+        }
+
+        // Builds a tree from LeetCode's level-order array, where null means "no node".
+        function buildTree(values) {
+          if (values.length === 0 || values[0] === null) return null;
+          const root = new TreeNode(values[0]);
+          const queue = [root];
+          let i = 1;
+          for (let h = 0; h < queue.length && i < values.length; h++) {
+            const node = queue[h];
+            if (i < values.length && values[i] !== null) {
+              node.left = new TreeNode(values[i]);
+              queue.push(node.left);
+            }
+            i++;
+            if (i < values.length && values[i] !== null) {
+              node.right = new TreeNode(values[i]);
+              queue.push(node.right);
+            }
+            i++;
+          }
+          return root;
+        }
+
+        // The reverse: a tree back into a level-order array.
+        function treeToArray(root) {
+          const out = [];
+          const queue = [root];
+          for (let h = 0; h < queue.length; h++) {
+            const node = queue[h];
+            if (node) {
+              out.push(node.val);
+              queue.push(node.left, node.right);
+            } else {
+              out.push(null);
+            }
+          }
+          while (out.length > 0 && out[out.length - 1] === null) out.pop();
+          return out;
+        }
+
+
+        function inorder(node, out = []) {
+          if (node === null) return out;
+          inorder(node.left, out);
+          out.push(node.val);
+          inorder(node.right, out);
+          return out;
+        }
+        function deleteNode(root, key) {
+          return root;
+        }
+
+  - kind: code
+    title: Lowest common ancestor
+    body: |
+      The **lowest common ancestor** of two values `p` and `q` is the deepest node that has both as descendants (a node counts as its own descendant). In a BST you never need to search both sides: walk down from the root, and the first node where `p` and `q` **split** (one goes left, the other right) is the answer.
+
+      Write `lowestCommonAncestor(root, p, q)` returning that node's **value**. Both values are in the tree.
+    code: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function lowestCommonAncestor(root, p, q) {
+        return null;
+      }
+    tests:
+      - "lowestCommonAncestor(buildTree([6, 2, 8, 0, 4, 7, 9, null, null, 3, 5]), 2, 8)"
+      - "lowestCommonAncestor(buildTree([6, 2, 8, 0, 4, 7, 9, null, null, 3, 5]), 2, 4)"
+      - "lowestCommonAncestor(buildTree([6, 2, 8, 0, 4, 7, 9, null, null, 3, 5]), 3, 5)"
+      - "lowestCommonAncestor(buildTree([6, 2, 8, 0, 4, 7, 9, null, null, 3, 5]), 7, 9)"
+      - "lowestCommonAncestor(buildTree([2, 1]), 2, 1)"
+    solution: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function lowestCommonAncestor(root, p, q) {
+        let node = root;
+        while (node !== null) {
+          if (p < node.val && q < node.val) node = node.left;
+          else if (p > node.val && q > node.val) node = node.right;
+          else return node.val;
+        }
+        return null;
+      }
+    hint: If both values are smaller than the node, go left. If both are bigger, go right. Otherwise this node splits them.
+    reject:
+      - |
+        class TreeNode {
+          constructor(val, left = null, right = null) {
+            this.val = val;
+            this.left = left;
+            this.right = right;
+          }
+        }
+
+        // Builds a tree from LeetCode's level-order array, where null means "no node".
+        function buildTree(values) {
+          if (values.length === 0 || values[0] === null) return null;
+          const root = new TreeNode(values[0]);
+          const queue = [root];
+          let i = 1;
+          for (let h = 0; h < queue.length && i < values.length; h++) {
+            const node = queue[h];
+            if (i < values.length && values[i] !== null) {
+              node.left = new TreeNode(values[i]);
+              queue.push(node.left);
+            }
+            i++;
+            if (i < values.length && values[i] !== null) {
+              node.right = new TreeNode(values[i]);
+              queue.push(node.right);
+            }
+            i++;
+          }
+          return root;
+        }
+
+        // The reverse: a tree back into a level-order array.
+        function treeToArray(root) {
+          const out = [];
+          const queue = [root];
+          for (let h = 0; h < queue.length; h++) {
+            const node = queue[h];
+            if (node) {
+              out.push(node.val);
+              queue.push(node.left, node.right);
+            } else {
+              out.push(null);
+            }
+          }
+          while (out.length > 0 && out[out.length - 1] === null) out.pop();
+          return out;
+        }
+
+
+        function lowestCommonAncestor(root, p, q) {
+          return root.val;
+        }
+
+  - kind: info
+    title: "🔹 Self-balancing trees (recognition)"
+    body: |
+      A plain BST can become a chain if values arrive in sorted order, and then every operation is O(n). **Self-balancing** trees fix this by **rotating** nodes after inserts and deletes so the height stays about `log n`.
+
+      - **AVL trees** keep every node's two sides within 1 level of each other.
+      - **Red-black trees** use colour rules to keep the tree roughly balanced, with cheaper updates.
+
+      You do not need to write one. Just know they exist to guarantee O(log n), and that the ordered maps of many languages are built on them. (JavaScript's `Map` is a hash map, not a tree.)
+
+  - kind: why
+    body: |
+      The BST joins two ideas you already know: **binary search** (halve the search each step) and a **linked structure** (cheap inserts and deletes). It gives you both fast lookups and fast changes, which a sorted array cannot.
+
+      The lesson to carry forward: an ordering rule stored in the *shape* of a structure is a powerful thing.
+
+  - kind: recap
+    body: |
+      - **BST rule:** left subtree smaller, right subtree bigger, at every node.
+      - Search, insert and delete walk down one path: **O(height)**, which is O(log n) if balanced and O(n) if it is a chain.
+      - **Inorder** traversal of a BST is sorted, which gives the sorted list and the k-th smallest.
+      - **Validate** with an allowed `(low, high)` range, not just direct children.
+      - **Delete:** leaf, one child, or two children (replace with the inorder successor).
+      - The **lowest common ancestor** is the first node where the two values split.
+      - 🔹 AVL and red-black trees stay balanced by rotation.

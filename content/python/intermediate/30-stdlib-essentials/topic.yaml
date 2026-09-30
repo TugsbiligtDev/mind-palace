@@ -1,0 +1,4 @@
+title: "Standard Library Essentials"
+module: 30
+summary: "The everyday toolbox: collections (Counter, defaultdict, deque), time zones without bugs, regular expressions, argparse for command-line options, subprocess and shutil, and logging."
+minutes: 95

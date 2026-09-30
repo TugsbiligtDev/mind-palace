@@ -1,0 +1,41 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: You have a 6-step data pipeline that gives a wrong final answer. What is the fastest first move?
+    options:
+      - Check the output after step 3 to see whether the mistake is before or after it
+      - Rewrite the whole program
+      - Add random print statements everywhere
+      - Ask someone else to fix it
+    answer: 0
+    explanation: Checking the middle halves the search area each time, the same trick as binary search.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      total = 0
+      trace = []
+      for n in [2, 5, 1]:
+          total += n
+          trace.append(total)
+      print(trace)
+    options: ["[2, 7, 8]", "[2, 5, 1]", "[8]", "[0, 2, 7]"]
+    answer: 0
+    explanation: "After each round the running total is 2, then 7, then 8."
+  - type: mcq
+    prompt: Which is the best way to use an AI assistant when you are stuck on an exercise?
+    options:
+      - Ask for a hint or an explanation, then write the solution yourself and test it
+      - Paste the exercise and copy the answer without reading it
+      - Never use it at all
+      - Paste your passwords so it can log in
+    answer: 0
+    explanation: Learning happens when you do the thinking. Use the assistant to explain, hint and review, and always verify.
+  - type: mcq
+    prompt: You get an error. What should you copy into a search engine?
+    options:
+      - The last line of the traceback, without your own file and variable names
+      - The whole traceback and your private code
+      - Only the file name
+      - Nothing, errors cannot be searched
+    answer: 0
+    explanation: The last line names the error. Removing your own names makes the search match other people's questions.

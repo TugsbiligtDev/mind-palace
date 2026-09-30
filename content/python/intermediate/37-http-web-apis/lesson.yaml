@@ -1,0 +1,382 @@
+steps:
+  - kind: explain
+    title: "How the web talks: requests and responses"
+    body: |
+      When your browser loads a page, it sends an **HTTP request** to a server, and the server sends back an **HTTP response**. Programs talk to each other the same way, often exchanging **JSON** instead of web pages. Such a service is called a **web API**.
+
+      **A request has:**
+
+      - a **method**: what you want to do. `GET` (read), `POST` (create), `PUT`/`PATCH` (change), `DELETE` (remove),
+      - a **URL**: where (`https://api.example.com/books?author=herbert`), made of a host, a **path** and **query parameters** after the `?`,
+      - **headers**: extra information (`Accept: application/json`, `Authorization: Bearer ...`),
+      - sometimes a **body**: data you send (JSON for a POST).
+
+      **A response has:**
+
+      - a **status code**: how it went,
+      - **headers** (`Content-Type: application/json`),
+      - a **body**: the data.
+
+      | Status | Meaning |
+      |---|---|
+      | **2xx** (200 OK, 201 Created) | success |
+      | **3xx** (301, 302) | redirect: look elsewhere |
+      | **4xx** (400 bad request, 401 not logged in, 403 forbidden, 404 not found, 429 too many requests) | **your** mistake |
+      | **5xx** (500, 502, 503) | the **server's** problem, often temporary |
+
+      In this lesson the browser cannot reach the real internet, so we use a **fake server** inside Python (`httpx.MockTransport`). Your code is the real thing; only the network is pretended. That is also exactly how you test HTTP code (Module 34).
+
+  - kind: code
+    title: Read the status code
+    body: |
+      Write `status_kind(code)` returning `"success"` for 200-299, `"redirect"` for 300-399, `"client error"` for 400-499, `"server error"` for 500-599, and `"unknown"` for anything else.
+    code: |
+      def status_kind(code):
+          return "unknown"
+    tests:
+      - "[status_kind(c) for c in (200, 201, 204, 301, 404, 429, 500, 503, 100, 700, 199, 299)]"
+    solution: |
+      def status_kind(code):
+          if 200 <= code < 300:
+              return "success"
+          if 300 <= code < 400:
+              return "redirect"
+          if 400 <= code < 500:
+              return "client error"
+          if 500 <= code < 600:
+              return "server error"
+          return "unknown"
+    hint: "Chained comparisons: `200 <= code < 300`."
+    reject:
+      - |
+        def status_kind(code):
+            return "success" if code == 200 else "unknown"
+
+  - kind: code
+    title: Build a URL properly
+    body: |
+      Never glue query strings together by hand: special characters (spaces, `&`, `é`) must be **encoded**. `urllib.parse.urlencode` does it. Write `build_url(base, path, params)`: join base and path with exactly one `/`, and add `?` plus the encoded parameters, unless `params` is empty.
+
+      `build_url("https://api.test", "/search", {"q": "dune messiah", "limit": 2})` is `"https://api.test/search?q=dune+messiah&limit=2"`.
+    code: |
+      from urllib.parse import urlencode
+
+
+      def build_url(base, path, params):
+          return base
+    tests:
+      - "build_url('https://api.test', '/search', {'q': 'dune messiah', 'limit': 2})"
+      - "build_url('https://api.test/', 'books', {})"
+      - "build_url('https://api.test', '/a/b', {'q': 'a&b=c'})"
+      - "build_url('https://api.test/', '/x', {'lang': 'français'})"
+    solution: |
+      from urllib.parse import urlencode
+
+
+      def build_url(base, path, params):
+          url = base.rstrip("/") + "/" + path.lstrip("/")
+          if params:
+              url += "?" + urlencode(params)
+          return url
+    hint: "`base.rstrip(\"/\") + \"/\" + path.lstrip(\"/\")`, then `\"?\" + urlencode(params)` when there are params."
+    reject:
+      - |
+        from urllib.parse import urlencode
+
+
+        def build_url(base, path, params):
+            return base + path + "?" + "&".join(f"{k}={v}" for k, v in params.items())
+
+  - kind: explain
+    title: JSON APIs with httpx
+    body: |
+      **httpx** is a modern HTTP library (`requests` is the older, similar one). A call looks like this:
+
+      ```python
+      import httpx
+
+      response = httpx.get("https://api.example.com/books", params={"q": "dune"}, timeout=10)
+      response.status_code        # 200
+      response.headers["content-type"]
+      response.json()             # the body parsed from JSON into dicts and lists
+      response.raise_for_status() # raises httpx.HTTPStatusError for 4xx/5xx
+      ```
+
+      Good habits:
+
+      - **Always set a `timeout`.** Without one a hung server can freeze your program forever.
+      - Call **`raise_for_status()`** so failures are loud, not silent.
+      - Use a **`Client`** (`with httpx.Client() as client:`) to reuse the connection and share headers when making several calls.
+      - Don't trust the data: JSON fields can be missing or `null`. Validate it (Module 39).
+
+      In the exercises below, a `client` is passed into your function. In real life it is `httpx.Client()`; in tests it is a client wired to a fake server.
+
+  - kind: code
+    title: Fetch and parse
+    body: |
+      Write `get_json(client, url)`: use the client to `GET` the URL with a **timeout of 5 seconds**, raise for error statuses, and return the parsed JSON. The checker uses a fake server that returns `{"title": "Dune"}` at `/books/1` and a 404 for everything else.
+    code: |
+      import httpx
+
+
+      def get_json(client, url):
+          return None
+    tests:
+      - "def handler(request):\n    if request.url.path == '/books/1':\n        return httpx.Response(200, json={'title': 'Dune'})\n    return httpx.Response(404, json={'error': 'not found'})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\nresult = get_json(client, 'https://api.test/books/1')"
+      - "def handler(request):\n    return httpx.Response(404, json={'error': 'not found'})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\ntry:\n    get_json(client, 'https://api.test/nope')\nexcept httpx.HTTPStatusError as e:\n    result = e.response.status_code"
+    solution: |
+      import httpx
+
+
+      def get_json(client, url):
+          response = client.get(url, timeout=5)
+          response.raise_for_status()
+          return response.json()
+    hint: "`client.get(url, timeout=5)`, then `response.raise_for_status()`, then `response.json()`."
+    reject:
+      - |
+        import httpx
+
+
+        def get_json(client, url):
+            return client.get(url, timeout=5).json()
+
+  - kind: code
+    title: Sending data
+    body: |
+      Write `create_book(client, base_url, title)`: `POST` a JSON body `{"title": title}` to `base_url + "/books"`, raise for errors, and return the parsed response. Use `client.post(url, json=...)`. The fake server replies `201` with the created record.
+    code: |
+      import httpx
+
+
+      def create_book(client, base_url, title):
+          return None
+    tests:
+      - "seen = []\ndef handler(request):\n    import json\n    seen.append((request.method, request.url.path, json.loads(request.content)))\n    return httpx.Response(201, json={'id': 7, 'title': json.loads(request.content)['title']})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\nresult = (create_book(client, 'https://api.test', 'Emma'), seen)"
+      - "def handler(request):\n    return httpx.Response(422, json={'error': 'bad'})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\ntry:\n    create_book(client, 'https://api.test', '')\nexcept httpx.HTTPStatusError as e:\n    result = e.response.status_code"
+    solution: |
+      import httpx
+
+
+      def create_book(client, base_url, title):
+          response = client.post(base_url + "/books", json={"title": title}, timeout=5)
+          response.raise_for_status()
+          return response.json()
+    hint: "`client.post(url, json={\"title\": title}, timeout=5)`."
+    reject:
+      - |
+        import httpx
+
+
+        def create_book(client, base_url, title):
+            response = client.get(base_url + "/books", timeout=5)
+            return response.json()
+
+  - kind: explain
+    title: "API keys, tokens and .env files"
+    body: |
+      Many APIs need to know **who you are**, so they give you an **API key** or **token** that you send in a header:
+
+      ```python
+      headers = {"Authorization": f"Bearer {token}"}      # a common pattern
+      # or a custom header: {"X-API-Key": key}
+      ```
+
+      **A key is a password.** If it leaks, others can use (and be billed for) your account. The rules:
+
+      1. **Never write a key in your code**, and never commit it to Git or GitHub. (Bots scan GitHub for keys within seconds.)
+      2. Keep it in an **environment variable**, read with `os.environ["API_KEY"]`.
+      3. During development, put it in a **`.env` file** (`API_KEY=abc123`), load it at start-up, and add `.env` to **`.gitignore`**.
+      4. Commit a **`.env.example`** with the *names* but fake values, so others know what to set.
+      5. If a key leaks, **revoke it immediately** and make a new one. Deleting the commit is not enough.
+      6. Never print keys in logs.
+
+  - kind: code
+    title: Read a key safely
+    body: |
+      Write `get_api_key(env)`: `env` is a dictionary-like (in real code `os.environ`). Return the value of `"API_KEY"`. If it is missing **or empty**, raise `RuntimeError("Set the API_KEY environment variable")`. Then write `auth_headers(key)` returning `{"Authorization": "Bearer <key>"}`.
+    code: |
+      def get_api_key(env):
+          return ""
+
+
+      def auth_headers(key):
+          return {}
+    tests:
+      - "get_api_key({'API_KEY': 'abc'})"
+      - "try:\n    get_api_key({})\nexcept RuntimeError as e:\n    result = str(e)"
+      - "try:\n    get_api_key({'API_KEY': ''})\nexcept RuntimeError as e:\n    result = str(e)"
+      - "auth_headers('abc')"
+    solution: |
+      def get_api_key(env):
+          key = env.get("API_KEY", "")
+          if not key:
+              raise RuntimeError("Set the API_KEY environment variable")
+          return key
+
+
+      def auth_headers(key):
+          return {"Authorization": f"Bearer {key}"}
+    hint: "`env.get(\"API_KEY\", \"\")`, then `if not key: raise ...`."
+    reject:
+      - |
+        def get_api_key(env):
+            return env["API_KEY"]
+
+
+        def auth_headers(key):
+            return {"Authorization": key}
+
+  - kind: code
+    title: Parse a .env file
+    body: |
+      A `.env` file has lines like `NAME=value`. Write `parse_env(text)` returning a dict. Ignore blank lines and lines starting with `#`. Split only at the **first** `=` (values may contain `=`), and strip spaces and surrounding quotes (`"` or `'`) from the value.
+    code: |
+      def parse_env(text):
+          return {}
+    tests:
+      - "parse_env('API_KEY=abc123\\nDEBUG=true\\n')"
+      - "parse_env('# secrets\\n\\nTOKEN = \"quoted value\"\\nURL=https://x.test/?a=b\\n')"
+      - "parse_env('')"
+      - "parse_env('NAME=\\'single\\'\\nbadline\\n')"
+    solution: |
+      def parse_env(text):
+          values = {}
+          for line in text.splitlines():
+              line = line.strip()
+              if not line or line.startswith("#") or "=" not in line:
+                  continue
+              name, value = line.split("=", 1)
+              values[name.strip()] = value.strip().strip("\"'")
+          return values
+    hint: "`line.split(\"=\", 1)` splits at the first `=` only. Skip blank, comment and `=`-less lines."
+    reject:
+      - |
+        def parse_env(text):
+            return dict(line.split("=") for line in text.splitlines())
+
+  - kind: explain
+    title: Timeouts, retries and rate limits
+    body: |
+      Networks fail. A robust client plans for it:
+
+      - **Timeouts:** always set one (already a habit).
+      - **Retries:** a `5xx` or a dropped connection is often temporary, so try again, but **wait longer each time** (**exponential backoff**: 1 s, 2 s, 4 s...). Do not retry `4xx` errors (except `429`), because repeating a bad request never fixes it.
+      - **Rate limits:** APIs allow only so many requests per minute. When you exceed it you get **`429 Too Many Requests`**, often with a **`Retry-After`** header saying how many seconds to wait. Respect it. Hammering a server can get you banned.
+      - **Be polite:** cache results you already have, and send only the requests you need.
+
+      Real projects often use a library (`tenacity`, or httpx's transport retries) instead of writing this by hand, but you should understand the idea.
+
+  - kind: code
+    title: Retry with backoff
+    body: |
+      Write `get_with_retry(client, url, attempts=3, sleep=time.sleep)`. Send `GET` requests (timeout 5). Return the JSON of the first `2xx` response. If a response is `5xx`, wait `2 ** attempt_number` seconds (1, 2, ... for attempts numbered from 0) by calling `sleep(...)`, then try again. If it is `429`, wait the number of seconds in its `Retry-After` header instead. Any other status raises through `raise_for_status()` **immediately**, without retrying. If all attempts fail, raise `RuntimeError("giving up")`.
+
+      Return a tuple `(data, delays)` where `delays` is the list of waits.
+    code: |
+      import time
+
+      import httpx
+
+
+      def get_with_retry(client, url, attempts=3, sleep=time.sleep):
+          return (None, [])
+    tests:
+      - "codes = [503, 503, 200]\ndef handler(request):\n    code = codes.pop(0)\n    return httpx.Response(code, json={'ok': True})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\nresult = get_with_retry(client, 'https://x.test', sleep=lambda s: None)"
+      - "waits = []\ncodes = [503, 503, 200]\ndef handler(request):\n    return httpx.Response(codes.pop(0), json={})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\nresult = get_with_retry(client, 'https://x.test', sleep=waits.append)[1]"
+      - "codes = [429, 200]\ndef handler(request):\n    code = codes.pop(0)\n    return httpx.Response(code, json={'v': 1}, headers={'Retry-After': '7'} if code == 429 else {})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\nresult = get_with_retry(client, 'https://x.test', sleep=lambda s: None)"
+      - "calls = []\ndef handler(request):\n    calls.append(1)\n    return httpx.Response(404, json={})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\ntry:\n    get_with_retry(client, 'https://x.test', sleep=lambda s: None)\nexcept httpx.HTTPStatusError:\n    result = len(calls)"
+      - "def handler(request):\n    return httpx.Response(500, json={})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\ntry:\n    get_with_retry(client, 'https://x.test', attempts=2, sleep=lambda s: None)\nexcept RuntimeError as e:\n    result = str(e)"
+    solution: |
+      import time
+
+      import httpx
+
+
+      def get_with_retry(client, url, attempts=3, sleep=time.sleep):
+          delays = []
+          for attempt in range(attempts):
+              response = client.get(url, timeout=5)
+              if response.status_code == 429:
+                  wait = int(response.headers.get("Retry-After", 2 ** attempt))
+              elif response.status_code >= 500:
+                  wait = 2 ** attempt
+              else:
+                  response.raise_for_status()
+                  return (response.json(), delays)
+              delays.append(wait)
+              sleep(wait)
+          raise RuntimeError("giving up")
+    hint: "Loop over attempts. For 429 use `int(response.headers[\"Retry-After\"])`, for 5xx use `2 ** attempt`. Anything else: `raise_for_status()` then return."
+    reject:
+      - |
+        import time
+
+        import httpx
+
+
+        def get_with_retry(client, url, attempts=3, sleep=time.sleep):
+            response = client.get(url, timeout=5)
+            response.raise_for_status()
+            return (response.json(), [])
+
+  - kind: mac
+    title: Call a real API on your Mac
+    body: |
+      On your Mac you can reach the real internet. This asks Open Library (a free book API, no key needed) about *Dune*, with a timeout, and checks the status. It uses `uv run --with httpx` to borrow the library without changing any project.
+
+      **Checkpoint:** paste the output. It should contain `200` and `Dune`.
+    commands: |
+      mkdir -p ~/Desktop/api-practice && cd ~/Desktop/api-practice
+      cat > books.py <<'PY'
+      import httpx
+
+      response = httpx.get(
+          "https://openlibrary.org/search.json",
+          params={"q": "dune", "limit": 1},
+          timeout=10,
+      )
+      print(response.status_code)
+      response.raise_for_status()
+      print(response.json()["docs"][0]["title"])
+      PY
+      uv run --with httpx books.py
+    expect_output:
+      - "200"
+      - "Dune"
+
+  - kind: mac
+    title: Keep a key out of Git
+    body: |
+      Practise the safe pattern with a **fake** key: a `.env` file that is git-ignored, an example file that is committed, and a script that reads the value from the environment.
+
+      **Checkpoint:** paste the output. `git status --short` should list `.env.example` and `.gitignore` but **not** `.env`, and the script should print `key loaded`.
+    commands: |
+      cd ~/Desktop/api-practice
+      git init
+      printf 'API_KEY=not-a-real-key\n' > .env
+      printf 'API_KEY=put-your-key-here\n' > .env.example
+      printf '.env\n.venv/\n__pycache__/\n' > .gitignore
+      cat > check_key.py <<'PY'
+      import os
+
+      key = os.environ.get("API_KEY")
+      print("key loaded" if key else "missing key")
+      PY
+      export $(cat .env | xargs) && uv run check_key.py
+      git status --short
+    expect_output:
+      - "key loaded"
+      - ".env.example"
+
+  - kind: why
+    body: |
+      Almost every modern program is a client of some web API: maps, payments, weather, AI models, your own company's services. Doing it well means loud failures (`raise_for_status`), timeouts, polite retries, and secrets that never touch Git. Get these habits now and you will avoid the classic mistakes: frozen programs, banned accounts and leaked keys.
+
+  - kind: recap
+    body: |
+      - **HTTP:** request (method, URL, headers, body) → response (status, headers, body). Status classes: 2xx ok, 3xx redirect, 4xx your fault, 5xx server's.
+      - **httpx:** `client.get(url, params=..., timeout=...)`, `response.raise_for_status()`, `response.json()`, `client.post(url, json=...)`. **Always set a timeout.**
+      - **Keys are passwords:** use environment variables and a git-ignored `.env`; commit only `.env.example`; revoke any leaked key.
+      - **Resilience:** retry only 5xx/network errors and `429`, with **exponential backoff**, and respect `Retry-After`.
+      - Test HTTP code with a fake transport (`httpx.MockTransport`), not the real network.

@@ -1,0 +1,319 @@
+steps:
+  - kind: explain
+    title: Your own types
+    body: |
+      So far you have used Python's types (`str`, `list`, `dict`). A **class** lets you invent your own. It is a **blueprint**; each thing built from it is an **object** (also called an **instance**).
+
+      Think of a blueprint for a book. Every book has a title and an author (its **data**, called *attributes*) and can do things such as describe itself (its **behaviour**, called *methods*). One blueprint makes as many books as you like.
+
+      ```python
+      class Book:
+          def __init__(self, title, author):
+              self.title = title
+              self.author = author
+
+          def describe(self):
+              return f"{self.title} by {self.author}"
+
+      dune = Book("Dune", "Herbert")
+      print(dune.describe())      # Dune by Herbert
+      ```
+
+      - `class Book:` defines the blueprint. Class names use **CapWords**.
+      - `__init__` is the **initialiser**. Python runs it automatically when you write `Book(...)`, to set up the new object.
+      - **`self`** is the object itself. It is always the first parameter of a method, and Python fills it in for you: `dune.describe()` really calls `Book.describe(dune)`.
+      - `self.title = title` stores data *on the object*.
+
+  - kind: code
+    title: Build objects
+    body: |
+      Run this. Make a third book and print its description.
+    code: |
+      class Book:
+          def __init__(self, title, author):
+              self.title = title
+              self.author = author
+
+          def describe(self):
+              return f"{self.title} by {self.author}"
+
+
+      dune = Book("Dune", "Herbert")
+      emma = Book("Emma", "Austen")
+      print(dune.describe())
+      print(emma.author)
+      print(dune is emma, type(dune).__name__)
+
+  - kind: code
+    title: A bank account
+    body: |
+      Write a class `Account`.
+
+      - `Account(owner, balance=0)` stores both.
+      - `deposit(amount)` adds to the balance.
+      - `withdraw(amount)` subtracts, but if there is not enough money it must `raise ValueError("insufficient funds")` and leave the balance unchanged.
+      - `summary()` returns text like `"Ada: 50"`.
+    code: |
+      class Account:
+          pass
+    tests:
+      - "a = Account('Ada')\na.deposit(50)\nresult = a.summary()"
+      - "a = Account('Ada', 100)\na.withdraw(30)\nresult = (a.balance, a.summary())"
+      - "a = Account('Ada', 10)\ntry:\n    a.withdraw(30)\nexcept ValueError as e:\n    result = (str(e), a.balance)"
+      - "a = Account('Bo')\nb = Account('Cy', 5)\na.deposit(1)\nresult = (a.balance, b.balance)"
+    solution: |
+      class Account:
+          def __init__(self, owner, balance=0):
+              self.owner = owner
+              self.balance = balance
+
+          def deposit(self, amount):
+              self.balance += amount
+
+          def withdraw(self, amount):
+              if amount > self.balance:
+                  raise ValueError("insufficient funds")
+              self.balance -= amount
+
+          def summary(self):
+              return f"{self.owner}: {self.balance}"
+    hint: "Store `self.owner` and `self.balance` in `__init__`. In `withdraw`, check `amount > self.balance` *before* changing anything."
+    reject:
+      - |
+        class Account:
+            def __init__(self, owner, balance=0):
+                self.owner = owner
+                self.balance = balance
+
+            def deposit(self, amount):
+                self.balance += amount
+
+            def withdraw(self, amount):
+                self.balance -= amount
+
+            def summary(self):
+                return f"{self.owner}: {self.balance}"
+
+  - kind: explain
+    title: Class attributes and the shared-list trap
+    body: |
+      Attributes set with `self.x = ...` belong to **one object**. But a variable written directly in the class body is a **class attribute**, shared by **every** object:
+
+      ```python
+      class Team:
+          members = []            # class attribute: ONE list for all teams!
+
+          def add(self, name):
+              self.members.append(name)
+
+      a = Team()
+      b = Team()
+      a.add("Ada")
+      print(b.members)            # ['Ada']  !! b changed too
+      ```
+
+      This is the same shared-mutable trap as the mutable default argument (Module 14). The fix is to create the list **per object**, inside `__init__`:
+
+      ```python
+      class Team:
+          def __init__(self):
+              self.members = []
+      ```
+
+      Class attributes are fine for **constants** and counters that really are shared (`TAX_RATE = 0.2`). Never use a class-level list or dict for per-object data.
+
+  - kind: code
+    title: Fix the shared team
+    body: |
+      Two teams share one list of members. Fix the class so each `Team` has **its own** `members` list. `add(name)` appends; `size()` returns how many members.
+    code: |
+      class Team:
+          members = []
+
+          def add(self, name):
+              self.members.append(name)
+
+          def size(self):
+              return len(self.members)
+    tests:
+      - "a = Team()\nb = Team()\na.add('Ada')\nresult = (a.size(), b.size())"
+      - "t = Team()\nresult = t.size()"
+      - "a = Team()\na.add('x')\na.add('y')\nb = Team()\nresult = (a.members, b.members)"
+    solution: |
+      class Team:
+          def __init__(self):
+              self.members = []
+
+          def add(self, name):
+              self.members.append(name)
+
+          def size(self):
+              return len(self.members)
+    hint: "Move `members = []` out of the class body and into an `__init__` method as `self.members = []`."
+    broken_starter: true
+
+  - kind: explain
+    title: "@classmethod and @staticmethod"
+    body: |
+      Normal methods get the object (`self`). Two decorators change that:
+
+      - **`@classmethod`** receives the **class** (`cls`) instead. Its classic use is an **alternative constructor**: another way to build an object.
+      - **`@staticmethod`** receives **neither**. It is an ordinary function that lives inside the class because it belongs with it.
+
+      ```python
+      class Book:
+          def __init__(self, title, author):
+              self.title = title
+              self.author = author
+
+          @classmethod
+          def from_string(cls, text):          # "Dune by Herbert"
+              title, author = text.split(" by ")
+              return cls(title, author)
+
+          @staticmethod
+          def is_valid_year(year):
+              return 0 < year <= 2100
+      ```
+
+      `Book.from_string("Dune by Herbert")` builds a book; `Book.is_valid_year(1965)` needs no book at all.
+
+  - kind: code
+    title: Two ways to make a Book
+    body: |
+      Finish the class.
+
+      - `Book(title, author, year)` stores the three values.
+      - `Book.from_string("Dune by Herbert (1965)")` is a `@classmethod` that builds a book from that text pattern. The year is a whole number.
+      - `Book.is_valid_year(y)` is a `@staticmethod`: `True` if `1450 <= y <= 2100`.
+      - `label()` returns `"Dune (1965)"`.
+    code: |
+      class Book:
+          def __init__(self, title, author, year):
+              self.title = title
+              self.author = author
+              self.year = year
+    tests:
+      - "b = Book.from_string('Dune by Herbert (1965)')\nresult = (b.title, b.author, b.year, b.label())"
+      - "Book.is_valid_year(1965)"
+      - "Book.is_valid_year(1200)"
+      - "Book.is_valid_year(2101)"
+      - "b = Book('Emma', 'Austen', 1815)\nresult = b.label()"
+    solution: |
+      class Book:
+          def __init__(self, title, author, year):
+              self.title = title
+              self.author = author
+              self.year = year
+
+          @classmethod
+          def from_string(cls, text):
+              title, rest = text.split(" by ")
+              author, year_text = rest.split(" (")
+              return cls(title, author, int(year_text.rstrip(")")))
+
+          @staticmethod
+          def is_valid_year(year):
+              return 1450 <= year <= 2100
+
+          def label(self):
+              return f"{self.title} ({self.year})"
+    hint: "Split twice: on `\" by \"`, then on `\" (\"`. Remove the closing bracket with `.rstrip(\")\")` and convert with `int`."
+    reject:
+      - |
+        class Book:
+            def __init__(self, title, author, year):
+                self.title = title
+                self.author = author
+                self.year = year
+
+            @classmethod
+            def from_string(cls, text):
+                return cls(text, "", 0)
+
+            @staticmethod
+            def is_valid_year(year):
+                return True
+
+            def label(self):
+                return f"{self.title} ({self.year})"
+
+  - kind: code
+    title: Objects that change
+    body: |
+      Write a class `Playlist`.
+
+      - `Playlist(name)` starts empty.
+      - `add(song)` appends a song (text).
+      - `remove(song)` removes it and returns `True`, or returns `False` if it was not there.
+      - `total_songs()` returns how many songs.
+      - `songs` is a normal attribute holding the list of songs, in order.
+    code: |
+      class Playlist:
+          pass
+    tests:
+      - "p = Playlist('Road')\np.add('a')\np.add('b')\nresult = (p.songs, p.total_songs())"
+      - "p = Playlist('Road')\np.add('a')\nresult = (p.remove('a'), p.remove('a'), p.songs)"
+      - "a = Playlist('A')\nb = Playlist('B')\na.add('x')\nresult = (a.total_songs(), b.total_songs())"
+    solution: |
+      class Playlist:
+          def __init__(self, name):
+              self.name = name
+              self.songs = []
+
+          def add(self, song):
+              self.songs.append(song)
+
+          def remove(self, song):
+              if song in self.songs:
+                  self.songs.remove(song)
+                  return True
+              return False
+
+          def total_songs(self):
+              return len(self.songs)
+    hint: "Create `self.songs = []` in `__init__`, so every playlist has its own list."
+    reject:
+      - |
+        class Playlist:
+            songs = []
+
+            def __init__(self, name):
+                self.name = name
+
+            def add(self, song):
+                self.songs.append(song)
+
+            def remove(self, song):
+                if song in self.songs:
+                    self.songs.remove(song)
+                    return True
+                return False
+
+            def total_songs(self):
+                return len(self.songs)
+
+  - kind: explain
+    title: When is a class the right tool?
+    body: |
+      Classes are powerful, and overused. Ask:
+
+      **Use a class when** you have **data plus behaviour that belong together and change over time**, and you need several independent copies: a bank account, a game character, a shopping cart, a connection.
+
+      **Use a plain function when** you only transform input to output, with no memory between calls. `def average(numbers)` does not need a class.
+
+      **Use a dict or (soon) a dataclass when** you only need a bundle of fields with no behaviour: a record from a file.
+
+      Beginners often write classes with one method and no state (`class Calculator: def add(...)`). That is a function wearing a costume. Python is not Java: modules and functions are perfectly good "units".
+
+  - kind: why
+    body: |
+      Almost every real program models *things*: users, orders, files, games, network connections. Classes give each thing a clear home for its data and rules, so the rest of the program can just say `account.withdraw(30)` and trust the rule is enforced in one place. The habits from this lesson (own the data in `__init__`, protect it with checks, no shared mutable class attributes) prevent the bugs that plague object-oriented code.
+
+  - kind: recap
+    body: |
+      - A **class** is a blueprint; an **object** is one thing built from it. Class names are `CapWords`.
+      - `__init__(self, ...)` sets up each new object; **`self`** is the object; attributes are `self.name = value`.
+      - **Instance attributes** (`self.x`) are per-object. **Class attributes** are shared: never use a shared list or dict.
+      - `@classmethod` (gets `cls`) makes alternative constructors; `@staticmethod` is a plain function stored in the class.
+      - Use a class for **state + behaviour**; use a function for pure transformations.

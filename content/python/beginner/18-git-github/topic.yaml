@@ -1,0 +1,4 @@
+title: "Git & GitHub Basics"
+module: 18
+summary: "Save the history of your project with Git: commits, status, log and diff, what to leave out with .gitignore, writing good commit messages, and putting your code on GitHub."
+minutes: 75

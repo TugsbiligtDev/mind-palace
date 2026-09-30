@@ -1,0 +1,4 @@
+title: "Databases & SQL"
+module: 38
+summary: "Store data properly: tables, keys and relationships, the core SQL statements, Python's sqlite3, parameterized queries against SQL injection, transactions, and SQLAlchemy 2.0's ORM."
+minutes: 105

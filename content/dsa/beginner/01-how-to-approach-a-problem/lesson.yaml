@@ -1,0 +1,307 @@
+steps:
+  - kind: explain
+    title: Two words you will hear all the time
+    body: |
+      A **data structure** is a way of *storing* data so some jobs become easy. A shelf sorted by title, a stack of plates and a phone book are all data structures.
+
+      An **algorithm** is a step-by-step *method* for solving a problem. "Look at every book and remember the heaviest" is an algorithm.
+
+      They work as a pair: the structure you choose decides which algorithms are fast. In this course you will learn both, in JavaScript, and every lesson lets you run real code.
+
+      **How this course works.** In each "Try it" step, write code on the right and press **Run**. When a step has hidden tests, Run also checks your answer. A wrong answer tells you the first test that failed.
+
+  - kind: code
+    title: Run your first algorithm
+    body: |
+      This function looks at every number and remembers the biggest one. Press **Run** to see what it prints.
+
+      `console.log(...)` prints a value so you can see it. Use it any time you want to look inside your code.
+    code: |
+      function largest(nums) {
+        let best = nums[0];
+        for (const n of nums) {
+          if (n > best) best = n;
+        }
+        return best;
+      }
+
+      console.log(largest([3, 9, 2]));
+
+  - kind: explain
+    title: Read a problem as input, output and constraints
+    body: |
+      Before you write any code, read the problem and pull out three things.
+
+      - **Input**: what you are given. Here, an array of numbers.
+      - **Output**: what you must give back. Here, one number.
+      - **Constraints**: limits on the input. How long can the array be? Can it be empty? Can numbers be negative?
+
+      Constraints matter more than beginners expect. A solution that is fine for 10 numbers may take years for 10 million, and the constraints tell you which one you need.
+
+      Most problems on sites like LeetCode also give a **function signature**, such as `function largest(nums)`. The name and the parameters are fixed. You write the body and **`return`** the answer. Printing it with `console.log` is not the same as returning it.
+
+  - kind: explain
+    title: Write your own examples and edge cases first
+    body: |
+      Problem statements come with one or two examples. Write more yourself, *before* coding, and hunt for **edge cases**: the unusual inputs where code breaks.
+
+      | Edge case | Example for "largest number" |
+      |---|---|
+      | Empty input | `[]` |
+      | One element | `[7]` |
+      | All the same | `[4, 4, 4]` |
+      | Negative numbers | `[-5, -2, -9]` |
+      | Very large input | a million numbers |
+
+      A good habit is to write your examples as `input → expected output` pairs on paper. They become your tests.
+
+  - kind: code
+    title: Fix the empty and negative cases
+    body: |
+      This `largest` starts with `best = 0`. That works for `[3, 9, 2]`, but two edge cases break it.
+
+      Rewrite it so that:
+      - it returns **`null`** for an empty array,
+      - it works when every number is negative (`[-5, -2]` should give `-2`).
+    code: |
+      function largest(nums) {
+        let best = 0;
+        for (const n of nums) {
+          if (n > best) best = n;
+        }
+        return best;
+      }
+    tests:
+      - "largest([3, 9, 2])"
+      - "largest([7])"
+      - "largest([-5, -2, -9])"
+      - "largest([])"
+      - "largest([4, 4, 4])"
+    solution: |
+      function largest(nums) {
+        if (nums.length === 0) return null;
+        let best = nums[0];
+        for (const n of nums) {
+          if (n > best) best = n;
+        }
+        return best;
+      }
+    hint: |
+      Starting at `0` pretends the answer is at least 0. Start from the first element instead, and check for an empty array first.
+    reject:
+      - |
+        function largest(nums) {
+          let best = 0;
+          for (const n of nums) if (n > best) best = n;
+          return best;
+        }
+
+  - kind: explain
+    title: Brute force first, then optimize
+    body: |
+      When a problem looks hard, do not hunt for the clever answer. Ask: **what is the simplest thing that could possibly work?** That is the **brute force** solution: try everything.
+
+      Example: *does this array contain a duplicate?* Brute force compares every pair. It is slow for big arrays, but it is easy to get right, and it gives you something to check the fast version against.
+
+      Only after it works do you ask: **where is it wasting effort?** In Module 7 you will learn a faster way. The order is always: **make it correct, then make it fast.**
+
+  - kind: code
+    title: Brute force a duplicate check
+    body: |
+      Write `hasDuplicate(nums)`. It returns `true` if any value appears **twice or more**, and `false` otherwise.
+
+      Use two loops: for each position `i`, look at every later position `j`.
+    code: |
+      function hasDuplicate(nums) {
+        // compare every pair (i, j) with j after i
+        return false;
+      }
+    tests:
+      - "hasDuplicate([1, 2, 3, 1])"
+      - "hasDuplicate([1, 2, 3, 4])"
+      - "hasDuplicate([])"
+      - "hasDuplicate([5])"
+      - "hasDuplicate([2, 2])"
+    solution: |
+      function hasDuplicate(nums) {
+        for (let i = 0; i < nums.length; i++) {
+          for (let j = i + 1; j < nums.length; j++) {
+            if (nums[i] === nums[j]) return true;
+          }
+        }
+        return false;
+      }
+    hint: Start `j` at `i + 1`, so an element is never compared with itself.
+    reject:
+      - |
+        function hasDuplicate(nums) {
+          return nums.length > 1;
+        }
+      - |
+        function hasDuplicate(nums) {
+          for (let i = 0; i < nums.length; i++) {
+            for (let j = 0; j < nums.length; j++) {
+              if (nums[i] === nums[j]) return true;
+            }
+          }
+          return false;
+        }
+
+  - kind: explain
+    title: Pseudocode, then code
+    body: |
+      **Pseudocode** is a plan in plain words. It sits between the English problem and the code, and it lets you check the *idea* before fighting syntax.
+
+      ```
+      count = 0
+      for each number in the list:
+          if the number is even:
+              count = count + 1
+      return count
+      ```
+
+      If you cannot write the pseudocode, you are not ready to write the code. Keep the pseudocode as comments in your editor and fill in the code underneath.
+
+  - kind: code
+    title: Turn pseudocode into code
+    body: |
+      The pseudocode above is already in the editor as comments. Write `countEvens(nums)` to match it.
+
+      Hint: `n % 2 === 0` is true when `n` is even.
+    code: |
+      function countEvens(nums) {
+        // count = 0
+        // for each number in the list:
+        //     if the number is even:
+        //         count = count + 1
+        // return count
+      }
+    tests:
+      - "countEvens([1, 2, 3, 4, 6])"
+      - "countEvens([])"
+      - "countEvens([1, 3, 5])"
+      - "countEvens([0])"
+      - "countEvens([-2, -4])"
+    solution: |
+      function countEvens(nums) {
+        let count = 0;
+        for (const n of nums) {
+          if (n % 2 === 0) count++;
+        }
+        return count;
+      }
+    reject:
+      - |
+        function countEvens(nums) {
+          return nums.length;
+        }
+
+  - kind: explain
+    title: Dry-run your code by hand
+    body: |
+      Before you trust code, run it in your head (or on paper). Make a table with one row per step and one column per variable.
+
+      For `sumTo(3)` that adds `1 + 2 + 3`, with `total` starting at 0:
+
+      | i | total before | total after |
+      |---|---|---|
+      | 1 | 0 | 1 |
+      | 2 | 1 | 3 |
+      | 3 | 3 | 6 |
+
+      Dry-running finds the bugs that "it looks right" misses, especially **off-by-one errors**: loops that run one time too many or too few.
+
+  - kind: code
+    title: "Find the bug: dry-run it"
+    body: |
+      `sumTo(n)` should return `1 + 2 + … + n`, so `sumTo(5)` is `15`. This version returns something else. Dry-run it for `n = 3`, find the off-by-one bug and fix it.
+    code: |
+      function sumTo(n) {
+        let total = 0;
+        for (let i = 1; i < n; i++) {
+          total += i;
+        }
+        return total;
+      }
+    tests:
+      - "sumTo(5)"
+      - "sumTo(1)"
+      - "sumTo(0)"
+      - "sumTo(100)"
+    solution: |
+      function sumTo(n) {
+        let total = 0;
+        for (let i = 1; i <= n; i++) {
+          total += i;
+        }
+        return total;
+      }
+    hint: For `n = 3` the loop runs for `i = 1, 2` and stops. Which value of `i` never gets added?
+    broken_starter: true
+    reject:
+      - |
+        function sumTo(n) {
+          let total = 0;
+          for (let i = 1; i < n; i++) total += i;
+          return total;
+        }
+
+  - kind: explain
+    title: Reading a LeetCode-style problem
+    body: |
+      A typical statement looks like this:
+
+      > Given an array `nums`, return the **index** of the first negative number, or `-1` if there is none.
+      >
+      > Constraints: `0 <= nums.length <= 10^5`, `-10^9 <= nums[i] <= 10^9`.
+
+      Read it slowly:
+
+      1. **Signature**: `firstNegative(nums)`, one array in.
+      2. **Output**: an *index*, not the number itself. `-1` is the "not found" answer.
+      3. **Constraints**: the array can be empty, and `10^5` items means one loop is fine, but a loop inside a loop (10^10 steps) is not.
+
+      Most wrong answers on these sites come from misreading the output, not from weak coding.
+
+  - kind: code
+    title: Read the signature, return the right thing
+    body: |
+      Write `firstNegative(nums)`: return the **index** of the first negative number, or `-1` if there is none.
+    code: |
+      function firstNegative(nums) {
+        return -1;
+      }
+    tests:
+      - "firstNegative([3, 5, -2, 8, -1])"
+      - "firstNegative([-7])"
+      - "firstNegative([1, 2, 3])"
+      - "firstNegative([])"
+      - "firstNegative([0, 0, -1])"
+    solution: |
+      function firstNegative(nums) {
+        for (let i = 0; i < nums.length; i++) {
+          if (nums[i] < 0) return i;
+        }
+        return -1;
+      }
+    reject:
+      - |
+        function firstNegative(nums) {
+          for (const n of nums) if (n < 0) return n;
+          return -1;
+        }
+
+  - kind: why
+    body: |
+      Strong problem solvers are not faster typists. They spend the first minutes *understanding*: the input, the output, the limits and a few edge cases. Then they write the simplest correct solution and only then make it faster.
+
+      That habit is the difference between "I stared at it for an hour" and "I had a working answer in ten minutes." Everything in this course builds on it.
+
+  - kind: recap
+    body: |
+      - A **data structure** stores data; an **algorithm** is a method. Good ones are chosen together.
+      - Read every problem as **input → output → constraints**, and note the function signature.
+      - Write your own **examples and edge cases** (empty, one item, duplicates, negatives, huge) *before* coding.
+      - **Brute force first**, make it correct, then optimize.
+      - Sketch **pseudocode**, then **dry-run** the code by hand to catch off-by-one errors.
+      - `return` gives the answer back; `console.log` only prints.

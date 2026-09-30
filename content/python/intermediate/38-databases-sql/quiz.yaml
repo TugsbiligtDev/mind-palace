@@ -1,0 +1,41 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which code is safe against SQL injection?
+    options:
+      - 'conn.execute("SELECT * FROM users WHERE name = ?", (name,))'
+      - 'conn.execute(f"SELECT * FROM users WHERE name = ''{name}''")'
+      - 'conn.execute("SELECT * FROM users WHERE name = ''" + name + "''")'
+      - 'conn.execute("SELECT * FROM users WHERE name = ''%s''" % name)'
+    answer: 0
+    explanation: Only the placeholder version keeps the data separate from the SQL, so the database treats it as a value.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      import sqlite3
+      conn = sqlite3.connect(":memory:")
+      conn.execute("CREATE TABLE t (n INTEGER)")
+      conn.executemany("INSERT INTO t VALUES (?)", [(1,), (2,), (3,)])
+      print(conn.execute("SELECT SUM(n), COUNT(*) FROM t WHERE n > 1").fetchone())
+    options: ["(5, 2)", "(6, 3)", "(3, 2)", "(5, 3)"]
+    answer: 0
+    explanation: "Only the rows 2 and 3 match `n > 1`: their sum is 5 and there are 2 of them."
+  - type: mcq
+    prompt: What does `UPDATE books SET price = 0` (with no WHERE) do?
+    options: ["Changes the price of every row", "Changes nothing", "Raises an error", "Changes only the first row"]
+    answer: 0
+    explanation: Without a WHERE clause the statement applies to the whole table. Always run the matching SELECT first.
+  - type: mcq
+    prompt: What is a transaction for?
+    options:
+      - Making a group of statements happen completely or not at all
+      - Speeding up queries
+      - Encrypting the database
+      - Converting types
+    answer: 0
+    explanation: If any step fails, the transaction rolls back and the data is left as it was.
+  - type: mcq
+    prompt: In SQLAlchemy 2.0, what does `Mapped[int]` describe?
+    options: ["A column of integers, declared with a type hint", "A Python list", "A foreign key", "A session"]
+    answer: 0
+    explanation: "`Mapped[...]` uses type hints to declare the Python type of a column."

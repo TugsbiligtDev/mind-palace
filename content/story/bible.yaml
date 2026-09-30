@@ -1,16 +1,18 @@
 # The story bible: the fixed world every case is written in. Claude reads this before
 # writing any case so characters, tone and the season threads stay consistent.
+# DRAFT (2026-09-29): the bookstore version, waiting for the owner's approval before any
+# case is written from it. The old Wanderly (trip-planning) story is in git history.
 agency: The Mind Palace Detective Agency
-client: Wanderly Travel Co.
+client: Inkwell Books
 premise: |
-  Wanderly is a small trip-planning company. Lately its records have stopped adding up:
-  a booking that looks too cheap, a traveler nobody can reach, refunds nobody remembers
-  approving. Someone with access to the company database has been quietly rewriting
-  history, and signs their notes **~C**.
+  Inkwell Books is a small online bookstore with a handful of staff and customers all over
+  the world. Lately its records have stopped adding up: refunds for books that were delivered
+  fine, a customer nobody can reach, stock that disappears between counts. Someone with access
+  to the store's database has been quietly rewriting history, and signs their notes **~E**.
 
-  Wanderly keeps everything in a PostgreSQL database called `learn_sql`. The agency
-  can't interview a database, but you can *query* it. Learn its language, follow the
-  evidence, and find out who the Cartographer is.
+  Inkwell keeps everything in PostgreSQL: its early `practice` records, then the real
+  `bookstore` database. The agency can't interview a database, but you can *query* it.
+  Learn its language, follow the evidence, and find out who the Editor is.
 cast:
   - name: You
     role: The detective (the learner)
@@ -20,17 +22,18 @@ cast:
     voice: Calm and precise. Short sentences. Favorite line, "Data doesn't lie, but it can be made to mislead."
   - name: Moth
     role: Informant (gives the three hints in every case)
-    voice: A former Wanderly night-shift archivist. Nervous, kind, speaks in quick practical tips.
-  - name: The Cartographer (~C)
+    voice: A former Inkwell night-shift stock clerk. Nervous, kind, speaks in quick practical tips.
+  - name: The Editor (~E)
     role: Season 1 antagonist
-    voice: Never seen directly. Leaves smug signed notes in the data. Revealed in the Season 1 finale.
+    voice: Never seen directly. Leaves smug signed notes in the data, often in book reviews. Revealed in the Season 1 finale.
 season_threads:
   - season: 1
     summary: |
-      Dulguun Erdene's "Europe Grand Tour" (trip 5) was altered after the fact: the Rome stop
-      (trip_stop_id 7) was cut to 1 night at 60.00, and fake refunds were approved against it.
-      Clues across the season: the ~C signatures in the guest book, a garbled telegram
-      ("FOLLOW THE COST PER NIGHT"), the suspiciously cheap Rome night, sightings proving Dulguun
-      stayed in Rome for days, a 300.00 Rome hotel receipt, a hotel folio showing a 5-night stay,
-      staff logins pointing at Gerel Tsog (Operations), and refunds approved by login gtsog.
-      Finale: restore the record and name the culprit, Gerel Tsog.
+      Refunds are leaking out of Inkwell. Two delivered orders (7 and 16) were refunded in
+      full although nobody complained, and each refund was "approved" at an odd hour. Clues
+      across the season: ~E signatures hidden in review comments, a note reading "CHECK WHO
+      SOLD IT", in-store orders rung up by one sales associate, a customer (Daniel Novak) whose
+      account exists but who never ordered anything and can't be reached, stock counts that
+      drop without matching order lines, and refund logins pointing at the Sales team.
+      Finale: reverse the fake refunds and name the culprit, Marcus Reed (Head of Sales),
+      who used Kenji Mori's login to hide his tracks.

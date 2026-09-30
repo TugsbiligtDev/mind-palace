@@ -1,0 +1,42 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Why does `shortestRoute` keep a `previous` map?
+    options:
+      - To detect negative weights
+      - To rebuild the actual path by walking back from the destination
+      - To sort the cities
+      - To avoid the heap
+    answer: 1
+    explanation: Dijkstra's distances alone do not say which roads were used. Remembering where each city was reached from lets you retrace the route.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const data = JSON.parse('{"cities":["A","B"],"roads":[["A","B",7]]}');
+      console.log(data.cities.length, data.roads[0][2]);
+    options: ["2 7", "1 7", "2 B", "7 2"]
+    answer: 0
+    explanation: "`JSON.parse` gives an object. There are 2 cities, and the first road's third value is its length, 7."
+  - type: mcq
+    prompt: "Why does the road map store each road in BOTH cities' lists?"
+    options:
+      - It is a bug
+      - Roads work in both directions, so each city needs to know its neighbours
+      - Dijkstra needs duplicates
+      - To make the map bigger
+    answer: 1
+    explanation: An undirected road is two directed edges, one out of each city.
+  - type: mcq
+    prompt: A user types "ulaan" and only one city starts with those letters. What should the planner do?
+    options: ["Report an unknown city", "Use that one city", "Ask for the full name", "Pick a random city"]
+    answer: 1
+    explanation: A prefix that matches exactly one city is unambiguous, so the planner can safely resolve it.
+  - type: mcq
+    prompt: What does a trie give the autocomplete feature that a plain list of cities does not?
+    options:
+      - Sorted output automatically
+      - Lookup time that depends on the prefix length, not on the number of cities
+      - Case-insensitive search for free
+      - Shorter code
+    answer: 1
+    explanation: Walking the trie costs one step per letter typed, however many cities exist.

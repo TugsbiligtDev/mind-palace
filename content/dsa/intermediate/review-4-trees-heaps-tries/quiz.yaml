@@ -1,0 +1,35 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "\"Return the values level by level, top to bottom.\" Which traversal?"
+    options: ["Inorder", "Postorder", "Breadth-first with a queue", "Preorder with recursion"]
+    answer: 2
+    explanation: Only breadth-first finishes each depth before moving to the next.
+  - type: mcq
+    prompt: "\"Keep the 5 highest scores seen in an endless stream.\" Which structure?"
+    options: ["A sorted array of all scores", "A min-heap of size 5", "A trie", "A queue"]
+    answer: 1
+    explanation: The min-heap's root is the weakest of your top 5, so a better score replaces it in O(log 5).
+  - type: mcq
+    prompt: A binary tree is a valid BST if its inorder traversal is...
+    options: ["Any order", "Strictly increasing", "Decreasing", "Palindromic"]
+    answer: 1
+    explanation: The BST rule makes an inorder walk list the values in ascending order, with no repeats.
+  - type: predict
+    prompt: What does this print? (A trie for two words.)
+    code: |
+      const words = ["car", "cart"];
+      let prefixLength = 0;
+      for (let i = 0; i < words[0].length; i++) {
+        if (words.every((w) => w[i] === words[0][i])) prefixLength++;
+        else break;
+      }
+      console.log(words[0].slice(0, prefixLength));
+    options: ["car", "cart", "ca", "c"]
+    answer: 0
+    explanation: Every word starts with "car", and the first word ends there.
+  - type: mcq
+    prompt: Which is the best fit for "autocomplete as the user types"?
+    options: ["A hash Set", "A trie", "A max-heap", "A stack"]
+    answer: 1
+    explanation: A trie lets you jump to the prefix and list what continues from there.

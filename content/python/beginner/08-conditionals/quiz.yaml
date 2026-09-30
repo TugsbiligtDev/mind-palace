@@ -1,0 +1,48 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      n = 15
+      if n % 3 == 0:
+          print("three")
+      elif n % 5 == 0:
+          print("five")
+      else:
+          print("neither")
+    options: ["three", "five", "three\nfive", "neither"]
+    answer: 0
+    explanation: "15 is divisible by 3, so the first branch runs. Once a branch runs, the `elif` and `else` are skipped."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      items = []
+      if items:
+          print("full")
+      else:
+          print("empty")
+    options: ["empty", "full", "None", "Error"]
+    answer: 0
+    explanation: An empty list is falsy, so the `else` branch runs.
+  - type: mcq
+    prompt: Which check is best practice for a value that might be `None`?
+    options: ["if value == None:", "if value is None:", "if value = None:", "if value.None:"]
+    answer: 1
+    explanation: "Use `is` for `None`. A single `=` would be an assignment, which is a SyntaxError inside an `if`."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(bool(0), bool("0"), bool([]))
+    options: ["False True False", "False False False", "True True True", "False True True"]
+    answer: 0
+    explanation: "The number `0` is falsy, but the text `\"0\"` is not empty so it is truthy. An empty list is falsy."
+  - type: fill
+    prompt: Complete the line so the function leaves early when the age is under 18.
+    code: |
+      def welcome(age):
+          if age < 18:
+              ____ "Too young"
+          return "Come in"
+      print(welcome(10))
+    answer: return
+    explanation: "`return` ends the function immediately, so the last line only runs for adults."

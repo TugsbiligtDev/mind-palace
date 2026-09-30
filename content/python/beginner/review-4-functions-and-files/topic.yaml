@@ -1,0 +1,5 @@
+title: "Functions & files"
+module: 17
+kind: review
+summary: "Upgrade the contact book: validate input with exceptions, save and load JSON, import a CSV, and split it into modules that you run on your Mac."
+minutes: 55

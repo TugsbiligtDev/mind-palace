@@ -1,0 +1,393 @@
+steps:
+  - kind: explain
+    title: What is an algorithm?
+    body: |
+      An **algorithm** is a precise, step-by-step method for solving a problem: a recipe. You have been writing algorithms all along ("loop over the words, remember the longest").
+
+      Two different algorithms can solve the *same* problem and still differ enormously in **speed**. With 10 items you will never notice. With 10 million, one finishes in a blink and the other in an hour. Algorithmic thinking is learning to predict that difference *before* you write the code.
+
+      Two questions to ask about any solution:
+
+      1. Is it **correct**? (Does it work for every input, including strange ones?)
+      2. How does its **work grow** as the input grows?
+
+  - kind: explain
+    title: Big-O in everyday words
+    body: |
+      **Big-O** describes how the amount of work grows with the input size `n`. Everyday pictures:
+
+      | Big-O | Name | Everyday picture | Doubling `n`... |
+      |---|---|---|---|
+      | **O(1)** | constant | opening a page you know the number of | same work |
+      | **O(log n)** | logarithmic | finding a word in a dictionary by opening the middle and halving | one extra step |
+      | **O(n)** | linear | reading every page of a book | double the work |
+      | **O(n²)** | quadratic | everyone in a room shaking hands with everyone else | four times the work |
+
+      We ignore small details and constants: "about n steps" and "about 2n steps" are both O(n). What matters is the **shape of the growth**.
+
+      Rough sizes for `n = 1,000,000`: O(1) → 1 step, O(log n) → about 20, O(n) → a million, O(n²) → a *trillion*. That last one is why slow code "suddenly" hangs when the data grows.
+
+  - kind: code
+    title: Feel the difference
+    body: |
+      Run this. It times looking for a value in a list versus a set, both with 100,000 numbers. The list has to check items one by one (O(n)); the set jumps almost straight there (O(1)). Times vary each run, but the gap is huge.
+    code: |
+      import time
+
+      numbers_list = list(range(100_000))
+      numbers_set = set(numbers_list)
+      target = 99_999          # the worst case for the list: the last item
+
+      start = time.perf_counter()
+      for _ in range(200):
+          target in numbers_list
+      list_time = time.perf_counter() - start
+
+      start = time.perf_counter()
+      for _ in range(200):
+          target in numbers_set
+      set_time = time.perf_counter() - start
+
+      print("list:", round(list_time * 1000, 2), "ms")
+      print("set: ", round(set_time * 1000, 4), "ms")
+
+  - kind: explain
+    title: Linear search vs. binary search
+    body: |
+      **Linear search**: look at each item until you find it. Works on any list. O(n).
+
+      **Binary search**: works only on a **sorted** list. Look at the *middle* item:
+
+      - if it is your target, done,
+      - if the target is **smaller**, throw away the right half,
+      - if **larger**, throw away the left half,
+
+      and repeat on what is left. Each step halves the search, so 1,000,000 items need only about **20** steps. O(log n).
+
+      ```python
+      lo, hi = 0, len(items) - 1
+      while lo <= hi:
+          mid = (lo + hi) // 2
+          if items[mid] == target:
+              return mid
+          if items[mid] < target:
+              lo = mid + 1
+          else:
+              hi = mid - 1
+      return -1
+      ```
+
+      The trade-off: the list must be sorted first.
+
+  - kind: code
+    title: Linear search
+    body: |
+      Finish `linear_search(items, target)`: return the **index** of the first item equal to `target`, or `-1` if it is not there. Write the loop yourself (do not use `.index`).
+    code: |
+      def linear_search(items, target):
+          return -1
+    tests:
+      - "linear_search([4, 8, 15, 16], 15)"
+      - "linear_search([4, 8, 15, 16], 99)"
+      - "linear_search([], 1)"
+      - "linear_search([7, 7, 7], 7)"
+    solution: |
+      def linear_search(items, target):
+          for i, item in enumerate(items):
+              if item == target:
+                  return i
+          return -1
+    hint: "`for i, item in enumerate(items):` and return `i` on a match."
+    reject:
+      - |
+        def linear_search(items, target):
+            return len(items) - 1
+
+  - kind: code
+    title: Binary search
+    body: |
+      Finish `binary_search(items, target)` for a **sorted** list. Return a pair `(index, steps)`: the index of the target (or `-1`), and the number of times the loop ran. Use exactly the template above: `lo, hi = 0, len(items) - 1`, `mid = (lo + hi) // 2`, and count one step for each pass of the loop.
+
+      For a list of 1,000 items, no search should take more than 10 steps.
+    code: |
+      def binary_search(items, target):
+          steps = 0
+          return (-1, steps)
+    tests:
+      - "binary_search([1, 3, 5, 7, 9, 11], 7)"
+      - "binary_search([1, 3, 5, 7, 9, 11], 4)"
+      - "binary_search([], 5)"
+      - "binary_search(list(range(0, 2000, 2)), 1998)"
+      - "binary_search(list(range(1_000_000)), 999_999)"
+      - "binary_search([5], 5)"
+    solution: |
+      def binary_search(items, target):
+          steps = 0
+          lo, hi = 0, len(items) - 1
+          while lo <= hi:
+              steps += 1
+              mid = (lo + hi) // 2
+              if items[mid] == target:
+                  return (mid, steps)
+              if items[mid] < target:
+                  lo = mid + 1
+              else:
+                  hi = mid - 1
+          return (-1, steps)
+    hint: "Add `steps += 1` at the top of the `while lo <= hi:` loop. Return `(mid, steps)` when found and `(-1, steps)` at the end."
+    reject:
+      - |
+        def binary_search(items, target):
+            steps = 0
+            for i, item in enumerate(items):
+                steps += 1
+                if item == target:
+                    return (i, steps)
+            return (-1, steps)
+
+  - kind: explain
+    title: How sorting works
+    body: |
+      To sort by hand: **selection sort** repeats one idea: find the smallest remaining item and put it next.
+
+      ```
+      [4, 2, 5, 1]   →  find smallest (1), swap into position 0  →  [1, 2, 5, 4]
+      [1, 2, 5, 4]   →  smallest of the rest (2), already there   →  [1, 2, 5, 4]
+      [1, 2, 5, 4]   →  smallest of the rest (4), swap            →  [1, 2, 4, 5]
+      ```
+
+      For every position it scans the rest of the list, so it does about `n × n` steps: **O(n²)**. Good for understanding, bad for real work.
+
+      Python's `sorted()` and `.sort()` use a far smarter algorithm (**Timsort**) that takes about **n log n** steps. So the rule is: write a sort once to *understand* it, then use `sorted()` forever.
+
+  - kind: code
+    title: Write selection sort once
+    body: |
+      Finish `selection_sort(items)`: return a **new** list with the items in increasing order, using the selection idea (do not call `sorted` or `.sort`). Copy the list first with `items = list(items)` so the caller's list is not changed.
+
+      For each position `i`, find the index of the smallest item from `i` to the end, and swap it into place with `items[i], items[j] = items[j], items[i]`.
+    code: |
+      def selection_sort(items):
+          items = list(items)
+          return items
+    tests:
+      - "selection_sort([4, 2, 5, 1])"
+      - "selection_sort([])"
+      - "selection_sort([3, 3, 1, 2, 2])"
+      - "selection_sort(['pear', 'apple', 'fig'])"
+      - "(lambda x: (selection_sort(x), x))([3, 1, 2])"
+    solution: |
+      def selection_sort(items):
+          items = list(items)
+          for i in range(len(items)):
+              smallest = i
+              for j in range(i + 1, len(items)):
+                  if items[j] < items[smallest]:
+                      smallest = j
+              items[i], items[smallest] = items[smallest], items[i]
+          return items
+    hint: "Two loops: the outer picks position `i`; the inner finds `smallest` among `i+1...`. Then swap."
+    reject:
+      - |
+        def selection_sort(items):
+            items = list(items)
+            items.reverse()
+            return items
+
+  - kind: code
+    title: Make it fast
+    body: |
+      `has_repeats(items)` from Module 10 kept a *list* called `seen`, so every `in` check scanned the whole list. That is **O(n²)** overall, and a list of 200,000 numbers would take minutes.
+
+      Rewrite `has_repeats(items)` to be **O(n)** by using a **set** for `seen`. It must finish quickly on 200,000 items.
+    code: |
+      def has_repeats(items):
+          seen = []
+          for item in items:
+              if item in seen:
+                  return True
+              seen.append(item)
+          return False
+    tests:
+      - "has_repeats([1, 2, 3, 2])"
+      - "has_repeats([])"
+      - "has_repeats(list(range(200000)))"
+      - "has_repeats(list(range(200000)) + [5])"
+    solution: |
+      def has_repeats(items):
+          seen = set()
+          for item in items:
+              if item in seen:
+                  return True
+              seen.add(item)
+          return False
+    hint: "Change `seen = []` to `seen = set()` and `append` to `add`. Checking `in` on a set is almost instant."
+    broken_starter: true
+
+  - kind: explain
+    title: Why in is fast on sets and dicts
+    body: |
+      A **set** or **dict** stores items by a number computed from each item, its **hash**. To look something up, Python computes the hash and jumps straight to the right spot. It does not matter whether there are 10 items or 10 million: **O(1) on average**.
+
+      A **list** has no such shortcut. `x in items` must compare against item after item until it finds a match: **O(n)**.
+
+      So the rule of thumb: *if you are asking "is this in there?" over and over, use a set. If you are asking "what goes with this key?" over and over, use a dict.* This is exactly why the contact book gets a **dict index by phone number**: one jump instead of scanning every contact.
+
+  - kind: code
+    title: An index for instant lookup
+    body: |
+      Finish `build_index(book)`: turn a list of contacts (`{"name":..., "phone":...}`) into a dictionary from **phone number to the whole contact**. Then `index["555-0101"]` finds a contact in O(1). If two contacts share a phone, the **first** one wins.
+    code: |
+      def build_index(book):
+          return {}
+    tests:
+      - "build_index([{'name': 'Ada', 'phone': '1'}, {'name': 'Bold', 'phone': '2'}])"
+      - "build_index([])"
+      - "build_index([{'name': 'Ada', 'phone': '1'}, {'name': 'Copy', 'phone': '1'}])"
+    solution: |
+      def build_index(book):
+          index = {}
+          for contact in book:
+              if contact["phone"] not in index:
+                  index[contact["phone"]] = contact
+          return index
+    hint: "Loop, and only add a phone that is not already a key (`not in index`) so the first contact wins."
+    reject:
+      - |
+        def build_index(book):
+            return {c["phone"]: c for c in book}
+
+  - kind: explain
+    title: Recursion basics
+    body: |
+      A **recursive** function calls **itself** to solve a smaller version of the same problem. It needs two parts:
+
+      - a **base case**: the tiniest problem, answered directly (this stops the calls),
+      - a **recursive case**: reduce the problem and call yourself.
+
+      ```python
+      def factorial(n):          # 5! = 5 * 4 * 3 * 2 * 1
+          if n <= 1:             # base case
+              return 1
+          return n * factorial(n - 1)     # recursive case
+      ```
+
+      `factorial(3)` becomes `3 * factorial(2)`, which becomes `3 * (2 * factorial(1))`, which is `3 * 2 * 1 = 6`.
+
+      **If you forget the base case**, or never move towards it, the calls pile up until Python stops you with a **`RecursionError`** ("maximum recursion depth exceeded", about 1,000 calls deep). Recursion is elegant for trees and nested data; for a plain count, a loop is simpler and faster.
+
+  - kind: code
+    title: Recursive factorial
+    body: |
+      Finish `factorial(n)` using recursion: `factorial(0)` and `factorial(1)` are `1`, and `factorial(n)` is `n * factorial(n - 1)`.
+    code: |
+      def factorial(n):
+          return 0
+    tests:
+      - "factorial(0)"
+      - "factorial(1)"
+      - "factorial(5)"
+      - "factorial(10)"
+    solution: |
+      def factorial(n):
+          if n <= 1:
+              return 1
+          return n * factorial(n - 1)
+    hint: "Base case first: `if n <= 1: return 1`. Then `n * factorial(n - 1)`."
+    reject:
+      - |
+        def factorial(n):
+            return n
+
+  - kind: code
+    title: Catch the runaway
+    body: |
+      `countdown(n)` should return the list `[n, n-1, ..., 1]` using recursion. Write it, then add protection: in `safe_countdown(n)`, call `countdown(n)` inside `try`, and if a `RecursionError` happens, return the text `"too deep"` instead of crashing.
+
+      `safe_countdown(3)` is `[3, 2, 1]` and `safe_countdown(10_000_000)` is `"too deep"`.
+    code: |
+      def countdown(n):
+          return []
+
+
+      def safe_countdown(n):
+          return countdown(n)
+    tests:
+      - "safe_countdown(3)"
+      - "safe_countdown(0)"
+      - "safe_countdown(10_000_000)"
+    solution: |
+      def countdown(n):
+          if n <= 0:
+              return []
+          return [n] + countdown(n - 1)
+
+
+      def safe_countdown(n):
+          try:
+              return countdown(n)
+          except RecursionError:
+              return "too deep"
+    hint: "Base case: `n <= 0` gives `[]`. Otherwise `[n] + countdown(n - 1)`. Then catch `RecursionError`."
+    reject:
+      - |
+        def countdown(n):
+            if n <= 0:
+                return []
+            return [n] + countdown(n - 1)
+
+
+        def safe_countdown(n):
+            return countdown(n)
+
+  - kind: mac
+    title: "Checkpoint: the contact book on GitHub"
+    body: |
+      This finishes Part 5. Take the contact book from the last review and make it a proper project: a `uv` project with a README, a `.gitignore`, **a fast lookup by phone number using a dict index**, and meaningful commits. The commands below do it in small commits. Then create an empty repository on GitHub and push (Module 18).
+
+      In your README, add a sentence in your own words explaining **why the dict index is faster than searching the list**. (Hint: this lesson.)
+
+      **Checkpoint:** paste the output. It should contain `Add phone index` and `README.md`.
+    commands: |
+      cd ~/Desktop/contact-book
+      uv init --bare
+      printf '.venv/\n__pycache__/\n*.pyc\n.env\n.DS_Store\ncontacts.json\n' > .gitignore
+      git init
+      git add . && git commit -m "Add contact book with JSON storage"
+      cat >> book.py <<'PY'
+
+
+      def build_index(contacts):
+          """Map each phone number to its contact for instant lookup."""
+          index = {}
+          for contact in contacts:
+              index.setdefault(contact["phone"], contact)
+          return index
+      PY
+      git add book.py && git commit -m "Add phone index"
+      cat > README.md <<'MD'
+      # Contact book
+      A small command-line contact book. Run it with `uv run main.py`.
+
+      ## Fast lookup by phone
+      `build_index` stores contacts in a dictionary keyed by phone number.
+      MD
+      git add README.md && git commit -m "Add README"
+      git log --oneline
+      ls
+    expect_output:
+      - "Add phone index"
+      - "README.md"
+
+  - kind: why
+    body: |
+      A program that works on 10 items and freezes on 10,000 is one of the most common real-world failures. You now have the vocabulary (O(1), O(log n), O(n), O(n²)) and the habits: prefer sets and dicts for lookups, sorted data plus binary search for repeated searching, and built-in `sorted()` for sorting. Choosing the right data structure is often the entire optimisation.
+
+  - kind: recap
+    body: |
+      - An **algorithm** is a step-by-step method. Compare algorithms by how their work **grows** with input size.
+      - **Big-O:** O(1) constant · O(log n) halving · O(n) one pass · O(n²) pairs.
+      - **Linear search** O(n); **binary search** O(log n) on sorted data.
+      - **Selection sort** is O(n²), for learning; use `sorted()` (about n log n).
+      - **`in`** is O(1) on sets/dicts (hashing) but O(n) on lists.
+      - **Recursion** needs a base case; too deep gives `RecursionError`.

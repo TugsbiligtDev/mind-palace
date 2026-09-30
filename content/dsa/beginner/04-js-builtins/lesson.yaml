@@ -1,0 +1,270 @@
+steps:
+  - kind: explain
+    title: Built-ins hide their cost
+    body: |
+      JavaScript gives you handy tools: `push`, `sort`, `includes`, `Map`. They are one line each, so it is easy to forget that each one *does work*, sometimes a lot of it.
+
+      A loop that looks like O(n) can secretly be O(n²) if the line inside it is an O(n) built-in. This module is a cost menu for the tools you will use all course.
+
+  - kind: explain
+    title: What array methods cost
+    body: |
+      | Method | Cost | Why |
+      |---|---|---|
+      | `arr[i]`, `arr.length` | O(1) | direct access |
+      | `push`, `pop` | O(1) | work at the end |
+      | `shift`, `unshift` | **O(n)** | every other item must slide over |
+      | `splice` | **O(n)** | items after the cut slide |
+      | `slice`, `concat`, spread `[...arr]` | **O(n)** | they **copy** |
+      | `includes`, `indexOf` | **O(n)** | scan until found |
+
+      The classic mistake is using `shift()` inside a loop to take items from the front. Each `shift` is O(n), so the whole loop is O(n²).
+
+  - kind: code
+    title: Time it yourself
+    body: |
+      Run this. It removes items from the back with `pop` and from the front with `shift`, and times both. The numbers vary, but `shift` is far slower.
+
+      Try increasing `size`. (On your Mac in Node the gap is even bigger.)
+    code: |
+      const size = 100000;
+
+      function timeIt(label, take) {
+        const arr = Array.from({ length: size }, (_, i) => i);
+        const start = Date.now();
+        while (arr.length > 0) take(arr);
+        console.log(label, Date.now() - start, "ms");
+      }
+
+      timeIt("pop  ", (a) => a.pop());
+      timeIt("shift", (a) => a.shift());
+
+  - kind: explain
+    title: Strings are immutable
+    body: |
+      You cannot change a string in place. Every "edit" creates a **new** string.
+
+      ```js
+      let s = "";
+      for (let i = 0; i < n; i++) s += "x";   // builds a new string every time
+      ```
+
+      Engines optimize this, but you should not rely on it. The safe pattern: collect the pieces in an **array**, then `join` once at the end.
+
+      ```js
+      const parts = [];
+      for (let i = 0; i < n; i++) parts.push("x");
+      const s = parts.join("");
+      ```
+
+  - kind: explain
+    title: Sort, and its famous trap
+    body: |
+      `arr.sort()` with no argument sorts items **as text**. So numbers go wrong:
+
+      ```js
+      [10, 9, 1].sort()   // [1, 10, 9]   (because "10" < "9" as text)
+      ```
+
+      Always pass a **comparator**: a function that returns a negative number if `a` goes first, positive if `b` goes first, and 0 if equal.
+
+      ```js
+      nums.sort((a, b) => a - b);   // ascending
+      nums.sort((a, b) => b - a);   // descending
+      ```
+
+      Facts to remember:
+      - `sort` is **O(n log n)**.
+      - It is **stable**: equal items keep their original order.
+      - It **changes the array**. `toSorted()` and `toReversed()` return a new array and leave the original alone.
+
+  - kind: code
+    title: Sort numbers correctly, without harm
+    body: |
+      Write `sortNumbers(nums)` that returns a **new** array sorted from smallest to largest. The original array must not change.
+    code: |
+      function sortNumbers(nums) {
+        return nums.sort();
+      }
+    tests:
+      - "sortNumbers([10, 9, 1])"
+      - "sortNumbers([3, -1, 2, -10])"
+      - "sortNumbers([])"
+      - "(() => { const a = [3, 1, 2]; sortNumbers(a); return a; })()"
+    solution: |
+      function sortNumbers(nums) {
+        return [...nums].sort((a, b) => a - b);
+      }
+    hint: "Copy first with `[...nums]` (or use `toSorted`), then sort the copy with a comparator."
+    reject:
+      - |
+        function sortNumbers(nums) {
+          return nums.sort((a, b) => a - b);
+        }
+      - |
+        function sortNumbers(nums) {
+          return [...nums].sort();
+        }
+
+  - kind: explain
+    title: Map and Set beat plain objects
+    body: |
+      For a hash table (lookups by key), use **`Map`** and **`Set`** rather than `{}`.
+
+      - Keys can be **any value**, not just strings.
+      - No accidental keys: a plain object already has keys like `constructor` and `toString`.
+      - Insertion order is kept, and `.size` is O(1).
+      - Methods: `map.set(k, v)`, `map.get(k)`, `map.has(k)`, `map.delete(k)`, and `set.add(x)`, `set.has(x)`.
+
+      All of these are O(1) on average. Module 7 goes deep on why.
+
+  - kind: code
+    title: The plain-object trap
+    body: |
+      Write `countWords(words)` that returns a **`Map`** from each word to how many times it appears.
+
+      Try it on `["constructor", "a", "constructor"]`. A plain `{}` breaks here, because `{}.constructor` already exists!
+    code: |
+      function countWords(words) {
+        const counts = {};
+        for (const w of words) {
+          counts[w] = (counts[w] || 0) + 1;
+        }
+        return counts;
+      }
+    tests:
+      - "Array.from(countWords(['a', 'b', 'a']))"
+      - "Array.from(countWords(['constructor', 'a', 'constructor']))"
+      - "Array.from(countWords([]))"
+    solution: |
+      function countWords(words) {
+        const counts = new Map();
+        for (const w of words) {
+          counts.set(w, (counts.get(w) || 0) + 1);
+        }
+        return counts;
+      }
+    hint: "`new Map()`, then `counts.set(w, (counts.get(w) || 0) + 1)`."
+    reject:
+      - |
+        function countWords(words) {
+          const counts = {};
+          for (const w of words) counts[w] = (counts[w] || 0) + 1;
+          return counts;
+        }
+
+  - kind: explain
+    title: The shared-reference trap
+    body: |
+      Objects and arrays are stored **by reference**. Two variables can point at the *same* array.
+
+      ```js
+      const grid = Array(3).fill([]);   // 3 slots, all holding THE SAME array
+      grid[0].push("x");
+      console.log(grid);                // [ ['x'], ['x'], ['x'] ]
+      ```
+
+      `fill` puts one array in every slot. Build independent arrays with `Array.from`:
+
+      ```js
+      const grid = Array.from({ length: 3 }, () => []);
+      ```
+
+      The function you pass runs once per slot, so each slot gets a fresh array. This bug is one of the most common in matrix and graph problems.
+
+  - kind: code
+    title: "Find the bug: the grid that changes everywhere"
+    body: |
+      `makeGrid(rows, cols)` should return a `rows × cols` grid of zeros where the rows are independent. Change one cell and only that cell should change. Right now it does not. Fix it.
+    code: |
+      function makeGrid(rows, cols) {
+        return Array(rows).fill(Array(cols).fill(0));
+      }
+    tests:
+      - "makeGrid(2, 3)"
+      - "(() => { const g = makeGrid(2, 3); g[0][0] = 1; return g; })()"
+      - "(() => { const g = makeGrid(3, 2); g[1][1] = 7; return g; })()"
+      - "makeGrid(0, 5)"
+    solution: |
+      function makeGrid(rows, cols) {
+        return Array.from({ length: rows }, () => Array(cols).fill(0));
+      }
+    hint: The outer `fill` reuses one row. Build each row separately with `Array.from`.
+    broken_starter: true
+    reject:
+      - |
+        function makeGrid(rows, cols) {
+          return Array(rows).fill(Array(cols).fill(0));
+        }
+
+  - kind: code
+    title: "Find the bug: copy, do not change"
+    body: |
+      `withItem(list, item)` should return a **new** array with `item` added at the end, leaving `list` alone. This version changes the original. Fix it.
+    code: |
+      function withItem(list, item) {
+        list.push(item);
+        return list;
+      }
+    tests:
+      - "withItem([1, 2], 3)"
+      - "(() => { const a = [1]; const b = withItem(a, 2); return [a, b]; })()"
+      - "withItem([], 'x')"
+    solution: |
+      function withItem(list, item) {
+        return [...list, item];
+      }
+    hint: Spread `[...list]` makes a copy, so you can add to the copy. Remember that it costs O(n).
+    broken_starter: true
+    reject:
+      - |
+        function withItem(list, item) {
+          list.push(item);
+          return list;
+        }
+
+  - kind: explain
+    title: What JavaScript does not have
+    body: |
+      Some structures you will need have **no built-in version**:
+
+      - **Queue**: an array's `shift` is O(n). You will build a fast one in Module 9.
+      - **Heap / priority queue**: you write your own in Module 20.
+      - **Tree, linked list, graph**: built from plain objects and classes.
+
+      Two engine limits to know:
+      - **Recursion depth** is roughly **10 000 frames**. A deeper recursion crashes with `RangeError: Maximum call stack size exceeded`.
+      - **No tail-call optimization**: V8 does not turn tail-recursive functions into loops, so deep recursion must be rewritten with a loop or an explicit stack.
+
+  - kind: code
+    title: Hit the recursion limit
+    body: |
+      Run this to see the stack overflow error caught safely. Then change `100` to `1000000` to see what a real overflow looks like.
+    code: |
+      function depth(n) {
+        if (n === 0) return 0;
+        return 1 + depth(n - 1);
+      }
+
+      console.log(depth(100));
+
+      try {
+        console.log(depth(1000000));
+      } catch (e) {
+        console.log("Crashed with", e.name);
+      }
+
+  - kind: why
+    body: |
+      When you know what a call really costs, you stop writing accidental O(n²) code. You also know when to reach for a `Map` instead of scanning an array, when a copy is hiding in a spread, and why the default `sort` gave you nonsense.
+
+      These are the details that separate "it works on my example" from "it works on a million items."
+
+  - kind: recap
+    body: |
+      - `push`/`pop` are **O(1)**. `shift`/`unshift`/`splice` are **O(n)**. `slice`, `concat` and spread **copy**, so O(n). `includes`/`indexOf` are O(n).
+      - Strings are **immutable**: build them with an array and `join`.
+      - `sort()` compares as text. Always pass `(a, b) => a - b`. It is stable, O(n log n), and mutates. `toSorted` does not.
+      - Use `Map` and `Set` as hash tables.
+      - `Array(n).fill([])` shares one array. Use `Array.from({ length: n }, () => [])`.
+      - JS has no built-in queue, heap or tree, and recursion is limited to about 10 000 frames.

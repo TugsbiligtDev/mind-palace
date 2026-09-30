@@ -1,0 +1,800 @@
+steps:
+  - kind: explain
+    title: Pick the structure
+    body: |
+      Six questions across trees, heaps and tries. Ask yourself first:
+
+      - Is it about **levels, depth or paths**? (tree traversal)
+      - Is there an **ordering rule** I can use to skip half? (BST)
+      - Do I need **the best so far**, repeatedly? (heap)
+      - Is it about **shared beginnings of words**? (trie)
+
+      The tree helpers (`TreeNode`, `buildTree`, `treeToArray`) are in the editor when a question uses trees.
+
+  - kind: code
+    title: "1. Mirror image"
+    body: |
+      Write `isSymmetric(root)`: `true` if the tree is a mirror image of itself around its centre. `[1, 2, 2, 3, 4, 4, 3]` is symmetric. `[1, 2, 2, null, 3, null, 3]` is not.
+    code: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function isSymmetric(root) {
+        // your code
+        return false;
+      }
+    tests:
+      - "isSymmetric(buildTree([1, 2, 2, 3, 4, 4, 3]))"
+      - "isSymmetric(buildTree([1, 2, 2, null, 3, null, 3]))"
+      - "isSymmetric(buildTree([]))"
+      - "isSymmetric(buildTree([1]))"
+      - "isSymmetric(buildTree([1, 2, 3]))"
+    solution: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function isSymmetric(root) {
+        function mirror(a, b) {
+          if (a === null && b === null) return true;
+          if (a === null || b === null) return false;
+          return a.val === b.val && mirror(a.left, b.right) && mirror(a.right, b.left);
+        }
+        return root === null || mirror(root.left, root.right);
+      }
+    hint: Compare two subtrees at once. The left of one must mirror the right of the other, and vice versa.
+    reject:
+      - |
+        class TreeNode {
+          constructor(val, left = null, right = null) {
+            this.val = val;
+            this.left = left;
+            this.right = right;
+          }
+        }
+
+        // Builds a tree from LeetCode's level-order array, where null means "no node".
+        function buildTree(values) {
+          if (values.length === 0 || values[0] === null) return null;
+          const root = new TreeNode(values[0]);
+          const queue = [root];
+          let i = 1;
+          for (let h = 0; h < queue.length && i < values.length; h++) {
+            const node = queue[h];
+            if (i < values.length && values[i] !== null) {
+              node.left = new TreeNode(values[i]);
+              queue.push(node.left);
+            }
+            i++;
+            if (i < values.length && values[i] !== null) {
+              node.right = new TreeNode(values[i]);
+              queue.push(node.right);
+            }
+            i++;
+          }
+          return root;
+        }
+
+        // The reverse: a tree back into a level-order array.
+        function treeToArray(root) {
+          const out = [];
+          const queue = [root];
+          for (let h = 0; h < queue.length; h++) {
+            const node = queue[h];
+            if (node) {
+              out.push(node.val);
+              queue.push(node.left, node.right);
+            } else {
+              out.push(null);
+            }
+          }
+          while (out.length > 0 && out[out.length - 1] === null) out.pop();
+          return out;
+        }
+
+
+        function isSymmetric(root) {
+          return true;
+        }
+
+  - kind: code
+    title: "2. Lowest common ancestor of any tree"
+    body: |
+      This tree is **not** a search tree, so you cannot compare sizes. Write `lca(root, p, q)`: the value of the lowest node that has both `p` and `q` (values) in its subtree. Both values exist.
+    code: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function lca(root, p, q) {
+        // your code
+        return null;
+      }
+    tests:
+      - "lca(buildTree([3, 5, 1, 6, 2, 0, 8, null, null, 7, 4]), 5, 1)"
+      - "lca(buildTree([3, 5, 1, 6, 2, 0, 8, null, null, 7, 4]), 5, 4)"
+      - "lca(buildTree([3, 5, 1, 6, 2, 0, 8, null, null, 7, 4]), 6, 7)"
+      - "lca(buildTree([1, 2]), 1, 2)"
+    solution: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function lca(root, p, q) {
+        function find(node) {
+          if (node === null) return null;
+          if (node.val === p || node.val === q) return node;
+          const left = find(node.left);
+          const right = find(node.right);
+          if (left !== null && right !== null) return node;
+          return left !== null ? left : right;
+        }
+        const node = find(root);
+        return node === null ? null : node.val;
+      }
+    hint: Return a node when you find `p` or `q`. If both sides return something, the current node is where they meet.
+    reject:
+      - |
+        class TreeNode {
+          constructor(val, left = null, right = null) {
+            this.val = val;
+            this.left = left;
+            this.right = right;
+          }
+        }
+
+        // Builds a tree from LeetCode's level-order array, where null means "no node".
+        function buildTree(values) {
+          if (values.length === 0 || values[0] === null) return null;
+          const root = new TreeNode(values[0]);
+          const queue = [root];
+          let i = 1;
+          for (let h = 0; h < queue.length && i < values.length; h++) {
+            const node = queue[h];
+            if (i < values.length && values[i] !== null) {
+              node.left = new TreeNode(values[i]);
+              queue.push(node.left);
+            }
+            i++;
+            if (i < values.length && values[i] !== null) {
+              node.right = new TreeNode(values[i]);
+              queue.push(node.right);
+            }
+            i++;
+          }
+          return root;
+        }
+
+        // The reverse: a tree back into a level-order array.
+        function treeToArray(root) {
+          const out = [];
+          const queue = [root];
+          for (let h = 0; h < queue.length; h++) {
+            const node = queue[h];
+            if (node) {
+              out.push(node.val);
+              queue.push(node.left, node.right);
+            } else {
+              out.push(null);
+            }
+          }
+          while (out.length > 0 && out[out.length - 1] === null) out.pop();
+          return out;
+        }
+
+
+        function lca(root, p, q) {
+          return root.val;
+        }
+
+  - kind: code
+    title: "3. Smallest to the right, in a tree"
+    body: |
+      Given a **BST** as a level-order array, write `closestValue(root, target)`: the value in the tree that is closest to `target`. Use the BST rule to skip half the tree each step.
+    code: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function closestValue(root, target) {
+        // your code
+        return null;
+      }
+    tests:
+      - "closestValue(buildTree([4, 2, 5, 1, 3]), 3.714286)"
+      - "closestValue(buildTree([1]), 4.428571)"
+      - "closestValue(buildTree([8, 3, 10, 1, 6, null, 14]), 12)"
+      - "closestValue(buildTree([8, 3, 10, 1, 6, null, 14]), 0)"
+      - "closestValue(buildTree([8, 3, 10, 1, 6, null, 14]), 20)"
+    solution: |
+      class TreeNode {
+        constructor(val, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      // Builds a tree from LeetCode's level-order array, where null means "no node".
+      function buildTree(values) {
+        if (values.length === 0 || values[0] === null) return null;
+        const root = new TreeNode(values[0]);
+        const queue = [root];
+        let i = 1;
+        for (let h = 0; h < queue.length && i < values.length; h++) {
+          const node = queue[h];
+          if (i < values.length && values[i] !== null) {
+            node.left = new TreeNode(values[i]);
+            queue.push(node.left);
+          }
+          i++;
+          if (i < values.length && values[i] !== null) {
+            node.right = new TreeNode(values[i]);
+            queue.push(node.right);
+          }
+          i++;
+        }
+        return root;
+      }
+
+      // The reverse: a tree back into a level-order array.
+      function treeToArray(root) {
+        const out = [];
+        const queue = [root];
+        for (let h = 0; h < queue.length; h++) {
+          const node = queue[h];
+          if (node) {
+            out.push(node.val);
+            queue.push(node.left, node.right);
+          } else {
+            out.push(null);
+          }
+        }
+        while (out.length > 0 && out[out.length - 1] === null) out.pop();
+        return out;
+      }
+
+
+      function closestValue(root, target) {
+        let best = root.val;
+        let node = root;
+        while (node !== null) {
+          if (Math.abs(node.val - target) < Math.abs(best - target)) best = node.val;
+          node = target < node.val ? node.left : node.right;
+        }
+        return best;
+      }
+    hint: Walk down like a search. At every node, update the best-so-far if this node is closer, then go left or right depending on the target.
+    reject:
+      - |
+        class TreeNode {
+          constructor(val, left = null, right = null) {
+            this.val = val;
+            this.left = left;
+            this.right = right;
+          }
+        }
+
+        // Builds a tree from LeetCode's level-order array, where null means "no node".
+        function buildTree(values) {
+          if (values.length === 0 || values[0] === null) return null;
+          const root = new TreeNode(values[0]);
+          const queue = [root];
+          let i = 1;
+          for (let h = 0; h < queue.length && i < values.length; h++) {
+            const node = queue[h];
+            if (i < values.length && values[i] !== null) {
+              node.left = new TreeNode(values[i]);
+              queue.push(node.left);
+            }
+            i++;
+            if (i < values.length && values[i] !== null) {
+              node.right = new TreeNode(values[i]);
+              queue.push(node.right);
+            }
+            i++;
+          }
+          return root;
+        }
+
+        // The reverse: a tree back into a level-order array.
+        function treeToArray(root) {
+          const out = [];
+          const queue = [root];
+          for (let h = 0; h < queue.length; h++) {
+            const node = queue[h];
+            if (node) {
+              out.push(node.val);
+              queue.push(node.left, node.right);
+            } else {
+              out.push(null);
+            }
+          }
+          while (out.length > 0 && out[out.length - 1] === null) out.pop();
+          return out;
+        }
+
+
+        function closestValue(root, target) {
+          return root.val;
+        }
+
+  - kind: code
+    title: "4. Cheapest ropes"
+    body: |
+      You have ropes of given lengths and must join them into one. Joining two ropes costs the **sum of their lengths**. Write `connectRopes(ropes)`: the **minimum total cost** to join them all. `[4, 3, 2, 6]` costs `29`.
+
+      A `MinHeap` is provided.
+    code: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function connectRopes(ropes) {
+        // your code
+        return 0;
+      }
+    tests:
+      - "connectRopes([4, 3, 2, 6])"
+      - "connectRopes([1, 2, 3, 4, 5])"
+      - "connectRopes([5])"
+      - "connectRopes([])"
+      - "connectRopes([2, 2])"
+    solution: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function connectRopes(ropes) {
+        const heap = new MinHeap();
+        for (const r of ropes) heap.push(r);
+        let cost = 0;
+        while (heap.size() > 1) {
+          const joined = heap.pop() + heap.pop();
+          cost += joined;
+          heap.push(joined);
+        }
+        return cost;
+      }
+    hint: Always join the two shortest ropes. Push the joined rope back so it can be joined again.
+    reject:
+      - |
+        class MinHeap {
+          constructor(compare = (a, b) => a - b) {
+            this.data = [];
+            this.compare = compare;
+          }
+          size() {
+            return this.data.length;
+          }
+          peek() {
+            return this.data[0];
+          }
+          push(x) {
+            const d = this.data;
+            d.push(x);
+            let i = d.length - 1;
+            while (i > 0) {
+              const p = (i - 1) >> 1;
+              if (this.compare(d[i], d[p]) >= 0) break;
+              [d[i], d[p]] = [d[p], d[i]];
+              i = p;
+            }
+          }
+          pop() {
+            const d = this.data;
+            if (d.length === 0) return undefined;
+            const top = d[0];
+            const last = d.pop();
+            if (d.length > 0) {
+              d[0] = last;
+              let i = 0;
+              for (;;) {
+                const l = 2 * i + 1;
+                const r = l + 1;
+                let m = i;
+                if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+                if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+                if (m === i) break;
+                [d[i], d[m]] = [d[m], d[i]];
+                i = m;
+              }
+            }
+            return top;
+          }
+        }
+
+
+        function connectRopes(ropes) {
+          return ropes.reduce((a, b) => a + b, 0);
+        }
+
+  - kind: code
+    title: "5. Most frequent words"
+    body: |
+      Write `topKWords(words, k)`: the `k` most frequent words, most frequent first. When two words have the same count, the **alphabetically smaller** word comes first.
+    code: |
+      function topKWords(words, k) {
+        // your code
+        return [];
+      }
+    tests:
+      - "topKWords(['i', 'love', 'leetcode', 'i', 'love', 'coding'], 2)"
+      - "topKWords(['the', 'day', 'is', 'sunny', 'the', 'the', 'the', 'sunny', 'is', 'is'], 4)"
+      - "topKWords(['a'], 1)"
+      - "topKWords(['b', 'a'], 2)"
+      - "topKWords([], 3)"
+    solution: |
+      function topKWords(words, k) {
+        const counts = new Map();
+        for (const w of words) counts.set(w, (counts.get(w) || 0) + 1);
+        return [...counts.keys()]
+          .sort((a, b) => counts.get(b) - counts.get(a) || (a < b ? -1 : a > b ? 1 : 0))
+          .slice(0, k);
+      }
+    hint: Count with a Map, then sort by count (descending) and, on ties, alphabetically. A heap also works, but sorting is fine here.
+    reject:
+      - |
+        function topKWords(words, k) {
+          return [...new Set(words)].slice(0, k);
+        }
+
+  - kind: code
+    title: "6. Words with a common start"
+    body: |
+      Write `longestCommonPrefix(words)` using a **trie**: insert every word, then walk from the root while a node has exactly one child and is not the end of a word. Return the prefix you walked. (A working `Trie` node structure is up to you.)
+    code: |
+      function longestCommonPrefix(words) {
+        // your code
+        return "";
+      }
+    tests:
+      - "longestCommonPrefix(['flower', 'flow', 'flight'])"
+      - "longestCommonPrefix(['dog', 'racecar', 'car'])"
+      - "longestCommonPrefix(['interview', 'internet', 'internal', 'interval'])"
+      - "longestCommonPrefix(['a'])"
+      - "longestCommonPrefix([])"
+      - "longestCommonPrefix(['ab', 'ab'])"
+    solution: |
+      function longestCommonPrefix(words) {
+        if (words.length === 0) return "";
+        const root = { children: new Map(), isEnd: false };
+        for (const word of words) {
+          let node = root;
+          for (const ch of word) {
+            if (!node.children.has(ch)) node.children.set(ch, { children: new Map(), isEnd: false });
+            node = node.children.get(ch);
+          }
+          node.isEnd = true;
+        }
+        let prefix = "";
+        let node = root;
+        while (node.children.size === 1 && !node.isEnd) {
+          const [ch, next] = [...node.children][0];
+          prefix += ch;
+          node = next;
+        }
+        return prefix;
+      }
+    hint: Stop when a node has two or more children (the words split), or when a word ends there.
+    reject:
+      - |
+        function longestCommonPrefix(words) {
+          return words.length ? words[0] : "";
+        }
+
+  - kind: why
+    body: |
+      Each structure answers a different question about data. Trees answer "what is inside this?", search trees "where would this go?", heaps "what is best right now?", and tries "what starts like this?". Choosing among them is the real skill.
+
+  - kind: recap
+    body: |
+      - Symmetry, ancestors and paths are **recursive tree** problems (two subtrees compared at once, or "return something when found").
+      - A **BST** lets you skip half the tree per step.
+      - A **min-heap** joins the smallest items greedily (ropes) and finds top-k.
+      - A **trie** exposes shared prefixes: a node with one child and no word end is still a common prefix.

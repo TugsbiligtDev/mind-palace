@@ -1,0 +1,302 @@
+steps:
+  - kind: explain
+    title: Writing down what you expect
+    body: |
+      Python does not force you to declare types, but you *can* annotate them. A **type hint** says what kind of value goes in and comes out:
+
+      ```python
+      def greet(name: str, times: int = 1) -> str:
+          return ("Hello, " + name + "! ") * times
+
+      count: int = 0                       # a variable annotation
+      ```
+
+      - `name: str` means "`name` should be a string".
+      - `-> str` means "returns a string".
+
+      **Why bother?**
+
+      1. They are **documentation that stays honest**: a reader instantly sees what a function takes and gives.
+      2. Your **editor** uses them to autocomplete and warn you as you type.
+      3. A **type checker** (mypy, pyright) reads them and finds bugs *before you run the program*.
+
+      **The crucial fact: hints are not enforced when the program runs.** Python ignores them. `greet(5)` runs anyway and crashes (or misbehaves) later. Hints are for humans and tools.
+
+  - kind: code
+    title: Hints do not stop you
+    body: |
+      Run this. The function is annotated to take integers, but Python happily runs it with text. Only a type checker would complain (you will use one on your Mac).
+    code: |
+      def add(a: int, b: int) -> int:
+          return a + b
+
+
+      print(add(2, 3))
+      print(add("2", "3"))
+      print(add.__annotations__)
+
+  - kind: code
+    title: Annotate a function
+    body: |
+      Give `area(width, height)` these type hints: both parameters `float`, the return value `float`. The behaviour must stay the same. The checker looks at `area.__annotations__`.
+    code: |
+      def area(width, height):
+          return width * height
+    tests:
+      - "area.__annotations__"
+      - "area(2.5, 4)"
+    solution: |
+      def area(width: float, height: float) -> float:
+          return width * height
+    hint: "`def area(width: float, height: float) -> float:`"
+    reject:
+      - |
+        def area(width: int, height: int) -> int:
+            return width * height
+
+  - kind: explain
+    title: Containers, unions and None
+    body: |
+      Since Python 3.9 you write the type of the *contents* in square brackets, using the built-in names:
+
+      | Hint | Meaning |
+      |---|---|
+      | `list[int]` | a list of ints |
+      | `dict[str, int]` | a dict from str keys to int values |
+      | `set[str]` | a set of strings |
+      | `tuple[int, str]` | a pair: an int then a str |
+      | `tuple[int, ...]` | a tuple of any length of ints |
+      | `int \| None` | an int **or** `None` (an *optional* value) |
+      | `int \| str` | either type |
+
+      The **`X | None`** form is important: it says "this might be missing". A type checker then makes you handle the `None` case, which prevents the classic `AttributeError: 'NoneType' object has no attribute...`.
+
+      ```python
+      def find_age(ages: dict[str, int], name: str) -> int | None:
+          return ages.get(name)
+      ```
+
+  - kind: code
+    title: Word counts, typed
+    body: |
+      Write `count_words(words)` with hints: takes a `list[str]`, returns a `dict[str, int]` counting how many times each word appears. The checker verifies both the behaviour and the annotations (through `typing.get_type_hints`).
+    code: |
+      def count_words(words):
+          return {}
+    tests:
+      - "count_words(['a', 'b', 'a'])"
+      - "count_words([])"
+      - "import typing\nhints = typing.get_type_hints(count_words)\nresult = (hints['words'] == list[str], hints['return'] == dict[str, int])"
+    solution: |
+      def count_words(words: list[str]) -> dict[str, int]:
+          counts: dict[str, int] = {}
+          for word in words:
+              counts[word] = counts.get(word, 0) + 1
+          return counts
+    hint: "`def count_words(words: list[str]) -> dict[str, int]:` and count with `.get(word, 0) + 1`."
+    reject:
+      - |
+        def count_words(words):
+            counts = {}
+            for word in words:
+                counts[word] = counts.get(word, 0) + 1
+            return counts
+
+  - kind: code
+    title: Maybe there is no answer
+    body: |
+      Write `first_long(words, n)`: return the first word longer than `n` characters, or `None` if there is none. Annotate it: `words: list[str]`, `n: int`, return `str | None`.
+    code: |
+      def first_long(words, n):
+          return None
+    tests:
+      - "first_long(['a', 'abcd', 'xyz'], 2)"
+      - "first_long(['a', 'b'], 5)"
+      - "first_long([], 0)"
+      - "import typing\nresult = typing.get_type_hints(first_long)['return'] == (str | None)"
+    solution: |
+      def first_long(words: list[str], n: int) -> str | None:
+          for word in words:
+              if len(word) > n:
+                  return word
+          return None
+    hint: "`-> str | None` tells readers (and checkers) the result may be missing."
+    reject:
+      - |
+        def first_long(words: list[str], n: int) -> str:
+            for word in words:
+                if len(word) > n:
+                    return word
+            return None
+
+  - kind: explain
+    title: TypedDict, Literal and aliases
+    body: |
+      **`TypedDict`** describes a dictionary with known keys, ideal for JSON-shaped data:
+
+      ```python
+      from typing import TypedDict
+
+      class Book(TypedDict):
+          title: str
+          year: int
+      ```
+
+      At runtime a `Book` is still a plain `dict`. The hints only help checkers and readers.
+
+      **`Literal`** restricts a value to specific choices:
+
+      ```python
+      from typing import Literal
+      Direction = Literal["N", "E", "S", "W"]
+
+      def turn_right(d: Direction) -> Direction: ...
+      ```
+
+      **Type aliases** give a complicated type a name:
+
+      ```python
+      type Point = tuple[float, float]       # Python 3.12+ syntax
+      Point2 = tuple[float, float]           # the older way, still common
+      ```
+
+      The `type X = ...` statement is the modern way; older code writes a plain assignment.
+
+  - kind: code
+    title: A typed record
+    body: |
+      Define a `TypedDict` called `Book` with the keys `title: str`, `author: str`, `year: int`. Then write `describe(book: Book) -> str` returning `"<title> by <author> (<year>)"`.
+    code: |
+      from typing import TypedDict
+
+
+      def describe(book):
+          return ""
+    tests:
+      - "describe({'title': 'Dune', 'author': 'Herbert', 'year': 1965})"
+      - "Book.__annotations__"
+      - "sorted(Book.__required_keys__)"
+      - "import typing\nresult = typing.get_type_hints(describe)['book'] is Book"
+    solution: |
+      from typing import TypedDict
+
+
+      class Book(TypedDict):
+          title: str
+          author: str
+          year: int
+
+
+      def describe(book: Book) -> str:
+          return f"{book['title']} by {book['author']} ({book['year']})"
+    hint: "`class Book(TypedDict):` with three annotated fields, then annotate `describe(book: Book) -> str`."
+    reject:
+      - |
+        from typing import TypedDict
+
+
+        class Book(TypedDict):
+            title: str
+
+
+        def describe(book: Book) -> str:
+            return book["title"]
+
+  - kind: code
+    title: Only four directions
+    body: |
+      Define the alias `Direction = Literal["N", "E", "S", "W"]` and write `turn_right(d: Direction) -> Direction`: N → E → S → W → N. The checker also reads the allowed values from the alias.
+    code: |
+      from typing import Literal
+
+
+      def turn_right(d):
+          return d
+    tests:
+      - "turn_right('N')"
+      - "turn_right('W')"
+      - "[turn_right(x) for x in ['N', 'E', 'S', 'W']]"
+      - "import typing\nresult = typing.get_args(Direction)"
+    solution: |
+      from typing import Literal
+
+      Direction = Literal["N", "E", "S", "W"]
+
+
+      def turn_right(d: Direction) -> Direction:
+          order = ["N", "E", "S", "W"]
+          return order[(order.index(d) + 1) % 4]
+    hint: "Keep the four letters in a list. The next one is at `(index + 1) % 4`."
+    reject:
+      - |
+        from typing import Literal
+
+        Direction = Literal["N", "E"]
+
+
+        def turn_right(d: Direction) -> Direction:
+            return "E"
+
+  - kind: explain
+    title: Checking with mypy or pyright
+    body: |
+      A **type checker** reads your hints and reports mistakes without running the code. The two popular ones are **mypy** and **pyright** (also built into VS Code's Pylance).
+
+      ```python
+      def total(prices: list[float]) -> float:
+          return sum(prices)
+
+      total("12")           # error: Argument 1 has incompatible type "str"; expected "list[float]"
+      ```
+
+      Add it to a project as a development tool and run it: `uv add --dev mypy`, then `uv run mypy .`. Options like `--strict` turn on all the checks. It is much easier to add hints as you write than to add them to old code later.
+
+      Some practical guidance: hint **every function's parameters and return**; let the checker *infer* local variables; use `X | None` honestly; start with mypy's default mode, then move to `--strict`.
+
+  - kind: mac
+    title: Catch a bug with mypy
+    body: |
+      Make a project, add `mypy`, and check a file with a deliberate mistake. Read the error message.
+
+      **Checkpoint:** paste the output. It should contain `error` and `Found 1 error`.
+    commands: |
+      mkdir -p ~/Desktop/typed && cd ~/Desktop/typed
+      uv init --bare
+      uv add --dev mypy
+      cat > shop.py <<'PY'
+      def total(prices: list[float]) -> float:
+          return sum(prices)
+
+
+      print(total("12"))
+      PY
+      uv run mypy shop.py
+    expect_output:
+      - "error"
+      - "Found 1 error"
+
+  - kind: info
+    title: "🔹 Older spellings: List, Optional, Union"
+    body: |
+      Before Python 3.9/3.10 you had to import capitalised names from `typing`:
+
+      ```python
+      from typing import List, Dict, Optional, Union
+
+      def f(x: List[int]) -> Optional[str]: ...
+      def g(x: Union[int, str]) -> Dict[str, int]: ...
+      ```
+
+      They mean exactly the same as `list[int]`, `str | None`, `int | str`, `dict[str, int]`. You will meet them in older code and libraries. **In new code use the modern forms.**
+
+  - kind: why
+    body: |
+      Type hints turn many bugs from "found by a user at 2 a.m." into "found by your editor before you saved". They are also the best documentation a function can have. Nearly every serious Python codebase uses them, and Pydantic (Module 39) and FastAPI build directly on them.
+
+  - kind: recap
+    body: |
+      - Annotate: `x: int`, `def f(a: str, b: int = 0) -> bool:`. Hints are **not enforced at runtime**; they serve humans, editors and type checkers.
+      - Modern syntax: `list[int]`, `dict[str, int]`, `tuple[int, str]`, **`X | None`**.
+      - `TypedDict` for dict-shaped records, `Literal["a", "b"]` for fixed choices, aliases (`type Point = ...`) for names.
+      - Check with **mypy** or **pyright** (`uv run mypy .`, `--strict`).
+      - 🔹 `List`, `Optional`, `Union` are the legacy spellings.

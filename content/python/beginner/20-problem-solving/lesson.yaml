@@ -1,0 +1,256 @@
+steps:
+  - kind: explain
+    title: Syntax is the easy part
+    body: |
+      Beginners think programming is memorising commands. Experienced programmers know it is **solving problems**, and the commands are just the vocabulary. This lesson is about the *method* that works on every problem.
+
+      A dependable routine:
+
+      1. **Understand.** Say the problem in your own words. What goes in? What must come out? Write two or three examples, including a strange one (empty, zero, one item).
+      2. **Break it down.** Split it into small steps you could each do by hand.
+      3. **Write pseudocode.** Describe the steps in plain English before any Python.
+      4. **Code one step at a time.** Run after every step. Print values.
+      5. **Test with your examples**, then the strange ones.
+      6. **Clean up.** Rename things, delete dead code.
+
+  - kind: explain
+    title: "Pseudocode: think before you type"
+    body: |
+      **Pseudocode** is a plan in ordinary words, laid out like code. It has no rules, so you can focus on the *idea*.
+
+      *Problem: find the longest word in a sentence.*
+
+      ```
+      longest = empty text
+      for each word in the sentence:
+          if this word is longer than longest:
+              longest = this word
+      return longest
+      ```
+
+      Turning it into Python is now almost mechanical. If you get stuck writing the code, you are usually missing a step in the plan.
+
+  - kind: code
+    title: From plan to code
+    body: |
+      Turn the plan above into `longest_word(sentence)`. If two words have the same length, return the **first** one. An empty sentence gives `""`.
+    code: |
+      def longest_word(sentence):
+          # longest = empty text
+          # for each word in the sentence:
+          #     if this word is longer than longest:
+          #         longest = this word
+          # return longest
+          return ""
+    tests:
+      - "longest_word('the quick brown fox')"
+      - "longest_word('a bb cc')"
+      - "longest_word('')"
+      - "longest_word('one')"
+      - "longest_word('detective moth')"
+    solution: |
+      def longest_word(sentence):
+          longest = ""
+          for word in sentence.split():
+              if len(word) > len(longest):
+                  longest = word
+          return longest
+    hint: "Use `>` (not `>=`) so the first of equal-length words stays."
+    reject:
+      - |
+        def longest_word(sentence):
+            longest = ""
+            for word in sentence.split():
+                if len(word) >= len(longest):
+                    longest = word
+            return longest
+
+  - kind: explain
+    title: Tracing code by hand
+    body: |
+      When code gives a surprising answer, don't stare at it. **Trace it**: be the computer. Write a table with one column per variable, and update it line by line.
+
+      ```python
+      total = 0
+      for n in [3, 1, 4]:
+          total += n
+      ```
+
+      | step | n | total |
+      |---|---|---|
+      | start | (none) | 0 |
+      | 1st round | 3 | 3 |
+      | 2nd round | 1 | 4 |
+      | 3rd round | 4 | 8 |
+
+      Comparing the table with what you *expected* shows you exactly where reality and your idea split apart. Adding a `print` for each variable does the same job automatically.
+
+  - kind: code
+    title: Produce the trace
+    body: |
+      Finish `running_totals(numbers)`: return the list of `total` after each round. `running_totals([3, 1, 4])` is `[3, 4, 8]`. That is the last column of the table above.
+    code: |
+      def running_totals(numbers):
+          return []
+    tests:
+      - "running_totals([3, 1, 4])"
+      - "running_totals([])"
+      - "running_totals([5])"
+      - "running_totals([1, -1, 1])"
+    solution: |
+      def running_totals(numbers):
+          totals = []
+          total = 0
+          for n in numbers:
+              total += n
+              totals.append(total)
+          return totals
+    hint: "Keep `total` going, and `append` it to a list after adding each number."
+    reject:
+      - |
+        def running_totals(numbers):
+            return [sum(numbers)]
+
+  - kind: explain
+    title: Shrink the bug
+    body: |
+      A bug in a 200-line program is hard to see. So **make it smaller** until it is obvious:
+
+      - Delete everything not needed to make the bug appear.
+      - Replace real data with the smallest input that still fails.
+      - Test one piece at a time. If a pipeline has 6 steps, check the output of step 3: is it already wrong? Then the bug is in steps 1–3. If it is fine, look at 4–6. Halving the search each time finds the bug fast.
+
+      The tiny program you end up with is called a **minimal reproducible example**. Half the time, making it reveals the bug. The other half, it is exactly what you paste when asking someone for help.
+
+  - kind: code
+    title: Which step broke it?
+    body: |
+      A pipeline of steps turns a value along the way. `first_bad_step(steps, value, is_ok)` runs each function in `steps` on the value in turn (the output of one step is the input of the next). After each step, call `is_ok(value)`. Return the **1-based number** of the first step whose output is not ok, or `0` if every step was fine.
+
+      Example: with steps `[add_one, double, negate]`, starting from `1`, values go `2, 4, -4`. If `is_ok` is "value > 0", step 3 is the first bad one, so the answer is `3`.
+    code: |
+      def first_bad_step(steps, value, is_ok):
+          return 0
+    tests:
+      - "first_bad_step([lambda x: x + 1, lambda x: x * 2, lambda x: -x], 1, lambda v: v > 0)"
+      - "first_bad_step([lambda x: x + 1, lambda x: x * 2], 1, lambda v: v > 0)"
+      - "first_bad_step([], 5, lambda v: v > 0)"
+      - "first_bad_step([lambda x: x - 10], 5, lambda v: v > 0)"
+    solution: |
+      def first_bad_step(steps, value, is_ok):
+          for number, step in enumerate(steps, start=1):
+              value = step(value)
+              if not is_ok(value):
+                  return number
+          return 0
+    hint: "`enumerate(steps, start=1)` numbers the steps from 1. Apply each step, check, and return early."
+    reject:
+      - |
+        def first_bad_step(steps, value, is_ok):
+            return len(steps)
+
+  - kind: explain
+    title: Searching for errors well
+    body: |
+      Almost every error you will ever meet has already happened to thousands of people. The trick is searching well:
+
+      1. **Read the last line** of the traceback. It has the error type and message.
+      2. **Copy that line** into a search engine, and remove parts that are specific to *your* code (your file names, your variable names, your paths).
+      3. Add the language or library name (`python`, `pandas`).
+      4. Prefer **official documentation**, then well-voted Stack Overflow answers, then blog posts. Check the **date**: Python changes.
+      5. Understand a fix before using it. If you paste code you do not understand, you cannot fix the next bug.
+
+  - kind: code
+    title: Make a search query
+    body: |
+      Finish `search_query(traceback_text)`: take the text of a traceback and return the **last non-empty line** of it (that is the error message), with leading and trailing spaces removed, followed by `" python"`.
+
+      For a traceback ending in `NameError: name 'total' is not defined` the answer is `"NameError: name 'total' is not defined python"`.
+    code: |
+      def search_query(traceback_text):
+          return ""
+    tests:
+      - "search_query('Traceback (most recent call last):\\n  File \"main.py\", line 3, in <module>\\n    print(total)\\nNameError: name \\'total\\' is not defined\\n')"
+      - "search_query('ValueError: bad\\n\\n')"
+      - "search_query('')"
+    solution: |
+      def search_query(traceback_text):
+          lines = [line.strip() for line in traceback_text.splitlines() if line.strip()]
+          if not lines:
+              return ""
+          return lines[-1] + " python"
+    hint: "Strip each line, keep the non-empty ones, then take `lines[-1]`. An empty traceback gives `\"\"`."
+    reject:
+      - |
+        def search_query(traceback_text):
+            return traceback_text.splitlines()[0] + " python"
+
+  - kind: explain
+    title: Reading documentation
+    body: |
+      Documentation feels dense at first. A reliable way in:
+
+      1. Find the **one-line description** at the top: does this even do what I need?
+      2. Jump to the **examples**. Copy one and run it.
+      3. Then read the **parameters** and what is **returned**.
+      4. Read the notes about **errors** and edge cases last.
+
+      Python documents its own functions with **docstrings** (Module 14). In a terminal, `help(len)` shows one, and in code the text is in `function.__doc__`. The first line is the summary.
+
+  - kind: code
+    title: Pull out the summary
+    body: |
+      Finish `doc_summary(func)`: return the **first line** of a function's docstring, stripped of spaces. If the function has no docstring, return `"(no documentation)"`.
+
+      Any function has `func.__doc__`, which is `None` if there is no docstring.
+    code: |
+      def doc_summary(func):
+          return ""
+    tests:
+      - "(lambda: (lambda f: doc_summary(f))(eval('lambda x: x')))()"
+      - "doc_summary(len) != '(no documentation)'"
+      - "doc_summary(str.upper) != ''"
+      - "(lambda ns: (exec('def f():\\n    \"\"\"Add stuff.\\n\\n    More detail.\\n    \"\"\"', ns), doc_summary(ns['f']))[1])({})"
+    solution: |
+      def doc_summary(func):
+          doc = func.__doc__
+          if not doc:
+              return "(no documentation)"
+          return doc.strip().splitlines()[0].strip()
+    hint: "Check `if not func.__doc__` first. Then `.strip().splitlines()[0]`."
+    reject:
+      - |
+        def doc_summary(func):
+            return func.__doc__
+
+  - kind: explain
+    title: Using AI assistants to learn
+    body: |
+      AI assistants (like Claude) are powerful helpers, and they can make you learn faster or slower depending on how you use them.
+
+      **Good uses**
+      - *Ask for an explanation:* "Explain this error in plain words and show why it happens."
+      - *Ask for a hint, not the answer:* "Give me a hint for step 2, without the full solution."
+      - *Check your understanding:* explain your solution back and ask what is wrong with it.
+      - *Get examples:* "Show two more examples of list comprehensions with a filter."
+      - *Review your code:* "What edge cases might break this?"
+
+      **Habits that keep you learning**
+      - Try first for a real while. The struggle is what builds the skill.
+      - Never paste code you don't understand. Ask what each line does, then type it yourself.
+      - **Verify.** AI can be confidently wrong. Run the code and test it, and check the docs.
+      - Do not paste secrets, passwords, API keys or private data into any AI tool.
+      - Be honest in school or work about where help came from.
+
+  - kind: why
+    body: |
+      Languages and libraries change; the problem-solving routine does not. Planning before typing, tracing by hand, shrinking bugs, searching well and reading docs are the habits that let you solve problems in *any* language, even without an AI assistant nearby.
+
+  - kind: recap
+    body: |
+      - Routine: **understand → break down → pseudocode → code a step at a time → test (incl. strange cases) → clean up**.
+      - **Trace** code by hand (a variable table) or with `print`.
+      - **Shrink** the bug to a minimal reproducible example; check the middle of a pipeline to halve the search.
+      - **Search** with the last line of the traceback; strip out your own names; prefer official docs; check dates.
+      - **Docs:** description, examples, then parameters. Use `help()` and docstrings.
+      - Use **AI to learn**: ask for explanations and hints, verify everything, never paste what you don't understand, never share secrets.

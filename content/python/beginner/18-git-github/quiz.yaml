@@ -1,0 +1,33 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which command saves a snapshot of the staged changes with a message?
+    options: ['git commit -m "Add search"', "git push", "git status", "git init"]
+    answer: 0
+    explanation: "`commit` saves the snapshot. `push` uploads commits to GitHub, `status` only looks, and `init` starts a repo."
+  - type: mcq
+    prompt: Which commit message is best?
+    options: ["Fix crash when the contact list is empty", "fixed stuff", "update", "I changed some things."]
+    answer: 0
+    explanation: It is short, in the imperative, and says what changed.
+  - type: mcq
+    prompt: Which file should be listed in `.gitignore`?
+    options: [".env (holding passwords and keys)", "main.py", "README.md", "pyproject.toml"]
+    answer: 0
+    explanation: Secrets and generated folders such as `.venv/` do not belong in the repository.
+  - type: mcq
+    prompt: You edited a file but have not committed. You run `git restore file.py`. What happens?
+    options:
+      - Your edit is discarded and the last committed version returns
+      - The file is committed
+      - The file is deleted from history
+      - The edit is saved to GitHub
+    answer: 0
+    explanation: "`restore` throws away uncommitted edits. Commit often so there is something to go back to."
+  - type: fill
+    prompt: Complete the command that shows the list of commits on one line each.
+    code: |
+      git log ____
+    runnable: false
+    answer: "--oneline"
+    explanation: "`git log --oneline` prints each commit as a short one-line summary."

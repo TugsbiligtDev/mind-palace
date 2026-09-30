@@ -1,0 +1,4 @@
+title: Complexity Analysis (Big-O)
+module: 3
+summary: "Measure how the work grows: time and space, the common classes from O(1) to O(n!), counting loops, amortized cost, and guessing the target from the input size."
+minutes: 50

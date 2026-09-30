@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def f(a, b=10):
+          return a + b
+
+      print(f(1), f(1, 2), f(b=5, a=1))
+    options: ["11 3 6", "11 3 11", "1 3 6", "11 12 6"]
+    answer: 0
+    explanation: "`f(1)` uses the default b=10. `f(1, 2)` gives 3. `f(b=5, a=1)` gives 6 (keywords can go in any order)."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def total(*nums):
+          return sum(nums)
+
+      print(total(1, 2, 3), total())
+    options: ["6 0", "3 0", "6 None", "Error"]
+    answer: 0
+    explanation: "`*nums` collects the arguments into a tuple. With no arguments it is empty and its sum is 0."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def add(x, items=[]):
+          items.append(x)
+          return items
+
+      add(1)
+      print(add(2))
+    options: ["[1, 2]", "[2]", "[1]", "Error"]
+    answer: 0
+    explanation: "The default list is created once and shared by every call, so the second call sees the first call's item."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def show():
+          message = "hi"
+          return message
+
+      show()
+      print("message" in dir())
+    options: ["False", "True", "hi", "Error"]
+    answer: 0
+    explanation: "`message` is local to `show`. It does not exist at the top level after the function returns."
+  - type: mcq
+    prompt: What does a function return if it has no `return` statement?
+    options: ["None", "0", "An empty string", "An error"]
+    answer: 0
+    explanation: Functions without `return` give back `None`.

@@ -1,0 +1,33 @@
+pass: 2
+questions:
+  - type: mcq
+    prompt: Why is BFS guaranteed to find a shortest path in an unweighted maze?
+    options:
+      - It explores cells in rings of increasing distance, so the first time it reaches the exit is by a shortest route
+      - It always goes straight to the exit
+      - It uses recursion
+      - It sorts the cells
+    answer: 0
+    explanation: A queue processes all cells 1 step away, then 2 steps away, and so on.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      parents = {(0, 0): None, (0, 1): (0, 0), (0, 2): (0, 1)}
+      cell = (0, 2)
+      path = []
+      while cell is not None:
+          path.append(cell)
+          cell = parents[cell]
+      print(path[::-1])
+    options: ["[(0, 0), (0, 1), (0, 2)]", "[(0, 2), (0, 1), (0, 0)]", "[(0, 2)]", "[None, (0, 0)]"]
+    answer: 0
+    explanation: "Walking back from the goal collects the path in reverse, so it is reversed at the end."
+  - type: mcq
+    prompt: What is the only difference between the BFS and DFS versions of the search?
+    options:
+      - Taking from the front of a queue versus the end of a stack
+      - One uses recursion and one does not
+      - One works on grids only
+      - One needs a heap
+    answer: 0
+    explanation: The order in which cells are taken from the frontier decides the search behaviour.

@@ -1,0 +1,260 @@
+steps:
+  - kind: explain
+    title: Look things up by name
+    body: |
+      A list finds things by **position** (`items[2]`). A **dictionary** (`dict`) finds them by a **key** you choose, like a phone book: look up a name, get a number.
+
+      ```python
+      book = {"title": "Dune", "author": "Herbert", "year": 1965}
+      print(book["title"])      # Dune
+      ```
+
+      Each entry is a **key: value** pair, written with curly brackets. Keys are usually text or numbers.
+
+      **Change a dictionary:**
+
+      ```python
+      book["year"] = 1966       # update an existing key
+      book["pages"] = 412       # add a new key: same syntax!
+      del book["author"]        # delete a key
+      ```
+
+      Dictionaries remember the **order you inserted** keys (guaranteed since Python 3.7).
+
+  - kind: code
+    title: Try a dictionary
+    body: |
+      Run this and read each line. Then add a new key of your own.
+    code: |
+      book = {"title": "Dune", "author": "Herbert", "year": 1965}
+      print(book["title"])
+      book["year"] = 1966
+      book["pages"] = 412
+      del book["author"]
+      print(book)
+      print(len(book))
+      print("title" in book)
+
+  - kind: explain
+    title: "[] versus .get()"
+    body: |
+      Asking for a key that is **not there** with `[]` crashes:
+
+      ```python
+      book["isbn"]         # KeyError: 'isbn'
+      ```
+
+      `.get(key)` is the gentle version: it returns **`None`** when the key is missing, or a default you supply:
+
+      ```python
+      book.get("isbn")             # None
+      book.get("isbn", "unknown")  # "unknown"
+      ```
+
+      Use `[]` when the key **must** exist (a crash points at a real bug). Use `.get()` when it might be absent. `"isbn" in book` also checks safely.
+
+  - kind: code
+    title: A price lookup
+    body: |
+      Finish `price_of(prices, item)`: return the price for `item` from the dictionary `prices`, or `0` if the item is not listed. `price_of({"pen": 2}, "pen")` is `2`, and `price_of({"pen": 2}, "ink")` is `0`.
+    code: |
+      def price_of(prices, item):
+          return prices[item]
+    tests:
+      - "price_of({'pen': 2, 'book': 12}, 'pen')"
+      - "price_of({'pen': 2}, 'ink')"
+      - "price_of({}, 'pen')"
+      - "price_of({'a': 0}, 'a')"
+    solution: |
+      def price_of(prices, item):
+          return prices.get(item, 0)
+    hint: "`prices.get(item, 0)`: the second argument is the default."
+    broken_starter: true
+
+  - kind: explain
+    title: Looping over a dictionary
+    body: |
+      ```python
+      stock = {"pen": 5, "book": 2}
+
+      for key in stock:                 # keys (the default)
+          print(key)
+      for value in stock.values():      # just the values
+          print(value)
+      for key, value in stock.items():  # both: the most useful
+          print(key, value)
+      ```
+
+      `.keys()`, `.values()` and `.items()` give you the parts. The pattern **"count things with a dictionary"** is one of the most useful in Python:
+
+      ```python
+      counts = {}
+      for letter in "banana":
+          counts[letter] = counts.get(letter, 0) + 1
+      # {'b': 1, 'a': 3, 'n': 2}
+      ```
+
+  - kind: code
+    title: Count the words
+    body: |
+      Finish `word_count(text)`: return a dictionary that says how many times each word appears. Words are separated by spaces, and case matters. `word_count("a b a")` is `{"a": 2, "b": 1}`.
+    code: |
+      def word_count(text):
+          counts = {}
+          return counts
+    tests:
+      - "word_count('a b a')"
+      - "word_count('')"
+      - "word_count('the cat the hat the')"
+      - "word_count('Ada ada')"
+    solution: |
+      def word_count(text):
+          counts = {}
+          for word in text.split():
+              counts[word] = counts.get(word, 0) + 1
+          return counts
+    hint: "Follow the banana pattern: `counts[word] = counts.get(word, 0) + 1`."
+    reject:
+      - |
+        def word_count(text):
+            counts = {}
+            for word in text.split():
+                counts[word] = 1
+            return counts
+
+  - kind: code
+    title: Total the stock
+    body: |
+      Finish `total_stock(stock)`: add up all the **values** of a dictionary that maps items to counts. `total_stock({"pen": 5, "book": 2})` is `7`.
+    code: |
+      def total_stock(stock):
+          return 0
+    tests:
+      - "total_stock({'pen': 5, 'book': 2})"
+      - "total_stock({})"
+      - "total_stock({'a': 10})"
+    solution: |
+      def total_stock(stock):
+          total = 0
+          for count in stock.values():
+              total += count
+          return total
+    hint: "Loop over `stock.values()`. (`sum(stock.values())` also works.)"
+    reject:
+      - |
+        def total_stock(stock):
+            return len(stock)
+
+  - kind: code
+    title: Add, update, delete
+    body: |
+      Finish `apply_changes(stock, changes)`. `changes` is a list of pairs `(item, amount)`:
+
+      - if `amount` is `0`, **delete** that item from `stock` (do nothing if it is absent),
+      - otherwise **set** the item's count to `amount` (adding it if new).
+
+      Return the updated `stock`. `apply_changes({"pen": 5}, [("pen", 0), ("ink", 3)])` is `{"ink": 3}`.
+    code: |
+      def apply_changes(stock, changes):
+          return stock
+    tests:
+      - "apply_changes({'pen': 5}, [('pen', 0), ('ink', 3)])"
+      - "apply_changes({}, [('a', 1)])"
+      - "apply_changes({'a': 1}, [('a', 9)])"
+      - "apply_changes({'a': 1}, [('zzz', 0)])"
+    solution: |
+      def apply_changes(stock, changes):
+          for item, amount in changes:
+              if amount == 0:
+                  stock.pop(item, None)
+              else:
+                  stock[item] = amount
+          return stock
+    hint: "`stock.pop(item, None)` deletes a key without crashing if it is missing."
+    reject:
+      - |
+        def apply_changes(stock, changes):
+            for item, amount in changes:
+                stock[item] = amount
+            return stock
+
+  - kind: explain
+    title: "Nested dictionaries: the shape of JSON"
+    body: |
+      Values can be anything, including lists and other dictionaries. That is exactly the shape of **JSON**, the format almost every web service uses to send data:
+
+      ```python
+      customer = {
+          "name": "Ada",
+          "address": {"city": "London", "zip": "N1"},
+          "orders": [101, 102],
+      }
+      customer["address"]["city"]     # "London"
+      customer["orders"][0]           # 101
+      ```
+
+      **Which keys are allowed?** Keys must be **hashable**: immutable types such as text, numbers and tuples. A list cannot be a key (it can change), but a tuple can: `{(3, 4): "treasure"}`.
+
+  - kind: code
+    title: Dig for the city
+    body: |
+      Finish `city_of(person)`: return `person["address"]["city"]`, but if the person has no `"address"`, or the address has no `"city"`, return `"unknown"` instead of crashing.
+    code: |
+      def city_of(person):
+          return person["address"]["city"]
+    tests:
+      - "city_of({'name': 'Ada', 'address': {'city': 'London'}})"
+      - "city_of({'name': 'Moth'})"
+      - "city_of({'address': {}})"
+      - "city_of({'address': {'city': 'Ulaanbaatar', 'zip': 'X'}})"
+    solution: |
+      def city_of(person):
+          address = person.get("address", {})
+          return address.get("city", "unknown")
+    hint: "`.get(\"address\", {})` gives an empty dict when missing, and you can safely `.get` from that."
+    broken_starter: true
+
+  - kind: code
+    title: Group by length
+    body: |
+      Finish `group_by_length(words)`: return a dictionary from word length to the **list** of words with that length, in the order they appeared. `group_by_length(["hi", "yo", "cat"])` is `{2: ["hi", "yo"], 3: ["cat"]}`.
+
+      For each word, if its length is not yet a key, start with an empty list; then append.
+    code: |
+      def group_by_length(words):
+          groups = {}
+          return groups
+    tests:
+      - "group_by_length(['hi', 'yo', 'cat'])"
+      - "group_by_length([])"
+      - "group_by_length(['a', 'b', 'c'])"
+      - "group_by_length(['abc', 'de', 'fgh', 'i'])"
+    solution: |
+      def group_by_length(words):
+          groups = {}
+          for word in words:
+              n = len(word)
+              if n not in groups:
+                  groups[n] = []
+              groups[n].append(word)
+          return groups
+    hint: "`if n not in groups: groups[n] = []`, then `groups[n].append(word)`."
+    reject:
+      - |
+        def group_by_length(words):
+            groups = {}
+            for word in words:
+                groups[len(word)] = [word]
+            return groups
+
+  - kind: why
+    body: |
+      Real data is almost always key-value: a user profile, a book record, a settings file, an API answer. Dictionaries make "find this thing by name" instant and readable, and counting/grouping with them replaces pages of loops. The nested shape you just used is the same as JSON, which you will read and write in Module 17.
+
+  - kind: recap
+    body: |
+      - A `dict` maps **keys** to **values**: `{"a": 1}`. Read `d[key]`, set `d[key] = v` (adds or updates), delete `del d[key]`.
+      - `d[key]` raises `KeyError` if missing; `d.get(key, default)` does not.
+      - Loop with `.keys()`, `.values()`, `.items()`. Count with `counts[k] = counts.get(k, 0) + 1`.
+      - Values can be nested dicts and lists (JSON-shaped). Keys must be **hashable** (text, numbers, tuples).
+      - Dictionaries keep insertion order.

@@ -1,0 +1,221 @@
+steps:
+  - kind: explain
+    title: Two ways to run Python
+    body: |
+      **1. The REPL.** Type `python` (or `uv run python`) in a terminal and you get a prompt `>>>`. Type a line, press Enter, and Python answers immediately. REPL means *read, evaluate, print, loop*. It is a calculator for trying ideas.
+
+      **2. A `.py` file.** You save many lines in a file ending in `.py` and run the whole thing: `uv run hello.py`. That is a **script**, or **program**. Anything you want to keep goes in a file.
+
+      In this course the editor on the right runs a small script each time you press **Run**. On your Mac you will do the same in a real terminal.
+
+  - kind: code
+    title: print() shows things
+    body: |
+      `print(...)` displays whatever is inside the brackets. Text goes in **quotes**. Numbers do not need them. Python runs your lines **from top to bottom**.
+
+      Run this, then add a third line that prints your own name.
+    code: |
+      print("Detective Ada reporting")
+      print(40 + 2)
+      print("The answer is", 42)
+
+  - kind: explain
+    title: "Comments: notes for humans"
+    body: |
+      A line starting with `#` is a **comment**. Python ignores it completely. It is there for the *next person* (often you, in three weeks).
+
+      ```python
+      # Show the welcome message
+      print("Welcome")   # a comment can follow code, too
+      ```
+
+      Good comments say **why**, not what. `# add 1 to count` is noise. `# skip the header row` is useful. And you can "comment out" a line to switch it off for a moment.
+
+  - kind: code
+    title: An about-me card
+    body: |
+      Finish `card()` so it prints a short "about me" card of **three lines**:
+
+      ```
+      Name: Ada
+      Job: Detective
+      City: London
+      ```
+
+      (Use exactly this text. On your own you would use your details.) The checker calls `card()` and reads what it printed.
+    code: |
+      def card():
+          # print three lines here
+          pass
+    tests:
+      - "given_input([], card)"
+    solution: |
+      def card():
+          print("Name: Ada")
+          print("Job: Detective")
+          print("City: London")
+    hint: One `print("...")` per line, each starting at the same indent as the comment.
+    reject:
+      - |
+        def card():
+            print("Name: Ada")
+
+  - kind: explain
+    title: Indentation is part of the language
+    body: |
+      In most languages indentation is just for looks. In Python it **is the structure**. Lines that belong together are indented by the same amount (four spaces is the rule).
+
+      ```python
+      def greet():
+          print("Hello")    # inside greet: indented
+          print("Welcome")  # also inside
+      print("Done")         # not indented: outside greet
+      ```
+
+      Get it wrong and Python stops with an **IndentationError**. Your editor adds the spaces when you press Tab. Never mix tabs and spaces.
+
+  - kind: code
+    title: Fix the indentation
+    body: |
+      `banner()` should print two lines, but the second one is not lined up, so Python refuses to run the file. Fix the indentation so it works.
+    code: |
+      def banner():
+          print("== CASE FILE ==")
+            print("Top secret")
+    tests:
+      - "given_input([], banner)"
+    solution: |
+      def banner():
+          print("== CASE FILE ==")
+          print("Top secret")
+    hint: Both `print` lines must start in exactly the same column.
+    broken_starter: true
+
+  - kind: explain
+    title: "When it breaks: reading a traceback"
+    body: |
+      Every programmer gets errors all day long. They are not failures. They are **messages telling you exactly what is wrong**. You only have to read them properly.
+
+      When Python stops it prints a **traceback**:
+
+      ```
+      Traceback (most recent call last):
+        File "main.py", line 3, in <module>
+          print(total)
+                ^^^^^
+      NameError: name 'total' is not defined
+      ```
+
+      **Read it from the bottom up.**
+
+      1. The **last line** is the verdict: the kind of error (`NameError`) and a plain description.
+      2. Just above it is the **line of code** where it happened, with the file and line number (`line 3`).
+      3. The lines further up show the path Python took to get there (more useful in bigger programs).
+
+      Here: on line 3 you used `total`, but never created it. Perhaps you misspelled it.
+
+  - kind: code
+    title: Read the error
+    body: |
+      Press **Run** and read the message at the bottom of the panel. It names a line and a problem. Then fix the code so `bill()` returns `12`.
+
+      (Run shows the message. The checker tests `bill()` once it works.)
+    code: |
+      def bill():
+          price = 4
+          count = 3
+          return prise * count
+    tests:
+      - "bill()"
+    solution: |
+      def bill():
+          price = 4
+          count = 3
+          return price * count
+    hint: "The name in the `return` line is not spelled the same as the one on the first line."
+    broken_starter: true
+
+  - kind: explain
+    title: SyntaxError vs. runtime errors
+    body: |
+      Errors come in two flavours:
+
+      | | SyntaxError | Runtime error |
+      |---|---|---|
+      | When | Before anything runs | While the program is running |
+      | Cause | The code is not valid Python (missing bracket, missing quote, missing `:`) | Valid code that fails on a real problem (dividing by zero, an unknown name) |
+      | Example | `print("hi"` | `print(10 / 0)` → `ZeroDivisionError` |
+      | Effect | **Nothing** runs | Everything *before* the failing line already ran |
+
+      A SyntaxError points at the place Python got confused, and the real mistake is often on that line or the one just above it (a bracket you forgot to close).
+
+  - kind: code
+    title: Fix the syntax
+    body: |
+      Two mistakes here stop Python from even starting: a missing closing bracket, and a missing closing quote. Fix `welcome(name)` so `welcome("Ada")` returns `"Welcome, Ada!"`.
+    code: |
+      def welcome(name):
+          message = "Welcome, " + name + "!
+          return (message
+    tests:
+      - "welcome('Ada')"
+      - "welcome('Moth')"
+    solution: |
+      def welcome(name):
+          message = "Welcome, " + name + "!"
+          return (message)
+    hint: Every opening quote and bracket needs its partner. Look at the end of both lines.
+    broken_starter: true
+    reject:
+      - |
+        def welcome(name):
+            return "Welcome"
+
+  - kind: mac
+    title: Your first script, on your Mac
+    body: |
+      This is the checkpoint for Part 1. Do it in Terminal only.
+
+      1. Make a project folder and go into it.
+      2. Write a script `about_me.py` that prints a short multi-line "about me" card. The `cat` command below writes the file for you (you will use an editor later).
+      3. Run it with `uv run`.
+
+      **Checkpoint:** paste the output. It should show your card, including the line `Job: Detective`. (Change the other lines to be about you.)
+
+      Not set up yet? Follow *Take it to your Mac* (top of the course page) first, or choose **Skip for now**.
+    commands: |
+      mkdir -p ~/Desktop/python-practice && cd ~/Desktop/python-practice
+      cat > about_me.py <<'PY'
+      # A small about-me card
+      print("Name: Ada")
+      print("Job: Detective")
+      print("City: London")
+      PY
+      uv run about_me.py
+    expect_output:
+      - "Job: Detective"
+
+  - kind: mac
+    title: Break it on purpose
+    body: |
+      Now make the script fail and read the error from the bottom up. This command changes the last line so it has a missing bracket.
+
+      **Checkpoint:** paste the output. It should contain `SyntaxError`.
+    commands: |
+      cd ~/Desktop/python-practice
+      echo 'print("oops"' >> about_me.py
+      uv run about_me.py
+    expect_output:
+      - "SyntaxError"
+
+  - kind: why
+    body: |
+      Beginners think errors mean *"I am bad at this."* Experts know errors mean *"the computer is telling me what to fix."* Learning to read a traceback from the bottom up turns a scary red wall into the most helpful tool you have, and it will be your first move for the next thousand bugs.
+
+  - kind: recap
+    body: |
+      - The **REPL** (`>>>`) is for trying ideas; a **`.py` file** is a program you keep. On a Mac: `uv run file.py`.
+      - `print()` shows values; `#` starts a comment (explain **why**).
+      - **Indentation is syntax**: four spaces, consistent.
+      - Read a **traceback bottom-up**: the error type and message, then the file and line.
+      - A **SyntaxError** stops everything before it runs; a **runtime error** happens mid-run.

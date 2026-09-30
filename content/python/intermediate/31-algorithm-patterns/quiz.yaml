@@ -1,0 +1,41 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      import heapq
+      h = []
+      for n in [5, 1, 4]:
+          heapq.heappush(h, n)
+      print(heapq.heappop(h), heapq.heappop(h))
+    options: ["1 4", "5 1", "1 5", "4 5"]
+    answer: 0
+    explanation: "A heap always pops the smallest item next: 1, then 4."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      import bisect
+      nums = [1, 3, 3, 3, 7]
+      print(bisect.bisect_left(nums, 3), bisect.bisect_right(nums, 3))
+    options: ["1 4", "1 3", "2 4", "0 5"]
+    answer: 0
+    explanation: "The 3s occupy positions 1, 2 and 3. `bisect_left` gives the first position (1), `bisect_right` the position after the last (4)."
+  - type: mcq
+    prompt: Why is `queue.pop(0)` on a list a poor way to take from the front of a queue?
+    options:
+      - Every remaining item has to shift, so it is O(n). Use deque.popleft().
+      - It raises an error
+      - It returns the last item
+      - It changes the list type
+    answer: 0
+    explanation: "A `deque` removes from the front in O(1)."
+  - type: mcq
+    prompt: You need the running maximum sum of every 5 consecutive readings in a very long list. Which pattern?
+    options: ["A sliding window", "Sorting the list", "Recursion", "A stack"]
+    answer: 0
+    explanation: Add the new reading and drop the old one instead of re-adding all five each time.
+  - type: mcq
+    prompt: A sorted list has 10 million numbers and you must answer many "is 42 in there?" questions. Best choice?
+    options: ["bisect (binary search), or convert to a set", "A loop over the list each time", "Sort it again each time", "A stack"]
+    answer: 0
+    explanation: Binary search takes about 24 steps; a set gives O(1) lookups. A loop is O(n) each time.

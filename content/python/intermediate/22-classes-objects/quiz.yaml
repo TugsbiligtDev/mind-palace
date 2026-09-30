@@ -1,0 +1,62 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class Counter:
+          def __init__(self):
+              self.n = 0
+
+          def bump(self):
+              self.n += 1
+              return self.n
+
+      a = Counter()
+      b = Counter()
+      a.bump()
+      a.bump()
+      print(a.n, b.n)
+    options: ["2 0", "2 2", "0 0", "1 1"]
+    answer: 0
+    explanation: "Each object has its own `n`, so bumping `a` twice does not affect `b`."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class Box:
+          items = []
+
+      a = Box()
+      b = Box()
+      a.items.append("x")
+      print(b.items)
+    options: ["['x']", "[]", "Error", "None"]
+    answer: 0
+    explanation: "`items` is a class attribute: one list shared by every Box."
+  - type: mcq
+    prompt: What is `self` in a method?
+    options:
+      - The object the method was called on
+      - The class itself
+      - A reserved word that does nothing
+      - The method's return value
+    answer: 0
+    explanation: "`dune.describe()` is the same as `Book.describe(dune)`, so `self` is `dune`."
+  - type: mcq
+    prompt: When is `@classmethod` most useful?
+    options:
+      - As an alternative way to construct objects, like `Book.from_string(...)`
+      - To make a method private
+      - To speed up loops
+      - To stop a class being subclassed
+    answer: 0
+    explanation: A class method receives the class, so it can call `cls(...)` to build an object from different input.
+  - type: fill
+    prompt: Complete the initialiser so each object stores its own name.
+    code: |
+      class Person:
+          def __init__(self, name):
+              ____.name = name
+
+      print(Person("Ada").name)
+    answer: self
+    explanation: "`self.name = name` stores the value on the object being created."

@@ -1,0 +1,4 @@
+title: Graph Representations
+module: 22
+summary: "Vertices and edges, directed and weighted graphs, and the three ways to store one: adjacency list, adjacency matrix and edge list. Plus grids as hidden graphs."
+minutes: 60

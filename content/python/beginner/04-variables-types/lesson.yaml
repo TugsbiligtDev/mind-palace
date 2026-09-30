@@ -1,0 +1,238 @@
+steps:
+  - kind: explain
+    title: A variable is a name tag
+    body: |
+      A **variable** is a name that points to a value. You create one with `=`:
+
+      ```python
+      city = "London"
+      age = 34
+      ```
+
+      Read `=` as **"let this name point to that value"**. It is not a maths equals sign. Picture a sticky note with `city` written on it, stuck onto the text `"London"`.
+
+      Because it is only a name tag, you can move it:
+
+      ```python
+      age = 34
+      age = 35        # the tag now sits on a new value
+      ```
+
+      Python never asks you to declare what *kind* of thing a variable holds. The value carries its own kind (its **type**), and a name can point to any type later. That is called **dynamic typing**.
+
+  - kind: code
+    title: Names and values
+    body: |
+      Run this. `type(...)` tells you what kind of value something is. Then change `age` and run it again to see the output change.
+    code: |
+      city = "London"
+      age = 34
+      price = 12.5
+      is_open = True
+
+      print(city, age, price, is_open)
+      print(type(city))
+      print(type(age))
+      print(type(price))
+      print(type(is_open))
+
+  - kind: explain
+    title: The basic types
+    body: |
+      | Type | What it holds | Examples |
+      |---|---|---|
+      | `int` | whole numbers | `42`, `-7`, `1_000_000` |
+      | `float` | numbers with a decimal point | `3.14`, `-0.5`, `2.0` |
+      | `str` | text (a **str**ing) | `"hello"`, `'hello'` |
+      | `bool` | true or false (capital letter!) | `True`, `False` |
+      | `NoneType` | "nothing here": the single value `None` | `None` |
+
+      `None` is how Python says *no value yet*, or *not found*. It is not zero and not empty text. It is its own thing.
+
+      Note that `"5"` (text) and `5` (a number) are **different**: `"5" + "5"` is `"55"`, but `5 + 5` is `10`.
+
+  - kind: code
+    title: What type is it?
+    body: |
+      Finish `type_name(value)`. It returns the name of the value's type as text: `"int"`, `"float"`, `"str"`, `"bool"`, or `"NoneType"`.
+
+      `type(value)` gives the type, and `type(value).__name__` is its name as text.
+    code: |
+      def type_name(value):
+          return ""
+    tests:
+      - "type_name(5)"
+      - "type_name(5.0)"
+      - "type_name('5')"
+      - "type_name(True)"
+      - "type_name(None)"
+      - "type_name(2 ** 100)"
+    solution: |
+      def type_name(value):
+          return type(value).__name__
+    hint: "`type(value).__name__`."
+    reject:
+      - |
+        def type_name(value):
+            return "int"
+
+  - kind: code
+    title: Use variables to calculate
+    body: |
+      Finish `rectangle_area(width, height)`. Inside the function, store the answer in a variable called `area`, then return it.
+
+      Variables make code readable: `area = width * height` explains itself.
+    code: |
+      def rectangle_area(width, height):
+          area = 0
+          return area
+    tests:
+      - "rectangle_area(3, 4)"
+      - "rectangle_area(2.5, 4)"
+      - "rectangle_area(0, 10)"
+      - "rectangle_area(7, 7)"
+    solution: |
+      def rectangle_area(width, height):
+          area = width * height
+          return area
+    hint: "`*` multiplies."
+    reject:
+      - |
+        def rectangle_area(width, height):
+            area = width + height
+            return area
+
+  - kind: explain
+    title: "Naming: snake_case (PEP 8)"
+    body: |
+      Python has an official style guide called **PEP 8**. For variable names it says:
+
+      - use **snake_case**: lowercase words joined by underscores (`total_price`, `first_name`),
+      - use clear words (`price` beats `p`), but not essays,
+      - a name may use letters, digits and `_`, must **not start with a digit**, and cannot contain spaces or `-`,
+      - do not use Python's own words (`if`, `for`, `class`…) or built-in names (`list`, `str`, `print`) as variable names.
+
+      Python is **case-sensitive**: `Total` and `total` are two different names. A misspelling gives `NameError`.
+
+      Names can point to *constants* too. By convention, a value that never changes is written in CAPITALS: `TAX_RATE = 0.2`. Python does not stop you from changing it, so it is a promise to yourself.
+
+  - kind: code
+    title: Name things properly
+    body: |
+      `total_with_tax(price)` should add 20% tax and return the result. The starter works but uses a bad name and a "magic number". Give the rate a good constant name `TAX_RATE` (value `0.2`), and use it. The checker calls the function.
+    code: |
+      def total_with_tax(price):
+          return price * 1.5
+    tests:
+      - "total_with_tax(100)"
+      - "total_with_tax(50)"
+      - "total_with_tax(0)"
+      - "total_with_tax(10)"
+    solution: |
+      TAX_RATE = 0.2
+
+
+      def total_with_tax(price):
+          return price + price * TAX_RATE
+    hint: "The price plus 20% of the price. Put `TAX_RATE = 0.2` above the function."
+    reject:
+      - |
+        def total_with_tax(price):
+            return price * 0.2
+
+  - kind: explain
+    title: Floats are not exact
+    body: |
+      Computers store floats in binary, and most decimals cannot be written exactly in binary. So tiny errors sneak in:
+
+      ```python
+      print(0.1 + 0.2)          # 0.30000000000000004
+      print(0.1 + 0.2 == 0.3)   # False !
+      ```
+
+      This is not a Python bug. Every language does it. Two rules:
+
+      1. **Never compare floats with `==`.** Check whether they are *close*: `abs(a - b) < 0.000001`.
+      2. **For money**, count in whole cents (integers), or use `round(x, 2)` when showing. Later you will meet the `decimal` module for exact money maths.
+
+      Whole numbers (`int`) are always exact, and Python's `int` can be as large as memory allows (`2 ** 100` just works).
+
+  - kind: code
+    title: Close enough
+    body: |
+      Finish `is_close(a, b)`: return `True` if the two numbers differ by less than `0.000001`, else `False`. `abs(x)` gives the size of `x` ignoring its sign.
+
+      Then `is_close(0.1 + 0.2, 0.3)` is `True`, though `0.1 + 0.2 == 0.3` is `False`.
+    code: |
+      def is_close(a, b):
+          return a == b
+    tests:
+      - "is_close(0.1 + 0.2, 0.3)"
+      - "is_close(1, 2)"
+      - "is_close(5, 5)"
+      - "is_close(1.0000001, 1.0000002)"
+      - "is_close(-3, 3)"
+    solution: |
+      def is_close(a, b):
+          return abs(a - b) < 0.000001
+    hint: "`abs(a - b) < 0.000001`."
+    reject:
+      - |
+        def is_close(a, b):
+            return abs(a) - abs(b) < 0.000001
+
+  - kind: code
+    title: Something or nothing?
+    body: |
+      Write `describe(value)`. If `value` **is** `None`, return `"nothing"`. For any other value (even `0` or `""`) return `"something"`.
+
+      Compare with `None` using `is`: `value is None`. (You will see why in Module 8.) The word `if` runs a line only when a condition is true:
+
+      ```python
+      if value is None:
+          return "nothing"
+      ```
+    code: |
+      def describe(value):
+          return "something"
+    tests:
+      - "describe(None)"
+      - "describe(0)"
+      - "describe('')"
+      - "describe(False)"
+      - "describe('hi')"
+    solution: |
+      def describe(value):
+          if value is None:
+              return "nothing"
+          return "something"
+    hint: "Test `value is None` first. Everything else, including `0` and `\"\"`, is something."
+    reject:
+      - |
+        def describe(value):
+            if not value:
+                return "nothing"
+            return "something"
+
+  - kind: info
+    title: "🔹 Two names, one value"
+    body: |
+      Because a variable is a name tag, `b = a` does not copy anything. It sticks a second tag on the same value. For numbers and text this never causes trouble, because those values cannot be changed. For lists it matters a lot (Module 13).
+
+      ```python
+      a = 5
+      b = a
+      a = 10
+      print(b)   # 5: b still points at the old value
+      ```
+
+  - kind: why
+    body: |
+      Almost every bug comes from a wrong assumption about *what a name points to* or *what type a value is*. If you can always answer "what is this, and what does it hold right now?", you can debug anything. And the float rule saves real money: bank software never adds prices as floats.
+
+  - kind: recap
+    body: |
+      - A **variable** is a name pointing to a value: `name = value`. It can be re-pointed, and Python is **dynamically typed**.
+      - Basic types: `int`, `float`, `str`, `bool` (`True`/`False`), and `None` ("no value"). Check with `type()`.
+      - Use **snake_case** (PEP 8) and clear names; `CAPITALS` for constants.
+      - **Floats are inexact**: `0.1 + 0.2 != 0.3`. Compare with a small tolerance; count money in whole cents.

@@ -1,0 +1,20 @@
+id: advanced
+title: Advanced
+season: 3
+season_title: Mastery
+season_pitch: |
+  Dynamic programming, bit tricks, data structure design and the professional problem-solving
+  process, plus optional competitive-programming modules.
+status: coming_soon
+topics: []
+planned:
+  - "DP Foundations"
+  - "Core DP Families"
+  - "Advanced DP Patterns"
+  - "Bit Manipulation & Number Basics"
+  - "Range Query Structures (optional)"
+  - "Advanced Graph Algorithms (optional)"
+  - "String Algorithms (optional)"
+  - "Data Structure Design"
+  - "Professional Problem-Solving Process"
+  - "Performance-Aware JavaScript"

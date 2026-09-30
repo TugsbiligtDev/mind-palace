@@ -1,0 +1,48 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from collections import Counter
+      c = Counter("mississippi")
+      print(c["s"], c["z"])
+    options: ["4 0", "4 Error", "3 0", "2 None"]
+    answer: 0
+    explanation: "There are four s letters. A Counter reports 0 for anything it has not seen, instead of raising KeyError."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from collections import deque
+      d = deque(maxlen=2)
+      for i in range(4):
+          d.append(i)
+      print(list(d))
+    options: ["[2, 3]", "[0, 1]", "[0, 1, 2, 3]", "[3]"]
+    answer: 0
+    explanation: "With `maxlen=2` old items fall off the far end as new ones arrive."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      import re
+      print(re.findall(r"\d+", "a1 b22 c333"))
+    options: ["['1', '22', '333']", "['1', '2', '3']", "[1, 22, 333]", "['a1', 'b22', 'c333']"]
+    answer: 0
+    explanation: "`\\d+` matches one or more digits; `findall` returns every match as text."
+  - type: mcq
+    prompt: Which rule avoids most date/time bugs?
+    options:
+      - Store and calculate in UTC with aware datetimes; convert to local time only for display
+      - Use naive datetimes everywhere
+      - Compare naive and aware datetimes freely
+      - Use `datetime.now()` and hope
+    answer: 0
+    explanation: Naive datetimes do not know their zone, and mixing them with aware ones raises errors or silently gives wrong answers.
+  - type: mcq
+    prompt: Why is `logging` better than `print` for a real program?
+    options:
+      - You can set levels, choose where output goes and format it, without editing every line
+      - It is shorter to type
+      - It runs faster
+      - print is deprecated
+    answer: 0
+    explanation: Levels, handlers and formatters give you control that `print` cannot.

@@ -1,0 +1,4 @@
+title: Sorting & Selection
+module: 12
+summary: "Insertion, merge and quick sort, quickselect for the k-th item, why stability matters, and when to just use the built-in sort."
+minutes: 65

@@ -1,0 +1,50 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      for i in range(3):
+          print(i)
+    options: ["0\n1\n2", "1\n2\n3", "0\n1\n2\n3", "1\n2"]
+    answer: 0
+    explanation: "`range(3)` gives 0, 1, 2. It starts at 0 and stops before 3."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      for n in range(10):
+          if n == 2:
+              continue
+          if n == 4:
+              break
+          print(n)
+    options: ["0\n1\n3", "0\n1\n2\n3", "0\n1", "0\n1\n3\n4"]
+    answer: 0
+    explanation: "`continue` skips 2. `break` stops the loop when n reaches 4, before it can print."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      total = 0
+      for i, letter in enumerate("abc"):
+          total += i
+      print(total)
+    options: ["3", "6", "0", "abc"]
+    answer: 0
+    explanation: "`enumerate` numbers the letters 0, 1, 2. Their sum is 3."
+  - type: mcq
+    prompt: Why is it risky to remove items from a list while looping over it?
+    options:
+      - The loop can skip items, because the list shifts under it
+      - Python forbids it with a SyntaxError
+      - It makes the list immutable
+      - The loop runs twice
+    answer: 0
+    explanation: Removing an item shifts everything after it, so the loop steps over the next item. Build a new list instead.
+  - type: fill
+    prompt: Complete the loop so it stops as soon as it finds a 7.
+    code: |
+      for n in [3, 5, 7, 9]:
+          if n == 7:
+              ____
+          print(n)
+    answer: break
+    explanation: "`break` leaves the loop immediately, so it only prints 3 and 5."

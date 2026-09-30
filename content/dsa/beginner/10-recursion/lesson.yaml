@@ -1,0 +1,316 @@
+steps:
+  - kind: explain
+    title: A function that calls itself
+    body: |
+      **Recursion** means solving a problem by solving a *smaller version of the same problem*. The function calls itself with a smaller input, until the input is so small the answer is obvious.
+
+      Every recursive function needs two parts:
+
+      1. **Base case**: the smallest input, answered directly. It is the *stopping rule*.
+      2. **Recursive case**: reduce the problem, call yourself, and use the result.
+
+      ```js
+      function factorial(n) {
+        if (n === 0) return 1;            // base case
+        return n * factorial(n - 1);      // recursive case
+      }
+      ```
+
+      `factorial(3)` is `3 × factorial(2)`, which is `3 × 2 × factorial(1)`, and so on down to the base case.
+
+  - kind: code
+    title: Your first recursive function
+    body: |
+      Write `factorial(n)`: `n × (n − 1) × … × 1`, with `factorial(0)` equal to `1`. Use recursion, not a loop.
+    code: |
+      function factorial(n) {
+        return 0;
+      }
+    tests:
+      - "factorial(0)"
+      - "factorial(1)"
+      - "factorial(5)"
+      - "factorial(10)"
+    solution: |
+      function factorial(n) {
+        if (n === 0) return 1;
+        return n * factorial(n - 1);
+      }
+    hint: "Base case: `n === 0` returns `1`. Otherwise return `n * factorial(n - 1)`."
+    reject:
+      - |
+        function factorial(n) {
+          return n;
+        }
+
+  - kind: explain
+    title: The call stack
+    body: |
+      When a function calls another (or itself), the computer must remember where to come back to. It keeps a **stack of unfinished calls**, called the **call stack**.
+
+      ```
+      factorial(3)   waiting for factorial(2)
+      factorial(2)   waiting for factorial(1)
+      factorial(1)   waiting for factorial(0)
+      factorial(0)   returns 1   ← top of the stack
+      ```
+
+      Then the calls finish one by one, from the top down: `1`, then `1 × 1`, `2 × 1`, `3 × 2 = 6`.
+
+      Because each call uses memory, recursion that goes `n` levels deep uses **O(n) space**.
+
+  - kind: code
+    title: Watch the stack build up and unwind
+    body: |
+      Run this. Notice the lines print "going down" from 3 to 0, then "coming back" from 0 up to 3. Change `3` to `5`.
+    code: |
+      function countdown(n) {
+        console.log("going down", n);
+        if (n > 0) countdown(n - 1);
+        console.log("coming back", n);
+      }
+
+      countdown(3);
+
+  - kind: code
+    title: "Find the bug: no way to stop"
+    body: |
+      `sumTo(n)` should add `1 + 2 + … + n` using recursion. This version has no base case, so it calls itself forever, until JavaScript gives up with a **stack overflow**. Fix it.
+    code: |
+      function sumTo(n) {
+        return n + sumTo(n - 1);
+      }
+    tests:
+      - "sumTo(4)"
+      - "sumTo(0)"
+      - "sumTo(1)"
+      - "sumTo(100)"
+    solution: |
+      function sumTo(n) {
+        if (n <= 0) return 0;
+        return n + sumTo(n - 1);
+      }
+    hint: What should `sumTo(0)` return? Stop there, so `sumTo(n - 1)` eventually reaches it.
+    broken_starter: true
+    reject:
+      - |
+        function sumTo(n) {
+          return n + sumTo(n - 1);
+        }
+
+  - kind: explain
+    title: Recursion trees and counting work
+    body: |
+      To count the work of a recursive function, **draw a tree**: each call is a node, and its children are the calls it makes.
+
+      A function that makes **one** call (like factorial) draws a straight line of `n` nodes: O(n).
+
+      The famous **Fibonacci** function makes **two** calls:
+
+      ```js
+      function fib(n) {
+        if (n <= 1) return n;
+        return fib(n - 1) + fib(n - 2);
+      }
+      ```
+
+      ```
+                    fib(4)
+                  /        \
+              fib(3)       fib(2)
+              /    \       /    \
+          fib(2) fib(1) fib(1) fib(0)
+          /   \
+       fib(1) fib(0)
+      ```
+
+      Every level roughly **doubles** the number of calls, so the tree has about 2ⁿ nodes. That is O(2ⁿ): `fib(40)` makes over 300 million calls. (Module 28 shows how to fix that.)
+
+  - kind: code
+    title: Count the calls
+    body: |
+      Write `fibCalls(n)`: return **how many function calls** the naive `fib(n)` makes in total, counting the first call. `fibCalls(0)` and `fibCalls(1)` are `1`. `fibCalls(4)` is `9` (count the nodes in the tree above).
+
+      A call for `n ≥ 2` is itself one call, plus the calls of `n − 1`, plus the calls of `n − 2`.
+    code: |
+      function fibCalls(n) {
+        return n;
+      }
+    tests:
+      - "fibCalls(0)"
+      - "fibCalls(1)"
+      - "fibCalls(2)"
+      - "fibCalls(4)"
+      - "fibCalls(10)"
+      - "fibCalls(20)"
+    solution: |
+      function fibCalls(n) {
+        if (n <= 1) return 1;
+        return 1 + fibCalls(n - 1) + fibCalls(n - 2);
+      }
+    reject:
+      - |
+        function fibCalls(n) {
+          return n <= 1 ? 1 : fibCalls(n - 1) + fibCalls(n - 2);
+        }
+
+  - kind: explain
+    title: Recursion on nested data
+    body: |
+      Recursion shines when the data itself is nested: folders inside folders, comments with replies, arrays inside arrays.
+
+      *Sum every number in `[1, [2, [3, 4]], 5]`.* For each item:
+      - if it is a **number**, add it,
+      - if it is an **array**, it is a smaller version of the same problem, so recurse into it.
+
+      ```js
+      Array.isArray(item)   // tells the two cases apart
+      ```
+
+  - kind: code
+    title: Sum a nested array
+    body: |
+      Write `sumNested(arr)`: the sum of every number in an array that may contain arrays inside arrays, to any depth. `[1, [2, [3, 4]], 5]` gives `15`.
+    code: |
+      function sumNested(arr) {
+        return 0;
+      }
+    tests:
+      - "sumNested([1, [2, [3, 4]], 5])"
+      - "sumNested([])"
+      - "sumNested([[], [[]]])"
+      - "sumNested([7])"
+      - "sumNested([[1, 2], [3, [4, [5]]]])"
+    solution: |
+      function sumNested(arr) {
+        let total = 0;
+        for (const item of arr) {
+          if (Array.isArray(item)) total += sumNested(item);
+          else total += item;
+        }
+        return total;
+      }
+    hint: Loop over the items. For each one, either add it or add `sumNested(item)`.
+    reject:
+      - |
+        function sumNested(arr) {
+          return arr.reduce((a, b) => a + b, 0);
+        }
+
+  - kind: explain
+    title: Stack overflow, and recursion vs. iteration
+    body: |
+      Each call takes memory on the call stack, and the stack is limited to roughly 10 000 frames in JavaScript. Go deeper and you get `RangeError: Maximum call stack size exceeded`. JavaScript does not optimize tail calls, so no recursion is "free".
+
+      Everything recursive can be written with a **loop**. Use recursion when it makes the code much clearer (trees, nested data, backtracking). Use a loop when the depth may be huge.
+
+      The bridge between them: replace the **call stack** with **your own stack** (an array).
+
+      ```js
+      const stack = [start];
+      while (stack.length > 0) {
+        const item = stack.pop();
+        // handle item; push any smaller pieces onto the stack
+      }
+      ```
+
+  - kind: code
+    title: Sum a nested array without recursion
+    body: |
+      Write `sumNestedLoop(arr)`: the same job as before, but with **no recursion**. Use your own stack: start with the array on it, pop an item, and if it is an array push all its elements, otherwise add it to the total.
+
+      The hidden tests include an array nested **20 000 levels deep**, which a recursive version cannot survive.
+    code: |
+      function sumNestedLoop(arr) {
+        // recursive version, this crashes on very deep input
+        let total = 0;
+        for (const item of arr) {
+          if (Array.isArray(item)) total += sumNestedLoop(item);
+          else total += item;
+        }
+        return total;
+      }
+    tests:
+      - "sumNestedLoop([1, [2, [3, 4]], 5])"
+      - "sumNestedLoop([])"
+      - "sumNestedLoop([[1, 2], [3, [4, [5]]]])"
+      - "(() => { let a = [1]; for (let i = 0; i < 20000; i++) a = [a]; return sumNestedLoop(a); })()"
+    solution: |
+      function sumNestedLoop(arr) {
+        let total = 0;
+        const stack = [arr];
+        while (stack.length > 0) {
+          const item = stack.pop();
+          if (Array.isArray(item)) {
+            for (const x of item) stack.push(x);
+          } else {
+            total += item;
+          }
+        }
+        return total;
+      }
+    hint: One `while` loop over `stack`. Arrays get *unpacked* onto the stack, and numbers get added.
+    broken_starter: true
+    reject:
+      - |
+        function sumNestedLoop(arr) {
+          let total = 0;
+          for (const item of arr) {
+            if (Array.isArray(item)) total += sumNestedLoop(item);
+            else total += item;
+          }
+          return total;
+        }
+
+  - kind: code
+    title: Fast power by halving
+    body: |
+      Write `power(x, n)`: `x` raised to the whole-number power `n` (which may be negative). A loop that multiplies `n` times is O(n). Do better with recursion that **halves** `n`:
+
+      - `x⁰ = 1`,
+      - `xⁿ = (xⁿ⁄²)²` when `n` is even,
+      - `xⁿ = x · (xⁿ⁻¹)` when `n` is odd,
+      - a negative `n` means `1 / x⁻ⁿ`.
+
+      That is O(log n), because the exponent halves each time.
+    code: |
+      function power(x, n) {
+        return x * n;
+      }
+    tests:
+      - "power(2, 10)"
+      - "power(2, 0)"
+      - "power(2, -2)"
+      - "power(1.5, 3)"
+      - "power(3, 7)"
+      - "power(2, 30)"
+    solution: |
+      function power(x, n) {
+        if (n === 0) return 1;
+        if (n < 0) return 1 / power(x, -n);
+        if (n % 2 === 0) {
+          const half = power(x, n / 2);
+          return half * half;
+        }
+        return x * power(x, n - 1);
+      }
+    hint: Compute the half power *once* into a variable and square it. Calling `power` twice would undo the saving.
+    reject:
+      - |
+        function power(x, n) {
+          return x * n;
+        }
+
+  - kind: why
+    body: |
+      Recursion is the natural way to think about anything that contains smaller copies of itself: trees, graphs, nested folders, puzzles with choices. Once you can see the base case and the "shrink the problem" step, hard-looking problems become a few lines.
+
+      Knowing the call stack also explains two real-world facts: why infinite recursion crashes, and why deep recursion can crash even when correct.
+
+  - kind: recap
+    body: |
+      - A recursive function has a **base case** (stop) and a **recursive case** (a smaller call).
+      - Calls wait on the **call stack**. Depth `n` costs **O(n) space** and can overflow at about 10 000 frames.
+      - Draw a **recursion tree** to count work: one call per level is O(n), two calls per level is often O(2ⁿ).
+      - Recursion suits **nested data**. Anything recursive can become a loop with your own **explicit stack**.
+      - Halving the problem each call (fast power) gives **O(log n)**.

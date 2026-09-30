@@ -1,0 +1,4 @@
+title: "Comprehensions, References & Copying"
+module: 13
+summary: "Build lists, dicts and sets in one readable line, then learn why two names can secretly share one list, and how to copy properly."
+minutes: 65

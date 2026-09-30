@@ -1,0 +1,29 @@
+pass: 2
+questions:
+  - type: mcq
+    prompt: Why does the analyzer read the log with a generator instead of `f.read().splitlines()`?
+    options:
+      - It processes one line at a time, so a huge file never has to fit in memory
+      - Generators are always faster
+      - "`read()` is deprecated"
+      - It sorts the lines
+    answer: 0
+    explanation: Lazy generators keep memory use tiny regardless of file size.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from collections import Counter
+      records = [("db", "ERROR"), ("web", "INFO"), ("db", "ERROR")]
+      print(dict(Counter(s for s, level in records if level == "ERROR")))
+    options: ["{'db': 2}", "{'db': 1, 'web': 1}", "{'db': 2, 'web': 1}", "Counter"]
+    answer: 0
+    explanation: "Only ERROR records are counted, and `db` has two of them."
+  - type: mcq
+    prompt: Why should `main(argv)` return its results instead of only printing them?
+    options:
+      - A returned value is easy to test; printing can be done in the `__main__` block
+      - Printing is not allowed in functions
+      - It runs faster
+      - argparse requires it
+    answer: 0
+    explanation: Separating logic from output makes functions testable and reusable.

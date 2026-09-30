@@ -1,0 +1,4 @@
+title: "Lists"
+module: 10
+summary: "Hold many values in order: index and slice lists, change them in place with append, insert, pop and sort, and unpack them into names."
+minutes: 65

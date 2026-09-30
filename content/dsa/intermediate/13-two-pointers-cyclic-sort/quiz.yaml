@@ -1,0 +1,41 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: You use two pointers at the ends of a sorted array to find a pair with sum `target`. The current sum is too big. What do you do?
+    options: ["Move `left` right", "Move `right` left", "Move both", "Stop, there is no pair"]
+    answer: 1
+    explanation: The array is sorted, so the biggest value is at `right`. Moving it left is the only way to reduce the sum.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const nums = [0, 0, 1, 1, 2];
+      let write = 1;
+      for (let read = 1; read < nums.length; read++) {
+        if (nums[read] !== nums[write - 1]) {
+          nums[write] = nums[read];
+          write++;
+        }
+      }
+      console.log(write, nums.slice(0, write));
+    options: ["3 [ 0, 1, 2 ]", "5 [ 0, 0, 1, 1, 2 ]", "3 [ 0, 1, 1 ]", "2 [ 0, 1 ]"]
+    answer: 0
+    explanation: The read pointer copies a value forward only when it differs from the last kept one, so 0, 1, 2 are kept.
+  - type: mcq
+    prompt: In cyclic sort of an array holding the values 1 to n, where does the value 5 belong?
+    options: ["Index 5", "Index 4", "Index 6", "Index 0"]
+    answer: 1
+    explanation: Value `v` belongs at index `v - 1`, because arrays start at index 0.
+  - type: mcq
+    prompt: What is the time and space complexity of cyclic sort?
+    options: ["O(n²) time, O(1) space", "O(n log n) time, O(n) space", "O(n) time, O(1) space", "O(n) time, O(n) space"]
+    answer: 2
+    explanation: Every swap puts one value in its final place, so there are at most n swaps, and the array is edited in place.
+  - type: mcq
+    prompt: Why must 3Sum skip equal neighbours after sorting?
+    options:
+      - To make the sort faster
+      - Otherwise the same triple can be reported more than once
+      - Because negative numbers are special
+      - It does not need to
+    answer: 1
+    explanation: Duplicates in the input would lead to identical triples appearing several times in the result.

@@ -1,0 +1,4 @@
+title: "Loops"
+module: 9
+summary: "Repeat work without repeating code: while and for loops, range(), break and continue, enumerate() and zip(), and the classic loop mistakes."
+minutes: 70

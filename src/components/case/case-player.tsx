@@ -3,11 +3,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DifficultyBadge } from "@/components/case/difficulty-badge";
 import { Markdown } from "@/components/markdown";
-import { NoRunnerYet } from "@/components/no-runner-yet";
+import { JsRunner } from "@/components/js/js-runner";
+import { PyRunner } from "@/components/py/py-runner";
 import { SqlRunner, type Engine } from "@/components/sql/sql-runner";
 import type { Case, Track } from "@/lib/content/schema";
 import { caseReward, recordCase, setLast, takeHint, useProgress } from "@/lib/progress";
+import { gradeJavaScript } from "@/lib/js/client";
+import type { JsRunOutput } from "@/lib/js/core";
+import { gradePython } from "@/lib/py/client";
+import type { PyRunOutput } from "@/lib/py/core";
 import { gradeSql } from "@/lib/sql/client";
+import type { RunOutput } from "@/lib/sql/core";
 
 export function CasePlayer({
   id,
@@ -41,7 +47,6 @@ export function CasePlayer({
   useEffect(() => setLast(href, `Case: ${data.title}`), [href, data.title]);
 
   if (!p) return <div className="h-96" />;
-  if (language !== "postgres") return <NoRunnerYet language={language} />;
 
   const record = p.cases[id];
   const hints = record?.hints ?? 0;
@@ -49,7 +54,13 @@ export function CasePlayer({
 
   async function submit(input: string) {
     setGrading(true);
-    const v = await gradeSql(engine.key, engine.setup, input, data.check);
+    const check = data.check;
+    const v =
+      check.mode === "js"
+        ? await gradeJavaScript(input, check)
+        : check.mode === "py"
+          ? await gradePython(input, check)
+          : await gradeSql(engine.key, engine.setup, input, check);
     const earned = recordCase(id, data.difficulty, v.correct);
     setVerdict({ correct: v.correct, message: v.message, earned });
     setGrading(false);
@@ -107,17 +118,42 @@ export function CasePlayer({
         </div>
 
         <div className="space-y-5">
-          <SqlRunner
-            engine={engine}
-            initial={p.code[slot] ?? data.starter}
-            starter={data.starter}
-            slot={slot}
-            runLabel="Run"
-            onSubmit={submit}
-            submitLabel={grading ? "Checking…" : "Submit answer"}
-            busy={grading}
-            minHeight="220px"
-          />
+          {language === "python" ? (
+            <PyRunner
+              initial={p.code[slot] ?? data.starter}
+              starter={data.starter}
+              slot={slot}
+              runLabel="Run"
+              onSubmit={submit as (code: string) => Promise<PyRunOutput | undefined>}
+              submitLabel={grading ? "Checking…" : "Submit answer"}
+              busy={grading}
+              stdin={data.check.mode === "py" ? data.check.stdin : []}
+              minHeight="220px"
+            />
+          ) : language === "javascript" ? (
+            <JsRunner
+              initial={p.code[slot] ?? data.starter}
+              starter={data.starter}
+              slot={slot}
+              runLabel="Run"
+              onSubmit={submit as (code: string) => Promise<JsRunOutput | undefined>}
+              submitLabel={grading ? "Checking…" : "Submit answer"}
+              busy={grading}
+              minHeight="220px"
+            />
+          ) : (
+            <SqlRunner
+              engine={engine}
+              initial={p.code[slot] ?? data.starter}
+              starter={data.starter}
+              slot={slot}
+              runLabel="Run"
+              onSubmit={submit as (input: string) => Promise<RunOutput | undefined>}
+              submitLabel={grading ? "Checking…" : "Submit answer"}
+              busy={grading}
+              minHeight="220px"
+            />
+          )}
 
           {verdict && !verdict.correct && (
             <p className="rounded-lg bg-xp/10 px-4 py-3 text-sm">{verdict.message}</p>

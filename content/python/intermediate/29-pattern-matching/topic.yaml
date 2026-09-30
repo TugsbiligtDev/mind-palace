@@ -1,0 +1,4 @@
+title: "Structural Pattern Matching"
+module: 29
+summary: "Choose by the shape of your data with match and case: literals, captures, sequences, dictionaries and classes, with guards, and when match beats a chain of if/elif."
+minutes: 65

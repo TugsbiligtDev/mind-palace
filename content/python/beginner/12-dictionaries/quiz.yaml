@@ -1,0 +1,42 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      d = {"a": 1}
+      d["b"] = 2
+      d["a"] = 10
+      print(d)
+    options: ["{'a': 10, 'b': 2}", "{'a': 1, 'b': 2}", "{'a': 10}", "{'b': 2, 'a': 10}"]
+    answer: 0
+    explanation: "Assigning to a new key adds it; assigning to an existing key replaces its value. Order is the order of insertion."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      d = {"x": 5}
+      print(d.get("y"), d.get("y", 0))
+    options: ["None 0", "0 0", "Error", "None None"]
+    answer: 0
+    explanation: "A missing key gives `None`, or the default if you provide one."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      total = 0
+      for key, value in {"a": 2, "b": 3}.items():
+          total += value
+      print(total)
+    options: ["5", "ab", "2", "0"]
+    answer: 0
+    explanation: "`.items()` gives each key and value; the values 2 and 3 add up to 5."
+  - type: mcq
+    prompt: Which of these can NOT be used as a dictionary key?
+    options: ["A list, like [1, 2]", "A tuple, like (1, 2)", "A string", "A number"]
+    answer: 0
+    explanation: Keys must be hashable (immutable). A list can change, so Python refuses it. A tuple works.
+  - type: fill
+    prompt: Complete the line so a missing key gives `0` instead of an error.
+    code: |
+      stock = {"pen": 3}
+      print(stock.____("ink", 0))
+    answer: get
+    explanation: "`.get(key, default)` returns the default instead of raising KeyError."

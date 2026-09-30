@@ -1,0 +1,44 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: You open an existing file with mode `"w"`. What happens to its old contents?
+    options: ["They are erased", "They are kept and new text goes at the end", "Python raises an error", "Nothing, it opens read-only"]
+    answer: 0
+    explanation: Write mode starts with an empty file. Use `"a"` to add to the end.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      import json
+      text = json.dumps({"a": [1, 2], "ok": True, "x": None})
+      print(text)
+    options: ['{"a": [1, 2], "ok": true, "x": null}', "{'a': [1, 2], 'ok': True, 'x': None}", '{"a": [1, 2], "ok": True, "x": None}', "Error"]
+    answer: 0
+    explanation: "JSON writes `true`, `null` and double quotes, unlike Python's `True`, `None` and single quotes."
+  - type: mcq
+    prompt: Your script opens `data.txt` and works from one folder but gives FileNotFoundError from another. Why?
+    options:
+      - Relative paths depend on the folder you ran the script from
+      - The file was deleted
+      - Python forgot the file
+      - JSON is broken
+    answer: 0
+    explanation: "`open(\"data.txt\")` looks in the current working directory, which is wherever you started the program."
+  - type: predict
+    prompt: What does this print? (The file contains the line `12.5` and nothing else.)
+    code: |
+      with open("price.txt", "w") as f:
+          f.write("12.5\n")
+      with open("price.txt") as f:
+          price = f.read().strip()
+      print(type(price).__name__)
+    options: ["str", "float", "int", "NoneType"]
+    answer: 0
+    explanation: Everything read from a file is text. Convert it with `float(price)`.
+  - type: fill
+    prompt: Complete the line so the file is closed automatically, even if an error happens.
+    code: |
+      ____ open("notes.txt", "w", encoding="utf-8") as f:
+          f.write("hi")
+      print("saved")
+    answer: with
+    explanation: "`with` closes the file for you when the block ends."

@@ -1,0 +1,500 @@
+steps:
+  - kind: explain
+    title: Making the library trustworthy
+    body: |
+      The lending library from Part 6 works, but nobody has *proved* it. This is the **Part 9 checkpoint**: retrofit quality onto it.
+
+      - **Type hints** that a strict type checker accepts,
+      - a **pytest suite** with fixtures and parametrized tests that catches real bugs,
+      - **Ruff** with no warnings,
+      - **pre-commit** hooks so it stays that way.
+
+      In the browser you will do the hints and the tests (the checker runs your tests against correct code *and* against buggy copies). On your Mac you will run the whole toolchain with mypy in strict mode, Ruff, coverage and pre-commit.
+
+      A compact version of the library is used here, so the exercises stay focused:
+
+      ```python
+      class Member:                       # holds up to 3 books
+      class Library:                      # add_book, checkout, return_book, fine
+      ```
+
+  - kind: code
+    title: "1. Add type hints"
+    body: |
+      Add hints to the untyped library below. Requirements (the checker reads them with `typing.get_type_hints`):
+
+      - `fine(days_late: int) -> int`
+      - `Member.__init__(self, name: str) -> None` and the attribute annotations `name: str`, `borrowed: list[str]` declared in the class body
+      - `Member.can_borrow(self) -> bool`
+      - `Library.available(self, isbn: str) -> int`
+      - `Library.checkout(self, member: Member, isbn: str) -> None`
+
+      Behaviour must not change.
+    code: |
+      LIMIT = 3
+
+
+      def fine(days_late):
+          return min(max(days_late, 0) * 25, 1000)
+
+
+      class Member:
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self.copies = {}
+              self.loans = {}
+
+          def available(self, isbn):
+              return self.copies.get(isbn, 0) - self.loans.get(isbn, 0)
+
+          def checkout(self, member, isbn):
+              if self.available(isbn) <= 0:
+                  raise ValueError("no copies left")
+              member.borrowed.append(isbn)
+              self.loans[isbn] = self.loans.get(isbn, 0) + 1
+    tests:
+      - "import typing\nresult = typing.get_type_hints(fine)"
+      - "import typing\nresult = typing.get_type_hints(Member.can_borrow)"
+      - "import typing\nresult = typing.get_type_hints(Member.__init__)"
+      - "import typing\nresult = typing.get_type_hints(Member)"
+      - "import typing\nresult = typing.get_type_hints(Library.available)"
+      - "import typing\nresult = {k: v.__name__ if hasattr(v, '__name__') else str(v) for k, v in typing.get_type_hints(Library.checkout).items()}"
+      - "lib = Library()\nlib.copies['1'] = 1\nm = Member('A')\nlib.checkout(m, '1')\nresult = (m.borrowed, lib.available('1'), fine(3))"
+    solution: |
+      LIMIT = 3
+
+
+      def fine(days_late: int) -> int:
+          return min(max(days_late, 0) * 25, 1000)
+
+
+      class Member:
+          name: str
+          borrowed: list[str]
+
+          def __init__(self, name: str) -> None:
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self) -> bool:
+              return len(self.borrowed) < LIMIT
+
+
+      class Library:
+          def __init__(self) -> None:
+              self.copies: dict[str, int] = {}
+              self.loans: dict[str, int] = {}
+
+          def available(self, isbn: str) -> int:
+              return self.copies.get(isbn, 0) - self.loans.get(isbn, 0)
+
+          def checkout(self, member: Member, isbn: str) -> None:
+              if self.available(isbn) <= 0:
+                  raise ValueError("no copies left")
+              member.borrowed.append(isbn)
+              self.loans[isbn] = self.loans.get(isbn, 0) + 1
+    hint: "`def fine(days_late: int) -> int:`. In `Member`, declare `name: str` and `borrowed: list[str]` at the top of the class body. Every method gets `-> ...` too, including `-> None` for `__init__`."
+    broken_starter: true
+
+  - kind: explain
+    title: Tests that can fail
+    body: |
+      A test suite is only useful if it **fails when the code is wrong**. A test that always passes is worse than none because it gives false confidence. You prove a suite is good by **mutation**: break the code on purpose in realistic ways and check that at least one test fails for each break.
+
+      The checker does exactly that. It runs your tests against `GOOD` (must pass) and against several `BUG_*` copies (each must produce a failure). Think about *what each bug would break* and write a test that would notice.
+
+  - kind: code
+    title: "2. Fixtures and parametrize"
+    body: |
+      Write tests for the library, using a **fixture** `lib` (a fresh library with book `"1"` having 2 copies and book `"2"` having 1 copy) and **`parametrize`** for the fine calculation. The three bugs:
+
+      - `BUG_LIMIT`: a member can borrow a fourth book,
+      - `BUG_FINE`: the fine is not capped at 1000,
+      - `BUG_RETURN`: returning a book does not free the copy.
+
+      Your tests must pass on `GOOD` and fail on all three. `GOOD` is below (`library.py`); the buggy versions are constructed for you.
+    code: |
+      GOOD = '''
+      LIMIT = 3
+
+
+      def fine(days_late):
+          return min(max(days_late, 0) * 25, 1000)
+
+
+      class Member:
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self.copies = {}
+              self.loans = {}
+
+          def add(self, isbn, copies):
+              self.copies[isbn] = self.copies.get(isbn, 0) + copies
+
+          def available(self, isbn):
+              return self.copies.get(isbn, 0) - self.loans.get(isbn, 0)
+
+          def checkout(self, member, isbn):
+              if isbn in member.borrowed:
+                  raise ValueError("already borrowed")
+              if not member.can_borrow():
+                  raise ValueError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise ValueError("no copies left")
+              member.borrowed.append(isbn)
+              self.loans[isbn] = self.loans.get(isbn, 0) + 1
+
+          def give_back(self, member, isbn, days_late=0):
+              member.borrowed.remove(isbn)
+              self.loans[isbn] -= 1
+              return fine(days_late)
+      '''
+
+      BUG_LIMIT = GOOD.replace("LIMIT = 3", "LIMIT = 4")
+      BUG_FINE = GOOD.replace("return min(max(days_late, 0) * 25, 1000)", "return max(days_late, 0) * 25")
+      BUG_RETURN = GOOD.replace("self.loans[isbn] -= 1", "pass")
+
+      TESTS = '''
+      import pytest
+      from library import Library, Member, fine
+
+      # write a fixture named lib, and tests (use parametrize for fine)
+      '''
+    tests:
+      - "run = lambda impl: pytest_run({'library.py': impl, 'test_library.py': TESTS})\nresult = 'failed' not in run(GOOD) and 'passed' in run(GOOD)"
+      - "result = 'failed' in pytest_run({'library.py': BUG_LIMIT, 'test_library.py': TESTS})"
+      - "result = 'failed' in pytest_run({'library.py': BUG_FINE, 'test_library.py': TESTS})"
+      - "result = 'failed' in pytest_run({'library.py': BUG_RETURN, 'test_library.py': TESTS})"
+      - "result = ('@pytest.fixture' in TESTS, 'parametrize' in TESTS)"
+    solution: |
+      GOOD = '''
+      LIMIT = 3
+
+
+      def fine(days_late):
+          return min(max(days_late, 0) * 25, 1000)
+
+
+      class Member:
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self.copies = {}
+              self.loans = {}
+
+          def add(self, isbn, copies):
+              self.copies[isbn] = self.copies.get(isbn, 0) + copies
+
+          def available(self, isbn):
+              return self.copies.get(isbn, 0) - self.loans.get(isbn, 0)
+
+          def checkout(self, member, isbn):
+              if isbn in member.borrowed:
+                  raise ValueError("already borrowed")
+              if not member.can_borrow():
+                  raise ValueError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise ValueError("no copies left")
+              member.borrowed.append(isbn)
+              self.loans[isbn] = self.loans.get(isbn, 0) + 1
+
+          def give_back(self, member, isbn, days_late=0):
+              member.borrowed.remove(isbn)
+              self.loans[isbn] -= 1
+              return fine(days_late)
+      '''
+
+      BUG_LIMIT = GOOD.replace("LIMIT = 3", "LIMIT = 4")
+      BUG_FINE = GOOD.replace("return min(max(days_late, 0) * 25, 1000)", "return max(days_late, 0) * 25")
+      BUG_RETURN = GOOD.replace("self.loans[isbn] -= 1", "pass")
+
+      TESTS = '''
+      import pytest
+      from library import Library, Member, fine
+
+      @pytest.fixture
+      def lib():
+          library = Library()
+          library.add("1", 2)
+          library.add("2", 1)
+          library.add("3", 1)
+          library.add("4", 1)
+          return library
+
+      @pytest.mark.parametrize("days, expected", [(0, 0), (3, 75), (40, 1000), (41, 1000), (-2, 0)])
+      def test_fine(days, expected):
+          assert fine(days) == expected
+
+      def test_checkout_reduces_availability(lib):
+          lib.checkout(Member("Ada"), "1")
+          assert lib.available("1") == 1
+
+      def test_limit_is_three(lib):
+          member = Member("Ada")
+          for isbn in ("1", "2", "3"):
+              lib.checkout(member, isbn)
+          with pytest.raises(ValueError, match="limit"):
+              lib.checkout(member, "4")
+
+      def test_return_frees_a_copy(lib):
+          member = Member("Ada")
+          lib.checkout(member, "2")
+          assert lib.available("2") == 0
+          lib.give_back(member, "2")
+          assert lib.available("2") == 1
+      '''
+    hint: "Fixture with several books. Parametrize `fine` with 0, a few days, and cases at and beyond the cap (40 days = 1000, 41 = still 1000). Check the limit with a fourth checkout, and check availability before and after `give_back`."
+
+  - kind: code
+    title: "3. The error paths"
+    body: |
+      Now the rules that must **refuse**. Write tests with `pytest.raises` for each of the three error messages (`"already borrowed"`, `"limit reached"`, `"no copies left"`). The bugs: `BUG_DUP` allows borrowing the same book twice, `BUG_ORDER` checks the copies *before* the limit (so the wrong message appears when both apply), and `BUG_STOCK` never checks that a copy is available.
+    code: |
+      GOOD = '''
+      LIMIT = 3
+
+
+      class Member:
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self.copies = {}
+              self.loans = {}
+
+          def add(self, isbn, copies):
+              self.copies[isbn] = self.copies.get(isbn, 0) + copies
+
+          def available(self, isbn):
+              return self.copies.get(isbn, 0) - self.loans.get(isbn, 0)
+
+          def checkout(self, member, isbn):
+              if isbn in member.borrowed:
+                  raise ValueError("already borrowed")
+              if not member.can_borrow():
+                  raise ValueError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise ValueError("no copies left")
+              member.borrowed.append(isbn)
+              self.loans[isbn] = self.loans.get(isbn, 0) + 1
+      '''
+
+      BUG_DUP = GOOD.replace('if isbn in member.borrowed:', 'if False:')
+      BUG_STOCK = GOOD.replace('if self.available(isbn) <= 0:', 'if False:')
+      BUG_ORDER = GOOD.replace(
+          '''if not member.can_borrow():
+                  raise ValueError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise ValueError("no copies left")''',
+          '''if self.available(isbn) <= 0:
+                  raise ValueError("no copies left")
+              if not member.can_borrow():
+                  raise ValueError("limit reached")''',
+      )
+
+      TESTS = '''
+      import pytest
+      from library import Library, Member
+
+      # write tests using pytest.raises
+      '''
+    tests:
+      - "run = lambda impl: pytest_run({'library.py': impl, 'test_library.py': TESTS})\nresult = 'failed' not in run(GOOD) and 'passed' in run(GOOD)"
+      - "result = 'failed' in pytest_run({'library.py': BUG_DUP, 'test_library.py': TESTS})"
+      - "result = 'failed' in pytest_run({'library.py': BUG_STOCK, 'test_library.py': TESTS})"
+      - "result = 'failed' in pytest_run({'library.py': BUG_ORDER, 'test_library.py': TESTS})"
+      - "result = BUG_ORDER != GOOD"
+    solution: |
+      GOOD = '''
+      LIMIT = 3
+
+
+      class Member:
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self.copies = {}
+              self.loans = {}
+
+          def add(self, isbn, copies):
+              self.copies[isbn] = self.copies.get(isbn, 0) + copies
+
+          def available(self, isbn):
+              return self.copies.get(isbn, 0) - self.loans.get(isbn, 0)
+
+          def checkout(self, member, isbn):
+              if isbn in member.borrowed:
+                  raise ValueError("already borrowed")
+              if not member.can_borrow():
+                  raise ValueError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise ValueError("no copies left")
+              member.borrowed.append(isbn)
+              self.loans[isbn] = self.loans.get(isbn, 0) + 1
+      '''
+
+      BUG_DUP = GOOD.replace('if isbn in member.borrowed:', 'if False:')
+      BUG_STOCK = GOOD.replace('if self.available(isbn) <= 0:', 'if False:')
+      BUG_ORDER = GOOD.replace(
+          '''if not member.can_borrow():
+                  raise ValueError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise ValueError("no copies left")''',
+          '''if self.available(isbn) <= 0:
+                  raise ValueError("no copies left")
+              if not member.can_borrow():
+                  raise ValueError("limit reached")''',
+      )
+
+      TESTS = '''
+      import pytest
+      from library import Library, Member
+
+      def test_cannot_borrow_twice():
+          lib = Library()
+          lib.add("1", 2)
+          member = Member("Ada")
+          lib.checkout(member, "1")
+          with pytest.raises(ValueError, match="already borrowed"):
+              lib.checkout(member, "1")
+
+      def test_no_copies_left():
+          lib = Library()
+          lib.add("1", 1)
+          lib.checkout(Member("Ada"), "1")
+          with pytest.raises(ValueError, match="no copies left"):
+              lib.checkout(Member("Bo"), "1")
+
+      def test_limit_message_wins_over_no_copies():
+          lib = Library()
+          for isbn in ("1", "2", "3", "4"):
+              lib.add(isbn, 1)
+          member = Member("Ada")
+          for isbn in ("1", "2", "3"):
+              lib.checkout(member, isbn)
+          lib.checkout(Member("Bo"), "4")
+          with pytest.raises(ValueError, match="limit reached"):
+              lib.checkout(member, "4")
+      '''
+    hint: "One test per rule with `pytest.raises(ValueError, match=...)`. To catch the ordering bug you need a situation where **both** the limit and the copies rule apply, and the message must be `limit reached`."
+
+  - kind: mac
+    title: The full toolchain
+    body: |
+      Now run the complete quality gate on your Mac, on the compact library. This creates a project with **strict mypy, Ruff, pytest with coverage** and a **pre-commit** hook, then runs them all.
+
+      **Checkpoint:** paste the output. It should contain `Success`, `All checks passed`, `passed` and `pre-commit installed`.
+    commands: |
+      mkdir -p ~/Desktop/library-quality && cd ~/Desktop/library-quality
+      git init
+      uv init --bare
+      uv add --dev mypy ruff pytest pytest-cov pre-commit
+      cat >> pyproject.toml <<'TOML'
+
+      [tool.ruff.lint]
+      select = ["E", "F", "I", "UP", "B"]
+
+      [tool.mypy]
+      strict = true
+
+      [tool.pytest.ini_options]
+      addopts = "--cov=library --cov-report=term-missing"
+      TOML
+      cat > library.py <<'PY'
+      LIMIT = 3
+
+
+      def fine(days_late: int) -> int:
+          return min(max(days_late, 0) * 25, 1000)
+
+
+      class Member:
+          def __init__(self, name: str) -> None:
+              self.name = name
+              self.borrowed: list[str] = []
+
+          def can_borrow(self) -> bool:
+              return len(self.borrowed) < LIMIT
+      PY
+      cat > test_library.py <<'PY'
+      import pytest
+
+      from library import Member, fine
+
+
+      @pytest.mark.parametrize(("days", "expected"), [(0, 0), (3, 75), (41, 1000)])
+      def test_fine(days: int, expected: int) -> None:
+          assert fine(days) == expected
+
+
+      def test_limit() -> None:
+          member = Member("Ada")
+          member.borrowed = ["1", "2", "3"]
+          assert not member.can_borrow()
+      PY
+      cat > .pre-commit-config.yaml <<'YML'
+      repos:
+        - repo: https://github.com/astral-sh/ruff-pre-commit
+          rev: v0.9.0
+          hooks:
+            - id: ruff
+              args: [--fix]
+            - id: ruff-format
+      YML
+      uv run ruff format .
+      uv run ruff check .
+      uv run mypy library.py test_library.py
+      uv run pytest
+      uv run pre-commit install
+    expect_output:
+      - "Success"
+      - "All checks passed"
+      - "passed"
+      - "pre-commit installed"
+
+  - kind: why
+    body: |
+      Type hints catch a whole class of bugs before running, tests catch behaviour bugs when you change things, Ruff keeps the code uniform, and pre-commit makes sure the checks actually run. Together they let you change code without fear, which is what separates a project you can keep improving from a script you are scared to touch.
+
+  - kind: recap
+    body: |
+      - The **Part 9 checkpoint**: typed (strict mypy), Ruff-clean, a pytest suite with fixtures and parametrized tests, and pre-commit hooks.
+      - Good tests **fail when the code is wrong**: check by mutation (break the code on purpose and see the tests fail).
+      - Cover the rules that must **refuse** (`pytest.raises`), and the order in which rules apply.
+      - Put tool settings in `pyproject.toml` so every developer and machine agrees.

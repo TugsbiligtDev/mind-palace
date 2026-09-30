@@ -1,0 +1,1060 @@
+steps:
+  - kind: explain
+    title: The priority queue problem
+    body: |
+      A **priority queue** is a queue where the item that leaves next is not the *oldest* but the *most important* (smallest or biggest). Think of an emergency room: the most urgent patient goes first, not the first to arrive.
+
+      With an array, finding the smallest is O(n). With a sorted array, inserting is O(n). A **heap** does both in **O(log n)**, and reading the minimum is O(1).
+
+      JavaScript has **no built-in heap**, so you write one. (LeetCode preloads a library for it, but interviewers expect you to be able to build your own.)
+
+  - kind: explain
+    title: A tree stored in an array
+    body: |
+      A **binary heap** is a *complete* binary tree (every level full, except maybe the last, filled left to right) that obeys the **heap rule**: every parent is **smaller than or equal to** its children (a *min-heap*). So the **minimum is always at the root**.
+
+      Because the tree is complete, it fits in a plain array with no pointers:
+
+      ```
+      index:  0   1   2   3   4   5   6
+      value: [1,  3,  2,  7,  4,  5,  9]
+
+                 1
+               /   \
+              3     2
+             / \   / \
+            7   4 5   9
+      ```
+
+      For the node at index `i`:
+      - **parent** = `(i - 1) >> 1` (that is `Math.floor((i - 1) / 2)`),
+      - **left child** = `2i + 1`,
+      - **right child** = `2i + 2`.
+
+  - kind: explain
+    title: Push (sift-up) and pop (sift-down)
+    body: |
+      **Push:** add the new value at the **end** of the array (the next free spot), then **sift up**: while it is smaller than its parent, swap them. At most `log n` swaps.
+
+      **Pop the minimum:** the minimum is at index 0. Remove it by moving the **last** item to the root, then **sift down**: swap it with its *smaller* child while that child is smaller than it. At most `log n` swaps.
+
+      **Peek** is just `data[0]`: O(1).
+
+      A comparator function `compare(a, b)` (negative if `a` should come out first) lets one class serve as a min-heap of numbers, a max-heap (flip the comparison), or a heap of pairs and objects.
+
+  - kind: code
+    title: Write your own MinHeap
+    body: |
+      Finish the `MinHeap` class. The constructor accepts a `compare` function (default `(a, b) => a - b`).
+
+      - `push(x)`: add and sift up,
+      - `pop()`: remove and return the smallest (`undefined` if empty), then sift down,
+      - `peek()`: the smallest without removing (`undefined` if empty),
+      - `size()`: how many items.
+    code: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return 0;
+        }
+        peek() {}
+        push(x) {}
+        pop() {}
+      }
+    tests:
+      - "(() => { const h = new MinHeap(); [5, 3, 8, 1, 9, 2].forEach((x) => h.push(x)); const out = []; while (h.size() > 0) out.push(h.pop()); return out; })()"
+      - "(() => { const h = new MinHeap(); return [h.size(), h.peek(), h.pop()]; })()"
+      - "(() => { const h = new MinHeap((a, b) => b - a); [4, 7, 1, 9].forEach((x) => h.push(x)); return [h.pop(), h.pop(), h.peek(), h.size()]; })()"
+      - "(() => { const h = new MinHeap((a, b) => a[0] - b[0]); h.push([3, 'c']); h.push([1, 'a']); h.push([2, 'b']); return [h.pop()[1], h.peek()[1]]; })()"
+      - "(() => { const h = new MinHeap(); for (let i = 5000; i > 0; i--) h.push(i); let ok = true; for (let i = 1; i <= 5000; i++) if (h.pop() !== i) ok = false; return ok; })()"
+    solution: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const parent = (i - 1) >> 1;
+            if (this.compare(d[i], d[parent]) >= 0) break;
+            [d[i], d[parent]] = [d[parent], d[i]];
+            i = parent;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const left = 2 * i + 1;
+              const right = left + 1;
+              let smallest = i;
+              if (left < d.length && this.compare(d[left], d[smallest]) < 0) smallest = left;
+              if (right < d.length && this.compare(d[right], d[smallest]) < 0) smallest = right;
+              if (smallest === i) break;
+              [d[i], d[smallest]] = [d[smallest], d[i]];
+              i = smallest;
+            }
+          }
+          return top;
+        }
+      }
+    hint: "Sift up: while `compare(child, parent) < 0`, swap. Sift down: pick the smaller of the two children, and swap while it is smaller than the item you are moving. Take care when the heap has just one item."
+    reject:
+      - |
+        class MinHeap {
+          constructor(compare = (a, b) => a - b) { this.data = []; this.compare = compare; }
+          size() { return this.data.length; }
+          peek() { return this.data[0]; }
+          push(x) { this.data.push(x); }
+          pop() { return this.data.shift(); }
+        }
+
+  - kind: explain
+    title: Top-k problems, and the size-k heap
+    body: |
+      *"Find the k largest items."* Sorting everything costs O(n log n). A heap of size `k` does it in **O(n log k)**:
+
+      - Keep a **min-heap of the k best so far**.
+      - For each new item, push it. If the heap now holds more than `k`, **pop the smallest**.
+      - At the end, the heap holds the k largest, and its root is the **k-th largest**.
+
+      It also works on **streams**, where items arrive forever and you cannot sort them all. Compare with quickselect (Module 12): quickselect is O(n) but needs all the data at once. The heap works one item at a time.
+
+  - kind: code
+    title: "Find the bug: the heap that keeps growing"
+    body: |
+      `KthLargest` tracks the `k`-th largest number in a stream. `add(val)` adds a number and returns the current k-th largest. It should keep only the `k` biggest numbers in a min-heap, but this version keeps everything, so it returns the smallest instead. Fix it. (A working `MinHeap` is provided.)
+    code: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      class KthLargest {
+        constructor(k, nums) {
+          this.k = k;
+          this.heap = new MinHeap();
+          for (const n of nums) this.add(n);
+        }
+        add(val) {
+          this.heap.push(val);
+          return this.heap.peek();
+        }
+      }
+    tests:
+      - "(() => { const t = new KthLargest(3, [4, 5, 8, 2]); return [t.add(3), t.add(5), t.add(10), t.add(9), t.add(4)]; })()"
+      - "(() => { const t = new KthLargest(1, []); return [t.add(-3), t.add(-2), t.add(-4), t.add(0), t.add(4)]; })()"
+      - "(() => { const t = new KthLargest(2, [0]); return [t.add(-1), t.add(1), t.add(-2), t.add(-4), t.add(3)]; })()"
+    solution: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      class KthLargest {
+        constructor(k, nums) {
+          this.k = k;
+          this.heap = new MinHeap();
+          for (const n of nums) this.add(n);
+        }
+        add(val) {
+          this.heap.push(val);
+          if (this.heap.size() > this.k) this.heap.pop();
+          return this.heap.peek();
+        }
+      }
+    hint: After pushing, if the heap holds more than `k` items, pop the smallest one.
+    broken_starter: true
+    reject:
+      - |
+        class MinHeap {
+          constructor(compare = (a, b) => a - b) {
+            this.data = [];
+            this.compare = compare;
+          }
+          size() {
+            return this.data.length;
+          }
+          peek() {
+            return this.data[0];
+          }
+          push(x) {
+            const d = this.data;
+            d.push(x);
+            let i = d.length - 1;
+            while (i > 0) {
+              const p = (i - 1) >> 1;
+              if (this.compare(d[i], d[p]) >= 0) break;
+              [d[i], d[p]] = [d[p], d[i]];
+              i = p;
+            }
+          }
+          pop() {
+            const d = this.data;
+            if (d.length === 0) return undefined;
+            const top = d[0];
+            const last = d.pop();
+            if (d.length > 0) {
+              d[0] = last;
+              let i = 0;
+              for (;;) {
+                const l = 2 * i + 1;
+                const r = l + 1;
+                let m = i;
+                if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+                if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+                if (m === i) break;
+                [d[i], d[m]] = [d[m], d[i]];
+                i = m;
+              }
+            }
+            return top;
+          }
+        }
+
+
+        class KthLargest {
+          constructor(k, nums) {
+            this.k = k;
+            this.heap = new MinHeap();
+            for (const n of nums) this.add(n);
+          }
+          add(val) {
+            this.heap.push(val);
+            return this.heap.peek();
+          }
+        }
+
+  - kind: code
+    title: Last stone weight
+    body: |
+      A pile of stones has weights. Each turn, smash the **two heaviest** together: if they are equal, both vanish. Otherwise the lighter vanishes and the heavier loses that much weight. Write `lastStoneWeight(stones)`: the weight of the last stone, or `0` if none remain.
+
+      You need the **biggest** each time, so use a `MinHeap` with a flipped comparator: `new MinHeap((a, b) => b - a)`.
+    code: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function lastStoneWeight(stones) {
+        return 0;
+      }
+    tests:
+      - "lastStoneWeight([2, 7, 4, 1, 8, 1])"
+      - "lastStoneWeight([1])"
+      - "lastStoneWeight([2, 2])"
+      - "lastStoneWeight([])"
+      - "lastStoneWeight([10, 4, 2, 10])"
+    solution: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function lastStoneWeight(stones) {
+        const heap = new MinHeap((a, b) => b - a);
+        for (const s of stones) heap.push(s);
+        while (heap.size() > 1) {
+          const first = heap.pop();
+          const second = heap.pop();
+          if (first !== second) heap.push(first - second);
+        }
+        return heap.size() === 0 ? 0 : heap.peek();
+      }
+    hint: Pop twice, push the difference back if it is not zero, and repeat until at most one stone is left.
+    reject:
+      - |
+        class MinHeap {
+          constructor(compare = (a, b) => a - b) {
+            this.data = [];
+            this.compare = compare;
+          }
+          size() {
+            return this.data.length;
+          }
+          peek() {
+            return this.data[0];
+          }
+          push(x) {
+            const d = this.data;
+            d.push(x);
+            let i = d.length - 1;
+            while (i > 0) {
+              const p = (i - 1) >> 1;
+              if (this.compare(d[i], d[p]) >= 0) break;
+              [d[i], d[p]] = [d[p], d[i]];
+              i = p;
+            }
+          }
+          pop() {
+            const d = this.data;
+            if (d.length === 0) return undefined;
+            const top = d[0];
+            const last = d.pop();
+            if (d.length > 0) {
+              d[0] = last;
+              let i = 0;
+              for (;;) {
+                const l = 2 * i + 1;
+                const r = l + 1;
+                let m = i;
+                if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+                if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+                if (m === i) break;
+                [d[i], d[m]] = [d[m], d[i]];
+                i = m;
+              }
+            }
+            return top;
+          }
+        }
+
+
+        function lastStoneWeight(stones) {
+          return Math.max(0, ...stones);
+        }
+
+  - kind: code
+    title: K closest points
+    body: |
+      Write `kClosest(points, k)`: the `k` points closest to the origin `(0, 0)`, as `[x, y]` pairs. The order of the answer does not matter. Compare **squared** distances (`x*x + y*y`), which avoids square roots.
+
+      Keep a **max-heap of size k** (the farthest of your k candidates sits on top, so you can evict it).
+    code: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function kClosest(points, k) {
+        return [];
+      }
+    unordered: true
+    tests:
+      - "kClosest([[1, 3], [-2, 2]], 1)"
+      - "kClosest([[3, 3], [5, -1], [-2, 4]], 2)"
+      - "kClosest([[0, 1], [1, 0]], 2)"
+      - "kClosest([[5, 5]], 1)"
+      - "kClosest([[1, 1], [2, 2], [3, 3], [0, 0]], 3)"
+    solution: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function kClosest(points, k) {
+        const dist = ([x, y]) => x * x + y * y;
+        const heap = new MinHeap((a, b) => dist(b) - dist(a));
+        for (const p of points) {
+          heap.push(p);
+          if (heap.size() > k) heap.pop();
+        }
+        return heap.data.map((p) => [...p]);
+      }
+    hint: A "max-heap by distance" is a MinHeap whose comparator is `dist(b) - dist(a)`. After each push, if it holds more than `k`, pop (that removes the farthest).
+    reject:
+      - |
+        class MinHeap {
+          constructor(compare = (a, b) => a - b) {
+            this.data = [];
+            this.compare = compare;
+          }
+          size() {
+            return this.data.length;
+          }
+          peek() {
+            return this.data[0];
+          }
+          push(x) {
+            const d = this.data;
+            d.push(x);
+            let i = d.length - 1;
+            while (i > 0) {
+              const p = (i - 1) >> 1;
+              if (this.compare(d[i], d[p]) >= 0) break;
+              [d[i], d[p]] = [d[p], d[i]];
+              i = p;
+            }
+          }
+          pop() {
+            const d = this.data;
+            if (d.length === 0) return undefined;
+            const top = d[0];
+            const last = d.pop();
+            if (d.length > 0) {
+              d[0] = last;
+              let i = 0;
+              for (;;) {
+                const l = 2 * i + 1;
+                const r = l + 1;
+                let m = i;
+                if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+                if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+                if (m === i) break;
+                [d[i], d[m]] = [d[m], d[i]];
+                i = m;
+              }
+            }
+            return top;
+          }
+        }
+
+
+        function kClosest(points, k) {
+          return points.slice(0, k);
+        }
+
+  - kind: explain
+    title: Merging k sorted lists
+    body: |
+      You have `k` sorted lists and want one sorted list. Merging two is easy (two pointers). For `k` lists, the smallest remaining item is always at the **front of one of the k lists**. A heap of `k` fronts gives the overall smallest in `O(log k)`.
+
+      Put `[value, listIndex, positionInList]` for each list's first item in a min-heap. Repeatedly pop the smallest, add it to the output, and push the next item from the same list.
+
+      Total cost: `O(N log k)` for `N` items in all, far better than merging one after another.
+
+  - kind: code
+    title: Merge k sorted arrays
+    body: |
+      Write `mergeKSorted(arrays)`: merge several sorted arrays into a single sorted array, using a heap of the current front of each array.
+    code: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function mergeKSorted(arrays) {
+        return [];
+      }
+    tests:
+      - "mergeKSorted([[1, 4, 5], [1, 3, 4], [2, 6]])"
+      - "mergeKSorted([])"
+      - "mergeKSorted([[], []])"
+      - "mergeKSorted([[5], [1], [3]])"
+      - "mergeKSorted([[1, 2, 3]])"
+      - "mergeKSorted([[-1, 5, 9], [], [0, 2, 10]])"
+    solution: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      function mergeKSorted(arrays) {
+        const heap = new MinHeap((a, b) => a[0] - b[0]);
+        arrays.forEach((arr, i) => {
+          if (arr.length > 0) heap.push([arr[0], i, 0]);
+        });
+        const result = [];
+        while (heap.size() > 0) {
+          const [value, i, j] = heap.pop();
+          result.push(value);
+          if (j + 1 < arrays[i].length) heap.push([arrays[i][j + 1], i, j + 1]);
+        }
+        return result;
+      }
+    hint: Push `[value, arrayIndex, position]` triples. When you pop one, push the next item from the same array if it has one.
+    reject:
+      - |
+        class MinHeap {
+          constructor(compare = (a, b) => a - b) {
+            this.data = [];
+            this.compare = compare;
+          }
+          size() {
+            return this.data.length;
+          }
+          peek() {
+            return this.data[0];
+          }
+          push(x) {
+            const d = this.data;
+            d.push(x);
+            let i = d.length - 1;
+            while (i > 0) {
+              const p = (i - 1) >> 1;
+              if (this.compare(d[i], d[p]) >= 0) break;
+              [d[i], d[p]] = [d[p], d[i]];
+              i = p;
+            }
+          }
+          pop() {
+            const d = this.data;
+            if (d.length === 0) return undefined;
+            const top = d[0];
+            const last = d.pop();
+            if (d.length > 0) {
+              d[0] = last;
+              let i = 0;
+              for (;;) {
+                const l = 2 * i + 1;
+                const r = l + 1;
+                let m = i;
+                if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+                if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+                if (m === i) break;
+                [d[i], d[m]] = [d[m], d[i]];
+                i = m;
+              }
+            }
+            return top;
+          }
+        }
+
+
+        function mergeKSorted(arrays) {
+          return arrays.flat();
+        }
+
+  - kind: explain
+    title: The median of a stream, two heaps
+    body: |
+      The **median** is the middle value of the sorted numbers. For a stream, sorting each time is too slow. Use **two heaps** that split the numbers into halves:
+
+      - a **max-heap `low`** holding the smaller half (its top is the biggest of the small numbers),
+      - a **min-heap `high`** holding the larger half (its top is the smallest of the big numbers).
+
+      Keep them balanced (sizes differ by at most 1). Then the median is the top of the bigger heap, or the average of both tops when the sizes are equal. Adding a number costs O(log n) and reading the median is O(1).
+
+  - kind: code
+    title: Find the median from a data stream
+    body: |
+      Finish `MedianFinder`: `addNum(x)` adds a number, and `findMedian()` returns the median of all numbers so far.
+    code: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      class MedianFinder {
+        constructor() {
+          this.low = new MinHeap((a, b) => b - a); // smaller half (max-heap)
+          this.high = new MinHeap(); // larger half (min-heap)
+        }
+        addNum(x) {}
+        findMedian() {
+          return 0;
+        }
+      }
+    tests:
+      - "(() => { const m = new MedianFinder(); const out = []; for (const x of [1, 2]) { m.addNum(x); out.push(m.findMedian()); } m.addNum(3); out.push(m.findMedian()); return out; })()"
+      - "(() => { const m = new MedianFinder(); const out = []; for (const x of [5, 15, 1, 3]) { m.addNum(x); out.push(m.findMedian()); } return out; })()"
+      - "(() => { const m = new MedianFinder(); m.addNum(-1); m.addNum(-2); m.addNum(-3); return m.findMedian(); })()"
+      - "(() => { const m = new MedianFinder(); m.addNum(7); return m.findMedian(); })()"
+    solution: |
+      class MinHeap {
+        constructor(compare = (a, b) => a - b) {
+          this.data = [];
+          this.compare = compare;
+        }
+        size() {
+          return this.data.length;
+        }
+        peek() {
+          return this.data[0];
+        }
+        push(x) {
+          const d = this.data;
+          d.push(x);
+          let i = d.length - 1;
+          while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (this.compare(d[i], d[p]) >= 0) break;
+            [d[i], d[p]] = [d[p], d[i]];
+            i = p;
+          }
+        }
+        pop() {
+          const d = this.data;
+          if (d.length === 0) return undefined;
+          const top = d[0];
+          const last = d.pop();
+          if (d.length > 0) {
+            d[0] = last;
+            let i = 0;
+            for (;;) {
+              const l = 2 * i + 1;
+              const r = l + 1;
+              let m = i;
+              if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+              if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+              if (m === i) break;
+              [d[i], d[m]] = [d[m], d[i]];
+              i = m;
+            }
+          }
+          return top;
+        }
+      }
+
+
+      class MedianFinder {
+        constructor() {
+          this.low = new MinHeap((a, b) => b - a);
+          this.high = new MinHeap();
+        }
+        addNum(x) {
+          this.low.push(x);
+          this.high.push(this.low.pop());
+          if (this.high.size() > this.low.size()) this.low.push(this.high.pop());
+        }
+        findMedian() {
+          if (this.low.size() > this.high.size()) return this.low.peek();
+          return (this.low.peek() + this.high.peek()) / 2;
+        }
+      }
+    hint: "A neat way: push into `low`, move `low`'s top to `high`, and if `high` now has more items, move its top back to `low`. `low` is then never smaller than `high`."
+    reject:
+      - |
+        class MinHeap {
+          constructor(compare = (a, b) => a - b) {
+            this.data = [];
+            this.compare = compare;
+          }
+          size() {
+            return this.data.length;
+          }
+          peek() {
+            return this.data[0];
+          }
+          push(x) {
+            const d = this.data;
+            d.push(x);
+            let i = d.length - 1;
+            while (i > 0) {
+              const p = (i - 1) >> 1;
+              if (this.compare(d[i], d[p]) >= 0) break;
+              [d[i], d[p]] = [d[p], d[i]];
+              i = p;
+            }
+          }
+          pop() {
+            const d = this.data;
+            if (d.length === 0) return undefined;
+            const top = d[0];
+            const last = d.pop();
+            if (d.length > 0) {
+              d[0] = last;
+              let i = 0;
+              for (;;) {
+                const l = 2 * i + 1;
+                const r = l + 1;
+                let m = i;
+                if (l < d.length && this.compare(d[l], d[m]) < 0) m = l;
+                if (r < d.length && this.compare(d[r], d[m]) < 0) m = r;
+                if (m === i) break;
+                [d[i], d[m]] = [d[m], d[i]];
+                i = m;
+              }
+            }
+            return top;
+          }
+        }
+
+
+        class MedianFinder {
+          constructor() { this.nums = []; }
+          addNum(x) { this.nums.push(x); }
+          findMedian() { return this.nums[0]; }
+        }
+
+  - kind: why
+    body: |
+      A heap gives you "the best thing so far" in O(log n) without sorting everything. It is the engine behind schedulers, "top 10" lists, event simulations, and the shortest-path algorithm you will meet in Module 24.
+
+      When you see "k largest", "k smallest", "merge k sorted", "median of a stream" or "process the most urgent first", think heap.
+
+  - kind: recap
+    body: |
+      - A **heap** is a complete binary tree kept in an array. For index `i`: parent `(i - 1) >> 1`, children `2i + 1` and `2i + 2`.
+      - **Push** adds at the end and sifts up. **Pop** moves the last item to the root and sifts down. Both are **O(log n)**. Peek is O(1).
+      - Write it once with a **comparator** and it serves as a min-heap, a max-heap or a heap of objects.
+      - **Top-k:** keep a heap of size `k` (O(n log k)). It works on streams.
+      - **Merge k sorted lists:** heap of the current fronts, O(N log k).
+      - **Median of a stream:** a max-heap for the lower half and a min-heap for the upper half, kept balanced.

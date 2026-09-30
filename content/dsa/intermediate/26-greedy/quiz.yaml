@@ -1,0 +1,53 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: With coins of 1, 3 and 4, why does "always take the biggest coin" fail for a target of 6?
+    options:
+      - It never fails
+      - It gives 4 + 1 + 1 (three coins), but 3 + 3 (two coins) is better
+      - Coins cannot be reused
+      - 6 is not reachable
+    answer: 1
+    explanation: The locally best choice (the biggest coin) leads to a worse total. Greedy needs a problem where that cannot happen.
+  - type: predict
+    prompt: What does this print? (Kadane's algorithm.)
+    code: |
+      const nums = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
+      let current = nums[0];
+      let best = nums[0];
+      for (let i = 1; i < nums.length; i++) {
+        current = Math.max(nums[i], current + nums[i]);
+        best = Math.max(best, current);
+      }
+      console.log(best);
+    options: ["6", "4", "9", "7"]
+    answer: 0
+    explanation: The best stretch is `4, -1, 2, 1`, which adds to 6.
+  - type: mcq
+    prompt: To keep the most intervals without overlap, which rule is greedy-correct?
+    options: ["Take the shortest interval first", "Take the earliest-starting interval first", "Take the interval that ends earliest", "Take the longest interval first"]
+    answer: 2
+    explanation: Finishing earliest leaves the most room for the rest, and an exchange argument proves it is never worse.
+  - type: predict
+    prompt: What does this print? (Merging intervals after sorting by start.)
+    code: |
+      const intervals = [[8, 10], [1, 3], [2, 6]].sort((a, b) => a[0] - b[0]);
+      const merged = [];
+      for (const [start, end] of intervals) {
+        const last = merged[merged.length - 1];
+        if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+        else merged.push([start, end]);
+      }
+      console.log(merged);
+    options: ["[ [ 1, 6 ], [ 8, 10 ] ]", "[ [ 1, 3 ], [ 2, 6 ], [ 8, 10 ] ]", "[ [ 1, 10 ] ]", "[ [ 2, 6 ], [ 8, 10 ] ]"]
+    answer: 0
+    explanation: Sorted, they are `[1,3]`, `[2,6]`, `[8,10]`. The first two overlap and merge to `[1,6]`.
+  - type: mcq
+    prompt: Why does merging intervals start with a sort?
+    options:
+      - To make the code shorter only
+      - So overlapping intervals end up next to each other and one sweep is enough
+      - Because intervals must be ascending
+      - It is not needed
+    answer: 1
+    explanation: After sorting by start, an interval can only overlap the most recently merged one.

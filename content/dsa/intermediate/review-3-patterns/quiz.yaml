@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "\"Find the longest piece of the array where at most 2 distinct values appear.\" Which pattern?"
+    options: ["Prefix sums", "Sliding window", "Binary search on the answer", "Cyclic sort"]
+    answer: 1
+    explanation: It is a contiguous piece with a rule, where the rule can be checked by a count of distinct values as the edges move.
+  - type: mcq
+    prompt: "\"The array is sorted. Find two numbers whose difference is exactly k.\" Which pattern?"
+    options: ["Two pointers moving the same way", "Monotonic stack", "Backtracking", "Difference array"]
+    answer: 0
+    explanation: On sorted data two pointers can move forward together, growing or shrinking the difference.
+  - type: mcq
+    prompt: "\"Find the smallest number of workers so that all jobs finish in D days.\" Which pattern?"
+    options: ["Binary search on the answer", "Cyclic sort", "Sliding window", "Two pointers at both ends"]
+    answer: 0
+    explanation: If some number of workers is enough, any bigger number is enough too, so the yes/no flips once.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const nums = [1, 2, 3, 4];
+      const seen = new Map([[0, 1]]);
+      let total = 0;
+      let count = 0;
+      for (const n of nums) {
+        total += n;
+        count += seen.get(total - 6) || 0;
+        seen.set(total, (seen.get(total) || 0) + 1);
+      }
+      console.log(count);
+    options: ["1", "2", "0", "3"]
+    answer: 0
+    explanation: "Only `1 + 2 + 3` adds to 6. (`2 + 4` is not contiguous.)"
+  - type: mcq
+    prompt: "\"For each day, how many days until a warmer temperature?\" Which pattern?"
+    options: ["Sliding window", "Monotonic stack", "Prefix sums", "Union-find"]
+    answer: 1
+    explanation: It is a next-greater question, which a monotonic stack answers in one pass.

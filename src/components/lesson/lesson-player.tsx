@@ -3,16 +3,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Markdown } from "@/components/markdown";
+import { JsRunner } from "@/components/js/js-runner";
+import { PyRunner } from "@/components/py/py-runner";
 import { SqlRunner, type Engine } from "@/components/sql/sql-runner";
-import type { Step } from "@/lib/content/schema";
-import { tryStepCheck } from "@/lib/content/step-check";
+import type { Step, Track } from "@/lib/content/schema";
+import { codeStepCheck, pyStepCheck, tryStepCheck } from "@/lib/content/step-check";
 import { completeLesson, completeStep, setLast, setLessonStep, useProgress } from "@/lib/progress";
+import { gradeJavaScript } from "@/lib/js/client";
+import type { JsRunOutput } from "@/lib/js/core";
+import { gradePython } from "@/lib/py/client";
+import type { PyRunOutput } from "@/lib/py/core";
 import type { RunOutput } from "@/lib/sql/core";
 import { gradeSql } from "@/lib/sql/client";
 
 const KIND_LABEL: Record<Step["kind"], string> = {
   explain: "Learn",
   try: "Try it",
+  code: "Try it",
   info: "Good to know",
   mac: "On your Mac",
   why: "Why this matters",
@@ -25,6 +32,7 @@ export function LessonPlayer({
   label,
   steps,
   engine,
+  language,
   href,
   quizHref,
 }: {
@@ -33,6 +41,7 @@ export function LessonPlayer({
   label: string;
   steps: Step[];
   engine: Engine;
+  language: Track["engine"];
   href: string;
   quizHref: string;
 }) {
@@ -54,11 +63,12 @@ export function LessonPlayer({
 
   const step = steps[index];
   const done = saved?.stepsDone.includes(index) ?? false;
-  const needsAction = (step.kind === "try" || step.kind === "mac") && !done;
+  const isExercise = step.kind === "try" || step.kind === "code";
+  const needsAction = (isExercise || step.kind === "mac") && !done;
   const last = index === steps.length - 1;
 
   function next() {
-    if (step.kind !== "try" && step.kind !== "mac") completeStep(topicKey, index!);
+    if (!isExercise && step.kind !== "mac") completeStep(topicKey, index!);
     advance();
   }
 
@@ -93,7 +103,7 @@ export function LessonPlayer({
         </p>
       </div>
 
-      <div className={step.kind === "try" ? "grid gap-6 lg:grid-cols-2" : "mx-auto max-w-2xl"}>
+      <div className={isExercise ? "grid gap-6 lg:grid-cols-2" : "mx-auto max-w-2xl"}>
         <article className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
           <p className="mb-2 text-xs font-medium tracking-wide text-brand uppercase">{KIND_LABEL[step.kind]}</p>
           {"title" in step && <h1 className="mb-4 text-2xl font-semibold tracking-tight">{step.title}</h1>}
@@ -107,9 +117,12 @@ export function LessonPlayer({
         {step.kind === "try" && (
           <TryPanel key={`${topicKey}-${index}`} step={step} engine={engine} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />
         )}
+        {step.kind === "code" && (
+          <CodePanel key={`${topicKey}-${index}`} step={step} language={language} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />
+        )}
       </div>
 
-      <div className={`mt-6 flex items-center gap-3 ${step.kind === "try" ? "" : "mx-auto max-w-2xl"}`}>
+      <div className={`mt-6 flex items-center gap-3 ${isExercise ? "" : "mx-auto max-w-2xl"}`}>
         <button
           onClick={() => setIndex(Math.max(0, index - 1))}
           disabled={index === 0}
@@ -131,7 +144,9 @@ export function LessonPlayer({
               I ran it ✓
             </button>
           )}
-          {needsAction && step.kind === "try" && <span className="text-sm text-muted">Run the query to continue</span>}
+          {needsAction && isExercise && (
+            <span className="text-sm text-muted">Run the {step.kind === "code" ? "code" : "query"} to continue</span>
+          )}
           <button
             onClick={next}
             disabled={needsAction}
@@ -164,8 +179,6 @@ function TryPanel({
   const p = useProgress();
   const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
   const [misses, setMisses] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
-  const [showHint, setShowHint] = useState(false);
 
   const onRan = useCallback(
     async (input: string, out: RunOutput) => {
@@ -215,11 +228,96 @@ function TryPanel({
         </p>
       )}
       {done && !feedback && <p className="text-sm text-success">✓ Step complete</p>}
-      {step.hint && misses >= 1 && !done && (
+      <HelpPanel hint={step.hint} answer={step.expect} answerLabel="Stuck? Show one working answer" misses={misses} done={done} />
+    </div>
+  );
+}
+
+// The JavaScript version of TryPanel. Run executes the code; when the step has tests, Run also
+// grades it (hidden test calls run on the learner's code and on the reference solution).
+function CodePanel({
+  step,
+  language,
+  slot,
+  done,
+  onDone,
+}: {
+  step: Extract<Step, { kind: "code" }>;
+  language: Track["engine"];
+  slot: string;
+  done: boolean;
+  onDone: () => void;
+}) {
+  const p = useProgress();
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const [misses, setMisses] = useState(0);
+
+  const onRan = useCallback(
+    async (code: string, out: JsRunOutput | PyRunOutput) => {
+      if (out.error) {
+        setFeedback({ ok: false, text: "An error. Read the message, fix the code, and run it again." });
+        return;
+      }
+      const check = language === "python" ? pyStepCheck(step) : codeStepCheck(step);
+      if (!check) {
+        onDone();
+        setFeedback(null);
+        return;
+      }
+      const v = language === "python" ? await gradePython(code, check) : await gradeJavaScript(code, check);
+      if (v.correct) {
+        setFeedback({ ok: true, text: `Correct! All ${v.total} tests pass.` });
+        onDone();
+      } else {
+        setMisses((m) => m + 1);
+        setFeedback({ ok: false, text: v.message });
+      }
+    },
+    [step, language, onDone],
+  );
+
+  return (
+    <div className="space-y-3">
+      {language === "python" ? (
+        <PyRunner initial={p?.code[slot] ?? step.code} starter={step.code} slot={slot} onRan={onRan} stdin={step.stdin} minHeight="200px" />
+      ) : (
+        <JsRunner initial={p?.code[slot] ?? step.code} starter={step.code} slot={slot} onRan={onRan} minHeight="200px" />
+      )}
+      {feedback && (
+        <p className={`rounded-lg px-3 py-2 text-sm ${feedback.ok ? "bg-success/10 text-success" : "bg-xp/10 text-text"}`}>
+          {feedback.ok ? "✓ " : ""}
+          {feedback.text}
+        </p>
+      )}
+      {done && !feedback && <p className="text-sm text-success">✓ Step complete</p>}
+      <HelpPanel hint={step.hint} answer={step.solution} answerLabel="Stuck? Show one working solution" misses={misses} done={done} />
+    </div>
+  );
+}
+
+// "Need a hint?" after the first miss, "Show one working answer" after three.
+function HelpPanel({
+  hint,
+  answer,
+  answerLabel,
+  misses,
+  done,
+}: {
+  hint?: string;
+  answer?: string;
+  answerLabel: string;
+  misses: number;
+  done: boolean;
+}) {
+  const [showHint, setShowHint] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
+  return (
+    <>
+      {hint && misses >= 1 && !done && (
         <div className="text-sm">
           {showHint ? (
             <div className="rounded-lg border border-border px-3 py-2">
-              <Markdown>{step.hint}</Markdown>
+              <Markdown>{hint}</Markdown>
             </div>
           ) : (
             <button onClick={() => setShowHint(true)} className="text-muted underline underline-offset-4 hover:text-text">
@@ -228,18 +326,18 @@ function TryPanel({
           )}
         </div>
       )}
-      {step.expect && misses >= 3 && !done && (
+      {answer && misses >= 3 && !done && (
         <div className="text-sm">
           {showAnswer ? (
-            <pre className="overflow-x-auto rounded-lg border border-border bg-code p-3 font-mono text-xs">{step.expect}</pre>
+            <pre className="overflow-x-auto rounded-lg border border-border bg-code p-3 font-mono text-xs">{answer}</pre>
           ) : (
             <button onClick={() => setShowAnswer(true)} className="text-muted underline underline-offset-4 hover:text-text">
-              Stuck? Show one working answer
+              {answerLabel}
             </button>
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }
 

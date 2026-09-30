@@ -1,0 +1,459 @@
+steps:
+  - kind: explain
+    title: The brief
+    body: |
+      You have learned to store data and to search and sort it. Now you build the toolbox yourself: a small **DSA library** you can keep and reuse.
+
+      It contains six pieces:
+
+      | Piece | What it does |
+      |---|---|
+      | `LinkedList` | append, prepend, remove, contains, size, toArray |
+      | `Stack` | last in, first out |
+      | `Queue` | first in, first out, with **O(1)** dequeue |
+      | `mergeSort` | a stable O(n log n) sort with an optional comparator |
+      | `binarySearch` | find a value in a sorted array in O(log n) |
+      | `quickselect` | the k-th smallest value in average O(n) |
+
+      Six graded steps check the pieces in the browser. The last step moves the library onto your Mac and tests it with Node's built-in test runner.
+
+  - kind: explain
+    title: House rules
+    body: |
+      Two rules turn code into a *library*:
+
+      1. **Every function and method gets a complexity comment**, for example `// O(1) time` or `// O(n log n) time, O(n) space`. The browser cannot check comments, but you should still write them. It is the habit interviewers look for.
+      2. **Every piece gets tests.** The browser grades your code for you here. On your Mac you will write your own tests.
+
+      Write the plainest correct version first, then improve it.
+
+  - kind: code
+    title: "1. LinkedList"
+    body: |
+      Finish the `LinkedList` class. It is a singly linked list of `Node`s.
+
+      - `append(val)`: add at the end (**O(1)**: keep a `tail`),
+      - `prepend(val)`: add at the front (**O(1)**),
+      - `remove(val)`: remove the **first** node holding `val`, returning `true`, or `false` if it is not there,
+      - `contains(val)`: `true` or `false`,
+      - `size()`: the number of nodes,
+      - `toArray()`: the values in order.
+    code: |
+      class Node {
+        constructor(val) {
+          this.val = val;
+          this.next = null;
+        }
+      }
+
+      class LinkedList {
+        constructor() {
+          this.head = null;
+          this.tail = null;
+          this.length = 0;
+        }
+        append(val) {}
+        prepend(val) {}
+        remove(val) {
+          return false;
+        }
+        contains(val) {
+          return false;
+        }
+        size() {
+          return 0;
+        }
+        toArray() {
+          return [];
+        }
+      }
+    tests:
+      - "(() => { const l = new LinkedList(); l.append(2); l.append(3); l.prepend(1); return [l.toArray(), l.size()]; })()"
+      - "(() => { const l = new LinkedList(); [1, 2, 3, 2].forEach((x) => l.append(x)); const a = l.remove(2); const b = l.remove(9); const c = l.remove(1); return [a, b, c, l.toArray(), l.size()]; })()"
+      - "(() => { const l = new LinkedList(); return [l.size(), l.toArray(), l.contains(1), l.remove(1)]; })()"
+      - "(() => { const l = new LinkedList(); l.append(1); l.append(2); l.remove(2); l.append(3); return [l.toArray(), l.contains(2), l.contains(3)]; })()"
+      - "(() => { const l = new LinkedList(); l.append(5); l.remove(5); l.prepend(7); return [l.toArray(), l.size()]; })()"
+    solution: |
+      class Node {
+        constructor(val) {
+          this.val = val;
+          this.next = null;
+        }
+      }
+
+      class LinkedList {
+        constructor() {
+          this.head = null;
+          this.tail = null;
+          this.length = 0;
+        }
+        append(val) {
+          const node = new Node(val);
+          if (this.tail === null) {
+            this.head = node;
+            this.tail = node;
+          } else {
+            this.tail.next = node;
+            this.tail = node;
+          }
+          this.length++;
+        }
+        prepend(val) {
+          const node = new Node(val);
+          node.next = this.head;
+          this.head = node;
+          if (this.tail === null) this.tail = node;
+          this.length++;
+        }
+        remove(val) {
+          let prev = null;
+          let curr = this.head;
+          while (curr !== null) {
+            if (curr.val === val) {
+              if (prev === null) this.head = curr.next;
+              else prev.next = curr.next;
+              if (curr === this.tail) this.tail = prev;
+              this.length--;
+              return true;
+            }
+            prev = curr;
+            curr = curr.next;
+          }
+          return false;
+        }
+        contains(val) {
+          for (let n = this.head; n !== null; n = n.next) {
+            if (n.val === val) return true;
+          }
+          return false;
+        }
+        size() {
+          return this.length;
+        }
+        toArray() {
+          const out = [];
+          for (let n = this.head; n !== null; n = n.next) out.push(n.val);
+          return out;
+        }
+      }
+    hint: Removing the last node must also move `tail` back to `prev`. Removing the head must move `head` forward. Forgetting either is the classic bug.
+    reject:
+      - |
+        class Node {
+          constructor(val) { this.val = val; this.next = null; }
+        }
+        class LinkedList {
+          constructor() { this.head = null; this.tail = null; this.length = 0; }
+          append(val) {
+            const node = new Node(val);
+            if (this.tail === null) { this.head = node; this.tail = node; }
+            else { this.tail.next = node; this.tail = node; }
+            this.length++;
+          }
+          prepend(val) {
+            const node = new Node(val);
+            node.next = this.head;
+            this.head = node;
+            if (this.tail === null) this.tail = node;
+            this.length++;
+          }
+          remove(val) {
+            let prev = null;
+            let curr = this.head;
+            while (curr !== null) {
+              if (curr.val === val) {
+                if (prev === null) this.head = curr.next;
+                else prev.next = curr.next;
+                this.length--;
+                return true;
+              }
+              prev = curr;
+              curr = curr.next;
+            }
+            return false;
+          }
+          contains(val) { for (let n = this.head; n !== null; n = n.next) if (n.val === val) return true; return false; }
+          size() { return this.length; }
+          toArray() { const out = []; for (let n = this.head; n !== null; n = n.next) out.push(n.val); return out; }
+        }
+
+  - kind: code
+    title: "2. Stack"
+    body: |
+      Finish `Stack`, backed by an array: `push(x)`, `pop()` (returns `undefined` when empty), `peek()` (the top without removing, or `undefined`), `size()` and `isEmpty()`.
+    code: |
+      class Stack {
+        constructor() {
+          this.items = [];
+        }
+        push(x) {}
+        pop() {}
+        peek() {}
+        size() {
+          return 0;
+        }
+        isEmpty() {
+          return true;
+        }
+      }
+    tests:
+      - "(() => { const s = new Stack(); s.push(1); s.push(2); s.push(3); return [s.pop(), s.peek(), s.size(), s.isEmpty()]; })()"
+      - "(() => { const s = new Stack(); return [s.pop(), s.peek(), s.size(), s.isEmpty()]; })()"
+      - "(() => { const s = new Stack(); s.push('a'); s.pop(); return [s.isEmpty(), s.pop()]; })()"
+    solution: |
+      class Stack {
+        constructor() {
+          this.items = [];
+        }
+        push(x) {
+          this.items.push(x);
+        }
+        pop() {
+          return this.items.pop();
+        }
+        peek() {
+          return this.items[this.items.length - 1];
+        }
+        size() {
+          return this.items.length;
+        }
+        isEmpty() {
+          return this.items.length === 0;
+        }
+      }
+    reject:
+      - |
+        class Stack {
+          constructor() { this.items = []; }
+          push(x) { this.items.push(x); }
+          pop() { return this.items.shift(); }
+          peek() { return this.items[0]; }
+          size() { return this.items.length; }
+          isEmpty() { return this.items.length === 0; }
+        }
+
+  - kind: code
+    title: "3. Queue with O(1) dequeue"
+    body: |
+      Finish `Queue` using a `head` index so `dequeue` never shifts the array. Add `peek()` too: the front item without removing it, or `undefined`.
+    code: |
+      class Queue {
+        constructor() {
+          this.items = [];
+          this.head = 0;
+        }
+        enqueue(x) {}
+        dequeue() {}
+        peek() {}
+        size() {
+          return 0;
+        }
+        isEmpty() {
+          return true;
+        }
+      }
+    tests:
+      - "(() => { const q = new Queue(); q.enqueue(1); q.enqueue(2); q.enqueue(3); return [q.dequeue(), q.peek(), q.size(), q.isEmpty()]; })()"
+      - "(() => { const q = new Queue(); return [q.dequeue(), q.peek(), q.size(), q.isEmpty()]; })()"
+      - "(() => { const q = new Queue(); q.enqueue('a'); q.dequeue(); q.enqueue('b'); return [q.peek(), q.size()]; })()"
+      - "(() => { const q = new Queue(); for (let i = 0; i < 100000; i++) q.enqueue(i); let s = 0; while (!q.isEmpty()) s += q.dequeue(); return s; })()"
+    solution: |
+      class Queue {
+        constructor() {
+          this.items = [];
+          this.head = 0;
+        }
+        enqueue(x) {
+          this.items.push(x);
+        }
+        dequeue() {
+          if (this.head >= this.items.length) return undefined;
+          const x = this.items[this.head];
+          this.head++;
+          return x;
+        }
+        peek() {
+          return this.items[this.head];
+        }
+        size() {
+          return this.items.length - this.head;
+        }
+        isEmpty() {
+          return this.size() === 0;
+        }
+      }
+    reject:
+      - |
+        class Queue {
+          constructor() { this.items = []; }
+          enqueue(x) { this.items.push(x); }
+          dequeue() { return this.items.pop(); }
+          peek() { return this.items[this.items.length - 1]; }
+          size() { return this.items.length; }
+          isEmpty() { return this.items.length === 0; }
+        }
+
+  - kind: code
+    title: "4. mergeSort with a comparator"
+    body: |
+      Write `mergeSort(items, compare)` returning a **new sorted array** and leaving the input alone. `compare(a, b)` works like the one you give `sort`: negative if `a` goes first. Make it the default `(a, b) => a - b`. Keep it **stable**.
+    code: |
+      function mergeSort(items, compare = (a, b) => a - b) {
+        return items;
+      }
+    tests:
+      - "mergeSort([5, 2, 9, 1, 5, 6])"
+      - "mergeSort([])"
+      - "mergeSort(['pear', 'fig', 'apple', 'kiwi'], (a, b) => a.length - b.length)"
+      - "mergeSort([3, 1, 2], (a, b) => b - a)"
+      - "(() => { const a = [3, 1, 2]; mergeSort(a); return a; })()"
+      - "mergeSort([{ k: 1, v: 'a' }, { k: 0, v: 'b' }, { k: 1, v: 'c' }, { k: 0, v: 'd' }], (a, b) => a.k - b.k)"
+    solution: |
+      function mergeSort(items, compare = (a, b) => a - b) {
+        if (items.length <= 1) return [...items];
+        const mid = Math.floor(items.length / 2);
+        const left = mergeSort(items.slice(0, mid), compare);
+        const right = mergeSort(items.slice(mid), compare);
+        const out = [];
+        let i = 0;
+        let j = 0;
+        while (i < left.length && j < right.length) {
+          if (compare(left[i], right[j]) <= 0) out.push(left[i++]);
+          else out.push(right[j++]);
+        }
+        while (i < left.length) out.push(left[i++]);
+        while (j < right.length) out.push(right[j++]);
+        return out;
+      }
+    hint: "Take from the left half when `compare(left[i], right[j]) <= 0`. The `<=` (not `<`) is what keeps equal items in order."
+    reject:
+      - |
+        function mergeSort(items, compare = (a, b) => a - b) {
+          return items.sort();
+        }
+
+  - kind: code
+    title: "5. binarySearch"
+    body: |
+      Write `binarySearch(sorted, target)`: the index of `target` in a sorted array of numbers with **no duplicates**, or `-1`.
+    code: |
+      function binarySearch(sorted, target) {
+        return -1;
+      }
+    tests:
+      - "binarySearch([1, 3, 5, 7, 9], 7)"
+      - "binarySearch([1, 3, 5, 7, 9], 1)"
+      - "binarySearch([1, 3, 5, 7, 9], 9)"
+      - "binarySearch([1, 3, 5, 7, 9], 4)"
+      - "binarySearch([], 1)"
+      - "binarySearch([2], 2)"
+      - "binarySearch(Array.from({ length: 100000 }, (_, i) => i * 2), 77778)"
+    solution: |
+      function binarySearch(sorted, target) {
+        let lo = 0;
+        let hi = sorted.length - 1;
+        while (lo <= hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (sorted[mid] === target) return mid;
+          if (sorted[mid] < target) lo = mid + 1;
+          else hi = mid - 1;
+        }
+        return -1;
+      }
+    reject:
+      - |
+        function binarySearch(sorted, target) {
+          let lo = 0;
+          let hi = sorted.length - 1;
+          while (lo < hi) {
+            const mid = Math.floor((lo + hi) / 2);
+            if (sorted[mid] === target) return mid;
+            if (sorted[mid] < target) lo = mid + 1;
+            else hi = mid - 1;
+          }
+          return -1;
+        }
+
+  - kind: code
+    title: "6. quickselect"
+    body: |
+      Write `quickselect(nums, k)`: the `k`-th smallest value (`k = 1` is the smallest) in **average O(n)**, without sorting the whole array. Do not change the input array.
+    code: |
+      function quickselect(nums, k) {
+        return nums[0];
+      }
+    tests:
+      - "quickselect([3, 2, 1, 5, 6, 4], 2)"
+      - "quickselect([3, 2, 3, 1, 2, 4, 5, 5, 6], 4)"
+      - "quickselect([7], 1)"
+      - "quickselect([4, 4, 4], 2)"
+      - "quickselect([10, 9, 8, 7, 6, 5, 4, 3, 2, 1], 10)"
+      - "(() => { const a = [3, 1, 2]; quickselect(a, 2); return a; })()"
+    solution: |
+      function quickselect(nums, k) {
+        const pivot = nums[Math.floor(Math.random() * nums.length)];
+        const smaller = nums.filter((x) => x < pivot);
+        const equal = nums.filter((x) => x === pivot);
+        const larger = nums.filter((x) => x > pivot);
+        if (k <= smaller.length) return quickselect(smaller, k);
+        if (k <= smaller.length + equal.length) return pivot;
+        return quickselect(larger, k - smaller.length - equal.length);
+      }
+    hint: Same idea as the k-th smallest exercise in Module 12. Recurse into only the side that contains position `k`.
+    reject:
+      - |
+        function quickselect(nums, k) {
+          return nums.sort((a, b) => a - b)[k - 1];
+        }
+
+  - kind: mac
+    title: Move it to your Mac and test it
+    body: |
+      Now make it real. On your Mac:
+
+      1. Create a folder and a file `library.js`, and paste in your six pieces. Write a **complexity comment** above every function and method.
+      2. At the very bottom of `library.js` add the line
+         `module.exports = { LinkedList, Stack, Queue, mergeSort, binarySearch, quickselect };`
+      3. Create `library.test.js` next to it with **at least one test per piece**, like this one:
+
+      ```js
+      const test = require("node:test");
+      const assert = require("node:assert");
+      const { Stack, mergeSort } = require("./library");
+
+      test("stack is last in, first out", () => {
+        const s = new Stack();
+        s.push(1);
+        s.push(2);
+        assert.strictEqual(s.pop(), 2);
+      });
+
+      test("mergeSort sorts numbers", () => {
+        assert.deepStrictEqual(mergeSort([3, 1, 2]), [1, 2, 3]);
+      });
+      ```
+
+      4. Run the tests and paste the summary lines below.
+
+      Not on your Mac right now? Choose **Skip for now**. You can come back later.
+    commands: |
+      cd ~/Desktop
+      mkdir dsa-library && cd dsa-library
+      # ...create library.js and library.test.js, then:
+      node --test
+    expect_output:
+      - "pass"
+      - "fail 0"
+
+  - kind: why
+    body: |
+      This is the point of the whole beginner level: not memorizing, but *owning* the tools. A `Stack`, a `Queue` and a sorted array are used inside nearly every program. When you have built them yourself, tested them, and written down what each costs, you can use the built-in versions with confidence, and you can spot when they will not be fast enough.
+
+      Keep the library. The Intermediate level adds trees, heaps, graphs and more.
+
+  - kind: recap
+    body: |
+      - You built a **LinkedList** (O(1) append with a tail pointer), a **Stack**, a **Queue** with O(1) dequeue, a stable **mergeSort**, **binarySearch** and **quickselect**.
+      - Every function gets a **complexity comment**.
+      - Every piece gets **tests**, and `node --test` runs them with no extra tools.
+      - The Beginner level is complete: you can analyse complexity, know what JavaScript's built-ins cost, and solve most easy interview problems.

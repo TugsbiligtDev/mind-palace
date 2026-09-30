@@ -1,0 +1,60 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def f(x):
+          match x:
+              case [a, b]:
+                  return a + b
+              case [a, *rest]:
+                  return len(rest)
+              case _:
+                  return "other"
+
+      print(f([1, 2]), f([1, 2, 3]), f(5))
+    options: ["3 2 other", "3 3 other", "2 2 other", "3 2 5"]
+    answer: 0
+    explanation: "`[1, 2]` matches the two-item pattern (sum 3). `[1, 2, 3]` matches the second (rest has 2 items). `5` is not a list, so `_`."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def kind(e):
+          match e:
+              case {"type": "a", "v": v} if v > 0:
+                  return "positive a"
+              case {"type": "a"}:
+                  return "other a"
+              case _:
+                  return "none"
+
+      print(kind({"type": "a", "v": 5}), kind({"type": "a", "v": -1}), kind({}))
+    options: ["positive a other a none", "positive a positive a none", "other a other a none", "positive a other a other a"]
+    answer: 0
+    explanation: "The guard `v > 0` fails for -1, so the plain `a` case runs. An empty dict matches neither, so `_`."
+  - type: mcq
+    prompt: What does `case _:` mean?
+    options: ["Match anything (the default case)", "Match the underscore character", "Skip this case", "Match None"]
+    answer: 0
+    explanation: "`_` is the wildcard: it matches any value and does not bind a name."
+  - type: mcq
+    prompt: When is `match` clearly better than a chain of `if/elif`?
+    options:
+      - When you decide by the shape of data and want to unpack it at the same time
+      - When comparing one number with another
+      - Always, in every situation
+      - When you need speed
+    answer: 0
+    explanation: "Sequence, mapping and class patterns replace lots of `isinstance`, `len` and key checks."
+  - type: fill
+    prompt: Complete the pattern so it also matches the text `"exit"` in the same case.
+    code: |
+      def stop(word):
+          match word:
+              case "quit" ____ "exit":
+                  return True
+              case _:
+                  return False
+      print(stop("exit"))
+    answer: "|"
+    explanation: "The `|` operator combines alternatives in a single case."

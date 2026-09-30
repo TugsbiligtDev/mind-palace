@@ -1,0 +1,5 @@
+title: "Route planner"
+module: 27
+kind: capstone
+summary: Build a terminal route planner. Load a road map from JSON as a weighted graph, find shortest routes with Dijkstra and your own MinHeap, and autocomplete city names with a Trie.
+minutes: 90

@@ -1,0 +1,31 @@
+pass: 2
+questions:
+  - type: mcq
+    prompt: In the library system, why is `borrowed` created inside `Member.__init__` rather than in the class body?
+    options:
+      - So every member gets their own list instead of sharing one
+      - Because class bodies cannot hold lists
+      - To make it private
+      - It makes the code shorter
+    answer: 0
+    explanation: A list in the class body is shared by every Member, the shared-mutable trap.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class LibraryError(Exception):
+          pass
+
+      try:
+          raise LibraryError("limit reached")
+      except LibraryError as e:
+          print("caught:", e)
+    options: ["caught: limit reached", "limit reached", "LibraryError", "Error"]
+    answer: 0
+    explanation: "A custom exception is just a class inheriting from `Exception`; `str(e)` is the message you passed."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(min(max(7, 0) * 25, 1000), min(max(100, 0) * 25, 1000))
+    options: ["175 1000", "175 2500", "7 100", "1000 1000"]
+    answer: 0
+    explanation: "Seven days late is 175 cents. One hundred days would be 2500, but the fine is capped at 1000."

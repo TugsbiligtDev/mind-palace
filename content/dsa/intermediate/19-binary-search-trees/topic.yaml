@@ -1,0 +1,4 @@
+title: Binary Search Trees
+module: 19
+summary: "The BST rule, searching, inserting and deleting, why inorder is sorted, validating a BST, the k-th smallest value, the lowest common ancestor, and why balance matters."
+minutes: 65

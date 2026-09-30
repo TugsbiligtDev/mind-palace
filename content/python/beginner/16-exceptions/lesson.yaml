@@ -1,0 +1,262 @@
+steps:
+  - kind: explain
+    title: When things go wrong
+    body: |
+      Errors during a run are called **exceptions**. If nothing handles them, the program stops and prints a traceback (Module 3). But you can **catch** an exception and decide what to do:
+
+      ```python
+      try:
+          age = int(input("Age? "))
+      except ValueError:
+          print("Please type a number")
+      ```
+
+      How it works: Python runs the `try` block. If a `ValueError` happens, it jumps to the `except` block instead of crashing. If nothing goes wrong, the `except` block is skipped.
+
+      **Why bother?** Real programs meet bad input, missing files and network failures. A good program deals with them politely.
+
+  - kind: code
+    title: Try it
+    body: |
+      Run this. Change the text to `"42"` and run again.
+    code: |
+      text = "forty-two"
+      try:
+          number = int(text)
+          print("Got", number)
+      except ValueError:
+          print("That is not a number:", text)
+      print("The program keeps going")
+
+  - kind: explain
+    title: Catch specific exceptions
+    body: |
+      Always name the exception you expect. Common ones:
+
+      | Exception | When |
+      |---|---|
+      | `ValueError` | right type, wrong value: `int("abc")` |
+      | `TypeError` | wrong type: `"a" + 1` |
+      | `KeyError` | missing dictionary key |
+      | `IndexError` | list index too big: `[1][5]` |
+      | `FileNotFoundError` | file does not exist |
+      | `ZeroDivisionError` | `1 / 0` |
+
+      **Never write a bare `except:`.** It catches *everything*, including typos in your own code and the Ctrl+C that stops the program, and hides real bugs. Catch the specific error, and catch as little code as possible:
+
+      ```python
+      try:
+          value = data["price"]
+      except KeyError:
+          value = 0
+      ```
+
+      You can handle several: `except (ValueError, TypeError):`, or write separate `except` blocks.
+
+  - kind: code
+    title: A forgiving converter
+    body: |
+      Finish `safe_int(text, default=0)`: convert the text to a whole number, but if it cannot be converted return `default` instead of crashing. `safe_int("42")` is `42`, `safe_int("oops")` is `0`, and `safe_int("oops", -1)` is `-1`.
+    code: |
+      def safe_int(text, default=0):
+          return int(text)
+    tests:
+      - "safe_int('42')"
+      - "safe_int('oops')"
+      - "safe_int('oops', -1)"
+      - "safe_int('')"
+      - "safe_int('-7')"
+      - "safe_int(None)"
+    solution: |
+      def safe_int(text, default=0):
+          try:
+              return int(text)
+          except (ValueError, TypeError):
+              return default
+    hint: "`int(None)` raises a TypeError, not a ValueError, so catch both: `except (ValueError, TypeError):`."
+    broken_starter: true
+
+  - kind: code
+    title: Look up safely
+    body: |
+      Finish `price_or_missing(prices, item)`. Use `prices[item]` inside a `try`. If the item is not a key, return the text `"missing"`. Catch only `KeyError`.
+    code: |
+      def price_or_missing(prices, item):
+          return prices[item]
+    tests:
+      - "price_or_missing({'pen': 2}, 'pen')"
+      - "price_or_missing({'pen': 2}, 'ink')"
+      - "price_or_missing({}, 'x')"
+    solution: |
+      def price_or_missing(prices, item):
+          try:
+              return prices[item]
+          except KeyError:
+              return "missing"
+    hint: "`try: return prices[item]` then `except KeyError: return \"missing\"`."
+    broken_starter: true
+
+  - kind: explain
+    title: else and finally
+    body: |
+      A `try` can have two more parts:
+
+      ```python
+      try:
+          number = int(text)
+      except ValueError:
+          print("bad number")
+      else:
+          print("worked, got", number)     # runs only if NO exception happened
+      finally:
+          print("done")                    # runs ALWAYS, error or not
+      ```
+
+      - **`else`** holds the code that should run only if the `try` succeeded. It keeps the `try` block short.
+      - **`finally`** always runs, even if there was an error or a `return`. It is for **clean-up** like closing a file. (Module 28's `with` does this for you.)
+
+  - kind: code
+    title: The order things happen
+    body: |
+      `steps(text)` records what happens in a list. Finish it to return `["start", "ok", "end"]` for good text like `"5"`, and `["start", "bad", "end"]` for text that cannot become a number. Append `"start"` first, `"ok"` in the `else`, `"bad"` in the `except`, and `"end"` in the `finally`.
+    code: |
+      def steps(text):
+          log = []
+          return log
+    tests:
+      - "steps('5')"
+      - "steps('x')"
+      - "steps('')"
+      - "steps('-3')"
+    solution: |
+      def steps(text):
+          log = ["start"]
+          try:
+              int(text)
+          except ValueError:
+              log.append("bad")
+          else:
+              log.append("ok")
+          finally:
+              log.append("end")
+          return log
+    hint: "Start the list with `\"start\"`. Then `try: int(text)`, `except ValueError:`, `else:`, `finally:`."
+    reject:
+      - |
+        def steps(text):
+            return ["start", "ok", "end"]
+
+  - kind: explain
+    title: Raising your own errors
+    body: |
+      You can also *cause* an exception with `raise`, when your function is given something unacceptable. That is better than quietly returning nonsense:
+
+      ```python
+      def set_age(age):
+          if age < 0:
+              raise ValueError("age cannot be negative")
+          return age
+      ```
+
+      The caller can then decide what to do with `try`/`except`. A good message says **what** was wrong and helps the reader fix it.
+
+  - kind: code
+    title: Reject bad ages
+    body: |
+      Finish `parse_age(text)`: turn the text into a whole number. If the number is **below 0 or above 130**, `raise ValueError("age out of range")`. If the text is not a number at all, let Python's own `ValueError` happen.
+
+      `parse_age("34")` is `34`; `parse_age("-5")` and `parse_age("200")` raise a `ValueError`; `parse_age("abc")` raises a `ValueError` too.
+    code: |
+      def parse_age(text):
+          return int(text)
+    tests:
+      - "parse_age('34')"
+      - "parse_age('0')"
+      - "parse_age('130')"
+      - "try:\n    parse_age('-5')\nexcept ValueError as e:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "try:\n    parse_age('200')\nexcept ValueError as e:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "try:\n    parse_age('abc')\nexcept ValueError as e:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+    solution: |
+      def parse_age(text):
+          age = int(text)
+          if age < 0 or age > 130:
+              raise ValueError("age out of range")
+          return age
+    hint: "Convert first, then check the range and `raise ValueError(...)`."
+    reject:
+      - |
+        def parse_age(text):
+            age = int(text)
+            if age < 0:
+                raise ValueError("age out of range")
+            return age
+
+  - kind: code
+    title: An average that cannot crash
+    body: |
+      Finish `average(numbers)`: the average of a list, but an **empty** list has no average, so return `None` (do not crash with `ZeroDivisionError`). Use `try` and `except ZeroDivisionError`.
+    code: |
+      def average(numbers):
+          return sum(numbers) / len(numbers)
+    tests:
+      - "average([2, 4, 6])"
+      - "average([])"
+      - "average([5])"
+      - "average([1, 2])"
+    solution: |
+      def average(numbers):
+          try:
+              return sum(numbers) / len(numbers)
+          except ZeroDivisionError:
+              return None
+    hint: "Wrap the division in `try:` and return `None` in `except ZeroDivisionError:`."
+    broken_starter: true
+
+  - kind: explain
+    title: Finding bugs
+    body: |
+      Sometimes there is no exception, just a **wrong answer**. To find out why, look at what the program is really doing:
+
+      **1. Print-debugging.** Add `print` lines to show the values at key moments:
+
+      ```python
+      print("DEBUG total so far:", total)
+      ```
+
+      Run it, compare what you see to what you expected, and find the first place they differ. Remove the prints afterwards.
+
+      **2. The debugger.** VS Code lets you **pause** a running program on a line (a *breakpoint*, the red dot in the margin), look at every variable, and **step** one line at a time. It is print-debugging without editing your code.
+
+      **The method:** reproduce the bug, shrink it to the smallest example, form a guess, test the guess, repeat. Change one thing at a time.
+
+  - kind: mac
+    title: Try the VS Code debugger
+    body: |
+      Optional but highly recommended. In VS Code (installed from *Take it to your Mac*):
+
+      1. Save the file below as `debug_me.py` in a folder, and open the folder (`code .`).
+      2. Click in the margin left of the line `total = total + n` so a red dot appears.
+      3. Press **F5** (choose *Python File* if asked). The program stops at the dot.
+      4. Look at the **Variables** panel, then press **F10** to step and watch `total` grow.
+
+      This checkpoint is for you. Press *I ran it* when you have seen the variables change.
+    commands: |
+      mkdir -p ~/Desktop/python-practice && cd ~/Desktop/python-practice
+      cat > debug_me.py <<'PY'
+      total = 0
+      for n in [4, 8, 15]:
+          total = total + n
+      print(total)
+      PY
+      code .
+
+  - kind: why
+    body: |
+      Professional programs do not avoid errors. They **expect** them and respond well: a helpful message, a safe default, a clean shutdown. Catching *specific* exceptions keeps real bugs visible, and a calm debugging method is what turns hours of guessing into minutes of finding.
+
+  - kind: recap
+    body: |
+      - `try` / `except SpecificError` / `else` (only on success) / `finally` (always).
+      - Catch **specific** exceptions; **never a bare `except:`**. Common: `ValueError`, `TypeError`, `KeyError`, `IndexError`, `FileNotFoundError`, `ZeroDivisionError`.
+      - `raise ValueError("clear message")` rejects bad input.
+      - Debug by reproducing, shrinking, printing values, and stepping with the VS Code debugger.

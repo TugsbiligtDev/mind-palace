@@ -1,0 +1,265 @@
+steps:
+  - kind: explain
+    title: A string is a row of characters
+    body: |
+      You can treat a string like a read-only array of characters:
+
+      ```js
+      const s = "hello";
+      s.length      // 5
+      s[0]          // "h"
+      s.at(-1)      // "o"  (the last one)
+      ```
+
+      You can loop over it with `for (const ch of s)` or an index. But remember from Module 4: strings are **immutable**. `s[0] = "j"` does nothing. To "change" a string you build a new one.
+
+  - kind: explain
+    title: Characters are numbers underneath
+    body: |
+      Every character has a numeric **code**. In the basic alphabet:
+
+      - `"a"` is 97, `"b"` is 98 … `"z"` is 122
+      - `"A"` is 65 … `"Z"` is 90
+      - `"0"` is 48 … `"9"` is 57
+
+      ```js
+      "a".charCodeAt(0)            // 97
+      String.fromCharCode(98)      // "b"
+      "c".charCodeAt(0) - "a".charCodeAt(0)   // 2  (position in the alphabet)
+      ```
+
+      Subtracting `"a"`'s code turns a lowercase letter into a small index from 0 to 25. That trick powers the next idea.
+
+  - kind: code
+    title: Letter to position
+    body: |
+      Write `alphabetIndex(ch)`: given one lowercase letter, return its position in the alphabet, starting at 0. `"a"` is `0` and `"z"` is `25`.
+    code: |
+      function alphabetIndex(ch) {
+        return 0;
+      }
+    tests:
+      - "alphabetIndex('a')"
+      - "alphabetIndex('z')"
+      - "alphabetIndex('m')"
+      - "alphabetIndex('b')"
+    solution: |
+      function alphabetIndex(ch) {
+        return ch.charCodeAt(0) - "a".charCodeAt(0);
+      }
+    reject:
+      - |
+        function alphabetIndex(ch) {
+          return ch.charCodeAt(0);
+        }
+
+  - kind: explain
+    title: Counting letters with 26 slots
+    body: |
+      To count how often each letter appears, you do not need a Map. Use an array of **26 counters**, one per letter:
+
+      ```js
+      const counts = Array(26).fill(0);
+      for (const ch of "banana") {
+        counts[ch.charCodeAt(0) - 97]++;
+      }
+      // counts[0] (a) = 3, counts[1] (b) = 1, counts[13] (n) = 2
+      ```
+
+      Plain numbers filling `Array(26).fill(0)` are safe (unlike arrays, numbers are copied, not shared). Because 26 is a constant, this uses **O(1)** space.
+
+  - kind: code
+    title: Valid anagram
+    body: |
+      Two words are **anagrams** if one can be rearranged into the other: `"listen"` and `"silent"`. Write `isAnagram(a, b)` for lowercase letters only. Use a 26-slot array: add `1` for each letter in `a` and subtract `1` for each letter in `b`. If every slot ends at 0, they match.
+    code: |
+      function isAnagram(a, b) {
+        return a.length === b.length;
+      }
+    tests:
+      - "isAnagram('listen', 'silent')"
+      - "isAnagram('rat', 'car')"
+      - "isAnagram('a', 'ab')"
+      - "isAnagram('', '')"
+      - "isAnagram('aabb', 'abab')"
+      - "isAnagram('aab', 'abb')"
+    solution: |
+      function isAnagram(a, b) {
+        if (a.length !== b.length) return false;
+        const counts = Array(26).fill(0);
+        for (const ch of a) counts[ch.charCodeAt(0) - 97]++;
+        for (const ch of b) counts[ch.charCodeAt(0) - 97]--;
+        return counts.every((c) => c === 0);
+      }
+    hint: Different lengths can never be anagrams, so return `false` early. Then add for `a`, subtract for `b`, and check every slot is 0.
+    reject:
+      - |
+        function isAnagram(a, b) {
+          return a.length === b.length;
+        }
+
+  - kind: explain
+    title: Palindromes
+    body: |
+      A **palindrome** reads the same forwards and backwards: `"level"`. The two-pointer idea from Module 5 fits perfectly: compare the first and last characters, then move inwards.
+
+      Real problems add wrinkles, such as "ignore punctuation and upper/lower case". Clean the text first, then compare:
+
+      ```js
+      const clean = s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      ```
+
+      (`replace` with that pattern deletes every character that is not a letter or digit.)
+
+  - kind: code
+    title: Valid palindrome
+    body: |
+      Write `isPalindrome(s)` that ignores everything except letters and digits, and ignores case. `"A man, a plan, a canal: Panama"` is a palindrome. An empty string is too.
+    code: |
+      function isPalindrome(s) {
+        return false;
+      }
+    tests:
+      - "isPalindrome('A man, a plan, a canal: Panama')"
+      - "isPalindrome('race a car')"
+      - "isPalindrome('')"
+      - "isPalindrome('0P')"
+      - "isPalindrome('Was it a car or a cat I saw?')"
+      - "isPalindrome('ab')"
+    solution: |
+      function isPalindrome(s) {
+        const clean = s.toLowerCase().replace(/[^a-z0-9]/g, "");
+        let left = 0;
+        let right = clean.length - 1;
+        while (left < right) {
+          if (clean[left] !== clean[right]) return false;
+          left++;
+          right--;
+        }
+        return true;
+      }
+    hint: Clean the string first, then use two pointers. `"0P"` is not a palindrome (`0` and `p` differ).
+    reject:
+      - |
+        function isPalindrome(s) {
+          return s === s.split("").reverse().join("");
+        }
+
+  - kind: code
+    title: "Find the bug: the missing capital vowels"
+    body: |
+      `countVowels(s)` should count the vowels `a e i o u` in a string, capital or lowercase. `"Education"` has 5. This version misses some. Fix it.
+    code: |
+      function countVowels(s) {
+        let count = 0;
+        for (const ch of s) {
+          if ("aeiou".includes(ch)) count++;
+        }
+        return count;
+      }
+    tests:
+      - "countVowels('Education')"
+      - "countVowels('rhythm')"
+      - "countVowels('AEIOU')"
+      - "countVowels('')"
+      - "countVowels('Queue')"
+    solution: |
+      function countVowels(s) {
+        let count = 0;
+        for (const ch of s.toLowerCase()) {
+          if ("aeiou".includes(ch)) count++;
+        }
+        return count;
+      }
+    hint: "`\"aeiou\".includes(\"E\")` is `false`. Make the case the same first."
+    broken_starter: true
+    reject:
+      - |
+        function countVowels(s) {
+          let count = 0;
+          for (const ch of s) if ("aeiou".includes(ch)) count++;
+          return count;
+        }
+
+  - kind: explain
+    title: What string operations cost
+    body: |
+      | Operation | Cost |
+      |---|---|
+      | `s.length`, `s[i]` | O(1) |
+      | `s.slice(a, b)`, `s.substring(a, b)` | O(length of the piece) |
+      | `s.split("")`, `arr.join("")` | O(n) |
+      | `a + b` | O(length of the result) |
+      | `s.includes(x)`, `s.indexOf(x)` | O(n · m) worst case |
+
+      The habit: **do not build a string one character at a time inside a big loop**, and do not take a `slice` on every step of a loop unless you must. Both quietly turn O(n) into O(n²).
+
+  - kind: code
+    title: Longest common prefix
+    body: |
+      Write `longestCommonPrefix(words)`: the longest starting piece shared by **every** word. `["flower", "flow", "flight"]` gives `"fl"`. If there is none (or no words), return `""`.
+    code: |
+      function longestCommonPrefix(words) {
+        return "";
+      }
+    tests:
+      - "longestCommonPrefix(['flower', 'flow', 'flight'])"
+      - "longestCommonPrefix(['dog', 'racecar', 'car'])"
+      - "longestCommonPrefix([])"
+      - "longestCommonPrefix(['solo'])"
+      - "longestCommonPrefix(['ab', 'ab', 'abc'])"
+    solution: |
+      function longestCommonPrefix(words) {
+        if (words.length === 0) return "";
+        let prefix = words[0];
+        for (const w of words) {
+          while (!w.startsWith(prefix)) {
+            prefix = prefix.slice(0, -1);
+          }
+        }
+        return prefix;
+      }
+    hint: Start with the first word as the prefix. For every word, shorten the prefix until the word starts with it.
+    reject:
+      - |
+        function longestCommonPrefix(words) {
+          return words[0] || "";
+        }
+
+  - kind: info
+    title: "🔹 Unicode and the emoji length gotcha"
+    body: |
+      JavaScript strings are made of 16-bit units. Most characters use one unit, but **emoji and many symbols use two** (a "surrogate pair"). So `.length` counts units, not what a human sees:
+
+      ```js
+      "hi".length        // 2
+      "😀".length        // 2   (!)
+      [..."😀"].length   // 1   (spread walks by real characters)
+      ```
+
+      For everyday interview problems the strings are plain ASCII, so you can ignore this. Just remember it if a string might contain emoji or accents.
+
+  - kind: code
+    title: See it for yourself
+    body: |
+      Run this and compare `.length` with the spread version.
+    code: |
+      const word = "ab😀";
+      console.log(word.length);
+      console.log([...word].length);
+      console.log([...word]);
+
+  - kind: why
+    body: |
+      Text is everywhere: search boxes, names, messages, passwords. The 26-slot array shows a recurring idea, **turn the input into small numbers and use an array instead of a heavier structure**, and it is often the fastest option.
+
+      Knowing that strings are immutable and that slicing and joining cost O(n) keeps your loops honest.
+
+  - kind: recap
+    body: |
+      - `s[i]` and `s.length` are O(1). Strings are **immutable**.
+      - `charCodeAt(0)` gives a character's number. `ch.charCodeAt(0) - 97` maps `a`–`z` to `0`–`25`.
+      - A **26-slot array** counts letters in O(1) space. Anagram check: add for one word, subtract for the other.
+      - A **palindrome** check uses two pointers, after cleaning the text.
+      - `slice`, `split`, `join` and `+` cost O(n). Do not repeat them inside a big loop.
+      - 🔹 Emoji take two units: `"😀".length` is 2, `[..."😀"].length` is 1.

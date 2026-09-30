@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: In a traceback, which part should you read first?
+    options:
+      - The very first line
+      - The last line, which names the error
+      - The middle line
+      - Nothing, it is just noise
+    answer: 1
+    explanation: The last line says what went wrong. Then look above it for the line number.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print("one")
+      # print("two")
+      print("three")
+    options: ["one\nthree", "one\ntwo\nthree", "one", "three"]
+    answer: 0
+    explanation: "A line starting with `#` is a comment and is ignored, so `two` is never printed."
+  - type: mcq
+    prompt: "Which one is a SyntaxError?"
+    options:
+      - "`print(10 / 0)`"
+      - "`print(missing_name)`"
+      - "`print(\"hi\"`"
+      - "`print(\"5\" + 5)`"
+    answer: 2
+    explanation: The bracket is never closed, so Python cannot even read the program. The others are valid code that fails only when it runs.
+  - type: mcq
+    prompt: |
+      A program has three lines: `print("start")`, then `print(1 / 0)`, then `print("end")`. What happens when you run it?
+    options:
+      - "It prints `start`, then stops with a ZeroDivisionError"
+      - "It prints `start` and `end`, and ignores the error"
+      - "It prints nothing, because it is a SyntaxError"
+      - "It prints `start`, `0`, `end`"
+    answer: 0
+    explanation: "Dividing by zero is a runtime error. The first line already ran, and the error stops the program before `end`. A SyntaxError would have stopped everything before it began."
+  - type: fill
+    prompt: Python decides which lines belong together by their ____.
+    code: |
+      def hello():
+      ____print("hi")
+    answer: "    "
+    runnable: false
+    explanation: "Indentation (four spaces) is how Python knows a line is inside the function."

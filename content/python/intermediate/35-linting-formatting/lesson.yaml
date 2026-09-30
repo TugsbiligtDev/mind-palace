@@ -1,0 +1,337 @@
+steps:
+  - kind: explain
+    title: Code is read more than written
+    body: |
+      You write a line once and it is read dozens of times, by teammates and by you in six months. So readable, consistent code is not decoration. It is how bugs are avoided.
+
+      Two kinds of automatic helper make that easy:
+
+      - A **formatter** rewrites your code into one agreed layout (spacing, line breaks, quotes). No arguments about style ever again.
+      - A **linter** reads your code and reports likely **mistakes and bad habits**: an unused import, an undefined name, a variable never used, a comparison to `None` with `==`.
+
+      Python's official style guide is **PEP 8**. Key points:
+
+      - 4 spaces per indent level; lines up to about 79-88 characters.
+      - `snake_case` for functions and variables, `CapWords` for classes, `UPPER_CASE` for constants.
+      - Two blank lines between top-level functions and classes; one between methods.
+      - Imports at the top, one per line, grouped: standard library, third-party, your own.
+      - Spaces around operators (`x = a + b`), none inside brackets (`f(x)`, not `f( x )`).
+
+      You do not memorise PEP 8. **Ruff** enforces it for you.
+
+  - kind: code
+    title: Check a name
+    body: |
+      Write `is_snake_case(name)`: `True` if the name is a valid PEP 8 function/variable name: lower-case letters, digits and underscores only, starting with a lower-case letter or underscore, and not containing capitals. `total_price` and `_private` and `x2` are fine; `TotalPrice`, `total-price` and `2fast` are not. Use `re.fullmatch`.
+    code: |
+      import re
+
+
+      def is_snake_case(name):
+          return False
+    tests:
+      - "is_snake_case('total_price')"
+      - "is_snake_case('_private')"
+      - "is_snake_case('x2')"
+      - "is_snake_case('TotalPrice')"
+      - "is_snake_case('total-price')"
+      - "is_snake_case('2fast')"
+      - "is_snake_case('')"
+      - "is_snake_case('has space')"
+    solution: |
+      import re
+
+
+      def is_snake_case(name):
+          return re.fullmatch(r"[a-z_][a-z0-9_]*", name) is not None
+    hint: "Pattern: `[a-z_][a-z0-9_]*`, matched against the whole name."
+    reject:
+      - |
+        import re
+
+
+        def is_snake_case(name):
+            return name == name.lower()
+
+  - kind: code
+    title: Find the long lines
+    body: |
+      Formatters wrap long lines. Write `long_lines(source, limit=88)`: given a program as text, return the **1-based line numbers** of lines longer than `limit` characters (a list, in order).
+    code: |
+      def long_lines(source, limit=88):
+          return []
+    tests:
+      - "long_lines('short\\n' + 'x' * 100 + '\\nok\\n' + 'y' * 89)"
+      - "long_lines('a\\nb')"
+      - "long_lines('x' * 88)"
+      - "long_lines('x' * 89)"
+      - "long_lines('x' * 50 + '\\n' + 'x' * 51, limit=50)"
+      - "long_lines('')"
+    solution: |
+      def long_lines(source, limit=88):
+          return [number for number, line in enumerate(source.splitlines(), start=1) if len(line) > limit]
+    hint: "`enumerate(source.splitlines(), start=1)` gives line numbers starting at 1."
+    reject:
+      - |
+        def long_lines(source, limit=88):
+            return [n for n, line in enumerate(source.splitlines()) if len(line) > limit]
+
+  - kind: explain
+    title: "Ruff: linter and formatter in one"
+    body: |
+      **Ruff** is a very fast tool, written in Rust, that does both jobs and replaces several older ones (Flake8, isort, Black). You install it as a development dependency and run two commands:
+
+      ```bash
+      uv add --dev ruff
+      uv run ruff check .        # lint: report problems (add --fix to repair the safe ones)
+      uv run ruff format .       # format: rewrite the layout
+      ```
+
+      Ruff reports each problem with a **rule code**: `F401` unused import, `E711` comparison to `None`, `F841` unused variable, `I001` unsorted imports. `ruff check --fix` corrects many automatically.
+
+      A linter finds more than style. `F821` (undefined name) is a real bug caught before the program runs.
+
+  - kind: code
+    title: "A tiny linter: unused imports"
+    body: |
+      You can build simple checks yourself with the `ast` module, which parses Python source into a tree. Write `unused_imports(source)`: return a **sorted list** of names imported with plain `import x` or `from m import x` that are never used anywhere else in the source. (Handle `import a.b` as `a`, and `import x as y` as `y`.)
+
+      Starter hint: walk `ast.walk(tree)`. `ast.Import` and `ast.ImportFrom` list `names`; every use of a name appears as an `ast.Name` node with `.id`, and `a.b` uses appear as `ast.Attribute` whose `.value` is a `Name`.
+    code: |
+      import ast
+
+
+      def unused_imports(source):
+          return []
+    tests:
+      - "unused_imports('import os\\nimport sys\\nprint(sys.argv)')"
+      - "unused_imports('from math import sqrt, pi\\nprint(sqrt(4))')"
+      - "unused_imports('import os.path\\nprint(1)')"
+      - "unused_imports('import numpy as np\\nx = np.zeros(2)')"
+      - "unused_imports('import json as j\\nprint(1)')"
+      - "unused_imports('print(1)')"
+    solution: |
+      import ast
+
+
+      def unused_imports(source):
+          tree = ast.parse(source)
+          imported = []
+          used = set()
+          for node in ast.walk(tree):
+              if isinstance(node, ast.Import):
+                  for alias in node.names:
+                      imported.append(alias.asname or alias.name.split(".")[0])
+              elif isinstance(node, ast.ImportFrom):
+                  for alias in node.names:
+                      imported.append(alias.asname or alias.name)
+              elif isinstance(node, ast.Name):
+                  used.add(node.id)
+          return sorted(name for name in imported if name not in used)
+    hint: "Collect imported names (using `asname` when present) and all `ast.Name` ids. The answer is the imported ones that are not in the used set."
+    reject:
+      - |
+        import ast
+
+
+        def unused_imports(source):
+            return []
+
+  - kind: explain
+    title: Configure it in pyproject.toml
+    body: |
+      Settings live in **`pyproject.toml`** (Module 19), so every developer and the automated checks use the same rules:
+
+      ```toml
+      [tool.ruff]
+      line-length = 88
+      target-version = "py314"
+
+      [tool.ruff.lint]
+      select = ["E", "F", "I", "UP", "B"]   # which rule families to enable
+      ignore = ["E501"]                       # rules you switch off
+
+      [tool.ruff.format]
+      quote-style = "double"
+      ```
+
+      The letters are rule families: `E`/`W` = PEP 8 style, `F` = real errors (unused/undefined), `I` = import sorting, `UP` = suggest modern syntax, `B` = likely bugs. Start with a small set and grow it. Fix the code rather than switching rules off, and when you must silence one line, be explicit: `# noqa: F401`.
+
+  - kind: code
+    title: Read the config
+    body: |
+      Write `enabled_rules(toml_text)`: parse a `pyproject.toml` with `tomllib` and return the sorted list of rule families in `[tool.ruff.lint] select`. If the section or key is missing, return `[]`.
+    code: |
+      import tomllib
+
+
+      def enabled_rules(toml_text):
+          return []
+    tests:
+      - "enabled_rules('[tool.ruff.lint]\\nselect = [\"F\", \"E\", \"I\"]\\n')"
+      - "enabled_rules('[tool.ruff]\\nline-length = 88\\n')"
+      - "enabled_rules('')"
+      - "enabled_rules('[project]\\nname = \"x\"\\n')"
+    solution: |
+      import tomllib
+
+
+      def enabled_rules(toml_text):
+          data = tomllib.loads(toml_text)
+          return sorted(data.get("tool", {}).get("ruff", {}).get("lint", {}).get("select", []))
+    hint: "Chain `.get(..., {})` through `tool`, `ruff`, `lint`, then `.get(\"select\", [])`."
+    reject:
+      - |
+        import tomllib
+
+
+        def enabled_rules(toml_text):
+            return tomllib.loads(toml_text)["tool"]["ruff"]["lint"]["select"]
+
+  - kind: mac
+    title: Lint and format with Ruff
+    body: |
+      Create a file with a few style problems, let Ruff find them, and then fix them.
+
+      **Checkpoint:** paste the output. It should contain `F401` (the unused import) and `reformatted`.
+    commands: |
+      mkdir -p ~/Desktop/styled && cd ~/Desktop/styled
+      uv init --bare
+      uv add --dev ruff
+      cat > messy.py <<'PY'
+      import os
+      import sys
+      def add( a,b ):
+          return a+b
+      print(add(1,2))
+      PY
+      uv run ruff check messy.py
+      uv run ruff format messy.py
+      cat messy.py
+    expect_output:
+      - "F401"
+      - "reformatted"
+
+  - kind: explain
+    title: "Pre-commit hooks: check before you commit"
+    body: |
+      It is easy to forget to run the linter. **Pre-commit** runs checks **automatically every time you `git commit`** and refuses the commit if a check fails. Broken or messy code never enters the history.
+
+      A `.pre-commit-config.yaml` file lists the hooks:
+
+      ```yaml
+      repos:
+        - repo: https://github.com/astral-sh/ruff-pre-commit
+          rev: v0.9.0
+          hooks:
+            - id: ruff
+              args: [--fix]
+            - id: ruff-format
+      ```
+
+      Then install it once per clone: `uv run pre-commit install`. From then on, `git commit` runs Ruff on the changed files. (Use the current release number from the project's page for `rev`.) Teams pair it with the same checks running in automated pipelines (Advanced, CI).
+
+  - kind: mac
+    title: Install a pre-commit hook
+    body: |
+      Add `pre-commit` to the project and install its Git hook.
+
+      **Checkpoint:** paste the output. It should contain `pre-commit installed`.
+    commands: |
+      cd ~/Desktop/styled
+      git init
+      uv add --dev pre-commit
+      cat > .pre-commit-config.yaml <<'YML'
+      repos:
+        - repo: https://github.com/astral-sh/ruff-pre-commit
+          rev: v0.9.0
+          hooks:
+            - id: ruff
+              args: [--fix]
+            - id: ruff-format
+      YML
+      uv run pre-commit install
+    expect_output:
+      - "pre-commit installed"
+
+  - kind: explain
+    title: Docstrings and readable names
+    body: |
+      **Docstrings** (Module 14) explain what a function does. Pick one style and stay consistent. The most common is **Google style**:
+
+      ```python
+      def area(width, height):
+          """Return the area of a rectangle.
+
+          Args:
+              width: The width in metres.
+              height: The height in metres.
+
+          Returns:
+              The area in square metres.
+
+          Raises:
+              ValueError: If either side is negative.
+          """
+      ```
+
+      The first line is a one-sentence summary in the imperative ("Return ...", not "Returns ..."). (NumPy style and reStructuredText style say the same things with different layouts.)
+
+      **Readable names beat comments.** `d` and `tmp` tell you nothing; `days_overdue` tells you everything. A function name should be a **verb** (`load_users`), a class a **noun** (`UserRepository`), a boolean a **question** (`is_valid`, `has_items`). If you need a comment to explain a name, rename it instead.
+
+  - kind: code
+    title: Rename for clarity
+    body: |
+      This function computes compound interest but its names explain nothing. Rename the function to `compound_interest` and the parameters to `principal`, `rate_percent` and `years` (in that order). Keep the behaviour exactly the same. The checker looks at both the answers and the parameter names.
+    code: |
+      def calc(p, r, t):
+          return round(p * (1 + r / 100) ** t, 2)
+    tests:
+      - "compound_interest(1000, 5, 2)"
+      - "compound_interest(200, 0, 10)"
+      - "import inspect\nresult = list(inspect.signature(compound_interest).parameters)"
+    solution: |
+      def compound_interest(principal, rate_percent, years):
+          return round(principal * (1 + rate_percent / 100) ** years, 2)
+    hint: "Change the function name and each parameter (also inside the body)."
+    broken_starter: true
+
+  - kind: code
+    title: Write a docstring
+    body: |
+      Write `Google`-style documentation for `mean(numbers)`. Its docstring must start with a one-line summary, then a blank line, then `Args:` and `Returns:` sections. The checker inspects the docstring text. The function returns the average of a non-empty list.
+    code: |
+      def mean(numbers):
+          return sum(numbers) / len(numbers)
+    tests:
+      - "mean([2, 4, 6])"
+      - "doc = mean.__doc__ or ''\nlines = [l.strip() for l in doc.strip().splitlines()]\nresult = (len(lines) >= 5, lines[0].endswith('.'), lines[1] == '', 'Args:' in lines, 'Returns:' in lines)"
+    solution: |
+      def mean(numbers):
+          """Return the average of a list of numbers.
+
+          Args:
+              numbers: A non-empty list of numbers.
+
+          Returns:
+              The arithmetic mean as a float.
+          """
+          return sum(numbers) / len(numbers)
+    hint: "First line: a summary ending in a full stop. Then an empty line, `Args:` with an indented description, and `Returns:`."
+    reject:
+      - |
+        def mean(numbers):
+            """Return the average."""
+            return sum(numbers) / len(numbers)
+
+  - kind: why
+    body: |
+      Style is a solved problem. Let a formatter decide layout, let a linter catch the mechanical mistakes, and let pre-commit make sure nobody can forget. Your energy then goes into the parts only humans can do: choosing clear names, structuring the code and explaining the why.
+
+  - kind: recap
+    body: |
+      - **PEP 8**: 4-space indents, `snake_case` functions/variables, `CapWords` classes, `UPPER_CASE` constants, sorted imports at the top.
+      - **Ruff** lints (`ruff check`, `--fix`) and formats (`ruff format`); configure it under `[tool.ruff]` in `pyproject.toml` with rule families like `E`, `F`, `I`, `UP`, `B`.
+      - **Pre-commit** hooks run the checks on every `git commit`.
+      - **Docstrings**: one-line imperative summary, then `Args:`, `Returns:`, `Raises:` (Google style is common).
+      - Prefer **clear names** to comments: verbs for functions, nouns for classes, questions for booleans.

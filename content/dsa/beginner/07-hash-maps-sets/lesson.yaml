@@ -1,0 +1,312 @@
+steps:
+  - kind: explain
+    title: The idea behind hashing
+    body: |
+      Finding an item in an unsorted array means scanning it: O(n). A **hash map** finds it in about one step.
+
+      How? A **hash function** turns the key (say, `"apple"`) into a number, and that number tells the computer which slot ("bucket") of an internal array to look in. Same key, same slot, so lookup is direct.
+
+      Two different keys can land in the same slot. That is a **collision**. The map handles it by keeping a tiny list in that slot and checking it. With a good hash function collisions are rare and lists stay tiny.
+
+      That is why the cost is:
+      - **O(1) on average** for `get`, `set`, `has`, `delete`,
+      - **O(n) in the worst case** (every key collides), which you will essentially never see with a good hash.
+
+  - kind: explain
+    title: Four jobs a hash map does
+    body: |
+      Almost every hash-map problem is one of these four:
+
+      1. **Count things** (frequency counting): how many times does each value appear?
+      2. **"Have I seen this before?"**: a `Set` that remembers values as you scan.
+      3. **Group things**: put items that share a property into the same bucket (all anagrams together).
+      4. **Look up a complement**: while scanning, ask "have I already seen the partner of this value?" (Two Sum).
+
+      Learn to spot which job a problem is asking for, and the code almost writes itself.
+
+  - kind: code
+    title: "Job 2: have I seen this?"
+    body: |
+      Write `firstRepeat(nums)`: return the **first value that appears a second time** while scanning left to right, or `null` if there is no repeat.
+
+      `[2, 5, 1, 2, 3, 5]` gives `2`, because `2` repeats before `5` does.
+    code: |
+      function firstRepeat(nums) {
+        const seen = new Set();
+        return null;
+      }
+    tests:
+      - "firstRepeat([2, 5, 1, 2, 3, 5])"
+      - "firstRepeat([1, 2, 3])"
+      - "firstRepeat([])"
+      - "firstRepeat([7, 7])"
+      - "firstRepeat([5, 1, 5, 1])"
+    solution: |
+      function firstRepeat(nums) {
+        const seen = new Set();
+        for (const n of nums) {
+          if (seen.has(n)) return n;
+          seen.add(n);
+        }
+        return null;
+      }
+    hint: "For each number: if `seen.has(n)` return it, otherwise `seen.add(n)`."
+    reject:
+      - |
+        function firstRepeat(nums) {
+          return nums.length - new Set(nums).size;
+        }
+
+  - kind: code
+    title: "Job 4: two sum"
+    body: |
+      Write `twoSum(nums, target)`: return the two **positions** `[i, j]` (with `i < j`) whose values add up to `target`. Exactly one such pair exists in the tests, except when told otherwise: return `null` if none.
+
+      The brute force is two loops, O(n²). With a map from *value → position*, one loop is enough: for each number, check whether `target - number` was already seen.
+    code: |
+      function twoSum(nums, target) {
+        const seen = new Map(); // value -> position
+        return null;
+      }
+    tests:
+      - "twoSum([2, 7, 11, 15], 9)"
+      - "twoSum([3, 2, 4], 6)"
+      - "twoSum([3, 3], 6)"
+      - "twoSum([1, 2, 3], 100)"
+      - "twoSum([], 5)"
+      - "twoSum([-1, -2, -3, -4], -6)"
+    solution: |
+      function twoSum(nums, target) {
+        const seen = new Map();
+        for (let i = 0; i < nums.length; i++) {
+          const need = target - nums[i];
+          if (seen.has(need)) return [seen.get(need), i];
+          seen.set(nums[i], i);
+        }
+        return null;
+      }
+    hint: "Look up `target - nums[i]` **before** you store `nums[i]`, so a number is never paired with itself."
+    reject:
+      - |
+        function twoSum(nums, target) {
+          return null;
+        }
+
+  - kind: explain
+    title: "Job 3: grouping"
+    body: |
+      To group, pick a **key** that is the same for all items that belong together, then push each item into the bucket for its key.
+
+      Anagrams share one thing: sorted letters. `"eat"`, `"tea"` and `"ate"` all sort to `"aet"`. So the sorted word is the key:
+
+      ```js
+      const groups = new Map();
+      for (const w of words) {
+        const key = w.split("").sort().join("");
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(w);
+      }
+      return [...groups.values()];
+      ```
+
+      Note `groups.get(key).push(w)`: the bucket is created once and then reused, which is not the shared-reference bug because each key gets its own new array.
+
+  - kind: code
+    title: Group the anagrams
+    body: |
+      Write `groupAnagrams(words)`: return an array of groups, each group holding the words that are anagrams of each other. The order of groups, and of words inside a group, does not matter for the checker.
+    code: |
+      function groupAnagrams(words) {
+        return words.map((w) => [w]);
+      }
+    unordered: true
+    tests:
+      - "groupAnagrams(['eat', 'tea', 'tan', 'ate', 'nat', 'bat'])"
+      - "groupAnagrams([])"
+      - "groupAnagrams(['a'])"
+      - "groupAnagrams(['ab', 'ba', 'ab'])"
+    solution: |
+      function groupAnagrams(words) {
+        const groups = new Map();
+        for (const w of words) {
+          const key = w.split("").sort().join("");
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(w);
+        }
+        return [...groups.values()];
+      }
+    reject:
+      - |
+        function groupAnagrams(words) {
+          return [words];
+        }
+
+  - kind: explain
+    title: "Job 1: counting, and picking the top"
+    body: |
+      Frequency counting is the most common job:
+
+      ```js
+      const counts = new Map();
+      for (const x of nums) counts.set(x, (counts.get(x) || 0) + 1);
+      ```
+
+      To find the **most frequent** items, turn the map into an array of `[value, count]` pairs and sort it by count:
+
+      ```js
+      const pairs = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+      ```
+
+      Sorting costs O(n log n). In Module 20 you will learn a faster way with a heap.
+
+  - kind: code
+    title: Top k frequent
+    body: |
+      Write `topFrequent(nums, k)`: the `k` values that appear most often, most frequent first. In the tests the counts never tie for the cut-off.
+    code: |
+      function topFrequent(nums, k) {
+        return nums.slice(0, k);
+      }
+    tests:
+      - "topFrequent([1, 1, 1, 2, 2, 3], 2)"
+      - "topFrequent([5], 1)"
+      - "topFrequent([4, 4, 4, 4, 9, 9, 7], 1)"
+      - "topFrequent([3, 0, 1, 0], 1)"
+    solution: |
+      function topFrequent(nums, k) {
+        const counts = new Map();
+        for (const x of nums) counts.set(x, (counts.get(x) || 0) + 1);
+        return [...counts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, k)
+          .map(([value]) => value);
+      }
+    hint: Count first, sort the `[value, count]` pairs by count (largest first), keep `k`, and return just the values.
+    reject:
+      - |
+        function topFrequent(nums, k) {
+          return [...new Set(nums)].slice(0, k);
+        }
+
+  - kind: explain
+    title: "The pitfall: reference keys"
+    body: |
+      Objects and arrays are compared by **reference**, not by content. So a `Set` treats two separate arrays with the same numbers as different:
+
+      ```js
+      const seen = new Set();
+      seen.add([1, 2]);
+      seen.has([1, 2]);   // false!  a different array object
+      ```
+
+      The fix is to turn the value into a **string key** with the same content:
+
+      ```js
+      seen.add("1,2");
+      seen.has("1,2");    // true
+      ```
+
+      (`JSON.stringify([1, 2])` or `${x},${y}` both work.)
+
+  - kind: code
+    title: "Find the bug: the same point twice"
+    body: |
+      `hasDuplicatePoint(points)` gets a list of `[x, y]` points and should return `true` when the same point appears twice. This version never finds one. Fix it.
+    code: |
+      function hasDuplicatePoint(points) {
+        const seen = new Set();
+        for (const p of points) {
+          if (seen.has(p)) return true;
+          seen.add(p);
+        }
+        return false;
+      }
+    tests:
+      - "hasDuplicatePoint([[1, 2], [3, 4], [1, 2]])"
+      - "hasDuplicatePoint([[1, 2], [2, 1]])"
+      - "hasDuplicatePoint([])"
+      - "hasDuplicatePoint([[0, 0], [0, 0]])"
+    solution: |
+      function hasDuplicatePoint(points) {
+        const seen = new Set();
+        for (const [x, y] of points) {
+          const key = `${x},${y}`;
+          if (seen.has(key)) return true;
+          seen.add(key);
+        }
+        return false;
+      }
+    hint: Build a string key such as `` `${x},${y}` `` and store that in the set.
+    broken_starter: true
+    reject:
+      - |
+        function hasDuplicatePoint(points) {
+          const seen = new Set();
+          for (const p of points) {
+            if (seen.has(p)) return true;
+            seen.add(p);
+          }
+          return false;
+        }
+
+  - kind: code
+    title: Longest consecutive run
+    body: |
+      Write `longestConsecutive(nums)`: the length of the longest run of consecutive whole numbers that appear in the array, in any order. `[100, 4, 200, 1, 3, 2]` has the run `1, 2, 3, 4`, so the answer is `4`.
+
+      Put every number in a `Set`. Only start counting from a number `x` when `x - 1` is **not** in the set, because then `x` is the start of a run. That keeps the whole thing O(n).
+    code: |
+      function longestConsecutive(nums) {
+        return nums.length;
+      }
+    tests:
+      - "longestConsecutive([100, 4, 200, 1, 3, 2])"
+      - "longestConsecutive([])"
+      - "longestConsecutive([0, 3, 7, 2, 5, 8, 4, 6, 0, 1])"
+      - "longestConsecutive([1, 1, 1])"
+      - "longestConsecutive([9])"
+    solution: |
+      function longestConsecutive(nums) {
+        const set = new Set(nums);
+        let best = 0;
+        for (const x of set) {
+          if (set.has(x - 1)) continue;
+          let length = 1;
+          while (set.has(x + length)) length++;
+          best = Math.max(best, length);
+        }
+        return best;
+      }
+    hint: Only start a run at a number whose predecessor `x - 1` is missing, then walk forwards with `has`.
+    reject:
+      - |
+        function longestConsecutive(nums) {
+          return new Set(nums).size;
+        }
+
+  - kind: info
+    title: "🔹 Newer helpers: groupBy and set methods"
+    body: |
+      Modern JavaScript adds shortcuts. You may see them, but everything above works without them.
+
+      ```js
+      Object.groupBy(words, (w) => w.length)   // { 3: [...], 4: [...] }
+      Map.groupBy(words, (w) => w.length)      // the same, as a Map
+      setA.union(setB)  setA.intersection(setB)  setA.difference(setB)
+      ```
+
+      Some older environments and interview sites do not support them yet, so know the manual way first.
+
+  - kind: why
+    body: |
+      The hash map is probably the single most useful tool in interviews and in real programs. It turns "search the whole list" (O(n)) into "look it up" (O(1)), and that turns many O(n²) solutions into O(n).
+
+      Whenever your brute force has a loop inside a loop that is *searching*, ask: "could a `Map` or `Set` remember this?"
+
+  - kind: recap
+    body: |
+      - Hashing turns a key into a slot number, so `get`, `set`, `has` and `delete` are **O(1) on average** (worst case O(n) with heavy collisions).
+      - The four jobs: **count**, **seen before?**, **group**, **complement lookup**.
+      - For grouping, choose a key that is identical for all items in a group (sorted letters for anagrams).
+      - Objects and arrays as keys compare by **reference**: convert them to a string key.
+      - 🔹 `Object.groupBy`, `Map.groupBy` and the Set methods are handy shortcuts, but not required.

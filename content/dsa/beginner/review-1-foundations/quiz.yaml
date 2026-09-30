@@ -1,0 +1,45 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A function must return the largest number, and the input may be empty. What is the safest first step?
+    options:
+      - Start with `best = 0`
+      - Check for the empty array and decide what to return before looping
+      - Sort the array and take the last item
+      - Use `Math.max` on the array without checking
+    answer: 1
+    explanation: The empty case has no "largest", so decide the answer (such as `null`) first. Starting at 0 also fails for all-negative arrays.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      console.log(-3 % 2, ((-3 % 2) + 2) % 2);
+    options: ["-1 1", "1 1", "-1 -1", "1 -1"]
+    answer: 0
+    explanation: "`%` keeps the sign of the left side, so `-3 % 2` is `-1`. Adding 2 and taking `% 2` again lands in the range 0 to 1."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const buckets = Array(3).fill([]);
+      buckets[1].push("x");
+      console.log(buckets[0].length + buckets[2].length);
+    options: ["2", "0", "1", "3"]
+    answer: 0
+    explanation: All three slots hold the same array, so the one push shows up in slots 0 and 2 as well.
+  - type: mcq
+    prompt: You sort with `nums.sort()` and get `[1, 10, 9]` from `[10, 9, 1]`. What went wrong?
+    options:
+      - Nothing, that is ascending order
+      - The default sort compares items as text
+      - The array was mutated
+      - Sort only works on strings
+    answer: 1
+    explanation: As text, "10" comes before "9". Pass `(a, b) => a - b` to sort numbers.
+  - type: mcq
+    prompt: Which is the better way to count how often each word appears?
+    options:
+      - A plain object `{}`
+      - A `Map`
+      - An array of pairs searched with `find`
+      - "Sort, then compare neighbours only"
+    answer: 1
+    explanation: A Map has no built-in keys that clash with words, and lookups are O(1) on average.

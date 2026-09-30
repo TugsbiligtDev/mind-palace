@@ -1,0 +1,59 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class C:
+          def __enter__(self):
+              print("in")
+              return self
+          def __exit__(self, *args):
+              print("out")
+              return False
+
+      with C():
+          print("body")
+    options: ["in\nbody\nout", "body\nin\nout", "in\nout\nbody", "body"]
+    answer: 0
+    explanation: "`__enter__` runs first, then the body, then `__exit__`."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class Quiet:
+          def __enter__(self):
+              return self
+          def __exit__(self, exc_type, exc, tb):
+              return True
+
+      with Quiet():
+          1 / 0
+      print("after")
+    options: ["after", "ZeroDivisionError", "nothing", "0"]
+    answer: 0
+    explanation: "`__exit__` returned `True`, which suppresses the exception, so the program carries on."
+  - type: mcq
+    prompt: In a `@contextmanager` function, where should the clean-up code go?
+    options:
+      - In a `finally` block after the `yield`
+      - Before the `yield`
+      - In `__exit__`
+      - Anywhere; it always runs
+    answer: 0
+    explanation: Without `try/finally` around `yield`, an exception in the `with` block would skip the clean-up.
+  - type: mcq
+    prompt: What does `__exit__` returning `False` (or `None`) do?
+    options:
+      - Any exception from the block continues to propagate
+      - It swallows the exception
+      - It restarts the block
+      - It closes the program
+    answer: 0
+    explanation: Only a true return value suppresses the exception.
+  - type: fill
+    prompt: Complete the line so both files are managed by one statement.
+    code: |
+      ____ open("a.txt", "w") as a, open("b.txt", "w") as b:
+          a.write("1")
+          b.write("2")
+    answer: with
+    explanation: "`with` accepts several context managers separated by commas."

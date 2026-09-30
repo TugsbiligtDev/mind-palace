@@ -1,0 +1,325 @@
+steps:
+  - kind: explain
+    title: What an array really is
+    body: |
+      An **array** stores items in one unbroken block of memory, side by side, like seats in a row. Because every item is the same distance from the next, the computer can jump straight to position `i` without looking at the others. That is why `arr[i]` is **O(1)**.
+
+      There are two kinds:
+      - A **static** array has a fixed size, decided in advance. (Typed arrays such as `Int32Array` work like this.)
+      - A **dynamic** array grows as needed. A normal JavaScript array is dynamic: `push` resizes it behind the scenes (the amortized O(1) from Module 3).
+
+      Trade-off: reading any position is instant, but **inserting or deleting in the middle** is O(n), because everything after it must shift.
+
+  - kind: explain
+    title: Walking and changing an array
+    body: |
+      Three ways to visit every item:
+
+      ```js
+      for (let i = 0; i < arr.length; i++) { /* use arr[i] and i */ }
+      for (const x of arr) { /* just the values */ }
+      arr.forEach((x, i) => { /* callback style */ });
+      ```
+
+      Use the classic `for` when you need the **index** or need to stop early.
+
+      Changing an array **in place** means editing `arr` itself instead of building a new array. In-place solutions use O(1) extra space, which interviewers love. The price: you destroy the original.
+
+  - kind: code
+    title: Reverse in place with two pointers
+    body: |
+      Write `reverseInPlace(arr)` that reverses the array **itself** (do not build a new one). Use two positions, `left` at the start and `right` at the end, swap them, and move them toward each other.
+
+      Swap with: `[arr[left], arr[right]] = [arr[right], arr[left]];`
+    code: |
+      function reverseInPlace(arr) {
+        let left = 0;
+        let right = arr.length - 1;
+        // while left < right: swap, then move both
+      }
+    tests:
+      - "(() => { const a = [1, 2, 3, 4]; reverseInPlace(a); return a; })()"
+      - "(() => { const a = [1, 2, 3]; reverseInPlace(a); return a; })()"
+      - "(() => { const a = []; reverseInPlace(a); return a; })()"
+      - "(() => { const a = [9]; reverseInPlace(a); return a; })()"
+    solution: |
+      function reverseInPlace(arr) {
+        let left = 0;
+        let right = arr.length - 1;
+        while (left < right) {
+          [arr[left], arr[right]] = [arr[right], arr[left]];
+          left++;
+          right--;
+        }
+      }
+    hint: Stop when `left` and `right` meet. With an odd length, the middle item stays where it is.
+    reject:
+      - |
+        function reverseInPlace(arr) {
+          for (let i = 0; i < arr.length; i++) {
+            [arr[i], arr[arr.length - 1 - i]] = [arr[arr.length - 1 - i], arr[i]];
+          }
+        }
+
+  - kind: explain
+    title: Rotating an array
+    body: |
+      **Rotating right by `k`** moves each item `k` places to the right, and the ones that fall off the end wrap around to the front. `[1, 2, 3, 4, 5]` rotated right by 2 is `[4, 5, 1, 2, 3]`.
+
+      Two tricks make it easy:
+
+      1. **`k` can be bigger than the array.** Rotating a 5-item array by 7 is the same as by 2, so use `k % n` (and handle `n = 0`).
+      2. **The new array is the last `k` items followed by the rest**: `arr.slice(n - k)` then `arr.slice(0, n - k)`.
+
+      (There is also an in-place version made of three reversals. You will see it in the Practice list.)
+
+  - kind: code
+    title: Rotate right
+    body: |
+      Write `rotateRight(arr, k)` that returns a **new** array rotated right by `k` places. `k` may be larger than the array, and the array may be empty.
+    code: |
+      function rotateRight(arr, k) {
+        return arr;
+      }
+    tests:
+      - "rotateRight([1, 2, 3, 4, 5], 2)"
+      - "rotateRight([1, 2], 5)"
+      - "rotateRight([], 3)"
+      - "rotateRight([1, 2, 3], 0)"
+      - "rotateRight([1, 2, 3], 3)"
+    solution: |
+      function rotateRight(arr, k) {
+        const n = arr.length;
+        if (n === 0) return [];
+        const shift = k % n;
+        return [...arr.slice(n - shift), ...arr.slice(0, n - shift)];
+      }
+    hint: "Compute `k % n` first. Beware `slice(n - 0)` when the shift is 0: it returns nothing, which is fine, then the rest follows."
+    reject:
+      - |
+        function rotateRight(arr, k) {
+          return [...arr.slice(arr.length - k), ...arr.slice(0, arr.length - k)];
+        }
+
+  - kind: explain
+    title: One pass, remembering the best
+    body: |
+      Many array problems are solved with **one loop and a couple of variables**. You walk through once and remember something useful.
+
+      *Best day to buy and sell a stock.* Prices are `[7, 1, 5, 3, 6, 4]`. Buy on one day, sell on a later day. The best profit is `5` (buy at 1, sell at 6).
+
+      Walk through the prices and keep:
+      - `lowest`: the cheapest price seen so far (the best day to have bought),
+      - `best`: the best profit found so far.
+
+      At each price, the profit *if you sold today* is `price - lowest`. Update `best`, then update `lowest`. One pass, O(n) time, O(1) space.
+
+  - kind: code
+    title: Best time to buy and sell
+    body: |
+      Write `maxProfit(prices)`. Return the best profit from **one** buy followed by a later sell, or `0` if no profit is possible (or there are no prices).
+    code: |
+      function maxProfit(prices) {
+        return 0;
+      }
+    tests:
+      - "maxProfit([7, 1, 5, 3, 6, 4])"
+      - "maxProfit([7, 6, 4, 3, 1])"
+      - "maxProfit([])"
+      - "maxProfit([5])"
+      - "maxProfit([2, 4, 1])"
+      - "maxProfit([3, 3, 3])"
+    solution: |
+      function maxProfit(prices) {
+        let lowest = Infinity;
+        let best = 0;
+        for (const price of prices) {
+          best = Math.max(best, price - lowest);
+          lowest = Math.min(lowest, price);
+        }
+        return best;
+      }
+    hint: Update `best` with `price - lowest` *before* you update `lowest`, so you never sell on the same day you buy.
+    reject:
+      - |
+        function maxProfit(prices) {
+          return Math.max(...prices) - Math.min(...prices);
+        }
+
+  - kind: explain
+    title: 2D arrays, or matrices
+    body: |
+      A **matrix** is an array of arrays. `grid[row][col]`: first the row, then the column.
+
+      ```js
+      const grid = [
+        [1, 2, 3],
+        [4, 5, 6],
+      ];
+      grid[1][2]          // 6  (row 1, column 2)
+      grid.length         // 2  rows
+      grid[0].length      // 3  columns
+      ```
+
+      Visit every cell with a loop inside a loop: **rows outside, columns inside**. That is O(rows × cols).
+
+      Build an empty grid with `Array.from`, never `Array(r).fill(Array(c))` (Module 4's trap):
+
+      ```js
+      const grid = Array.from({ length: rows }, () => Array(cols).fill(0));
+      ```
+
+  - kind: code
+    title: Transpose a grid
+    body: |
+      The **transpose** of a matrix swaps its rows and columns: cell `[r][c]` moves to `[c][r]`. `[[1, 2, 3], [4, 5, 6]]` becomes `[[1, 4], [2, 5], [3, 6]]`.
+
+      Write `transpose(matrix)`. The matrix may have a different number of rows and columns.
+    code: |
+      function transpose(matrix) {
+        return matrix;
+      }
+    tests:
+      - "transpose([[1, 2, 3], [4, 5, 6]])"
+      - "transpose([[1, 2], [3, 4]])"
+      - "transpose([[7]])"
+      - "transpose([[1], [2], [3]])"
+    solution: |
+      function transpose(matrix) {
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        const result = Array.from({ length: cols }, () => Array(rows).fill(0));
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            result[c][r] = matrix[r][c];
+          }
+        }
+        return result;
+      }
+    hint: The result has `cols` rows and `rows` columns. Copy each `matrix[r][c]` into `result[c][r]`.
+    reject:
+      - |
+        function transpose(matrix) {
+          return matrix.map((row) => [...row].reverse());
+        }
+
+  - kind: explain
+    title: Bounds checking and neighbours
+    body: |
+      Grid problems constantly ask about the **neighbours** of a cell: up, down, left, right. A neighbour might be off the edge, and `grid[-1][0]` **crashes**, because `grid[-1]` is `undefined`.
+
+      Always check the bounds first:
+
+      ```js
+      const inside = r >= 0 && r < rows && c >= 0 && c < cols;
+      ```
+
+      A neat way to visit the four neighbours is a **directions array**:
+
+      ```js
+      const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr;
+        const nc = c + dc;
+        // check bounds, then use grid[nr][nc]
+      }
+      ```
+
+  - kind: code
+    title: "Find the bug: falling off the edge"
+    body: |
+      `neighborCount(grid, r, c)` should count how many of the four neighbours of cell `(r, c)` actually exist inside the grid. A corner has 2, an edge has 3, and the middle has 4. This version crashes at the edges. Fix it.
+    code: |
+      function neighborCount(grid, r, c) {
+        let count = 0;
+        if (grid[r - 1][c] !== undefined) count++;
+        if (grid[r + 1][c] !== undefined) count++;
+        if (grid[r][c - 1] !== undefined) count++;
+        if (grid[r][c + 1] !== undefined) count++;
+        return count;
+      }
+    tests:
+      - "neighborCount([[1, 2, 3], [4, 5, 6], [7, 8, 9]], 1, 1)"
+      - "neighborCount([[1, 2, 3], [4, 5, 6], [7, 8, 9]], 0, 0)"
+      - "neighborCount([[1, 2, 3], [4, 5, 6], [7, 8, 9]], 0, 1)"
+      - "neighborCount([[1, 2, 3], [4, 5, 6], [7, 8, 9]], 2, 2)"
+      - "neighborCount([[5]], 0, 0)"
+    solution: |
+      function neighborCount(grid, r, c) {
+        const rows = grid.length;
+        const cols = grid[0].length;
+        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        let count = 0;
+        for (const [dr, dc] of dirs) {
+          const nr = r + dr;
+          const nc = c + dc;
+          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) count++;
+        }
+        return count;
+      }
+    hint: Check `nr >= 0 && nr < rows && nc >= 0 && nc < cols` *before* you look inside the grid.
+    broken_starter: true
+    reject:
+      - |
+        function neighborCount(grid, r, c) {
+          return 4;
+        }
+
+  - kind: explain
+    title: Diagonals
+    body: |
+      In a square grid of size `n`:
+
+      - The **main diagonal** is every cell where **row = column**: `(0,0), (1,1), (2,2)…`
+      - The **anti-diagonal** is every cell where **row + column = n − 1**: `(0,2), (1,1), (2,0)` when `n = 3`.
+
+      For an odd `n` both diagonals share the centre cell. Do not count it twice.
+
+  - kind: code
+    title: Add both diagonals
+    body: |
+      Write `diagonalSum(grid)` for a square grid: the sum of the main diagonal plus the anti-diagonal, counting the shared centre cell only once.
+
+      `[[1, 2, 3], [4, 5, 6], [7, 8, 9]]` gives `1 + 5 + 9 + 3 + 7 = 25`.
+    code: |
+      function diagonalSum(grid) {
+        return 0;
+      }
+    tests:
+      - "diagonalSum([[1, 2, 3], [4, 5, 6], [7, 8, 9]])"
+      - "diagonalSum([[1, 1], [1, 1]])"
+      - "diagonalSum([[5]])"
+      - "diagonalSum([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]])"
+    solution: |
+      function diagonalSum(grid) {
+        const n = grid.length;
+        let total = 0;
+        for (let i = 0; i < n; i++) {
+          total += grid[i][i];
+          if (i !== n - 1 - i) total += grid[i][n - 1 - i];
+        }
+        return total;
+      }
+    hint: One loop is enough. In row `i`, the two diagonal cells are at columns `i` and `n - 1 - i`.
+    reject:
+      - |
+        function diagonalSum(grid) {
+          let total = 0;
+          for (let i = 0; i < grid.length; i++) total += grid[i][i] + grid[i][grid.length - 1 - i];
+          return total;
+        }
+
+  - kind: why
+    body: |
+      Arrays and matrices are the raw material of almost every problem: images are grids, game boards are grids, spreadsheets are grids, and lists of scores are arrays. Most bigger structures you will meet are built on top of them.
+
+      The two habits from this module (walk once and remember something, and always check your bounds) will save you in many later modules.
+
+  - kind: recap
+    body: |
+      - An array is one contiguous block, so `arr[i]` is **O(1)**, but inserting in the middle is O(n).
+      - Change in place with **two pointers** (`left`, `right`) to use O(1) extra space.
+      - Rotate with `k % n` and two `slice`s.
+      - Solve "best so far" problems in **one pass**, keeping a couple of variables.
+      - A matrix is `grid[row][col]`. Build it with `Array.from`, and **check bounds** before touching a neighbour.
+      - Main diagonal: `row === col`. Anti-diagonal: `row + col === n - 1`.

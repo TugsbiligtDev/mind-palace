@@ -1,0 +1,36 @@
+id: beginner
+title: Beginner
+season: 1
+season_title: The Case Files Room
+season_pitch: |
+  Every detective needs a place to work. Set yours up: learn how a computer runs a program,
+  drive the terminal, and write your first Python. Then master variables, text, decisions and
+  loops, and the data structures that hold real information.
+status: open
+topics:
+  - 01-how-computers-work
+  - 02-terminal-macos
+  - 03-first-programs
+  - review-1-first-steps
+  - 04-variables-types
+  - 05-operators
+  - 06-strings
+  - 07-input-conversion
+  - 08-conditionals
+  - 09-loops
+  - review-2-core-language
+  - 10-lists
+  - 11-tuples-sets
+  - 12-dictionaries
+  - 13-comprehensions-copying
+  - review-3-data-structures
+  - 14-functions
+  - 15-modules-stdlib
+  - 16-exceptions
+  - 17-files
+  - review-4-functions-and-files
+  - 18-git-github
+  - 19-uv-packages
+  - 20-problem-solving
+  - 21-algorithmic-thinking
+  - capstone-1-finance-tracker

@@ -1,0 +1,464 @@
+steps:
+  - kind: explain
+    title: Scripts that save you time
+    body: |
+      One of Python's best uses is **automating repetitive work**: renaming a thousand photos, merging spreadsheets, collecting prices, backing up folders, sending a daily report. Anything you would do by hand more than a few times is a candidate.
+
+      A good automation script is:
+
+      - a **command-line tool**: run from the terminal with options, so you (or a scheduler) can reuse it,
+      - **safe**: it never deletes or overwrites without care (offer a `--dry-run` that only *shows* what it would do),
+      - **quiet when fine, loud when not**: clear messages and a proper exit status on failure,
+      - **testable**: logic in functions that take inputs and return results, with only a thin `main()` around them.
+
+      This lesson pulls the earlier modules together: `argparse`, `pathlib`, `shutil`, `csv`, HTTP and parsing.
+
+  - kind: explain
+    title: Subcommands with argparse
+    body: |
+      Tools like `git` have **subcommands** (`git add`, `git commit`). `argparse` supports them:
+
+      ```python
+      import argparse
+
+      parser = argparse.ArgumentParser(prog="tracker")
+      sub = parser.add_subparsers(dest="command", required=True)
+
+      add = sub.add_parser("add", help="add an item")
+      add.add_argument("title")
+      add.add_argument("--priority", type=int, default=1)
+
+      sub.add_parser("list", help="show all items")
+
+      args = parser.parse_args(["add", "Read Dune", "--priority", "2"])
+      # Namespace(command='add', title='Read Dune', priority=2)
+      ```
+
+      Each subcommand has its own options. `--help` works at every level. It gives you a professional feel with very little code.
+
+  - kind: code
+    title: A two-command tool
+    body: |
+      Write `parse(argv)` returning `vars(args)` (a dict) for a parser with subcommands:
+
+      - `add TITLE [--priority N]` (`N` an integer, default `1`),
+      - `list [--all]` (a flag),
+      - `done ID` (`ID` an integer).
+
+      A subcommand is required. Bad input makes `argparse` exit (`SystemExit`).
+    code: |
+      import argparse
+
+
+      def parse(argv):
+          return {}
+    tests:
+      - "parse(['add', 'Read Dune'])"
+      - "parse(['add', 'Read Dune', '--priority', '3'])"
+      - "parse(['list'])"
+      - "parse(['list', '--all'])"
+      - "parse(['done', '7'])"
+      - "try:\n    parse(['done', 'seven'])\nexcept SystemExit:\n    result = 'exit'"
+      - "try:\n    parse([])\nexcept SystemExit:\n    result = 'exit'"
+    solution: |
+      import argparse
+
+
+      def parse(argv):
+          parser = argparse.ArgumentParser(prog="tracker")
+          sub = parser.add_subparsers(dest="command", required=True)
+
+          add = sub.add_parser("add")
+          add.add_argument("title")
+          add.add_argument("--priority", type=int, default=1)
+
+          show = sub.add_parser("list")
+          show.add_argument("--all", action="store_true")
+
+          done = sub.add_parser("done")
+          done.add_argument("id", type=int)
+
+          return vars(parser.parse_args(argv))
+    hint: "`sub = parser.add_subparsers(dest=\"command\", required=True)` then one `sub.add_parser(name)` per command, each with its own arguments."
+    reject:
+      - |
+        import argparse
+
+
+        def parse(argv):
+            return {"command": argv[0]}
+
+  - kind: explain
+    title: File and folder automation
+    body: |
+      `pathlib` and `shutil` do most file chores:
+
+      ```python
+      from pathlib import Path
+      import shutil
+
+      folder = Path("downloads")
+      for path in folder.iterdir():                 # every item in the folder
+          if path.is_file():
+              ext = path.suffix.lower().lstrip(".") or "other"
+              target = folder / ext
+              target.mkdir(exist_ok=True)
+              shutil.move(str(path), target / path.name)
+      ```
+
+      Useful tools: `Path.glob("*.jpg")` (pattern search), `Path.rglob("*.py")` (recursive), `path.stem` (name without extension), `path.rename(new)`, `shutil.copy2`, `shutil.rmtree` (deletes a whole folder: **be very careful**).
+
+      **Safety habits:** show what will happen first (a *dry run*), never overwrite silently (check `target.exists()`), and test on a copy.
+
+  - kind: code
+    title: Tidy a folder
+    body: |
+      Write `organize(folder, dry_run=False)`. For every **file** directly in `folder` (ignore sub-folders), work out its target sub-folder from the extension in lower case without the dot (files with no extension go to `"other"`). Return a **sorted list** of `"name -> subfolder"` texts. When `dry_run` is `False`, also actually move the files there (creating the sub-folders). When `True`, change nothing.
+    code: |
+      from pathlib import Path
+      import shutil
+
+
+      def organize(folder, dry_run=False):
+          return []
+    tests:
+      - "from pathlib import Path\nfor n in ['a.TXT', 'b.jpg', 'c', 'd.txt']:\n    Path(n).write_text('x')\nresult = (organize('.', dry_run=True), sorted(p.name for p in Path('.').iterdir()))"
+      - "from pathlib import Path\nfor n in ['a.TXT', 'b.jpg', 'c', 'd.txt']:\n    Path(n).write_text('x')\nmoved = organize('.')\nresult = (moved, sorted(str(p) for p in Path('.').rglob('*') if p.is_file()))"
+      - "from pathlib import Path\nPath('sub').mkdir()\nresult = organize('.')"
+    solution: |
+      from pathlib import Path
+      import shutil
+
+
+      def organize(folder, dry_run=False):
+          root = Path(folder)
+          plan = []
+          for path in root.iterdir():
+              if path.is_file():
+                  ext = path.suffix.lower().lstrip(".") or "other"
+                  plan.append((path, ext))
+          if not dry_run:
+              for path, ext in plan:
+                  target = root / ext
+                  target.mkdir(exist_ok=True)
+                  shutil.move(str(path), str(target / path.name))
+          return sorted(f"{path.name} -> {ext}" for path, ext in plan)
+    hint: "First build a list of `(path, ext)` for files only. Move them only if not `dry_run`. Build the report from the plan."
+    reject:
+      - |
+        from pathlib import Path
+        import shutil
+
+
+        def organize(folder, dry_run=False):
+            return []
+
+  - kind: explain
+    title: Spreadsheets and CSV
+    body: |
+      Most business data lives in spreadsheets. **CSV** files (Module 17) are the easy, universal format, and every spreadsheet program can export them. For real Excel files (`.xlsx`) the `openpyxl` package reads and writes them (and `pandas` in the optional data branch):
+
+      ```python
+      from openpyxl import Workbook, load_workbook
+
+      wb = load_workbook("sales.xlsx")
+      sheet = wb.active
+      for row in sheet.iter_rows(min_row=2, values_only=True):
+          ...
+      ```
+
+      A typical automation: read a CSV, **group and total** it, write a summary CSV. `csv.DictReader` and a dict of totals do it without any extra package. Remember every value read is **text**: convert with `float(...)`, and think about blank cells.
+
+  - kind: code
+    title: Sales summary
+    body: |
+      Write `totals_by_category(csv_text)`: the text has a header `category,amount`. Return a dict from category to the **total amount** (a float rounded to 2 decimals), ordered from the largest total to the smallest (ties alphabetical). **Skip rows whose amount is blank or not a number.** Use `csv.DictReader` over `io.StringIO(csv_text)`.
+    code: |
+      import csv
+      import io
+
+
+      def totals_by_category(csv_text):
+          return {}
+    tests:
+      - "totals_by_category('category,amount\\nfood,12.5\\nrent,900\\nfood,7.25\\ntravel,\\nrent,abc\\ncoffee,3\\n')"
+      - "totals_by_category('category,amount\\n')"
+      - "list(totals_by_category('category,amount\\nb,5\\na,5\\nc,9\\n').items())"
+    solution: |
+      import csv
+      import io
+
+
+      def totals_by_category(csv_text):
+          totals = {}
+          for row in csv.DictReader(io.StringIO(csv_text)):
+              try:
+                  amount = float(row["amount"])
+              except (ValueError, TypeError):
+                  continue
+              totals[row["category"]] = totals.get(row["category"], 0) + amount
+          ordered = sorted(totals.items(), key=lambda pair: (-pair[1], pair[0]))
+          return {category: round(total, 2) for category, total in ordered}
+    hint: "`try: float(row[\"amount\"]) except ValueError: continue` skips bad rows. Sort the items by `(-total, category)` and rebuild a dict."
+    reject:
+      - |
+        import csv
+        import io
+
+
+        def totals_by_category(csv_text):
+            totals = {}
+            for row in csv.DictReader(io.StringIO(csv_text)):
+                totals[row["category"]] = totals.get(row["category"], 0) + float(row["amount"] or 0)
+            return totals
+
+  - kind: explain
+    title: Web scraping basics (and being a good citizen)
+    body: |
+      Some data is only available as a **web page**, not an API. **Scraping** means downloading the HTML and extracting the parts you want. The usual pair is `httpx` (download) and **BeautifulSoup** (`bs4`, parse):
+
+      ```python
+      from bs4 import BeautifulSoup
+
+      soup = BeautifulSoup(html, "html.parser")
+      soup.find("h1").get_text(strip=True)          # the first <h1>'s text
+      [a["href"] for a in soup.find_all("a")]       # every link address
+      soup.select("li.price")                       # CSS selectors
+      ```
+
+      **Be a good citizen. Before scraping, check:**
+
+      1. **Is there an API or a download?** Prefer it.
+      2. **The site's terms of service** and its **`robots.txt`** file (`https://site.com/robots.txt`), which says which paths automated tools may visit. Respect it.
+      3. **Be gentle:** slow down (a delay between requests), identify yourself with a `User-Agent`, and cache pages so you do not fetch twice.
+      4. **Never** scrape personal data, log in as someone else, or bypass access controls.
+
+      Pages change, so scrapers break. Keep the extraction in one small function that you can fix and test with a saved HTML sample.
+
+  - kind: code
+    title: Extract links
+    body: |
+      Write `extract_links(html)`: use BeautifulSoup (`html.parser`) to return a list of `(text, href)` pairs for every `<a>` tag **that has an `href`**, in page order, with the text stripped.
+    code: |
+      from bs4 import BeautifulSoup
+
+
+      def extract_links(html):
+          return []
+    tests:
+      - "extract_links('<p><a href=\"/dune\"> Dune </a> and <a href=\"https://x.test/emma\">Emma</a></p>')"
+      - "extract_links('<a name=\"anchor\">no href</a><a href=\"/ok\">ok</a>')"
+      - "extract_links('<p>nothing here</p>')"
+    solution: |
+      from bs4 import BeautifulSoup
+
+
+      def extract_links(html):
+          soup = BeautifulSoup(html, "html.parser")
+          return [(a.get_text(strip=True), a["href"]) for a in soup.find_all("a", href=True)]
+    hint: "`soup.find_all(\"a\", href=True)` finds only anchors that have an `href`."
+    reject:
+      - |
+        from bs4 import BeautifulSoup
+
+
+        def extract_links(html):
+            soup = BeautifulSoup(html, "html.parser")
+            return [(a.get_text(), a.get("href")) for a in soup.find_all("a")]
+
+  - kind: code
+    title: Read the price list
+    body: |
+      A shop page lists books as `<li class="book"><span class="title">Dune</span> <span class="price">$12.50</span></li>`. Write `parse_books(html)`: return a list of dictionaries `{"title": ..., "price": ...}` with the price as a **float**. Skip any `<li class="book">` missing a title or a valid price. Use CSS selectors: `soup.select("li.book")` and `item.select_one(".title")`.
+    code: |
+      from bs4 import BeautifulSoup
+
+
+      def parse_books(html):
+          return []
+    tests:
+      - "parse_books('<ul><li class=\"book\"><span class=\"title\">Dune</span> <span class=\"price\">$12.50</span></li><li class=\"book\"><span class=\"title\">Emma</span> <span class=\"price\">$8</span></li><li class=\"ad\">Buy!</li></ul>')"
+      - "parse_books('<ul><li class=\"book\"><span class=\"title\">Free</span></li><li class=\"book\"><span class=\"price\">$5</span></li><li class=\"book\"><span class=\"title\">Bad</span><span class=\"price\">n/a</span></li></ul>')"
+      - "parse_books('')"
+    solution: |
+      from bs4 import BeautifulSoup
+
+
+      def parse_books(html):
+          soup = BeautifulSoup(html, "html.parser")
+          books = []
+          for item in soup.select("li.book"):
+              title = item.select_one(".title")
+              price = item.select_one(".price")
+              if title is None or price is None:
+                  continue
+              try:
+                  value = float(price.get_text(strip=True).lstrip("$"))
+              except ValueError:
+                  continue
+              books.append({"title": title.get_text(strip=True), "price": value})
+          return books
+    hint: "For each `li.book`, look up `.title` and `.price`. Skip when either is `None`, then `float(text.lstrip(\"$\"))` inside `try`."
+    reject:
+      - |
+        from bs4 import BeautifulSoup
+
+
+        def parse_books(html):
+            soup = BeautifulSoup(html, "html.parser")
+            return [{"title": i.select_one(".title").text, "price": float(i.select_one(".price").text[1:])} for i in soup.select("li.book")]
+
+  - kind: code
+    title: May I visit this page?
+    body: |
+      Python's `urllib.robotparser` understands `robots.txt`. Write `allowed(robots_txt, path, agent="*")`: parse the text (`parser.parse(robots_txt.splitlines())`) and return whether the `agent` may fetch `path` (use `can_fetch(agent, path)`).
+    code: |
+      from urllib.robotparser import RobotFileParser
+
+
+      def allowed(robots_txt, path, agent="*"):
+          return True
+    tests:
+      - "rules = 'User-agent: *\\nDisallow: /private/\\nAllow: /\\n'\nresult = [allowed(rules, p) for p in ('/books', '/private/x', '/')]"
+      - "allowed('', '/anything')"
+      - "rules = 'User-agent: badbot\\nDisallow: /\\n\\nUser-agent: *\\nDisallow:\\n'\nresult = (allowed(rules, '/x', 'badbot'), allowed(rules, '/x', 'goodbot'))"
+    solution: |
+      from urllib.robotparser import RobotFileParser
+
+
+      def allowed(robots_txt, path, agent="*"):
+          parser = RobotFileParser()
+          parser.parse(robots_txt.splitlines())
+          return parser.can_fetch(agent, path)
+    hint: "`parser = RobotFileParser()`, `parser.parse(robots_txt.splitlines())`, then `parser.can_fetch(agent, path)`."
+    reject:
+      - |
+        from urllib.robotparser import RobotFileParser
+
+
+        def allowed(robots_txt, path, agent="*"):
+            return True
+
+  - kind: explain
+    title: "Typer: nicer command-line tools"
+    body: |
+      `argparse` is in the standard library, but wordy. **Typer** builds a command-line tool from **type hints** on ordinary functions:
+
+      ```python
+      import typer
+
+      app = typer.Typer()
+
+      @app.command()
+      def greet(name: str, times: int = 1, shout: bool = False):
+          text = f"Hello {name}"
+          for _ in range(times):
+              print(text.upper() if shout else text)
+
+      if __name__ == "__main__":
+          app()
+      ```
+
+      Run `python greet.py Ada --times 2 --shout`. Typer turns the parameters into arguments and options, converts the types, and writes `--help`. Several `@app.command()` functions become subcommands. It builds on **click** and needs installing (`uv add typer`), so you try it on your Mac.
+
+  - kind: mac
+    title: A Typer tool on your Mac
+    body: |
+      Build a small reading-list tool with Typer and two commands.
+
+      **Checkpoint:** paste the output. It should contain `Added` and `Read Dune`.
+    commands: |
+      mkdir -p ~/Desktop/reading-tool && cd ~/Desktop/reading-tool
+      uv init --bare
+      uv add typer
+      cat > tool.py <<'PY'
+      import typer
+
+      app = typer.Typer(help="A tiny reading list.")
+
+
+      @app.command()
+      def add(title: str, priority: int = 1) -> None:
+          """Add a book to read."""
+          print(f"Added {title!r} (priority {priority})")
+
+
+      @app.command()
+      def show() -> None:
+          """Show the reading list."""
+          print("Read Dune")
+
+
+      if __name__ == "__main__":
+          app()
+      PY
+      uv run tool.py add "Dune" --priority 2
+      uv run tool.py show
+      uv run tool.py --help
+    expect_output:
+      - "Added"
+      - "Read Dune"
+
+  - kind: info
+    title: "🔹 Scheduling on a Mac: cron and launchd"
+    body: |
+      To run a script automatically (every morning, every hour), use the Mac's scheduler.
+
+      **cron** (simple): `crontab -e`, then add a line: five time fields, then the command.
+
+      ```
+      # minute hour day month weekday  command
+      30 8 * * 1-5  /Users/you/.local/bin/uv run /Users/you/reports/daily.py
+      ```
+
+      That runs at 08:30 on weekdays. Always use **full paths** (a scheduled job has no idea what your current folder is), and send output to a log file.
+
+      **launchd** is the macOS-native way: a small `.plist` file in `~/Library/LaunchAgents/` describing the job, loaded with `launchctl`. It handles sleeping laptops better (it runs missed jobs when the Mac wakes). Both are worth knowing; recognise them and look up the exact syntax when you need one.
+
+  - kind: code
+    title: When does it run next?
+    body: |
+      Write `next_run(now_text, hour, minute)`. `now_text` is like `"2026-09-30 09:15"`. Return the next time a daily job at `hour:minute` should run, as text in the same format: **today** if that time is still ahead of `now`, otherwise **tomorrow**. A time exactly equal to `now` counts as already passed (so it runs tomorrow). Use `datetime` and `timedelta`.
+    code: |
+      from datetime import datetime, timedelta
+
+
+      def next_run(now_text, hour, minute):
+          return now_text
+    tests:
+      - "next_run('2026-09-30 09:15', 10, 0)"
+      - "next_run('2026-09-30 09:15', 8, 30)"
+      - "next_run('2026-09-30 08:30', 8, 30)"
+      - "next_run('2026-12-31 23:59', 0, 5)"
+      - "next_run('2028-02-28 12:00', 6, 0)"
+    solution: |
+      from datetime import datetime, timedelta
+
+
+      def next_run(now_text, hour, minute):
+          fmt = "%Y-%m-%d %H:%M"
+          now = datetime.strptime(now_text, fmt)
+          candidate = now.replace(hour=hour, minute=minute)
+          if candidate <= now:
+              candidate += timedelta(days=1)
+          return candidate.strftime(fmt)
+    hint: "`now.replace(hour=hour, minute=minute)`; if it is not later than `now`, add `timedelta(days=1)`."
+    reject:
+      - |
+        from datetime import datetime, timedelta
+
+
+        def next_run(now_text, hour, minute):
+            return now_text
+
+  - kind: why
+    body: |
+      Automation is where programming pays for itself fastest: a script that takes an hour to write can save an hour every week. The habits here (logic in functions, a thin command-line layer, dry runs, respect for the sites you visit) make your scripts safe to run, easy to schedule and easy for others to trust.
+
+  - kind: recap
+    body: |
+      - Good tools are **command-line programs**: `argparse` subcommands (`add_subparsers`) or **Typer** (type hints become options).
+      - File chores: `pathlib` (`iterdir`, `glob`, `rglob`, `suffix`, `mkdir(exist_ok=True)`) and `shutil` (`move`, `copy2`). Offer a **dry run**; never overwrite silently.
+      - Spreadsheets: CSV with `csv.DictReader`; Excel with `openpyxl` or pandas. Values are text.
+      - **Scraping:** prefer an API, obey the terms and `robots.txt` (`urllib.robotparser`), be gentle, parse with BeautifulSoup in one small testable function.
+      - 🔹 Schedule with **cron** or **launchd**; use full paths and log the output.

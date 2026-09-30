@@ -1,0 +1,67 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class A:
+          def hi(self):
+              return "A"
+
+      class B(A):
+          def hi(self):
+              return "B"
+
+      print(B().hi(), A().hi())
+    options: ["B A", "A A", "B B", "A B"]
+    answer: 0
+    explanation: "`B` overrides `hi`, so a B object uses its own version; an A object still uses A's."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class Animal:
+          pass
+
+      class Dog(Animal):
+          pass
+
+      d = Dog()
+      print(isinstance(d, Dog), isinstance(d, Animal), isinstance(Animal(), Dog))
+    options: ["True True False", "True False False", "True True True", "False True False"]
+    answer: 0
+    explanation: "A Dog is a Dog and also an Animal, but a plain Animal is not a Dog."
+  - type: mcq
+    prompt: A `Library` object holds many `Book` objects. Which relationship is this?
+    options:
+      - Composition ("has a")
+      - Inheritance ("is a")
+      - Overriding
+      - An abstract class
+    answer: 0
+    explanation: A library is not a kind of book. It contains books, which is composition.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from abc import ABC, abstractmethod
+
+      class Base(ABC):
+          @abstractmethod
+          def run(self):
+              pass
+
+      try:
+          Base()
+      except TypeError:
+          print("cannot create")
+    options: ["cannot create", "nothing", "Base object", "Error and no output"]
+    answer: 0
+    explanation: "A class with an unimplemented abstract method cannot be instantiated; Python raises TypeError."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class A: pass
+      class B(A): pass
+      class C(B): pass
+      print([k.__name__ for k in C.__mro__])
+    options: ["['C', 'B', 'A', 'object']", "['A', 'B', 'C']", "['C', 'B', 'A']", "['object', 'A', 'B', 'C']"]
+    answer: 0
+    explanation: "The MRO lists the class, then its parents in order, ending with `object`, the parent of every class."

@@ -1,0 +1,41 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      console.log([10, 9, 1].sort());
+    options: ["[ 1, 9, 10 ]", "[ 1, 10, 9 ]", "[ 10, 9, 1 ]", "[ 9, 10, 1 ]"]
+    answer: 1
+    explanation: Without a comparator, `sort` compares the items as text, and `"10"` comes before `"9"`.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const grid = Array(2).fill([]);
+      grid[0].push("x");
+      console.log(grid[0].length, grid[1].length);
+    options: ["1 0", "1 1", "0 0", "2 2"]
+    answer: 1
+    explanation: Both slots hold the *same* array, so pushing into slot 0 also shows up in slot 1.
+  - type: mcq
+    prompt: You call `arr.shift()` inside a loop that runs `n` times. What is the total cost?
+    options: ["O(n)", "O(n²)", "O(log n)", "O(1)"]
+    answer: 1
+    explanation: Each `shift` is O(n) because every remaining item slides forward, and you do it `n` times.
+  - type: mcq
+    prompt: Why is `Map` usually better than `{}` for counting words?
+    options:
+      - It is always faster
+      - It has no built-in keys that can clash with your words, and any value can be a key
+      - It sorts the keys
+      - Objects cannot store numbers
+    answer: 1
+    explanation: A plain object already has keys such as `constructor`, so the word "constructor" gets a surprising starting value.
+  - type: fill
+    prompt: Complete the comparator so the numbers sort from smallest to largest.
+    code: |
+      const nums = [3, 1, 2];
+      nums.sort((a, b) => ____);
+      console.log(nums);
+    answer: a - b
+    accept: ["a-b"]
+    explanation: A negative result means `a` goes first, so `a - b` sorts ascending.

@@ -1,0 +1,49 @@
+"use client";
+import { python } from "@codemirror/lang-python";
+import { keymap } from "@codemirror/view";
+import { Prec } from "@codemirror/state";
+import CodeMirror from "@uiw/react-codemirror";
+import { useMemo } from "react";
+
+export function PyEditor({
+  value,
+  onChange,
+  onRun,
+  minHeight = "140px",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onRun: () => void;
+  minHeight?: string;
+}) {
+  const extensions = useMemo(
+    () => [
+      python(),
+      Prec.highest(
+        keymap.of([
+          {
+            key: "Mod-Enter",
+            run: () => {
+              onRun();
+              return true;
+            },
+          },
+        ]),
+      ),
+    ],
+    [onRun],
+  );
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border">
+      <CodeMirror
+        value={value}
+        onChange={onChange}
+        extensions={extensions}
+        theme="none"
+        minHeight={minHeight}
+        basicSetup={{ foldGutter: false, highlightActiveLineGutter: true, autocompletion: false }}
+      />
+    </div>
+  );
+}

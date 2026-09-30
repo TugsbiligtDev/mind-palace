@@ -1,0 +1,339 @@
+steps:
+  - kind: explain
+    title: The greedy idea
+    body: |
+      A **greedy algorithm** builds an answer step by step, and at each step picks **the option that looks best right now**, never reconsidering. It is fast and simple, but it is only correct for problems with the right structure.
+
+      Example: making change with coins of 25, 10, 5 and 1. Take the biggest coin that fits, repeat. For 41 you take 25, 10, 5, 1: perfect. But with coins of 1, 3 and 4 and a target of 6, greedy takes 4 + 1 + 1 (three coins), while 3 + 3 (two coins) is better. **Greedy is not always right.**
+
+  - kind: explain
+    title: When is greedy valid?
+    body: |
+      Greedy works when a **locally best choice can always be part of an overall best answer**. The standard proof is an **exchange argument**: take any optimal solution that does *not* use your greedy choice, and show you can swap in the greedy choice without making it worse.
+
+      You do not need to write proofs. You need the habit:
+
+      1. **Guess** a greedy rule ("always take the earliest-ending meeting").
+      2. **Try to break it** with small counterexamples.
+      3. If you cannot break it, and an exchange argument feels convincing, code it.
+
+      Greedy solutions are usually **O(n)** or **O(n log n)** because of a sort.
+
+  - kind: code
+    title: Maximum subarray (Kadane's algorithm)
+    body: |
+      Write `maxSubArray(nums)`: the largest sum of any non-empty contiguous piece. `[-2, 1, -3, 4, -1, 2, 1, -5, 4]` gives `6` (`4 + -1 + 2 + 1`).
+
+      Greedy rule: walk along keeping the best sum **ending here**. If the running sum ever drops below 0, it can only hurt, so **restart** from the current number.
+    code: |
+      function maxSubArray(nums) {
+        return 0;
+      }
+    tests:
+      - "maxSubArray([-2, 1, -3, 4, -1, 2, 1, -5, 4])"
+      - "maxSubArray([1])"
+      - "maxSubArray([5, 4, -1, 7, 8])"
+      - "maxSubArray([-3, -1, -2])"
+      - "maxSubArray([-2, -1])"
+    solution: |
+      function maxSubArray(nums) {
+        let current = nums[0];
+        let best = nums[0];
+        for (let i = 1; i < nums.length; i++) {
+          current = Math.max(nums[i], current + nums[i]);
+          best = Math.max(best, current);
+        }
+        return best;
+      }
+    hint: "At each number, `current` is either that number alone (restart) or the number added to the previous `current`, whichever is bigger."
+    reject:
+      - |
+        function maxSubArray(nums) {
+          let current = 0;
+          let best = 0;
+          for (const n of nums) {
+            current = Math.max(0, current + n);
+            best = Math.max(best, current);
+          }
+          return best;
+        }
+
+  - kind: code
+    title: Jump game
+    body: |
+      `nums[i]` is the farthest you can jump forward from position `i`. Starting at position 0, can you reach the last position? Write `canJump(nums)`.
+
+      Greedy: track the **farthest position reachable so far**. If you ever stand on a position beyond it, you are stuck.
+    code: |
+      function canJump(nums) {
+        return true;
+      }
+    tests:
+      - "canJump([2, 3, 1, 1, 4])"
+      - "canJump([3, 2, 1, 0, 4])"
+      - "canJump([0])"
+      - "canJump([1, 0])"
+      - "canJump([0, 1])"
+      - "canJump([2, 0, 0])"
+    solution: |
+      function canJump(nums) {
+        let farthest = 0;
+        for (let i = 0; i < nums.length; i++) {
+          if (i > farthest) return false;
+          farthest = Math.max(farthest, i + nums[i]);
+        }
+        return true;
+      }
+    hint: Walk left to right. If `i` is beyond `farthest`, return false. Otherwise update `farthest` with `i + nums[i]`.
+    reject:
+      - |
+        function canJump(nums) {
+          return true;
+        }
+
+  - kind: code
+    title: Minimum jumps
+    body: |
+      Same array, but now you know the last position is reachable. Write `jump(nums)`: the **fewest jumps** needed to reach it.
+
+      Greedy by levels (BFS in disguise): the current jump covers positions up to `end`. While scanning those, remember the `farthest` you could get with one more jump. When you pass `end`, you must jump, so `end = farthest` and count one jump.
+    code: |
+      function jump(nums) {
+        return 0;
+      }
+    tests:
+      - "jump([2, 3, 1, 1, 4])"
+      - "jump([2, 3, 0, 1, 4])"
+      - "jump([0])"
+      - "jump([1, 1, 1, 1])"
+      - "jump([5, 1, 1, 1, 1, 1])"
+    solution: |
+      function jump(nums) {
+        let jumps = 0;
+        let end = 0;
+        let farthest = 0;
+        for (let i = 0; i < nums.length - 1; i++) {
+          farthest = Math.max(farthest, i + nums[i]);
+          if (i === end) {
+            jumps++;
+            end = farthest;
+          }
+        }
+        return jumps;
+      }
+    hint: Stop the loop before the last index. When `i` reaches the end of the current jump, take another jump to `farthest`.
+    reject:
+      - |
+        function jump(nums) {
+          return nums.length - 1;
+        }
+
+  - kind: code
+    title: Gas station
+    body: |
+      Gas stations sit on a circular road. `gas[i]` is the fuel at station `i`, and `cost[i]` the fuel needed to reach the next station. Write `canCompleteCircuit(gas, cost)`: the index of the station to start from to drive all the way round once (clockwise), or `-1` if impossible. If a solution exists it is unique.
+
+      Greedy: if the total gas is less than the total cost, it is impossible. Otherwise walk once; whenever your tank goes negative, the start must be **after** the current station, so restart there.
+    code: |
+      function canCompleteCircuit(gas, cost) {
+        return -1;
+      }
+    tests:
+      - "canCompleteCircuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2])"
+      - "canCompleteCircuit([2, 3, 4], [3, 4, 3])"
+      - "canCompleteCircuit([5], [4])"
+      - "canCompleteCircuit([1, 2], [2, 1])"
+      - "canCompleteCircuit([3, 1, 1], [1, 2, 2])"
+    solution: |
+      function canCompleteCircuit(gas, cost) {
+        let total = 0;
+        let tank = 0;
+        let start = 0;
+        for (let i = 0; i < gas.length; i++) {
+          const diff = gas[i] - cost[i];
+          total += diff;
+          tank += diff;
+          if (tank < 0) {
+            start = i + 1;
+            tank = 0;
+          }
+        }
+        return total >= 0 ? start : -1;
+      }
+    hint: Track `total` (over the whole circle) and `tank` (since the candidate start). When `tank < 0`, no station up to here can be the start, so try `i + 1`.
+    reject:
+      - |
+        function canCompleteCircuit(gas, cost) {
+          return 0;
+        }
+
+  - kind: explain
+    title: Interval problems
+    body: |
+      Intervals such as meetings or time slots `[start, end]` are a favourite for greedy. Almost always: **sort first**, then sweep once.
+
+      - **Merge overlapping intervals:** sort by start. Keep the last merged interval. If the next one starts before the last one ends, extend the end. Otherwise start a new one.
+      - **Fewest to remove so none overlap:** sort by **end**. Always keep the interval that finishes earliest (it leaves the most room), and skip any that overlap it. (This "earliest finish" rule passes the exchange argument.)
+      - **Minimum meeting rooms:** sort by start, and use a min-heap of end times, or count overlaps with two sorted lists.
+
+  - kind: code
+    title: "Find the bug: unsorted intervals"
+    body: |
+      `mergeIntervals(intervals)` should merge overlapping `[start, end]` intervals. It works when the input happens to be sorted, but real input is not. Fix it.
+    code: |
+      function mergeIntervals(intervals) {
+        const merged = [];
+        for (const [start, end] of intervals) {
+          const last = merged[merged.length - 1];
+          if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+          else merged.push([start, end]);
+        }
+        return merged;
+      }
+    tests:
+      - "mergeIntervals([[1, 3], [2, 6], [8, 10], [15, 18]])"
+      - "mergeIntervals([[1, 3], [8, 10], [2, 6]])"
+      - "mergeIntervals([[1, 4], [4, 5]])"
+      - "mergeIntervals([[5, 6], [1, 2], [2, 3]])"
+      - "mergeIntervals([])"
+      - "mergeIntervals([[1, 10], [2, 3]])"
+    solution: |
+      function mergeIntervals(intervals) {
+        const sorted = [...intervals].sort((a, b) => a[0] - b[0]);
+        const merged = [];
+        for (const [start, end] of sorted) {
+          const last = merged[merged.length - 1];
+          if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+          else merged.push([start, end]);
+        }
+        return merged;
+      }
+    hint: Sort a copy by start time first, then run the same sweep.
+    broken_starter: true
+    reject:
+      - |
+        function mergeIntervals(intervals) {
+          const merged = [];
+          for (const [start, end] of intervals) {
+            const last = merged[merged.length - 1];
+            if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+            else merged.push([start, end]);
+          }
+          return merged;
+        }
+
+  - kind: code
+    title: Fewest intervals to remove
+    body: |
+      Write `eraseOverlapIntervals(intervals)`: the minimum number of intervals to remove so the rest do not overlap. Intervals that only touch at an end (`[1, 2]` and `[2, 3]`) do **not** overlap.
+
+      Sort by **end**. Keep an interval if it starts at or after the last kept end. Otherwise it overlaps: remove it and count.
+    code: |
+      function eraseOverlapIntervals(intervals) {
+        return 0;
+      }
+    tests:
+      - "eraseOverlapIntervals([[1, 2], [2, 3], [3, 4], [1, 3]])"
+      - "eraseOverlapIntervals([[1, 2], [1, 2], [1, 2]])"
+      - "eraseOverlapIntervals([[1, 2], [2, 3]])"
+      - "eraseOverlapIntervals([])"
+      - "eraseOverlapIntervals([[1, 100], [11, 22], [1, 11], [2, 12]])"
+    solution: |
+      function eraseOverlapIntervals(intervals) {
+        const sorted = [...intervals].sort((a, b) => a[1] - b[1]);
+        let removed = 0;
+        let lastEnd = -Infinity;
+        for (const [start, end] of sorted) {
+          if (start >= lastEnd) lastEnd = end;
+          else removed++;
+        }
+        return removed;
+      }
+    hint: Keeping the interval that ends earliest leaves the most room for the rest.
+    reject:
+      - |
+        function eraseOverlapIntervals(intervals) {
+          return 0;
+        }
+
+  - kind: code
+    title: How many meeting rooms?
+    body: |
+      Write `minMeetingRooms(intervals)`: given meetings as `[start, end]`, the minimum number of rooms so no two meetings in the same room overlap (a meeting may start exactly when another ends).
+
+      Sort all **starts** and all **ends** separately. Sweep the starts: a meeting takes a new room unless the earliest-ending meeting has already finished (then it reuses that room).
+    code: |
+      function minMeetingRooms(intervals) {
+        return 0;
+      }
+    tests:
+      - "minMeetingRooms([[0, 30], [5, 10], [15, 20]])"
+      - "minMeetingRooms([[7, 10], [2, 4]])"
+      - "minMeetingRooms([[1, 5], [2, 6], [3, 7], [4, 8]])"
+      - "minMeetingRooms([])"
+      - "minMeetingRooms([[1, 2], [2, 3], [3, 4]])"
+    solution: |
+      function minMeetingRooms(intervals) {
+        const starts = intervals.map((i) => i[0]).sort((a, b) => a - b);
+        const ends = intervals.map((i) => i[1]).sort((a, b) => a - b);
+        let rooms = 0;
+        let endIndex = 0;
+        for (const start of starts) {
+          if (start >= ends[endIndex]) endIndex++;
+          else rooms++;
+        }
+        return rooms;
+      }
+    hint: If the next meeting starts at or after the earliest end, one room frees up (advance `endIndex`). Otherwise you need one more room.
+    reject:
+      - |
+        function minMeetingRooms(intervals) {
+          return intervals.length;
+        }
+
+  - kind: code
+    title: Task scheduler
+    body: |
+      A CPU has tasks labelled by letters. It does one task per unit of time (or sits idle). The same task must be separated by at least `n` units of cooldown. Write `leastInterval(tasks, n)`: the least time to finish every task.
+
+      Greedy insight: the most frequent task creates the bottleneck. With `maxCount` copies of it, you need `(maxCount − 1)` gaps of `n + 1` slots, plus a last row containing every task tied for the most copies. The answer is at least the number of tasks.
+    code: |
+      function leastInterval(tasks, n) {
+        return tasks.length;
+      }
+    tests:
+      - "leastInterval(['A', 'A', 'A', 'B', 'B', 'B'], 2)"
+      - "leastInterval(['A', 'A', 'A', 'B', 'B', 'B'], 0)"
+      - "leastInterval(['A', 'A', 'A', 'A', 'A', 'A', 'B', 'C', 'D', 'E', 'F', 'G'], 2)"
+      - "leastInterval(['A'], 5)"
+      - "leastInterval(['A', 'B', 'C'], 2)"
+    solution: |
+      function leastInterval(tasks, n) {
+        const counts = new Map();
+        for (const t of tasks) counts.set(t, (counts.get(t) || 0) + 1);
+        const maxCount = Math.max(...counts.values());
+        let tied = 0;
+        for (const c of counts.values()) if (c === maxCount) tied++;
+        return Math.max(tasks.length, (maxCount - 1) * (n + 1) + tied);
+      }
+    hint: "Count each task. The frame is `(maxCount - 1) * (n + 1) + (number of tasks with maxCount)`. Take the bigger of that and `tasks.length`."
+    reject:
+      - |
+        function leastInterval(tasks, n) {
+          return tasks.length;
+        }
+
+  - kind: why
+    body: |
+      Greedy is the most satisfying family: short code, fast programs, and a little proof-by-intuition. The danger is trusting a greedy idea that only *looks* right. That is why you hunt for counterexamples before you code.
+
+      A practical checklist: is there an ordering (by end time, by ratio, by size) that makes the local choice safe? If a sort makes the choice obvious, greedy is probably the answer.
+
+  - kind: recap
+    body: |
+      - **Greedy** takes the best-looking choice at each step, without going back. It is only correct when the problem allows it. Coin change with odd coins is the classic counterexample.
+      - Test a greedy idea with **small counterexamples** and an **exchange argument**.
+      - **Kadane:** restart the running sum when it goes negative. **Jump game:** track the farthest reach.
+      - **Gas station:** if total gas ≥ total cost, restart the start after every negative tank.
+      - **Intervals:** sort first. Merge by start, drop-to-avoid-overlap by end, and count rooms with sorted starts and ends.
+      - **Task scheduler:** the most frequent task decides the frame.

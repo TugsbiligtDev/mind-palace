@@ -1,0 +1,760 @@
+steps:
+  - kind: explain
+    title: The Inkwell lending desk
+    body: |
+      Inkwell Books also runs a small lending library, and Inspector Bold wants its records modelled properly. This is the **Part 6 checkpoint**: a library-management system with three classes.
+
+      - **`Book`** (a dataclass): `isbn`, `title`, `author`, `copies` (how many copies the library owns).
+      - **`Member`**: has a name and a list of borrowed ISBNs; may borrow at most 3 books.
+      - **`Library`**: holds the books and tracks loans, and enforces the **borrowing and return rules**.
+
+      You build it in five cases. Each starter already contains the earlier, finished code, so you add one piece at a time. A custom error class `LibraryError` is provided.
+
+  - kind: code
+    title: "1. Book and Member"
+    body: |
+      Write:
+
+      - `Book` as a **dataclass** with `isbn: str`, `title: str`, `author: str`, `copies: int = 1`.
+      - `Member(name)` with `name` and `borrowed` (a **fresh list** of ISBNs for each member), a class constant `LIMIT = 3`, and `can_borrow()`, which is `True` while they hold fewer than `LIMIT` books.
+    code: |
+      from dataclasses import dataclass
+
+
+      class LibraryError(Exception):
+          """Raised when a library rule is broken."""
+    tests:
+      - "Book('1', 'Dune', 'Herbert')"
+      - "Book('1', 'Dune', 'Herbert', 3).copies"
+      - "m = Member('Ada')\nresult = (m.name, m.borrowed, m.can_borrow(), Member.LIMIT)"
+      - "m = Member('Ada')\nm.borrowed = ['a', 'b', 'c']\nresult = m.can_borrow()"
+      - "a = Member('A')\nb = Member('B')\na.borrowed.append('x')\nresult = b.borrowed"
+    solution: |
+      from dataclasses import dataclass
+
+
+      class LibraryError(Exception):
+          """Raised when a library rule is broken."""
+
+
+      @dataclass
+      class Book:
+          isbn: str
+          title: str
+          author: str
+          copies: int = 1
+
+
+      class Member:
+          LIMIT = 3
+
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < self.LIMIT
+    hint: "`@dataclass class Book:` with four fields. In `Member.__init__`, create `self.borrowed = []` (not a class attribute)."
+    reject:
+      - |
+        from dataclasses import dataclass
+
+
+        @dataclass
+        class Book:
+            isbn: str
+            title: str
+            author: str
+            copies: int = 1
+
+
+        class Member:
+            LIMIT = 3
+            borrowed = []
+
+            def __init__(self, name):
+                self.name = name
+
+            def can_borrow(self):
+                return len(self.borrowed) < self.LIMIT
+
+  - kind: code
+    title: "2. The Library holds books"
+    body: |
+      Add a `Library` class.
+
+      - `Library()` starts with no books (keep them in a dict from ISBN to `Book`, and a second dict `_loans` from ISBN to how many are lent out).
+      - `add_book(book)`: if that ISBN already exists, **add the new copies** to the existing book; otherwise store the book.
+      - `find(isbn)`: return the `Book`, or raise `LibraryError("no such book")`.
+      - `available(isbn)`: copies owned minus copies on loan (nothing is lent yet, so for now it equals `copies`).
+    code: |
+      from dataclasses import dataclass
+
+
+      class LibraryError(Exception):
+          """Raised when a library rule is broken."""
+
+
+      @dataclass
+      class Book:
+          isbn: str
+          title: str
+          author: str
+          copies: int = 1
+
+
+      class Member:
+          LIMIT = 3
+
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < self.LIMIT
+    tests:
+      - "lib = Library()\nlib.add_book(Book('1', 'Dune', 'H', 2))\nresult = (lib.find('1').title, lib.available('1'))"
+      - "lib = Library()\nlib.add_book(Book('1', 'Dune', 'H', 2))\nlib.add_book(Book('1', 'Dune', 'H', 3))\nresult = lib.find('1').copies"
+      - "lib = Library()\ntry:\n    lib.find('9')\nexcept LibraryError as e:\n    result = str(e)"
+    solution: |
+      from dataclasses import dataclass
+
+
+      class LibraryError(Exception):
+          """Raised when a library rule is broken."""
+
+
+      @dataclass
+      class Book:
+          isbn: str
+          title: str
+          author: str
+          copies: int = 1
+
+
+      class Member:
+          LIMIT = 3
+
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < self.LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self._books = {}
+              self._loans = {}
+
+          def add_book(self, book):
+              if book.isbn in self._books:
+                  self._books[book.isbn].copies += book.copies
+              else:
+                  self._books[book.isbn] = book
+
+          def find(self, isbn):
+              if isbn not in self._books:
+                  raise LibraryError("no such book")
+              return self._books[isbn]
+
+          def available(self, isbn):
+              return self.find(isbn).copies - self._loans.get(isbn, 0)
+    hint: "Use a dict `self._books`, and another `self._loans` (ISBN to how many are lent) for the next step."
+    reject:
+      - |
+        from dataclasses import dataclass
+
+
+        class LibraryError(Exception):
+            pass
+
+
+        @dataclass
+        class Book:
+            isbn: str
+            title: str
+            author: str
+            copies: int = 1
+
+
+        class Library:
+            def __init__(self):
+                self._books = {}
+
+            def add_book(self, book):
+                self._books[book.isbn] = book
+
+            def find(self, isbn):
+                if isbn not in self._books:
+                    raise LibraryError("no such book")
+                return self._books[isbn]
+
+            def available(self, isbn):
+                return self.find(isbn).copies
+
+  - kind: code
+    title: "3. Borrowing rules"
+    body: |
+      Add `checkout(member, isbn)` to `Library`. Enforce these rules, raising `LibraryError` with **exactly these messages**, checked in this order:
+
+      1. unknown book: `"no such book"`
+      2. member already holds this book: `"already borrowed"`
+      3. member is at the limit: `"limit reached"`
+      4. no copy on the shelf: `"no copies left"`
+
+      On success, add the ISBN to `member.borrowed` and record the loan so `available(isbn)` drops by one.
+    code: |
+      from dataclasses import dataclass
+
+
+      class LibraryError(Exception):
+          """Raised when a library rule is broken."""
+
+
+      @dataclass
+      class Book:
+          isbn: str
+          title: str
+          author: str
+          copies: int = 1
+
+
+      class Member:
+          LIMIT = 3
+
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < self.LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self._books = {}
+              self._loans = {}
+
+          def add_book(self, book):
+              if book.isbn in self._books:
+                  self._books[book.isbn].copies += book.copies
+              else:
+                  self._books[book.isbn] = book
+
+          def find(self, isbn):
+              if isbn not in self._books:
+                  raise LibraryError("no such book")
+              return self._books[isbn]
+
+          def available(self, isbn):
+              return self.find(isbn).copies - self._loans.get(isbn, 0)
+    tests:
+      - "lib = Library()\nlib.add_book(Book('1', 'Dune', 'H', 2))\nm = Member('Ada')\nlib.checkout(m, '1')\nresult = (m.borrowed, lib.available('1'))"
+      - "lib = Library()\nm = Member('Ada')\ntry:\n    lib.checkout(m, '9')\nexcept LibraryError as e:\n    result = str(e)"
+      - "lib = Library()\nlib.add_book(Book('1', 'Dune', 'H', 2))\nm = Member('Ada')\nlib.checkout(m, '1')\ntry:\n    lib.checkout(m, '1')\nexcept LibraryError as e:\n    result = str(e)"
+      - "lib = Library()\nfor i in '1234':\n    lib.add_book(Book(i, 't', 'a', 1))\nm = Member('Ada')\nfor i in '123':\n    lib.checkout(m, i)\ntry:\n    lib.checkout(m, '4')\nexcept LibraryError as e:\n    result = str(e)"
+      - "lib = Library()\nlib.add_book(Book('1', 'Dune', 'H', 1))\na = Member('A')\nb = Member('B')\nlib.checkout(a, '1')\ntry:\n    lib.checkout(b, '1')\nexcept LibraryError as e:\n    result = (str(e), b.borrowed)"
+    solution: |
+      from dataclasses import dataclass
+
+
+      class LibraryError(Exception):
+          """Raised when a library rule is broken."""
+
+
+      @dataclass
+      class Book:
+          isbn: str
+          title: str
+          author: str
+          copies: int = 1
+
+
+      class Member:
+          LIMIT = 3
+
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < self.LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self._books = {}
+              self._loans = {}
+
+          def add_book(self, book):
+              if book.isbn in self._books:
+                  self._books[book.isbn].copies += book.copies
+              else:
+                  self._books[book.isbn] = book
+
+          def find(self, isbn):
+              if isbn not in self._books:
+                  raise LibraryError("no such book")
+              return self._books[isbn]
+
+          def available(self, isbn):
+              return self.find(isbn).copies - self._loans.get(isbn, 0)
+
+          def checkout(self, member, isbn):
+              self.find(isbn)
+              if isbn in member.borrowed:
+                  raise LibraryError("already borrowed")
+              if not member.can_borrow():
+                  raise LibraryError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise LibraryError("no copies left")
+              member.borrowed.append(isbn)
+              self._loans[isbn] = self._loans.get(isbn, 0) + 1
+    hint: "Check the four rules in the stated order with `if ...: raise LibraryError(\"...\")`, then update both `member.borrowed` and `self._loans`."
+    reject:
+      - |
+        from dataclasses import dataclass
+
+
+        class LibraryError(Exception):
+            pass
+
+
+        @dataclass
+        class Book:
+            isbn: str
+            title: str
+            author: str
+            copies: int = 1
+
+
+        class Member:
+            LIMIT = 3
+
+            def __init__(self, name):
+                self.name = name
+                self.borrowed = []
+
+            def can_borrow(self):
+                return len(self.borrowed) < self.LIMIT
+
+
+        class Library:
+            def __init__(self):
+                self._books = {}
+                self._loans = {}
+
+            def add_book(self, book):
+                self._books[book.isbn] = book
+
+            def find(self, isbn):
+                if isbn not in self._books:
+                    raise LibraryError("no such book")
+                return self._books[isbn]
+
+            def available(self, isbn):
+                return self.find(isbn).copies - self._loans.get(isbn, 0)
+
+            def checkout(self, member, isbn):
+                self.find(isbn)
+                member.borrowed.append(isbn)
+                self._loans[isbn] = self._loans.get(isbn, 0) + 1
+
+  - kind: code
+    title: "4. Returns and late fines"
+    body: |
+      Add `return_book(member, isbn, days_late=0)` to `Library`. If the member does not hold that book, raise `LibraryError("not borrowed")`. Otherwise remove it from `member.borrowed`, free the copy, and **return the fine in cents**: 25 cents per day late, **capped at 1000**. On time (0 days) the fine is `0`.
+
+      Add a `@staticmethod` `fine(days_late)` that computes the fine, and use it.
+    code: |
+      from dataclasses import dataclass
+
+
+      class LibraryError(Exception):
+          """Raised when a library rule is broken."""
+
+
+      @dataclass
+      class Book:
+          isbn: str
+          title: str
+          author: str
+          copies: int = 1
+
+
+      class Member:
+          LIMIT = 3
+
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < self.LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self._books = {}
+              self._loans = {}
+
+          def add_book(self, book):
+              if book.isbn in self._books:
+                  self._books[book.isbn].copies += book.copies
+              else:
+                  self._books[book.isbn] = book
+
+          def find(self, isbn):
+              if isbn not in self._books:
+                  raise LibraryError("no such book")
+              return self._books[isbn]
+
+          def available(self, isbn):
+              return self.find(isbn).copies - self._loans.get(isbn, 0)
+
+          def checkout(self, member, isbn):
+              self.find(isbn)
+              if isbn in member.borrowed:
+                  raise LibraryError("already borrowed")
+              if not member.can_borrow():
+                  raise LibraryError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise LibraryError("no copies left")
+              member.borrowed.append(isbn)
+              self._loans[isbn] = self._loans.get(isbn, 0) + 1
+    tests:
+      - "Library.fine(0)"
+      - "Library.fine(3)"
+      - "Library.fine(100)"
+      - "lib = Library()\nlib.add_book(Book('1', 'D', 'H', 1))\nm = Member('A')\nlib.checkout(m, '1')\nfine = lib.return_book(m, '1', 4)\nresult = (fine, m.borrowed, lib.available('1'))"
+      - "lib = Library()\nlib.add_book(Book('1', 'D', 'H', 1))\nm = Member('A')\ntry:\n    lib.return_book(m, '1')\nexcept LibraryError as e:\n    result = str(e)"
+      - "lib = Library()\nlib.add_book(Book('1', 'D', 'H', 1))\na = Member('A')\nb = Member('B')\nlib.checkout(a, '1')\nlib.return_book(a, '1')\nlib.checkout(b, '1')\nresult = b.borrowed"
+    solution: |
+      from dataclasses import dataclass
+
+
+      class LibraryError(Exception):
+          """Raised when a library rule is broken."""
+
+
+      @dataclass
+      class Book:
+          isbn: str
+          title: str
+          author: str
+          copies: int = 1
+
+
+      class Member:
+          LIMIT = 3
+
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < self.LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self._books = {}
+              self._loans = {}
+
+          def add_book(self, book):
+              if book.isbn in self._books:
+                  self._books[book.isbn].copies += book.copies
+              else:
+                  self._books[book.isbn] = book
+
+          def find(self, isbn):
+              if isbn not in self._books:
+                  raise LibraryError("no such book")
+              return self._books[isbn]
+
+          def available(self, isbn):
+              return self.find(isbn).copies - self._loans.get(isbn, 0)
+
+          def checkout(self, member, isbn):
+              self.find(isbn)
+              if isbn in member.borrowed:
+                  raise LibraryError("already borrowed")
+              if not member.can_borrow():
+                  raise LibraryError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise LibraryError("no copies left")
+              member.borrowed.append(isbn)
+              self._loans[isbn] = self._loans.get(isbn, 0) + 1
+
+          @staticmethod
+          def fine(days_late):
+              return min(max(days_late, 0) * 25, 1000)
+
+          def return_book(self, member, isbn, days_late=0):
+              if isbn not in member.borrowed:
+                  raise LibraryError("not borrowed")
+              member.borrowed.remove(isbn)
+              self._loans[isbn] -= 1
+              return self.fine(days_late)
+    hint: "`fine` is `min(days_late * 25, 1000)`. In `return_book`, check membership first, then `member.borrowed.remove(isbn)` and reduce the loan count."
+    reject:
+      - |
+        from dataclasses import dataclass
+
+
+        class LibraryError(Exception):
+            pass
+
+
+        @dataclass
+        class Book:
+            isbn: str
+            title: str
+            author: str
+            copies: int = 1
+
+
+        class Member:
+            LIMIT = 3
+
+            def __init__(self, name):
+                self.name = name
+                self.borrowed = []
+
+            def can_borrow(self):
+                return len(self.borrowed) < self.LIMIT
+
+
+        class Library:
+            def __init__(self):
+                self._books = {}
+                self._loans = {}
+
+            def add_book(self, book):
+                self._books[book.isbn] = book
+
+            def find(self, isbn):
+                return self._books[isbn]
+
+            def available(self, isbn):
+                return self._books[isbn].copies - self._loans.get(isbn, 0)
+
+            def checkout(self, member, isbn):
+                member.borrowed.append(isbn)
+                self._loans[isbn] = self._loans.get(isbn, 0) + 1
+
+            @staticmethod
+            def fine(days_late):
+                return days_late * 25
+
+            def return_book(self, member, isbn, days_late=0):
+                member.borrowed.remove(isbn)
+                self._loans[isbn] -= 1
+                return self.fine(days_late)
+
+  - kind: code
+    title: "5. Custom string output"
+    body: |
+      Finish the system with readable output. Add:
+
+      - `Book.__str__` giving `"Dune by Herbert"` (a dataclass keeps its own `__repr__`).
+      - `Member.__str__` giving `"Ada (2 borrowed)"`.
+      - `Library.__len__`: the number of **distinct titles** it owns.
+      - `Library.__str__`: one line per book, **sorted by title**, like `"Dune (1/2 available)"` (available / owned), joined with newlines. An empty library gives `"(empty)"`.
+    code: |
+      from dataclasses import dataclass
+
+
+      class LibraryError(Exception):
+          """Raised when a library rule is broken."""
+
+
+      @dataclass
+      class Book:
+          isbn: str
+          title: str
+          author: str
+          copies: int = 1
+
+
+      class Member:
+          LIMIT = 3
+
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < self.LIMIT
+
+
+      class Library:
+          def __init__(self):
+              self._books = {}
+              self._loans = {}
+
+          def add_book(self, book):
+              if book.isbn in self._books:
+                  self._books[book.isbn].copies += book.copies
+              else:
+                  self._books[book.isbn] = book
+
+          def find(self, isbn):
+              if isbn not in self._books:
+                  raise LibraryError("no such book")
+              return self._books[isbn]
+
+          def available(self, isbn):
+              return self.find(isbn).copies - self._loans.get(isbn, 0)
+
+          def checkout(self, member, isbn):
+              self.find(isbn)
+              if isbn in member.borrowed:
+                  raise LibraryError("already borrowed")
+              if not member.can_borrow():
+                  raise LibraryError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise LibraryError("no copies left")
+              member.borrowed.append(isbn)
+              self._loans[isbn] = self._loans.get(isbn, 0) + 1
+    tests:
+      - "str(Book('1', 'Dune', 'Herbert'))"
+      - "m = Member('Ada')\nm.borrowed = ['1', '2']\nresult = str(m)"
+      - "str(Library())"
+      - "lib = Library()\nlib.add_book(Book('2', 'Emma', 'Austen', 1))\nlib.add_book(Book('1', 'Dune', 'Herbert', 2))\nresult = (len(lib), str(lib))"
+      - "lib = Library()\nlib.add_book(Book('1', 'Dune', 'Herbert', 2))\nlib.checkout(Member('A'), '1')\nresult = str(lib)"
+    solution: |
+      from dataclasses import dataclass
+
+
+      class LibraryError(Exception):
+          """Raised when a library rule is broken."""
+
+
+      @dataclass
+      class Book:
+          isbn: str
+          title: str
+          author: str
+          copies: int = 1
+
+          def __str__(self):
+              return f"{self.title} by {self.author}"
+
+
+      class Member:
+          LIMIT = 3
+
+          def __init__(self, name):
+              self.name = name
+              self.borrowed = []
+
+          def can_borrow(self):
+              return len(self.borrowed) < self.LIMIT
+
+          def __str__(self):
+              return f"{self.name} ({len(self.borrowed)} borrowed)"
+
+
+      class Library:
+          def __init__(self):
+              self._books = {}
+              self._loans = {}
+
+          def add_book(self, book):
+              if book.isbn in self._books:
+                  self._books[book.isbn].copies += book.copies
+              else:
+                  self._books[book.isbn] = book
+
+          def find(self, isbn):
+              if isbn not in self._books:
+                  raise LibraryError("no such book")
+              return self._books[isbn]
+
+          def available(self, isbn):
+              return self.find(isbn).copies - self._loans.get(isbn, 0)
+
+          def checkout(self, member, isbn):
+              self.find(isbn)
+              if isbn in member.borrowed:
+                  raise LibraryError("already borrowed")
+              if not member.can_borrow():
+                  raise LibraryError("limit reached")
+              if self.available(isbn) <= 0:
+                  raise LibraryError("no copies left")
+              member.borrowed.append(isbn)
+              self._loans[isbn] = self._loans.get(isbn, 0) + 1
+
+          def __len__(self):
+              return len(self._books)
+
+          def __str__(self):
+              if not self._books:
+                  return "(empty)"
+              books = sorted(self._books.values(), key=lambda b: b.title)
+              return "\n".join(
+                  f"{b.title} ({self.available(b.isbn)}/{b.copies} available)" for b in books
+              )
+    hint: "Add `__str__` to `Book` and `Member`, and `__len__` and `__str__` to `Library`. Sort with `sorted(self._books.values(), key=lambda b: b.title)`."
+    reject:
+      - |
+        from dataclasses import dataclass
+
+
+        class LibraryError(Exception):
+            pass
+
+
+        @dataclass
+        class Book:
+            isbn: str
+            title: str
+            author: str
+            copies: int = 1
+
+
+        class Member:
+            def __init__(self, name):
+                self.name = name
+                self.borrowed = []
+
+
+        class Library:
+            def __init__(self):
+                self._books = {}
+
+            def add_book(self, book):
+                self._books[book.isbn] = book
+
+  - kind: mac
+    title: Run it on your Mac
+    body: |
+      Save the finished classes in a file and try them from a small script. (Use your own working code from the cases above.) This checkpoint is for you: when you have run a borrow, a return and printed the library, press *I ran it*.
+    commands: |
+      mkdir -p ~/Desktop/library && cd ~/Desktop/library
+      # save your Book, Member and Library classes as library.py, then:
+      cat > demo.py <<'PY'
+      from library import Book, Library, Member
+
+      lib = Library()
+      lib.add_book(Book("1", "Dune", "Herbert", 2))
+      ada = Member("Ada")
+      lib.checkout(ada, "1")
+      print(ada)
+      print(lib)
+      print("fine:", lib.return_book(ada, "1", days_late=3))
+      PY
+      uv run demo.py
+
+  - kind: why
+    body: |
+      You just built a small but real domain model: a data class for records, classes with state and rules, a custom error, composition (the library holds books and tracks loans), and readable output. Every business program, from a shop to a game, is built the same way.
+
+  - kind: recap
+    body: |
+      - The **Part 6 checkpoint**: Book (dataclass), Member and Library with borrowing/return rules and custom `__str__`.
+      - Keep **rules in one place** (the Library), raise a **specific exception class** for rule violations, and keep per-object lists in `__init__`.
+      - `@staticmethod` for helpers that need no object (`fine`), dunder methods for natural output.

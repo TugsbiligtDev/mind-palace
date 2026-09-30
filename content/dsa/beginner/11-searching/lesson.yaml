@@ -1,0 +1,365 @@
+steps:
+  - kind: explain
+    title: Two ways to find something
+    body: |
+      **Linear search** looks at every item until it finds the target. It works on any array and costs **O(n)**.
+
+      **Binary search** works only on a **sorted** array, and it is dramatically faster: **O(log n)**. Like guessing a number from 1 to 100, you always guess the middle, and the answer "higher" or "lower" throws away half of what is left. A million items take about 20 guesses.
+
+      The rule to remember: **sorted data lets you throw away half the search each step.**
+
+  - kind: code
+    title: Play the guessing game
+    body: |
+      This code finds `target` in a sorted array by halving. Run it, then change `target` and watch how few steps it takes. Try a value that is not in the array.
+    code: |
+      const nums = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91];
+      const target = 23;
+
+      let lo = 0;
+      let hi = nums.length - 1;
+      let steps = 0;
+      let found = -1;
+
+      while (lo <= hi) {
+        steps++;
+        const mid = Math.floor((lo + hi) / 2);
+        console.log("look at index", mid, "value", nums[mid]);
+        if (nums[mid] === target) {
+          found = mid;
+          break;
+        }
+        if (nums[mid] < target) lo = mid + 1;
+        else hi = mid - 1;
+      }
+
+      console.log("found at", found, "after", steps, "steps");
+
+  - kind: explain
+    title: The binary search template
+    body: |
+      Keep two markers, `lo` and `hi`, around the part that could still hold the answer.
+
+      ```js
+      let lo = 0, hi = nums.length - 1;
+      while (lo <= hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (nums[mid] === target) return mid;
+        if (nums[mid] < target) lo = mid + 1;   // answer is to the right
+        else hi = mid - 1;                      // answer is to the left
+      }
+      return -1;
+      ```
+
+      Three details cause almost all bugs:
+
+      1. **`lo <= hi`**: while the range holds at least one item. With `<` you skip a range of one item.
+      2. **`mid ± 1`**: you already checked `mid`, so exclude it. Otherwise the loop can run forever.
+      3. **Computing `mid`**: `Math.floor((lo + hi) / 2)`, or `(lo + hi) >> 1`. In other languages `(lo + hi)` can overflow, but a JavaScript number will not for realistic sizes.
+
+  - kind: code
+    title: Write binary search
+    body: |
+      Write `binarySearch(nums, target)`: return the index of `target` in the sorted array `nums`, or `-1` if it is not there.
+    code: |
+      function binarySearch(nums, target) {
+        return -1;
+      }
+    tests:
+      - "binarySearch([-1, 0, 3, 5, 9, 12], 9)"
+      - "binarySearch([-1, 0, 3, 5, 9, 12], 2)"
+      - "binarySearch([], 4)"
+      - "binarySearch([5], 5)"
+      - "binarySearch([5], 3)"
+      - "binarySearch([1, 3, 5, 7, 9, 11, 13], 1)"
+      - "binarySearch([1, 3, 5, 7, 9, 11, 13], 13)"
+    solution: |
+      function binarySearch(nums, target) {
+        let lo = 0;
+        let hi = nums.length - 1;
+        while (lo <= hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (nums[mid] === target) return mid;
+          if (nums[mid] < target) lo = mid + 1;
+          else hi = mid - 1;
+        }
+        return -1;
+      }
+    hint: Start with `lo = 0` and `hi = nums.length - 1`, and loop while `lo <= hi`.
+    reject:
+      - |
+        function binarySearch(nums, target) {
+          return nums.indexOf(target) === 0 ? 0 : -1;
+        }
+
+  - kind: code
+    title: "Find the bug: one item is not enough"
+    body: |
+      This binary search uses `lo < hi` and misses answers. Run it on `[5]` looking for `5` and read what it returns. Fix it so every test passes.
+    code: |
+      function search(nums, target) {
+        let lo = 0;
+        let hi = nums.length - 1;
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (nums[mid] === target) return mid;
+          if (nums[mid] < target) lo = mid + 1;
+          else hi = mid - 1;
+        }
+        return -1;
+      }
+    tests:
+      - "search([5], 5)"
+      - "search([1, 3, 5, 7], 7)"
+      - "search([1, 3, 5, 7], 1)"
+      - "search([1, 3, 5, 7], 4)"
+      - "search([2, 4], 4)"
+    solution: |
+      function search(nums, target) {
+        let lo = 0;
+        let hi = nums.length - 1;
+        while (lo <= hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (nums[mid] === target) return mid;
+          if (nums[mid] < target) lo = mid + 1;
+          else hi = mid - 1;
+        }
+        return -1;
+      }
+    hint: When `lo` and `hi` are equal, one candidate is left, and it still needs checking.
+    broken_starter: true
+    reject:
+      - |
+        function search(nums, target) {
+          let lo = 0;
+          let hi = nums.length - 1;
+          while (lo < hi) {
+            const mid = Math.floor((lo + hi) / 2);
+            if (nums[mid] === target) return mid;
+            if (nums[mid] < target) lo = mid + 1;
+            else hi = mid - 1;
+          }
+          return -1;
+        }
+
+  - kind: explain
+    title: Lower bound, the most useful variant
+    body: |
+      Often you do not want "is it there?" but "**where would it go?**" The **lower bound** is the first index whose value is **at least** `target`. It is also the spot where you would insert `target` to keep the array sorted.
+
+      For `[1, 3, 5, 6]`: target `5` → `2`, target `2` → `1`, target `7` → `4` (the end).
+
+      This uses the second common template: `lo < hi`, where `hi` starts at `nums.length` (one past the end), and you **keep** `mid` as a candidate when it might be the answer:
+
+      ```js
+      let lo = 0, hi = nums.length;
+      while (lo < hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (nums[mid] < target) lo = mid + 1;
+        else hi = mid;          // mid could be the answer, so keep it
+      }
+      return lo;
+      ```
+
+      **When to use which?** `lo <= hi` with `mid ± 1` finds an *exact* match. `lo < hi` with `hi = mid` finds a *boundary* ("first that is at least…").
+
+  - kind: code
+    title: Find the insert position
+    body: |
+      Write `lowerBound(nums, target)`: the first index `i` with `nums[i] >= target`, or `nums.length` if there is none.
+    code: |
+      function lowerBound(nums, target) {
+        return 0;
+      }
+    tests:
+      - "lowerBound([1, 3, 5, 6], 5)"
+      - "lowerBound([1, 3, 5, 6], 2)"
+      - "lowerBound([1, 3, 5, 6], 7)"
+      - "lowerBound([1, 3, 5, 6], 0)"
+      - "lowerBound([], 3)"
+      - "lowerBound([2, 2, 2, 2], 2)"
+    solution: |
+      function lowerBound(nums, target) {
+        let lo = 0;
+        let hi = nums.length;
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (nums[mid] < target) lo = mid + 1;
+          else hi = mid;
+        }
+        return lo;
+      }
+    hint: "Use the boundary template: `hi` starts at `nums.length`, and `nums[mid] < target` is the \"go right\" case."
+    reject:
+      - |
+        function lowerBound(nums, target) {
+          let lo = 0;
+          let hi = nums.length - 1;
+          while (lo <= hi) {
+            const mid = Math.floor((lo + hi) / 2);
+            if (nums[mid] < target) lo = mid + 1;
+            else hi = mid - 1;
+          }
+          return lo === 0 ? 1 : lo;
+        }
+
+  - kind: explain
+    title: First and last occurrence
+    body: |
+      With duplicates, `[5, 7, 7, 8, 8, 10]` has two 8s. To find where the 8s **start and end**:
+
+      - **First position** of `x` = `lowerBound(x)`.
+      - **Last position** of `x` = `lowerBound(x + 1) - 1` (the spot just before the first number bigger than `x`; for whole numbers).
+
+      Then check `nums[first] === x`. If not, `x` is not in the array.
+
+      This turns "how many times does x appear?" into two O(log n) searches instead of an O(n) scan: `count = last − first + 1`.
+
+  - kind: code
+    title: First and last position
+    body: |
+      Write `searchRange(nums, target)` for a sorted array of whole numbers: return `[first, last]` positions of `target`, or `[-1, -1]` if it is missing. Reuse the lower-bound idea.
+    code: |
+      function lowerBound(nums, target) {
+        let lo = 0;
+        let hi = nums.length;
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (nums[mid] < target) lo = mid + 1;
+          else hi = mid;
+        }
+        return lo;
+      }
+
+      function searchRange(nums, target) {
+        return [-1, -1];
+      }
+    tests:
+      - "searchRange([5, 7, 7, 8, 8, 10], 8)"
+      - "searchRange([5, 7, 7, 8, 8, 10], 6)"
+      - "searchRange([], 0)"
+      - "searchRange([1], 1)"
+      - "searchRange([2, 2, 2], 2)"
+      - "searchRange([1, 2, 3], 3)"
+    solution: |
+      function lowerBound(nums, target) {
+        let lo = 0;
+        let hi = nums.length;
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (nums[mid] < target) lo = mid + 1;
+          else hi = mid;
+        }
+        return lo;
+      }
+
+      function searchRange(nums, target) {
+        const first = lowerBound(nums, target);
+        if (first === nums.length || nums[first] !== target) return [-1, -1];
+        return [first, lowerBound(nums, target + 1) - 1];
+      }
+    hint: "Check `first === nums.length` before reading `nums[first]`."
+    reject:
+      - |
+        function lowerBound(nums, target) {
+          return nums.indexOf(target);
+        }
+        function searchRange(nums, target) {
+          const i = nums.indexOf(target);
+          return [i, i];
+        }
+
+  - kind: explain
+    title: "Binary search on the answer"
+    body: |
+      Binary search does not need an array. It works whenever you can ask a **yes/no question that flips exactly once**, from all "no" to all "yes".
+
+      *What is the integer square root of `x`?* The answer is the biggest `r` with `r × r <= x`. For small `r` the question "is `r × r <= x`?" is yes; past some point it turns to no. Search for that turning point among the numbers `0 … x`.
+
+      The pattern: keep the last value that answered "yes", and move `lo` up or `hi` down. You will use it a lot in Module 16.
+
+  - kind: code
+    title: Integer square root
+    body: |
+      Write `mySqrt(x)`: the largest whole number `r` with `r * r <= x`, for `x >= 0`. Use binary search over `0 … x`, not `Math.sqrt`. `mySqrt(8)` is `2`.
+    code: |
+      function mySqrt(x) {
+        return Math.round(Math.sqrt(x));
+      }
+    tests:
+      - "mySqrt(0)"
+      - "mySqrt(1)"
+      - "mySqrt(8)"
+      - "mySqrt(16)"
+      - "mySqrt(15)"
+      - "mySqrt(2147395599)"
+    solution: |
+      function mySqrt(x) {
+        let lo = 0;
+        let hi = x;
+        let answer = 0;
+        while (lo <= hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (mid * mid <= x) {
+            answer = mid;
+            lo = mid + 1;
+          } else {
+            hi = mid - 1;
+          }
+        }
+        return answer;
+      }
+    hint: "If `mid * mid <= x`, `mid` is a valid answer, so remember it and look for something bigger."
+    broken_starter: true
+    reject:
+      - |
+        function mySqrt(x) {
+          return Math.round(Math.sqrt(x));
+        }
+
+  - kind: code
+    title: First bad version
+    body: |
+      Versions `1 … n` of a program were released, and from some version on every version is bad. You can ask `isBad(v)` (it is passed in). Write `firstBad(n, isBad)`: the **first** bad version, using as few questions as possible.
+    code: |
+      function firstBad(n, isBad) {
+        return n;
+      }
+    tests:
+      - "firstBad(10, (v) => v >= 4)"
+      - "firstBad(1, (v) => true)"
+      - "firstBad(100, (v) => v >= 100)"
+      - "firstBad(100, (v) => v >= 1)"
+      - "firstBad(5, (v) => v >= 3)"
+    solution: |
+      function firstBad(n, isBad) {
+        let lo = 1;
+        let hi = n;
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (isBad(mid)) hi = mid;
+          else lo = mid + 1;
+        }
+        return lo;
+      }
+    hint: If `mid` is bad, it might be the first, so keep it (`hi = mid`). If it is good, the answer is after it.
+    reject:
+      - |
+        function firstBad(n, isBad) {
+          return n;
+        }
+
+  - kind: why
+    body: |
+      Binary search is the first algorithm where you *feel* the difference between O(n) and O(log n). It also hides the trickiest lesson of the beginner level: the code is short, but off-by-one mistakes are easy. Practise the two templates until they are automatic.
+
+      And remember the wider idea: any time a yes/no answer changes only once, you can binary search for the switch.
+
+  - kind: recap
+    body: |
+      - **Linear search** is O(n) on any array. **Binary search** is O(log n) and needs sorted data.
+      - **Exact match:** `while (lo <= hi)`, `mid = Math.floor((lo + hi) / 2)`, and move with `mid + 1` / `mid - 1`.
+      - **Boundary (lower bound):** `while (lo < hi)`, `hi = nums.length`, and `hi = mid` when `mid` might be the answer.
+      - First and last positions come from two lower bounds.
+      - You can binary search on **an answer** (like a square root) when the yes/no question flips once.
+      - Off-by-one bugs live in `<` vs `<=` and `mid ± 1`. Trace small cases by hand.

@@ -1,0 +1,42 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A request returns status 404. Whose problem is that?
+    options: ["The client's (the thing asked for was not found)", "The server's", "The network's", "Nobody's"]
+    answer: 0
+    explanation: "4xx codes mean the request was wrong (or the resource is missing). 5xx codes mean the server failed."
+  - type: mcq
+    prompt: Where should an API key live?
+    options:
+      - In an environment variable (loaded from a git-ignored .env file in development)
+      - Hard-coded in the source file
+      - In the README
+      - In a public GitHub repository
+    answer: 0
+    explanation: Anything committed to Git should be assumed public forever.
+  - type: mcq
+    prompt: Which failures should a client retry with backoff?
+    options:
+      - 5xx server errors, network drops and 429 rate limits
+      - Every 4xx error
+      - Only 404 errors
+      - None, never retry
+    answer: 0
+    explanation: Those are often temporary. Retrying a 400 or 404 request never helps because the request itself is wrong.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from urllib.parse import urlencode
+      print(urlencode({"q": "a b", "n": 2}))
+    options: ["q=a+b&n=2", "q=a b&n=2", "?q=a+b&n=2", "q=a%20b&n=2"]
+    answer: 0
+    explanation: "`urlencode` encodes spaces as `+` and joins pairs with `&` (without the leading `?`)."
+  - type: mcq
+    prompt: Why should every HTTP call have a timeout?
+    options:
+      - Without one, a server that never answers can freeze your program forever
+      - It makes responses faster
+      - It is required by JSON
+      - It hides errors
+    answer: 0
+    explanation: A timeout turns an endless wait into an error you can handle.

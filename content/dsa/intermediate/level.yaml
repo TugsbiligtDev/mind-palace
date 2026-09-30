@@ -1,0 +1,29 @@
+id: intermediate
+title: Intermediate
+season: 2
+season_title: The Pattern Room
+season_pitch: |
+  Deeper in the vault, the locks stop being single puzzles and start repeating patterns. Learn
+  the core problem-solving patterns (two pointers, sliding window, prefix sums), then trees,
+  heaps and tries, graphs and shortest paths, greedy choices and backtracking.
+status: open
+topics:
+  - 13-two-pointers-cyclic-sort
+  - 14-sliding-window
+  - 15-prefix-sums
+  - 16-binary-search-advanced
+  - 17-monotonic-stack-queue
+  - review-3-patterns
+  - 18-binary-trees
+  - 19-binary-search-trees
+  - 20-heaps
+  - 21-tries
+  - review-4-trees-heaps-tries
+  - 22-graph-representations
+  - 23-graph-traversal
+  - 24-shortest-paths-ordering
+  - 25-union-find
+  - review-5-graphs
+  - 26-greedy
+  - 27-backtracking
+  - capstone-2-route-planner

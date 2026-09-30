@@ -1,0 +1,4 @@
+title: The Math You Actually Need
+module: 2
+summary: "Exponents, logarithms as halving, the 1 + 2 + … + n shortcut, modulo with negative numbers, and the floating-point and integer-size traps in JavaScript."
+minutes: 40

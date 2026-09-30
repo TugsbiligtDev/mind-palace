@@ -1,0 +1,5 @@
+title: "Quality retrofit"
+module: 36
+kind: review
+summary: "The Part 9 checkpoint: add type hints, a pytest suite with fixtures and parametrized tests, Ruff and pre-commit to the library system, and prove the tests catch real bugs."
+minutes: 75

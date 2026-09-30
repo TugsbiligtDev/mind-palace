@@ -1,0 +1,4 @@
+title: "Data Structures & Algorithm Patterns"
+module: 31
+summary: "Reusable problem-solving patterns: stacks and queues, priority queues with heapq, hash-map counting and grouping, two pointers, sliding windows, and binary search with bisect."
+minutes: 100

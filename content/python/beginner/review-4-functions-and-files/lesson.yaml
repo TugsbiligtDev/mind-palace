@@ -1,0 +1,269 @@
+steps:
+  - kind: explain
+    title: Making the contact book real
+    body: |
+      The contact book from the last review lived only in memory and trusted every input. The **Part 4 checkpoint** upgrades it: split into small functions, save and load a JSON file, and survive every bad-input and missing-file case without crashing.
+
+      The cases below build the pieces. At the end you assemble them into a multi-file project on your Mac.
+
+      As before, only the function name is given. Think about *which error can happen here* and *what should the caller see*.
+
+  - kind: code
+    title: "1. Parse a line"
+    body: |
+      Contacts arrive as text lines like `"Ada Lovelace,555-0101"`. Write `parse_contact(line)` returning `{"name": ..., "phone": ...}` with spaces trimmed. If the line does not have **exactly two** comma-separated parts, or either part is empty after trimming, `raise ValueError("bad line")`.
+    code: |
+      def parse_contact(line):
+          # your code
+          pass
+    tests:
+      - "parse_contact('Ada Lovelace,555-0101')"
+      - "parse_contact('  Bold , 555-0102 ')"
+      - "try:\n    parse_contact('only one part')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+      - "try:\n    parse_contact('a,b,c')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+      - "try:\n    parse_contact(' ,555')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+    solution: |
+      def parse_contact(line):
+          parts = [p.strip() for p in line.split(",")]
+          if len(parts) != 2 or not parts[0] or not parts[1]:
+              raise ValueError("bad line")
+          return {"name": parts[0], "phone": parts[1]}
+    hint: "Split on commas and strip each part. Check `len(parts) != 2` and empty parts before building the dict."
+    reject:
+      - |
+        def parse_contact(line):
+            name, phone = line.split(",")
+            return {"name": name.strip(), "phone": phone.strip()}
+
+  - kind: code
+    title: "2. Validate a phone number"
+    body: |
+      Write `clean_phone(text)`. Remove spaces and dashes; the result must be **7 to 15 digits only**. Return the digits as text, otherwise `raise ValueError("bad phone")`. `clean_phone("555-0101")` is `"5550101"`.
+    code: |
+      def clean_phone(text):
+          # your code
+          pass
+    tests:
+      - "clean_phone('555-0101')"
+      - "clean_phone(' 555 0101 ')"
+      - "try:\n    clean_phone('12-3')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+      - "try:\n    clean_phone('555-01a1')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+      - "clean_phone('123456789012345')"
+      - "try:\n    clean_phone('1234567890123456')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+    solution: |
+      def clean_phone(text):
+          digits = text.replace(" ", "").replace("-", "")
+          if not digits.isdigit() or not 7 <= len(digits) <= 15:
+              raise ValueError("bad phone")
+          return digits
+    hint: "`digits.isdigit()` and a chained comparison for the length."
+    reject:
+      - |
+        def clean_phone(text):
+            return text.replace(" ", "").replace("-", "")
+
+  - kind: code
+    title: "3. Save and load the book"
+    body: |
+      Write `save_book(path, book)` and `load_book(path)` using JSON. `load_book` must return an **empty list** if the file is missing **or** damaged, and must return a list (if the file holds anything other than a list, also return `[]`).
+    code: |
+      def save_book(path, book):
+          # your code
+          pass
+
+
+      def load_book(path):
+          # your code
+          pass
+    tests:
+      - "(save_book('b.json', [{'name': 'Ada', 'phone': '1'}]), load_book('b.json'))[1]"
+      - "load_book('nope.json')"
+      - "(open('bad.json', 'w').write('{{{'), load_book('bad.json'))[1]"
+      - "(open('obj.json', 'w').write('{\"a\": 1}'), load_book('obj.json'))[1]"
+    solution: |
+      import json
+
+
+      def save_book(path, book):
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(book, f, indent=2)
+
+
+      def load_book(path):
+          try:
+              with open(path, encoding="utf-8") as f:
+                  data = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              return []
+          return data if isinstance(data, list) else []
+    hint: "Catch `FileNotFoundError` and `json.JSONDecodeError`. After loading, check `isinstance(data, list)`."
+    reject:
+      - |
+        import json
+
+
+        def save_book(path, book):
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(book, f)
+
+
+        def load_book(path):
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+
+  - kind: code
+    title: "4. Search"
+    body: |
+      Write `search(book, text)`: return the **names** of all contacts whose name contains `text` (ignoring capitals), sorted alphabetically ignoring capitals. An empty search text matches everyone.
+    code: |
+      def search(book, text):
+          # your code
+          pass
+    tests:
+      - "search([{'name': 'Ada Lovelace', 'phone': '1'}, {'name': 'Bold', 'phone': '2'}, {'name': 'Nada', 'phone': '3'}], 'ADA')"
+      - "search([{'name': 'b', 'phone': '1'}, {'name': 'A', 'phone': '2'}], '')"
+      - "search([], 'x')"
+      - "search([{'name': 'Bold', 'phone': '2'}], 'zz')"
+    solution: |
+      def search(book, text):
+          needle = text.lower()
+          names = [c["name"] for c in book if needle in c["name"].lower()]
+          return sorted(names, key=str.lower)
+    hint: "`needle in c[\"name\"].lower()`, then `sorted(..., key=str.lower)`."
+    reject:
+      - |
+        def search(book, text):
+            names = [c["name"] for c in book if text in c["name"]]
+            return sorted(names)
+
+  - kind: code
+    title: "5. Import a CSV"
+    body: |
+      Write `import_csv(path)`. The CSV has a header `name,phone`. Return a tuple `(book, skipped)`: `book` is the list of valid contacts (with the phone cleaned to digits by the same rule as case 2: 7 to 15 digits after removing spaces and dashes), and `skipped` is how many rows were rejected. If the file is missing return `([], 0)`.
+    code: |
+      import csv
+
+
+      def import_csv(path):
+          # your code
+          pass
+    tests:
+      - "(open('c.csv', 'w').write('name,phone\\nAda,555-0101\\nBold,12\\nCole,5550103\\n'), import_csv('c.csv'))[1]"
+      - "import_csv('missing.csv')"
+      - "(open('d.csv', 'w').write('name,phone\\n,5550101\\n'), import_csv('d.csv'))[1]"
+    solution: |
+      import csv
+
+
+      def import_csv(path):
+          book = []
+          skipped = 0
+          try:
+              f = open(path, newline="", encoding="utf-8")
+          except FileNotFoundError:
+              return ([], 0)
+          with f:
+              for row in csv.DictReader(f):
+                  name = (row.get("name") or "").strip()
+                  digits = (row.get("phone") or "").replace(" ", "").replace("-", "")
+                  if name and digits.isdigit() and 7 <= len(digits) <= 15:
+                      book.append({"name": name, "phone": digits})
+                  else:
+                      skipped += 1
+          return (book, skipped)
+    hint: "Count the rows that fail: an empty name, or a phone that is not 7 to 15 digits. Use `try` around the `open`."
+    reject:
+      - |
+        import csv
+
+
+        def import_csv(path):
+            return ([], 0)
+
+  - kind: explain
+    title: From one file to a project
+    body: |
+      Real programs are split into files, each with one job. On your Mac you will assemble the contact book as a tiny project:
+
+      - `book.py`: the pure logic (parse, search),
+      - `storage.py`: saving and loading JSON,
+      - `main.py`: the program that imports the others and runs.
+
+      Each file imports the ones it needs. Only `main.py` has the `if __name__ == "__main__":` block.
+
+  - kind: mac
+    title: Assemble the project
+    body: |
+      The commands below create the three files and run the program with a couple of typed commands (using `printf`). Then run `uv run main.py` yourself and try `add`, `list` and `quit`. Run it a second time to see the saved contacts come back from the JSON file.
+
+      **Checkpoint:** paste the output. It should contain `Ada` and `Saved`.
+    commands: |
+      mkdir -p ~/Desktop/contact-book && cd ~/Desktop/contact-book
+      cat > book.py <<'PY'
+      def parse_contact(line):
+          parts = [p.strip() for p in line.split(",")]
+          if len(parts) != 2 or not parts[0] or not parts[1]:
+              raise ValueError("bad line")
+          return {"name": parts[0], "phone": parts[1]}
+
+
+      def names(book):
+          return sorted((c["name"] for c in book), key=str.lower)
+      PY
+      cat > storage.py <<'PY'
+      import json
+      from pathlib import Path
+
+      FILE = Path(__file__).parent / "contacts.json"
+
+
+      def load():
+          try:
+              data = json.loads(FILE.read_text(encoding="utf-8"))
+          except (FileNotFoundError, json.JSONDecodeError):
+              return []
+          return data if isinstance(data, list) else []
+
+
+      def save(book):
+          FILE.write_text(json.dumps(book, indent=2), encoding="utf-8")
+      PY
+      cat > main.py <<'PY'
+      import book
+      import storage
+
+
+      def main():
+          contacts = storage.load()
+          while True:
+              command = input("add / list / quit> ").strip().lower()
+              if command == "add":
+                  try:
+                      contacts.append(book.parse_contact(input("name,phone> ")))
+                  except ValueError as error:
+                      print("Could not add:", error)
+              elif command == "list":
+                  print(", ".join(book.names(contacts)) or "(empty)")
+              elif command == "quit":
+                  storage.save(contacts)
+                  print("Saved")
+                  break
+
+
+      if __name__ == "__main__":
+          main()
+      PY
+      printf 'add\nAda Lovelace,555-0101\nadd\nnonsense\nlist\nquit\n' | uv run main.py
+    expect_output:
+      - "Ada"
+      - "Saved"
+
+  - kind: why
+    body: |
+      You just did what real programmers do all day: validated input, kept data on disk, coped with damaged files, and organised code into small modules with one job each. Nothing crashed, because every bad case was expected.
+
+  - kind: recap
+    body: |
+      - The **Part 4 checkpoint**: the contact book with functions, validation, JSON storage, CSV import and separate modules.
+      - Raise `ValueError` for bad input; catch `FileNotFoundError` and `json.JSONDecodeError` for bad files.
+      - Split code by job (logic, storage, program) and use `if __name__ == "__main__":` in the entry file only.

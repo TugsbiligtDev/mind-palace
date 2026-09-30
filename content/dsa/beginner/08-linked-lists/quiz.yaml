@@ -1,0 +1,43 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+      const head = new ListNode(1, new ListNode(2, new ListNode(3)));
+      let node = head.next;
+      console.log(node.val, node.next.val, node.next.next);
+    options: ["2 3 null", "1 2 3", "2 3 undefined", "2 1 null"]
+    answer: 0
+    explanation: "`head.next` is the second node (2), its `next` is the third (3), and the third node's `next` is `null`."
+  - type: mcq
+    prompt: You already hold a reference to a node in the middle of a **singly** linked list. What is the cost of inserting a new node right after it?
+    options: ["O(1)", "O(n)", "O(log n)", "O(n²)"]
+    answer: 0
+    explanation: You only change two pointers (the new node's `next`, and the old node's `next`). Nothing shifts.
+  - type: mcq
+    prompt: Why do list solutions often start with a dummy node?
+    options:
+      - It makes the list faster
+      - The head may change, and a dummy in front removes that special case
+      - Lists cannot be empty without it
+      - It stores the length
+    answer: 1
+    explanation: With a dummy in front, every real node (including the head) has a node before it, so one piece of code handles all of them.
+  - type: mcq
+    prompt: With fast and slow pointers (fast moves 2, slow moves 1), where is `slow` when `fast` reaches the end of a list of 7 nodes?
+    options: ["The 1st node", "The 4th node, the middle", "The 7th node", "The 2nd node"]
+    answer: 1
+    explanation: "`fast` covers the list in about half the steps, so `slow` has only walked halfway."
+  - type: fill
+    prompt: The last node of a linked list has a `next` of ____.
+    code: |
+      const only = { val: 1, next: ____ };
+      console.log(only.next === null);
+    answer: "null"
+    explanation: "`null` marks the end of the list. Loops stop when the current node is `null`."

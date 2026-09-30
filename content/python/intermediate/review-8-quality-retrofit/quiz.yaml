@@ -1,0 +1,32 @@
+pass: 2
+questions:
+  - type: mcq
+    prompt: A test suite passes on your code and also passes when you deliberately break the code. What does that tell you?
+    options:
+      - The suite is not testing that behaviour and gives false confidence
+      - The code must be perfect
+      - The tests are too strict
+      - Nothing
+    answer: 0
+    explanation: Tests are only valuable if they can fail. Mutation checks find the gaps.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      import typing
+
+      def fine(days_late: int) -> int:
+          return days_late * 25
+
+      print(typing.get_type_hints(fine))
+    options: ["{'days_late': <class 'int'>, 'return': <class 'int'>}", "{}", "int", "(int) -> int"]
+    answer: 0
+    explanation: "`get_type_hints` returns the annotations, including the `return` entry."
+  - type: mcq
+    prompt: Why keep tool settings for mypy, Ruff and pytest in `pyproject.toml`?
+    options:
+      - So every developer, machine and automated check uses the same rules
+      - Python requires it
+      - It makes the tools faster
+      - It hides warnings
+    answer: 0
+    explanation: Shared configuration in the repository removes "works on my machine" differences.

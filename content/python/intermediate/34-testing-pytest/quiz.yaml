@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: How does pytest find your tests?
+    options:
+      - Files named test_*.py, and functions named test_*
+      - You must list them in a config file
+      - Only functions decorated with @test
+      - It runs every function in the project
+    answer: 0
+    explanation: pytest's discovery is based on those naming conventions, so plain functions and `assert` are enough.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      import pytest
+
+      @pytest.mark.parametrize("n, expected", [(1, 1), (2, 4), (3, 9)])
+      def check(n, expected):
+          return n * n == expected
+
+      print(len(check.pytestmark[0].args[1]))
+    options: ["3", "2", "1", "9"]
+    answer: 0
+    explanation: "The decorator records the list of three (input, expected) cases, so the test runs three times."
+  - type: mcq
+    prompt: Why use a fixture that returns a new object rather than one shared object for all tests?
+    options:
+      - So tests stay independent and cannot affect each other
+      - It is faster
+      - Fixtures cannot be shared
+      - pytest requires it
+    answer: 0
+    explanation: A test must give the same result regardless of order, so each starts from a fresh state.
+  - type: mcq
+    prompt: A function calls a weather website. What is the best way to unit-test it?
+    options:
+      - Replace the website call with a mock that returns known data
+      - Call the real website every time
+      - Skip testing it
+      - Test only when the network is up
+    answer: 0
+    explanation: Mocks make tests fast, repeatable and independent of the network.
+  - type: mcq
+    prompt: You have 100% coverage. What does that guarantee?
+    options:
+      - Every line ran during the tests, but not that the tests check the right things
+      - The program has no bugs
+      - The tests are perfect
+      - The code is fast
+    answer: 0
+    explanation: Coverage shows which lines executed. It cannot tell whether the assertions are meaningful.

@@ -1,0 +1,46 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A sliding window over an array of n items is O(n) even though it has a loop inside a loop. Why?
+    options:
+      - The inner loop is always short
+      - Each element enters the window once and leaves once, so the total moves are at most 2n
+      - JavaScript optimizes it
+      - It is actually O(n²)
+    answer: 1
+    explanation: Both `left` and `right` only move forward, so together they make at most 2n moves.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const nums = [1, 12, -5, -6, 50, 3];
+      const k = 4;
+      let sum = 0;
+      for (let i = 0; i < k; i++) sum += nums[i];
+      let best = sum;
+      for (let i = k; i < nums.length; i++) {
+        sum += nums[i] - nums[i - k];
+        best = Math.max(best, sum);
+      }
+      console.log(best);
+    options: ["51", "42", "2", "54"]
+    answer: 0
+    explanation: "The windows sum to 2, 51 and 42, and the best is 51 (12 + −5 + −6 + 50)."
+  - type: mcq
+    prompt: For "find the SHORTEST window with sum at least target", where do you record the best length?
+    options:
+      - After the shrink loop
+      - Inside the shrink loop, while the window is still valid
+      - Before the loop starts
+      - Only at the very end
+    answer: 1
+    explanation: Once the shrink loop finishes, the window is no longer valid, so it would give a length that does not satisfy the rule.
+  - type: mcq
+    prompt: The rule "no repeated characters" is broken when a character's count in the window becomes...
+    options: ["0", "1", "greater than 1", "equal to the window length"]
+    answer: 2
+    explanation: A count of 1 means it appears once. When it goes above 1, a character repeats and you must shrink.
+  - type: mcq
+    prompt: What is the best state to keep when the window must contain all the letters of a target string `t`?
+    options: ["A single number", "A Map of letter counts", "A sorted copy of the window", "A stack"]
+    answer: 1
+    explanation: Counts tell you what you have and what is still missing, and each slide changes only two entries.

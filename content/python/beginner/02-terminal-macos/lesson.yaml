@@ -1,0 +1,262 @@
+steps:
+  - kind: explain
+    title: Talking to your computer with words
+    body: |
+      You normally click icons. The **terminal** lets you *type* instead: you write a short command, press Enter, and the computer does it. Programmers love it because typed commands can be repeated, saved and combined, and because it works the same on every machine.
+
+      Two words you will hear:
+
+      - The **terminal** is the window where you type.
+      - The **shell** is the program inside it that reads your commands. On a Mac the shell is **zsh** ("z-shell").
+
+      Open it now: press **⌘ + Space**, type *Terminal*, press Enter. You will see a line ending in `%`. That is the **prompt**. It means "I'm waiting for a command".
+
+      Lines in this lesson labelled *Terminal* are for your Mac's terminal, not for this page. The exercises on the right run Python and check your understanding.
+
+  - kind: explain
+    title: Where am I? Paths
+    body: |
+      The terminal is always "standing" in one folder, called the **current folder** or **working directory**. Every command happens *there* unless you say otherwise. Mixing this up is the most common beginner mistake.
+
+      A **path** is a folder's address. There are two kinds:
+
+      - **Absolute path**: starts at the very top of the disk, with `/`. Example: `/Users/ada/Desktop`. It means the same thing wherever you are.
+      - **Relative path**: starts from where you are now. `notes` means "the folder called notes *inside the current folder*".
+
+      Four shortcuts you will type constantly:
+
+      | Shortcut | Means |
+      |---|---|
+      | `~` | Your home folder, for example `/Users/ada` |
+      | `.` | The current folder |
+      | `..` | The folder one level **up** |
+      | `/` | The top of the disk (the *root*) |
+
+  - kind: mac
+    title: Look around
+    body: |
+      Run these one at a time. After each, read what came back.
+
+      - `pwd` = **p**rint **w**orking **d**irectory: "where am I?"
+      - `ls` = **l**i**s**t: "what is in this folder?"
+      - `cd` = **c**hange **d**irectory: "go there"
+
+      **Checkpoint:** paste what Terminal printed below. It should end with a path that contains `/Desktop`.
+    commands: |
+      pwd
+      ls
+      cd ~/Desktop
+      pwd
+      cd ..
+      pwd
+    expect_output:
+      - "/Desktop"
+
+  - kind: code
+    title: Absolute or relative?
+    body: |
+      Finish `is_absolute(path)`. It returns `True` if the path is **absolute** (starts with `/`) or starts from home (`~`), and `False` for a relative path such as `notes/todo.txt`.
+
+      Text has a method `startswith`. `"/tmp".startswith("/")` is `True`. And `or` means "either one".
+    code: |
+      def is_absolute(path):
+          return False
+    tests:
+      - "is_absolute('/Users/ada/Desktop')"
+      - "is_absolute('notes/todo.txt')"
+      - "is_absolute('~/Documents')"
+      - "is_absolute('../photos')"
+      - "is_absolute('.')"
+      - "is_absolute('/')"
+    solution: |
+      def is_absolute(path):
+          return path.startswith("/") or path.startswith("~")
+    hint: "Two checks joined with `or`: `path.startswith(\"/\") or path.startswith(\"~\")`."
+    reject:
+      - |
+        def is_absolute(path):
+            return path.startswith("/")
+
+  - kind: explain
+    title: Making, copying, moving and deleting
+    body: |
+      These are the commands you will use every day:
+
+      | Command | What it does | Example |
+      |---|---|---|
+      | `mkdir` | make a folder | `mkdir python-practice` |
+      | `touch` | make an empty file | `touch notes.txt` |
+      | `cp` | copy | `cp notes.txt backup.txt` |
+      | `mv` | move **or rename** | `mv backup.txt old-notes.txt` |
+      | `rm` | remove (delete) | `rm old-notes.txt` |
+
+      Two comforts: press **Tab** and the terminal completes a name for you (`cd Desk` + Tab becomes `cd Desktop`). Press the **↑ (up arrow)** to bring back your previous commands, which is called your *history*.
+
+  - kind: mac
+    title: Build a practice folder
+    body: |
+      Make a folder, go into it, create a file, and look at it.
+
+      **Checkpoint:** paste the output. It should show `notes.txt` and a path ending in `python-practice`.
+    commands: |
+      cd ~/Desktop
+      mkdir python-practice
+      cd python-practice
+      touch notes.txt
+      ls
+      pwd
+    expect_output:
+      - "notes.txt"
+      - "python-practice"
+
+  - kind: code
+    title: Join a folder and a name
+    body: |
+      When you run `mkdir python-practice` inside `/Users/ada/Desktop`, the new folder's full path is the two joined together. Finish `join_path(folder, name)`.
+
+      `Path` from `pathlib` uses `/` to join pieces: `Path("/a") / "b"` is `Path("/a/b")`. Wrap the answer in `str(...)` to get plain text.
+    code: |
+      from pathlib import Path
+
+
+      def join_path(folder, name):
+          return ""
+    tests:
+      - "join_path('/Users/ada/Desktop', 'python-practice')"
+      - "join_path('/tmp', 'notes.txt')"
+      - "join_path('/', 'Users')"
+      - "join_path('/a/b', 'c')"
+    solution: |
+      from pathlib import Path
+
+
+      def join_path(folder, name):
+          return str(Path(folder) / name)
+    hint: "`str(Path(folder) / name)`. The `/` here is not division, it joins path pieces."
+    reject:
+      - |
+        from pathlib import Path
+
+
+        def join_path(folder, name):
+            return folder + name
+
+  - kind: code
+    title: One level up
+    body: |
+      `cd ..` goes up one folder. Finish `go_up(path)`: return the folder that contains `path`. `go_up("/Users/ada/Desktop")` is `"/Users/ada"`.
+
+      A `Path` has a `.parent`. The parent of the top `/` is `/` itself, and `Path` handles that for you.
+    code: |
+      from pathlib import Path
+
+
+      def go_up(path):
+          return path
+    tests:
+      - "go_up('/Users/ada/Desktop')"
+      - "go_up('/Users/ada')"
+      - "go_up('/Users')"
+      - "go_up('/')"
+    solution: |
+      from pathlib import Path
+
+
+      def go_up(path):
+          return str(Path(path).parent)
+    hint: "`str(Path(path).parent)`."
+    reject:
+      - |
+        from pathlib import Path
+
+
+        def go_up(path):
+            return str(Path(path).name)
+
+  - kind: mac
+    title: Copy, rename, delete
+    body: |
+      Now practise the three that change things. Do this inside your `python-practice` folder.
+
+      **Checkpoint:** paste the output. The first `ls` should show both `notes.txt` and `renamed.txt`, and the second only `notes.txt`.
+    commands: |
+      cd ~/Desktop/python-practice
+      cp notes.txt copy.txt
+      mv copy.txt renamed.txt
+      ls
+      rm renamed.txt
+      ls
+    expect_output:
+      - "renamed.txt"
+      - "notes.txt"
+
+  - kind: explain
+    title: Why rm is dangerous
+    body: |
+      `rm` does **not** send things to the Trash. The file is gone for good. And there is no "are you sure?".
+
+      Two things make it worse:
+
+      - **`rm -r`** removes a folder *and everything inside it*.
+      - **`rm -f`** ("force") silences every warning.
+
+      So `rm -rf something` deletes a whole folder, silently, forever. Most horror stories are `rm -rf` typed in the wrong folder, or with a typo. Habits that protect you:
+
+      1. Run `pwd` and `ls` first, so you know where you are and what is there.
+      2. Read the command twice before pressing Enter.
+      3. Delete single files, not folders, until you are confident.
+      4. Never paste a command from the internet that you do not understand.
+
+  - kind: code
+    title: A safety check
+    body: |
+      Finish `rm_warning(command)`. It looks at a typed command and returns:
+
+      - `"DANGER"` if it starts with `rm` and contains `-r` or `-f`,
+      - `"careful"` if it starts with `rm` without those,
+      - `"fine"` for anything else.
+
+      `rm notes.txt` is `"careful"`, `rm -rf photos` is `"DANGER"`, and `ls` is `"fine"`.
+    code: |
+      def rm_warning(command):
+          return "fine"
+    tests:
+      - "rm_warning('rm notes.txt')"
+      - "rm_warning('rm -rf photos')"
+      - "rm_warning('ls')"
+      - "rm_warning('rm -r old')"
+      - "rm_warning('rm -f x.txt')"
+      - "rm_warning('mkdir rmdir-test')"
+    solution: |
+      def rm_warning(command):
+          if command.startswith("rm"):
+              if "-r" in command or "-f" in command:
+                  return "DANGER"
+              return "careful"
+          return "fine"
+    hint: "Check `command.startswith(\"rm\")` first. Inside that, check for `-r` or `-f`. Note `mkdir rmdir-test` does not *start* with `rm`."
+    reject:
+      - |
+        def rm_warning(command):
+            if "rm" in command:
+                return "DANGER"
+            return "fine"
+
+  - kind: info
+    title: "🔹 The mistake behind most errors: the wrong folder"
+    body: |
+      When a command says `No such file or directory`, the file usually exists, just **not in the folder you are standing in**. Before anything else, run `pwd` and `ls`. You will do this for the rest of your career.
+
+      This matters for Python too: a script that opens `data.txt` looks for it in the folder where you *ran* it, not the folder where the script is saved. Module 17 comes back to this.
+
+  - kind: why
+    body: |
+      Every later tool, Python's `uv`, Git, servers, is used from the terminal. It looks strange for a day and then becomes the fastest way to work. Knowing *where you are*, and being careful with `rm`, saves you from the two most common beginner disasters.
+
+  - kind: recap
+    body: |
+      - The **terminal** is the window; the **shell** (zsh on a Mac) reads your commands.
+      - A path is **absolute** (starts with `/` or `~`) or **relative** to the current folder. `.` is here, `..` is up, `~` is home.
+      - `pwd`, `ls`, `cd`, `mkdir`, `touch`, `cp`, `mv`, `rm`. **Tab** completes names and **↑** repeats history.
+      - `rm` deletes permanently, and `rm -rf` deletes folders silently. Check `pwd` first.
+      - The classic mistake is running a command in the wrong folder.

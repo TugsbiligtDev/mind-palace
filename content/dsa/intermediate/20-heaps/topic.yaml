@@ -1,0 +1,4 @@
+title: Heaps & Priority Queues
+module: 20
+summary: "A heap stored in an array: parent and child index maths, sift-up and sift-down, writing your own MinHeap, top-k problems, merging sorted lists and the median of a stream."
+minutes: 75

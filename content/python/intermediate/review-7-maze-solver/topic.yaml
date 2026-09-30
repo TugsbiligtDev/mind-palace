@@ -1,0 +1,5 @@
+title: "Maze solver"
+module: 32
+kind: review
+summary: "The Part 8 checkpoint: read a maze from a text file, find the shortest path with BFS, draw the solution, and compare it with depth-first search on the same maze."
+minutes: 70

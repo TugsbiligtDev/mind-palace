@@ -1,0 +1,259 @@
+steps:
+  - kind: explain
+    title: Name the pattern first
+    body: |
+      Six questions, six patterns, and no hints about which is which. Before you type, spend a minute on the checklist:
+
+      - Is the input **sorted**, or are the values in a **range**? (two pointers, cyclic sort, binary search)
+      - Is it about a **contiguous piece**? (sliding window, prefix sums)
+      - Is it about the **nearest bigger or smaller** thing? (monotonic stack)
+      - Can I **check an answer** easily, and does "works" flip once? (binary search on the answer)
+
+      A hint appears after a wrong attempt, and a working answer after three.
+
+  - kind: code
+    title: "1. Squares in order"
+    body: |
+      `nums` is sorted ascending and may contain negatives. Write `sortedSquares(nums)`: the squares of every number, in ascending order, in **O(n)**.
+
+      `[-4, -1, 0, 3, 10]` gives `[0, 1, 9, 16, 100]`.
+    code: |
+      function sortedSquares(nums) {
+        // your code
+        return [];
+      }
+    tests:
+      - "sortedSquares([-4, -1, 0, 3, 10])"
+      - "sortedSquares([-7, -3, 2, 3, 11])"
+      - "sortedSquares([])"
+      - "sortedSquares([5])"
+      - "sortedSquares([-2, -1])"
+    solution: |
+      function sortedSquares(nums) {
+        const result = Array(nums.length);
+        let left = 0;
+        let right = nums.length - 1;
+        for (let i = nums.length - 1; i >= 0; i--) {
+          if (Math.abs(nums[left]) > Math.abs(nums[right])) {
+            result[i] = nums[left] * nums[left];
+            left++;
+          } else {
+            result[i] = nums[right] * nums[right];
+            right--;
+          }
+        }
+        return result;
+      }
+    hint: The biggest square is at one of the two ends. Fill the result from the back, taking the bigger end each time.
+    reject:
+      - |
+        function sortedSquares(nums) {
+          return nums.map((x) => x * x);
+        }
+
+  - kind: code
+    title: "2. Missing from the range"
+    body: |
+      `nums` holds `n` distinct numbers taken from `0 … n`, so exactly one number in that range is missing. Write `missingNumber(nums)` using O(1) extra space.
+    code: |
+      function missingNumber(nums) {
+        // your code
+        return 0;
+      }
+    tests:
+      - "missingNumber([3, 0, 1])"
+      - "missingNumber([0, 1])"
+      - "missingNumber([9, 6, 4, 2, 3, 5, 7, 0, 1])"
+      - "missingNumber([0])"
+      - "missingNumber([1])"
+    solution: |
+      function missingNumber(nums) {
+        const n = nums.length;
+        let expected = (n * (n + 1)) / 2;
+        for (const x of nums) expected -= x;
+        return expected;
+      }
+    hint: You already know a formula for the sum of `0 … n`. What is left after subtracting everything you have?
+    reject:
+      - |
+        function missingNumber(nums) {
+          return nums.length;
+        }
+
+  - kind: code
+    title: "3. The best stretch"
+    body: |
+      Write `longestOnes(nums, k)`: `nums` holds only `0` and `1`. You may flip at most `k` zeros to ones. Return the length of the longest run of ones you can make.
+    code: |
+      function longestOnes(nums, k) {
+        // your code
+        return 0;
+      }
+    tests:
+      - "longestOnes([1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0], 2)"
+      - "longestOnes([0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1], 3)"
+      - "longestOnes([0, 0, 0], 0)"
+      - "longestOnes([1, 1, 1], 0)"
+      - "longestOnes([], 2)"
+    solution: |
+      function longestOnes(nums, k) {
+        let left = 0;
+        let zeros = 0;
+        let best = 0;
+        for (let right = 0; right < nums.length; right++) {
+          if (nums[right] === 0) zeros++;
+          while (zeros > k) {
+            if (nums[left] === 0) zeros--;
+            left++;
+          }
+          best = Math.max(best, right - left + 1);
+        }
+        return best;
+      }
+    hint: Keep the window valid while it holds at most `k` zeros. Shrink from the left when it holds more.
+    reject:
+      - |
+        function longestOnes(nums, k) {
+          return Math.min(nums.length, k + 1);
+        }
+
+  - kind: code
+    title: "4. Zero-sum stretches"
+    body: |
+      Write `countZeroSumSubarrays(nums)`: how many contiguous pieces of `nums` add up to `0`. The numbers can be negative.
+    code: |
+      function countZeroSumSubarrays(nums) {
+        // your code
+        return 0;
+      }
+    tests:
+      - "countZeroSumSubarrays([1, -1, 2, -2])"
+      - "countZeroSumSubarrays([0, 0, 0])"
+      - "countZeroSumSubarrays([1, 2, 3])"
+      - "countZeroSumSubarrays([])"
+      - "countZeroSumSubarrays([3, -3, 3, -3])"
+    solution: |
+      function countZeroSumSubarrays(nums) {
+        const seen = new Map([[0, 1]]);
+        let total = 0;
+        let count = 0;
+        for (const n of nums) {
+          total += n;
+          count += seen.get(total) || 0;
+          seen.set(total, (seen.get(total) || 0) + 1);
+        }
+        return count;
+      }
+    hint: "Two prefix sums that are equal mean the numbers between them add to zero. Count matching pairs with a Map, starting with `{0: 1}`."
+    reject:
+      - |
+        function countZeroSumSubarrays(nums) {
+          return nums.filter((x) => x === 0).length;
+        }
+
+  - kind: code
+    title: "5. Fewest days"
+    body: |
+      A bakery must make `bouquets` bouquets. Flower `i` blooms on day `bloom[i]`. A bouquet needs `flowers` **adjacent** flowers that have all bloomed. Write `minDays(bloom, bouquets, flowers)`: the earliest day by which the bakery can make all the bouquets, or `-1` if it is impossible.
+    code: |
+      function minDays(bloom, bouquets, flowers) {
+        // your code
+        return -1;
+      }
+    tests:
+      - "minDays([1, 10, 3, 10, 2], 3, 1)"
+      - "minDays([1, 10, 3, 10, 2], 3, 2)"
+      - "minDays([7, 7, 7, 7, 12, 7, 7], 2, 3)"
+      - "minDays([1, 2, 3], 1, 4)"
+      - "minDays([5], 1, 1)"
+    solution: |
+      function minDays(bloom, bouquets, flowers) {
+        if (bouquets * flowers > bloom.length) return -1;
+        const canMake = (day) => {
+          let made = 0;
+          let run = 0;
+          for (const b of bloom) {
+            if (b <= day) {
+              run++;
+              if (run === flowers) {
+                made++;
+                run = 0;
+              }
+            } else {
+              run = 0;
+            }
+          }
+          return made >= bouquets;
+        };
+        let lo = Math.min(...bloom);
+        let hi = Math.max(...bloom);
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          if (canMake(mid)) hi = mid;
+          else lo = mid + 1;
+        }
+        return lo;
+      }
+    hint: If bouquets can be made by day `d`, they can be made by any later day. That is "no…no…yes…yes", so search over the days.
+    reject:
+      - |
+        function minDays(bloom, bouquets, flowers) {
+          return -1;
+        }
+
+  - kind: code
+    title: "6. Rain on the skyline"
+    body: |
+      `heights[i]` is the height of a bar of width 1. After rain, water sits between bars. Write `trapWater(heights)`: the total units of water trapped.
+
+      `[0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]` traps `6`.
+    code: |
+      function trapWater(heights) {
+        // your code
+        return 0;
+      }
+    tests:
+      - "trapWater([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1])"
+      - "trapWater([4, 2, 0, 3, 2, 5])"
+      - "trapWater([])"
+      - "trapWater([3])"
+      - "trapWater([1, 2, 3])"
+      - "trapWater([3, 0, 3])"
+    solution: |
+      function trapWater(heights) {
+        let left = 0;
+        let right = heights.length - 1;
+        let leftMax = 0;
+        let rightMax = 0;
+        let total = 0;
+        while (left < right) {
+          if (heights[left] < heights[right]) {
+            leftMax = Math.max(leftMax, heights[left]);
+            total += leftMax - heights[left];
+            left++;
+          } else {
+            rightMax = Math.max(rightMax, heights[right]);
+            total += rightMax - heights[right];
+            right--;
+          }
+        }
+        return total;
+      }
+    hint: The water above a bar is `min(tallest bar on the left, tallest bar on the right) - its height`. Two pointers can track both maxima while moving inwards.
+    reject:
+      - |
+        function trapWater(heights) {
+          return 0;
+        }
+
+  - kind: why
+    body: |
+      Each answer was short once the pattern was clear. The hard part was never the code. It was recognising the shape: sorted ends, a range, a window, prefix sums, a yes/no that flips.
+
+  - kind: recap
+    body: |
+      - Sorted input with ends that matter: **two pointers**.
+      - Values in a known range: **maths or cyclic sort**.
+      - A contiguous piece with a rule: **sliding window**.
+      - Sums of contiguous pieces: **prefix sums (plus a Map)**.
+      - "Smallest X that works": **binary search on the answer**.

@@ -1,0 +1,4 @@
+title: Searching
+module: 11
+summary: "Linear search, then binary search on sorted data: the loop template, computing the middle, finding first and last positions, and hunting off-by-one bugs."
+minutes: 55

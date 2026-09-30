@@ -1,0 +1,271 @@
+steps:
+  - kind: explain
+    title: How do we compare two solutions?
+    body: |
+      "It ran in 40 ms on my laptop" is not a good answer. Another computer, another input or another day changes the number.
+
+      Instead we ask: **as the input gets bigger, how does the amount of work grow?** We count *steps*, not seconds, and we express the answer with the input size `n`.
+
+      This is **Big-O notation**. It has two flavours:
+
+      - **Time complexity**: how many steps the code takes.
+      - **Space complexity**: how much extra memory the code uses.
+
+  - kind: explain
+    title: The common classes
+    body: |
+      From best to worst:
+
+      | Class | Name | Example | Work when n = 1 000 |
+      |---|---|---|---|
+      | O(1) | constant | read `arr[5]` | 1 |
+      | O(log n) | logarithmic | binary search | 10 |
+      | O(n) | linear | one loop over the array | 1 000 |
+      | O(n log n) | linearithmic | a good sort | 10 000 |
+      | O(n²) | quadratic | a loop inside a loop | 1 000 000 |
+      | O(2ⁿ) | exponential | try every subset | astronomically large |
+      | O(n!) | factorial | try every ordering | even larger |
+
+      The first four are usually fine. O(n²) is fine for small inputs only. The last two only work for tiny `n`.
+
+  - kind: explain
+    title: Counting work in loops
+    body: |
+      **One loop over `n` items** → n steps → **O(n)**.
+
+      **Two loops, one after the other** → n + n = 2n steps → still **O(n)**.
+
+      **A loop inside a loop**, both over `n` → n × n steps → **O(n²)**.
+
+      **A loop that halves** (`while (n > 1) n = n / 2`) → log₂ n steps → **O(log n)**.
+
+      **Drop constants and small terms.** `3n + 10` is O(n). `n² + n` is O(n²). We only care about the part that dominates when `n` gets large.
+
+  - kind: code
+    title: Instrument a loop
+    body: |
+      The best way to *believe* a count is to make the computer do it. Write `sumWithCount(nums)` that returns a two-item array `[total, steps]`, where `steps` counts how many numbers you added.
+
+      For `[1, 2, 3]` the answer is `[6, 3]`. For an array of `n` numbers, `steps` is always `n`, so the work is O(n).
+    code: |
+      function sumWithCount(nums) {
+        let total = 0;
+        let steps = 0;
+        return [total, steps];
+      }
+    tests:
+      - "sumWithCount([1, 2, 3])"
+      - "sumWithCount([])"
+      - "sumWithCount([10])"
+      - "sumWithCount([5, 5, 5, 5, 5])"
+    solution: |
+      function sumWithCount(nums) {
+        let total = 0;
+        let steps = 0;
+        for (const n of nums) {
+          total += n;
+          steps++;
+        }
+        return [total, steps];
+      }
+    reject:
+      - |
+        function sumWithCount(nums) {
+          return [nums.reduce((a, b) => a + b, 0), 1];
+        }
+
+  - kind: code
+    title: Count a nested loop
+    body: |
+      Write `nestedSteps(n)`. It must run this loop pair and return how many times the inner line ran:
+
+      ```js
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < i; j++) {
+          // count this line
+        }
+      }
+      ```
+
+      The inner loop runs `0, 1, 2, …, n - 1` times. That is the sum from Module 2, so the total is close to n²/2, which is still **O(n²)**.
+    code: |
+      function nestedSteps(n) {
+        let steps = 0;
+        return steps;
+      }
+    tests:
+      - "nestedSteps(4)"
+      - "nestedSteps(1)"
+      - "nestedSteps(0)"
+      - "nestedSteps(10)"
+      - "nestedSteps(100)"
+    solution: |
+      function nestedSteps(n) {
+        let steps = 0;
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < i; j++) {
+            steps++;
+          }
+        }
+        return steps;
+      }
+    hint: Write the two loops exactly as shown and add `1` to `steps` inside the inner one.
+    reject:
+      - |
+        function nestedSteps(n) {
+          return n * n;
+        }
+
+  - kind: explain
+    title: Best, average and worst case
+    body: |
+      The same code can do different amounts of work for different inputs. Take "find `x` in an unsorted array":
+
+      - **Best case**: `x` is the first item. 1 step.
+      - **Worst case**: `x` is last or missing. `n` steps.
+      - **Average case**: about `n / 2` steps, which is still O(n).
+
+      Unless told otherwise, Big-O means the **worst case**. It is the promise that it will never be worse than this.
+
+  - kind: explain
+    title: Amortized cost, why push is O(1)
+    body: |
+      A JavaScript array grows as you `push`. Sometimes there is room, and the push takes one step. Sometimes the array is full, so the engine allocates a bigger block (about double) and **copies every item**, which costs `n` steps.
+
+      Copies are rare. If the size doubles each time, the total copying over `n` pushes is about `1 + 2 + 4 + … + n ≈ 2n`. Spread over `n` pushes, that is a constant few steps each. We say `push` is **amortized O(1)**: an occasional expensive step averaged over many cheap ones.
+
+  - kind: code
+    title: Watch the doubling
+    body: |
+      Write `copiesForPushes(n)`. Simulate an array that starts with room for **1** item and **doubles** its room whenever it is full. Each time it grows, it copies all its current items. Return the total number of copies after `n` pushes.
+
+      For example `copiesForPushes(5)` is `7`: growing from 1 to 2 copies 1, 2 to 4 copies 2, and 4 to 8 copies 4.
+    code: |
+      function copiesForPushes(n) {
+        let capacity = 1;
+        let size = 0;
+        let copies = 0;
+        // for each push: if size === capacity, copy `size` items and double capacity
+        return copies;
+      }
+    tests:
+      - "copiesForPushes(1)"
+      - "copiesForPushes(2)"
+      - "copiesForPushes(5)"
+      - "copiesForPushes(9)"
+      - "copiesForPushes(1000)"
+    solution: |
+      function copiesForPushes(n) {
+        let capacity = 1;
+        let size = 0;
+        let copies = 0;
+        for (let i = 0; i < n; i++) {
+          if (size === capacity) {
+            copies += size;
+            capacity *= 2;
+          }
+          size++;
+        }
+        return copies;
+      }
+    hint: Check `size === capacity` *before* adding the new item, then add one to `size`.
+    reject:
+      - |
+        function copiesForPushes(n) {
+          return n;
+        }
+
+  - kind: explain
+    title: Space complexity and the call stack
+    body: |
+      **Space complexity** counts the *extra* memory your code needs beyond the input.
+
+      - A few variables → **O(1)** space.
+      - Building a new array of `n` items → **O(n)** space.
+      - **Recursion uses the call stack.** A function that calls itself `n` levels deep holds `n` unfinished calls in memory, so it costs **O(n)** space even if it creates no arrays. You will see this in Module 10.
+
+  - kind: explain
+    title: Let the constraints tell you the target
+    body: |
+      A computer does roughly **10⁸ simple steps per second**. The problem's input limit tells you which complexity will finish in time.
+
+      | Input size `n` up to | Aim for |
+      |---|---|
+      | 10 | O(n!) is fine |
+      | 20 | O(2ⁿ) |
+      | 500 | O(n³) |
+      | 5 000 | O(n²) |
+      | 1 000 000 | O(n log n) |
+      | 100 000 000 | O(n) |
+      | more than that | O(log n) or O(1) |
+
+      Read a limit like `n ≤ 10⁵` as a hint: "n² would be 10¹⁰ steps, far too slow, so I need O(n log n) or better."
+
+  - kind: code
+    title: Pick the target from the limit
+    body: |
+      Write `targetComplexity(n)`. Given the maximum input size, return the string from the table above, using the **first row whose limit is at least `n`**: `"O(n!)"`, `"O(2^n)"`, `"O(n^3)"`, `"O(n^2)"`, `"O(n log n)"`, `"O(n)"`, or `"O(log n)"` when `n` is over 100 000 000.
+    code: |
+      function targetComplexity(n) {
+        return "O(n)";
+      }
+    tests:
+      - "targetComplexity(8)"
+      - "targetComplexity(10)"
+      - "targetComplexity(11)"
+      - "targetComplexity(20)"
+      - "targetComplexity(300)"
+      - "targetComplexity(5000)"
+      - "targetComplexity(100000)"
+      - "targetComplexity(1000000)"
+      - "targetComplexity(50000000)"
+      - "targetComplexity(1000000000)"
+    solution: |
+      function targetComplexity(n) {
+        if (n <= 10) return "O(n!)";
+        if (n <= 20) return "O(2^n)";
+        if (n <= 500) return "O(n^3)";
+        if (n <= 5000) return "O(n^2)";
+        if (n <= 1000000) return "O(n log n)";
+        if (n <= 100000000) return "O(n)";
+        return "O(log n)";
+      }
+    hint: Check the limits in order from smallest to largest and return at the first one that fits.
+    reject:
+      - |
+        function targetComplexity(n) {
+          if (n <= 10) return "O(n!)";
+          if (n <= 20) return "O(2^n)";
+          if (n <= 500) return "O(n^3)";
+          if (n <= 5000) return "O(n^2)";
+          if (n < 1000000) return "O(n log n)";
+          if (n <= 100000000) return "O(n)";
+          return "O(log n)";
+        }
+
+  - kind: info
+    title: "🔹 Big-Θ and Big-Ω (just recognize them)"
+    body: |
+      You may see two cousins of Big-O:
+
+      - **Big-O** is an *upper* bound: "no worse than".
+      - **Big-Ω** (omega) is a *lower* bound: "no better than".
+      - **Big-Θ** (theta) says both: "exactly this growth".
+
+      In everyday practice people say "Big-O" and mean the tight worst case. You only need to recognize the other two when you read them.
+
+  - kind: why
+    body: |
+      Complexity is a way of predicting the future. Before you write a line, you can say "this will handle a million items" or "this will freeze on 100 000". That prediction saves you from writing a solution that can never work, and it is the first thing interviewers ask: "what is the time and space complexity?"
+
+      From now on, write the time and space complexity as a comment above every solution you write.
+
+  - kind: recap
+    body: |
+      - Big-O describes how **work grows** with input size `n`, ignoring constants and small terms.
+      - Common classes, best to worst: O(1), O(log n), O(n), O(n log n), O(n²), O(2ⁿ), O(n!).
+      - One loop is O(n). A loop inside a loop is O(n²). A loop that halves is O(log n).
+      - Big-O usually means the **worst case**. `push` is **amortized** O(1).
+      - **Recursion costs stack space**, one frame per level.
+      - Use the input limit to pick a target: n ≤ 10⁵ means aim for O(n log n) or better.
+      - 🔹 Big-Θ (exact) and Big-Ω (lower bound) exist. Recognize them.

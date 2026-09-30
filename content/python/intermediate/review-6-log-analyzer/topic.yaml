@@ -1,0 +1,5 @@
+title: "Log analyzer"
+module: 30
+kind: review
+summary: "The Part 7 checkpoint: stream a log with a generator, parse lines with regex, count errors with Counter, time the run with a decorator, and take options with argparse."
+minutes: 65

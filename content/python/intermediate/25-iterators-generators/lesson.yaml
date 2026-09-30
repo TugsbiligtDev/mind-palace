@@ -1,0 +1,273 @@
+steps:
+  - kind: explain
+    title: What a for-loop really does
+    body: |
+      A `for` loop works on anything **iterable**: lists, strings, dicts, files. Behind the scenes Python does this:
+
+      ```python
+      it = iter([10, 20, 30])   # ask for an iterator
+      next(it)                  # 10
+      next(it)                  # 20
+      next(it)                  # 30
+      next(it)                  # raises StopIteration: "no more items"
+      ```
+
+      - An **iterable** can produce an iterator (`iter(x)`).
+      - An **iterator** hands out one item at a time with `next()` and remembers where it is. When it runs out it raises `StopIteration`, which the `for` loop catches for you to stop quietly.
+
+      An iterator is **used up** once you go through it. That surprises people: `list(it)` a second time gives `[]`.
+
+  - kind: code
+    title: Step through by hand
+    body: |
+      Run this. Then call `next(it)` once more and read the error. Notice the second `list(it)` is empty.
+    code: |
+      it = iter(["a", "b", "c"])
+      print(next(it))
+      print(next(it))
+      print(list(it))
+      print(list(it))
+
+  - kind: explain
+    title: "Generators: yield instead of return"
+    body: |
+      Writing a full iterator class is fiddly. A **generator function** is the easy way. Use **`yield`** instead of `return`:
+
+      ```python
+      def countdown(n):
+          while n > 0:
+              yield n
+              n -= 1
+
+      for x in countdown(3):
+          print(x)          # 3, 2, 1
+      ```
+
+      Calling `countdown(3)` does **not** run the body. It returns a generator object. Each `next()` runs the function *until the next `yield`*, hands that value out, and **pauses right there**, remembering all its local variables. The next `next()` resumes where it stopped.
+
+      Why bother? A generator produces values **lazily**, one at a time, *only when asked*. That is perfect for huge files, endless sequences, and pipelines, because you never hold everything in memory.
+
+  - kind: code
+    title: Write a generator
+    body: |
+      Write a generator function `evens(limit)` that yields the even numbers from `0` up to but **not including** `limit`. So `list(evens(7))` is `[0, 2, 4, 6]`.
+    code: |
+      def evens(limit):
+          pass
+    tests:
+      - "list(evens(7))"
+      - "list(evens(0))"
+      - "list(evens(1))"
+      - "next(evens(100))"
+      - "type(evens(3)).__name__"
+    solution: |
+      def evens(limit):
+          n = 0
+          while n < limit:
+              yield n
+              n += 2
+    hint: "Use a `while` loop that `yield`s `n` and then adds 2."
+    reject:
+      - |
+        def evens(limit):
+            return [n for n in range(0, limit, 2)]
+
+  - kind: code
+    title: An endless sequence
+    body: |
+      A generator can go on forever, because it never builds the whole thing. Write `fib()` that yields the Fibonacci numbers **forever**: `0, 1, 1, 2, 3, 5, 8, ...` (each is the sum of the previous two).
+
+      To look at just the first ten without an endless loop, the checker uses `itertools.islice`.
+    code: |
+      from itertools import islice
+
+
+      def fib():
+          pass
+    tests:
+      - "list(islice(fib(), 10))"
+      - "list(islice(fib(), 1))"
+      - "next(islice(fib(), 50, None))"
+    solution: |
+      from itertools import islice
+
+
+      def fib():
+          a, b = 0, 1
+          while True:
+              yield a
+              a, b = b, a + b
+    hint: "`a, b = 0, 1`, then inside `while True:` `yield a` and `a, b = b, a + b`."
+    reject:
+      - |
+        from itertools import islice
+
+
+        def fib():
+            yield 0
+            yield 1
+
+  - kind: explain
+    title: Generator expressions
+    body: |
+      A comprehension with round brackets instead of square ones is a **generator expression**. It computes items lazily:
+
+      ```python
+      squares_list = [n * n for n in range(1_000_000)]   # builds a million numbers in memory
+      squares_gen  = (n * n for n in range(1_000_000))   # builds nothing yet
+
+      sum(n * n for n in range(1_000_000))               # streams them into sum: tiny memory
+      ```
+
+      When a generator expression is the only argument, you may drop the extra brackets: `sum(n * n for n in ...)`, `any(...)`, `max(...)`.
+
+      Rule of thumb: use a **list** when you need the items more than once or need indexes; use a **generator** when you only pass through them once.
+
+  - kind: code
+    title: Lazy filtering
+    body: |
+      Write a generator `matching(lines, word)` that yields, one at a time, only the lines that contain `word`. It must be **lazy**: the checker feeds it an endless stream of lines and asks for just the first match, which only works if you do not build a list.
+    code: |
+      def matching(lines, word):
+          pass
+    tests:
+      - "list(matching(['a cat', 'a dog', 'cat and dog'], 'cat'))"
+      - "list(matching([], 'x'))"
+      - "next(matching((f'line {i}' for i in range(10**12)), '99'))"
+      - "type(matching([], 'x')).__name__"
+    solution: |
+      def matching(lines, word):
+          for line in lines:
+              if word in line:
+                  yield line
+    hint: "`for line in lines:` then `yield line` when `word in line`. Do not use a list."
+    reject:
+      - |
+        def matching(lines, word):
+            return [line for line in lines if word in line]
+
+  - kind: code
+    title: Sum of squares, lazily
+    body: |
+      Write `sum_of_squares(n)`: the sum of the squares of `1..n`, using a **generator expression** inside `sum(...)` (no list). `sum_of_squares(3)` is `14`.
+    code: |
+      def sum_of_squares(n):
+          return 0
+    tests:
+      - "sum_of_squares(3)"
+      - "sum_of_squares(0)"
+      - "sum_of_squares(2_000_000)"
+    solution: |
+      def sum_of_squares(n):
+          return sum(i * i for i in range(1, n + 1))
+    hint: "`sum(i * i for i in range(1, n + 1))`."
+    reject:
+      - |
+        def sum_of_squares(n):
+            return n * n
+
+  - kind: explain
+    title: "itertools: the iterator toolbox"
+    body: |
+      The `itertools` module has fast, lazy building blocks:
+
+      ```python
+      from itertools import chain, islice, groupby, product, count
+
+      list(chain([1, 2], [3]))                  # [1, 2, 3]   join iterables
+      list(islice(count(1), 3))                 # [1, 2, 3]   first 3 of an endless counter
+      list(product("ab", [1, 2]))               # [('a', 1), ('a', 2), ('b', 1), ('b', 2)]
+      [(k, len(list(g))) for k, g in groupby("aabccc")]   # [('a', 2), ('b', 1), ('c', 3)]
+      ```
+
+      - `chain` glues sequences end to end.
+      - `islice(it, stop)` or `islice(it, start, stop)` slices any iterator (lists' `[a:b]` does not work on generators).
+      - `product` gives every combination.
+      - `groupby` groups **consecutive** equal items (so sort first if you want overall groups).
+
+  - kind: code
+    title: Run-length encoding
+    body: |
+      Write `compress(text)` using `groupby`: turn `"aabccc"` into `"a2b1c3"` (each letter followed by how many times it repeats in a row). An empty string gives `""`.
+    code: |
+      from itertools import groupby
+
+
+      def compress(text):
+          return text
+    tests:
+      - "compress('aabccc')"
+      - "compress('')"
+      - "compress('abc')"
+      - "compress('aaaaaaaaaaaa')"
+      - "compress('aabaa')"
+    solution: |
+      from itertools import groupby
+
+
+      def compress(text):
+          return "".join(f"{key}{len(list(group))}" for key, group in groupby(text))
+    hint: "`groupby(text)` gives `(letter, group)` pairs. `len(list(group))` counts the run."
+    reject:
+      - |
+        from itertools import groupby
+
+
+        def compress(text):
+            return "".join(sorted(set(text)))
+
+  - kind: code
+    title: All the combinations
+    body: |
+      A shop sells shirts in sizes and colours. Write `variants(sizes, colours)` returning a list of `"size-colour"` texts for every combination, sizes varying slowest. `variants(["S", "M"], ["red", "blue"])` is `["S-red", "S-blue", "M-red", "M-blue"]`. Use `itertools.product`.
+    code: |
+      from itertools import product
+
+
+      def variants(sizes, colours):
+          return []
+    tests:
+      - "variants(['S', 'M'], ['red', 'blue'])"
+      - "variants([], ['red'])"
+      - "variants(['L'], ['a', 'b', 'c'])"
+    solution: |
+      from itertools import product
+
+
+      def variants(sizes, colours):
+          return [f"{size}-{colour}" for size, colour in product(sizes, colours)]
+    hint: "`product(sizes, colours)` yields `(size, colour)` pairs in the right order."
+    reject:
+      - |
+        from itertools import product
+
+
+        def variants(sizes, colours):
+            return [f"{s}-{c}" for s, c in zip(sizes, colours)]
+
+  - kind: info
+    title: "🔹 yield from and iterator classes"
+    body: |
+      **`yield from`** hands over to another iterable inside a generator:
+
+      ```python
+      def flatten(rows):
+          for row in rows:
+              yield from row       # same as: for x in row: yield x
+
+      list(flatten([[1, 2], [3]]))   # [1, 2, 3]
+      ```
+
+      You can also write an iterator as a **class** with `__iter__` (returns itself) and `__next__` (returns the next item, or raises `StopIteration`). Generators are simply a much shorter way to do the same thing.
+
+  - kind: why
+    body: |
+      Real data is often too big for memory: a 10 GB log file, an endless stream of events, millions of database rows. Generators let you process it one piece at a time in constant memory, and `itertools` gives you fast building blocks. This is the foundation of the log analyzer at the end of Part 7.
+
+  - kind: recap
+    body: |
+      - A `for` loop calls `iter()` then `next()` until `StopIteration`. Iterators are **used up** after one pass.
+      - **Generators** use `yield`, pause between values, and are **lazy**. Generator expressions `(x for x in ...)` do the same in one line.
+      - Use a list to reuse or index items, a generator to pass through them once.
+      - `itertools`: `chain`, `islice`, `count`, `product`, `groupby` (consecutive groups).
+      - 🔹 `yield from` delegates to another iterable.

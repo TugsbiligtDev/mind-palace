@@ -1,0 +1,424 @@
+steps:
+  - kind: explain
+    title: Trying everything, cleverly
+    body: |
+      Some problems ask for **all** the ways to do something: every subset, every arrangement, every valid board. There is no shortcut. You must try the possibilities. **Backtracking** does this systematically as a **search tree** of choices, and it **abandons** a branch as soon as it cannot lead to an answer.
+
+      The three-beat template:
+
+      ```js
+      function explore(/* state */) {
+        if (/* a complete answer */) { save it; return; }
+        for (const choice of /* the options here */) {
+          // 1. CHOOSE   (add it to the path)
+          explore(/* next state */);        // 2. EXPLORE
+          // 3. UN-CHOOSE (remove it from the path, undo)
+        }
+      }
+      ```
+
+      The un-choose step is what lets the same `path` array be reused for every branch.
+
+  - kind: explain
+    title: The shared-reference trap, again
+    body: |
+      When you find a complete answer, you save the current `path`. But `path` is **one array that keeps changing** as you choose and un-choose. If you save `path` itself, every saved answer points at the same array and ends up **empty** when the search finishes.
+
+      **Always save a copy: `result.push([...path])`.** This is the number-one backtracking bug (you met the same shared-reference idea in Module 4).
+
+  - kind: code
+    title: "Find the bug: the answers that all vanish"
+    body: |
+      `subsets(nums)` should return every subset of a list of distinct numbers (including the empty subset). This version returns a list of empty arrays. Find the one-line bug and fix it.
+    code: |
+      function subsets(nums) {
+        const result = [];
+        const path = [];
+        function explore(start) {
+          result.push(path);
+          for (let i = start; i < nums.length; i++) {
+            path.push(nums[i]);
+            explore(i + 1);
+            path.pop();
+          }
+        }
+        explore(0);
+        return result;
+      }
+    unordered: true
+    tests:
+      - "subsets([1, 2, 3])"
+      - "subsets([])"
+      - "subsets([5])"
+      - "subsets([1, 2])"
+    solution: |
+      function subsets(nums) {
+        const result = [];
+        const path = [];
+        function explore(start) {
+          result.push([...path]);
+          for (let i = start; i < nums.length; i++) {
+            path.push(nums[i]);
+            explore(i + 1);
+            path.pop();
+          }
+        }
+        explore(0);
+        return result;
+      }
+    hint: "`result.push(path)` stores the array that keeps being changed. Store a copy."
+    broken_starter: true
+    reject:
+      - |
+        function subsets(nums) {
+          const result = [];
+          const path = [];
+          function explore(start) {
+            result.push(path);
+            for (let i = start; i < nums.length; i++) {
+              path.push(nums[i]);
+              explore(i + 1);
+              path.pop();
+            }
+          }
+          explore(0);
+          return result;
+        }
+
+  - kind: explain
+    title: Duplicates, sort and skip
+    body: |
+      With repeated input values (`[1, 2, 2]`), a naive search produces the same subset twice. The fix:
+
+      1. **Sort** the array so equal values sit together.
+      2. At each level of the search, **skip a value if it equals the previous one at the same level**: `if (i > start && nums[i] === nums[i - 1]) continue;`
+
+      The rule means "a duplicate may only be used as a follow-on to its twin, never as a fresh start at the same position."
+
+  - kind: code
+    title: Subsets with duplicates
+    body: |
+      Write `subsetsWithDup(nums)`: every **distinct** subset of a list that may contain duplicates. The order of subsets does not matter.
+    code: |
+      function subsetsWithDup(nums) {
+        return [[]];
+      }
+    unordered: true
+    tests:
+      - "subsetsWithDup([1, 2, 2])"
+      - "subsetsWithDup([0])"
+      - "subsetsWithDup([])"
+      - "subsetsWithDup([2, 2, 2])"
+      - "subsetsWithDup([4, 1, 4, 1])"
+    solution: |
+      function subsetsWithDup(nums) {
+        const sorted = [...nums].sort((a, b) => a - b);
+        const result = [];
+        const path = [];
+        function explore(start) {
+          result.push([...path]);
+          for (let i = start; i < sorted.length; i++) {
+            if (i > start && sorted[i] === sorted[i - 1]) continue;
+            path.push(sorted[i]);
+            explore(i + 1);
+            path.pop();
+          }
+        }
+        explore(0);
+        return result;
+      }
+    hint: Sort first. Inside the loop, `continue` when `i > start` and the value equals the one before it.
+    reject:
+      - |
+        function subsetsWithDup(nums) {
+          return [[]];
+        }
+
+  - kind: code
+    title: Permutations
+    body: |
+      Write `permutations(nums)`: every ordering of a list of **distinct** numbers. `[1, 2, 3]` has 6. Each position may use any number **not already in the path**, so track which ones are used.
+    code: |
+      function permutations(nums) {
+        return [];
+      }
+    unordered: true
+    tests:
+      - "permutations([1, 2, 3])"
+      - "permutations([0, 1])"
+      - "permutations([1])"
+      - "permutations([])"
+      - "permutations([4, 5, 6, 7]).length"
+    solution: |
+      function permutations(nums) {
+        const result = [];
+        const path = [];
+        const used = Array(nums.length).fill(false);
+        function explore() {
+          if (path.length === nums.length) {
+            result.push([...path]);
+            return;
+          }
+          for (let i = 0; i < nums.length; i++) {
+            if (used[i]) continue;
+            used[i] = true;
+            path.push(nums[i]);
+            explore();
+            path.pop();
+            used[i] = false;
+          }
+        }
+        explore();
+        return result;
+      }
+    hint: Choose an unused number, mark it used, explore, then un-choose both the path entry and the used flag.
+    reject:
+      - |
+        function permutations(nums) {
+          return [nums];
+        }
+
+  - kind: code
+    title: Combination sum
+    body: |
+      Write `combinationSum(candidates, target)`: every unique combination of the candidate numbers (distinct positive integers) that adds up to `target`. **Each number can be used any number of times.** Order inside a combination does not matter, so `[2, 3]` and `[3, 2]` count as one.
+
+      **Prune:** as soon as the running total goes above `target`, stop exploring that branch.
+    code: |
+      function combinationSum(candidates, target) {
+        return [];
+      }
+    unordered: true
+    tests:
+      - "combinationSum([2, 3, 6, 7], 7)"
+      - "combinationSum([2, 3, 5], 8)"
+      - "combinationSum([2], 1)"
+      - "combinationSum([1], 3)"
+      - "combinationSum([3, 5], 0)"
+    solution: |
+      function combinationSum(candidates, target) {
+        const result = [];
+        const path = [];
+        function explore(start, remaining) {
+          if (remaining === 0) {
+            result.push([...path]);
+            return;
+          }
+          for (let i = start; i < candidates.length; i++) {
+            if (candidates[i] > remaining) continue;
+            path.push(candidates[i]);
+            explore(i, remaining - candidates[i]);
+            path.pop();
+          }
+        }
+        explore(0, target);
+        return result;
+      }
+    hint: Recurse with `explore(i, ...)` (not `i + 1`) so a number can repeat, but never look at earlier candidates again, which avoids reordered duplicates.
+    reject:
+      - |
+        function combinationSum(candidates, target) {
+          return [];
+        }
+
+  - kind: code
+    title: Phone-number letters
+    body: |
+      On an old phone keypad, `2` is "abc", `3` is "def", `4` is "ghi", `5` is "jkl", `6` is "mno", `7` is "pqrs", `8` is "tuv" and `9` is "wxyz". Write `letterCombinations(digits)`: every letter string the digits could spell. An empty input gives `[]`. Order does not matter.
+    code: |
+      function letterCombinations(digits) {
+        return [];
+      }
+    unordered: true
+    tests:
+      - "letterCombinations('23')"
+      - "letterCombinations('')"
+      - "letterCombinations('2')"
+      - "letterCombinations('79')"
+      - "letterCombinations('234').length"
+    solution: |
+      function letterCombinations(digits) {
+        if (digits.length === 0) return [];
+        const letters = { 2: "abc", 3: "def", 4: "ghi", 5: "jkl", 6: "mno", 7: "pqrs", 8: "tuv", 9: "wxyz" };
+        const result = [];
+        const path = [];
+        function explore(i) {
+          if (i === digits.length) {
+            result.push(path.join(""));
+            return;
+          }
+          for (const ch of letters[digits[i]]) {
+            path.push(ch);
+            explore(i + 1);
+            path.pop();
+          }
+        }
+        explore(0);
+        return result;
+      }
+    hint: One level of recursion per digit, and one loop iteration per letter of that digit.
+    reject:
+      - |
+        function letterCombinations(digits) {
+          return [];
+        }
+
+  - kind: code
+    title: Palindrome partitioning
+    body: |
+      Write `partition(s)`: every way to cut `s` into pieces so that **every piece is a palindrome**. `"aab"` gives `[["a","a","b"],["aa","b"]]`. Order does not matter.
+
+      At each position, try every possible **first piece**; only continue if that piece is a palindrome (pruning).
+    code: |
+      function partition(s) {
+        return [];
+      }
+    unordered: true
+    tests:
+      - "partition('aab')"
+      - "partition('a')"
+      - "partition('abba')"
+      - "partition('abc')"
+      - "partition('')"
+    solution: |
+      function partition(s) {
+        const result = [];
+        const path = [];
+        const isPal = (a, b) => {
+          while (a < b) {
+            if (s[a] !== s[b]) return false;
+            a++;
+            b--;
+          }
+          return true;
+        };
+        function explore(start) {
+          if (start === s.length) {
+            result.push([...path]);
+            return;
+          }
+          for (let end = start; end < s.length; end++) {
+            if (!isPal(start, end)) continue;
+            path.push(s.slice(start, end + 1));
+            explore(end + 1);
+            path.pop();
+          }
+        }
+        explore(0);
+        return result;
+      }
+    hint: For a piece from `start` to `end`, skip it unless it is a palindrome. When `start` reaches the end of the string, you have a full partition.
+    reject:
+      - |
+        function partition(s) {
+          return [];
+        }
+
+  - kind: code
+    title: Word search on a grid
+    body: |
+      Write `exist(board, word)`: `true` if `word` can be traced in the grid by moving up, down, left or right between adjacent cells, **without using any cell twice** in the same path.
+
+      Mark the cell you are standing on (for example set it to `"#"`) **before** exploring, and restore it **after** (the un-choose step).
+    code: |
+      function exist(board, word) {
+        return false;
+      }
+    tests:
+      - "exist([['A', 'B', 'C', 'E'], ['S', 'F', 'C', 'S'], ['A', 'D', 'E', 'E']], 'ABCCED')"
+      - "exist([['A', 'B', 'C', 'E'], ['S', 'F', 'C', 'S'], ['A', 'D', 'E', 'E']], 'SEE')"
+      - "exist([['A', 'B', 'C', 'E'], ['S', 'F', 'C', 'S'], ['A', 'D', 'E', 'E']], 'ABCB')"
+      - "exist([['A']], 'A')"
+      - "exist([['A', 'B']], 'BA')"
+      - "exist([['A']], 'AA')"
+    solution: |
+      function exist(board, word) {
+        const rows = board.length;
+        const cols = board[0].length;
+        const grid = board.map((row) => [...row]);
+        function explore(r, c, i) {
+          if (i === word.length) return true;
+          if (r < 0 || r >= rows || c < 0 || c >= cols || grid[r][c] !== word[i]) return false;
+          const saved = grid[r][c];
+          grid[r][c] = "#";
+          const found =
+            explore(r + 1, c, i + 1) || explore(r - 1, c, i + 1) || explore(r, c + 1, i + 1) || explore(r, c - 1, i + 1);
+          grid[r][c] = saved;
+          return found;
+        }
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (explore(r, c, 0)) return true;
+          }
+        }
+        return false;
+      }
+    hint: Try every cell as a starting point. Stop a path immediately when a cell does not match the next letter. Restore the cell after exploring.
+    reject:
+      - |
+        function exist(board, word) {
+          return true;
+        }
+
+  - kind: code
+    title: N-Queens
+    body: |
+      Place `n` queens on an `n × n` chessboard so that no two attack each other (no shared row, column or diagonal). Write `totalNQueens(n)`: the **number** of distinct solutions.
+
+      Place one queen per row. For each row, try each column, and prune as soon as a column or diagonal is already taken. Diagonals are identified by `row − col` and `row + col`.
+    code: |
+      function totalNQueens(n) {
+        return 0;
+      }
+    tests:
+      - "totalNQueens(1)"
+      - "totalNQueens(2)"
+      - "totalNQueens(4)"
+      - "totalNQueens(6)"
+      - "totalNQueens(8)"
+    solution: |
+      function totalNQueens(n) {
+        const cols = new Set();
+        const diag1 = new Set();
+        const diag2 = new Set();
+        let count = 0;
+        function place(row) {
+          if (row === n) {
+            count++;
+            return;
+          }
+          for (let col = 0; col < n; col++) {
+            if (cols.has(col) || diag1.has(row - col) || diag2.has(row + col)) continue;
+            cols.add(col);
+            diag1.add(row - col);
+            diag2.add(row + col);
+            place(row + 1);
+            cols.delete(col);
+            diag1.delete(row - col);
+            diag2.delete(row + col);
+          }
+        }
+        place(0);
+        return count;
+      }
+    hint: Keep three Sets, one each for columns, `row - col` diagonals and `row + col` diagonals. Add before exploring and delete after.
+    reject:
+      - |
+        function totalNQueens(n) {
+          return 1;
+        }
+
+  - kind: why
+    body: |
+      Backtracking is how computers solve puzzles: Sudoku, crosswords, scheduling, generating every valid configuration. It is brute force made intelligent, because pruning cuts off huge parts of the search tree the moment they cannot succeed.
+
+      It is also the on-ramp to dynamic programming: when the same sub-problems appear again and again inside a backtracking search, you can remember the answers instead of recomputing them. That is Module 28.
+
+  - kind: recap
+    body: |
+      - **Backtracking** explores a tree of choices: **choose, explore, un-choose**.
+      - Save a **copy** of the path: `result.push([...path])`.
+      - **Subsets** start each level from `start`. **Permutations** use a `used` array.
+      - **Duplicates:** sort, then skip `i > start && nums[i] === nums[i - 1]`.
+      - **Prune** as soon as a branch cannot work (sum too big, cell already used, column or diagonal taken).
+      - Grid searches mark a cell before exploring and restore it after.

@@ -1,0 +1,399 @@
+steps:
+  - kind: explain
+    title: A stack is a pile of plates
+    body: |
+      A **stack** is **last in, first out** (LIFO): you add to the top, and you take from the top. The plate you put on last is the first one off.
+
+      In JavaScript a plain array is a fine stack, because `push` and `pop` work at the end in **O(1)**:
+
+      ```js
+      const stack = [];
+      stack.push("a");
+      stack.push("b");
+      stack.pop();      // "b"
+      stack[stack.length - 1]   // peek at the top without removing
+      ```
+
+      Stacks appear whenever the *most recent* thing must be handled first: matching brackets, the undo button, and the call stack of your own recursive functions.
+
+  - kind: code
+    title: Balanced brackets
+    body: |
+      Write `isBalanced(s)`: return `true` if every `(`, `[` and `{` is closed in the right order, else `false`. `"([]{})"` is balanced. `"(]"` and `"(("` are not. An empty string is balanced.
+
+      Idea: push each opener. On a closer, the top of the stack must be its matching opener.
+    code: |
+      function isBalanced(s) {
+        const stack = [];
+        return true;
+      }
+    tests:
+      - "isBalanced('()[]{}')"
+      - "isBalanced('(]')"
+      - "isBalanced('((')"
+      - "isBalanced('')"
+      - "isBalanced('([)]')"
+      - "isBalanced('{[]}')"
+      - "isBalanced(')')"
+    solution: |
+      function isBalanced(s) {
+        const stack = [];
+        const pairs = { ")": "(", "]": "[", "}": "{" };
+        for (const ch of s) {
+          if (ch === "(" || ch === "[" || ch === "{") stack.push(ch);
+          else if (stack.pop() !== pairs[ch]) return false;
+        }
+        return stack.length === 0;
+      }
+    hint: At the end the stack must be empty. And a closer with nothing to match (`pop()` gives `undefined`) is a failure.
+    reject:
+      - |
+        function isBalanced(s) {
+          return true;
+        }
+
+  - kind: explain
+    title: A queue is a line at a shop
+    body: |
+      A **queue** is **first in, first out** (FIFO): items leave in the order they arrived. You add at the back (`enqueue`) and remove from the front (`dequeue`).
+
+      The obvious array version uses `push` and `shift`, but you know from Module 4 that `shift()` is **O(n)**, because every item slides forward. A busy queue would crawl.
+
+      **The fix: never move the items. Move a marker.** Keep an index `head` pointing at the current front. To dequeue, return `items[head]` and add 1 to `head`. Nothing shifts, so it is **O(1)**.
+
+  - kind: code
+    title: Build a fast Queue
+    body: |
+      Finish the `Queue` class using a `head` index:
+
+      - `enqueue(x)` adds `x` at the back,
+      - `dequeue()` removes and returns the front item, or `undefined` if empty,
+      - `size()` is how many items remain,
+      - `isEmpty()` is `true` when none remain.
+    code: |
+      class Queue {
+        constructor() {
+          this.items = [];
+          this.head = 0;
+        }
+        enqueue(x) {}
+        dequeue() {}
+        size() {
+          return 0;
+        }
+        isEmpty() {
+          return true;
+        }
+      }
+    tests:
+      - "(() => { const q = new Queue(); q.enqueue(1); q.enqueue(2); q.enqueue(3); return [q.dequeue(), q.size(), q.dequeue(), q.dequeue(), q.dequeue()]; })()"
+      - "new Queue().isEmpty()"
+      - "(() => { const q = new Queue(); q.enqueue('a'); return [q.isEmpty(), q.dequeue(), q.isEmpty()]; })()"
+      - "(() => { const q = new Queue(); for (let i = 0; i < 200000; i++) q.enqueue(i); let s = 0; while (!q.isEmpty()) s += q.dequeue(); return s; })()"
+    solution: |
+      class Queue {
+        constructor() {
+          this.items = [];
+          this.head = 0;
+        }
+        enqueue(x) {
+          this.items.push(x);
+        }
+        dequeue() {
+          if (this.head >= this.items.length) return undefined;
+          const x = this.items[this.head];
+          this.head++;
+          return x;
+        }
+        size() {
+          return this.items.length - this.head;
+        }
+        isEmpty() {
+          return this.size() === 0;
+        }
+      }
+    hint: The size is `items.length - head`. Dequeue reads `items[head]` and then does `head++`.
+    reject:
+      - |
+        class Queue {
+          constructor() { this.items = []; }
+          enqueue(x) { this.items.push(x); }
+          dequeue() { return this.items.pop(); }
+          size() { return this.items.length; }
+          isEmpty() { return this.items.length === 0; }
+        }
+
+  - kind: explain
+    title: Undo and redo with two stacks
+    body: |
+      Undo and redo are a perfect use of two stacks.
+
+      - Every action you do goes onto the **done** stack.
+      - **Undo** pops from *done* and pushes onto **undone**.
+      - **Redo** pops from *undone* and pushes back onto *done*.
+      - Doing a **new** action clears *undone*, because you have left the old timeline.
+
+      🔹 A **deque** ("deck", double-ended queue) lets you add and remove at *both* ends. You will need one in Module 17. In JavaScript you build it from a doubly linked list or a circular array.
+
+  - kind: code
+    title: A tiny text editor
+    body: |
+      Finish `Editor`. Typing adds a piece of text. `text()` returns everything typed so far, joined together.
+
+      - `type(s)`: add `s`, and forget any redo history,
+      - `undo()`: remove the most recent piece (do nothing if there is none),
+      - `redo()`: bring back the most recently undone piece (do nothing if there is none).
+    code: |
+      class Editor {
+        constructor() {
+          this.done = [];
+          this.undone = [];
+        }
+        type(s) {}
+        undo() {}
+        redo() {}
+        text() {
+          return "";
+        }
+      }
+    tests:
+      - "(() => { const e = new Editor(); e.type('a'); e.type('b'); e.undo(); return e.text(); })()"
+      - "(() => { const e = new Editor(); e.type('a'); e.type('b'); e.undo(); e.undo(); e.undo(); return e.text(); })()"
+      - "(() => { const e = new Editor(); e.type('a'); e.undo(); e.redo(); return e.text(); })()"
+      - "(() => { const e = new Editor(); e.type('a'); e.type('b'); e.undo(); e.type('c'); e.redo(); return e.text(); })()"
+      - "(() => { const e = new Editor(); e.redo(); return e.text(); })()"
+    solution: |
+      class Editor {
+        constructor() {
+          this.done = [];
+          this.undone = [];
+        }
+        type(s) {
+          this.done.push(s);
+          this.undone = [];
+        }
+        undo() {
+          if (this.done.length > 0) this.undone.push(this.done.pop());
+        }
+        redo() {
+          if (this.undone.length > 0) this.done.push(this.undone.pop());
+        }
+        text() {
+          return this.done.join("");
+        }
+      }
+    hint: Reset `this.undone = []` inside `type`. That is what stops redo after a new action.
+    reject:
+      - |
+        class Editor {
+          constructor() { this.done = []; this.undone = []; }
+          type(s) { this.done.push(s); }
+          undo() { if (this.done.length) this.undone.push(this.done.pop()); }
+          redo() { if (this.undone.length) this.done.push(this.undone.pop()); }
+          text() { return this.done.join(""); }
+        }
+
+  - kind: explain
+    title: "Evaluating expressions: postfix"
+    body: |
+      In everyday maths the operator sits *between* the numbers (`3 + 4`), which is called **infix**. In **postfix** (Reverse Polish Notation) the operator comes *after*: `3 4 +`. Postfix needs no brackets and no precedence rules, and a stack evaluates it perfectly:
+
+      - Read a token. If it is a **number**, push it.
+      - If it is an **operator**, pop the top two numbers, apply the operator, push the result.
+      - At the end the single value left is the answer.
+
+      `2 1 + 3 *` means `(2 + 1) * 3 = 9`. Watch out for the order: the **first** number you pop is the *right-hand* operand.
+
+  - kind: code
+    title: Evaluate Reverse Polish Notation
+    body: |
+      Write `evalRPN(tokens)`: `tokens` is an array of strings such as `["2", "1", "+", "3", "*"]`. Support `+ - * /`. Division **truncates toward zero** (use `Math.trunc`).
+    code: |
+      function evalRPN(tokens) {
+        const stack = [];
+        return 0;
+      }
+    tests:
+      - "evalRPN(['2', '1', '+', '3', '*'])"
+      - "evalRPN(['4', '13', '5', '/', '+'])"
+      - "evalRPN(['10', '6', '9', '3', '+', '-11', '*', '/', '*', '17', '+', '5', '+'])"
+      - "evalRPN(['18'])"
+      - "evalRPN(['5', '1', '2', '+', '4', '*', '+', '3', '-'])"
+    solution: |
+      function evalRPN(tokens) {
+        const stack = [];
+        for (const t of tokens) {
+          if (t === "+" || t === "-" || t === "*" || t === "/") {
+            const b = stack.pop();
+            const a = stack.pop();
+            if (t === "+") stack.push(a + b);
+            else if (t === "-") stack.push(a - b);
+            else if (t === "*") stack.push(a * b);
+            else stack.push(Math.trunc(a / b));
+          } else {
+            stack.push(Number(t));
+          }
+        }
+        return stack.pop();
+      }
+    hint: "Pop `b` first, then `a`, and compute `a op b`. It matters for `-` and `/`."
+    reject:
+      - |
+        function evalRPN(tokens) {
+          const stack = [];
+          for (const t of tokens) {
+            if ("+-*/".includes(t) && t.length === 1) {
+              const a = stack.pop();
+              const b = stack.pop();
+              stack.push(t === "+" ? a + b : t === "-" ? a - b : t === "*" ? a * b : Math.trunc(a / b));
+            } else stack.push(Number(t));
+          }
+          return stack.pop();
+        }
+
+  - kind: explain
+    title: "Infix with precedence"
+    body: |
+      Now the real thing: `3 + 2 * 2`. Multiplication and division bind tighter than addition and subtraction, so the answer is 7, not 10.
+
+      A stack solves it with one idea: **turn every term into a number you can simply add up.**
+
+      - Remember the **last operator** seen (start with `+`).
+      - When you finish reading a number:
+        - `+` → push the number,
+        - `-` → push the *negative* of the number,
+        - `*` or `/` → pop the previous number, combine it with this one, push the result.
+      - At the end, add up everything on the stack.
+
+      `3 + 2 * 2` → push `3`, push `2`, then `*`: pop `2`, push `4`. Stack `[3, 4]` sums to 7.
+
+  - kind: code
+    title: A calculator with precedence
+    body: |
+      Write `calculate(expr)` for a string with non-negative whole numbers, `+ - * /`, and optional spaces (no brackets). Division truncates toward zero. `"3+2*2"` is `7` and `" 3/2 "` is `1`.
+
+      Tip: build multi-digit numbers digit by digit (`num = num * 10 + digit`), and treat the end of the string like one last operator so the final number gets processed.
+    code: |
+      function calculate(expr) {
+        const stack = [];
+        return 0;
+      }
+    tests:
+      - "calculate('3+2*2')"
+      - "calculate(' 3/2 ')"
+      - "calculate(' 3+5 / 2 ')"
+      - "calculate('14-3/2')"
+      - "calculate('2*3*4')"
+      - "calculate('42')"
+      - "calculate('1-1+1')"
+    solution: |
+      function calculate(expr) {
+        const stack = [];
+        let num = 0;
+        let op = "+";
+        for (let i = 0; i <= expr.length; i++) {
+          const ch = i < expr.length ? expr[i] : "+";
+          if (ch >= "0" && ch <= "9") {
+            num = num * 10 + (ch.charCodeAt(0) - 48);
+            continue;
+          }
+          if (ch === " ") continue;
+          if (op === "+") stack.push(num);
+          else if (op === "-") stack.push(-num);
+          else if (op === "*") stack.push(stack.pop() * num);
+          else stack.push(Math.trunc(stack.pop() / num));
+          op = ch;
+          num = 0;
+        }
+        return stack.reduce((a, b) => a + b, 0);
+      }
+    hint: When you meet an operator (or the end), first *use* the previous operator with the number you just built, then remember the new operator and reset `num`.
+    reject:
+      - |
+        function calculate(expr) {
+          const t = expr.match(/\d+|[-+*/]/g);
+          let r = Number(t[0]);
+          for (let i = 1; i < t.length; i += 2) {
+            const n = Number(t[i + 1]);
+            const o = t[i];
+            r = o === "+" ? r + n : o === "-" ? r - n : o === "*" ? r * n : Math.trunc(r / n);
+          }
+          return r;
+        }
+
+  - kind: explain
+    title: Adding parentheses
+    body: |
+      Parentheses mean "work this part out first, then use it as one number". Whenever you see `(`, you are starting a fresh sub-problem, and a stack remembers where you left off.
+
+      For an expression with `+`, `-` and brackets, track:
+      - `result`: the total so far in the current bracket,
+      - `sign`: `+1` or `-1`, from the last `+` or `-`.
+
+      On `(`: push `result` and `sign` onto the stack, then start over with `result = 0`.
+      On `)`: finish the bracket, pop the saved sign and result, and combine: `result = savedResult + savedSign * bracketResult`.
+
+  - kind: code
+    title: Calculator with brackets
+    body: |
+      Write `calculateParens(expr)` for whole numbers, `+`, `-`, spaces and **parentheses**. `"(1+(4+5+2)-3)+(6+8)"` is `23`, and `"-(2+3)"` is `-5`.
+    code: |
+      function calculateParens(expr) {
+        const stack = [];
+        return 0;
+      }
+    tests:
+      - "calculateParens('1 + 1')"
+      - "calculateParens(' 2-1 + 2 ')"
+      - "calculateParens('(1+(4+5+2)-3)+(6+8)')"
+      - "calculateParens('2-(5-6)')"
+      - "calculateParens('-(2+3)')"
+      - "calculateParens('(7)-(0)+(4)')"
+    solution: |
+      function calculateParens(expr) {
+        const stack = [];
+        let result = 0;
+        let sign = 1;
+        let num = 0;
+        for (const ch of expr) {
+          if (ch >= "0" && ch <= "9") {
+            num = num * 10 + (ch.charCodeAt(0) - 48);
+          } else if (ch === "+" || ch === "-") {
+            result += sign * num;
+            num = 0;
+            sign = ch === "+" ? 1 : -1;
+          } else if (ch === "(") {
+            stack.push(result, sign);
+            result = 0;
+            sign = 1;
+          } else if (ch === ")") {
+            result += sign * num;
+            num = 0;
+            const savedSign = stack.pop();
+            const savedResult = stack.pop();
+            result = savedResult + savedSign * result;
+          }
+        }
+        return result + sign * num;
+      }
+    hint: "On `(`, push `result` and then `sign`. On `)`, pop in the opposite order: sign first, then result."
+    reject:
+      - |
+        function calculateParens(expr) {
+          return expr.split("").filter((c) => c >= "0" && c <= "9").reduce((a, c) => a + Number(c), 0);
+        }
+
+  - kind: why
+    body: |
+      Stacks and queues are the two shapes of "waiting". A stack handles the newest first, and a queue handles the oldest first. Between them they explain undo buttons, browser history, print jobs, matching brackets, how your code's function calls are tracked, and how a calculator reads an expression.
+
+      They are also the engines inside two big algorithms you will meet later: **depth-first search** (a stack) and **breadth-first search** (a queue).
+
+  - kind: recap
+    body: |
+      - **Stack**: last in, first out. An array with `push` and `pop` is O(1).
+      - **Queue**: first in, first out. `shift` is O(n), so track a `head` index (or use a linked list) for O(1) dequeue.
+      - Brackets, undo/redo and expression evaluation are stack problems.
+      - **Postfix** evaluation: push numbers, and on an operator pop two, apply, push. The first pop is the *right* operand.
+      - **Infix with precedence**: remember the last operator, push terms, and combine on `*` and `/`. For brackets, push the state on `(` and restore it on `)`.
+      - 🔹 A **deque** works at both ends. You build one once.

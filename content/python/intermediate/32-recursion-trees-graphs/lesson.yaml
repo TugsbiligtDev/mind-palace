@@ -1,0 +1,410 @@
+steps:
+  - kind: explain
+    title: "Recursion: a problem inside itself"
+    body: |
+      In Module 21 you met recursion: a function that calls itself on a *smaller* piece of the same problem, with a **base case** to stop. It shines when the data is itself nested:
+
+      ```python
+      def total(nested):
+          """Sum a list that may contain lists of lists."""
+          result = 0
+          for item in nested:
+              if isinstance(item, list):
+                  result += total(item)      # smaller problem: the inner list
+              else:
+                  result += item             # base case: a plain number
+          return result
+
+      total([1, [2, 3], [[4], 5]])    # 15
+      ```
+
+      A useful way to think: **trust the recursive call**. Assume `total(item)` already works for the smaller list, and only decide how to combine its answer with the rest. Then check the base case.
+
+      Remember the limits: Python stops at about 1,000 nested calls (`RecursionError`), and recursion can repeat work, which the next tool fixes.
+
+  - kind: code
+    title: Flatten a nested list
+    body: |
+      Write `flatten(nested)`: turn a list that may contain lists (to any depth) into one flat list of the non-list items, in order. `flatten([1, [2, [3, 4]], 5])` is `[1, 2, 3, 4, 5]`. Use recursion.
+    code: |
+      def flatten(nested):
+          return []
+    tests:
+      - "flatten([1, [2, [3, 4]], 5])"
+      - "flatten([])"
+      - "flatten([[], [[]]])"
+      - "flatten([[['deep']]])"
+      - "flatten(['a', ['b', ['c']]])"
+    solution: |
+      def flatten(nested):
+          flat = []
+          for item in nested:
+              if isinstance(item, list):
+                  flat.extend(flatten(item))
+              else:
+                  flat.append(item)
+          return flat
+    hint: "For each item: if it is a list, `extend` with `flatten(item)`; otherwise `append` it."
+    reject:
+      - |
+        def flatten(nested):
+            return [x for item in nested for x in (item if isinstance(item, list) else [item])]
+
+  - kind: explain
+    title: "Memoization: never solve the same thing twice"
+    body: |
+      Some recursions repeat the same sub-problems again and again. Counting the ways to walk across a grid from the top-left to the bottom-right (moving only right or down) is one:
+
+      ```python
+      def paths(r, c):
+          if r == 1 or c == 1:
+              return 1
+          return paths(r - 1, c) + paths(r, c - 1)
+      ```
+
+      `paths(3, 3)` calls `paths(2, 3)` and `paths(3, 2)`, which both call `paths(2, 2)`, and so on. The work explodes. **Memoization** stores each answer the first time, so it is never recomputed: just add `@cache` (Module 26). A slow exponential recursion becomes fast and linear in the number of distinct sub-problems.
+
+  - kind: code
+    title: Grid paths, fast
+    body: |
+      Finish `paths(rows, cols)`: the number of ways to go from the top-left to the bottom-right of a `rows × cols` grid, moving only right or down. A grid with one row or one column has exactly one path. The starter is correct but far too slow for a `18 × 18` grid. Make it fast with **one decorator**.
+    code: |
+      from functools import cache
+
+
+      def paths(rows, cols):
+          if rows == 1 or cols == 1:
+              return 1
+          return paths(rows - 1, cols) + paths(rows, cols - 1)
+    tests:
+      - "paths(1, 5)"
+      - "paths(3, 3)"
+      - "paths(3, 7)"
+      - "paths(18, 18)"
+      - "paths(60, 60)"
+    solution: |
+      from functools import cache
+
+
+      @cache
+      def paths(rows, cols):
+          if rows == 1 or cols == 1:
+              return 1
+          return paths(rows - 1, cols) + paths(rows, cols - 1)
+    hint: "Put `@cache` directly above `def paths`."
+    broken_starter: true
+
+  - kind: explain
+    title: Trees
+    body: |
+      A **tree** is nested data: a **node** holds a value and links to child nodes. The top node is the **root**; nodes with no children are **leaves**. In a **binary tree** every node has at most a `left` and a `right` child.
+
+      ```python
+      from dataclasses import dataclass
+
+      @dataclass
+      class Node:
+          value: int
+          left: "Node | None" = None
+          right: "Node | None" = None
+
+      #        4
+      #       / \
+      #      2   6
+      #     / \
+      #    1   3
+      root = Node(4, Node(2, Node(1), Node(3)), Node(6))
+      ```
+
+      Trees are naturally **recursive**: a tree is a node plus two smaller trees. So most tree functions look the same: handle the empty tree (`None`), then combine the answers from the left and right subtrees.
+
+      **Traversals** visit every node in a set order:
+
+      - **in-order**: left, node, right (for a sorted tree this gives sorted values),
+      - **pre-order**: node, left, right,
+      - **post-order**: left, right, node.
+
+  - kind: code
+    title: Depth and in-order
+    body: |
+      Using the `Node` class below, write two recursive functions:
+
+      - `depth(node)`: the number of levels: `0` for an empty tree (`None`), `1` for a single node, and so on (1 + the deeper subtree).
+      - `inorder(node)`: the list of values visited left, node, right. An empty tree gives `[]`.
+    code: |
+      from dataclasses import dataclass
+
+
+      @dataclass
+      class Node:
+          value: int
+          left: "Node | None" = None
+          right: "Node | None" = None
+    tests:
+      - "root = Node(4, Node(2, Node(1), Node(3)), Node(6))\nresult = (depth(root), inorder(root))"
+      - "result = (depth(None), inorder(None))"
+      - "result = (depth(Node(7)), inorder(Node(7)))"
+      - "chain = Node(1, None, Node(2, None, Node(3)))\nresult = (depth(chain), inorder(chain))"
+    solution: |
+      from dataclasses import dataclass
+
+
+      @dataclass
+      class Node:
+          value: int
+          left: "Node | None" = None
+          right: "Node | None" = None
+
+
+      def depth(node):
+          if node is None:
+              return 0
+          return 1 + max(depth(node.left), depth(node.right))
+
+
+      def inorder(node):
+          if node is None:
+              return []
+          return inorder(node.left) + [node.value] + inorder(node.right)
+    hint: "Base case: `node is None`. `depth` is `1 + max(depth(left), depth(right))`. `inorder` is left list + `[value]` + right list."
+    reject:
+      - |
+        from dataclasses import dataclass
+
+
+        @dataclass
+        class Node:
+            value: int
+            left: "Node | None" = None
+            right: "Node | None" = None
+
+
+        def depth(node):
+            return 0 if node is None else 1
+
+
+        def inorder(node):
+            return [] if node is None else [node.value]
+
+  - kind: explain
+    title: Graphs as adjacency lists
+    body: |
+      A **graph** is things (**nodes**, or *vertices*) joined by links (**edges**): cities and roads, people and friendships, web pages and links. A tree is a special graph with no loops.
+
+      The simplest way to store one in Python is an **adjacency list**: a dictionary from each node to the list of its neighbours.
+
+      ```python
+      graph = {
+          "A": ["B", "C"],
+          "B": ["A", "D"],
+          "C": ["A", "D"],
+          "D": ["B", "C"],
+      }
+      ```
+
+      Because graphs can have loops (A → B → A), searching one needs a **visited** set, or you would walk in circles forever.
+
+      Two ways to explore a graph:
+
+      - **Breadth-first search (BFS)** visits nodes in rings: everything 1 step away, then 2 steps, and so on. It uses a **queue** (`deque`) and finds the **shortest path** in an unweighted graph.
+      - **Depth-first search (DFS)** goes as deep as possible along one path, then backs up. It uses a **stack** (or recursion). It is good for "is it reachable?", finding connected pieces, and exploring every possibility.
+
+  - kind: code
+    title: Shortest path with BFS
+    body: |
+      Write `shortest_path(graph, start, goal)`: return the list of nodes on a shortest path from `start` to `goal` (both included), or `None` if the goal cannot be reached. `start == goal` gives `[start]`.
+
+      Keep a `deque` of paths (or a `parents` dict), and a `visited` set. **Mark a node visited when you add it to the queue**, so it is never queued twice.
+    code: |
+      from collections import deque
+
+
+      def shortest_path(graph, start, goal):
+          return None
+    tests:
+      - "shortest_path({'A': ['B', 'C'], 'B': ['A', 'D'], 'C': ['A', 'D'], 'D': ['B', 'C']}, 'A', 'D')"
+      - "shortest_path({'A': ['B'], 'B': ['A'], 'C': []}, 'A', 'C')"
+      - "shortest_path({'A': []}, 'A', 'A')"
+      - "len(shortest_path({i: [i + 1] for i in range(5000)} | {5000: []}, 0, 5000))"
+      - "shortest_path({'S': ['A', 'B'], 'A': ['G'], 'B': ['C'], 'C': ['G'], 'G': []}, 'S', 'G')"
+    solution: |
+      from collections import deque
+
+
+      def shortest_path(graph, start, goal):
+          queue = deque([[start]])
+          visited = {start}
+          while queue:
+              path = queue.popleft()
+              node = path[-1]
+              if node == goal:
+                  return path
+              for neighbour in graph.get(node, []):
+                  if neighbour not in visited:
+                      visited.add(neighbour)
+                      queue.append(path + [neighbour])
+          return None
+    hint: "Queue holds whole paths. Pop the oldest, stop if its last node is the goal, else add a path for each unvisited neighbour."
+    reject:
+      - |
+        def shortest_path(graph, start, goal):
+            path = [start]
+            while path[-1] != goal:
+                nxt = graph.get(path[-1], [])
+                if not nxt:
+                    return None
+                path.append(nxt[0])
+            return path
+
+  - kind: code
+    title: What can I reach?
+    body: |
+      Write `reachable(graph, start)`: the **set** of all nodes you can get to from `start` (including `start` itself), using depth-first search with an explicit **stack** (a list), not recursion. It must cope with a chain of 20,000 nodes (which would break a recursive version).
+    code: |
+      def reachable(graph, start):
+          return set()
+    tests:
+      - "sorted(reachable({'A': ['B'], 'B': ['C'], 'C': ['A'], 'D': ['A']}, 'A'))"
+      - "sorted(reachable({'A': []}, 'A'))"
+      - "len(reachable({i: [i + 1] for i in range(20000)} | {20000: []}, 0))"
+      - "sorted(reachable({'A': ['B'], 'B': []}, 'B'))"
+    solution: |
+      def reachable(graph, start):
+          seen = {start}
+          stack = [start]
+          while stack:
+              node = stack.pop()
+              for neighbour in graph.get(node, []):
+                  if neighbour not in seen:
+                      seen.add(neighbour)
+                      stack.append(neighbour)
+          return seen
+    hint: "`stack = [start]`; pop a node, and push each neighbour not yet in `seen`."
+    reject:
+      - |
+        def reachable(graph, start):
+            return {start} | set(graph.get(start, []))
+
+  - kind: explain
+    title: Shortest path on a grid
+    body: |
+      A grid map is a graph in disguise: each open cell is a node, connected to its up/down/left/right neighbours. You do not need to build the dictionary. Just generate the neighbours as you go:
+
+      ```python
+      for dr, dc in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+          nr, nc = r + dr, c + dc
+          if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] != "#":
+              ...
+      ```
+
+      BFS again gives the **fewest steps**. Store the **distance** with each cell in the queue: `(row, col, steps)`.
+
+  - kind: code
+    title: Find the exit
+    body: |
+      A maze is a list of equal-length strings: `"S"` start, `"E"` exit, `"."` floor, `"#"` wall. Write `steps_to_exit(maze)`: the smallest number of moves (up/down/left/right) from `S` to `E`, or `-1` if the exit cannot be reached.
+    code: |
+      from collections import deque
+
+
+      def steps_to_exit(maze):
+          return -1
+    tests:
+      - "steps_to_exit(['S.#', '..#', '#.E'])"
+      - "steps_to_exit(['S#E'])"
+      - "steps_to_exit(['SE'])"
+      - "steps_to_exit(['S....', '.###.', '.#E#.', '.#.#.', '.....'])"
+      - "steps_to_exit(['S' + '.' * 300 + 'E'])"
+    solution: |
+      from collections import deque
+
+
+      def steps_to_exit(maze):
+          rows, cols = len(maze), len(maze[0])
+          for r in range(rows):
+              for c in range(cols):
+                  if maze[r][c] == "S":
+                      start = (r, c)
+          queue = deque([(start[0], start[1], 0)])
+          seen = {start}
+          while queue:
+              r, c, steps = queue.popleft()
+              if maze[r][c] == "E":
+                  return steps
+              for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                  nr, nc = r + dr, c + dc
+                  if 0 <= nr < rows and 0 <= nc < cols and maze[nr][nc] != "#" and (nr, nc) not in seen:
+                      seen.add((nr, nc))
+                      queue.append((nr, nc, steps + 1))
+          return -1
+    hint: "BFS from `S` storing `(row, col, steps)`. Skip walls and cells already in `seen`. Return `steps` when you reach `E`."
+    reject:
+      - |
+        def steps_to_exit(maze):
+            for r, row in enumerate(maze):
+                for c, ch in enumerate(row):
+                    if ch == "S":
+                        sr, sc = r, c
+                    if ch == "E":
+                        er, ec = r, c
+            return abs(sr - er) + abs(sc - ec)
+
+  - kind: info
+    title: "🔹 Dynamic programming basics"
+    body: |
+      **Dynamic programming** is recursion plus memoization used on problems whose best answer is built from best answers to smaller versions of the same problem. Example: the fewest coins to make an amount.
+
+      ```python
+      from functools import cache
+
+      def min_coins(coins, amount):
+          @cache
+          def best(rest):
+              if rest == 0:
+                  return 0
+              options = [best(rest - c) for c in coins if c <= rest]
+              return 1 + min(options) if options else float("inf")
+          answer = best(amount)
+          return answer if answer != float("inf") else -1
+
+      min_coins([1, 5, 10], 27)     # 5   (10 + 10 + 5 + 1 + 1)
+      ```
+
+      Recipe: define the sub-problem, write the recursion, add `@cache`. You will not need more than that as an intermediate programmer.
+
+  - kind: info
+    title: "🔹 Dijkstra's algorithm"
+    body: |
+      BFS finds the fewest *steps*. When edges have **weights** (distances, costs), the cheapest route needs **Dijkstra's algorithm**: BFS with a **priority queue** (`heapq`) instead of a plain queue, always expanding the cheapest unvisited node next.
+
+      ```python
+      import heapq
+
+      def dijkstra(graph, start):          # graph[node] = [(neighbour, cost), ...]
+          best = {start: 0}
+          heap = [(0, start)]
+          while heap:
+              cost, node = heapq.heappop(heap)
+              if cost > best.get(node, float("inf")):
+                  continue
+              for neighbour, w in graph[node]:
+                  new_cost = cost + w
+                  if new_cost < best.get(neighbour, float("inf")):
+                      best[neighbour] = new_cost
+                      heapq.heappush(heap, (new_cost, neighbour))
+          return best
+      ```
+
+      It powers map directions. Recognise the shape: BFS + heap.
+
+  - kind: why
+    body: |
+      Trees and graphs are everywhere: file systems are trees, the web is a graph, maps are weighted graphs, dependencies between packages form a graph, and game boards are grids. Recursion and BFS/DFS are the tools for exploring all of them, and memoization turns explosive recursions into fast ones.
+
+  - kind: recap
+    body: |
+      - Recursion: trust the smaller call, define the base case, combine. `@cache` (memoization) removes repeated work.
+      - A **tree** is a node plus subtrees. Recursion: handle `None`, combine left and right. In-order = left, node, right.
+      - A **graph** as an **adjacency list** (`{node: [neighbours]}`); keep a **visited** set.
+      - **BFS** (queue) finds shortest paths in unweighted graphs and grids; **DFS** (stack or recursion) explores and finds reachability.
+      - 🔹 Dynamic programming = recursion + memo; Dijkstra = BFS + `heapq` for weighted graphs.

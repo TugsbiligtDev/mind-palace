@@ -1,0 +1,4 @@
+title: "Automation & Command-Line Tools"
+module: 40
+summary: "Make Python do the boring work: command-line tools with argparse subcommands or Typer, file and folder automation, spreadsheets and CSV, web scraping basics with respect for site rules, and scheduling on a Mac."
+minutes: 95

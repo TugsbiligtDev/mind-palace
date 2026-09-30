@@ -1,0 +1,41 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: In a rotated sorted array, what is always true about the two halves around `mid`?
+    options: ["Both halves are sorted", "At least one half is sorted", "Neither half is sorted", "The left half is always sorted"]
+    answer: 1
+    explanation: The rotation point can only be in one half, so the other half is a normal sorted run.
+  - type: predict
+    prompt: What does this print? (Hours needed to eat all piles at speed 4.)
+    code: |
+      const piles = [3, 6, 7, 11];
+      const speed = 4;
+      let hours = 0;
+      for (const p of piles) hours += Math.ceil(p / speed);
+      console.log(hours);
+    options: ["8", "7", "6", "10"]
+    answer: 0
+    explanation: "The piles take 1, 2, 2 and 3 hours (rounding up), which is 8 in total."
+  - type: mcq
+    prompt: You binary search the smallest ship capacity that works. When `daysNeeded(mid) <= days`, what do you do?
+    options: ["`lo = mid + 1`", "`hi = mid`", "Return `mid` immediately", "`hi = mid - 1`"]
+    answer: 1
+    explanation: "`mid` works, but a smaller capacity might work too, so keep `mid` as a candidate with `hi = mid`."
+  - type: mcq
+    prompt: Why does "find a peak" work with binary search even though the array is not sorted?
+    options:
+      - It secretly is sorted
+      - Moving toward the rising side always keeps a peak in the half you keep
+      - Peaks are always in the middle
+      - It does not work
+    answer: 1
+    explanation: If the next item is higher, going up must eventually lead to a peak or the end, which counts as one.
+  - type: mcq
+    prompt: Which condition makes a problem suitable for "binary search on the answer"?
+    options:
+      - The input is an array
+      - If an answer works, every larger answer also works (or every smaller one)
+      - The answer is a small number
+      - The problem involves strings
+    answer: 1
+    explanation: That monotonic "no…no…yes…yes" shape is what lets you halve the range of answers.

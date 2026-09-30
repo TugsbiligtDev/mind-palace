@@ -1,0 +1,4 @@
+title: "Inheritance & Composition"
+module: 23
+summary: "Reuse and specialise classes: subclassing, super(), overriding, isinstance(), why 'has-a' (composition) usually beats 'is-a' (inheritance), and abstract base classes."
+minutes: 70

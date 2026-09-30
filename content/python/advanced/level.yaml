@@ -1,0 +1,24 @@
+id: advanced
+title: Advanced
+season: 3
+season_title: Mastery
+season_pitch: |
+  Python's data model, advanced typing and error design, then concurrency and performance, and
+  finally the professional habits: packaging, design, security, CI and working in real codebases.
+status: coming_soon
+topics: []
+planned:
+  - "Python's Data Model"
+  - "Advanced Typing"
+  - "Error-Handling Design"
+  - "Concurrency Fundamentals"
+  - "Async with asyncio"
+  - "Performance & Profiling"
+  - "Project Structure & Packaging"
+  - "Software Design"
+  - "Advanced Testing"
+  - "Security Essentials"
+  - "CI & Automated Quality"
+  - "Working in Real Codebases"
+  - "Docker & Deployment (optional)"
+  - "Production Web APIs with FastAPI (optional)"

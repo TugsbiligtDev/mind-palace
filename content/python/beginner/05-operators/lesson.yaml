@@ -1,0 +1,207 @@
+steps:
+  - kind: explain
+    title: Arithmetic
+    body: |
+      An **expression** is anything Python can work out to a single value, like `3 + 4`. The symbols in the middle are **operators**.
+
+      | Operator | Meaning | Example | Result |
+      |---|---|---|---|
+      | `+` | add | `7 + 2` | `9` |
+      | `-` | subtract | `7 - 2` | `5` |
+      | `*` | multiply | `7 * 2` | `14` |
+      | `/` | divide (always a float) | `7 / 2` | `3.5` |
+      | `//` | floor divide (whole part only) | `7 // 2` | `3` |
+      | `%` | remainder ("modulo") | `7 % 2` | `1` |
+      | `**` | power | `7 ** 2` | `49` |
+
+      `/` **always** gives a float, even `6 / 3` is `2.0`. Use `//` when you want whole pieces and `%` when you want what is left over. Together: `17 // 5` is `3` and `17 % 5` is `2`, because `5 * 3 + 2 = 17`.
+
+  - kind: code
+    title: Try the operators
+    body: |
+      Run this and compare each line with the table. Then change the numbers and predict the output *before* you run it.
+    code: |
+      print(7 + 2)
+      print(7 / 2)
+      print(7 // 2)
+      print(7 % 2)
+      print(7 ** 2)
+      print(6 / 3)
+      print(-7 // 2)
+
+  - kind: code
+    title: Split the bill
+    body: |
+      Four friends split a bill of `total` cents. Finish `split_bill(total, people)`. It returns two numbers in a pair: what **each person pays** (whole cents) and the **leftover** cents nobody can split.
+
+      `split_bill(1000, 3)` gives `(333, 1)`. You will need `//` and `%`.
+    code: |
+      def split_bill(total, people):
+          each = 0
+          leftover = 0
+          return (each, leftover)
+    tests:
+      - "split_bill(1000, 3)"
+      - "split_bill(1200, 4)"
+      - "split_bill(7, 2)"
+      - "split_bill(5, 10)"
+    solution: |
+      def split_bill(total, people):
+          each = total // people
+          leftover = total % people
+          return (each, leftover)
+    hint: "`total // people` is each person's share; `total % people` is what is left."
+    reject:
+      - |
+        def split_bill(total, people):
+            each = total / people
+            leftover = total % people
+            return (each, leftover)
+
+  - kind: explain
+    title: Comparisons and logic
+    body: |
+      Comparisons give a `bool` (`True` or `False`):
+
+      `==` equal · `!=` not equal · `<` `>` less/greater · `<=` `>=` less/greater or equal
+
+      **Careful:** `=` *assigns* (name a value) and `==` *asks* "are these equal?". Mixing them up is the classic beginner slip.
+
+      Combine conditions with words:
+
+      - `a and b` is true only if **both** are true,
+      - `a or b` is true if **at least one** is true,
+      - `not a` flips it.
+
+      Python allows **chained comparisons** the way you write them in maths: `1 <= x <= 10` means "x is between 1 and 10".
+
+  - kind: code
+    title: Is it in range?
+    body: |
+      Finish `in_range(x, low, high)`: `True` if `x` is between `low` and `high` **including both ends**. `in_range(5, 1, 10)` is `True`, `in_range(10, 1, 10)` is `True`, `in_range(11, 1, 10)` is `False`.
+    code: |
+      def in_range(x, low, high):
+          return False
+    tests:
+      - "in_range(5, 1, 10)"
+      - "in_range(10, 1, 10)"
+      - "in_range(1, 1, 10)"
+      - "in_range(11, 1, 10)"
+      - "in_range(0, 1, 10)"
+      - "in_range(-3, -5, -1)"
+    solution: |
+      def in_range(x, low, high):
+          return low <= x <= high
+    hint: "Chain them: `low <= x <= high`."
+    reject:
+      - |
+        def in_range(x, low, high):
+            return low < x < high
+
+  - kind: code
+    title: Leap years
+    body: |
+      A year is a **leap year** if it is divisible by 4, **except** century years (divisible by 100) that are *not* also divisible by 400. So 2024 and 2000 are leap years, but 1900 and 2023 are not.
+
+      Finish `is_leap_year(year)` using `%`, `==`, `and`, `or` and `not`.
+    code: |
+      def is_leap_year(year):
+          return False
+    tests:
+      - "is_leap_year(2024)"
+      - "is_leap_year(2023)"
+      - "is_leap_year(1900)"
+      - "is_leap_year(2000)"
+      - "is_leap_year(2100)"
+      - "is_leap_year(1996)"
+    solution: |
+      def is_leap_year(year):
+          return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+    hint: "Divisible by 4 AND (not a century OR divisible by 400). The brackets matter."
+    reject:
+      - |
+        def is_leap_year(year):
+            return year % 4 == 0
+
+  - kind: explain
+    title: "Precedence: what happens first"
+    body: |
+      Like in school maths, Python works out some operators before others:
+
+      1. `**` (power)
+      2. `*`, `/`, `//`, `%`
+      3. `+`, `-`
+      4. comparisons (`==`, `<`, …)
+      5. `not`, then `and`, then `or`
+
+      So `2 + 3 * 4` is `14`, not `20`. **When in doubt, add brackets.** They cost nothing and make your intent clear: `(2 + 3) * 4` is `20`.
+
+      A shortcut for updating a variable: `total += 5` means `total = total + 5`. The same works for `-=`, `*=`, `/=` and the others.
+
+  - kind: code
+    title: Fix the average
+    body: |
+      `average(a, b, c)` should return the average of three numbers, but it gives the wrong answer because of precedence. Fix it. `average(3, 6, 9)` should be `6.0`.
+    code: |
+      def average(a, b, c):
+          return a + b + c / 3
+    tests:
+      - "average(3, 6, 9)"
+      - "average(1, 2, 3)"
+      - "average(0, 0, 0)"
+      - "average(10, 20, 60)"
+    solution: |
+      def average(a, b, c):
+          return (a + b + c) / 3
+    hint: "Division happens before addition, so only `c` is being divided. Add brackets around the sum."
+    broken_starter: true
+
+  - kind: code
+    title: Update a variable
+    body: |
+      Finish `after_raises(salary)`: give a raise of 1000 with `+=`, then a 10% increase with `*=` (multiply by `1.1`), then return the result. `after_raises(20000)` is `23100.000000000004`, and yes, that float noise is exactly the problem from Module 4.
+
+      To keep the output tidy, return `round(salary, 2)`.
+    code: |
+      def after_raises(salary):
+          return salary
+    tests:
+      - "after_raises(20000)"
+      - "after_raises(0)"
+      - "after_raises(50000)"
+    solution: |
+      def after_raises(salary):
+          salary += 1000
+          salary *= 1.1
+          return round(salary, 2)
+    hint: "`salary += 1000`, then `salary *= 1.1`, then `round(salary, 2)`."
+    reject:
+      - |
+        def after_raises(salary):
+            salary *= 1.1
+            salary += 1000
+            return round(salary, 2)
+
+  - kind: info
+    title: "🔹 The walrus operator :="
+    body: |
+      Since Python 3.8 you can assign a value **inside** an expression with `:=`, nicknamed the *walrus*:
+
+      ```python
+      if (n := len("detective")) > 5:
+          print("long word, length", n)
+      ```
+
+      It saves computing something twice. It is handy, but never necessary, so recognise it and move on. Beginners are better off with a plain `n = len(...)` on its own line.
+
+  - kind: why
+    body: |
+      Operators are the verbs of every calculation, and `//` with `%` quietly solves a huge range of problems: splitting things into groups, wrapping around a clock, telling odd from even, and building leap-year and calendar logic. Brackets in the right places prevent whole categories of bugs.
+
+  - kind: recap
+    body: |
+      - Arithmetic: `+ - * / // % **`. `/` always gives a float; `//` keeps the whole part; `%` is the remainder.
+      - Comparisons give `bool`. `=` assigns, `==` compares. Chain them: `1 <= x <= 10`.
+      - `and`, `or`, `not` combine conditions. Precedence: `**`, then `* / // %`, then `+ -`, then comparisons, then `not`/`and`/`or`. Use brackets when unsure.
+      - `x += 1` is short for `x = x + 1`.
+      - 🔹 The walrus `:=` assigns inside an expression.

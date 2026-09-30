@@ -1,0 +1,51 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const nums = [2, 1, 2, 4, 3];
+      const result = Array(nums.length).fill(-1);
+      const stack = [];
+      for (let i = 0; i < nums.length; i++) {
+        while (stack.length > 0 && nums[stack[stack.length - 1]] < nums[i]) {
+          result[stack.pop()] = nums[i];
+        }
+        stack.push(i);
+      }
+      console.log(result);
+    options: ["[ 4, 2, 4, -1, -1 ]", "[ 4, 2, 4, 3, -1 ]", "[ 1, 2, 4, 3, -1 ]", "[ -1, -1, -1, -1, -1 ]"]
+    answer: 0
+    explanation: 2 waits for 4, 1 finds 2, the second 2 finds 4, and 4 and 3 never find a bigger number.
+  - type: mcq
+    prompt: A monotonic stack solution has a `while` loop inside a `for` loop. Why is it still O(n)?
+    options:
+      - The while loop rarely runs
+      - Each item is pushed once and popped at most once, so total pops are at most n
+      - JavaScript speeds it up
+      - It is actually O(n²)
+    answer: 1
+    explanation: The pops across the whole run can never exceed the pushes, which is n. That is an amortized argument.
+  - type: mcq
+    prompt: For "next greater element", which order should the stack keep?
+    options: ["Increasing from bottom to top", "Decreasing from bottom to top", "Random", "Sorted alphabetically"]
+    answer: 1
+    explanation: The stack holds values still waiting for something bigger, so smaller values sit above bigger ones, and a larger arrival pops the smaller ones.
+  - type: mcq
+    prompt: In sliding window maximum, why is the front of the deque always the maximum?
+    options:
+      - Items are added at the front
+      - Smaller values behind a bigger new value are removed, so the deque stays decreasing
+      - The deque is sorted by index
+      - It is a heap
+    answer: 1
+    explanation: "A smaller value that comes before a bigger one can never be a window maximum again, so it is dropped."
+  - type: fill
+    prompt: The stack should hold ____ rather than values, so you can write each answer into the right place.
+    code: |
+      const stack = [];
+      stack.push(0);
+      console.log(typeof stack[0] === "number" ? "____" : "no");
+    answer: indexes
+    accept: ["indices", "index", "positions"]
+    runnable: false
+    explanation: Storing indexes lets you both read the value (`nums[i]`) and update `result[i]`.

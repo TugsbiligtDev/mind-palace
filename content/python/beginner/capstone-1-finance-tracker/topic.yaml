@@ -1,0 +1,5 @@
+title: "Personal finance tracker"
+module: 21
+kind: capstone
+summary: "Build a command-line finance tracker: parse and validate transactions, keep money in whole cents, summarise by category, save to JSON, and publish it as a uv project on GitHub."
+minutes: 90

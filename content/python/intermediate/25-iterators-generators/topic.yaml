@@ -1,0 +1,4 @@
+title: "Iterators & Generators"
+module: 25
+summary: "Process data one piece at a time: how for-loops really work (iter and next), writing generators with yield, lazy evaluation for huge or endless data, and the itertools toolbox."
+minutes: 75

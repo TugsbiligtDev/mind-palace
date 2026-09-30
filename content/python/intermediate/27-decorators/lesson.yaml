@@ -1,0 +1,329 @@
+steps:
+  - kind: explain
+    title: A decorator wraps a function
+    body: |
+      Sometimes you want to add behaviour to many functions: log every call, time them, check permissions. Copying the same lines into each one is tedious and error-prone. A **decorator** adds it from the outside.
+
+      A decorator is simply **a function that takes a function and returns a new function** (built with closures, Module 26):
+
+      ```python
+      def shout(func):
+          def wrapper(*args, **kwargs):
+              result = func(*args, **kwargs)     # call the original
+              return result.upper() + "!"        # add behaviour around it
+          return wrapper
+
+      @shout
+      def greet(name):
+          return "hello " + name
+
+      greet("ada")      # 'HELLO ADA!'
+      ```
+
+      The line `@shout` above `def greet` is a shortcut for `greet = shout(greet)`. From then on, the name `greet` points at the **wrapper**. Using `*args, **kwargs` lets the wrapper accept any arguments and pass them straight through.
+
+  - kind: code
+    title: Your first decorator
+    body: |
+      Run this. Then add a second decorated function of your own, and remove `@shout` to see the difference.
+    code: |
+      def shout(func):
+          def wrapper(*args, **kwargs):
+              result = func(*args, **kwargs)
+              return result.upper() + "!"
+          return wrapper
+
+
+      @shout
+      def greet(name):
+          return "hello " + name
+
+
+      print(greet("ada"))
+
+  - kind: code
+    title: Count the calls
+    body: |
+      Write a decorator `counted`. The decorated function must still work normally, and it gets an attribute **`calls`** that starts at `0` and goes up by one every time it is called. So after two calls of `add`, `add.calls` is `2`.
+
+      Set the attribute on the wrapper: `wrapper.calls = 0`.
+    code: |
+      def counted(func):
+          return func
+    tests:
+      - "@counted\ndef add(a, b):\n    return a + b\n\nadd(1, 2)\nadd(3, 4)\nresult = (add.calls, add(5, 5), add.calls)"
+      - "@counted\ndef f():\n    return 'x'\n\nresult = f.calls"
+      - "@counted\ndef a():\n    pass\n\n@counted\ndef b():\n    pass\n\na()\na()\nb()\nresult = (a.calls, b.calls)"
+    solution: |
+      def counted(func):
+          def wrapper(*args, **kwargs):
+              wrapper.calls += 1
+              return func(*args, **kwargs)
+
+          wrapper.calls = 0
+          return wrapper
+    hint: "Define `wrapper`, increase `wrapper.calls` inside it, set `wrapper.calls = 0` after defining it, and return `wrapper`."
+    reject:
+      - |
+        def counted(func):
+            calls = 0
+
+            def wrapper(*args, **kwargs):
+                nonlocal calls
+                calls += 1
+                return func(*args, **kwargs)
+
+            return wrapper
+
+  - kind: explain
+    title: "functools.wraps: keep the identity"
+    body: |
+      A wrapper hides the original's name and docstring:
+
+      ```python
+      @shout
+      def greet(name):
+          """Say hello."""
+          ...
+
+      greet.__name__      # 'wrapper'   (not 'greet'!)
+      greet.__doc__       # None
+      ```
+
+      That confuses debugging, documentation tools and tracebacks. The fix is another decorator, **`functools.wraps`**, on the wrapper:
+
+      ```python
+      from functools import wraps
+
+      def shout(func):
+          @wraps(func)
+          def wrapper(*args, **kwargs):
+              ...
+          return wrapper
+      ```
+
+      Now `greet.__name__` is `'greet'` again. **Always use `@wraps(func)`** when you write a decorator.
+
+  - kind: code
+    title: A logging decorator
+    body: |
+      Write a decorator `logged` that appends the text `"calling <name>"` to a **global list called `LOG`** each time the decorated function is called, then runs it. The decorated function must keep its own `__name__` (use `functools.wraps`).
+
+      `LOG` is provided for you.
+    code: |
+      from functools import wraps
+
+      LOG = []
+
+
+      def logged(func):
+          return func
+    tests:
+      - "LOG.clear()\n@logged\ndef add(a, b):\n    return a + b\n\nadd(1, 2)\nadd(3, 4)\nresult = (LOG, add.__name__)"
+      - "LOG.clear()\n@logged\ndef hello():\n    '''Say hi.'''\n    return 'hi'\n\nresult = (hello(), hello.__doc__, LOG)"
+    solution: |
+      from functools import wraps
+
+      LOG = []
+
+
+      def logged(func):
+          @wraps(func)
+          def wrapper(*args, **kwargs):
+              LOG.append(f"calling {func.__name__}")
+              return func(*args, **kwargs)
+
+          return wrapper
+    hint: "`@wraps(func)` on `wrapper`, and `LOG.append(f\"calling {func.__name__}\")` before calling the original."
+    reject:
+      - |
+        from functools import wraps
+
+        LOG = []
+
+
+        def logged(func):
+            def wrapper(*args, **kwargs):
+                LOG.append(f"calling {func.__name__}")
+                return func(*args, **kwargs)
+
+            return wrapper
+
+  - kind: explain
+    title: Decorators with arguments
+    body: |
+      What if the decorator needs a setting, like `@repeat(3)`? Then you need **one more layer**: a function that takes the setting and *returns the real decorator*.
+
+      ```python
+      from functools import wraps
+
+      def repeat(times):                      # 1. takes the setting
+          def decorator(func):                # 2. the real decorator
+              @wraps(func)
+              def wrapper(*args, **kwargs):   # 3. the wrapper
+                  result = None
+                  for _ in range(times):
+                      result = func(*args, **kwargs)
+                  return result
+              return wrapper
+          return decorator
+
+      @repeat(3)
+      def say(): print("hi")     # prints hi three times
+      ```
+
+      Read `@repeat(3)` as: call `repeat(3)` first, and use whatever it returns as the decorator. Three nested functions can feel like a lot, but the pattern is always the same.
+
+  - kind: code
+    title: An access check
+    body: |
+      Write `require_role(role)`, a decorator **with an argument**. The decorated function's **first argument** is a `user` dictionary like `{"name": "Ada", "roles": ["admin"]}`. If `role` is not in `user["roles"]`, raise `PermissionError("needs role: <role>")`; otherwise run the function normally.
+    code: |
+      from functools import wraps
+
+
+      def require_role(role):
+          pass
+    tests:
+      - "@require_role('admin')\ndef delete(user, item):\n    return f'{item} deleted'\n\nresult = delete({'name': 'Ada', 'roles': ['admin', 'staff']}, 'file')"
+      - "@require_role('admin')\ndef delete(user, item):\n    return 'done'\n\ntry:\n    delete({'name': 'Bo', 'roles': ['staff']}, 'file')\nexcept PermissionError as e:\n    result = str(e)"
+      - "@require_role('staff')\ndef who(user):\n    return user['name']\n\nresult = (who({'name': 'Bo', 'roles': ['staff']}), who.__name__)"
+    solution: |
+      from functools import wraps
+
+
+      def require_role(role):
+          def decorator(func):
+              @wraps(func)
+              def wrapper(user, *args, **kwargs):
+                  if role not in user["roles"]:
+                      raise PermissionError(f"needs role: {role}")
+                  return func(user, *args, **kwargs)
+
+              return wrapper
+
+          return decorator
+    hint: "Three layers: `require_role(role)` returns `decorator(func)` which returns `wrapper(user, *args, **kwargs)`."
+    reject:
+      - |
+        from functools import wraps
+
+
+        def require_role(role):
+            def decorator(func):
+                @wraps(func)
+                def wrapper(user, *args, **kwargs):
+                    return func(user, *args, **kwargs)
+
+                return wrapper
+
+            return decorator
+
+  - kind: code
+    title: Repeat a call
+    body: |
+      Write the `repeat(times)` decorator from the explanation, but make it **collect** the results: the decorated function returns the **list** of results from all `times` calls. So a function that returns `"hi"`, decorated with `@repeat(3)`, returns `["hi", "hi", "hi"]`.
+    code: |
+      from functools import wraps
+
+
+      def repeat(times):
+          pass
+    tests:
+      - "@repeat(3)\ndef hi():\n    return 'hi'\n\nresult = hi()"
+      - "n = []\n@repeat(4)\ndef bump():\n    n.append(1)\n    return len(n)\n\nresult = bump()"
+      - "@repeat(0)\ndef f():\n    return 1\n\nresult = f()"
+      - "@repeat(2)\ndef double(x):\n    return x * 2\n\nresult = (double(5), double.__name__)"
+    solution: |
+      from functools import wraps
+
+
+      def repeat(times):
+          def decorator(func):
+              @wraps(func)
+              def wrapper(*args, **kwargs):
+                  return [func(*args, **kwargs) for _ in range(times)]
+
+              return wrapper
+
+          return decorator
+    hint: "The wrapper returns a list comprehension that calls `func(*args, **kwargs)` `times` times."
+    reject:
+      - |
+        from functools import wraps
+
+
+        def repeat(times):
+            def decorator(func):
+                @wraps(func)
+                def wrapper(*args, **kwargs):
+                    return func(*args, **kwargs)
+
+                return wrapper
+
+            return decorator
+
+  - kind: code
+    title: Build your own cache
+    body: |
+      `@cache` from `functools` remembers results. Write your own version to see how simple it is: `memoize` keeps a dictionary from the arguments (a tuple) to the result, and only calls the function on a **miss**. Assume all arguments are hashable and there are no keyword arguments.
+    code: |
+      from functools import wraps
+
+
+      def memoize(func):
+          return func
+    tests:
+      - "calls = []\n@memoize\ndef slow_double(n):\n    calls.append(n)\n    return n * 2\n\nresult = (slow_double(4), slow_double(4), slow_double(5), calls)"
+      - "@memoize\ndef fib(n):\n    return n if n < 2 else fib(n - 1) + fib(n - 2)\n\nresult = fib(90)"
+    solution: |
+      from functools import wraps
+
+
+      def memoize(func):
+          cache = {}
+
+          @wraps(func)
+          def wrapper(*args):
+              if args not in cache:
+                  cache[args] = func(*args)
+              return cache[args]
+
+          return wrapper
+    hint: "Keep a dict `cache` in the outer function. In the wrapper: `if args not in cache: cache[args] = func(*args)`, then `return cache[args]`."
+    reject:
+      - |
+        from functools import wraps
+
+
+        def memoize(func):
+            @wraps(func)
+            def wrapper(*args):
+                return func(*args)
+
+            return wrapper
+
+  - kind: explain
+    title: Where you will meet decorators
+    body: |
+      Decorators are everywhere in real Python:
+
+      - **Timing**: measure how long a function takes (`time.perf_counter()` before and after).
+      - **Logging**: record calls and arguments (Module 30's `logging`).
+      - **Caching**: `@cache`, `@lru_cache`.
+      - **Access checks**: `@login_required` in web frameworks.
+      - **Registration**: `@app.route("/")` in web frameworks, `@pytest.fixture` in tests, `@property`, `@classmethod`, `@dataclass` (you have used several already!).
+
+      You will write them occasionally and *use* them constantly. The important habits: use `@wraps`, pass `*args, **kwargs`, and keep the added behaviour small and focused.
+
+  - kind: why
+    body: |
+      Decorators let you separate *what a function does* from *cross-cutting concerns* like logging, timing and permissions, keeping each function short and each concern in one place. They are also how most Python frameworks work, so understanding them demystifies a lot of code you will read.
+
+  - kind: recap
+    body: |
+      - A **decorator** is a function that takes a function and returns a replacement. `@d` above `def f` means `f = d(f)`.
+      - Write the wrapper as `def wrapper(*args, **kwargs)` and call the original inside it.
+      - Always add **`@functools.wraps(func)`** to keep the name and docstring.
+      - A decorator **with arguments** needs three layers: `outer(setting)` → `decorator(func)` → `wrapper(...)`.
+      - Common uses: timing, logging, caching, access checks, registering functions.

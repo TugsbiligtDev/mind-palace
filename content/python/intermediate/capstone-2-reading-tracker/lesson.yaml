@@ -1,0 +1,707 @@
+steps:
+  - kind: explain
+    title: The brief
+    body: |
+      Inspector Bold wants a **personal reading tracker** for the agency's book club. It searches an online book catalogue, keeps the books you choose, and tracks whether each is *to-read*, *reading* or *finished*. This uses everything in the Intermediate level:
+
+      - **HTTP** (Module 37): fetch search results from a book API (Open Library),
+      - **Pydantic** (Module 39): validate the messy data it returns,
+      - **SQLite** (Module 38): store books safely with parameterized queries,
+      - **Type hints** and **tests** (Modules 33-34), with the network **mocked**,
+      - a **command-line** front end (Module 40).
+
+      It is the Part 10 checkpoint and the Intermediate capstone. Five graded steps build the core; the last ones run it on your Mac. (The optional data-analysis and web-API extensions from the roadmap are not built yet.)
+
+      A search result from the API looks roughly like this. Real data is untidy: some books have no author, or no year.
+
+      ```json
+      {"docs": [
+        {"key": "/works/OL1W", "title": "Dune", "author_name": ["Frank Herbert"], "first_publish_year": 1965},
+        {"key": "/works/OL2W", "title": "Mystery Ledger"},
+        {"title": "No key"}
+      ]}
+      ```
+
+  - kind: code
+    title: "1. Validate a search result"
+    body: |
+      Write the Pydantic model `BookRecord` and `parse_doc(doc)`.
+
+      - `BookRecord` fields: `key: str` (non-empty), `title: str` (non-empty, spaces trimmed), `author: str` (default `"Unknown"`), `year: int | None = None`.
+      - `parse_doc(doc)` takes one API result (a dict) and returns a `BookRecord`, using `author_name[0]` (the first author, if any) and `first_publish_year`. If the doc is not valid (for example no `key`), return `None`.
+    code: |
+      from pydantic import BaseModel, Field, ValidationError, field_validator
+    tests:
+      - "parse_doc({'key': '/works/OL1W', 'title': ' Dune ', 'author_name': ['Frank Herbert', 'X'], 'first_publish_year': 1965})"
+      - "parse_doc({'key': '/works/OL2W', 'title': 'Mystery Ledger'})"
+      - "parse_doc({'title': 'No key'})"
+      - "parse_doc({'key': '/works/OL3W', 'title': '   '})"
+      - "parse_doc({'key': '/works/OL4W', 'title': 'Odd', 'author_name': [], 'first_publish_year': '1999'})"
+    solution: |
+      from pydantic import BaseModel, Field, ValidationError, field_validator
+
+
+      class BookRecord(BaseModel):
+          key: str = Field(min_length=1)
+          title: str
+          author: str = "Unknown"
+          year: int | None = None
+
+          @field_validator("title")
+          @classmethod
+          def title_required(cls, value: str) -> str:
+              value = value.strip()
+              if not value:
+                  raise ValueError("title required")
+              return value
+
+
+      def parse_doc(doc):
+          authors = doc.get("author_name") or []
+          data = {"key": doc.get("key", ""), "title": doc.get("title", ""), "year": doc.get("first_publish_year")}
+          if authors:
+              data["author"] = authors[0]
+          try:
+              return BookRecord(**data)
+          except ValidationError:
+              return None
+    hint: "Build a dict for the model: `key`, `title`, `year`, and `author` only when the list is non-empty. Return `None` on `ValidationError`."
+    reject:
+      - |
+        from pydantic import BaseModel, Field, ValidationError, field_validator
+
+
+        class BookRecord(BaseModel):
+            key: str
+            title: str
+            author: str = "Unknown"
+            year: int | None = None
+
+
+        def parse_doc(doc):
+            return BookRecord(key=doc["key"], title=doc["title"])
+
+  - kind: code
+    title: "2. Fetch with HTTP"
+    body: |
+      With `BookRecord` and `parse_doc` provided, write `search_books(client, query, limit=5)`:
+
+      - `GET https://openlibrary.org/search.json` with query parameters `q` and `limit` and a **5 second timeout**,
+      - raise for error statuses,
+      - parse every entry of the response's `"docs"` list with `parse_doc`, **skipping invalid ones**, and return the list of `BookRecord`s.
+
+      The checker uses a fake server.
+    code: |
+      from pydantic import BaseModel, Field, ValidationError, field_validator
+      import httpx
+
+
+      class BookRecord(BaseModel):
+          key: str = Field(min_length=1)
+          title: str
+          author: str = "Unknown"
+          year: int | None = None
+
+          @field_validator("title")
+          @classmethod
+          def title_required(cls, value: str) -> str:
+              value = value.strip()
+              if not value:
+                  raise ValueError("title required")
+              return value
+
+
+      def parse_doc(doc):
+          authors = doc.get("author_name") or []
+          data = {"key": doc.get("key", ""), "title": doc.get("title", ""), "year": doc.get("first_publish_year")}
+          if authors:
+              data["author"] = authors[0]
+          try:
+              return BookRecord(**data)
+          except ValidationError:
+              return None
+
+
+      def search_books(client, query, limit=5):
+          return []
+    tests:
+      - "seen = []\ndef handler(request):\n    seen.append(dict(request.url.params))\n    return httpx.Response(200, json={'docs': [{'key': '/w/1', 'title': 'Dune', 'author_name': ['Frank Herbert'], 'first_publish_year': 1965}, {'title': 'No key'}, {'key': '/w/2', 'title': 'Emma'}]})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\nresult = ([(b.title, b.author, b.year) for b in search_books(client, 'dune', limit=3)], seen)"
+      - "def handler(request):\n    return httpx.Response(500, json={})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\ntry:\n    search_books(client, 'x')\nexcept httpx.HTTPStatusError as e:\n    result = e.response.status_code"
+      - "def handler(request):\n    return httpx.Response(200, json={'docs': []})\nclient = httpx.Client(transport=httpx.MockTransport(handler))\nresult = search_books(client, 'nothing')"
+    solution: |
+      from pydantic import BaseModel, Field, ValidationError, field_validator
+      import httpx
+
+
+      class BookRecord(BaseModel):
+          key: str = Field(min_length=1)
+          title: str
+          author: str = "Unknown"
+          year: int | None = None
+
+          @field_validator("title")
+          @classmethod
+          def title_required(cls, value: str) -> str:
+              value = value.strip()
+              if not value:
+                  raise ValueError("title required")
+              return value
+
+
+      def parse_doc(doc):
+          authors = doc.get("author_name") or []
+          data = {"key": doc.get("key", ""), "title": doc.get("title", ""), "year": doc.get("first_publish_year")}
+          if authors:
+              data["author"] = authors[0]
+          try:
+              return BookRecord(**data)
+          except ValidationError:
+              return None
+
+
+      def search_books(client, query, limit=5):
+          response = client.get(
+              "https://openlibrary.org/search.json",
+              params={"q": query, "limit": limit},
+              timeout=5,
+          )
+          response.raise_for_status()
+          records = (parse_doc(doc) for doc in response.json().get("docs", []))
+          return [record for record in records if record is not None]
+    hint: "`client.get(url, params={\"q\": query, \"limit\": limit}, timeout=5)`, `raise_for_status()`, then parse each doc and keep the non-`None` ones."
+    reject:
+      - |
+        from pydantic import BaseModel, Field, ValidationError, field_validator
+        import httpx
+
+
+        class BookRecord(BaseModel):
+            key: str = Field(min_length=1)
+            title: str
+            author: str = "Unknown"
+            year: int | None = None
+
+
+        def parse_doc(doc):
+            return BookRecord(**doc)
+
+
+        def search_books(client, query, limit=5):
+            return [parse_doc(d) for d in client.get("https://openlibrary.org/search.json").json()["docs"]]
+
+  - kind: code
+    title: "3. Store it in SQLite"
+    body: |
+      Write the storage functions. The table has `key TEXT PRIMARY KEY`, `title`, `author`, `year` (may be NULL) and `status TEXT NOT NULL DEFAULT 'to-read'`.
+
+      - `init_db(conn)`: create the table if it does not exist.
+      - `save_books(conn, books)`: insert each `BookRecord` (a simple object with `key`, `title`, `author`, `year`). If the `key` already exists, **update** the title/author/year but **keep the reading status**. Return how many records were processed. (`INSERT ... ON CONFLICT(key) DO UPDATE SET ...`.)
+      - `list_books(conn, status=None)`: return `(key, title, author, year, status)` tuples ordered by title, optionally only those with that status.
+
+      Always use `?` placeholders.
+    code: |
+      def init_db(conn):
+          pass
+
+
+      def save_books(conn, books):
+          return 0
+
+
+      def list_books(conn, status=None):
+          return []
+    tests:
+      - "import sqlite3\nfrom types import SimpleNamespace as B\nconn = sqlite3.connect(':memory:')\ninit_db(conn)\nn = save_books(conn, [B(key='/w/1', title='Dune', author='Herbert', year=1965), B(key='/w/2', title='Emma', author='Austen', year=None)])\nresult = (n, list_books(conn))"
+      - "import sqlite3\nfrom types import SimpleNamespace as B\nconn = sqlite3.connect(':memory:')\ninit_db(conn)\nsave_books(conn, [B(key='/w/1', title='Dune', author='Herbert', year=1965)])\nconn.execute(\"UPDATE books SET status = 'reading' WHERE key = '/w/1'\")\nconn.commit()\nsave_books(conn, [B(key='/w/1', title='Dune (new)', author='F. Herbert', year=1965)])\nresult = list_books(conn)"
+      - "import sqlite3\nfrom types import SimpleNamespace as B\nconn = sqlite3.connect(':memory:')\ninit_db(conn)\ninit_db(conn)\nsave_books(conn, [B(key='a', title='B', author='x', year=1), B(key='b', title='A', author='y', year=2)])\nconn.execute(\"UPDATE books SET status = 'finished' WHERE key = 'b'\")\nresult = (list_books(conn, 'finished'), [r[1] for r in list_books(conn)], list_books(conn, 'reading'))"
+      - "import sqlite3\nfrom types import SimpleNamespace as B\nconn = sqlite3.connect(':memory:')\ninit_db(conn)\nsave_books(conn, [B(key='k', title=\"O'Brien; DROP TABLE books;--\", author='x', year=1)])\nresult = list_books(conn)"
+    solution: |
+      def init_db(conn):
+          conn.execute(
+              """
+              CREATE TABLE IF NOT EXISTS books (
+                  key TEXT PRIMARY KEY,
+                  title TEXT NOT NULL,
+                  author TEXT NOT NULL,
+                  year INTEGER,
+                  status TEXT NOT NULL DEFAULT 'to-read'
+              )
+              """
+          )
+          conn.commit()
+
+
+      def save_books(conn, books):
+          count = 0
+          with conn:
+              for book in books:
+                  conn.execute(
+                      """
+                      INSERT INTO books (key, title, author, year) VALUES (?, ?, ?, ?)
+                      ON CONFLICT(key) DO UPDATE SET
+                          title = excluded.title,
+                          author = excluded.author,
+                          year = excluded.year
+                      """,
+                      (book.key, book.title, book.author, book.year),
+                  )
+                  count += 1
+          return count
+
+
+      def list_books(conn, status=None):
+          sql = "SELECT key, title, author, year, status FROM books"
+          params = ()
+          if status is not None:
+              sql += " WHERE status = ?"
+              params = (status,)
+          sql += " ORDER BY title"
+          return conn.execute(sql, params).fetchall()
+    hint: "The upsert is `INSERT ... ON CONFLICT(key) DO UPDATE SET title = excluded.title, ...` (leave `status` out). For the optional filter, add `WHERE status = ?` only when a status is given."
+    reject:
+      - |
+        def init_db(conn):
+            conn.execute("CREATE TABLE IF NOT EXISTS books (key TEXT PRIMARY KEY, title TEXT, author TEXT, year INTEGER, status TEXT DEFAULT 'to-read')")
+
+
+        def save_books(conn, books):
+            for b in books:
+                conn.execute("INSERT OR REPLACE INTO books (key, title, author, year) VALUES (?, ?, ?, ?)", (b.key, b.title, b.author, b.year))
+            return len(books)
+
+
+        def list_books(conn, status=None):
+            return conn.execute("SELECT key, title, author, year, status FROM books ORDER BY title").fetchall()
+
+  - kind: code
+    title: "4. Track the reading"
+    body: |
+      Add reading progress. The table already exists (the checker builds it).
+
+      - `set_status(conn, key, status)`: `status` must be one of `"to-read"`, `"reading"`, `"finished"`. Otherwise `raise ValueError("bad status")`. If no book has that key, `raise KeyError(key)`. Otherwise update it.
+      - `progress(conn)`: return a dictionary with a count for **every** status, including zeros: `{"to-read": n, "reading": n, "finished": n}`.
+    code: |
+      STATUSES = ("to-read", "reading", "finished")
+
+
+      def set_status(conn, key, status):
+          pass
+
+
+      def progress(conn):
+          return {}
+    tests:
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.execute(\"CREATE TABLE books (key TEXT PRIMARY KEY, title TEXT, author TEXT, year INTEGER, status TEXT NOT NULL DEFAULT 'to-read')\")\nconn.executemany('INSERT INTO books (key, title, author) VALUES (?, ?, ?)', [('a', 'A', 'x'), ('b', 'B', 'y'), ('c', 'C', 'z')])\nset_status(conn, 'a', 'reading')\nset_status(conn, 'b', 'finished')\nresult = progress(conn)"
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.execute(\"CREATE TABLE books (key TEXT PRIMARY KEY, title TEXT, author TEXT, year INTEGER, status TEXT NOT NULL DEFAULT 'to-read')\")\nresult = progress(conn)"
+      - "import sqlite3\nconn = sqlite3.connect(':memory:')\nconn.execute(\"CREATE TABLE books (key TEXT PRIMARY KEY, title TEXT, author TEXT, year INTEGER, status TEXT NOT NULL DEFAULT 'to-read')\")\nconn.execute(\"INSERT INTO books (key, title, author) VALUES ('a', 'A', 'x')\")\nout = []\nfor key, status in (('a', 'done'), ('zzz', 'reading')):\n    try:\n        set_status(conn, key, status)\n    except (ValueError, KeyError) as e:\n        out.append(type(e).__name__)\nresult = (out, progress(conn))"
+    solution: |
+      STATUSES = ("to-read", "reading", "finished")
+
+
+      def set_status(conn, key, status):
+          if status not in STATUSES:
+              raise ValueError("bad status")
+          with conn:
+              cursor = conn.execute("UPDATE books SET status = ? WHERE key = ?", (status, key))
+          if cursor.rowcount == 0:
+              raise KeyError(key)
+
+
+      def progress(conn):
+          counts = {status: 0 for status in STATUSES}
+          for status, total in conn.execute("SELECT status, COUNT(*) FROM books GROUP BY status"):
+              counts[status] = total
+          return counts
+    hint: "Validate the status first. `cursor.rowcount == 0` after the `UPDATE` means no such book. For `progress`, start from zeros and fill in the counts from `GROUP BY status`."
+    reject:
+      - |
+        STATUSES = ("to-read", "reading", "finished")
+
+
+        def set_status(conn, key, status):
+            conn.execute("UPDATE books SET status = ? WHERE key = ?", (status, key))
+
+
+        def progress(conn):
+            return dict(conn.execute("SELECT status, COUNT(*) FROM books GROUP BY status").fetchall())
+
+  - kind: explain
+    title: Tests with a mocked network
+    body: |
+      The next step is the point of the checkpoint: **prove it works without the internet**. Real network calls make tests slow, flaky and dependent on someone else's server. So the tests hand `search_books` a client wired to a **fake server** (`httpx.MockTransport`), exactly as you did in Module 37, and use an in-memory SQLite database that vanishes after each test.
+
+      A good test suite for this tracker checks:
+
+      - the **request** sent (right URL parameters, a timeout),
+      - **skipping bad data** from the API,
+      - **errors** surfacing (`500` raises),
+      - **saving twice** updates instead of duplicating, and never loses your reading status,
+      - the **status rules**.
+
+      As in Module 34 the checker runs your tests against a correct version and against buggy ones. A suite only counts if it fails on the bugs.
+
+  - kind: code
+    title: "5. Test the tracker"
+    body: |
+      `GOOD` is a compact, correct `tracker.py`. Three bugs are provided:
+
+      - `BUG_PARAMS`: `search_books` forgets to send the `limit` parameter,
+      - `BUG_SKIP`: invalid API entries are not skipped (they crash it),
+      - `BUG_STATUS`: saving a book again resets its reading status to `to-read`.
+
+      Write tests (with a `mock_client` helper or fixture, an in-memory database fixture, and at least one `parametrize`) that pass on `GOOD` and fail on all three bugs.
+    code: |
+      GOOD = '''
+      import httpx
+      from types import SimpleNamespace
+
+
+      def parse_doc(doc):
+          if not doc.get("key") or not (doc.get("title") or "").strip():
+              return None
+          authors = doc.get("author_name") or []
+          return SimpleNamespace(
+              key=doc["key"],
+              title=doc["title"].strip(),
+              author=authors[0] if authors else "Unknown",
+              year=doc.get("first_publish_year"),
+          )
+
+
+      def search_books(client, query, limit=5):
+          response = client.get(
+              "https://openlibrary.org/search.json",
+              params={"q": query, "limit": limit},
+              timeout=5,
+          )
+          response.raise_for_status()
+          records = (parse_doc(doc) for doc in response.json().get("docs", []))
+          return [record for record in records if record is not None]
+
+
+      def init_db(conn):
+          conn.execute(
+              "CREATE TABLE IF NOT EXISTS books (key TEXT PRIMARY KEY, title TEXT NOT NULL, "
+              "author TEXT NOT NULL, year INTEGER, status TEXT NOT NULL DEFAULT 'to-read')"
+          )
+          conn.commit()
+
+
+      def save_books(conn, books):
+          with conn:
+              for b in books:
+                  conn.execute(
+                      "INSERT INTO books (key, title, author, year) VALUES (?, ?, ?, ?) "
+                      "ON CONFLICT(key) DO UPDATE SET title = excluded.title, "
+                      "author = excluded.author, year = excluded.year",
+                      (b.key, b.title, b.author, b.year),
+                  )
+          return len(books)
+
+
+      def list_books(conn, status=None):
+          sql = "SELECT key, title, author, year, status FROM books"
+          params = ()
+          if status is not None:
+              sql += " WHERE status = ?"
+              params = (status,)
+          return conn.execute(sql + " ORDER BY title", params).fetchall()
+      '''
+
+      BUG_PARAMS = GOOD.replace('params={"q": query, "limit": limit}', 'params={"q": query}')
+      BUG_SKIP = GOOD.replace(
+          'if not doc.get("key") or not (doc.get("title") or "").strip():\n        return None',
+          'pass',
+      )
+      BUG_STATUS = GOOD.replace(
+          "INSERT INTO books (key, title, author, year) VALUES (?, ?, ?, ?) ",
+          "INSERT OR REPLACE INTO books (key, title, author, year) VALUES (?, ?, ?, ?) ",
+      ).replace("ON CONFLICT(key) DO UPDATE SET title = excluded.title, author = excluded.author, year = excluded.year", "")
+
+      TESTS = '''
+      import sqlite3
+
+      import httpx
+      import pytest
+
+      import tracker
+
+      # write a mock_client helper/fixture, a db fixture, and your tests
+      '''
+    tests:
+      - "run = lambda impl: pytest_run({'tracker.py': impl, 'test_tracker.py': TESTS})\nresult = 'failed' not in run(GOOD) and 'passed' in run(GOOD)"
+      - "result = BUG_PARAMS != GOOD and BUG_SKIP != GOOD and BUG_STATUS != GOOD"
+      - "result = 'failed' in pytest_run({'tracker.py': BUG_PARAMS, 'test_tracker.py': TESTS})"
+      - "result = 'failed' in pytest_run({'tracker.py': BUG_SKIP, 'test_tracker.py': TESTS})"
+      - "result = 'failed' in pytest_run({'tracker.py': BUG_STATUS, 'test_tracker.py': TESTS})"
+      - "result = ('MockTransport' in TESTS, 'parametrize' in TESTS)"
+    solution: |
+      GOOD = '''
+      import httpx
+      from types import SimpleNamespace
+
+
+      def parse_doc(doc):
+          if not doc.get("key") or not (doc.get("title") or "").strip():
+              return None
+          authors = doc.get("author_name") or []
+          return SimpleNamespace(
+              key=doc["key"],
+              title=doc["title"].strip(),
+              author=authors[0] if authors else "Unknown",
+              year=doc.get("first_publish_year"),
+          )
+
+
+      def search_books(client, query, limit=5):
+          response = client.get(
+              "https://openlibrary.org/search.json",
+              params={"q": query, "limit": limit},
+              timeout=5,
+          )
+          response.raise_for_status()
+          records = (parse_doc(doc) for doc in response.json().get("docs", []))
+          return [record for record in records if record is not None]
+
+
+      def init_db(conn):
+          conn.execute(
+              "CREATE TABLE IF NOT EXISTS books (key TEXT PRIMARY KEY, title TEXT NOT NULL, "
+              "author TEXT NOT NULL, year INTEGER, status TEXT NOT NULL DEFAULT 'to-read')"
+          )
+          conn.commit()
+
+
+      def save_books(conn, books):
+          with conn:
+              for b in books:
+                  conn.execute(
+                      "INSERT INTO books (key, title, author, year) VALUES (?, ?, ?, ?) "
+                      "ON CONFLICT(key) DO UPDATE SET title = excluded.title, "
+                      "author = excluded.author, year = excluded.year",
+                      (b.key, b.title, b.author, b.year),
+                  )
+          return len(books)
+
+
+      def list_books(conn, status=None):
+          sql = "SELECT key, title, author, year, status FROM books"
+          params = ()
+          if status is not None:
+              sql += " WHERE status = ?"
+              params = (status,)
+          return conn.execute(sql + " ORDER BY title", params).fetchall()
+      '''
+
+      BUG_PARAMS = GOOD.replace('params={"q": query, "limit": limit}', 'params={"q": query}')
+      BUG_SKIP = GOOD.replace(
+          'if not doc.get("key") or not (doc.get("title") or "").strip():\n        return None',
+          'pass',
+      )
+      BUG_STATUS = GOOD.replace(
+          "INSERT INTO books (key, title, author, year) VALUES (?, ?, ?, ?) ",
+          "INSERT OR REPLACE INTO books (key, title, author, year) VALUES (?, ?, ?, ?) ",
+      ).replace("ON CONFLICT(key) DO UPDATE SET title = excluded.title, author = excluded.author, year = excluded.year", "")
+
+      TESTS = '''
+      import sqlite3
+
+      import httpx
+      import pytest
+
+      import tracker
+
+
+      def make_client(docs, seen=None, status=200):
+          def handler(request):
+              if seen is not None:
+                  seen.append(dict(request.url.params))
+              return httpx.Response(status, json={"docs": docs})
+
+          return httpx.Client(transport=httpx.MockTransport(handler))
+
+
+      @pytest.fixture
+      def conn():
+          connection = sqlite3.connect(":memory:")
+          tracker.init_db(connection)
+          return connection
+
+
+      def test_sends_query_and_limit():
+          seen = []
+          tracker.search_books(make_client([], seen), "dune", limit=3)
+          assert seen == [{"q": "dune", "limit": "3"}]
+
+
+      @pytest.mark.parametrize(
+          "doc",
+          [
+              {"title": "No key"},
+              {"key": "/w/1", "title": "   "},
+              {"key": "", "title": "Empty key"},
+          ],
+      )
+      def test_invalid_entries_are_skipped(doc):
+          good = {"key": "/w/9", "title": "Emma"}
+          books = tracker.search_books(make_client([doc, good]), "x")
+          assert [b.key for b in books] == ["/w/9"]
+
+
+      def test_author_and_year_defaults():
+          docs = [{"key": "/w/1", "title": "Dune", "author_name": ["Frank Herbert"], "first_publish_year": 1965},
+                  {"key": "/w/2", "title": "Mystery"}]
+          dune, mystery = tracker.search_books(make_client(docs), "x")
+          assert (dune.author, dune.year) == ("Frank Herbert", 1965)
+          assert (mystery.author, mystery.year) == ("Unknown", None)
+
+
+      def test_server_error_raises():
+          with pytest.raises(httpx.HTTPStatusError):
+              tracker.search_books(make_client([], status=500), "x")
+
+
+      def test_saving_twice_keeps_status_and_updates_title(conn):
+          book = tracker.search_books(make_client([{"key": "/w/1", "title": "Dune"}]), "x")
+          tracker.save_books(conn, book)
+          conn.execute("UPDATE books SET status = 'reading' WHERE key = '/w/1'")
+          renamed = tracker.search_books(make_client([{"key": "/w/1", "title": "Dune Messiah"}]), "x")
+          tracker.save_books(conn, renamed)
+          rows = tracker.list_books(conn)
+          assert [(r[1], r[4]) for r in rows] == [("Dune Messiah", "reading")]
+      '''
+    hint: "Write `make_client(docs, seen=None, status=200)` that returns `httpx.Client(transport=httpx.MockTransport(handler))`. Then one test per bug: check the sent params, feed invalid docs, and save a book twice after changing its status."
+
+  - kind: mac
+    title: Assemble the whole project
+    body: |
+      Now build the real thing on your Mac: a `uv` project with `httpx`, `pydantic` and dev tools, storing in a `reading.db` file, with a command-line front end. The commands below write compact versions of your code and a small test, run the tests and the tools, and then search the real Open Library.
+
+      **Checkpoint:** paste the output. It should contain `passed`, `All checks passed` and a book `title`.
+    commands: |
+      mkdir -p ~/Desktop/reading-tracker && cd ~/Desktop/reading-tracker
+      git init
+      uv init --bare
+      uv add httpx pydantic
+      uv add --dev pytest ruff
+      printf '.venv/\n__pycache__/\n*.pyc\n.env\nreading.db\n' > .gitignore
+      cat > tracker.py <<'PY'
+      """A tiny reading tracker: search Open Library, keep books in SQLite."""
+
+      import argparse
+      import sqlite3
+
+      import httpx
+      from pydantic import BaseModel, Field, ValidationError, field_validator
+
+      STATUSES = ("to-read", "reading", "finished")
+
+
+      class BookRecord(BaseModel):
+          key: str = Field(min_length=1)
+          title: str
+          author: str = "Unknown"
+          year: int | None = None
+
+          @field_validator("title")
+          @classmethod
+          def title_required(cls, value: str) -> str:
+              value = value.strip()
+              if not value:
+                  raise ValueError("title required")
+              return value
+
+
+      def parse_doc(doc: dict) -> BookRecord | None:
+          authors = doc.get("author_name") or []
+          data = {"key": doc.get("key", ""), "title": doc.get("title", ""), "year": doc.get("first_publish_year")}
+          if authors:
+              data["author"] = authors[0]
+          try:
+              return BookRecord(**data)
+          except ValidationError:
+              return None
+
+
+      def search_books(client: httpx.Client, query: str, limit: int = 5) -> list[BookRecord]:
+          response = client.get(
+              "https://openlibrary.org/search.json", params={"q": query, "limit": limit}, timeout=10
+          )
+          response.raise_for_status()
+          records = (parse_doc(doc) for doc in response.json().get("docs", []))
+          return [record for record in records if record is not None]
+
+
+      def init_db(conn: sqlite3.Connection) -> None:
+          conn.execute(
+              "CREATE TABLE IF NOT EXISTS books (key TEXT PRIMARY KEY, title TEXT NOT NULL, "
+              "author TEXT NOT NULL, year INTEGER, status TEXT NOT NULL DEFAULT 'to-read')"
+          )
+          conn.commit()
+
+
+      def save_books(conn: sqlite3.Connection, books: list[BookRecord]) -> int:
+          with conn:
+              for b in books:
+                  conn.execute(
+                      "INSERT INTO books (key, title, author, year) VALUES (?, ?, ?, ?) "
+                      "ON CONFLICT(key) DO UPDATE SET title = excluded.title, "
+                      "author = excluded.author, year = excluded.year",
+                      (b.key, b.title, b.author, b.year),
+                  )
+          return len(books)
+
+
+      def main() -> None:
+          parser = argparse.ArgumentParser(prog="tracker")
+          parser.add_argument("query")
+          args = parser.parse_args()
+          conn = sqlite3.connect("reading.db")
+          init_db(conn)
+          with httpx.Client() as client:
+              books = search_books(client, args.query, limit=3)
+          save_books(conn, books)
+          for row in conn.execute("SELECT title, author, year, status FROM books ORDER BY title"):
+              print(row)
+
+
+      if __name__ == "__main__":
+          main()
+      PY
+      cat > test_tracker.py <<'PY'
+      import httpx
+
+      import tracker
+
+
+      def make_client(docs):
+          def handler(request):
+              return httpx.Response(200, json={"docs": docs})
+
+          return httpx.Client(transport=httpx.MockTransport(handler))
+
+
+      def test_invalid_entries_are_skipped():
+          docs = [{"title": "No key"}, {"key": "/w/1", "title": "Dune"}]
+          assert [b.title for b in tracker.search_books(make_client(docs), "x")] == ["Dune"]
+      PY
+      uv run ruff check .
+      uv run pytest -q
+      uv run tracker.py dune
+    expect_output:
+      - "passed"
+      - "All checks passed"
+      - "title"
+
+  - kind: why
+    body: |
+      You have now built what most real Python work looks like: data from a web API, validated at the boundary, stored in a database, exposed through a command-line tool, and covered by tests that never touch the network. Type hints, Ruff, pytest and Git make it maintainable. That is the whole Intermediate level in one project, and roughly junior-developer skill.
+
+  - kind: recap
+    body: |
+      - **API → Pydantic → SQLite → CLI**, tested with a **mocked** HTTP transport and an in-memory database.
+      - Validate untrusted API data at the edge and **skip** bad items rather than crashing.
+      - **Upsert** (`INSERT ... ON CONFLICT DO UPDATE`) keeps data unique without losing your own fields (the reading status).
+      - Parameterized queries, transactions (`with conn:`), and `raise_for_status()` with a timeout keep it safe.
+      - Good tests fail when the code is wrong: prove them with buggy variants.
+      - Next: the optional branches (data analysis or a REST API), or the Advanced level.

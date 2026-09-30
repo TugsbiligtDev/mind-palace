@@ -1,0 +1,45 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: You want to know if a value has appeared earlier in a long list, and you must do it in one pass. Which tool fits?
+    options: ["A nested loop", "A Set", "A queue", "A linked list"]
+    answer: 1
+    explanation: A Set answers "have I seen this?" in O(1) on average, so one pass is enough.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const stack = [];
+      for (const ch of "({[") stack.push(ch);
+      stack.pop();
+      console.log(stack.join(""));
+    options: ["({", "([", "{[", "({["]
+    answer: 0
+    explanation: "`pop` removes the most recent item, `[`, so `({` is left."
+  - type: mcq
+    prompt: Two pointers, one `n` steps ahead of the other, move together until the front one reaches the end. What do you find?
+    options:
+      - The middle of the list
+      - The n-th node from the end
+      - A cycle
+      - The list's length
+    answer: 1
+    explanation: When the front pointer falls off the end, the back one is exactly `n` nodes from the end.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const inbox = [1, 2, 3];
+      const outbox = [];
+      while (inbox.length > 0) outbox.push(inbox.pop());
+      console.log(outbox.pop());
+    options: ["1", "3", "2", "undefined"]
+    answer: 0
+    explanation: Pouring one stack into another reverses the order, so the old bottom item (1) ends up on top. That is how two stacks make a queue.
+  - type: mcq
+    prompt: In a sorted linked list, how do you spot duplicate values?
+    options:
+      - Use a Set of all values
+      - They are always next to each other, so compare a node with the next one
+      - Reverse the list first
+      - You cannot
+    answer: 1
+    explanation: Sorting places equal values side by side, so no extra memory is needed.

@@ -1,0 +1,36 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      console.log(-7 % 3);
+    options: ["-1", "2", "1", "-2"]
+    answer: 0
+    explanation: "`%` keeps the sign of the left number. `-7` divided by `3` leaves a remainder of `-1`. `((-7 % 3) + 3) % 3` would give `2`."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      console.log(Math.trunc(-2.5), Math.floor(-2.5));
+    options: ["-2 -3", "-3 -3", "-2 -2", "-3 -2"]
+    answer: 0
+    explanation: "`Math.trunc` cuts the decimals off, giving `-2`. `Math.floor` rounds down to the next lower integer, giving `-3`."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      console.log(0.1 + 0.2 === 0.3);
+    options: ["true", "false", "an error"]
+    answer: 1
+    explanation: "`0.1 + 0.2` is `0.30000000000000004` in binary floating point, so it is not exactly `0.3`."
+  - type: mcq
+    prompt: About how many times can you halve **1 000 000** before you reach 1?
+    options: ["10", "20", "1 000", "500 000"]
+    answer: 1
+    explanation: "log₂ of a million is about 20, because 2²⁰ is roughly a million. That is why halving algorithms are so fast."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const n = 10;
+      console.log((n * (n + 1)) / 2);
+    options: ["55", "110", "45", "50"]
+    answer: 0
+    explanation: "`1 + 2 + … + 10 = 10 × 11 / 2 = 55`."

@@ -1,0 +1,4 @@
+title: Monotonic Stack & Queue
+module: 17
+summary: "A stack or queue kept in sorted order: next greater element, daily temperatures, stock span, the largest rectangle in a histogram, and sliding window maximum."
+minutes: 65

@@ -1,0 +1,52 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      def gen():
+          yield 1
+          yield 2
+
+      g = gen()
+      print(next(g), next(g))
+      print(list(g))
+    options: ["1 2\n[]", "1 2\n[1, 2]", "1 1\n[2]", "[1, 2]\n[]"]
+    answer: 0
+    explanation: "The generator hands out 1, then 2. After that it is exhausted, so `list(g)` is empty."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      nums = (n * 2 for n in range(3))
+      print(type(nums).__name__)
+    options: ["generator", "list", "tuple", "range"]
+    answer: 0
+    explanation: "Round brackets around a comprehension make a generator expression, not a tuple."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      from itertools import islice, count
+      print(list(islice(count(5), 3)))
+    options: ["[5, 6, 7]", "[0, 1, 2]", "[5, 5, 5]", "[6, 7, 8]"]
+    answer: 0
+    explanation: "`count(5)` counts 5, 6, 7... forever, and `islice` takes the first three."
+  - type: mcq
+    prompt: When is a generator a better choice than a list?
+    options:
+      - When you only pass through the items once and they may be huge or endless
+      - When you need to index items by position
+      - When you need the length
+      - When you need to loop twice
+    answer: 0
+    explanation: Generators produce values lazily, saving memory. Lists are better when you reuse or index the items.
+  - type: fill
+    prompt: Complete the generator so it hands out each number one at a time.
+    code: |
+      def upto(n):
+          i = 0
+          while i < n:
+              ____ i
+              i += 1
+
+      print(list(upto(3)))
+    answer: yield
+    explanation: "`yield` produces a value and pauses the function until the next one is requested."

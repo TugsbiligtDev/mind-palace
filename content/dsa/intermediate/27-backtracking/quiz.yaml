@@ -1,0 +1,48 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const result = [];
+      const path = [];
+      function explore(start) {
+        result.push([...path]);
+        for (let i = start; i < 2; i++) {
+          path.push(i);
+          explore(i + 1);
+          path.pop();
+        }
+      }
+      explore(0);
+      console.log(result);
+    options: ["[ [], [ 0 ], [ 0, 1 ], [ 1 ] ]", "[ [], [], [], [] ]", "[ [ 0 ], [ 1 ] ]", "[ [], [ 0 ], [ 1 ], [ 0, 1 ] ]"]
+    answer: 0
+    explanation: The search records the empty set, then 0, then 0 with 1, then backtracks and records 1.
+  - type: mcq
+    prompt: What are the three beats of the backtracking template?
+    options: ["Sort, search, return", "Choose, explore, un-choose", "Split, solve, merge", "Push, pop, peek"]
+    answer: 1
+    explanation: You add a choice to the path, recurse, then remove it so the path is ready for the next option.
+  - type: mcq
+    prompt: How many permutations does a list of 5 distinct numbers have?
+    options: ["5", "25", "120", "3125"]
+    answer: 2
+    explanation: "5! = 5 × 4 × 3 × 2 × 1 = 120. Backtracking permutations is therefore O(n!)."
+  - type: mcq
+    prompt: What does "pruning" mean in backtracking?
+    options:
+      - Sorting the input
+      - Stopping a branch early, when it can no longer lead to a valid answer
+      - Removing duplicates from the output
+      - Caching results
+    answer: 1
+    explanation: Cutting off hopeless branches early is what makes backtracking practical instead of pure brute force.
+  - type: mcq
+    prompt: Why is `result.push(path)` (without a copy) a bug?
+    options:
+      - It is slower
+      - Every saved answer points at the same array, which is emptied as the search backtracks
+      - Arrays cannot be pushed
+      - It reverses the path
+    answer: 1
+    explanation: The saved reference sees later changes. A copy, `[...path]`, freezes the answer at that moment.

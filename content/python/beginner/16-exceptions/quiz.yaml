@@ -1,0 +1,53 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      try:
+          print("a")
+          int("x")
+          print("b")
+      except ValueError:
+          print("c")
+      finally:
+          print("d")
+    options: ["a\nc\nd", "a\nb\nd", "a\nd", "a\nc"]
+    answer: 0
+    explanation: "`a` prints, then `int(\"x\")` raises ValueError, so `b` is skipped and `c` runs. `finally` always runs, so `d` prints."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      try:
+          value = {"a": 1}["b"]
+      except KeyError:
+          value = 0
+      else:
+          value = 99
+      print(value)
+    options: ["0", "99", "1", "None"]
+    answer: 0
+    explanation: "The lookup raises KeyError, so `except` runs and `else` is skipped."
+  - type: mcq
+    prompt: Why is a bare `except:` a bad idea?
+    options:
+      - It hides real bugs, because it catches every error, even mistakes in your own code
+      - It is slower
+      - It only works inside functions
+      - It is a SyntaxError
+    answer: 0
+    explanation: Catch only the specific error you expect so that genuine bugs still show up.
+  - type: mcq
+    prompt: Which exception does `[1, 2, 3][10]` raise?
+    options: ["IndexError", "KeyError", "ValueError", "TypeError"]
+    answer: 0
+    explanation: An index beyond the end of a list raises IndexError. KeyError is for dictionaries.
+  - type: fill
+    prompt: Complete the line so the function rejects a negative price.
+    code: |
+      def check(price):
+          if price < 0:
+              ____ ValueError("price cannot be negative")
+          return price
+      print(check(5))
+    answer: raise
+    explanation: "`raise` causes an exception on purpose."

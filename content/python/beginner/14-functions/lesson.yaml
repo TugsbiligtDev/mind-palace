@@ -1,0 +1,273 @@
+steps:
+  - kind: explain
+    title: A function is a named recipe
+    body: |
+      You have been *using* functions (`print`, `len`, `sorted`) and even writing a few in exercises. Now the full picture.
+
+      A **function** packages steps under a name so you can reuse them. You **define** it with `def`, and **call** it by name:
+
+      ```python
+      def area(width, height):
+          return width * height
+
+      print(area(3, 4))       # 12
+      ```
+
+      - `width` and `height` are **parameters**: names for the inputs, inside the function.
+      - The values you pass when calling (`3`, `4`) are **arguments**.
+      - `return` sends a value back to the caller and **ends** the function. Without a `return`, a function gives back `None`.
+
+      Functions turn a long program into small named pieces, each easy to test. Do not repeat yourself: if you copy the same lines twice, make a function.
+
+  - kind: explain
+    title: "Arguments: positional, keyword, default"
+    body: |
+      ```python
+      def greet(name, greeting="Hello"):
+          return f"{greeting}, {name}!"
+
+      greet("Ada")                      # Hello, Ada!       (default used)
+      greet("Ada", "Welcome")           # Welcome, Ada!     (positional, in order)
+      greet(name="Ada", greeting="Hi")  # Hi, Ada!          (keyword, any order)
+      ```
+
+      - **Positional** arguments match by order.
+      - **Keyword** arguments match by name, so you can skip around and the call reads clearly.
+      - A **default** (`greeting="Hello"`) makes the argument optional. Parameters with defaults must come **after** those without.
+
+  - kind: code
+    title: A greeting with a default
+    body: |
+      Finish `greet(name, greeting="Hello")` so `greet("Ada")` returns `"Hello, Ada!"` and `greet("Ada", "Welcome")` returns `"Welcome, Ada!"`. Also give it a **docstring**, the description in triple quotes as the first line of the function.
+    code: |
+      def greet(name):
+          return ""
+    tests:
+      - "greet('Ada')"
+      - "greet('Ada', 'Welcome')"
+      - "greet(name='Moth', greeting='Hi')"
+      - "bool(greet.__doc__)"
+    solution: |
+      def greet(name, greeting="Hello"):
+          """Return a greeting for the given name."""
+          return f"{greeting}, {name}!"
+    hint: "Add `greeting=\"Hello\"` to the parameters, use it in an f-string, and put a `\"\"\"...\"\"\"` line right under `def`."
+    reject:
+      - |
+        def greet(name, greeting="Hello"):
+            return f"{greeting}, {name}!"
+
+  - kind: explain
+    title: "*args and **kwargs"
+    body: |
+      Sometimes you don't know how many arguments will come.
+
+      - `*args` collects extra **positional** arguments into a **tuple**.
+      - `**kwargs` collects extra **keyword** arguments into a **dict**.
+
+      ```python
+      def total(*numbers):
+          return sum(numbers)
+
+      total(1, 2, 3)          # 6   (numbers is (1, 2, 3))
+
+      def show(**details):
+          for key, value in details.items():
+              print(key, value)
+
+      show(city="London", age=34)
+      ```
+
+      The reverse also works when calling: `total(*[1, 2, 3])` spreads a list into separate arguments, and `show(**{"a": 1})` spreads a dict into keywords.
+
+  - kind: code
+    title: Add anything
+    body: |
+      Finish `add_all(*numbers)`: add up however many numbers are passed. `add_all(1, 2, 3)` is `6` and `add_all()` is `0`.
+    code: |
+      def add_all(*numbers):
+          return 0
+    tests:
+      - "add_all(1, 2, 3)"
+      - "add_all()"
+      - "add_all(5)"
+      - "add_all(*[10, 20, 30])"
+    solution: |
+      def add_all(*numbers):
+          total = 0
+          for n in numbers:
+              total += n
+          return total
+    hint: "`numbers` is a tuple. Loop over it (or use `sum(numbers)`)."
+    reject:
+      - |
+        def add_all(*numbers):
+            return len(numbers)
+
+  - kind: code
+    title: Build a web address
+    body: |
+      Finish `build_url(base, **params)`: it returns the base followed by `?` and the parameters as `key=value` joined with `&`, in the order given. With no parameters, return just the base.
+
+      `build_url("site.com", q="python", page=2)` is `"site.com?q=python&page=2"`.
+    code: |
+      def build_url(base, **params):
+          return base
+    tests:
+      - "build_url('site.com', q='python', page=2)"
+      - "build_url('site.com')"
+      - "build_url('a.org', x=1)"
+    solution: |
+      def build_url(base, **params):
+          if not params:
+              return base
+          pairs = [f"{key}={value}" for key, value in params.items()]
+          return base + "?" + "&".join(pairs)
+    hint: "`params` is a dict. Make `key=value` strings with a comprehension, then `\"&\".join(...)`."
+    reject:
+      - |
+        def build_url(base, **params):
+            return base + "?"
+
+  - kind: explain
+    title: "Scope: where names live"
+    body: |
+      A name created **inside** a function exists only inside it, and vanishes when the function ends. That keeps functions from interfering with each other.
+
+      ```python
+      def make():
+          secret = 42        # local to make()
+          return secret
+
+      make()
+      print(secret)          # NameError: secret is not defined
+      ```
+
+      When Python meets a name it looks in this order, called **LEGB**:
+
+      1. **L**ocal: inside the current function
+      2. **E**nclosing: inside any function that contains this one
+      3. **G**lobal: at the top level of the file
+      4. **B**uilt-in: Python's own names (`len`, `print`)
+
+      Reading a global from inside a function is fine. But **assigning** to a name inside a function creates a *new local* name; it does not change the global. The safe habit: **pass values in through parameters and get results out with `return`.**
+
+  - kind: code
+    title: Pure vs. side effects
+    body: |
+      A **pure function** only reads its inputs and returns a result. It changes nothing outside itself. A function that changes its argument has a **side effect**, and it can surprise the caller.
+
+      `discounted(prices, percent)` should return a **new** list of prices reduced by `percent`%, rounded to 2 decimals, and must not change `prices`. The starter changes the original list. Fix it.
+    code: |
+      def discounted(prices, percent):
+          for i in range(len(prices)):
+              prices[i] = round(prices[i] * (1 - percent / 100), 2)
+          return prices
+    tests:
+      - "discounted([10, 20], 50)"
+      - "discounted([], 10)"
+      - "discounted([9.99], 10)"
+      - "(lambda p: (discounted(p, 50), p))([10, 20])"
+    solution: |
+      def discounted(prices, percent):
+          return [round(p * (1 - percent / 100), 2) for p in prices]
+    hint: "Build a new list with a comprehension instead of assigning into `prices`."
+    broken_starter: true
+
+  - kind: explain
+    title: The mutable default argument bug
+    body: |
+      This looks harmless and is one of Python's most famous traps:
+
+      ```python
+      def add_clue(clue, clues=[]):
+          clues.append(clue)
+          return clues
+
+      add_clue("glove")       # ['glove']
+      add_clue("ledger")      # ['glove', 'ledger']   !!  the old list is back
+      ```
+
+      The default `[]` is created **once**, when the function is defined, and then reused by every call. The fix is to use `None` as the default and make a fresh list inside:
+
+      ```python
+      def add_clue(clue, clues=None):
+          if clues is None:
+              clues = []
+          clues.append(clue)
+          return clues
+      ```
+
+      Never use a list, dict or set as a default value.
+
+  - kind: code
+    title: Fix the shared default
+    body: |
+      `add_clue(clue, clues=[])` should return a **fresh** list each call unless a list is given. Calling `add_clue("a")` twice must give `["a"]` both times. Fix the default-argument bug.
+    code: |
+      def add_clue(clue, clues=[]):
+          clues.append(clue)
+          return clues
+    tests:
+      - "add_clue('a')"
+      - "add_clue('a')"
+      - "add_clue('b', ['x'])"
+      - "[add_clue('one'), add_clue('two')]"
+    solution: |
+      def add_clue(clue, clues=None):
+          if clues is None:
+              clues = []
+          clues.append(clue)
+          return clues
+    hint: "Default to `None`, then `if clues is None: clues = []`."
+    broken_starter: true
+
+  - kind: code
+    title: Write a documented function
+    body: |
+      Write `circle_area(radius)` returning `3.14159 * radius * radius` rounded to 2 decimals. Give it a docstring that says what it does. The checker looks at the answer and that the docstring exists.
+    code: |
+      def circle_area(radius):
+          pass
+    tests:
+      - "circle_area(1)"
+      - "circle_area(2)"
+      - "circle_area(0)"
+      - "len(circle_area.__doc__ or '') > 10"
+    solution: |
+      def circle_area(radius):
+          """Return the area of a circle with the given radius."""
+          return round(3.14159 * radius * radius, 2)
+    hint: "The docstring goes in triple quotes on the first line inside the function."
+    reject:
+      - |
+        def circle_area(radius):
+            return round(3.14159 * radius * radius, 2)
+
+  - kind: info
+    title: "🔹 global and nonlocal"
+    body: |
+      If you really must **assign** to a name from an outer scope, declare it:
+
+      ```python
+      count = 0
+
+      def bump():
+          global count       # "the module-level count, not a new local"
+          count += 1
+      ```
+
+      `nonlocal` does the same for a name in an *enclosing function* (used with closures, Intermediate Module 26). Relying on `global` makes code hard to test and reason about. Prefer parameters and `return`. Just recognise the keywords when you meet them.
+
+  - kind: why
+    body: |
+      Functions are how programmers manage complexity: name a job once, test it, reuse it everywhere. The habits from this lesson (clear parameters, `return` results instead of changing globals, no mutable defaults, docstrings) are what separate tidy programs from tangled ones.
+
+  - kind: recap
+    body: |
+      - `def name(params):` defines; `name(args)` calls; `return` sends back a value (else `None`).
+      - Arguments can be **positional** or **keyword**; **defaults** make them optional.
+      - `*args` collects extra positionals (tuple); `**kwargs` collects extra keywords (dict).
+      - **Scope**: local names stay local; lookup order is **LEGB**. Pass in, return out.
+      - **Pure** functions have no side effects. Never use a mutable default (use `None`).
+      - Add a **docstring**. 🔹 `global`/`nonlocal` exist but are rarely the answer.

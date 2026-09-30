@@ -1,0 +1,4 @@
+title: "Context Managers"
+module: 28
+summary: "Guarantee clean-up with the with statement: how it works, writing your own with __enter__/__exit__ or @contextmanager, and using it for files, locks, transactions and temporary changes."
+minutes: 65

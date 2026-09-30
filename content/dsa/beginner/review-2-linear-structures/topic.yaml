@@ -1,0 +1,5 @@
+title: "Linear structures"
+module: 9
+kind: review
+summary: Eight questions on arrays, strings, hash maps, linked lists, stacks and queues, with no hints about which tool to use.
+minutes: 55

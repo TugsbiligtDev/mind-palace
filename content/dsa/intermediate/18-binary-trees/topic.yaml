@@ -1,0 +1,4 @@
+title: Binary Trees
+module: 18
+summary: "Tree vocabulary, a TreeNode class, depth-first traversals (recursive and with a stack), level-order with a queue, and height, diameter and path problems."
+minutes: 70

@@ -1,0 +1,5 @@
+title: "Core language"
+module: 9
+kind: review
+summary: "Seven cases mixing Modules 4 to 9, ending in the checkpoint: a number-guessing game with hints, input checking and limited attempts."
+minutes: 50

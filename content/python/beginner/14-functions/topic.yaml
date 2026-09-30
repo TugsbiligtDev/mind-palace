@@ -1,0 +1,4 @@
+title: "Functions"
+module: 14
+summary: "Package code into reusable, named recipes: parameters and return values, keyword and default arguments, *args and **kwargs, scope, docstrings, and the mutable-default trap."
+minutes: 75

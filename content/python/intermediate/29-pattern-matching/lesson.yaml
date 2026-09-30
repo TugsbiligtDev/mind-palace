@@ -1,0 +1,362 @@
+steps:
+  - kind: explain
+    title: "match: a smarter if/elif"
+    body: |
+      Python 3.10 added **`match`/`case`**. It looks like a `switch` from other languages, but it is more powerful: it matches the **shape** of a value, and can pull pieces out of it at the same time.
+
+      ```python
+      def reply(command):
+          match command:
+              case "start":
+                  return "starting"
+              case "stop" | "quit":          # either one
+                  return "stopping"
+              case _:                         # anything else (the wildcard)
+                  return "unknown"
+      ```
+
+      - `match value:` names the thing to inspect.
+      - Each `case pattern:` is tried **top to bottom**; the first that fits runs, and the rest are skipped.
+      - `|` means "or". `_` matches anything and is the usual last "default" case.
+      - A plain name in a pattern is a **capture**: it matches anything and *binds* it to that name.
+
+  - kind: code
+    title: Try match
+    body: |
+      Run this. Then add a `case "pause":` line.
+    code: |
+      def reply(command):
+          match command:
+              case "start":
+                  return "starting"
+              case "stop" | "quit":
+                  return "stopping"
+              case _:
+                  return "unknown"
+
+
+      for c in ["start", "quit", "dance"]:
+          print(c, "->", reply(c))
+
+  - kind: explain
+    title: Sequence patterns
+    body: |
+      Patterns can look like lists or tuples and **capture** the parts:
+
+      ```python
+      match command.split():
+          case ["go", direction]:
+              print("going", direction)
+          case ["take", *items]:                  # *items collects the rest
+              print("taking", items)
+          case []:
+              print("nothing typed")
+          case _:
+              print("what?")
+      ```
+
+      `["go", direction]` matches a list of exactly two items whose first is `"go"`, and binds the second to `direction`. `["take", *items]` matches `take` followed by any number of things.
+
+  - kind: code
+    title: A tiny adventure parser
+    body: |
+      Write `parse(text)`. Split the text into words, then:
+
+      - `["go", d]` gives `("move", d)`,
+      - `["take", *things]` (at least one thing) gives `("take", things)` (a list),
+      - `["look"]` gives `("look",)`,
+      - an empty command gives `("nothing",)`,
+      - anything else gives `("unknown", text)`.
+
+      Use `match` with sequence patterns.
+    code: |
+      def parse(text):
+          return ("unknown", text)
+    tests:
+      - "parse('go north')"
+      - "parse('take lamp key')"
+      - "parse('look')"
+      - "parse('')"
+      - "parse('take')"
+      - "parse('dance wildly')"
+      - "parse('go')"
+    solution: |
+      def parse(text):
+          match text.split():
+              case ["go", direction]:
+                  return ("move", direction)
+              case ["take", first, *rest]:
+                  return ("take", [first, *rest])
+              case ["look"]:
+                  return ("look",)
+              case []:
+                  return ("nothing",)
+              case _:
+                  return ("unknown", text)
+    hint: "`case [\"take\", first, *rest]` needs at least one item after `take`, so plain `take` falls through to `_`."
+    reject:
+      - |
+        def parse(text):
+            words = text.split()
+            if words and words[0] == "go":
+                return ("move", words[1])
+            return ("unknown", text)
+
+  - kind: explain
+    title: Mapping patterns and guards
+    body: |
+      **Dictionaries** can be matched by the keys you care about. Extra keys are ignored:
+
+      ```python
+      match event:
+          case {"type": "click", "x": x, "y": y}:
+              print("click at", x, y)
+          case {"type": "key", "key": k}:
+              print("pressed", k)
+      ```
+
+      A **guard** adds an extra `if` condition to a case:
+
+      ```python
+      match n:
+          case int() if n < 0:
+              return "negative"
+          case int():
+              return "non-negative"
+      ```
+
+      The pattern must match **and** the guard must be true. `int()` is a **class pattern** that checks the type.
+
+  - kind: code
+    title: Summarise events
+    body: |
+      Write `summarize(event)` for events shaped like dictionaries:
+
+      - `{"type": "click", "x": x, "y": y}` gives `"click at (x, y)"`,
+      - `{"type": "key", "key": k}` gives `"key k"`,
+      - `{"type": "scroll", "amount": n}` with **n > 0** gives `"scroll down n"`, and with n ≤ 0 gives `"scroll up n"` (use the absolute value in the text),
+      - anything else `"ignored"`.
+    code: |
+      def summarize(event):
+          return "ignored"
+    tests:
+      - "summarize({'type': 'click', 'x': 3, 'y': 4})"
+      - "summarize({'type': 'key', 'key': 'a', 'shift': True})"
+      - "summarize({'type': 'scroll', 'amount': 5})"
+      - "summarize({'type': 'scroll', 'amount': -2})"
+      - "summarize({'type': 'scroll', 'amount': 0})"
+      - "summarize({'type': 'hover'})"
+      - "summarize('click')"
+    solution: |
+      def summarize(event):
+          match event:
+              case {"type": "click", "x": x, "y": y}:
+                  return f"click at ({x}, {y})"
+              case {"type": "key", "key": k}:
+                  return f"key {k}"
+              case {"type": "scroll", "amount": n} if n > 0:
+                  return f"scroll down {n}"
+              case {"type": "scroll", "amount": n}:
+                  return f"scroll up {abs(n)}"
+              case _:
+                  return "ignored"
+    hint: "Put the guarded scroll case (`if n > 0`) before the plain scroll case."
+    reject:
+      - |
+        def summarize(event):
+            if event["type"] == "click":
+                return f"click at ({event['x']}, {event['y']})"
+            return "ignored"
+
+  - kind: explain
+    title: Class patterns
+    body: |
+      You can match objects by their class and pull attributes out. With **dataclasses**, positional patterns work automatically:
+
+      ```python
+      from dataclasses import dataclass
+
+      @dataclass
+      class Circle:
+          radius: float
+
+      @dataclass
+      class Rect:
+          width: float
+          height: float
+
+      def area(shape):
+          match shape:
+              case Circle(radius):
+                  return 3.14159 * radius ** 2
+              case Rect(width, height):
+                  return width * height
+              case _:
+                  raise TypeError("unknown shape")
+      ```
+
+      `Rect(width, height)` checks that `shape` is a `Rect` and binds its fields by position. You can also match by keyword: `Rect(width=w)`.
+
+      **When does `match` beat `if/elif`?** When you are deciding by the *structure* of data (its type, length, or which keys it has) and want to unpack it in the same step. For simple comparisons of a single value, plain `if` is fine.
+
+  - kind: code
+    title: Shapes with match
+    body: |
+      The dataclasses `Circle`, `Rect` and `Point` are given. Write `describe(shape)` using `match` and class patterns:
+
+      - `Circle(r)` gives `"circle of radius r"`,
+      - `Rect(w, h)` where `w == h` gives `"square of side w"`; otherwise `"rectangle w by h"`,
+      - `Point(0, 0)` gives `"the origin"`; `Point(x, 0)` gives `"on the x axis at x"`; any other point gives `"point (x, y)"`,
+      - anything else gives `"not a shape"`.
+    code: |
+      from dataclasses import dataclass
+
+
+      @dataclass
+      class Circle:
+          radius: float
+
+
+      @dataclass
+      class Rect:
+          width: float
+          height: float
+
+
+      @dataclass
+      class Point:
+          x: float
+          y: float
+
+
+      def describe(shape):
+          return "not a shape"
+    tests:
+      - "describe(Circle(2))"
+      - "describe(Rect(3, 3))"
+      - "describe(Rect(3, 4))"
+      - "describe(Point(0, 0))"
+      - "describe(Point(5, 0))"
+      - "describe(Point(1, 2))"
+      - "describe(42)"
+    solution: |
+      from dataclasses import dataclass
+
+
+      @dataclass
+      class Circle:
+          radius: float
+
+
+      @dataclass
+      class Rect:
+          width: float
+          height: float
+
+
+      @dataclass
+      class Point:
+          x: float
+          y: float
+
+
+      def describe(shape):
+          match shape:
+              case Circle(r):
+                  return f"circle of radius {r}"
+              case Rect(w, h) if w == h:
+                  return f"square of side {w}"
+              case Rect(w, h):
+                  return f"rectangle {w} by {h}"
+              case Point(0, 0):
+                  return "the origin"
+              case Point(x, 0):
+                  return f"on the x axis at {x}"
+              case Point(x, y):
+                  return f"point ({x}, {y})"
+              case _:
+                  return "not a shape"
+    hint: "Literals inside patterns work: `Point(0, 0)` and `Point(x, 0)`. Put the more specific patterns first."
+    reject:
+      - |
+        from dataclasses import dataclass
+
+
+        @dataclass
+        class Circle:
+            radius: float
+
+
+        @dataclass
+        class Rect:
+            width: float
+            height: float
+
+
+        @dataclass
+        class Point:
+            x: float
+            y: float
+
+
+        def describe(shape):
+            match shape:
+                case Point(x, y):
+                    return f"point ({x}, {y})"
+                case _:
+                    return "not a shape"
+
+  - kind: code
+    title: Evaluate a small command
+    body: |
+      Write `calc(tokens)` for a list of tokens: `["add", a, b]` gives `a + b`; `["mul", a, b]` gives `a * b`; `["neg", a]` gives `-a`; `["sum", *numbers]` gives the sum of all the numbers. Any other shape returns `None`.
+    code: |
+      def calc(tokens):
+          return None
+    tests:
+      - "calc(['add', 2, 3])"
+      - "calc(['mul', 4, 5])"
+      - "calc(['neg', 7])"
+      - "calc(['sum', 1, 2, 3, 4])"
+      - "calc(['sum'])"
+      - "calc(['div', 1, 2])"
+      - "calc([])"
+    solution: |
+      def calc(tokens):
+          match tokens:
+              case ["add", a, b]:
+                  return a + b
+              case ["mul", a, b]:
+                  return a * b
+              case ["neg", a]:
+                  return -a
+              case ["sum", *numbers]:
+                  return sum(numbers)
+              case _:
+                  return None
+    hint: "One `case` per shape. `[\"sum\", *numbers]` also matches `[\"sum\"]` (an empty tail), giving 0."
+    reject:
+      - |
+        def calc(tokens):
+            if tokens[0] == "add":
+                return tokens[1] + tokens[2]
+            return None
+
+  - kind: info
+    title: "🔹 Things to watch"
+    body: |
+      - A bare name in a pattern **captures**; it does not compare. `case RED:` would capture into a variable called `RED`, not compare with a constant. To compare with a constant use a **dotted name** (`case Color.RED:`) or a literal.
+      - Patterns are checked in order, so put specific cases before general ones and `_` last.
+      - `match` needs Python 3.10 or newer.
+      - Don't force `match` where a simple `if` or a dictionary lookup is clearer.
+
+  - kind: why
+    body: |
+      Real data is rarely a single number. It is nested lists, JSON-like dictionaries, and objects of different classes. `match` lets you describe the shapes you expect and unpack them in one readable step, which replaces long chains of `isinstance`, `len` and key checks. It is especially good for parsers, command handlers and processing API responses.
+
+  - kind: recap
+    body: |
+      - `match value:` with `case pattern:` tries patterns top to bottom; `_` is the wildcard; `|` means or.
+      - **Sequence** patterns (`["go", d]`, `[first, *rest]`), **mapping** patterns (`{"type": "click", "x": x}`), **class** patterns (`Point(x, y)`) capture parts of the data.
+      - A **guard** (`case ... if condition:`) adds an extra test.
+      - Use `match` for the *shape* of data; use `if` for simple comparisons. 🔹 A bare name captures, so use dotted names to compare with constants.

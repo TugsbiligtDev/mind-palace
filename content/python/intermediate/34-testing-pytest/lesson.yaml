@@ -1,0 +1,545 @@
+steps:
+  - kind: explain
+    title: Why test?
+    body: |
+      "It works on my machine" is not proof. A **test** is a small program that runs your code with known inputs and **checks the result**, automatically. You write it once, and it guards your code forever: change something, run the tests, and instantly see what broke.
+
+      **pytest** is the standard Python testing tool. It is famously easy:
+
+      1. Put tests in files named `test_*.py`.
+      2. Write functions named `test_*`.
+      3. Use plain `assert`.
+
+      ```python
+      # test_shop.py
+      from shop import add
+
+      def test_add():
+          assert add(2, 3) == 5
+
+      def test_add_negative():
+          assert add(-1, 1) == 0
+      ```
+
+      Run `pytest` in the project folder. It **discovers** every test file and function, runs them, and reports `2 passed` or shows exactly which `assert` failed and why (with the values compared).
+
+      In this lesson the browser really runs pytest for you. The editor holds the tests you write as text, and the checker runs them **against working code and against deliberately broken versions**. A good test suite passes the first and *fails* the second.
+
+  - kind: code
+    title: Write your first tests
+    body: |
+      The module under test is `slugify` (from Module 6): it strips, lower-cases, and turns spaces into dashes. The correct version is in `GOOD`, and there are two buggy versions, `BUG_CASE` (forgets to lower-case) and `BUG_STRIP` (forgets to strip the ends).
+
+      Write tests in the `TESTS` text so that pytest **passes on `GOOD` but fails on both buggy versions**. Use plain `assert` in functions named `test_...`.
+    code: |
+      GOOD = '''
+      def slugify(title):
+          return title.strip().lower().replace(" ", "-")
+      '''
+
+      BUG_CASE = '''
+      def slugify(title):
+          return title.strip().replace(" ", "-")
+      '''
+
+      BUG_STRIP = '''
+      def slugify(title):
+          return title.lower().replace(" ", "-")
+      '''
+
+      TESTS = '''
+      from shop import slugify
+
+      # write tests here, for example:
+      # def test_spaces():
+      #     assert slugify("a b") == "a-b"
+      '''
+    tests:
+      - "run = lambda impl: pytest_run({'shop.py': impl, 'test_shop.py': TESTS})\nresult = run(GOOD).endswith('passed') and 'failed' not in run(GOOD)"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_CASE, 'test_shop.py': TESTS})"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_STRIP, 'test_shop.py': TESTS})"
+    solution: |
+      GOOD = '''
+      def slugify(title):
+          return title.strip().lower().replace(" ", "-")
+      '''
+
+      BUG_CASE = '''
+      def slugify(title):
+          return title.strip().replace(" ", "-")
+      '''
+
+      BUG_STRIP = '''
+      def slugify(title):
+          return title.lower().replace(" ", "-")
+      '''
+
+      TESTS = '''
+      from shop import slugify
+
+      def test_spaces_become_dashes():
+          assert slugify("a b c") == "a-b-c"
+
+      def test_lowercase():
+          assert slugify("Hello World") == "hello-world"
+
+      def test_ends_are_stripped():
+          assert slugify("  padded  ") == "padded"
+      '''
+    hint: "You need one test with capital letters (catches the case bug) and one with spaces around the text (catches the strip bug)."
+
+  - kind: explain
+    title: "Fixtures: shared set-up"
+    body: |
+      Many tests need the same starting object. A **fixture** is a function that builds it, and pytest hands it to any test that asks by **naming it as a parameter**:
+
+      ```python
+      import pytest
+      from shop import Cart
+
+      @pytest.fixture
+      def cart():
+          return Cart()             # a NEW cart for every test that asks
+
+      def test_empty(cart):
+          assert cart.total() == 0
+
+      def test_add(cart):
+          cart.add("pen", 2)
+          assert cart.total() == 2
+      ```
+
+      Each test gets its **own fresh** fixture value, so tests do not affect each other. Independent tests are the rule: a test must pass or fail the same way regardless of the order they run in. (Fixtures can also clean up afterwards using `yield`.)
+
+  - kind: code
+    title: A fixture for a cart
+    body: |
+      `Cart` is the class under test. `BUG_SHARED` has the shared-list bug from Module 22: every cart shares one list. Write tests using a **fixture** called `cart`, at least two tests that each add an item to their cart, so pytest **passes on `GOOD` but fails on `BUG_SHARED`**.
+    code: |
+      GOOD = '''
+      class Cart:
+          def __init__(self):
+              self.items = []
+
+          def add(self, name, price):
+              self.items.append((name, price))
+
+          def total(self):
+              return sum(price for _, price in self.items)
+      '''
+
+      BUG_SHARED = '''
+      class Cart:
+          items = []
+
+          def add(self, name, price):
+              self.items.append((name, price))
+
+          def total(self):
+              return sum(price for _, price in self.items)
+      '''
+
+      TESTS = '''
+      import pytest
+      from shop import Cart
+
+      # write a fixture named cart and tests that use it
+      '''
+    tests:
+      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_SHARED, 'test_shop.py': TESTS})"
+      - "result = '@pytest.fixture' in TESTS"
+    solution: |
+      GOOD = '''
+      class Cart:
+          def __init__(self):
+              self.items = []
+
+          def add(self, name, price):
+              self.items.append((name, price))
+
+          def total(self):
+              return sum(price for _, price in self.items)
+      '''
+
+      BUG_SHARED = '''
+      class Cart:
+          items = []
+
+          def add(self, name, price):
+              self.items.append((name, price))
+
+          def total(self):
+              return sum(price for _, price in self.items)
+      '''
+
+      TESTS = '''
+      import pytest
+      from shop import Cart
+
+      @pytest.fixture
+      def cart():
+          return Cart()
+
+      def test_add_one(cart):
+          cart.add("pen", 2)
+          assert cart.total() == 2
+
+      def test_add_another(cart):
+          cart.add("book", 10)
+          assert cart.total() == 10
+      '''
+    hint: "Decorate a function with `@pytest.fixture` that returns `Cart()`. Two tests each take `cart` as a parameter and add one item. With the shared-list bug the second test sees the first test's item."
+
+  - kind: explain
+    title: "parametrize: one test, many cases"
+    body: |
+      Copy-pasting a test for every input is dull. **`@pytest.mark.parametrize`** runs one test function with many inputs, and reports each case separately:
+
+      ```python
+      import pytest
+      from shop import is_leap
+
+      @pytest.mark.parametrize("year, expected", [
+          (2024, True),
+          (2023, False),
+          (1900, False),
+          (2000, True),
+      ])
+      def test_is_leap(year, expected):
+          assert is_leap(year) == expected
+      ```
+
+      Choose your cases well: the ordinary case, the **boundaries**, the **edge cases** (empty, zero, negative, largest), and the cases that *distinguish right from plausible-but-wrong*. For leap years that means a century that is **not** a leap year (1900) and one that **is** (2000).
+
+  - kind: code
+    title: Cover the leap-year rules
+    body: |
+      `GOOD` is a correct `is_leap`. `BUG_A` only checks divisibility by 4. `BUG_B` also removes centuries, but forgets that years divisible by 400 are leap years. Write **one `parametrize`d test** with cases that pass on `GOOD` and fail on both bugs.
+    code: |
+      GOOD = '''
+      def is_leap(year):
+          return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+      '''
+
+      BUG_A = '''
+      def is_leap(year):
+          return year % 4 == 0
+      '''
+
+      BUG_B = '''
+      def is_leap(year):
+          return year % 4 == 0 and year % 100 != 0
+      '''
+
+      TESTS = '''
+      import pytest
+      from shop import is_leap
+
+      # write a parametrized test here
+      '''
+    tests:
+      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_A, 'test_shop.py': TESTS})"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_B, 'test_shop.py': TESTS})"
+      - "result = 'parametrize' in TESTS"
+    solution: |
+      GOOD = '''
+      def is_leap(year):
+          return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+      '''
+
+      BUG_A = '''
+      def is_leap(year):
+          return year % 4 == 0
+      '''
+
+      BUG_B = '''
+      def is_leap(year):
+          return year % 4 == 0 and year % 100 != 0
+      '''
+
+      TESTS = '''
+      import pytest
+      from shop import is_leap
+
+      @pytest.mark.parametrize("year, expected", [
+          (2024, True),
+          (2023, False),
+          (1900, False),
+          (2000, True),
+      ])
+      def test_is_leap(year, expected):
+          assert is_leap(year) == expected
+      '''
+    hint: "You need 1900 (a century that is not leap) to catch BUG_A, and 2000 (a century that is leap) to catch BUG_B."
+
+  - kind: explain
+    title: "Testing errors: pytest.raises"
+    body: |
+      Code that is supposed to fail on bad input needs a test, too. `pytest.raises` passes only if the block raises that exception:
+
+      ```python
+      import pytest
+
+      def test_negative_amount():
+          with pytest.raises(ValueError):
+              withdraw(100, -5)
+
+      def test_message():
+          with pytest.raises(ValueError, match="insufficient"):
+              withdraw(10, 50)
+      ```
+
+      Without it, a test for "this must fail" would itself crash, and a function that *forgot* to raise would go unnoticed. `match=` checks the message with a regex.
+
+  - kind: code
+    title: Test the failure path
+    body: |
+      `withdraw(balance, amount)` must raise `ValueError("insufficient funds")` when `amount` is more than `balance`, and otherwise return the new balance. `BUG_NORAISE` returns a negative balance instead of raising. Write tests that use `pytest.raises` (with `match="insufficient"`) plus a normal-case test, passing on `GOOD` and failing on `BUG_NORAISE`.
+    code: |
+      GOOD = '''
+      def withdraw(balance, amount):
+          if amount > balance:
+              raise ValueError("insufficient funds")
+          return balance - amount
+      '''
+
+      BUG_NORAISE = '''
+      def withdraw(balance, amount):
+          return balance - amount
+      '''
+
+      TESTS = '''
+      import pytest
+      from shop import withdraw
+
+      # write tests here
+      '''
+    tests:
+      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_NORAISE, 'test_shop.py': TESTS})"
+      - "result = 'pytest.raises' in TESTS"
+    solution: |
+      GOOD = '''
+      def withdraw(balance, amount):
+          if amount > balance:
+              raise ValueError("insufficient funds")
+          return balance - amount
+      '''
+
+      BUG_NORAISE = '''
+      def withdraw(balance, amount):
+          return balance - amount
+      '''
+
+      TESTS = '''
+      import pytest
+      from shop import withdraw
+
+      def test_normal():
+          assert withdraw(100, 30) == 70
+
+      def test_too_much():
+          with pytest.raises(ValueError, match="insufficient"):
+              withdraw(10, 50)
+      '''
+    hint: "`with pytest.raises(ValueError, match=\"insufficient\"): withdraw(10, 50)`."
+
+  - kind: explain
+    title: "Mocking: replace the outside world"
+    body: |
+      Tests should be **fast, repeatable and independent of the outside world**. Code that calls a website, reads the clock or sends an email cannot be tested by really doing those things. So we **replace** the risky part with a **mock**, a stand-in that returns what we tell it to and remembers how it was used.
+
+      ```python
+      from unittest.mock import Mock
+
+      def average_temp(client):
+          readings = client.get_readings()
+          return round(sum(readings) / len(readings), 1)
+
+      def test_average():
+          client = Mock()
+          client.get_readings.return_value = [10, 20]     # what the fake returns
+          assert average_temp(client) == 15.0
+          client.get_readings.assert_called_once()        # it asked exactly once
+      ```
+
+      pytest also has the built-in **`monkeypatch`** fixture, which temporarily replaces an attribute or environment variable for one test: `monkeypatch.setattr(module, "name", fake)`, `monkeypatch.setenv("KEY", "value")`, restored automatically afterwards.
+
+      A warning: mocks test *how* you call something, not that the real thing works. Do not mock what you own without a reason; prefer simple fakes (Advanced, Testing).
+
+  - kind: code
+    title: Test with a mock
+    body: |
+      Test `average_temp(client)` **without any real client**. `client.get_readings()` returns a list of numbers, and `average_temp` returns their average rounded to one decimal. `BUG_SUM` returns the sum, and `BUG_TWICE` calls `get_readings()` twice.
+
+      Write tests using `unittest.mock.Mock` that pass on `GOOD` but fail on both bugs. (Remember `assert_called_once()`.)
+    code: |
+      GOOD = '''
+      def average_temp(client):
+          readings = client.get_readings()
+          return round(sum(readings) / len(readings), 1)
+      '''
+
+      BUG_SUM = '''
+      def average_temp(client):
+          readings = client.get_readings()
+          return sum(readings)
+      '''
+
+      BUG_TWICE = '''
+      def average_temp(client):
+          client.get_readings()
+          readings = client.get_readings()
+          return round(sum(readings) / len(readings), 1)
+      '''
+
+      TESTS = '''
+      from unittest.mock import Mock
+      from shop import average_temp
+
+      # write tests here
+      '''
+    tests:
+      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_SUM, 'test_shop.py': TESTS})"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_TWICE, 'test_shop.py': TESTS})"
+    solution: |
+      GOOD = '''
+      def average_temp(client):
+          readings = client.get_readings()
+          return round(sum(readings) / len(readings), 1)
+      '''
+
+      BUG_SUM = '''
+      def average_temp(client):
+          readings = client.get_readings()
+          return sum(readings)
+      '''
+
+      BUG_TWICE = '''
+      def average_temp(client):
+          client.get_readings()
+          readings = client.get_readings()
+          return round(sum(readings) / len(readings), 1)
+      '''
+
+      TESTS = '''
+      from unittest.mock import Mock
+      from shop import average_temp
+
+      def test_average_value():
+          client = Mock()
+          client.get_readings.return_value = [10, 20]
+          assert average_temp(client) == 15.0
+
+      def test_asks_once():
+          client = Mock()
+          client.get_readings.return_value = [1, 2, 3]
+          average_temp(client)
+          client.get_readings.assert_called_once()
+      '''
+    hint: "Set `client.get_readings.return_value = [...]`, check the returned number, and in a second test call `client.get_readings.assert_called_once()`."
+
+  - kind: explain
+    title: Test-driven development (TDD)
+    body: |
+      **TDD** flips the order: write the test **first**, watch it fail, then write just enough code to make it pass, then tidy up. The loop is **red → green → refactor**:
+
+      1. **Red:** write a small failing test for the next bit of behaviour.
+      2. **Green:** write the simplest code that passes.
+      3. **Refactor:** clean up while the tests stay green.
+
+      Benefits: you think about *what* the code should do before *how*; every line has a test; and you always have a working program to return to. You do not have to use TDD always, but it is superb for bug fixes (write the failing test that shows the bug, then fix it) and for clear-spec functions.
+
+  - kind: code
+    title: Make the tests pass
+    body: |
+      Here the tests are already written (hidden in the checker, but the rules are below). Write `price_after_discount(price, percent)` in the editor so they pass:
+
+      - a discount of `0` returns the price unchanged,
+      - `price_after_discount(200, 25)` is `150.0`,
+      - the result is **rounded to 2 decimals** (`price_after_discount(9.99, 15)` is `8.49`),
+      - a percent below `0` or above `100` raises `ValueError`.
+
+      The checker runs real pytest on your function.
+    code: |
+      def price_after_discount(price, percent):
+          return price
+    tests:
+      - "pytest_run({'test_price.py': 'import pytest\\nfrom price import price_after_discount\\n\\ndef test_zero():\\n    assert price_after_discount(50, 0) == 50\\n\\ndef test_quarter():\\n    assert price_after_discount(200, 25) == 150.0\\n\\ndef test_rounding():\\n    assert price_after_discount(9.99, 15) == 8.49\\n\\n@pytest.mark.parametrize(\"bad\", [-1, 101])\\ndef test_bad_percent(bad):\\n    with pytest.raises(ValueError):\\n        price_after_discount(10, bad)\\n'}, source_as='price.py')"
+    solution: |
+      def price_after_discount(price, percent):
+          if percent < 0 or percent > 100:
+              raise ValueError("percent must be between 0 and 100")
+          return round(price * (1 - percent / 100), 2)
+    hint: "Validate the percent first and raise `ValueError`. Then `round(price * (1 - percent / 100), 2)`."
+    reject:
+      - |
+        def price_after_discount(price, percent):
+            return round(price * (1 - percent / 100), 2)
+
+  - kind: explain
+    title: Coverage and the older unittest
+    body: |
+      **Coverage** measures which lines of your code the tests actually ran. `pytest-cov` reports it: `pytest --cov=mypackage`. 100% does not mean *correct*, but a line that no test touches is a line nobody has checked. Treat coverage as a **flashlight** for finding untested code, not a score to chase.
+
+      Where to put tests: a `tests/` folder next to your code, with `test_*.py` files. Name tests after behaviour (`test_rejects_negative_amount`), keep each one short and focused, and make them independent and fast so you actually run them.
+
+  - kind: info
+    title: "🔹 unittest"
+    body: |
+      Python's standard library has an older testing framework, **`unittest`**, using classes and methods like `self.assertEqual(a, b)`:
+
+      ```python
+      import unittest
+
+      class TestAdd(unittest.TestCase):
+          def test_add(self):
+              self.assertEqual(add(2, 3), 5)
+      ```
+
+      Many older projects use it, and **pytest can run unittest tests** too. New code is simpler with pytest's plain `assert`, fixtures and parametrize.
+
+  - kind: mac
+    title: Run pytest with coverage
+    body: |
+      On your Mac, make a project, add `pytest` and `pytest-cov`, and run a small test with coverage.
+
+      **Checkpoint:** paste the output. It should contain `passed` and `TOTAL`.
+    commands: |
+      mkdir -p ~/Desktop/tested && cd ~/Desktop/tested
+      uv init --bare
+      uv add --dev pytest pytest-cov
+      cat > shop.py <<'PY'
+      def add(a, b):
+          return a + b
+
+
+      def unused():
+          return "nobody tests me"
+      PY
+      cat > test_shop.py <<'PY'
+      from shop import add
+
+
+      def test_add():
+          assert add(2, 3) == 5
+      PY
+      uv run pytest --cov=shop --cov-report=term-missing
+    expect_output:
+      - "passed"
+      - "TOTAL"
+
+  - kind: why
+    body: |
+      Tests are what let you change code with confidence, which is what separates a hobby script from software that lasts. They also document what the code is meant to do, and they are the safety net that makes refactoring, upgrading libraries and working in teams possible. In the checkpoint you will retrofit tests onto the library system.
+
+  - kind: recap
+    body: |
+      - pytest: files `test_*.py`, functions `test_*`, plain `assert`. Run with `pytest` (auto-discovery).
+      - **Fixtures** (`@pytest.fixture`) give each test fresh set-up. **`parametrize`** runs one test over many cases. **`pytest.raises`** checks errors.
+      - **Mocks** (`unittest.mock.Mock`, `monkeypatch`) replace slow or external things; test behaviour, not only calls.
+      - Good tests are small, independent, fast, and catch real bugs: check them by asking "would this fail if the code were wrong?"
+      - **TDD:** red → green → refactor. **Coverage** (`pytest-cov`) shows untested lines. 🔹 `unittest` is the older framework.

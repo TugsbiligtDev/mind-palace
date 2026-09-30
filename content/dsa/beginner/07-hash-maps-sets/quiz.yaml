@@ -1,0 +1,43 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      console.log(new Set([1, 2, 2, 3, 3, 3]).size);
+    options: ["3", "6", "2", "1"]
+    answer: 0
+    explanation: A Set keeps each value once, so it holds 1, 2 and 3.
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const seen = new Set();
+      seen.add([1, 2]);
+      console.log(seen.has([1, 2]));
+    options: ["true", "false", "an error"]
+    answer: 1
+    explanation: The two arrays are different objects. Sets compare arrays by reference, not by content.
+  - type: mcq
+    prompt: A hash map lookup is O(1) on average. When can it be O(n)?
+    options:
+      - Never
+      - When the keys are numbers
+      - When almost every key collides into the same slot
+      - When the map has more than 100 items
+    answer: 2
+    explanation: With many collisions, the slot holds a long list that has to be scanned. A good hash function makes this very unlikely.
+  - type: mcq
+    prompt: Two Sum asks for two positions whose values add to a target. Which idea makes it O(n)?
+    options:
+      - Sort the array first
+      - For each number, look up its complement in a Map of numbers seen so far
+      - Try every pair
+      - Use recursion
+    answer: 1
+    explanation: The map answers "have I already seen `target - x`?" in O(1), so one pass is enough.
+  - type: fill
+    prompt: Fill in the method that checks whether a Map contains a key.
+    code: |
+      const map = new Map([["a", 1]]);
+      console.log(map.____("a"));
+    answer: has
+    explanation: "`map.has(key)` returns `true` or `false`. (`map.get` returns the value.)"

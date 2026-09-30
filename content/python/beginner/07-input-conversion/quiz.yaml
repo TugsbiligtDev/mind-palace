@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What type does `input()` always return?
+    options: ["int", "str", "float", "It depends on what is typed"]
+    answer: 1
+    explanation: "It always returns text (`str`), even if the person types only digits."
+  - type: mcq
+    prompt: What is printed on the last line when the person types 5 and then 6?
+    code: |
+      a = input("a? ")
+      b = input("b? ")
+      print(a + b)
+    options: ["56", "11", "5 6", "Error"]
+    answer: 0
+    explanation: "Both answers are text, and `+` glues text together, so `\"5\" + \"6\"` is `\"56\"`."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(int("7") + int("8"))
+    options: ["15", "78", "7 8", "Error"]
+    answer: 0
+    explanation: "Converting first makes them numbers, so `+` adds."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      print(bool("False"))
+    options: ["True", "False", "None", "Error"]
+    answer: 0
+    explanation: "Any non-empty text is true, including the text \"False\"."
+  - type: fill
+    prompt: Complete the line so the typed age becomes a number.
+    code: |
+      age = ____(input("Age? "))
+      print(age + 1)
+    stdin: ["30"]
+    answer: int
+    explanation: "`int(...)` turns the typed text into a whole number, so adding 1 works."

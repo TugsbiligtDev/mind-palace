@@ -1,0 +1,292 @@
+steps:
+  - kind: explain
+    title: Why sorting matters
+    body: |
+      Sorted data unlocks fast tools: binary search (Module 11), spotting duplicates, merging, and finding the biggest and smallest instantly. Sorting is also the classic place to see how different algorithms solve the same job at very different speeds.
+
+      Two families:
+      - **Simple sorts** (bubble, selection, insertion) are easy to write and take **O(n²)**.
+      - **Fast sorts** (merge sort, quicksort) take **O(n log n)**, using divide and conquer.
+
+  - kind: explain
+    title: The simple sorts, in a minute
+    body: |
+      You should understand these, not memorize them.
+
+      - **Bubble sort**: repeatedly swap neighbours that are in the wrong order. The biggest value "bubbles" to the end each pass.
+      - **Selection sort**: find the smallest item, put it first; find the next smallest, put it second, and so on.
+      - **Insertion sort**: keep the front of the array sorted. Take the next item and slide it left into place, like sorting playing cards in your hand.
+
+      All three use two nested loops, so they are **O(n²)**. Insertion sort is quick on nearly-sorted data and is a real building block: good sorting libraries use it for small pieces.
+
+  - kind: code
+    title: Insertion sort
+    body: |
+      Write `insertionSort(nums)` that sorts the array **in place** (ascending) and returns it.
+
+      For each `i` from 1: hold `nums[i]` as `key`, slide larger items on its left one step right, then drop `key` into the gap.
+    code: |
+      function insertionSort(nums) {
+        return nums;
+      }
+    tests:
+      - "insertionSort([5, 2, 4, 6, 1, 3])"
+      - "insertionSort([])"
+      - "insertionSort([1])"
+      - "insertionSort([3, 3, 1, 2, 2])"
+      - "insertionSort([9, 8, 7, 6])"
+      - "insertionSort([-2, 5, 0, -7])"
+    solution: |
+      function insertionSort(nums) {
+        for (let i = 1; i < nums.length; i++) {
+          const key = nums[i];
+          let j = i - 1;
+          while (j >= 0 && nums[j] > key) {
+            nums[j + 1] = nums[j];
+            j--;
+          }
+          nums[j + 1] = key;
+        }
+        return nums;
+      }
+    hint: "The `while` loop keeps going as long as `j >= 0` and the item at `j` is bigger than `key`."
+    reject:
+      - |
+        function insertionSort(nums) {
+          return nums.sort();
+        }
+
+  - kind: explain
+    title: Merge sort, divide and conquer
+    body: |
+      Merge sort uses a beautiful idea: **splitting is easy, and merging two already-sorted lists is easy**.
+
+      1. If the array has 0 or 1 items, it is already sorted (base case).
+      2. Split it into two halves and **sort each half recursively**.
+      3. **Merge** the two sorted halves into one sorted array.
+
+      Merging: keep a pointer in each half, and repeatedly take the smaller front item. (You did exactly this with linked lists in Module 8.)
+
+      The recursion is `log n` levels deep, and each level does `n` work in total, so **O(n log n)** time. It needs **O(n)** extra space for the merged arrays, and it is **stable**.
+
+  - kind: code
+    title: Merge sort
+    body: |
+      Write `mergeSort(nums)` that returns a **new sorted array** and leaves the input alone.
+    code: |
+      function mergeSort(nums) {
+        return nums;
+      }
+    tests:
+      - "mergeSort([38, 27, 43, 3, 9, 82, 10])"
+      - "mergeSort([])"
+      - "mergeSort([1])"
+      - "mergeSort([2, 1])"
+      - "mergeSort([5, 5, 5, 1])"
+      - "(() => { const a = [3, 1, 2]; mergeSort(a); return a; })()"
+      - "(() => { const a = Array.from({ length: 3000 }, (_, i) => (i * 7919) % 1009); return mergeSort(a).slice(0, 8); })()"
+    solution: |
+      function mergeSort(nums) {
+        if (nums.length <= 1) return [...nums];
+        const mid = Math.floor(nums.length / 2);
+        const left = mergeSort(nums.slice(0, mid));
+        const right = mergeSort(nums.slice(mid));
+        const out = [];
+        let i = 0;
+        let j = 0;
+        while (i < left.length && j < right.length) {
+          if (left[i] <= right[j]) out.push(left[i++]);
+          else out.push(right[j++]);
+        }
+        while (i < left.length) out.push(left[i++]);
+        while (j < right.length) out.push(right[j++]);
+        return out;
+      }
+    hint: Use `<=` when comparing the two front items, so equal values keep their original order (that is what makes it stable).
+    reject:
+      - |
+        function mergeSort(nums) {
+          return nums;
+        }
+
+  - kind: explain
+    title: Quicksort and the partition
+    body: |
+      Quicksort also divides and conquers, but the work happens **before** the recursion, in a step called **partitioning**:
+
+      1. Pick a **pivot** value.
+      2. Rearrange so everything **smaller** than the pivot is on its left, and everything **larger** is on its right. The pivot is now in its final position.
+      3. Recursively sort the left part and the right part.
+
+      - **Average time: O(n log n)**, with very little extra memory.
+      - **Worst case: O(n²)**, when the pivot is always the smallest or largest (for example the first item of an already-sorted array). A **random pivot** makes that extremely unlikely.
+      - It is **not stable**.
+
+      For clarity, the version below uses filter-style partitioning (simple but uses extra memory):
+
+      ```js
+      const smaller = nums.filter((x) => x < pivot);
+      const equal   = nums.filter((x) => x === pivot);
+      const larger  = nums.filter((x) => x > pivot);
+      return [...quickSort(smaller), ...equal, ...quickSort(larger)];
+      ```
+
+  - kind: code
+    title: Quicksort
+    body: |
+      Write `quickSort(nums)` returning a new sorted array. Choose the pivot **at random** (`Math.floor(Math.random() * nums.length)`) so sorted input is not a worst case. Collect equal values in the middle so duplicates do not recurse forever.
+    code: |
+      function quickSort(nums) {
+        return nums;
+      }
+    tests:
+      - "quickSort([3, 6, 1, 8, 2, 9, 2])"
+      - "quickSort([])"
+      - "quickSort([4])"
+      - "quickSort([5, 5, 5, 5])"
+      - "quickSort(Array.from({ length: 5000 }, (_, i) => i)).slice(-3)"
+      - "quickSort(Array.from({ length: 5000 }, (_, i) => 5000 - i)).slice(0, 3)"
+      - "(() => { const a = [2, 1]; quickSort(a); return a; })()"
+    solution: |
+      function quickSort(nums) {
+        if (nums.length <= 1) return [...nums];
+        const pivot = nums[Math.floor(Math.random() * nums.length)];
+        const smaller = nums.filter((x) => x < pivot);
+        const equal = nums.filter((x) => x === pivot);
+        const larger = nums.filter((x) => x > pivot);
+        return [...quickSort(smaller), ...equal, ...quickSort(larger)];
+      }
+    hint: Split into smaller, equal and larger. Only the smaller and larger parts are sorted recursively.
+    reject:
+      - |
+        function quickSort(nums) {
+          return nums;
+        }
+
+  - kind: explain
+    title: Quickselect, the k-th item without a full sort
+    body: |
+      Sometimes you do not need everything sorted, only **one** value: the median, or the 3rd smallest. A full sort is O(n log n). **Quickselect** finds it in **O(n) on average** by reusing quicksort's partition and **recursing into only one side**.
+
+      After partitioning around a pivot, you know the pivot's exact rank. Compare it with `k`:
+      - the answer is **in the smaller part** → look only there,
+      - the answer **is the pivot**,
+      - the answer is **in the larger part** → look only there, and adjust `k`.
+
+      Throwing away a whole side each time makes the total work about `n + n/2 + n/4 + … ≈ 2n`. A **random pivot** avoids the O(n²) worst case.
+
+  - kind: code
+    title: The k-th smallest
+    body: |
+      Write `kthSmallest(nums, k)`: the `k`-th smallest value (`k = 1` is the smallest), counting duplicates as separate items. `[3, 2, 1, 5, 6, 4]` with `k = 2` gives `2`.
+
+      Partition into `smaller`, `equal` and `larger` around a random pivot, then decide which part holds position `k`.
+    code: |
+      function kthSmallest(nums, k) {
+        return nums[0];
+      }
+    tests:
+      - "kthSmallest([3, 2, 1, 5, 6, 4], 2)"
+      - "kthSmallest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4)"
+      - "kthSmallest([7], 1)"
+      - "kthSmallest([5, 5, 5], 3)"
+      - "kthSmallest([9, 1, 8, 2, 7, 3], 6)"
+      - "kthSmallest([9, 1, 8, 2, 7, 3], 1)"
+    solution: |
+      function kthSmallest(nums, k) {
+        const pivot = nums[Math.floor(Math.random() * nums.length)];
+        const smaller = nums.filter((x) => x < pivot);
+        const equal = nums.filter((x) => x === pivot);
+        const larger = nums.filter((x) => x > pivot);
+        if (k <= smaller.length) return kthSmallest(smaller, k);
+        if (k <= smaller.length + equal.length) return pivot;
+        return kthSmallest(larger, k - smaller.length - equal.length);
+      }
+    hint: If `k` is within the smaller part, recurse there. If it lands among the equal values, the answer is the pivot. Otherwise recurse into the larger part with `k` reduced by everything you skipped.
+    reject:
+      - |
+        function kthSmallest(nums, k) {
+          return nums[k - 1];
+        }
+
+  - kind: explain
+    title: Stability, and just using the built-in
+    body: |
+      A sort is **stable** if items that compare as equal keep their original order. It matters when you sort by one field after another: sort people by name, then by age, and stability keeps people of the same age in name order.
+
+      - Merge sort and JavaScript's `sort` are **stable**.
+      - Quicksort is not.
+
+      In real code and in interviews, **use the built-in `sort` with a comparator** unless the problem asks you to write a sort. It is well tested and O(n log n). Write your own only to learn or when told to.
+
+  - kind: code
+    title: Sort people, stably
+    body: |
+      Write `sortByAge(people)`: `people` is an array of `{ name, age }`. Return a **new** array sorted by `age`, youngest first. People with the **same age** must stay in their original order.
+    code: |
+      function sortByAge(people) {
+        return people;
+      }
+    tests:
+      - "sortByAge([{ name: 'Ann', age: 30 }, { name: 'Bo', age: 25 }, { name: 'Cy', age: 30 }, { name: 'Di', age: 25 }])"
+      - "sortByAge([])"
+      - "sortByAge([{ name: 'Solo', age: 9 }])"
+      - "(() => { const p = [{ name: 'A', age: 2 }, { name: 'B', age: 1 }]; sortByAge(p); return p; })()"
+    solution: |
+      function sortByAge(people) {
+        return [...people].sort((a, b) => a.age - b.age);
+      }
+    hint: Copy first, then `sort` with a comparator on `age`. The built-in sort is already stable.
+    reject:
+      - |
+        function sortByAge(people) {
+          return people.sort((a, b) => a.age - b.age);
+        }
+
+  - kind: code
+    title: "🔹 Counting sort for small ranges"
+    body: |
+      When every value is a whole number in a **small range** (say `0 … 100`), you can beat O(n log n) by **counting** instead of comparing. Make an array of counters, count each value, then write the values back in order. It runs in **O(n + range)**.
+
+      Write `countingSort(nums, maxValue)` for whole numbers from `0` to `maxValue`. It returns a new sorted array.
+    code: |
+      function countingSort(nums, maxValue) {
+        return nums;
+      }
+    tests:
+      - "countingSort([4, 2, 2, 8, 3, 3, 1], 8)"
+      - "countingSort([], 5)"
+      - "countingSort([0, 0, 0], 3)"
+      - "countingSort([5, 4, 3, 2, 1, 0], 5)"
+    solution: |
+      function countingSort(nums, maxValue) {
+        const counts = Array(maxValue + 1).fill(0);
+        for (const x of nums) counts[x]++;
+        const out = [];
+        for (let value = 0; value <= maxValue; value++) {
+          for (let c = 0; c < counts[value]; c++) out.push(value);
+        }
+        return out;
+      }
+    hint: "`counts[x]++` for each value, then output `value` as many times as `counts[value]` says."
+    reject:
+      - |
+        function countingSort(nums, maxValue) {
+          return [...nums];
+        }
+
+  - kind: why
+    body: |
+      Sorting is where divide and conquer first pays off: splitting a problem in half, solving the halves, and combining. The same shape returns in trees, in dynamic programming and in many "hard" problems.
+
+      Quickselect is the quiet star: knowing that "find the k-th" does not need a full sort is the kind of insight that turns an O(n log n) answer into an O(n) one.
+
+  - kind: recap
+    body: |
+      - **Bubble, selection and insertion sort** are O(n²): understand them, do not memorize them. Insertion sort is good on nearly-sorted data.
+      - **Merge sort**: split, sort halves, merge. O(n log n), needs O(n) extra space, stable.
+      - **Quicksort**: partition around a pivot, recurse on both sides. Average O(n log n), worst O(n²), so use a random pivot. Not stable.
+      - **Quickselect**: partition, then recurse into only one side. Average **O(n)** for the k-th smallest or largest.
+      - A **stable** sort keeps equal items in their original order.
+      - In everyday code, use the built-in `sort((a, b) => a - b)`.
+      - 🔹 **Counting sort** beats comparison sorts when values fall in a small range.

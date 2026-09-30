@@ -1,0 +1,4 @@
+title: Stacks & Queues
+module: 9
+summary: "Last-in-first-out and first-in-first-out: matching brackets, a queue with O(1) dequeue, undo and redo, and evaluating expressions with a stack."
+minutes: 60

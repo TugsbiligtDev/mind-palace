@@ -1,0 +1,5 @@
+title: "Data structures"
+module: 13
+kind: review
+summary: "Build the contact book checkpoint from lists and dictionaries: add, find, update, delete, sort and index contacts, one small function at a time."
+minutes: 50

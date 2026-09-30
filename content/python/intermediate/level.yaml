@@ -1,0 +1,38 @@
+id: intermediate
+title: Intermediate
+season: 2
+season_title: The Evidence Lab
+season_pitch: |
+  Turn scripts into software. Model the world with classes, write Pythonic code with generators
+  and decorators, solve problems with standard patterns, then make it all trustworthy with types,
+  tests and tooling, and connect it to the real world with APIs, databases and validation.
+status: open
+topics:
+  - 22-classes-objects
+  - 23-inheritance-composition
+  - 24-special-methods-dataclasses
+  - review-5-library-system
+  - 25-iterators-generators
+  - 26-functions-as-objects
+  - 27-decorators
+  - 28-context-managers
+  - 29-pattern-matching
+  - 30-stdlib-essentials
+  - review-6-log-analyzer
+  - 31-algorithm-patterns
+  - 32-recursion-trees-graphs
+  - review-7-maze-solver
+  - 33-type-hints
+  - 34-testing-pytest
+  - 35-linting-formatting
+  - 36-debugging
+  - review-8-quality-retrofit
+  - 37-http-web-apis
+  - 38-databases-sql
+  - 39-pydantic
+  - 40-automation-cli
+  - capstone-2-reading-tracker
+
+planned:
+  - "Optional branch A: Data Handling (Jupyter, NumPy, pandas, Matplotlib)"
+  - "Optional branch B: Web Backends with FastAPI"

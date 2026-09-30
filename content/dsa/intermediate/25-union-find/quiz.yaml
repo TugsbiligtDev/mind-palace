@@ -1,0 +1,41 @@
+pass: 3
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      const parent = [0, 1, 2, 3];
+      const find = (x) => {
+        while (parent[x] !== x) x = parent[x];
+        return x;
+      };
+      parent[find(0)] = find(1);
+      parent[find(2)] = find(3);
+      parent[find(0)] = find(2);
+      console.log(find(1) === find(3), find(0) === find(2));
+    options: ["true true", "true false", "false true", "false false"]
+    answer: 0
+    explanation: Merging {0,1} with {2,3} makes all four items one group, so every pair shares a root.
+  - type: mcq
+    prompt: What does path compression do?
+    options:
+      - Sorts the parent array
+      - Points every item on the path from x to the root directly at the root, making later finds faster
+      - Removes items from the set
+      - Merges the smallest group first
+    answer: 1
+    explanation: After one `find`, the whole path is flattened, so repeated finds cost almost nothing.
+  - type: mcq
+    prompt: You add an edge `a — b`, and `find(a) === find(b)` already. What does that tell you?
+    options: ["They are different groups", "The edge closes a cycle", "The graph is directed", "Nothing"]
+    answer: 1
+    explanation: They were already connected, so the new edge creates a second route between them, which is a cycle.
+  - type: mcq
+    prompt: Kruskal's algorithm sorts edges by weight and keeps an edge when...
+    options: ["It is the heaviest", "It joins two different groups", "Its vertices have the same degree", "It is the first edge"]
+    answer: 1
+    explanation: Cheapest edges first, and skipping any that would form a cycle, gives the minimum spanning tree.
+  - type: mcq
+    prompt: How many edges does a spanning tree of a connected graph with 10 vertices have?
+    options: ["9", "10", "11", "It depends"]
+    answer: 0
+    explanation: A tree on V vertices always has V − 1 edges. One more would create a cycle, and one fewer would leave it disconnected.

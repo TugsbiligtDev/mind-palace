@@ -1,0 +1,4 @@
+title: Prefix Sums & Difference Arrays
+module: 15
+summary: "Answer range-sum questions in O(1), combine prefix sums with a hash map to count subarrays, and use difference arrays to apply many range updates cheaply."
+minutes: 60

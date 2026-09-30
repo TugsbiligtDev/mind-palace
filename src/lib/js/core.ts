@@ -12,7 +12,7 @@ export type JsCheck = { tests: string[]; solution: string; unordered?: boolean }
 export type JsError = { message: string; line?: number };
 
 // One test call. `got` is the printed value, `error` the error name if the call threw.
-export type CallResult = { call: string; value: string; threw: boolean };
+export type CallResult = { call: string; value: string; key: string; threw: boolean };
 
 export type JsRunOutput = { logs: string[]; error?: JsError; results: CallResult[] };
 
@@ -29,7 +29,10 @@ const MAX_LOG_CHARS = 2000;
 // global scope plus a replacement `console`, never these helpers.
 const RUNTIME = String.raw`
 (function () {
-  function format(v, sortAll, seen, depth) {
+  // cap is how many items of a long array to show; results are also formatted with no cap
+  // (Infinity) so that comparing them never ignores items past the cap.
+  function format(v, sortAll, seen, depth, cap) {
+    if (cap === undefined) cap = 1000;
     if (v === null) return "null";
     if (v === undefined) return "undefined";
     var t = typeof v;
@@ -43,13 +46,13 @@ const RUNTIME = String.raw`
     if (depth > 60) return "[Too deep]";
     seen = seen.concat([v]);
     var d = depth + 1;
-    var f = function (x) { return format(x, sortAll, seen, d); };
-    var q = function (x) { return typeof x === "string" ? format(x, true, seen, d) : f(x); };
+    var f = function (x) { return format(x, sortAll, seen, d, cap); };
+    var q = function (x) { return typeof x === "string" ? format(x, true, seen, d, cap) : f(x); };
     var wrap = function (open, items, close) { return items.length ? open + " " + items.join(", ") + " " + close : open + close; };
     if (Array.isArray(v)) {
       var items = [];
-      for (var i = 0; i < v.length && i < 1000; i++) items.push(i in v ? f(v[i]) : "<empty>");
-      if (v.length > 1000) items.push("… " + (v.length - 1000) + " more");
+      for (var i = 0; i < v.length && i < cap; i++) items.push(i in v ? f(v[i]) : "<empty>");
+      if (v.length > cap) items.push("… " + (v.length - cap) + " more");
       if (sortAll) items.sort();
       return wrap("[", items, "]");
     }
@@ -66,13 +69,25 @@ const RUNTIME = String.raw`
       return "Set(" + v.size + ") " + wrap("{", s, "}");
     }
     if (v instanceof Error) return v.name + ": " + v.message;
-    if (ArrayBuffer.isView(v)) return v.constructor.name + "(" + v.length + ") " + wrap("[", Array.prototype.slice.call(v, 0, 1000).map(String), "]");
+    if (ArrayBuffer.isView(v)) return v.constructor.name + "(" + v.length + ") " + wrap("[", Array.prototype.slice.call(v, 0, cap).map(String), "]");
     var proto = Object.getPrototypeOf(v);
     var name = proto && proto.constructor && proto.constructor !== Object ? proto.constructor.name + " " : "";
     var keys = Object.keys(v);
     if (sortAll) keys.sort();
     var body = keys.map(function (k) { return k + ": " + f(v[k]); });
     return name + wrap("{", body, "}");
+  }
+
+  // A test result: value is shown to the learner, key is what gets compared. A string is
+  // always quoted, so returning "5" never matches returning 5.
+  function result(call, v, unordered) {
+    var shown = function (limit) {
+      return typeof v === "string" ? format(v, true, null, 0, limit) : format(v, unordered, null, 0, limit);
+    };
+    var full = shown(Infinity);
+    var h = 2166136261;
+    for (var i = 0; i < full.length; i++) h = Math.imul(h ^ full.charCodeAt(i), 16777619) >>> 0;
+    return { call: call, value: shown(1000), key: full.length + ":" + h, threw: false };
   }
 
   function lineOf(err) {
@@ -102,9 +117,10 @@ const RUNTIME = String.raw`
     }
     for (var i = 0; i < thunks.length; i++) {
       try {
-        out.results.push({ call: tests[i], value: format(thunks[i](), unordered, null, 0), threw: false });
+        out.results.push(result(tests[i], thunks[i](), unordered));
       } catch (err) {
-        out.results.push({ call: tests[i], value: err instanceof Error ? err.name : "Error", threw: true });
+        var name = err instanceof Error ? err.name : "Error";
+        out.results.push({ call: tests[i], value: name, key: name, threw: true });
       }
     }
     return JSON.stringify(out);
@@ -132,12 +148,15 @@ export function gradeJs(exec: Exec, code: string, check: JsCheck): JsVerdict {
   if (output.error) {
     return { correct: false, output, passed: 0, total, message: "Your code hit an error before the tests could run, so fix that first." };
   }
-  const bad = output.results.findIndex((r, i) => r.value !== ref.results[i].value || r.threw !== ref.results[i].threw);
-  const passed = output.results.filter((r, i) => r.value === ref.results[i].value && r.threw === ref.results[i].threw).length;
+  const same = (r: CallResult, i: number) => r.key === ref.results[i].key && r.threw === ref.results[i].threw;
+  const bad = output.results.findIndex((r, i) => !same(r, i));
+  const passed = output.results.filter((r, i) => same(r, i)).length;
   if (bad < 0) return { correct: true, output, passed, total, message: `All ${total} tests pass.` };
   const mine = output.results[bad];
   const want = ref.results[bad];
-  const show = (r: CallResult) => (r.threw ? `an error (${r.value})` : r.value);
+  // The shown values are cut at 1000 items, so two different results can look the same.
+  const show = (r: CallResult) =>
+    r.threw ? `an error (${r.value})` : r.value === want.value && r !== want ? `${r.value} (it differs after the part shown)` : r.value;
   return {
     correct: false,
     output,

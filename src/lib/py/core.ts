@@ -12,7 +12,7 @@ export type PyCheck = { tests: string[]; solution: string; unordered?: boolean; 
 
 export type PyError = { message: string; line?: number; trace?: string };
 
-export type CallResult = { call: string; value: string; threw: boolean };
+export type CallResult = { call: string; value: string; key: string; threw: boolean };
 
 export type PyRunOutput = { logs: string[]; error?: PyError; results: CallResult[] };
 
@@ -33,12 +33,14 @@ const MAX_LOG_CHARS = 2000;
 const HARNESS = String.raw`
 import builtins, contextlib, importlib, io, json, linecache, os, shutil, sys, tempfile, time, traceback
 
-def _mp_fmt(v, unordered=False, depth=0):
+def _mp_fmt(v, unordered=False, depth=0, canon=False):
+    # canon=True gives the form used for comparing results: dictionaries are compared like
+    # Python's ==, which ignores the order keys were added in.
     if depth > 30:
         return "..."
     d = depth + 1
     if isinstance(v, (list, tuple)):
-        items = [_mp_fmt(x, unordered, d) for x in v]
+        items = [_mp_fmt(x, unordered, d, canon) for x in v]
         if unordered:
             items.sort()
         inner = ", ".join(items)
@@ -46,11 +48,11 @@ def _mp_fmt(v, unordered=False, depth=0):
             return "[" + inner + "]"
         return "(" + inner + ("," if len(items) == 1 else "") + ")"
     if isinstance(v, (set, frozenset)):
-        items = sorted(_mp_fmt(x, unordered, d) for x in v)
+        items = sorted(_mp_fmt(x, unordered, d, canon) for x in v)
         return "{" + ", ".join(items) + "}" if items else "set()"
     if isinstance(v, dict):
-        items = [_mp_fmt(k, unordered, d) + ": " + _mp_fmt(x, unordered, d) for k, x in v.items()]
-        if unordered:
+        items = [_mp_fmt(k, unordered, d, canon) + ": " + _mp_fmt(x, unordered, d, canon) for k, x in v.items()]
+        if unordered or canon:
             items.sort()
         return "{" + ", ".join(items) + "}"
     return repr(v)
@@ -162,9 +164,15 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
                         local = dict(ns)
                         exec(compile(t, "<test>", "exec"), local)
                         value = local["result"]
-                    out["results"].append({"call": t, "value": _mp_fmt(value, unordered), "threw": False})
+                    out["results"].append({
+                        "call": t,
+                        "value": _mp_fmt(value, unordered),
+                        "key": _mp_fmt(value, unordered, canon=True),
+                        "threw": False,
+                    })
                 except BaseException as e:
-                    out["results"].append({"call": t, "value": type(e).__name__, "threw": True})
+                    name = type(e).__name__
+                    out["results"].append({"call": t, "value": name, "key": name, "threw": True})
     finally:
         sys.settrace(None)
         sys.stdout, sys.stderr = old_out, old_err
@@ -233,7 +241,7 @@ export async function gradePy(py: PyodideLike, code: string, check: PyCheck, lim
   if (output.error) {
     return { correct: false, output, passed: 0, total, message: "Your code hit an error before the tests could run, so fix that first." };
   }
-  const same = (r: CallResult, i: number) => r.value === ref.results[i].value && r.threw === ref.results[i].threw;
+  const same = (r: CallResult, i: number) => r.key === ref.results[i].key && r.threw === ref.results[i].threw;
   const bad = output.results.findIndex((r, i) => !same(r, i));
   const passed = output.results.filter((r, i) => same(r, i)).length;
   if (bad < 0) return { correct: true, output, passed, total, message: `All ${total} tests pass.` };

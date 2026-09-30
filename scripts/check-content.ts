@@ -57,6 +57,10 @@ async function main() {
         if (!bases.has(t.engine.key)) bases.set(t.engine.key, await makeBase(t.engine.setup));
         lessonBase = bases.get(t.engine.key)!;
         for (const [i, step] of t.lesson.steps.entries()) {
+          if (step.kind === "code") {
+            fail(`${t.key} lesson step ${i + 1}`, 'a SQL course uses "try" steps, not "code" (JavaScript/Python) steps');
+            continue;
+          }
           if (step.kind !== "try") continue;
           const where = `${t.key} lesson step ${i + 1}`;
           const out = await runInput(await fresh(), step.sql);

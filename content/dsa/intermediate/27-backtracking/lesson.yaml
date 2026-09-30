@@ -144,10 +144,10 @@ steps:
       }
     unordered: true
     tests:
-      - "permutations([1, 2, 3])"
-      - "permutations([0, 1])"
-      - "permutations([1])"
-      - "permutations([])"
+      - "permutations([1, 2, 3]).map((p) => p.join(','))"
+      - "permutations([0, 1]).map((p) => p.join(','))"
+      - "permutations([1]).map((p) => p.join(','))"
+      - "permutations([]).map((p) => p.join(','))"
       - "permutations([4, 5, 6, 7]).length"
     solution: |
       function permutations(nums) {
@@ -176,6 +176,12 @@ steps:
       - |
         function permutations(nums) {
           return [nums];
+        }
+      - |
+        function permutations(nums) {
+          const reversed = [...nums].reverse();
+          const count = nums.reduce((total, _, i) => total * (i + 1), 1);
+          return Array.from({ length: count }, () => [...reversed]);
         }
 
   - kind: code
@@ -275,11 +281,11 @@ steps:
       }
     unordered: true
     tests:
-      - "partition('aab')"
-      - "partition('a')"
-      - "partition('abba')"
-      - "partition('abc')"
-      - "partition('')"
+      - "partition('aab').map((pieces) => pieces.join('|'))"
+      - "partition('a').map((pieces) => pieces.join('|'))"
+      - "partition('abba').map((pieces) => pieces.join('|'))"
+      - "partition('abc').map((pieces) => pieces.join('|'))"
+      - "partition('').map((pieces) => pieces.join('|'))"
     solution: |
       function partition(s) {
         const result = [];

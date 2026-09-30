@@ -23,6 +23,19 @@ function shuffled<T>(items: T[]) {
   return a;
 }
 
+// Deterministic shuffle: a small hash of `seed` drives a linear congruential generator.
+function seededShuffle<T>(items: T[], seed: string) {
+  let h = 2166136261;
+  for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  const a = [...items];
+  for (let i = a.length - 1; i > 0; i--) {
+    h = (Math.imul(h, 1664525) + 1013904223) >>> 0;
+    const j = h % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export function QuizPlayer({
   topicKey,
   title,
@@ -50,6 +63,16 @@ export function QuizPlayer({
   const order = useMemo(
     () => (round === 0 ? questions.map((_, i) => i) : shuffled(questions.map((_, i) => i))),
     [round, questions],
+  );
+  // Each question's options in the order shown, so the answer's position is never a clue.
+  // The shuffle is seeded by quiz, question and retake: the same on the server and in the browser,
+  // and different on every retake. `choice` stays an index into q.options, so grading is unchanged.
+  const optionOrder = useMemo(
+    () =>
+      questions.map((q, n) =>
+        q.type === "fill" ? [] : seededShuffle(q.options.map((_, i) => i), `${topicKey}#${n}#${round}`),
+      ),
+    [questions, topicKey, round],
   );
   const [pos, setPos] = useState(0);
   const [choice, setChoice] = useState<number | null>(null);
@@ -164,7 +187,8 @@ export function QuizPlayer({
           />
         ) : (
           <div className="mt-5 space-y-2">
-            {q.options.map((opt, i) => {
+            {optionOrder[order[pos]].map((i, shownAt) => {
+              const opt = q.options[i];
               const picked = choice === i;
               const state = !checked ? (picked ? "picked" : "idle") : i === q.answer ? "right" : picked ? "wrong" : "idle";
               return (
@@ -181,7 +205,7 @@ export function QuizPlayer({
                           : "border-border hover:bg-subtle"
                   }`}
                 >
-                  <span className="mt-0.5 font-mono text-xs text-muted">{String.fromCharCode(65 + i)}</span>
+                  <span className="mt-0.5 font-mono text-xs text-muted">{String.fromCharCode(65 + shownAt)}</span>
                   <span className={q.type === "predict" ? "font-mono whitespace-pre-wrap" : ""}>{opt}</span>
                 </button>
               );

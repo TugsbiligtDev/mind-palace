@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/copy-pglite.mjs && next dev",
-    "build": "node scripts/copy-pglite.mjs && tsx scripts/check-content.ts && next build",
+    "build": "node scripts/copy-pglite.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "check:content": "tsx scripts/check-content.ts"

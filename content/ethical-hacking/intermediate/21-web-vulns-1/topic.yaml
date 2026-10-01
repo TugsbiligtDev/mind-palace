@@ -1,0 +1,4 @@
+title: "Common Web Vulnerabilities I"
+module: 21
+summary: "The injection family: SQL injection, cross-site scripting (XSS) and command injection. How each works, how to spot it in your lab, and — the part that matters most — how to prevent it."
+minutes: 45

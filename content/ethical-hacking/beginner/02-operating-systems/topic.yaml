@@ -1,0 +1,4 @@
+title: "Operating Systems Overview"
+module: 2
+summary: "Windows, Linux and macOS compared; how filesystems are laid out; users, permissions and the all-powerful root/admin account; and why Linux is the offensive security standard."
+minutes: 25

@@ -1,0 +1,101 @@
+steps:
+  - kind: explain
+    title: Seeing the invisible
+    body: |
+      A network is invisible until you ask it questions. This module is the small kit of commands that answer "is that machine alive?", "what route does my traffic take?", "what is my own machine doing on the network?", and finally "what do the packets themselves actually say?"
+
+      These are **diagnostic** tools — the same ones network administrators use all day. Running them against your own machine, or doing a simple reachability check to a public host, is ordinary and harmless. Pointing them at someone else's network *in bulk* starts to look like scanning, which needs authorisation. We will stay firmly on the safe side here.
+
+  - kind: explain
+    title: ping — is it alive?
+    body: |
+      `ping` sends a tiny "are you there?" message (an ICMP echo) and times the reply:
+
+      ```
+      ping -c 3 example.com
+      ```
+
+      `-c 3` sends just three and stops (otherwise it runs forever). A reply means the host is reachable and tells you the round-trip time in milliseconds. **No reply does not always mean "down"** — many machines are configured to ignore ping while still running services. That caveat is itself a lesson: absence of an answer is not proof of absence.
+
+  - kind: explain
+    title: traceroute — the path taken
+    body: |
+      `traceroute example.com` shows every router (**hop**) your packets pass through on the way to a destination, with the time to each. You watch the journey leave your home router, cross your ISP, and travel the internet one hop at a time — exactly the router-to-router trip from Module 6, made visible.
+
+      For a tester, traceroute hints at network structure: where a firewall sits, where traffic enters an organisation, which hops stop responding. It is reconnaissance you can do with a single, ordinary command.
+
+  - kind: explain
+    title: Knowing your own machine — ip / ifconfig
+    body: |
+      Before you look outward, know yourself. These show your own addresses and network settings:
+
+      - `ip addr` (modern Linux) or `ifconfig` (macOS and older Linux) — your IP and MAC addresses on each interface
+      - `ip route` or `netstat -rn` — your routing table, including your **default gateway** (the router that is your door to everything else)
+
+      On an engagement, the very first network question after landing on a machine is "what network am I actually on, and what is my gateway?" — because that defines what else you can reach.
+
+  - kind: explain
+    title: What am I connected to — netstat / ss
+    body: |
+      `netstat` (and its faster Linux cousin `ss`) lists your machine's own network connections and listening ports:
+
+      - `netstat -an` — every connection and listening port, numeric
+      - `ss -tlnp` (Linux) — listening TCP ports and the program behind each
+
+      This is how you answer "what services is *this* machine exposing, and what is it talking to?" During post-exploitation it reveals listening services you might pivot through and connections that hint at other machines — all from the inside.
+
+  - kind: explain
+    title: Asking DNS directly — dig / nslookup
+    body: |
+      You met these in Module 7. To recap their place in the kit:
+
+      - `dig example.com` — a detailed DNS answer; `dig +short example.com` for just the address
+      - `dig mx example.com` — the mail servers; `dig ns example.com` — the name servers
+      - `nslookup example.com` — a simpler, cross-platform equivalent
+
+      Querying public DNS records is just reading what an organisation has chosen to publish, which is why it is the gentle opening move of reconnaissance.
+
+  - kind: mac
+    title: Run the whole kit on your own machine
+    body: |
+      Every command here is safe: you look at your own settings, do a 3-packet reachability check, and trace a route to a documentation host (`example.com` is reserved precisely for examples). Read each answer.
+    commands: |
+      ifconfig | head -40
+      netstat -rn | head
+      ping -c 3 example.com
+      traceroute example.com
+  - kind: explain
+    title: Reading real packets — Wireshark
+    body: |
+      The commands above summarise the network. **Wireshark** shows you the raw conversation, packet by packet. It is a **packet capture** tool: it records the frames flowing past a network interface and lets you read them in a readable, colour-coded list.
+
+      Three skills make Wireshark useful rather than overwhelming:
+
+      - **Capture** on the right interface (your Wi-Fi or Ethernet, or a lab interface).
+      - **Filter**, so you see only what matters: type `http` to see web traffic, `dns` for lookups, `ip.addr == 192.168.1.10` for one machine, `tcp.port == 443` for one port.
+      - **Follow a stream** (right-click a packet → Follow → TCP Stream) to reassemble a whole conversation into one readable window.
+
+  - kind: explain
+    title: Why capturing is powerful — and sensitive
+    body: |
+      Wireshark reveals a hard truth: traffic sent over **plain HTTP, FTP or Telnet travels in cleartext**. Capture it and you can read the usernames, passwords and pages directly. That single demonstration is the most persuasive argument for encryption you will ever give a client — and the reason HTTPS, SSH and VPNs exist.
+
+      Because of that power, capturing is sensitive. On a shared or public network you may record other people's data, so you only capture on **networks you own or are explicitly authorised to monitor** — your own lab being the obvious safe choice. The tool is neutral; the permission is what makes its use legitimate.
+
+  - kind: info
+    title: "🔹 tcpdump, the terminal twin"
+    body: |
+      Wireshark is the graphical tool; **`tcpdump`** does the same capture from the command line, which is invaluable on a remote server with no screen. `sudo tcpdump -i eth0 port 80` captures web traffic on one interface. Many testers capture with `tcpdump` on the target and read the file in Wireshark later. Same idea, different front door.
+
+  - kind: why
+    body: |
+      These are the tools you reach for every single day: to confirm a host is up, to understand a network's shape, to see what a machine exposes, and to prove exactly what is crossing the wire. And the Wireshark lesson — that unencrypted traffic is readable by anyone in the path — is one you will spend the rest of the course helping people defend against.
+
+  - kind: recap
+    body: |
+      - **`ping`** checks reachability (`-c 3` to limit); no reply ≠ definitely down.
+      - **`traceroute`** reveals the router-by-router path, hinting at network structure and firewalls.
+      - **`ip addr`/`ifconfig`** show your own addresses; **`ip route`/`netstat -rn`** show your default **gateway**.
+      - **`netstat`/`ss`** list your machine's connections and listening ports.
+      - **`dig`/`nslookup`** query DNS directly.
+      - **Wireshark** captures and reads raw packets — **capture**, **filter** (`http`, `dns`, `ip.addr ==`), **follow a stream**. Cleartext protocols expose credentials, so only capture on networks you are authorised to monitor.

@@ -1,0 +1,4 @@
+title: "Common Web Vulnerabilities II"
+module: 22
+summary: "Logic and access flaws: broken authentication and sessions, IDOR and broken access control, insecure file upload, SSRF and CSRF, with a brief look at XXE — and the fix for each."
+minutes: 45

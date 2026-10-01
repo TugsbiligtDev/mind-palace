@@ -1,0 +1,101 @@
+steps:
+  - kind: explain
+    title: One more time, before we exploit anything
+    body: |
+      This module is about turning a known vulnerability into access. Everything here is practised **only against the deliberately-vulnerable target in your own isolated lab** (your Beginner capstone) or a range that has authorised you. Running any of this against a system you do not own is the crime Module 12 described — the techniques are identical, only authorisation makes them legal. Keep that front of mind for the rest of the Assessment.
+
+      With that settled: **exploitation** is the phase where a weakness you found and verified is used to gain a foothold. In a well-run test it is a small, careful step — most of the work was the recon and enumeration that told you exactly where to aim.
+
+  - kind: explain
+    title: What Metasploit is
+    body: |
+      **Metasploit** is a framework that organises exploitation into a consistent workflow. Instead of hunting down, compiling and debugging a different piece of exploit code for every vulnerability, you load a ready, tested **module** and fill in a few settings. You drive it from a console called **msfconsole**.
+
+      Its value is consistency. Thousands of exploits, payloads and helper tools all share the same handful of commands, so once you learn the workflow you can work with any of them. It is also why Metasploit is the standard teaching tool: the concepts it makes explicit — exploit, payload, listener, session — are the concepts of exploitation everywhere.
+
+  - kind: explain
+    title: The three pieces — exploit, payload, listener
+    body: |
+      Every Metasploit action is built from three ideas. Understanding them is understanding exploitation itself:
+
+      - **Exploit** — the code that abuses a specific vulnerability to get the target to run something it should not. It is the *way in* (one exploit per flaw, e.g. a module for a particular CVE).
+      - **Payload** — *what runs* on the target once the exploit succeeds. Commonly it opens a connection back to you so you get a shell. The payload is the goal; the exploit is just the delivery.
+      - **Listener** (the handler) — the part *on your machine* that waits for the payload to connect back and catches the session.
+
+      A useful picture: the exploit is picking the lock, the payload is what you do once the door opens, and the listener is you standing ready to walk through. Miss any one and nothing happens.
+
+  - kind: explain
+    title: Bind vs. reverse connections
+    body: |
+      Payloads connect in one of two directions, and knowing which to use is half of making exploitation work:
+
+      - A **bind** shell opens a listening port *on the target* and you connect in. Simple, but a firewall usually blocks inbound connections to the target.
+      - A **reverse** shell makes the *target* connect out to *you*. This is preferred, because outbound connections are far more often allowed through firewalls than inbound ones.
+
+      That single fact — outbound is usually permitted, inbound usually blocked — explains why reverse connections dominate real-world exploitation, and why egress filtering (restricting *outbound* traffic) is such an effective defence that most networks neglect.
+
+  - kind: explain
+    title: The workflow, step by step
+    body: |
+      The msfconsole workflow is the same every time, which is the whole point:
+
+      1. **`search`** for a module matching the vulnerability you verified (by CVE, product or name).
+      2. **`use`** the chosen exploit module.
+      3. **`show options`** to see what it needs, then **`set`** them — typically `RHOSTS` (the target, *in your lab*), the payload, and `LHOST`/`LPORT` (your listener's address and port).
+      4. **`check`** (where supported) to test whether the target looks vulnerable, *without* firing.
+      5. **`exploit`** / **`run`** to launch — the listener is set up automatically and catches the session if it works.
+
+      Notice how much is just configuration. The thinking happened earlier, in choosing the right module for a verified flaw and setting honest, in-scope targets.
+
+  - kind: explain
+    title: Meterpreter — a session, not just a shell
+    body: |
+      When an exploit succeeds, you often get a **Meterpreter** session: an advanced, in-memory payload that gives you a rich command set beyond a plain shell. Conceptually it offers things like:
+
+      - `sysinfo` — what machine am I on?
+      - `getuid` — which user am I running as? (the start of thinking about privilege escalation, Module 24)
+      - file access, and `help` to list what is available.
+
+      Meterpreter runs in memory and avoids writing much to disk, which is part of why it is effective — and part of why defenders invest in memory-aware detection (EDR, an Advanced topic). For now, the point is that a successful exploit lands you in a *session* from which the next phase, post-exploitation, begins.
+
+  - kind: explain
+    title: Why exploits fail — the common mistakes
+    body: |
+      Beginners assume a failed exploit means the target is not vulnerable. Far more often it is a configuration mistake:
+
+      - **Wrong architecture** — a 64-bit payload against a 32-bit target (or vice versa). Match them.
+      - **Wrong payload type** — a reverse payload when only a bind works for that target, or a mismatch with the OS.
+      - **LHOST set wrong** — your listener address points somewhere the target cannot reach, so the session never comes back.
+      - **A firewall** quietly dropping the connection.
+
+      The discipline is to change one variable at a time and read the errors, exactly like debugging code. "It failed" is the start of troubleshooting, not a conclusion.
+
+  - kind: info
+    title: "🔹 Metasploit is a learning scaffold, not a crutch"
+    body: |
+      Point-and-shoot exploitation is convenient, but the certifications that matter (like the OSCP) deliberately *limit* Metasploit use, because they want to see that you understand what is happening underneath — reading an exploit, adapting it, catching a shell by hand. Use Metasploit to learn the concepts cleanly, then make sure you can also do it without it. A tool you do not understand will fail you the moment it does not fit.
+
+  - kind: explain
+    title: The defender's view
+    body: |
+      Every part of this module points at a defence:
+
+      - **Patch** — the exploit targets a known flaw; a patched target has no door to pick.
+      - **Egress filtering** — restricting outbound traffic breaks reverse shells, the most common payload delivery.
+      - **EDR and memory detection** — catch in-memory payloads like Meterpreter.
+      - **Least privilege** — if the foothold lands as a limited user, the damage is contained until the attacker also wins privilege escalation.
+
+      A tester demonstrates the exploit so the client *feels* the risk, then hands them exactly these fixes.
+
+  - kind: why
+    body: |
+      Exploitation is the phase people picture when they think "hacking," but you can now see it in proportion: a short, careful step that depends entirely on good recon, honest verification and correct configuration — and that lands you in a session where the real work (post-exploitation and privilege escalation) begins. Understanding exploit/payload/listener cleanly here makes every later tool, in Metasploit or not, make sense.
+
+  - kind: recap
+    body: |
+      - Practise exploitation **only** in your own lab or an authorised range — authorisation is the whole difference.
+      - **Metasploit** standardises exploitation into a repeatable workflow driven from **msfconsole**.
+      - Three pieces: **exploit** (picks the lock, one per flaw), **payload** (what runs on the target), **listener/handler** (catches the session on your machine).
+      - **Reverse** connections (target connects out to you) beat **bind** because outbound traffic is usually allowed — which is why **egress filtering** is a strong defence.
+      - Workflow: `search → use → set options (RHOSTS/payload/LHOST) → check → exploit`; success often yields a **Meterpreter** session.
+      - Failures are usually **configuration** (architecture, payload type, LHOST, firewall), not "not vulnerable." Defences: patch, egress filtering, EDR, least privilege.

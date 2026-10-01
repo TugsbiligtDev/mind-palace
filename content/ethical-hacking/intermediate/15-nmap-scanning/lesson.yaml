@@ -1,0 +1,94 @@
+steps:
+  - kind: explain
+    title: From passive to active
+    body: |
+      You have mapped the target from the outside without touching it. Now you step over the line into **active** reconnaissance: you send packets *to the target* and read what comes back. This is the moment authorisation starts to matter for every action — you only scan what your scope allows, nothing more.
+
+      The tool for this is **Nmap** (Network Mapper), the most widely used scanner in the world. At heart it does something you already understand: it probes ports using the TCP handshake from Module 7 and reports which are open and what is behind them.
+
+  - kind: explain
+    title: What a scan actually asks
+    body: |
+      Recall the handshake. Nmap sends a **SYN** to a port and interprets the reply:
+
+      - **SYN-ACK** back → the port is **open** (a service is listening).
+      - **RST** back → the port is **closed** (nothing listening).
+      - **no reply** → **filtered** (a firewall is likely dropping the probe silently).
+
+      That third state is new and important: "filtered" means something is actively blocking you, which is itself information about the target's defences. Running this probe across many ports and hosts, quickly and reliably, is all Nmap is doing.
+
+  - kind: explain
+    title: Host discovery first
+    body: |
+      Before scanning ports, you find which hosts in a range are alive. `nmap -sn 10.10.50.0/24` does a **ping sweep** — no port scan, just "who is home?" across the whole subnet (CIDR from Module 6 in action).
+
+      A caution you already know: some hosts ignore ping but still run services. On an internal test you often skip discovery and scan suspected hosts directly (`-Pn`, "treat as up"), because "no ping reply" is not "not there."
+
+  - kind: explain
+    title: The scan types you will use
+    body: |
+      A few Nmap modes cover most work:
+
+      | Command | What it does |
+      |---|---|
+      | `nmap <target>` | the default: a quick TCP scan of the 1,000 most common ports |
+      | `nmap -p- <target>` | **all 65,535 TCP ports** (slower, but thorough — services hide on odd ports) |
+      | `nmap -sU <target>` | a **UDP** scan (DNS, SNMP, etc.; slow because UDP gives no clean confirmation) |
+      | `nmap -sS <target>` | a **SYN** scan (the fast default when run as root) |
+
+      The lesson from `-p-`: a scan of only common ports misses a service deliberately moved to port 8443 or 2222. Thoroughness is a choice between speed and completeness, and you make it consciously.
+
+  - kind: explain
+    title: The two flags that change everything — -sV and -O
+    body: |
+      Knowing a port is open is thin. Knowing *what* and *which version* is the whole game:
+
+      - **`-sV`** (service/version detection): Nmap talks to each open port and identifies the software and version — `OpenSSH 8.2`, `Apache 2.4.49`, `vsftpd 2.3.4`. This is the single most valuable flag, because a version is what you look up for known vulnerabilities (next module).
+      - **`-O`** (OS detection): Nmap guesses the operating system from subtle differences in how the host responds.
+
+      A common, practical combination is `nmap -sC -sV <target>`: version detection plus a set of safe default scripts. The output — ports, services, versions, OS — is the raw material for everything that follows.
+
+  - kind: explain
+    title: The Nmap Scripting Engine (NSE)
+    body: |
+      Nmap is not just a port scanner; it runs **scripts**. The **NSE** has hundreds, grouped by category: `default` (safe, informative), `discovery`, `vuln` (checks for specific known vulnerabilities), `auth`, and more.
+
+      - `nmap -sC <target>` runs the safe default set.
+      - `nmap --script vuln <target>` checks for a range of known weaknesses.
+      - Scripts can grab SMB shares, enumerate DNS, test for specific CVEs, and more.
+
+      Be deliberate: some scripts are intrusive or can crash fragile services. On an engagement you choose scripts knowingly and note which you ran — part of testing responsibly.
+
+  - kind: explain
+    title: Timing, noise, and being a good guest
+    body: |
+      Nmap has timing templates from `-T0` (paranoid, glacial) to `-T5` (insane, very fast and loud). `-T4` is a common balance on a test network. Two reasons timing matters:
+
+      - **Reliability:** scanning too fast can miss ports or overwhelm a weak device. A full, aggressive scan *can* disrupt fragile systems — which is exactly why rules of engagement often restrict it and why you avoid it on production without permission.
+      - **Detection:** a fast scan is obvious in logs and to intrusion-detection systems. Whether you care depends on the engagement (a stealthy red team cares; a straightforward pentest usually does not).
+
+      Scanning is interacting with someone's systems. Do it within scope, at a sane rate, and record what you did.
+
+  - kind: mac
+    title: Run a real scan — legally
+    body: |
+      `scanme.nmap.org` is run by the Nmap project expressly so people can practise scanning it. It is the one public host you may scan without arranging your own authorisation. (Install Nmap with `brew install nmap` if needed, or run these from Kali.) Read the open ports, then the detected versions.
+    commands: |
+      nmap scanme.nmap.org
+      nmap -sV scanme.nmap.org
+  - kind: info
+    title: "🔹 Save your output"
+    body: |
+      Always save scans — you will refer back constantly and you need them for the report. `nmap -sC -sV -oA scan_target <target>` writes the results in three formats at once (normal, greppable, XML). The XML can be imported into other tools. "Scan once, read many times" keeps you from re-scanning (and re-alerting the target) just to recheck a detail.
+
+  - kind: why
+    body: |
+      Nmap is the hinge between knowing a target exists and knowing how to approach it. Its version output feeds directly into vulnerability assessment (Module 17), its open-port list drives service enumeration (Module 16), and its OS detection shapes which exploitation and privilege-escalation paths you will consider. Nearly every engagement, and every certification exam, leans on reading an Nmap scan correctly.
+
+  - kind: recap
+    body: |
+      - **Nmap** probes ports via the TCP handshake: SYN-ACK = **open**, RST = **closed**, silence = **filtered** (a firewall).
+      - **Host discovery** (`-sn`) finds live hosts; `-Pn` scans hosts that ignore ping; `-p-` covers all 65,535 ports.
+      - **`-sV`** (version detection) is the most valuable flag — versions feed vulnerability lookups; **`-O`** guesses the OS; `-sC -sV` is a common combo.
+      - The **NSE** runs scripts (`default`, `vuln`, …) — powerful but sometimes intrusive, so choose and record them.
+      - **Timing** (`-T0`–`-T5`) trades speed against reliability and detection; scanning is interacting, so stay in scope and save output (`-oA`).

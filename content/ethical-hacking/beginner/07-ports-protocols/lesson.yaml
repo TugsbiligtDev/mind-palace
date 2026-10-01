@@ -1,0 +1,88 @@
+steps:
+  - kind: explain
+    title: One address, many doors
+    body: |
+      An IP address gets a packet to the right *machine*. But a machine runs many services at once — a web server, email, remote login. How does the packet reach the right *program*? Through a **port**: a number from 0 to 65535 that acts like a numbered door on the building.
+
+      So a full destination is an address *and* a port: `192.168.1.10:443` means "machine .10, door 443 (the web server)." The core of scanning, which you will learn in Intermediate, is simply: **which doors are open, and what is standing behind each one?**
+
+  - kind: explain
+    title: TCP vs. UDP
+    body: |
+      Two transport protocols carry almost everything, and they make opposite trade-offs:
+
+      | | **TCP** | **UDP** |
+      |---|---|---|
+      | Style | Connection first, like a phone call | Fire and forget, like a postcard |
+      | Reliable? | Yes — resends lost data, keeps order | No — fast, but may lose or reorder |
+      | Used for | Web, email, SSH, file transfer | DNS lookups, video calls, games |
+
+      TCP trades speed for reliability; UDP trades reliability for speed. This difference even changes how you *scan*: because UDP never confirms a connection, UDP scans are slower and less certain than TCP scans.
+
+  - kind: explain
+    title: The TCP three-way handshake
+    body: |
+      Before TCP sends any data, the two machines shake hands in three steps:
+
+      1. **SYN** — the client: "Can we talk? (synchronise)"
+      2. **SYN-ACK** — the server: "Yes, and acknowledged."
+      3. **ACK** — the client: "Acknowledged. Let's go."
+
+      Only then does real data flow. This handshake is not trivia — it is the basis of port scanning. A scanner sends a SYN; a **SYN-ACK** back means the port is **open**, while a **RST** (reset) means it is **closed**. Understanding these three packets is understanding how a scanner "sees" a machine.
+
+  - kind: explain
+    title: The ports worth memorising
+    body: |
+      Ports 0–1023 are the **well-known** ports, each tied by convention to a service. These are the ones you will recognise on sight for the rest of your career:
+
+      | Port | Service | What it is |
+      |---|---|---|
+      | 20, 21 | FTP | File transfer (old, often cleartext) |
+      | 22 | SSH | Secure remote login/shell |
+      | 25 | SMTP | Sending email |
+      | 53 | DNS | Name-to-address lookups |
+      | 80 | HTTP | Web (unencrypted) |
+      | 443 | HTTPS | Web (encrypted) |
+      | 445 | SMB | Windows file sharing |
+      | 3389 | RDP | Windows remote desktop |
+
+      When a scan reports "22 open, 80 open, 445 open," you already have a story: a Linux-ish box with SSH and a website, plus Windows file sharing. Each open port is a possible way in and a thing to investigate.
+
+  - kind: explain
+    title: DNS — names into addresses
+    body: |
+      People remember `example.com`; machines route to `93.184.216.34`. **DNS** (Domain Name System) is the phone book that translates one to the other. When you type a name, your computer asks a **DNS resolver**, which walks a hierarchy of servers until it finds the address, then caches the answer for next time.
+
+      DNS matters to a tester twice over. First, it is **reconnaissance gold**: the names and addresses an organisation publishes (subdomains like `mail.`, `vpn.`, `dev.`) map out its estate before you send a single packet at it (Module 14). Second, DNS itself can be attacked or misconfigured. For now: DNS turns names into IP addresses, usually over UDP port 53.
+
+  - kind: mac
+    title: Watch DNS resolve a name
+    body: |
+      Totally safe — a DNS lookup is a public question anyone's computer asks constantly. `dig` asks the DNS system to resolve a name and shows you the answer.
+    commands: |
+      dig example.com
+      dig +short example.com
+      nslookup example.com
+  - kind: explain
+    title: DHCP — settings on arrival
+    body: |
+      When a device joins a network, how does it get an IP address, a router to use, and a DNS server? Usually it does not ask a human — **DHCP** (Dynamic Host Configuration Protocol) hands them out automatically. The device broadcasts "I'm new here, can someone configure me?" and a DHCP server leases it an address and the settings to go with it.
+
+      For you this explains two things: why your laptop "just works" on a new Wi-Fi network, and why addresses on a network can change over time (leases expire). On an internal engagement, the DHCP range also hints at how big the network is meant to be.
+
+  - kind: info
+    title: "🔹 Ports can be moved"
+    body: |
+      Services usually sit on their standard port, but an administrator *can* move them — SSH on 2222 instead of 22, a website on 8080 instead of 80. This is why a good scan checks many ports, not just the famous ones, and why a tool that reports the *service* it actually found (not just the port number) is so valuable. Moving a port is mild obscurity, not real security.
+
+  - kind: why
+    body: |
+      The whole scanning-and-enumeration phase is built on this module. A scanner works by probing ports and reading the handshake responses; your first read of the results is "which well-known ports are open, so which services exist?"; and DNS is where reconnaissance begins. Know the handshake and the port table cold and Intermediate will feel like reading, not decoding.
+
+  - kind: recap
+    body: |
+      - A **port** (0–65535) is a numbered door on a machine; a destination is `address:port`.
+      - **TCP** is reliable and connection-based (web, SSH, email); **UDP** is fast and connectionless (DNS, video).
+      - TCP opens with the **three-way handshake** (SYN → SYN-ACK → ACK); a SYN-ACK means a port is **open**, a RST means **closed** — the basis of scanning.
+      - Memorise the well-known ports: **22** SSH, **80** HTTP, **443** HTTPS, **53** DNS, **445** SMB, **3389** RDP, **21** FTP, **25** SMTP.
+      - **DNS** turns names into addresses (and is recon gold); **DHCP** auto-assigns a device's address and settings when it joins.

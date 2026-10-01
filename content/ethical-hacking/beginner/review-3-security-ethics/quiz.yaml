@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: A friend asks you to "take a look" at their employer's website for holes. There is no written permission. What is the right response?
+    options:
+      - Do it quietly — they asked, so it is fine
+      - Decline until proper written authorization from someone with authority is in place, or help them arrange it
+      - Do it but only report the findings to your friend
+      - Scan it passively only, which needs no permission
+    answer: 1
+    explanation: A friend's request is not authorization. Without written permission from someone entitled to grant it, any testing is unauthorised access. Help them get it done properly.
+  - type: mcq
+    prompt: Any logged-in user can read others' private messages by changing a number in the URL. Which CIA property is primarily at risk?
+    options:
+      - Availability
+      - Integrity
+      - Confidentiality
+      - None
+    answer: 2
+    explanation: Private data is exposed to people who should not see it — a confidentiality breach, caused by broken access control (authenticated, but authorization not enforced).
+  - type: mcq
+    prompt: You read a company's public DNS records with `whois`, sending nothing to their own servers. Which phase and style is this?
+    options:
+      - Exploitation, active
+      - Reconnaissance, passive
+      - Post-exploitation, active
+      - Reporting
+    answer: 1
+    explanation: Reading published information without touching the target is passive reconnaissance — no footprint in their logs.
+  - type: mcq
+    prompt: "You find a cleartext-HTTP login on a public site and a missing security header on a staff-only internal page. How should you present them?"
+    options:
+      - As equally urgent
+      - Report both, but rank the public cleartext login as higher risk and advise fixing it first
+      - Only report the internal one
+      - Ignore both; they are minor
+    answer: 1
+    explanation: Risk is likelihood × impact. A cleartext login on the public internet is far higher risk than a missing header on a limited internal page. Ranking them is the professional's value.
+  - type: mcq
+    prompt: Which statement correctly uses the vocabulary?
+    options:
+      - "This base64 string is encrypted, so it is secure"
+      - "The user authenticated correctly but reached a page their authorization should have blocked"
+      - "Hashing is reversible with the right key"
+      - "A vulnerability and a risk are the same thing"
+    answer: 1
+    explanation: Authentication is identity; authorization is permission. The others are the classic mistakes — base64 is encoding not encryption, hashing is one-way, and a vulnerability is not the same as the risk it creates.

@@ -1,0 +1,98 @@
+steps:
+  - kind: explain
+    title: The quietest phase
+    body: |
+      Welcome to the Assessment. From here you work a real engagement, in order, against a target you are authorised to test. The first phase is **reconnaissance**, and it begins **passively**: gathering information from public sources *without ever touching the target's systems*.
+
+      Why start here? Because it is invisible — nothing you do appears in the target's logs — and because it is astonishing how much an organisation reveals for free. The more you learn now, the sharper and shorter the noisy active phases will be. Good testers spend real time here; impatient ones skip it and miss the easy way in.
+
+      One reminder before you begin: passive recon reads information people have *already published*. That is lawful almost everywhere. The moment you *interact* with the target (next module), you need to be inside your authorised scope.
+
+  - kind: explain
+    title: OSINT — open-source intelligence
+    body: |
+      **OSINT** is intelligence gathered from publicly available sources: websites, search engines, social media, public records, job postings, code repositories. It is not hacking in the dramatic sense — it is research. But it builds the map everything else hangs on:
+
+      - **People:** names, roles and emails (useful for understanding the org, and for the social-engineering risks you will advise clients about).
+      - **Technology:** what software, cloud providers and frameworks they use — often bragged about in job ads ("must know AWS, Django, Jenkins").
+      - **Infrastructure:** domains, subdomains, IP ranges, mail servers.
+
+      A job posting that lists the exact tech stack is a gift: it tells an attacker what to prepare for before sending a single packet.
+
+  - kind: explain
+    title: WHOIS — who owns this?
+    body: |
+      **WHOIS** looks up the registration record of a domain or IP: when it was registered, by whom (often redacted now for privacy), the registrar, and the name servers. For IP addresses, WHOIS tells you which organisation owns a block and its size.
+
+      It is a pure public-records lookup — you query a registry database, not the target. For a tester it confirms ownership (am I even looking at the right organisation?) and reveals the size of an IP range you may later be scoped to test.
+
+  - kind: explain
+    title: DNS and subdomain discovery
+    body: |
+      DNS (Module 7) is a recon goldmine because organisations publish it themselves. Beyond the main `example.com`, companies run dozens of **subdomains**, and each is a potential door:
+
+      - `mail.example.com` — email
+      - `vpn.example.com` — remote access
+      - `dev.example.com` / `staging.example.com` — often less-guarded test systems
+      - `admin.example.com` — the obvious one
+
+      You discover these passively from public DNS data, certificate-transparency logs (every HTTPS certificate ever issued is logged publicly, subdomains and all), and search results. `dev` and `staging` subdomains are a recurring theme in real breaches: they are built fast, secured loosely, and forgotten. Mapping the full surface before you scan means you scan the *right* things.
+
+  - kind: explain
+    title: Google dorking
+    body: |
+      Search engines index far more than people intend. **Google dorking** means using advanced search operators to find it:
+
+      | Operator | Finds |
+      |---|---|
+      | `site:example.com` | pages only on that domain |
+      | `filetype:pdf site:example.com` | documents of a type |
+      | `intitle:"index of"` | exposed directory listings |
+      | `inurl:admin` | admin pages by URL pattern |
+
+      The point is not trickery; it is that sensitive things — internal PDFs, backup files, login portals, even credentials in exposed files — get indexed when a site is misconfigured. The **Google Hacking Database (GHDB)** collects known-useful dorks. Defensively, this is why you tell clients to control what search engines can index and to never rely on "no one will find this URL."
+
+  - kind: explain
+    title: Shodan — the search engine for devices
+    body: |
+      **Shodan** continuously scans the whole internet and indexes what it finds: open ports, service banners, device types, versions. You can search it like Google, but for *machines* — "all exposed databases in this country," "all cameras running this firmware," "everything on this organisation's IP range."
+
+      For a tester, Shodan reveals a target's internet-facing footprint *without you scanning anything yourself* — Shodan already did, legally, at internet scale. It regularly turns up things organisations did not know were exposed: a forgotten server, a database with no password, an admin panel open to the world. That it exists at all is the strongest argument for knowing your own attack surface before an attacker does.
+
+  - kind: mac
+    title: Try passive lookups yourself
+    body: |
+      These are public-records queries — you are asking registries and the DNS system, not touching any target. Safe and legal. Read what comes back.
+    commands: |
+      whois example.com
+      dig +short example.com
+      dig ns example.com
+      dig mx example.com
+  - kind: info
+    title: "🔹 theHarvester and automation"
+    body: |
+      Kali includes tools that automate OSINT collection — **theHarvester** gathers emails, subdomains and hosts from many public sources at once; **Maltego** maps the relationships between people, domains and infrastructure visually; **Amass** and **Sublist3r** specialise in subdomain discovery. They save time, but they only assemble what is already public. Recognise the names; you will meet them hands-on in your lab.
+
+  - kind: explain
+    title: What the defender learns from all this
+    body: |
+      Every passive technique here has a defensive mirror, and that is how you add value:
+
+      - Perform OSINT on *your own* organisation regularly — find what leaks before an attacker does.
+      - Monitor certificate-transparency logs so a rogue or forgotten subdomain is noticed.
+      - Control search-engine indexing; never treat an obscure URL as a secret.
+      - Train staff on what job ads, social posts and public repos quietly reveal.
+
+      The strongest recon finding in a report is often "here is how much we learned about you before touching anything — and here is how to leak less."
+
+  - kind: why
+    body: |
+      Active scanning is loud and limited to your scope; passive recon is silent and almost unlimited. Done well, it tells you exactly where to point the noisy tools, surfaces forgotten and soft targets (that `staging` box), and produces findings a client can act on immediately. Skilled testers treat this phase as where the engagement is quietly won.
+
+  - kind: recap
+    body: |
+      - **Passive recon / OSINT** gathers public information *without touching the target* — invisible and lawful.
+      - **WHOIS** reveals domain/IP ownership and range size; **DNS and subdomain discovery** (including certificate-transparency logs) maps the attack surface — watch for soft `dev`/`staging` hosts.
+      - **Google dorking** finds indexed-but-sensitive content with operators like `site:`, `filetype:`, `inurl:`; the **GHDB** catalogues useful ones.
+      - **Shodan** indexes internet-facing devices and their versions, exposing a footprint without you scanning.
+      - Every technique has a **defensive mirror**: OSINT your own org, watch CT logs, control indexing, train staff.

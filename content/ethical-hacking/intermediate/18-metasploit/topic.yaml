@@ -1,0 +1,4 @@
+title: "Exploitation with Metasploit"
+module: 18
+summary: "How a known vulnerability becomes access: the Metasploit workflow of exploit, payload and listener; what a Meterpreter session is; and the common mistakes — all practised only in your own lab."
+minutes: 40

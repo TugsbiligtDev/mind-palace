@@ -1,0 +1,55 @@
+steps:
+  - kind: explain
+    title: The machine you reached is a door, not a destination
+    body: |
+      Imagine you have compromised one machine on an authorised test. From the outside you could only ever see that single host. But *it* can see things you cannot: other machines on the internal network, sitting behind NAT and firewalls (Module 6), that were never meant to be reachable from outside.
+
+      **Pivoting** is using that compromised host as a relay to reach those internal systems. It is how a breach of one exposed server turns into access across a whole internal network — and understanding it is what makes the case for segmenting networks so persuasive.
+
+  - kind: explain
+    title: Why the internal network is softer
+    body: |
+      Organisations spend heavily defending the **perimeter** — the boundary facing the internet — and often treat everything inside as trusted. So once a tester pivots inward, the internal machines are frequently far less hardened: older software, weaker passwords, services that assume "only insiders can reach me."
+
+      This is exactly the assumption pivoting breaks, and it is why modern defence rejects "hard shell, soft centre" in favour of treating the internal network as hostile too. Recognising this gap is half the value of the lesson.
+
+  - kind: explain
+    title: Port forwarding and proxies, in plain terms
+    body: |
+      You do not need the mechanics in depth, just the concepts:
+
+      - **Port forwarding** makes one specific internal service appear reachable *through* the compromised host, as if a single internal door had been propped open for one tool to walk through.
+      - A **SOCKS proxy** is more general: it routes a whole range of your traffic through the compromised host, so your tools can interact with the internal network *as if you were standing inside it*.
+
+      Both do the same basic thing — borrow the compromised host's **position** in the network. Tunneling is the wrapper that carries that traffic, sometimes disguised inside ordinary-looking connections.
+
+  - kind: explain
+    title: Why tunneling traffic is hidden
+    body: |
+      Internal firewalls may block most connections but almost always allow a few common ones (web traffic, DNS). **Tunneling** packs the pivoted traffic inside one of those permitted channels so it blends in with normal activity and slips past simple rules.
+
+      For the defender this is the key insight: it is not enough to allow "web traffic" blindly. You need to watch for traffic that is *shaped* like something it isn't, and for internal hosts talking to places they have no business talking to — which is where good logging and network monitoring earn their keep.
+
+  - kind: explain
+    title: The defence is segmentation
+    body: |
+      Everything in this module is defeated or contained by one design choice: **network segmentation**. Split the network into zones, and allow only the specific, necessary connections *between* them. Then a compromised web server simply cannot reach the finance database, because the network itself forbids that path — no matter how skilled the intruder.
+
+      Combine segmentation with **least privilege** (Module 11), monitoring of internal traffic, and the assumption that any single host *can* fall, and pivoting loses most of its power. A tester who demonstrates a pivot is really demonstrating a missing wall — and the fix is to build it.
+
+  - kind: info
+    title: "🔹 This is the bridge to enterprise attacks"
+    body: |
+      Pivoting plus the credential-reuse idea from Module 19 is the engine of **lateral movement** across large networks — the heart of the Active Directory attacks in the Advanced level. For now, just hold the shape: compromise a host, use it to reach more hosts, repeat. Segmentation and monitoring are what break the chain.
+
+  - kind: why
+    body: |
+      Pivoting is why a single internet-facing weakness can matter far more than it first appears: it is the difference between "one server was exposed" and "the attacker reached our internal databases." Being able to explain that chain — and to point directly at segmentation and internal monitoring as the fix — is one of the most impactful things a tester can put in a report, because it changes how an organisation designs its whole network.
+
+  - kind: recap
+    body: |
+      - **Pivoting** uses a compromised host as a relay to reach internal machines that are not exposed to the outside.
+      - Internal networks are often **softer** than the perimeter — the assumption pivoting exploits.
+      - **Port forwarding** exposes one internal service through the host; a **SOCKS proxy** routes broad traffic as if you were inside; **tunneling** hides it in allowed channels.
+      - Defence is **network segmentation** — allow only necessary connections between zones — plus least privilege and internal monitoring.
+      - 🔹 Pivoting + credential reuse = **lateral movement**, the bridge to enterprise/Active Directory attacks (Advanced).

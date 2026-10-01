@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: You ping a server you know is running, but get no reply. What is the best conclusion?
+    options:
+      - The server is definitely powered off
+      - The server may simply be configured to ignore ping while still running services
+      - Your network card is broken
+      - Ping only works on Windows
+    answer: 1
+    explanation: Many hosts drop ICMP echo requests but keep serving on their ports. "No reply" is not proof a host is down — a key caution when mapping a network.
+  - type: mcq
+    prompt: What does `traceroute example.com` show you?
+    options:
+      - The contents of the web page
+      - Each router (hop) your packets pass through on the way to the destination, with timings
+      - A list of open ports on the server
+      - The server's password
+    answer: 1
+    explanation: Traceroute reveals the path hop by hop — useful for understanding network structure and spotting where a firewall might sit.
+  - type: mcq
+    prompt: In Wireshark you only want to see web traffic. What is the right move?
+    options:
+      - Capture on every interface at once
+      - Apply the display filter `http`
+      - Delete all other packets manually
+      - Turn off your firewall
+    answer: 1
+    explanation: Filters make a capture usable. Typing `http` (or `dns`, `tcp.port == 443`, `ip.addr == ...`) narrows thousands of packets down to the ones you care about.
+  - type: mcq
+    prompt: Why is capturing traffic with Wireshark on a public coffee-shop network an ethical and legal problem?
+    options:
+      - It uses too much bandwidth
+      - You would be recording other people's data without their consent or any authorisation
+      - Wireshark is illegal software
+      - It slows down your laptop
+    answer: 1
+    explanation: Capturing records everyone's traffic in range, including cleartext credentials. You capture only on networks you own or are explicitly authorised to monitor — your lab is the safe choice.
+  - type: mcq
+    prompt: A capture shows a login over plain FTP with the username and password fully readable. What does this demonstrate?
+    options:
+      - FTP is encrypted and safe
+      - Cleartext protocols expose credentials to anyone who can see the traffic, which is why encryption exists
+      - Wireshark invented the password
+      - The server is unhackable
+    answer: 1
+    explanation: Plain FTP, HTTP and Telnet send data unencrypted. Anyone in the path can read it — the single most persuasive argument for HTTPS, SSH and VPNs.

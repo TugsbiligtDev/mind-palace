@@ -1,0 +1,5 @@
+title: "Reading a network"
+module: 8
+kind: review
+summary: "Five scenarios across Modules 6 to 8: interpret a CIDR scope, read a scan's open ports, tell private from public addresses, and reason about a packet capture."
+minutes: 20

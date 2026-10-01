@@ -1,0 +1,5 @@
+title: "Full assessment, end to end"
+module: 27
+kind: capstone
+summary: "Pull the whole level together: against one intentionally-vulnerable machine in your own lab, run recon, enumeration, a verified exploit, and privilege escalation — then write the professional-style report that is the real deliverable. The hands-on work happens off-site in your lab."
+minutes: 90

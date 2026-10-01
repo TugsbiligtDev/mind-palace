@@ -1,0 +1,46 @@
+steps:
+  - kind: explain
+    title: Put the network picture to work
+    body: |
+      Networking is where a lot of beginners stall, so spend a few minutes using Modules 6 to 8 together. Each scene below is the kind of judgement you make in the first hour of an engagement. Read, reason, then take the check.
+
+  - kind: explain
+    title: "Scene 1 — the scope email"
+    body: |
+      A client writes: *"You are authorised to test `10.10.50.0/24` only. Anything else is out of scope."*
+
+      Translate it before you touch a thing. `/24` fixes the first three numbers, so you may touch **10.10.50.1 through 10.10.50.254** — roughly 254 addresses — and nothing else. If a scan strays to `10.10.51.5`, you are outside your authorisation, which is a legal problem no matter how interesting the target. CIDR is not maths trivia; it is the fence line.
+
+  - kind: explain
+    title: "Scene 2 — the scan result"
+    body: |
+      A scan of one in-scope host returns:
+
+      ```
+      22/tcp   open   ssh
+      80/tcp   open   http
+      3389/tcp open   ms-wbt-server
+      ```
+
+      Read the story in the ports. **22** says there is SSH (remote shell). **80** says a website (unencrypted). **3389** is RDP — Windows remote desktop. SSH *and* RDP together suggest a Windows machine that also runs an SSH service. Each open port is a door to investigate further, and the mix already tells you what kind of building you are standing in front of.
+
+  - kind: explain
+    title: "Scene 3 — which address is which"
+    body: |
+      You note three addresses during recon: `192.168.0.14`, `8.8.8.8`, and `172.16.4.9`.
+
+      Two of them — `192.168.0.14` and `172.16.4.9` — fall in the private ranges (192.168.x.x and 172.16–31.x.x), so they are internal machines behind NAT. `8.8.8.8` is public (a well-known DNS resolver). Telling private from public instantly tells you what is "inside" the network you are testing and what is out on the open internet.
+
+  - kind: explain
+    title: "Scene 4 — the capture"
+    body: |
+      In your lab you capture traffic and, filtering on `http`, you can read a full login — username and password in plain text — sent to an internal web app over port 80.
+
+      Two conclusions. First, the finding: the app uses plain **HTTP**, so credentials cross the wire in the clear; the fix is **HTTPS (TLS)**. Second, the ethics: this is fine because it is *your lab*. The identical capture on a network you do not own would be unlawful interception. Same tool, different permission.
+
+  - kind: recap
+    body: |
+      - **CIDR is the fence.** `/24` = first three numbers fixed (~254 hosts); never stray outside the scoped range.
+      - **Read open ports as a story**: 22 SSH, 80 HTTP, 443 HTTPS, 445 SMB, 3389 RDP — each a door and a clue to the OS.
+      - **Private** addresses (10.x, 172.16–31.x, 192.168.x) are internal behind NAT; everything else is public.
+      - **Cleartext (HTTP/FTP/Telnet) is readable**; the fix is encryption, and capturing is only legitimate on networks you are authorised to monitor.

@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "A response header reads `Server: Apache/2.4.49`. Why does a tester note this immediately?"
+    options:
+      - It proves the site is secure
+      - The exact software and version can be looked up for known vulnerabilities, so disclosing it helps an attacker
+      - It means the site uses a database
+      - It is the admin password
+    answer: 1
+    explanation: Version disclosure lets an attacker search for known flaws in that precise version. Defensively, you avoid advertising versions you do not need to.
+  - type: mcq
+    prompt: A login form builds a SQL query by inserting your typed username directly into the query text. What risk does that create?
+    options:
+      - None; that is the normal, safe way
+      - SQL injection — your input could change what the query *means*, not just what it searches for
+      - The page will load slowly
+      - The cookie will expire
+    answer: 1
+    explanation: When untrusted input is glued into a query, an attacker can alter the query's logic. That is SQL injection, a classic and severe web vulnerability.
+  - type: mcq
+    prompt: HTTPS/TLS is in use on a site. Which statement is correct?
+    options:
+      - The application is now immune to SQL injection
+      - TLS encrypts data in transit and proves the server's identity, but does not fix flaws in the app or protect data at rest
+      - TLS stores the database securely
+      - TLS makes the site faster and bug-free
+    answer: 1
+    explanation: TLS protects traffic between browser and server and authenticates the server. Application flaws like SQL injection work fine over HTTPS — it is necessary, not sufficient.
+  - type: mcq
+    prompt: You want to watch exactly which requests a web page sends, with their status codes and headers, using only your browser. Where do you look?
+    options:
+      - The browser's bookmarks
+      - The developer tools' Network tab (F12 / ⌘-⌥-I)
+      - The address bar
+      - The operating system settings
+    answer: 1
+    explanation: The Network tab in developer tools shows every request/response live — the Module 9 conversation in real time, no extra software needed.
+  - type: mcq
+    prompt: Why must access-control testing cover a site's API endpoints directly, not just the visible page?
+    options:
+      - APIs are always offline
+      - Hiding a button on the page does not stop someone calling the API endpoint behind it directly
+      - APIs cannot return data
+      - The page and API are the same thing
+    answer: 1
+    explanation: A removed or hidden UI element does not secure the underlying endpoint. If the API still answers direct calls, the access control is not real.

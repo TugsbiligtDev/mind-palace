@@ -1,0 +1,73 @@
+steps:
+  - kind: explain
+    title: "\"Enumerate, enumerate, enumerate\""
+    body: |
+      There is a saying in this field: *enumeration is 80% of the work.* A scan gives you a list of open ports; **enumeration** is the patient job of interrogating each service for every detail it will reveal — versions, usernames, shares, configuration, anything. It is unglamorous and it is where tests are actually won.
+
+      Beginners scan, see a few open ports, and rush to look for an exploit. Professionals slow down and squeeze every service dry first, because the way in is almost always a detail enumeration surfaces — a readable file share, a guessable username, a version with a known flaw. This module walks the services you will meet most.
+
+  - kind: explain
+    title: Banner grabbing
+    body: |
+      The simplest enumeration is **banner grabbing**: connecting to a port and reading the greeting the service sends. Many services announce their software and version unprompted. `nmap -sV` does this automatically, and tools like `netcat` (`nc`) let you do it by hand.
+
+      Why it matters: that banner is often all you need to pivot from "a service is here" to "this *exact* version, which has a known weakness." Defensively, this is why hardening guides tell you to suppress or fake version banners — not because it fixes anything, but because it denies the attacker free intelligence.
+
+  - kind: explain
+    title: "SMB (445) — Windows file sharing"
+    body: |
+      **SMB** is how Windows machines share files and printers, and it is one of the richest things to find open. Enumeration asks: which **shares** exist, can any be read without credentials (a "null session"), what users and groups are defined, and what SMB version is running?
+
+      Tools like `enum4linux`, `smbclient` and Nmap's `smb-*` scripts automate this. Historically SMB has been the source of some of the most serious Windows vulnerabilities, and misconfigured open shares leak sensitive files constantly. A readable share found here can hand you credentials that unlock everything else.
+
+  - kind: explain
+    title: "FTP (21) and SSH (22)"
+    body: |
+      **FTP** moves files, often in cleartext. Enumeration checks the version and — critically — whether **anonymous login** is allowed (username `anonymous`, any password). Misconfigured anonymous FTP that exposes files is a classic, still-common finding.
+
+      **SSH** is secure remote login, so you are not "breaking" the encryption. Here enumeration means noting the version, the host key, and which authentication methods are offered (password vs. key-only). A password-authenticating SSH service becomes relevant later for credential attacks (Module 19); the encryption itself stays intact.
+
+  - kind: explain
+    title: "HTTP/HTTPS (80/443) — the biggest surface"
+    body: |
+      A web server is usually the largest attack surface on a target, so it gets the most enumeration:
+
+      - **Headers** — the `Server` and `X-Powered-By` fields leak software and versions (Module 9).
+      - **Hidden content** — directory and file discovery tools (`gobuster`, `ffuf`, `dirb`) request many likely paths to find `/admin`, `/backup`, `/.git`, API endpoints and old pages that are not linked anywhere.
+      - **Technology** — tools like `whatweb` fingerprint the framework and CMS.
+
+      Finding an unlinked `/admin` panel or an exposed `/.git` folder is routine here, and it is the doorway into the web-hacking modules that follow. You will meet these tools properly in Module 20.
+
+  - kind: explain
+    title: "DNS (53), SMTP (25), and databases"
+    body: |
+      A few more services worth knowing:
+
+      - **DNS (53):** beyond lookups, a misconfigured server may allow a **zone transfer** — handing over its entire list of records at once, mapping the whole internal estate. It should be restricted; when it is not, it is a tidy finding.
+      - **SMTP (25):** mail servers can sometimes be asked whether a username exists (`VRFY`), letting you build a valid-user list for later.
+      - **Databases (3306 MySQL, 5432 PostgreSQL, 1433 MSSQL, 27017 MongoDB):** a database exposed to the network is a serious finding on its own — and an unauthenticated one (famously, open MongoDB and Redis instances) is a breach waiting to happen.
+
+  - kind: explain
+    title: Keeping notes that become the report
+    body: |
+      Enumeration produces a flood of detail, and you cannot hold it in your head. Keep a structured note per host as you go: IP, each open port, the service and version, and every interesting finding (a readable share, an anonymous login, a hidden admin page, a valid username).
+
+      Two reasons this discipline matters. First, the way in is often a *combination* — a username from SMTP plus a password-auth SSH service — that you only spot when both are written down. Second, these notes *are* your report (Module 27). Testers who enumerate thoroughly and record carefully simply find more.
+
+  - kind: info
+    title: "🔹 Automated enumeration helpers"
+    body: |
+      Scripts exist to kick off enumeration across many services at once — `autorecon` and `nmapAutomator`, for example, run a sensible battery of scans and service checks so you do not forget a step. They are a convenience, not a replacement for understanding: they generate output, but *reading* it — spotting the one detail that matters — is still your job.
+
+  - kind: why
+    body: |
+      This is the phase that decides whether an engagement succeeds. Exploitation (coming next) is usually quick *once you know where to aim*; enumeration is what tells you where to aim. The readable SMB share, the anonymous FTP, the hidden admin panel, the exposed database, the valid username — these are the threads that unravel a target, and they only appear to the tester patient enough to pull on every service.
+
+  - kind: recap
+    body: |
+      - **Enumeration** — interrogating each open service for every detail — is "80% of the work"; slow down and do it before reaching for exploits.
+      - **Banner grabbing** reveals software and versions; suppressing banners denies attackers free intel.
+      - **SMB (445):** shares, null sessions, users — a rich, high-value target. **FTP (21):** check anonymous login. **SSH (22):** note version and auth methods (encryption stays intact).
+      - **HTTP/HTTPS:** the biggest surface — headers, hidden content (`gobuster`/`ffuf`), tech fingerprinting.
+      - **DNS (53):** watch for zone transfers; **SMTP (25):** username enumeration; **databases:** exposed or unauthenticated ones are serious findings.
+      - Keep **structured notes per host** — the way in is often a combination, and the notes become the report.

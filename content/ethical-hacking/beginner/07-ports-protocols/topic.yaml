@@ -1,0 +1,4 @@
+title: "Ports & Protocols"
+module: 7
+summary: "TCP vs. UDP and the three-way handshake; the well-known ports and the services behind them; how DNS turns names into addresses; and how DHCP hands out settings automatically."
+minutes: 35

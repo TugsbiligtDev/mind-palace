@@ -1,0 +1,4 @@
+title: "Service Enumeration"
+module: 16
+summary: "Turn open ports into concrete detail. Dig into SMB, FTP, SSH, HTTP, DNS, SMTP and databases; grab banners; and map the real attack surface. The phase that quietly decides the test."
+minutes: 40

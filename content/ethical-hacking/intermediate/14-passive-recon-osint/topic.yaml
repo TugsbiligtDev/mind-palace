@@ -1,0 +1,4 @@
+title: "Passive Recon / OSINT"
+module: 14
+summary: "Learn everything you can about a target without touching it: Google dorking, WHOIS, DNS and subdomain discovery, and Shodan. The quiet first phase that leaves no footprint."
+minutes: 35

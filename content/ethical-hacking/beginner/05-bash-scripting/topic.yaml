@@ -1,0 +1,4 @@
+title: "Bash Scripting Basics"
+module: 5
+summary: "Turn commands into tools: variables, arguments, conditionals and loops, and the pipes and redirection that chain commands together. Automate the boring parts of recon."
+minutes: 35

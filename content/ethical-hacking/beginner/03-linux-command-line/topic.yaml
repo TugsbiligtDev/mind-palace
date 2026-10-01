@@ -1,0 +1,4 @@
+title: "Linux Command Line Basics"
+module: 3
+summary: "The terminal is where everything happens. Navigate with cd/ls/pwd, work with files, search with find and grep, read the manual — and respect the commands that destroy without asking."
+minutes: 35

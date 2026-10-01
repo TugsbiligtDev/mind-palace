@@ -1,0 +1,89 @@
+steps:
+  - kind: explain
+    title: The three you will meet
+    body: |
+      Targets and tools run on one of three families of operating system. You do not need to be an expert in all three yet, but you must recognise them.
+
+      | OS | Where you meet it | Flavour |
+      |---|---|---|
+      | **Windows** | Most corporate desktops and servers; Active Directory networks | Closed-source, made by Microsoft; its own way of doing almost everything |
+      | **Linux** | Most web servers, cloud machines, and your attacker box (Kali) | Open-source; a whole family of versions ("distributions") |
+      | **macOS** | Developer and designer laptops; your own machine for this course | Apple's; Unix underneath, so it feels a lot like Linux at the terminal |
+
+      macOS and Linux are cousins — both descend from Unix — which is why the terminal commands you learn next work on your Mac *and* on a Linux server.
+
+  - kind: explain
+    title: The filesystem — where things live
+    body: |
+      A **filesystem** is how an OS organises files into a tree of folders (directories). The two families lay the tree out differently, and knowing the landmarks saves you time.
+
+      **Linux / macOS** start from a single root `/`:
+
+      - `/home/ada` (Linux) or `/Users/ada` (macOS) — a person's files
+      - `/etc` — system configuration (`/etc/passwd` lists accounts)
+      - `/var/log` — logs (gold for an investigator)
+      - `/tmp` — temporary scratch space, world-writable
+
+      **Windows** starts from drive letters like `C:\`:
+
+      - `C:\Users\Ada` — a person's files
+      - `C:\Windows\System32` — the heart of the system
+      - `C:\Program Files` — installed software
+
+      Note the slashes: Linux/macOS use `/`, Windows uses `\`.
+
+  - kind: explain
+    title: Users and the superuser
+    body: |
+      Every OS has **user accounts**. Each file and action is tied to *who* is allowed to do it. There is always one account that can do anything:
+
+      - On Linux/macOS it is **root** (user id 0).
+      - On Windows it is **Administrator** (and the even deeper `SYSTEM`).
+
+      Ordinary users are deliberately limited: they can change their own files but not the system's. This is the single most important security idea in an OS. A great deal of hacking is the attempt to go from a *limited* user to root/Administrator — called **privilege escalation**, which you will study in depth later.
+
+  - kind: explain
+    title: Permissions in one picture
+    body: |
+      Linux describes each file with three permissions — **read (r)**, **write (w)**, **execute (x)** — for three groups of people: the **owner**, the **group**, and **everyone else**. You will see it written like this:
+
+      ```
+      -rwxr-xr--  1 ada  staff   920  report.txt
+      ```
+
+      Read the first block in threes after the leading type character:
+
+      - `rwx` — the **owner** (ada) may read, write and run it
+      - `r-x` — the **group** (staff) may read and run, not change
+      - `r--` — **everyone else** may only read
+
+      A file that "everyone can write" (`-rw-rw-rw-`) is a classic weakness: anyone can tamper with it. You will practise reading and changing these in Module 4.
+
+  - kind: explain
+    title: Why offensive security lives on Linux
+    body: |
+      Your own laptop can be any OS, but the attacker's working machine is almost always Linux. Why:
+
+      - **The tools are built for it.** Nmap, Metasploit, Burp, Wireshark and thousands more are Linux-first. **Kali Linux** and **Parrot OS** ship with them pre-installed.
+      - **It is scriptable and transparent.** Everything is a file or a command, so you can automate and inspect anything.
+      - **It is free and disposable.** Spin up a VM, break it, delete it.
+      - **The targets run it too.** Most servers you will ever test are Linux, so speaking its language natively is a huge advantage.
+
+      That is why the next three modules teach Linux from the terminal up. It is the one skill everything else depends on.
+
+  - kind: info
+    title: "🔹 A distribution is just a packaging"
+    body: |
+      "Linux" is really a *kernel* (the core) wrapped up with tools into a **distribution** (distro): Ubuntu, Debian, Kali, Fedora, and many more. They differ mostly in which software is pre-installed and how you install more. Commands you learn on one usually work on the others. Kali is simply Debian with a security toolkit bolted on.
+
+  - kind: why
+    body: |
+      When you read a report that says "we gained a foothold as a low-privileged user on a Linux web server and escalated to root," every word now has a picture behind it: a limited account, the filesystem tree, the all-powerful root, and the permissions that were supposed to hold the line. Knowing the lay of each OS is what lets you find — and fix — the weak spot.
+
+  - kind: recap
+    body: |
+      - Three OS families: **Windows**, **Linux**, **macOS** (macOS and Linux are Unix cousins, so the terminal feels the same).
+      - The **filesystem** is a tree: Linux/macOS from `/`, Windows from `C:\`.
+      - Every OS has an all-powerful account: **root** (Linux/macOS) or **Administrator** (Windows). Going from a limited user to that account is **privilege escalation**.
+      - Linux permissions are **r/w/x** for **owner / group / others**; a world-writable file is a classic weakness.
+      - Offensive security runs on **Linux** (Kali) because the tools, the scripting and most targets do.

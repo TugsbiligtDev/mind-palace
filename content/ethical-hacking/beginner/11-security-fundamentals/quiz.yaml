@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: An attacker alters the balance stored in a bank's database. Which part of the CIA triad has been violated?
+    options:
+      - Confidentiality
+      - Integrity
+      - Availability
+      - None of them
+    answer: 1
+    explanation: Integrity is about data being correct and unaltered. Changing a stored value attacks integrity. (Reading it would be confidentiality; taking the system offline, availability.)
+  - type: mcq
+    prompt: You find a "secret" value in an app that turns out to be plain base64. How much protection does that provide?
+    options:
+      - Strong protection — base64 is encryption
+      - None — base64 is encoding, reversible instantly by anyone; it is not security
+      - Some, because it is hard to read
+      - It depends on the key length
+    answer: 1
+    explanation: Base64 is encoding for transport, not encryption. Anyone can decode it in a second, so a base64-"protected" secret is effectively unprotected.
+  - type: mcq
+    prompt: A user logs in correctly but then reaches an admin page they should never be able to see. Which idea does this violate?
+    options:
+      - Authentication (they are not who they say)
+      - Authorization (identity was fine, but their permissions were not enforced)
+      - Availability
+      - Encoding
+    answer: 1
+    explanation: They authenticated fine (identity proven). The failure is authorization — permissions were not enforced. That is broken access control.
+  - type: mcq
+    prompt: How should a well-designed system store user passwords?
+    options:
+      - Encrypted, so they can be decrypted when needed
+      - Encoded in base64
+      - Hashed (and salted), because the system never needs the original back — only to check a match
+      - In plain text for speed
+    answer: 2
+    explanation: Hashing is one-way; the system only needs to compare hashes, never recover the password. Salting defeats precomputed lookups. Reversible storage (encryption) is a weaker design.
+  - type: mcq
+    prompt: A client asks which of your 400 findings matters most. What is the professional way to answer?
+    options:
+      - All 400 are equally urgent
+      - Rank by risk — likelihood and impact — e.g. the three that could expose every customer record come first
+      - Fix them in the order you found them
+      - Count them and move on
+    answer: 1
+    explanation: Clients pay for risk judgement. A vulnerability's risk is likelihood times impact; you surface the few high-risk issues, not an undifferentiated list.

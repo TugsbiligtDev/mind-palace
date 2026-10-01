@@ -1,0 +1,4 @@
+title: "Active Scanning with Nmap"
+module: 15
+summary: "The scanner every tester knows: host discovery, TCP and UDP scan types, service and version detection, OS detection, the scripting engine, timing, and how to read the output."
+minutes: 40

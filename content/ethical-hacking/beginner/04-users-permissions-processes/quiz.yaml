@@ -1,0 +1,44 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "A file's permissions read `rwxr-xr-x`. Written as three octal digits, what is that?"
+    options:
+      - "777"
+      - "755"
+      - "644"
+      - "750"
+    answer: 1
+    explanation: "rwx = 4+2+1 = 7, r-x = 4+1 = 5, r-x = 5. So 755: owner full control, everyone else can read and run."
+  - type: mcq
+    prompt: You land on a machine as a limited user. Which single command best tells you how much power you currently have?
+    options:
+      - ls
+      - id
+      - cat
+      - top
+    answer: 1
+    explanation: "`id` shows your user id and all your groups at once — the first thing to check. `whoami` gives just the name."
+  - type: mcq
+    prompt: Why is a file with permissions `777` (`rwxrwxrwx`) a red flag during an audit?
+    options:
+      - It is too small to be useful
+      - Everyone can read, write and execute it, so any user can tamper with or replace it
+      - It can only be run by root
+      - It is encrypted
+    answer: 1
+    explanation: 777 grants full access to everyone, including write. Any user could alter or replace the file — a frequent and dangerous misconfiguration.
+  - type: mcq
+    prompt: What does `sudo` let an ordinary user do?
+    options:
+      - Hide their activity from the logs
+      - Run a single command with root's privileges after proving who they are
+      - Delete any file instantly
+      - Become invisible on the network
+    answer: 1
+    explanation: "`sudo` borrows root's power for one command and records it in the logs. A misconfigured sudo rule is a common privilege-escalation route — which is why `sudo -l` is so useful."
+  - type: fill
+    prompt: "You downloaded a script and need to make it runnable before you can execute it. Fill in the flag: `chmod ____ tool.sh` (the short form that just adds execute)."
+    code: "chmod ____ tool.sh"
+    answer: "+x"
+    runnable: false
+    explanation: "`chmod +x tool.sh` adds the execute permission so the file can be run as a program."

@@ -1,0 +1,5 @@
+title: "Mapping a target"
+module: 16
+kind: review
+summary: "Five scenarios across Modules 14 to 16: choose passive vs. active, read an Nmap result, decide what to enumerate next, and spot the detail that matters."
+minutes: 20

@@ -1,0 +1,44 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: On a Linux system, what is the name of the all-powerful account that can do anything?
+    options:
+      - admin
+      - root
+      - superduper
+      - kali
+    answer: 1
+    explanation: On Linux and macOS the superuser is **root** (user id 0). On Windows the equivalent is Administrator (and the deeper SYSTEM account).
+  - type: mcq
+    prompt: Going from a limited user account to root or Administrator is called what?
+    options:
+      - Pivoting
+      - Privilege escalation
+      - Enumeration
+      - Encoding
+    answer: 1
+    explanation: Privilege escalation is moving from limited access to full control of a machine. It is a whole topic later in the course.
+  - type: mcq
+    prompt: "A file shows permissions `-rw-rw-rw-`. Why might a security tester flag this?"
+    options:
+      - It cannot be executed, so it is useless
+      - Everyone can write to it, so anyone could tamper with its contents
+      - Only root can read it
+      - It is a Windows file on a Linux system
+    answer: 1
+    explanation: The final `rw-` is the "everyone else" block. Write for everyone means any user can change the file — a classic misconfiguration.
+  - type: mcq
+    prompt: Why is Linux the standard operating system for an attacker's working machine?
+    options:
+      - It is the only OS with a terminal
+      - The tools are Linux-first, it is scriptable and free, and most targets run Linux too
+      - It cannot be hacked
+      - It hides your identity automatically
+    answer: 1
+    explanation: Kali and Parrot ship the tools pre-installed, everything is scriptable, VMs are free and disposable, and most servers you test run Linux. Linux offers no automatic anonymity.
+  - type: fill
+    prompt: "Linux and macOS separate folders in a path with a forward slash `/`. Fill in the single character Windows uses instead."
+    code: "Windows path uses: C:____Users"
+    answer: "\\"
+    runnable: false
+    explanation: Windows separates folders with a backslash (`\`), e.g. `C:\Users\Ada`. Linux and macOS use a forward slash (`/`).

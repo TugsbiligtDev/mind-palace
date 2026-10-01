@@ -1,0 +1,29 @@
+id: beginner
+title: Beginner
+season: 1
+season_title: The Stakeout
+season_pitch: |
+  Before a detective ever makes an arrest, they learn the city: its streets, its locks, its
+  rules. Start the same way. Learn how computers and operating systems work, drive the Linux
+  terminal, understand networks and the web, then the core ideas of security — and the law and
+  ethics that separate a professional from a criminal. By the end you can build a legal lab and
+  safely map a target you are allowed to test.
+status: open
+topics:
+  - 01-how-computers-work
+  - 02-operating-systems
+  - 03-linux-command-line
+  - 04-users-permissions-processes
+  - 05-bash-scripting
+  - review-1-linux
+  - 06-networking-core
+  - 07-ports-protocols
+  - 08-network-tools
+  - review-2-networking
+  - 09-how-the-web-works
+  - 10-web-infrastructure
+  - 11-security-fundamentals
+  - 12-ethics-law-authorization
+  - 13-pentest-methodology
+  - review-3-security-ethics
+  - capstone-1-home-lab

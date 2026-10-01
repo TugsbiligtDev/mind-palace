@@ -1,0 +1,46 @@
+steps:
+  - kind: explain
+    title: How a review works here
+    body: |
+      No new material. This is a chance to use Modules 3 to 5 together the way you will on a live machine: you are handed some output, you decide what it means, and you choose the next command. Read each scene, think about your answer, then take the knowledge check.
+
+      Keep one habit in mind throughout: **know where you are and what a command will do before you run it.**
+
+  - kind: explain
+    title: "Scene 1 — just landed"
+    body: |
+      You have just gained a shell on a Linux machine you are authorised to test. The prompt looks unfamiliar and you have no idea who you are or where you are.
+
+      The professional reflex is three quick, harmless commands: `whoami` (or `id`) to learn *who* you are, `pwd` to learn *where* you are, and `ls -la` to see *what is here*, hidden files included. You never start by changing anything. You start by looking.
+
+  - kind: explain
+    title: "Scene 2 — a tempting command"
+    body: |
+      While tidying your notes you are about to run `rm -rf *` to clear a folder — but you are not certain which folder you are in.
+
+      Stop. `rm -rf *` deletes everything in the *current* directory, permanently, no questions asked. If `pwd` turns out to say `/` or your home folder, you have just destroyed far more than your notes. The fix is boring and lifesaving: run `pwd` first, confirm the path, and only then delete. Boring habits are what keep labs and clients intact.
+
+  - kind: explain
+    title: "Scene 3 — hunting for secrets"
+    body: |
+      You have read access to a web application's folder and you suspect a password or key was left in a config file somewhere beneath it.
+
+      This is `grep`'s moment. `grep -r "password" .` searches the current folder and everything below it for that text. Swap in `api_key`, `secret`, or `BEGIN PRIVATE KEY` and you have a standard post-access check. `find` would help you locate files *by name*, but here you are searching for text *inside* files, which is grep's job.
+
+  - kind: explain
+    title: "Scene 4 — a suspicious file"
+    body: |
+      `ls -l` on a script shows:
+
+      ```
+      -rwxrwxrwx  1 root  root  412  backup.sh
+      ```
+
+      Two things should jump out. It is owned by **root**, and its permissions are **777** — writable by *everyone*. That combination means any user on the system can edit `backup.sh`, and whatever it does will run with root's power when root next runs it. You have just found a likely privilege-escalation path, exactly the kind of loose thread Module 4 warned about.
+
+  - kind: recap
+    body: |
+      - On a new machine, **look before you touch**: `id`, `pwd`, `ls -la`.
+      - **`rm` is permanent.** Confirm your location with `pwd` before any delete.
+      - Search *inside* files with `grep -r`; search *for* files by name with `find`.
+      - A file that is **root-owned and world-writable (777)** is a classic weakness — note it, do not ignore it.

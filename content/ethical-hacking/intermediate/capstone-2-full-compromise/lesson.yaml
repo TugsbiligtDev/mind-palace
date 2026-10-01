@@ -1,0 +1,77 @@
+steps:
+  - kind: explain
+    title: One machine, the whole methodology
+    body: |
+      In the Beginner capstone you built a lab and safely mapped a target. Now you run the **full cycle** against one intentionally-vulnerable machine in that same lab: reconnaissance, enumeration, a verified exploit for a foothold, and privilege escalation to full administrator — and then you write the report that makes it all worth something.
+
+      This is a **guided project**. Read each step and do the real work on your own lab machine; the knowledge check at the end confirms you understood the choices. The proof is your own running lab and the report you produce.
+
+      One rule governs everything here: the target is a deliberately-vulnerable training machine **you own, on the isolated network from Beginner**. Never point any of this at a system you are not explicitly authorised to test. "I was learning" is not a defence (Module 12).
+
+  - kind: explain
+    title: "Step 0 — scope it like a real job"
+    body: |
+      Before touching anything, write your own one-paragraph **rules of engagement**, exactly as a client would give you: the single target by IP, the date, and the goal ("gain administrator access and document the path and the fixes"). This mirrors Module 12 and sets the habit of never working without defined scope — even on your own box.
+
+      Open your notes document now (Module 27). From this moment, write down every command, against which target, when, and what you saw. The report is built from these notes, not from memory.
+
+  - kind: explain
+    title: "Step 1 — reconnaissance and enumeration"
+    body: |
+      Start where every engagement starts (Modules 14–16):
+
+      - Confirm the target's address on your isolated network and that you can reach it.
+      - Scan it with Nmap to list open ports, services and versions.
+      - **Enumerate** each interesting service in turn — this is where most of the real work and most of the findings live. Resist rushing to exploitation; the person who is stuck almost always did not enumerate enough.
+
+      For every open port, record the service and its version. You are building the map that everything else depends on.
+
+  - kind: explain
+    title: "Step 2 — assess, then get a verified foothold"
+    body: |
+      Turn your map into leads (Module 17): match the services and versions you found to known weaknesses, and **verify** rather than trusting a banner. Pick one verified weakness and use it, in your lab, to gain an initial foothold — whether through a tool like Metasploit (Module 18), a weak credential you recovered offline (Module 19), or a web flaw (Modules 20–22), depending on what your target actually exposes.
+
+      The moment you are in, switch to the post-exploitation mindset (Module 23): situational awareness first — who am I, what is this machine, what can it see? Keep taking notes; capture the evidence you will need for the report.
+
+  - kind: explain
+    title: "Step 3 — escalate to administrator"
+    body: |
+      Your foothold is almost certainly a limited account. Now apply Module 24: enumerate the box for the common escalation categories — sudo rules, SUID programs, scheduled jobs running writable files, weak service configs — by hand and with a tool like LinPEAS/WinPEAS. Find one broken trust where a high-privilege process relies on something your low user controls, and use it to reach `root`/Administrator in your lab.
+
+      Record the exact misconfiguration you used, because that is the finding, and its fix is the most valuable line in your report. (If your target also has reachable internal neighbours, note the pivoting potential from Module 25 — you do not have to exploit it to report the exposure.)
+
+  - kind: mac
+    title: "Optional — keep your public-practice skills warm"
+    body: |
+      The capstone itself runs entirely in your own lab. If you want a quick, legal warm-up on your Mac first, scan the one public host set aside for practice — `scanme.nmap.org` — and read its services the way you will read your target's. Everything else must be your own lab machine.
+    commands: |
+      nmap -sV scanme.nmap.org
+  - kind: explain
+    title: "Step 4 — write the report (the real deliverable)"
+    body: |
+      This is what the whole level was for (Module 27). Produce a short, professional-style report:
+
+      - **Executive summary:** a few plain-language sentences a manager could read — overall risk and the top issue.
+      - **Scope and method:** your target, the date, and how you tested (your Step 0 rules of engagement).
+      - **Findings:** one entry per issue, each with a title, a severity rating (likelihood × impact, CVSS optional), a short description, the evidence you captured, the business-style impact, and a concrete fix.
+      - **Remediation summary:** the fixes, prioritised worst-first.
+
+      Write the fix for the escalation path especially carefully — point at the root cause (the broken trust) and the permission to correct, not just the one instance.
+
+  - kind: info
+    title: "🔹 Clean up and reset"
+    body: |
+      When you finish, note anything you changed and revert it, then roll your lab VMs back to a clean snapshot. Leaving the system as you found it — and recording what you touched — is part of doing the job properly, and it readies the lab for the next challenge.
+
+  - kind: why
+    body: |
+      This capstone is the Intermediate goal in a single exercise: you can take one target from "here is its address" to full control, and — more importantly — turn that into a clear, prioritised report a team could act on. That combination, technical path plus actionable write-up, is exactly what a real assessment delivers and what distinguishes a professional from someone who merely collects flags. The Advanced level scales this up from one machine to a whole enterprise network.
+
+  - kind: recap
+    body: |
+      - Run the **full cycle** on one intentionally-vulnerable machine **in your own isolated lab** — never an unauthorised system.
+      - **Scope it first** (rules of engagement) and **take notes** from the very start.
+      - **Recon → enumerate** thoroughly; **assess and verify**, then gain a **foothold**; do situational awareness.
+      - **Escalate** via one broken trust to administrator; record the exact misconfiguration and its fix.
+      - Deliver the **report** — executive summary, scope/method, findings (with severity, evidence, impact, fix), prioritised remediation.
+      - **Clean up**, revert changes, and snapshot back to clean.

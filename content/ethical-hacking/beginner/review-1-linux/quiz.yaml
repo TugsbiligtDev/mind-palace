@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: You have just obtained a shell on an authorised target. Which set of commands is the safest, smartest first move?
+    options:
+      - "rm -rf /tmp/* to clear space"
+      - "id; pwd; ls -la to learn who and where you are"
+      - "shutdown now to reset the machine"
+      - "chmod 777 everything so you can read it"
+    answer: 1
+    explanation: Always look before you touch. `id`, `pwd` and `ls -la` tell you your privileges, your location and what is around you, without changing anything.
+  - type: mcq
+    prompt: "You see this listing: `-rwxrwxrwx 1 root root 412 backup.sh`. What is the most important observation?"
+    options:
+      - The file is too big
+      - It is owned by root but writable by everyone, so any user could modify what root runs — a privilege-escalation risk
+      - It cannot be executed
+      - It is a hidden file
+    answer: 1
+    explanation: Root-owned plus world-writable (777) means any user can change a script that runs as root. That is a textbook escalation path worth noting.
+  - type: mcq
+    prompt: You want to find the text "api_key" inside any file beneath the current folder. Which command?
+    options:
+      - "find . -name api_key"
+      - "grep -r \"api_key\" ."
+      - "cat api_key"
+      - "ls -la api_key"
+    answer: 1
+    explanation: "`grep -r` searches recursively for text *inside* files. `find -name` would look for files *called* api_key, which is not what you want here."
+  - type: mcq
+    prompt: Before running `rm -rf *`, what single command most reduces the risk of a disaster?
+    options:
+      - "whoami"
+      - "pwd, to confirm which folder you are about to empty"
+      - "top"
+      - "echo done"
+    answer: 1
+    explanation: "`rm -rf *` empties the *current* directory permanently. `pwd` confirms you are where you think you are before you delete."
+  - type: mcq
+    prompt: "A script needs to run but you get 'Permission denied'. An `ls -l` shows `-rw-r--r--`. What is missing, and how do you add it?"
+    options:
+      - "Nothing is wrong; try again"
+      - "The execute bit; add it with chmod +x"
+      - "The read bit; add it with chmod +r"
+      - "It must be deleted and recreated as root"
+    answer: 1
+    explanation: "`-rw-r--r--` has no `x`, so it cannot be run. `chmod +x` adds the execute permission."

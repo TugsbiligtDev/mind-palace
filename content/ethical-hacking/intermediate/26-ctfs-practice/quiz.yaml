@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What makes it legal to attack the machines on a platform like TryHackMe or Hack The Box?
+    options:
+      - Nothing — it is a grey area
+      - You signed up and agreed to the platform's terms, which authorises you for its machines only
+      - Security practice is always legal
+      - The machines are on the public internet
+    answer: 1
+    explanation: Your agreement with the platform is your authorisation, and it covers that platform's targets and nothing else. The rule from Module 12 never changes.
+  - type: mcq
+    prompt: In a CTF, what is a "flag"?
+    options:
+      - A warning that you broke a rule
+      - A unique string or file that proves you reached a given level of access
+      - A type of firewall
+      - The name of the target machine
+    answer: 1
+    explanation: A flag (often like `THM{...}` or a file such as `user.txt`) is the proof of success — find it and you have demonstrated that level of access.
+  - type: mcq
+    prompt: A learner is stuck on a machine. What is usually the most productive first move?
+    options:
+      - Try random exploits until one works
+      - Go back and enumerate more thoroughly — most people who are stuck simply did not look hard enough
+      - Give up and pick another box
+      - Reinstall their tools
+    answer: 1
+    explanation: Thorough enumeration first is the backbone of a repeatable method. Frantic tool-hopping is the beginner trap; a calm, orderly process gets you further.
+  - type: mcq
+    prompt: What is the right way to use another person's writeup?
+    options:
+      - Copy the steps exactly to get the flag fast
+      - Try hard yourself first, then read it to understand *why* each step was chosen, and write your own notes afterwards
+      - Never read them
+      - Only read writeups for machines you have not attempted
+    answer: 1
+    explanation: An answer you copy does not stick; a hint you earned does. The thinking behind each step is the real lesson, and re-explaining it in your own words reveals your gaps.
+  - type: mcq
+    prompt: Why keep your own writeups as you solve machines?
+    options:
+      - Platforms require it
+      - They double as revision and as a portfolio that shows a future employer how you think
+      - To publish solutions to active machines
+      - They replace taking notes during the work
+    answer: 1
+    explanation: Clear writeups demonstrate your reasoning far better than a list of tools, and they build directly toward the career material in Module 37.

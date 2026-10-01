@@ -1,0 +1,60 @@
+steps:
+  - kind: explain
+    title: From a limited account to full control
+    body: |
+      Your foothold (Module 23) is almost always a low-privilege account. **Privilege escalation** is the step that turns it into administrator — `root` on Linux, `Administrator`/`SYSTEM` on Windows. It rarely comes from a dramatic exploit. Far more often it comes from a **misconfiguration**: something set up carelessly that hands more power than intended.
+
+      That is good news for defenders, because misconfigurations are fixable with hygiene, not expensive tools. Read this lesson as the checklist of things to *correct* — each category below is a thing an administrator can close.
+
+  - kind: explain
+    title: "Linux: the usual suspects"
+    body: |
+      On a Linux host, a tester reviews a handful of well-known categories, all built on Modules 3 and 4:
+
+      - **Sudo misconfigurations:** `sudo -l` shows what the account may run as root. An over-broad rule can be a direct path up. *Fix: grant sudo narrowly, only the specific commands needed.*
+      - **SUID programs:** files that run with their owner's privileges regardless of who starts them. A risky program marked this way can be abused. *Fix: remove the SUID bit where it is not essential; keep such programs minimal and patched.*
+      - **Scheduled jobs (cron):** a root job that runs a script a lesser user can edit means that user's code runs as root. *Fix: root-owned jobs must only run files only root can modify.*
+      - **Writable sensitive files:** config or scripts that a low user can change but a high process trusts. *Fix: correct ownership and permissions.*
+
+  - kind: explain
+    title: "Windows: a different landscape, same idea"
+    body: |
+      Windows has its own recurring categories, but the theme is identical — trusted things a low user can influence:
+
+      - **Service misconfigurations:** a service that runs with high privilege but whose program a low user can replace or control.
+      - **Unquoted service paths:** a spacing/quoting flaw in how a service path is stored that can cause the wrong program to run.
+      - **Token and privilege abuse:** certain account privileges that can be leveraged to act as a more powerful account.
+
+      You only need to recognise these for now. *The fixes are the mirror image: run services with the least privilege they need, lock down who can modify service programs and paths, and grant powerful privileges sparingly.*
+
+  - kind: explain
+    title: Why automated enumeration exists
+    body: |
+      Checking every one of these by hand is slow and easy to get wrong, so testers run enumeration scripts — **LinPEAS** on Linux, **WinPEAS** on Windows — that sweep the system and highlight likely escalation paths. They do not break in; they *list findings* for a human to judge.
+
+      The defensive insight is powerful: **you can run the very same tools on your own systems**, before an attacker does, and fix what they flag. An auditor and an intruder use the same checklist — so get there first.
+
+  - kind: explain
+    title: The single idea underneath all of it
+    body: |
+      Step back and every item above is one pattern: a **high-privilege process trusting something a low-privilege user controls** — a command, a file, a script, a service, a path. Escalation is finding that broken trust; defence is removing it.
+
+      This is **least privilege** (Module 11) made concrete. Give each account and service only what it needs, make sure nothing powerful relies on anything a weaker user can alter, and most escalation paths simply vanish. The same sentence describes the attack and the fix.
+
+  - kind: info
+    title: "🔹 Patch level still matters"
+    body: |
+      Besides misconfiguration, unpatched **kernel or OS vulnerabilities** can sometimes grant escalation directly. Recognise the category — it is one more reason the patching discipline from Module 17 matters — but in practice, careful configuration closes far more real-world escalation paths than chasing kernel exploits ever will.
+
+  - kind: why
+    body: |
+      Privilege escalation is what separates "an attacker got a toehold" from "an attacker owns the box," and in a report it is the step that pushes a finding's severity up. Because it almost always rests on misconfiguration, it is also the most *fixable* link in the chain — which is why a tester who can explain the exact broken trust, and the exact permission to correct, delivers so much value to a defender.
+
+  - kind: recap
+    body: |
+      - **Privilege escalation** turns a low account into administrator, usually via **misconfiguration**, not a fancy exploit.
+      - **Linux** categories: over-broad **sudo**, risky **SUID** programs, **cron** jobs running user-writable files, **writable** sensitive files — each with a permissions fix.
+      - **Windows** categories: weak **service** configs, **unquoted service paths**, **token/privilege** abuse — fixed by least privilege and locking down what low users can modify.
+      - **LinPEAS/WinPEAS** automate the search; defenders can run them first and fix what they flag.
+      - The one idea: a **high-privilege process trusting something a low user controls** — remove that trust and escalation paths disappear (**least privilege**).
+      - 🔹 Unpatched kernels can escalate too — another reason to patch (Module 17).

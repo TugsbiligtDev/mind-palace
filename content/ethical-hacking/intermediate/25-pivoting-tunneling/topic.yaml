@@ -1,0 +1,4 @@
+title: "Pivoting & Tunneling"
+module: 25
+summary: "How a single compromised host becomes a doorway into an internal network: the idea of pivoting, port forwarding and SOCKS proxies at a concept level, and why network segmentation is the defence that stops it."
+minutes: 35

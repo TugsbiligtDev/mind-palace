@@ -1,0 +1,4 @@
+title: "Privilege Escalation"
+module: 24
+summary: "How a limited account becomes an administrator: the common classes of misconfiguration on Linux and Windows, why automated enumeration finds them, and the fix for each — the defender's checklist in disguise."
+minutes: 40

@@ -1,0 +1,44 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: You want to know which folder you are currently sitting in. Which command answers that?
+    options:
+      - ls
+      - pwd
+      - cd
+      - man
+    answer: 1
+    explanation: "`pwd` (print working directory) prints your current location. `ls` lists contents; `cd` moves you."
+  - type: mcq
+    prompt: Which command searches for the text "password" *inside* files?
+    options:
+      - find . -name password
+      - grep "password" config.php
+      - ls -la password
+      - cat password
+    answer: 1
+    explanation: "`grep` searches for text *inside* files. `find` searches for files by name or property, which is a different job."
+  - type: mcq
+    prompt: Why is `rm -rf` treated with so much caution?
+    options:
+      - It is slow on large folders
+      - It deletes a folder and everything in it immediately and permanently, with no Trash and no confirmation
+      - It only works as root
+      - It sends files to the Recycle Bin
+    answer: 1
+    explanation: "`rm` has no undo and `-rf` forces a recursive delete with no prompt. Always check your path and your location (`pwd`) first."
+  - type: mcq
+    prompt: You see `ls -la` recommended instead of plain `ls`. What does the `-a` add?
+    options:
+      - It sorts alphabetically
+      - It shows hidden files and folders that start with a dot
+      - It deletes empty files
+      - It runs the command as admin
+    answer: 1
+    explanation: "`-a` shows *all* entries, including hidden dot-files like `.ssh` and `.bash_history` — often the first things an investigator checks."
+  - type: fill
+    prompt: "You are deep in a folder and want to move up one level to its parent. Fill in the blank: `cd ____`"
+    code: "cd ____"
+    answer: ".."
+    runnable: false
+    explanation: "`cd ..` moves up one level. `cd ~` goes home, and `cd -` jumps back to the previous folder."

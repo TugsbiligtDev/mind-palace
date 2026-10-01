@@ -1,0 +1,116 @@
+steps:
+  - kind: explain
+    title: What you'll build, and why
+    body: |
+      You have learned the pieces: computers, Linux, networking, the web, security, ethics and the methodology. This capstone ties them together into the one thing every ethical hacker needs before they can practise anything — a **legal, isolated home lab** and a first, gentle run through the early phases against a machine *you own*.
+
+      The lab is free, it lives entirely on your own computer, and nothing it does reaches the internet or anyone else. Building it is the rite of passage into the rest of the course.
+
+      This lesson is a **guided project**. Read each step and do the real work on your own machine. The knowledge check at the end confirms you understood the choices — the proof is the running lab on your screen.
+
+  - kind: explain
+    title: The plan on one page
+    body: |
+      Here is the whole lab before you build it:
+
+      - A **hypervisor** — free software that runs virtual machines. **VirtualBox** (Intel Macs/Windows/Linux) or **UTM** (Apple Silicon Macs) both work and cost nothing.
+      - An **attacker VM**: **Kali Linux**, your toolbox.
+      - A **target VM**: one deliberately-vulnerable training machine built for exactly this.
+      - A **private network** connecting only those two VMs, so traffic never leaves your computer.
+
+      Two machines on a closed network inside your laptop. That is the entire lab. You will snapshot it so you can break things and roll back in seconds.
+
+  - kind: explain
+    title: "Step 1 — install a hypervisor"
+    body: |
+      Download and install one hypervisor:
+
+      - **Apple Silicon Mac (M1/M2/M3/M4):** **UTM** (free) is the smoothest path.
+      - **Intel Mac, Windows, or Linux:** **VirtualBox** (free) is the classic choice.
+
+      This is ordinary free software from the official site — treat installing it like any app. Once it is running, you have the stage on which both VMs will live.
+
+  - kind: explain
+    title: "Step 2 — build the Kali attacker VM"
+    body: |
+      Get Kali from its **official** site (kali.org) — and *only* the official site; a security tool from a random mirror is a contradiction in terms. The easy route is Kali's **pre-built VM image** for your hypervisor, which you import directly rather than installing from scratch.
+
+      Give it a sensible amount of RAM (4 GB is fine to start), boot it, and log in. You now have hundreds of tools from Module 13 at your fingertips. Open a terminal and run the commands you already know — `whoami`, `id`, `ip addr` — to confirm you are at home here.
+
+  - kind: explain
+    title: "Step 3 — add a deliberately-vulnerable target"
+    body: |
+      Your target must be a machine *designed* to be hacked for practice — never a real device. Well-known free training targets include **Metasploitable 2**, the **OWASP Broken Web Apps / Juice Shop** (for web practice), and the beginner **VulnHub** images. Download one and import it as a second VM.
+
+      These exist precisely so learners have something legal and safe to attack. Using one is the difference between practising your craft and committing a crime.
+
+  - kind: explain
+    title: "Step 4 — isolate the network (the critical step)"
+    body: |
+      This step is what keeps the lab legal and safe, so do not skip it. In your hypervisor's network settings, put **both** VMs on a **Host-Only** or **Internal** network — *not* Bridged.
+
+      - **Host-Only / Internal:** the VMs can see each other and nothing else. Traffic stays inside your computer. ✅
+      - **Bridged:** the VMs appear as real devices on your home network and can reach the internet and your neighbours' devices. ❌ For a deliberately-vulnerable target, this is dangerous and can be unlawful if your scans leak out.
+
+      A deliberately-weak machine on an isolated network is a safe lab. The same machine on a bridged network is a liability you have invited onto the internet. Confirm the setting twice.
+
+  - kind: explain
+    title: "Step 5 — snapshot, then find your target"
+    body: |
+      Take a **snapshot** of each VM now, while they are clean. Any time you break something, you roll back in seconds.
+
+      Now the first real task. From Kali, find your target's IP address and confirm the two machines can see each other but not the outside world:
+
+      - `ip addr` on Kali shows your lab IP (likely something like `192.168.56.x` on Host-Only).
+      - Your target will be on the same little subnet.
+
+      You now have an authorised target — one you own, on a sealed network — and its address. Everything that follows is legal because of how you built this.
+
+  - kind: mac
+    title: "Optional — a legal taste of active scanning"
+    body: |
+      Real scanning happens from Kali against your lab target (that is Module 15). But you can get a legal taste right now from your Mac against **`scanme.nmap.org`** — a host the Nmap project runs expressly so people can practise scanning it. It is the *one* public machine you may scan without your own authorisation.
+
+      If you do not have `nmap` installed, install it with `brew install nmap`, or simply skip this and do it from Kali later. Read the open ports it reports and connect them to Module 7.
+    commands: |
+      nmap scanme.nmap.org
+      nmap -sV scanme.nmap.org
+  - kind: explain
+    title: "Step 6 — do passive and active recon, and take notes"
+    body: |
+      With the lab built, walk the first two phases of the methodology against your own target, writing down everything as you go (notes are the habit from Module 13):
+
+      1. **Passive-style recon** on the target VM's documentation: what service is it *supposed* to run? What is it known to be vulnerable to? (For a training image this is public — reading it is good practice for reading a real target.)
+      2. **Active recon** from Kali: ping the target, then scan it with Nmap to list its open ports and the services behind them. For each open port, write down the port, the service, and its version.
+
+      Keep your notes in a simple document: target IP, date, commands run, and results. This is the seed of a real engagement log.
+
+  - kind: explain
+    title: "Step 7 — write it up"
+    body: |
+      Finish with a one-page write-up, because the report is the deliverable (Module 13). Include:
+
+      - **Scope:** the one target you tested, by IP, and the date — your self-authorisation, lab-style.
+      - **Method:** that you did passive recon then an Nmap scan.
+      - **Findings:** the open ports and services you found, each with the version if you got it.
+      - **First impressions:** for each service, one line on what an attacker might investigate next — *not* an exploit, just the reasoning (e.g. "port 21 FTP, old version — worth checking for known vulnerabilities and anonymous login in a later module").
+
+      That document is your Beginner capstone. It proves you can set up a lab and safely, legally map a target — exactly the Beginner goal.
+
+  - kind: info
+    title: "🔹 No computer powerful enough? Use the cloud ranges"
+    body: |
+      If your machine cannot comfortably run two VMs, you lose nothing: **TryHackMe** and **Hack The Box** host the same kind of vulnerable targets in your browser, pre-authorised for you to attack. Their beginner paths line up neatly with this course. The skills transfer exactly — a lab is a lab.
+
+  - kind: why
+    body: |
+      This is the moment the course becomes real. You now have a place to practise everything that follows, built the right way: isolated, legal, reversible. And you have already walked the opening phases of a real engagement — recon, a scan, notes, a write-up — against a target you are unquestionably allowed to touch. Intermediate picks up exactly here, going deep on the scanning and enumeration you just sampled.
+
+  - kind: recap
+    body: |
+      - A home lab is a **hypervisor** (VirtualBox/UTM) running a **Kali** attacker VM and a **deliberately-vulnerable target** VM.
+      - Put both VMs on a **Host-Only/Internal** network — never Bridged — so nothing leaks out. This is what keeps the lab legal and safe.
+      - **Snapshot** clean VMs so you can always roll back.
+      - Practise the first phases against *your own* target: passive recon, then an active **Nmap** scan, taking notes throughout.
+      - Finish with a short **write-up** (scope, method, findings, next-step reasoning) — your first report.
+      - No spare computer? **TryHackMe** / **Hack The Box** give the same practice, pre-authorised, in the browser.

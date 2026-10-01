@@ -1,0 +1,69 @@
+steps:
+  - kind: explain
+    title: Why you need a bigger playground
+    body: |
+      Your home lab (the Beginner capstone) is where you learned to walk, but one or two target machines run dry quickly. Skill comes from seeing *many* different systems, each configured a little differently. A whole set of services exists to give you exactly that: legal, ready-made targets you are explicitly allowed to practise on.
+
+      The rule from Module 12 never changes. Each of these platforms works because *you signed up and agreed to its terms*, and that agreement is your authorisation — for that platform's machines and nothing else. The skills transfer everywhere; the permission does not.
+
+  - kind: explain
+    title: The platforms worth knowing
+    body: |
+      - **TryHackMe:** guided "rooms" that explain a topic, then let you practise it. The gentlest step after this course, with beginner paths that follow a similar order to ours.
+      - **Hack The Box:** standalone machines with little hand-holding — you get an address and a goal. Harder, and closer to a real assessment, which makes it the natural next step.
+      - **PortSwigger Web Security Academy:** free, browser-based labs for web vulnerabilities, from the makers of Burp Suite — the ideal place to rehearse Modules 20 to 22.
+      - **VulnHub:** downloadable vulnerable machines you run inside your own lab, completely offline.
+
+      Most online platforms connect you through a **VPN** into their private network. Connect while you practise, and disconnect when you finish — you have no business on that network otherwise.
+
+  - kind: explain
+    title: What a CTF actually is
+    body: |
+      A **CTF** (Capture The Flag) is a security challenge where success is proven by finding a **flag** — a unique string (often like `THM{...}`) or a file such as `user.txt`. Recovering it shows you reached that level of access.
+
+      Two common shapes:
+
+      - **Jeopardy-style:** separate puzzles grouped by category (web, cryptography, forensics, reverse engineering), each worth points.
+      - **Boot-to-root:** a single machine you take from "here is its address" to full administrator, usually collecting a lower-privilege flag and then an administrator flag — a miniature of the Intermediate capstone.
+
+      Beginner-friendly events such as picoCTF run regularly and make a welcoming first competition.
+
+  - kind: explain
+    title: A repeatable method beats a bag of tricks
+    body: |
+      The biggest difference between a beginner and a professional is not more tools — it is doing the **same orderly steps every time**. Turn the methodology from Module 13 into a personal checklist you follow on every box:
+
+      1. **Enumerate thoroughly first.** Most people who are stuck simply did not look hard enough. Map every service before touching any of them.
+      2. **Research what you found.** Match versions and services to known issues, in scope and verified (Module 17).
+      3. **Work one lead at a time** and take notes as you go (Module 27), so you can retrace instead of restarting.
+      4. **Record the fix, too.** For each thing you found, note how a defender would close it — that is the habit the whole course is building.
+
+      A calm, written process gets you further than frantic tool-hopping ever will.
+
+  - kind: explain
+    title: Learning from writeups without cheating yourself
+    body: |
+      When you finish a machine — or get truly stuck — read other people's **writeups** (step-by-step accounts of how they solved it). They are one of the fastest ways to learn, *if* you use them well:
+
+      - Try hard yourself first; a hint you earned sticks, an answer you copied does not.
+      - When you read one, ask **why** each step was chosen, not just what was typed. The thinking is the lesson.
+      - Afterwards, write your own notes in your own words — ideally your own writeup. Teaching it back is how you find the gaps in your understanding.
+
+      Respect each platform's rules: many ask you not to publish writeups for *active* machines, precisely so others get the same chance to think it through.
+
+  - kind: info
+    title: "🔹 Keep a portfolio as you go"
+    body: |
+      Your own writeups are not just revision — they become a **portfolio**. A tidy collection of machines you have solved, explained clearly, shows a future employer how you think far better than a list of tool names. Start it now; the Advanced level and Module 37 return to building a career on exactly this.
+
+  - kind: why
+    body: |
+      Reading about attacks only gets you so far; you learn security by doing it, repeatedly, on many different systems. Sanctioned platforms give you a legal, endless supply of those systems, and CTFs make the practice addictive. Just as importantly, grinding boxes is where a loose collection of techniques hardens into a *method* — the dependable, repeatable process that is the real mark of a professional.
+
+  - kind: recap
+    body: |
+      - Practise on **sanctioned platforms** — TryHackMe, Hack The Box, PortSwigger, VulnHub — where signing up *is* your authorisation (and only there).
+      - A **CTF** proves access by finding a **flag**; formats include jeopardy-style puzzles and boot-to-root machines.
+      - Beat beginners' tool-hopping with a **repeatable method**: enumerate fully, research, work one lead at a time, take notes, record the fix.
+      - Use **writeups** to learn *why*, after trying yourself; respect rules about active machines.
+      - Turn your solutions into **writeups and a portfolio** — the best evidence of how you think.

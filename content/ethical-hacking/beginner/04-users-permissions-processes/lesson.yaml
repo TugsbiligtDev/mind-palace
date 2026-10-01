@@ -1,0 +1,122 @@
+steps:
+  - kind: explain
+    title: Who am I, and who can I become?
+    body: |
+      On a shared system, everything hinges on *who you are*. Each account has a name and a numeric **user id** (root is always 0). Accounts are sorted into **groups** so permissions can be handed out to many people at once.
+
+      Three commands answer "who am I?":
+
+      - `whoami` — your username
+      - `id` — your user id, your groups, everything at a glance
+      - `groups` — just the groups you belong to
+
+      The very first thing you do after landing on a machine is run `id`. It tells you how much power you already have — and how much you still need to get.
+
+  - kind: explain
+    title: sudo — borrowing root's power
+    body: |
+      Ordinary users cannot change the system. To do an administrative task you borrow root's power for one command with **sudo** ("**s**uper**u**ser **do**"):
+
+      ```
+      sudo apt install nmap
+      ```
+
+      It asks for *your* password, checks that you are allowed, and runs that one command as root. This is safer than logging in as root all the time, and it leaves a trail in the logs of who did what.
+
+      For a security tester, the question "which commands can this user run with `sudo`?" (`sudo -l`) is one of the richest. A single misconfigured `sudo` rule is one of the most common ways to escalate from a limited user to full root — a theme you will return to.
+
+  - kind: explain
+    title: Reading permissions
+    body: |
+      Recall the permission line from Module 2. Run `ls -l` and you see something like:
+
+      ```
+      -rwxr-x---  1 ada  staff   920  tool.sh
+      ```
+
+      Break down the first ten characters:
+
+      - `-` the **type** (`-` file, `d` directory, `l` link)
+      - `rwx` the **owner** (ada): read, write, execute
+      - `r-x` the **group** (staff): read, execute
+      - `---` **everyone else**: nothing
+
+      **r**ead = view the contents; **w**rite = change them; e**x**ecute = run it as a program (or, for a folder, enter it). Permissions are the fence. Most attacks are about finding a gap in it.
+
+  - kind: explain
+    title: Permissions as numbers (octal)
+    body: |
+      The same permissions are often written as three digits, because each of r, w, x has a value:
+
+      | Letter | Value |
+      |---|---|
+      | read (r) | 4 |
+      | write (w) | 2 |
+      | execute (x) | 1 |
+
+      Add them up per group. So `rwx` = 4+2+1 = **7**, `r-x` = 4+1 = **5**, `r--` = **4**. The whole line `rwxr-x---` becomes **750**.
+
+      Two numbers you must recognise on sight:
+
+      - **755** (`rwxr-xr-x`) — owner full, everyone else read/run. Normal for programs.
+      - **777** (`rwxrwxrwx`) — *everyone* can read, write and run. Almost always a mistake, and a gift to an attacker.
+
+  - kind: explain
+    title: Changing ownership and permissions
+    body: |
+      Two commands set these:
+
+      - **`chmod`** changes the permission bits: `chmod 755 tool.sh` or `chmod +x tool.sh` (just add execute).
+      - **`chown`** changes the owner: `chown ada:staff tool.sh` (needs root, so usually `sudo chown ...`).
+
+      You will do this constantly — for example, after downloading a script you must `chmod +x` it before you can run it. And when auditing a machine, spotting a file that is `chmod 777` or owned by the wrong person is often the loose thread that unravels everything.
+
+  - kind: mac
+    title: Try permissions on your own file
+    body: |
+      This is safe — you are only touching a file you just made in your practice folder. Watch how the permission line changes.
+    commands: |
+      cd ~/Desktop/hacking-practice
+      whoami
+      id
+      touch tool.sh
+      ls -l tool.sh
+      chmod 755 tool.sh
+      ls -l tool.sh
+  - kind: explain
+    title: Processes — the programs running now
+    body: |
+      A running program is a **process**, each with a numeric **PID** (process id). Three commands let you see and control them:
+
+      - `ps aux` — a full list of every process, who owns it, and what it is
+      - `top` (or `htop`) — a live, updating view, sorted by what is using the CPU (`q` to quit)
+      - `kill 1234` — politely ask process 1234 to stop; `kill -9 1234` forces it
+
+      Why it matters: after getting onto a machine, `ps aux` shows what services are running, what is running *as root* (a potential escalation path), and sometimes even passwords accidentally passed on a command line.
+
+  - kind: explain
+    title: Software and services
+    body: |
+      Two last pieces of housekeeping:
+
+      - **Installing software.** Debian-based systems (Ubuntu, Kali) use `apt`: `sudo apt update` refreshes the catalogue, then `sudo apt install wireshark` installs a tool.
+      - **Services.** Long-running background programs (a web server, SSH) are **services**, managed with `systemctl`: `systemctl status ssh`, `sudo systemctl start ssh`, `... stop`, `... enable` (start at boot).
+
+      When you enumerate a target, "what services are running, and are they started at boot?" tells you both the attack surface and how the machine is meant to be used.
+
+  - kind: info
+    title: "🔹 SUID — a file that runs as its owner"
+    body: |
+      Sometimes you will see an `s` where an `x` should be: `-rwsr-xr-x`. That is the **SUID** bit: the program runs with the *owner's* privileges, not yours. A SUID program owned by root runs as root even when you launch it. Used correctly it is necessary (that is how `passwd` lets you change your own password). Used carelessly it is a direct route to privilege escalation — which is why hunting for unusual SUID files is a standard enumeration step later in the course.
+
+  - kind: why
+    body: |
+      Privilege escalation — the heart of Intermediate and Advanced — is almost entirely built from this module: who you are (`id`), what you may run as root (`sudo -l`), which files are misconfigured (`ls -l`, `chmod 777`, SUID), and what is running and as whom (`ps aux`). Master these on safe practice files now and the later attacks read like plain sentences.
+
+  - kind: recap
+    body: |
+      - Know yourself with `whoami`, `id`, `groups`; **`sudo`** borrows root's power for one command, and `sudo -l` shows what you are allowed.
+      - Permissions are **r/w/x** for **owner/group/others**; as octal, r=4, w=2, x=1, so `rwxr-x---` = **750**. **777** is almost always a mistake.
+      - Set them with **`chmod`** (bits) and **`chown`** (owner); `chmod +x` makes a script runnable.
+      - Processes have a **PID**; see them with `ps aux` / `top`, stop them with `kill`.
+      - Install with `apt`, manage background **services** with `systemctl`. The **SUID** bit makes a program run as its owner — a classic escalation path.

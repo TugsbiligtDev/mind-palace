@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What is pivoting?
+    options:
+      - Rotating a server rack
+      - Using a compromised host as a relay to reach internal machines that are not exposed to the outside
+      - Changing your attack tool
+      - Scanning the public internet faster
+    answer: 1
+    explanation: The compromised host can see internal systems you cannot reach directly. Pivoting borrows its position in the network to reach them.
+  - type: mcq
+    prompt: Why are internal machines often easier to attack once you have pivoted inside?
+    options:
+      - They have no data worth taking
+      - Organisations harden the perimeter but often treat the inside as trusted, leaving internal hosts less protected
+      - They are always fully patched
+      - Internal machines have no network
+    answer: 1
+    explanation: The "hard shell, soft centre" assumption is exactly what pivoting breaks — which is why modern defence treats the internal network as hostile too.
+  - type: mcq
+    prompt: Why is tunneling often used to carry pivoted traffic?
+    options:
+      - It makes the traffic faster
+      - It hides the traffic inside commonly-allowed channels so it blends in and slips past simple firewall rules
+      - It encrypts nothing
+      - It is required by law
+    answer: 1
+    explanation: Firewalls usually permit a few common connections; tunneling packs pivoted traffic into those, so defenders must watch for traffic shaped like something it isn't.
+  - type: mcq
+    prompt: What is the primary defence against pivoting across a network?
+    options:
+      - A longer administrator password
+      - Network segmentation — splitting the network into zones and allowing only necessary connections between them
+      - Faster internet
+      - Disabling all logging
+    answer: 1
+    explanation: Segmentation means a compromised web server simply cannot reach, say, the finance database — the network itself forbids the path, regardless of attacker skill.
+  - type: mcq
+    prompt: Pivoting combined with credential reuse is the engine of what larger technique?
+    options:
+      - Password hashing
+      - Lateral movement across a network — compromise a host, use it to reach more hosts, repeat
+      - Output encoding
+      - Port scanning
+    answer: 1
+    explanation: Lateral movement is the heart of enterprise/Active Directory attacks (Advanced level); segmentation and monitoring are what break the chain.

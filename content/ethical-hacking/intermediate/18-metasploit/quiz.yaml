@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: In Metasploit terms, what is the difference between the exploit and the payload?
+    options:
+      - They are the same thing
+      - The exploit is the code that abuses the vulnerability to get in; the payload is what runs on the target once it succeeds
+      - The payload picks the lock; the exploit runs afterwards
+      - The exploit is the listener
+    answer: 1
+    explanation: The exploit is the way in (one per flaw); the payload is what executes on the target afterward (often a shell back to you). The listener catches that connection.
+  - type: mcq
+    prompt: Why are reverse shells (target connects out to you) preferred over bind shells (you connect in to the target)?
+    options:
+      - They are more colourful
+      - Outbound connections are far more often allowed through firewalls than inbound ones
+      - Bind shells are illegal
+      - Reverse shells need no listener
+    answer: 1
+    explanation: Firewalls usually block inbound connections to a target but allow outbound. Reverse shells exploit that — which is why egress filtering (limiting outbound traffic) is a strong defence.
+  - type: mcq
+    prompt: An exploit fails to return a session. What is the most likely explanation?
+    options:
+      - The target is definitely not vulnerable, stop here
+      - A configuration mistake — wrong architecture, wrong payload type, a misset LHOST, or a firewall — so troubleshoot methodically
+      - Metasploit is broken
+      - The CVE was fake
+    answer: 1
+    explanation: Failed exploits are usually configuration issues, not proof of invulnerability. Change one variable at a time and read the errors, like debugging code.
+  - type: mcq
+    prompt: Which set of defences most directly counters the Metasploit workflow in this module?
+    options:
+      - Longer passwords only
+      - Patching (removes the flaw), egress filtering (breaks reverse shells), EDR (catches in-memory payloads) and least privilege (contains the foothold)
+      - Turning off DNS
+      - Using a different web browser
+    answer: 1
+    explanation: "Each maps to a step — patching removes the door, egress filtering stops the callback, EDR spots payloads like Meterpreter, and least privilege limits what a foothold can do."
+  - type: mcq
+    prompt: Why do certifications like the OSCP restrict Metasploit use?
+    options:
+      - Metasploit is malware
+      - They want to confirm you understand the underlying concepts — reading and adapting exploits, catching shells by hand — not just point-and-shoot
+      - Metasploit costs too much
+      - It only runs on Windows
+    answer: 1
+    explanation: Metasploit is an excellent scaffold for learning the concepts, but a tool you do not understand fails when it does not fit. Exams check you grasp what is happening underneath.

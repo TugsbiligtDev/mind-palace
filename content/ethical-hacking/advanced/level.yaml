@@ -1,0 +1,21 @@
+id: advanced
+title: Advanced
+season: 3
+season_title: The Syndicate
+season_pitch: |
+  The biggest cases are whole organisations: corporate Windows networks built on Active
+  Directory, custom tooling in Python, the basics of binary exploitation and evasion, command
+  and control, and the specializations and certifications that turn a hobby into a career.
+status: coming_soon
+topics: []
+planned:
+  - "Active Directory Fundamentals"
+  - "Active Directory Attacks"
+  - "Scripting for Hackers (Python)"
+  - "Binary Exploitation Basics"
+  - "Advanced Web Exploitation"
+  - "AV/EDR Evasion Concepts"
+  - "Command & Control and Red Teaming"
+  - "Wireless & Network Attacks"
+  - "Cloud & Container Security Intro"
+  - "Career & Certifications"

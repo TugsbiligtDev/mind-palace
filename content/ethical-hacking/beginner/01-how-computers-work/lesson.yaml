@@ -1,0 +1,98 @@
+steps:
+  - kind: explain
+    title: Why a hacker starts here
+    body: |
+      You cannot break into, or protect, a thing you do not understand. Every attack is really just a computer doing exactly what it was told — only it was told by the wrong person, or told something the owner never intended. So the first job is to picture clearly what a computer *is* and what it is doing at every moment.
+
+      This whole course has one promise, printed on the tin: **learn how attacks work, so you can defend against them.** Nothing here is a weapon you point at strangers. It is the mechanic's knowledge of the engine, so you can hear when something is wrong.
+
+  - kind: explain
+    title: Three parts that matter
+    body: |
+      Every computer — a phone, a laptop, a server in a data centre — has three parts a security person thinks about constantly:
+
+      | Part | What it is | Why an attacker cares |
+      |---|---|---|
+      | **CPU** (processor) | Does the actual work, one tiny instruction at a time, billions per second | It will run *whatever* instructions it is handed, good or evil |
+      | **RAM** (memory) | Holds what is being worked on *right now*. Fast, but wiped when power is lost | Passwords, keys and secrets often sit here in the clear while a program runs |
+      | **Storage** (SSD/disk) | Keeps files for the long term; survives a reboot | Where data lives at rest — and what ransomware tries to lock |
+
+      When you open a program, the computer copies it from storage into RAM, and the CPU starts following its instructions.
+
+  - kind: explain
+    title: Everything is 0s and 1s — binary
+    body: |
+      Inside RAM and storage, everything — numbers, text, photos, network traffic — is a long row of switches that are either **off (0)** or **on (1)**. One switch is a **bit**; eight bits make a **byte**.
+
+      Counting in **binary** works like normal counting, but with only two digits:
+
+      | Decimal | 0 | 1 | 2 | 3 | 4 | 5 | 8 |
+      |---|---|---|---|---|---|---|---|
+      | Binary | 0 | 1 | 10 | 11 | 100 | 101 | 1000 |
+
+      Why you will care: an IP address like `192.168.1.1` is really four bytes (four groups of eight bits), and subnet masks (a networking idea you meet in Module 6) only make sense in binary.
+
+  - kind: explain
+    title: Hexadecimal — shorthand for bytes
+    body: |
+      Binary is correct but exhausting to read: one byte is eight digits like `11111111`. So people write bytes in **hexadecimal** (hex) instead — base 16, using the digits 0–9 then a, b, c, d, e, f for ten to fifteen.
+
+      One hex digit covers four bits, so **two hex digits = one byte**. That is why you see hex everywhere in security:
+
+      - A MAC address: `00:1b:44:11:3a:b7`
+      - A colour in web code: `#059669`
+      - A file's fingerprint (hash): `d41d8cd98f00b204e9800998ecf8427e`
+      - Raw bytes in a packet or a memory dump
+
+      You do not need to convert hex in your head. You just need to recognise it and know each pair of characters is one byte.
+
+  - kind: explain
+    title: What an operating system does
+    body: |
+      Between the raw hardware and your programs sits the **operating system** (OS) — Windows, macOS, Linux. It is the manager. Three of its jobs matter most to us:
+
+      - **Processes.** A running program is a *process*. The OS starts them, stops them, and keeps them apart so one crashing program does not take down the rest.
+      - **Files and permissions.** The OS decides who may read or change each file. Most attacks are ultimately about doing something the permissions were *supposed* to stop.
+      - **Memory.** The OS hands each process its own slice of RAM and tries to stop one process from reading another's. When that separation fails, secrets leak.
+
+      A huge share of hacking is simply persuading the OS to run your code, or to run it with more privilege than it should.
+
+  - kind: explain
+    title: Virtual machines — the hacker's safe room
+    body: |
+      A **virtual machine** (VM) is a whole computer *pretended into existence* by software. A program called a **hypervisor** (VirtualBox, VMware, UTM) carves out some CPU, RAM and disk and runs a second operating system inside that sandbox, in a window on your real machine.
+
+      Security work lives inside VMs for good reasons:
+
+      - **Isolation.** If a target VM is infected or you run risky tooling, your real laptop and your files are not touched.
+      - **Snapshots.** You can save a VM's exact state, break it, and roll back in seconds.
+      - **A safe network.** VMs can be put on a private network that only talks to each other, so nothing escapes to the internet or to devices you do not own.
+
+      In this course you will meet **Kali Linux**, a VM pre-loaded with security tools, and a separate deliberately-weak **target VM**. They talk only to each other — your legal practice ground.
+
+  - kind: explain
+    title: Client vs. server
+    body: |
+      Two words you will hear constantly:
+
+      - A **server** waits and offers a service — a website, email, a database. It listens for requests.
+      - A **client** is whatever asks — your browser, a phone app, a mail program. It makes the request.
+
+      Your browser (client) asks a web server for a page; the server answers. One machine can be both: a server you attack might itself be a client to a database behind it. Attacks usually travel along these request–response lines, so always ask: *who is the client here, and who is the server?*
+
+  - kind: info
+    title: "🔹 Bits vs. bytes, and why it bites you"
+    body: |
+      Network speeds are measured in **bits** per second (Mbps, little `b`); file sizes in **bytes** (MB, big `B`). Eight bits to a byte, so a "100 Mbps" connection downloads at roughly 12.5 MB per second, not 100. It is a classic source of confusion — and of marketing that sounds faster than it is.
+
+  - kind: why
+    body: |
+      Every later idea rests on this one. "The password was in memory" means RAM. "The malware persists after reboot" means storage. "We scoped the engagement to these VMs" means isolation. "Who is the client and who is the server?" is the first question in almost every attack. Picture the machine clearly now and the rest of the course has something to hang on.
+
+  - kind: recap
+    body: |
+      - A computer is a **CPU** (does the work), **RAM** (fast, temporary) and **storage** (slow, permanent).
+      - Everything is **binary** (bits and bytes); **hex** is shorthand where two characters = one byte.
+      - The **operating system** manages processes, files/permissions and memory — and most attacks are about bending one of those rules.
+      - A **virtual machine** is a sandboxed computer-in-software; security work happens inside VMs for isolation, snapshots and a safe network.
+      - A **client** requests; a **server** offers a service. Always know which is which.

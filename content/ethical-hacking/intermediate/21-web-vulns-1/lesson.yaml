@@ -1,0 +1,99 @@
+steps:
+  - kind: explain
+    title: One idea behind three attacks
+    body: |
+      The three vulnerabilities in this module — SQL injection, cross-site scripting, and command injection — are all the same mistake wearing different clothes: **untrusted user input is mixed with code, and the system can no longer tell the data from the instructions.** When your input is treated as part of a command, you can change what the command *does*.
+
+      Understand that single idea and all three make sense, as does the single family of fixes. We study them to find them in authorised tests and, above all, to prevent them. (Practise only on your lab — DVWA, Juice Shop — or PortSwigger's Academy.)
+
+  - kind: explain
+    title: SQL injection — the shape of it
+    body: |
+      Recall from Module 10 that a login might build a database query out of your input. Imagine the server glues your username straight into:
+
+      ```
+      SELECT * FROM users WHERE name = 'INPUT';
+      ```
+
+      If `INPUT` is treated as part of the query rather than as plain text, a crafted value can close the quote and add logic the developer never intended — for example, a trailing condition that is always true, turning "find this one user" into "match every row." The classic teaching payload `' OR '1'='1` does exactly that. The database faithfully runs the new meaning, because it was never told which part was supposed to be mere data.
+
+      That is the whole essence: your input crossed from *data* into *code*.
+
+  - kind: explain
+    title: What SQL injection can lead to, and how to find it
+    body: |
+      Depending on the flaw, SQL injection can read data the app never meant to show (other users' records, password hashes), bypass a login, or in bad cases modify data. It is consistently one of the most damaging web vulnerabilities, which is why it sits near the top of the OWASP list.
+
+      **Finding it (in your lab):** the first sign is that a single quote or an unusual character in an input changes the response or produces a database error. A **500 error** or a changed result after injecting a quote is the classic tell. Testers confirm carefully and minimally; the automated tool **sqlmap** can detect and demonstrate it, but understanding the manual signal matters more than running the tool.
+
+  - kind: explain
+    title: How to stop SQL injection (the important part)
+    body: |
+      There is a clean, well-known fix, and your reports will recommend it constantly:
+
+      - **Parameterized queries (prepared statements).** The code sends the query structure and the user's values *separately*, so the database always treats input as data, never as code. This is the real fix — not trying to filter "bad characters."
+      - **Use an ORM or query builder** that parameterizes by default.
+      - **Least privilege** for the database account, so even a successful injection is limited.
+      - **Input validation** as defence in depth (expect a number? accept only digits) — helpful, but never the primary control.
+
+      The headline for a client: *never build queries by gluing strings together; use parameterized queries.* That one change closes the entire class.
+
+  - kind: explain
+    title: Cross-site scripting (XSS) — code in the browser
+    body: |
+      **XSS** is injection aimed at the *browser* instead of the database. If a site takes your input and puts it back into a page without proper handling, an attacker can get their input treated as **JavaScript** that runs in the browser of whoever views that page. (Recall from Module 9 that JavaScript runs client-side — that is why this is possible.)
+
+      Why it is dangerous: script running in a victim's browser runs *as that victim*. It can steal their session cookie (Module 9 — effectively their logged-in identity), act on their behalf, or deface the page. The victim is the user, not just the server.
+
+  - kind: explain
+    title: Reflected vs. stored XSS
+    body: |
+      Two main flavours, differing in where the malicious input lives:
+
+      - **Reflected XSS:** the input is echoed straight back in the response — typically via a link crafted by the attacker. The victim must click the attacker's link; the script runs once, for them.
+      - **Stored XSS:** the input is *saved* by the app (a comment, a profile field, a message) and served to *everyone* who views that page later. This is more dangerous because it needs no special link and can hit many victims — even administrators viewing the content.
+
+      A `<script>` tag that survives into the page unescaped is the simplest demonstration; real testing confirms whether input is reflected or stored and whether it executes.
+
+  - kind: explain
+    title: How to stop XSS
+    body: |
+      Again a clear fix, and again the theme is "keep data as data":
+
+      - **Output encoding / escaping.** When user input is placed into a page, encode it for its context so the browser shows it as text, not markup. This is the core defence.
+      - **A Content Security Policy (CSP)** header that restricts where scripts may come from, limiting damage if something slips through.
+      - **Framework auto-escaping** (React, modern templating) handles most cases automatically — a strong reason to use them.
+      - **Input validation and `HttpOnly` cookies** (so script cannot read the session cookie) as defence in depth.
+
+  - kind: explain
+    title: Command injection — reaching the operating system
+    body: |
+      The most severe of the three. If a web app passes user input into an **operating-system command** (say, a tool that takes a hostname and runs a system utility on it), and does so unsafely, an attacker may be able to append their own command and have the *server* run it. That is often a direct path to running code on the machine — essentially a foothold.
+
+      The mechanism is identical to the others: input crossed from data into code, this time into a shell command. The signs in a lab are that input influencing a system operation produces command-like behaviour or unexpected output.
+
+  - kind: explain
+    title: How to stop command injection
+    body: |
+      - **Avoid calling the shell with user input at all.** Prefer built-in language libraries that do the job directly (e.g. a DNS library instead of shelling out to a lookup command).
+      - **If a system call is truly necessary**, use safe APIs that pass arguments as a list (never a single string the shell re-parses) and strictly validate input against an allow-list.
+      - **Least privilege** for the web process, so a successful injection is contained.
+
+      Notice the pattern across all three fixes: separate the user's data from the code (parameterized queries, output encoding, argument lists). Trying to blacklist "dangerous characters" is the fragile approach that keeps failing; keeping data and code apart is the durable one.
+
+  - kind: info
+    title: "🔹 Injection is old and still everywhere"
+    body: |
+      These flaws have been understood for over two decades and have excellent fixes — yet they remain common, because they reappear the moment a developer glues input into a query, a page, or a command. That persistence is the real lesson: secure defaults and frameworks that parameterize and escape *by default* matter more than expecting every developer to remember every time.
+
+  - kind: why
+    body: |
+      Injection is the heart of web hacking and a huge fraction of real-world breaches. Grasping the one underlying idea — data becoming code — lets you recognise all three in a test and, more valuably, hand developers the one durable fix for each: parameterized queries, output encoding, and avoiding shell calls. This is where your work directly makes applications safer.
+
+  - kind: recap
+    body: |
+      - All three flaws share one cause: **untrusted input is treated as code**, so the attacker changes what a query, page or command does.
+      - **SQL injection** turns input into database logic (the classic `' OR '1'='1`); signs include errors or changed results from a quote. Fix: **parameterized queries** (+ least privilege, validation).
+      - **XSS** runs attacker **JavaScript** in a victim's browser (as that victim). **Reflected** needs a clicked link; **stored** is saved and hits everyone. Fix: **output encoding**, **CSP**, framework auto-escaping, `HttpOnly` cookies.
+      - **Command injection** runs attacker input as an **OS command** on the server — often code execution. Fix: avoid shelling out, use safe argument-list APIs with allow-lists, least privilege.
+      - The durable pattern: **separate data from code**; blacklisting characters is the fragile path that keeps failing.

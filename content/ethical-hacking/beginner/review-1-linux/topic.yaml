@@ -1,0 +1,5 @@
+title: "The terminal, under pressure"
+module: 5
+kind: review
+summary: "Five short Linux scenarios that mix Modules 3 to 5: read the output, pick the right command, spot the dangerous one, and reason about permissions — the way you will on a real machine."
+minutes: 20

@@ -1,0 +1,119 @@
+steps:
+  - kind: explain
+    title: The web is one conversation, repeated
+    body: |
+      Most of the systems you will ever test are web applications, so the web gets its own two modules. The good news: underneath, it is astonishingly simple. A **client** (your browser) sends a **request**; a **server** sends back a **response**. That is it, repeated billions of times a second.
+
+      The language of that conversation is **HTTP**. Learn to read an HTTP request and response and you can follow — and later test — almost anything a website does.
+
+  - kind: explain
+    title: Anatomy of a request
+    body: |
+      When you visit a page, your browser sends a request that looks roughly like this:
+
+      ```
+      GET /login HTTP/1.1
+      Host: example.com
+      User-Agent: Mozilla/5.0 ...
+      Cookie: session=abc123
+      ```
+
+      Three parts to notice:
+
+      - The **method** (`GET`) — what you want to *do*.
+      - The **path** (`/login`) — which resource.
+      - The **headers** (`Host`, `User-Agent`, `Cookie`) — extra information about the request.
+
+      Everything a web test does is, at bottom, crafting or tampering with requests like this — which is why tools that let you see and edit them (Module 20's Burp Suite) are so central.
+
+  - kind: explain
+    title: Methods — GET and POST
+    body: |
+      HTTP **methods** say what kind of action you want:
+
+      | Method | Means | Typical use |
+      |---|---|---|
+      | **GET** | "Give me this" | Loading a page; data goes in the URL |
+      | **POST** | "Here, take this" | Submitting a form; data goes in the body |
+      | PUT / DELETE | Create/replace, remove | APIs |
+
+      One security point already: because **GET puts data in the URL**, anything sent that way (a search term, worse, a password) ends up in browser history, server logs and bookmarks. Sensitive data belongs in a POST body, not a GET URL — a finding you will report more than once.
+
+  - kind: explain
+    title: The response and its status code
+    body: |
+      The server answers with a **status code** — a three-digit number summarising what happened. You will read these constantly:
+
+      | Range | Meaning | Examples |
+      |---|---|---|
+      | **2xx** | Success | 200 OK |
+      | **3xx** | Redirect | 301 moved, 302 found |
+      | **4xx** | *You* did something wrong | 401 unauthorised, 403 forbidden, 404 not found |
+      | **5xx** | *Server* broke | 500 internal error |
+
+      To a tester these are signals. A **403** says "something is here but you are not allowed" — worth probing. A **500** means your input broke the server, which often means the input was handled carelessly — the scent of a bug. A **302** to a login page tells you a resource is protected.
+
+  - kind: explain
+    title: Headers carry the metadata
+    body: |
+      **Headers** are the labelled extra lines in both requests and responses. A few matter enormously for security:
+
+      - `Set-Cookie` (response) — the server hands the browser a cookie.
+      - `Server` / `X-Powered-By` — often leak the exact software and version, telling an attacker what to look up.
+      - `Content-Type` — what kind of data this is.
+      - Security headers like `Content-Security-Policy` and `Strict-Transport-Security` — their *presence* hardens a site; their *absence* is a finding.
+
+      Reading headers is free reconnaissance: the site often tells you what it is built from before you do anything clever.
+
+  - kind: explain
+    title: Cookies and sessions — how a site remembers you
+    body: |
+      HTTP is **stateless**: each request stands alone, and the server does not inherently remember you from one to the next. So how do you stay logged in? With a **cookie**.
+
+      1. You log in. The server creates a **session** and sends back `Set-Cookie: session=abc123`.
+      2. Your browser includes `Cookie: session=abc123` on every later request.
+      3. The server looks up `abc123`, sees "this is Ada, already logged in," and treats you accordingly.
+
+      That little token *is* your logged-in identity. If an attacker steals it, copies it, or guesses it, they become you without ever knowing your password. That is why session handling is one of the richest areas of web security (Module 22).
+
+  - kind: explain
+    title: Reading a URL
+    body: |
+      A URL has parts, and testers pick them apart constantly:
+
+      ```
+      https://shop.example.com:443/products?id=42&sort=price#reviews
+      ```
+
+      - `https` — the **scheme** (protocol)
+      - `shop.example.com` — the **host** (and `shop.` is a subdomain)
+      - `:443` — the **port** (usually implied)
+      - `/products` — the **path**
+      - `?id=42&sort=price` — the **query parameters** (name=value pairs)
+      - `#reviews` — the **fragment** (browser-only; never sent to the server)
+
+      Those query parameters — `id=42` — are user input the server acts on, and user input is exactly where many web vulnerabilities live. Changing `id=42` to `id=43` to see someone else's data is the whole idea behind a flaw called IDOR (Module 22).
+
+  - kind: mac
+    title: Make a raw web request yourself
+    body: |
+      `curl` is a command-line web client. `-I` asks for just the response headers. This is an ordinary, polite request to a documentation host — exactly what your browser does, minus the pretty rendering. Read the status line and the headers.
+    commands: |
+      curl -I https://example.com
+      curl -s https://example.com | head -20
+  - kind: info
+    title: "🔹 HTML, CSS and JavaScript — recognition only"
+    body: |
+      The response body is usually a web page made of three languages: **HTML** (the structure and content), **CSS** (the styling), and **JavaScript** (behaviour that runs *in your browser*). You do not need to write them yet. Just recognise that JavaScript runs on the *client* side — which is why a flaw called cross-site scripting (XSS, Module 21), where an attacker's JavaScript runs in a victim's browser, is possible at all.
+
+  - kind: why
+    body: |
+      Web application hacking — three whole modules of the Intermediate level — is nothing more than reading and manipulating the request/response conversation you just learned. Status codes guide where you probe, headers hand you reconnaissance, cookies are stolen identities, and query parameters are the user input that so many attacks ride in on. This module is the alphabet; the web-hacking modules are the sentences.
+
+  - kind: recap
+    body: |
+      - The web is a **request → response** conversation in **HTTP**: a client asks, a server answers.
+      - A request has a **method** (**GET** = fetch, data in the URL; **POST** = submit, data in the body), a **path**, and **headers**.
+      - The response carries a **status code**: **2xx** success, **3xx** redirect, **4xx** your error (401/403/404), **5xx** server error — each a signal to a tester.
+      - **Headers** leak software versions and set security policy; **cookies** carry a **session** token that *is* your logged-in identity.
+      - A **URL** breaks into scheme, host, port, path, **query parameters** and fragment; those parameters are user input where many bugs live.

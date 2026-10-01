@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What is the OWASP Top 10?
+    options:
+      - A web-scanning tool
+      - An industry-standard list of the ten most critical categories of web application risk, used as a shared checklist
+      - The ten best hackers
+      - A password wordlist
+    answer: 1
+    explanation: The OWASP Top 10 is a regularly-updated catalogue of the most critical web risks. Testers use it as coverage; defenders use it as a priority list.
+  - type: mcq
+    prompt: Why is an intercepting proxy like Burp Suite so central to web testing?
+    options:
+      - It makes pages load faster
+      - It lets you see and edit each request *after* the browser sends it, so you test what the server actually accepts rather than what the browser enforces
+      - It encrypts your traffic
+      - It blocks ads
+    answer: 1
+    explanation: Browser-side checks (hidden fields, JS validation) are not real security. Editing the request in Burp tests the server, which is the only thing that can truly enforce the rules.
+  - type: mcq
+    prompt: Which Burp feature lets you send one request repeatedly with small changes, watching how the response differs?
+    options:
+      - Intercept
+      - Repeater
+      - HTTP history
+      - The browser bookmarks
+    answer: 1
+    explanation: Repeater is for methodical manual probing — change one thing, read the response, learn, repeat. It is where much real understanding of an app happens.
+  - type: mcq
+    prompt: What do content-discovery tools like gobuster and ffuf do?
+    options:
+      - Crack password hashes
+      - Request many likely paths from a wordlist to find unlinked pages and files such as /admin, /backup and /.git
+      - Capture network packets
+      - Scan for open ports
+    answer: 1
+    explanation: They brute-force likely URLs to reveal content that exists but is not linked — often high-value finds like admin panels or an exposed .git source folder.
+  - type: mcq
+    prompt: Why can automated web scanners miss access-control and logic flaws?
+    options:
+      - Scanners are always offline
+      - A scanner does not understand the application's intent — e.g. that user A should not see user B's invoice; a human who grasps the logic is needed
+      - Those flaws do not exist
+      - Scanners only test passwords
+    answer: 1
+    explanation: Access-control and business-logic bugs depend on what the app is *supposed* to allow. Tools lack that context, so human judgement remains essential.

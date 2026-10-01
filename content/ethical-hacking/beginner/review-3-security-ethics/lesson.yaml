@@ -1,0 +1,40 @@
+steps:
+  - kind: explain
+    title: The judgement that matters most
+    body: |
+      The hardest calls in this field are rarely technical. They are judgement: *Am I allowed to do this? How serious is it, really? What phase am I in?* These scenarios rehearse exactly those calls, pulling together the vocabulary (Module 11), the ethics and law (Module 12) and the methodology (Module 13). Read each, decide, then take the check.
+
+  - kind: explain
+    title: "Scene 1 — the eager friend"
+    body: |
+      A friend says: *"Our company website is probably full of holes. You're learning this stuff — can you take a look and tell us what's wrong?"*
+
+      Your friend's enthusiasm is not authorisation. Unless someone with actual authority over that system signs off on scope and dates in writing, testing it is unauthorised access — a crime — no matter how helpful your intent. The correct answer is to help them get *proper* written permission, or to point them at a professional. A friendly ask changes nothing about the law.
+
+  - kind: explain
+    title: "Scene 2 — naming the impact"
+    body: |
+      On an authorised test you find that any logged-in user can read any other user's private messages by changing a number in the URL.
+
+      Put the right words on it. The user is *authenticated* (logged in) but *authorization* is not enforced — broken access control. The property at risk is **confidentiality**: private data is exposed to people who should not see it. Phrasing it this precisely is what makes the finding land in a report.
+
+  - kind: explain
+    title: "Scene 3 — which phase?"
+    body: |
+      You run `whois` and read a company's public DNS records to list their subdomains, without sending anything to their servers.
+
+      That is **reconnaissance**, and specifically the **passive** kind — you are reading published information, not touching the target, so it leaves no trace in their logs. Recognising this keeps you oriented: you know how visible you are and what the natural next step (active scanning, once in scope) will be.
+
+  - kind: explain
+    title: "Scene 4 — vulnerability or risk?"
+    body: |
+      You find two issues: a missing security header on an internal page only staff can reach, and a login form that sends passwords over plain HTTP to the public internet.
+
+      Both are *vulnerabilities*. But **risk** is likelihood times impact, and it separates them sharply: the cleartext login on a public site is high risk (anyone in the path can steal credentials), while the missing header on an internal, limited page is low. A professional reports both but tells the client, loudly, which one to fix first. That ranking is the service.
+
+  - kind: recap
+    body: |
+      - Enthusiasm, friendship or good intent is **not authorization** — only written permission from someone with authority is.
+      - Name findings precisely: **authentication** vs **authorization**, and which **CIA** property (confidentiality/integrity/availability) is at risk.
+      - Reading public records without touching the target is **passive reconnaissance**.
+      - Everything you find is a **vulnerability**; the value is ranking them by **risk** (likelihood × impact) so the client fixes the dangerous ones first.

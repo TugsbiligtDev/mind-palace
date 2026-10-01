@@ -1,0 +1,77 @@
+steps:
+  - kind: explain
+    title: What is behind the page
+    body: |
+      A web page is the front of a building. Behind it is machinery: a program that serves pages, a store that holds the data, often an interface other programs talk to, and a layer of encryption around it all. Knowing those pieces tells you where the weaknesses tend to be — because a single visible form may touch every one of them.
+
+  - kind: explain
+    title: The web server and the app
+    body: |
+      Two layers answer your request:
+
+      - A **web server** (nginx, Apache, Microsoft IIS) receives HTTP requests and serves responses. It handles the plumbing.
+      - Behind it, an **application** written in a language like PHP, Python, Node.js or Java contains the actual logic — logging you in, fetching your orders, processing a payment.
+
+      Knowing *which* software is in use matters, because known vulnerabilities are tied to specific products and versions. A response header like `Server: Apache/2.4.49` is a gift: an attacker looks up exactly that version for known flaws (Module 17). Your defensive counterpart's advice: do not advertise versions you do not have to.
+
+  - kind: explain
+    title: Databases and SQL
+    body: |
+      Most applications keep their data — users, passwords, orders — in a **database**. The most common kind is **relational**: data in tables of rows and columns, like a set of linked spreadsheets. You talk to it in **SQL** (Structured Query Language). A query to fetch one user looks like:
+
+      ```sql
+      SELECT * FROM users WHERE username = 'ada';
+      ```
+
+      Here is the crucial idea for security. When a website logs you in, it builds a SQL query using *your input*. If it glues your typed username straight into the query text without care, you may be able to change what the query *means* — the vulnerability called **SQL injection** (Module 21), one of the oldest and most damaging web flaws. You do not need to write SQL fluently yet; you need to grasp that user input can reach a database query, and that is dangerous when done carelessly.
+
+  - kind: explain
+    title: APIs and REST
+    body: |
+      Modern apps often split the page (client) from the data (server), and connect them with an **API** (Application Programming Interface) — a set of URLs that return raw data instead of a web page. The common style is **REST**, which uses ordinary HTTP:
+
+      ```
+      GET  /api/users/42      → returns user 42 as JSON
+      POST /api/orders        → creates an order
+      ```
+
+      The data comes back as **JSON**, a simple text format of names and values (you met its shape in other courses). Why testers care: APIs are a huge, sometimes less-guarded attack surface. The web page might hide a button, but the API endpoint behind it may still answer anyone who calls it directly — so access-control testing must cover the API, not just the pretty front end.
+
+  - kind: explain
+    title: TLS and certificates — what HTTPS protects
+    body: |
+      The `s` in **HTTPS** is **TLS** (older name: SSL), the encryption wrapped around HTTP. It does two jobs:
+
+      - **Confidentiality** — it encrypts the traffic, so the eavesdropper from the Wireshark lesson sees scrambled bytes, not your password.
+      - **Authenticity** — a **certificate**, signed by a trusted authority, proves you are really talking to `example.com` and not an impostor.
+
+      Be clear about what TLS does *not* do: it protects data **in transit**, between browser and server. It does nothing about a flaw *in* the application (SQL injection travels perfectly well over HTTPS) or about how data is stored on the server. HTTPS is necessary, not sufficient — a distinction you will correct people on often.
+
+  - kind: explain
+    title: Your first toolkit — browser developer tools
+    body: |
+      You already own a capable web-inspection tool: the **developer tools** built into every browser (press **F12**, or ⌘-⌥-I on a Mac). The tabs you will live in:
+
+      - **Network** — every request the page makes, with methods, status codes, headers and responses. This is where you watch the Module 9 conversation happen in real time.
+      - **Elements/Inspector** — the live HTML and CSS; edit it locally to understand structure (note: changes are only in *your* browser).
+      - **Console** — run JavaScript and read errors.
+      - **Application/Storage** — the cookies and local storage, including that session token.
+
+      Before any specialist tool, dev tools let you see exactly what a site sends and stores. Much early web testing is just careful reading here.
+
+  - kind: info
+    title: "🔹 NoSQL exists too"
+    body: |
+      Not every database is relational/SQL. **NoSQL** stores (MongoDB, Redis and others) organise data differently — often as JSON-like documents. They have their own injection-style weaknesses. For now, just know "database" does not always mean "SQL," so when enumerating a target you note *which* kind is in play.
+
+  - kind: why
+    body: |
+      Every web vulnerability you will study has a home in this stack: version disclosure in the **server** header, **SQL injection** reaching the **database**, broken access control on an **API**, misplaced trust in **TLS**. And your sharpest everyday instrument is the free **developer tools** already in your browser. Understand the building and you know which floors to check.
+
+  - kind: recap
+    body: |
+      - A request is answered by a **web server** (nginx/Apache/IIS) plus an **application**; leaked **version** info guides attackers to known flaws.
+      - Data lives in a **database**, usually relational and queried with **SQL**; careless use of user input in a query leads to **SQL injection**.
+      - **APIs** (often **REST**, returning **JSON**) are a large attack surface that must be access-tested directly, not just through the web page.
+      - **TLS/HTTPS** protects data **in transit** (confidentiality) and proves identity (**certificates**) — but not flaws in the app or data at rest.
+      - The browser's **developer tools** (Network, Elements, Console, Application) are your first and most-used inspection kit.

@@ -1,0 +1,5 @@
+title: "Testing a web app"
+module: 22
+kind: review
+summary: "Five scenarios across Modules 20 to 22: use the right tool, name the vulnerability from its behaviour, and give the correct fix — the full web-testing loop."
+minutes: 20

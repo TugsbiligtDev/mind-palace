@@ -1,0 +1,4 @@
+title: "Users, Permissions & Processes"
+module: 4
+summary: "Who you are and what you are allowed to do: users and groups, sudo and root, reading and setting file permissions (rwx and octal), watching and stopping processes, and installing software."
+minutes: 35

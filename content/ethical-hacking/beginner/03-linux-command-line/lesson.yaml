@@ -1,0 +1,146 @@
+steps:
+  - kind: explain
+    title: The terminal is the real workshop
+    body: |
+      Graphical windows are nice, but security work happens in the **terminal** — a text window where you type a command and the computer answers in text. Every tool you will use, and most servers you will ever touch, are driven this way. It is faster, it is scriptable, and often it is the *only* way in.
+
+      The program that reads your commands is the **shell**. Linux usually uses one called **bash**; your Mac uses a close relative called **zsh**. The commands in this module work the same in both — which means you can practise right now on your own Mac.
+
+      You will see a **prompt** waiting for you, ending in `$`. You type after it and press Return.
+
+  - kind: mac
+    title: Open your terminal and look around
+    body: |
+      On your Mac, open **Terminal** (press ⌘-Space, type "Terminal", Return). Then run these one at a time and read each answer.
+
+      - `pwd` = **p**rint **w**orking **d**irectory → "where am I right now?"
+      - `ls` = **l**i**s**t → "what is in this folder?"
+      - `ls -la` → the same, but *long* and *all* (including hidden files that start with a dot)
+
+      Hidden dot-files like `.ssh` or `.bash_history` are exactly where investigators look first, so always use `-a` when poking around.
+    commands: |
+      pwd
+      ls
+      ls -la
+  - kind: explain
+    title: Moving around the tree
+    body: |
+      You move through the folder tree with **cd** (**c**hange **d**irectory). A few shortcuts do most of the work:
+
+      | Command | Meaning |
+      |---|---|
+      | `cd Documents` | go *into* the Documents folder (relative to where you are) |
+      | `cd ..` | go *up* one level to the parent folder |
+      | `cd ~` | go to your home folder (`~` means "my home") |
+      | `cd /` | go to the very top, the root |
+      | `cd -` | jump back to the folder you were just in |
+
+      A **path** starting with `/` is **absolute** (the full address). A path with no leading slash is **relative** (from where you stand). Confusing the two is the single most common beginner mistake.
+
+  - kind: mac
+    title: Walk the tree
+    body: |
+      Practise moving around. Nothing here changes a single file — you are only looking.
+    commands: |
+      cd ~
+      pwd
+      cd ..
+      pwd
+      cd ~/Desktop
+      ls
+      cd -
+  - kind: explain
+    title: Looking at files
+    body: |
+      Once you find a file, you read it without opening any app:
+
+      - `cat notes.txt` — dump the whole file to the screen (good for short files)
+      - `less notes.txt` — page through a long file (Space for next page, `q` to quit)
+      - `head notes.txt` / `tail notes.txt` — just the first / last ten lines
+      - `tail -f server.log` — *follow* a file live as new lines are written (how you watch logs during a test)
+
+      To an investigator, `cat /etc/passwd` (the account list) or `tail -f` on a log is daily bread.
+
+  - kind: explain
+    title: Making and changing files
+    body: |
+      Now the commands that *create* and *move* things:
+
+      | Command | What it does |
+      |---|---|
+      | `mkdir recon` | make a new folder called `recon` |
+      | `touch notes.txt` | create an empty file (or update its timestamp) |
+      | `cp a.txt b.txt` | **c**o**p**y a.txt to b.txt |
+      | `mv a.txt archive/` | **m**o**v**e (or rename) a.txt |
+      | `rm notes.txt` | **r**e**m**ove (delete) a file |
+
+      Build the habit of making a fresh folder for each target or task. Tidy notes are what separate a professional from a mess.
+
+  - kind: mac
+    title: Build a practice folder
+    body: |
+      Make a safe sandbox on your Desktop, create a file, copy and rename it, then look.
+    commands: |
+      cd ~/Desktop
+      mkdir hacking-practice
+      cd hacking-practice
+      touch notes.txt
+      cp notes.txt backup.txt
+      mv backup.txt renamed.txt
+      ls
+  - kind: explain
+    title: "⚠️ rm does not ask twice"
+    body: |
+      The terminal assumes you mean what you say. **`rm` deletes immediately and permanently** — there is no Trash, no "are you sure?". Two commands have ended more careers and lab machines than any exploit:
+
+      - `rm -rf something` — delete a folder and *everything inside it*, forcing past any warning.
+      - `rm -rf /` — attempt to delete the entire system. **Never run this.**
+
+      Rules that keep you safe:
+
+      1. Read an `rm` command twice before pressing Return — especially the path.
+      2. Be certain where you are first (`pwd`), because a relative path deletes from *here*.
+      3. On your own machine, `rm -i` asks before each delete. Use it while learning.
+
+      This caution is itself a security lesson: the same blind obedience that lets you automate also lets a careless command — or a malicious one — wreck everything.
+
+  - kind: explain
+    title: Finding things — find and grep
+    body: |
+      Two search commands are so useful they show up in nearly every engagement:
+
+      - **`find`** searches for *files by name or property*:
+        `find /var -name "*.conf"` → every `.conf` file under `/var`.
+      - **`grep`** searches for *text inside files*:
+        `grep "password" config.php` → every line containing the word password.
+
+      Combine them with a **pipe** `|` (you will study pipes in Module 5) to search inside many files at once:
+      `grep -r "api_key" .` searches the current folder and everything below it for `api_key`. Hunting config files for leaked secrets is often step one after you get access.
+
+  - kind: explain
+    title: When you are stuck — read the manual
+    body: |
+      No one memorises every option. Two habits make you self-sufficient:
+
+      - `man ls` opens the **man**ual for a command (Space to scroll, `q` to quit).
+      - `ls --help` prints a shorter summary of its options.
+
+      When a command misbehaves, the answer is almost always in `man` or `--help`. Reading documentation is not a failure — it is the skill.
+
+  - kind: info
+    title: "🔹 Tab-completion and history save you"
+    body: |
+      Two shortcuts you will use thousands of times: press **Tab** to auto-complete a half-typed file or command name (and avoid typos in long paths), and press the **Up arrow** to bring back previous commands. Your past commands also live in a file (`~/.zsh_history` on a Mac) — convenient for you, and a treasure for anyone who gets into an account.
+
+  - kind: why
+    body: |
+      Every scan, exploit and report in the rest of this course is typed into a terminal. The person who is fluent here moves at twice the speed of the person hunting through menus — and, just as important, understands exactly what each command will do *before* pressing Return. That judgement is what keeps you (and your client's systems) safe.
+
+  - kind: recap
+    body: |
+      - The **terminal** runs commands through a **shell** (bash on Linux, zsh on your Mac); the same basics work on both.
+      - Navigate with `pwd`, `ls` (`-la` shows hidden files), and `cd` (`..` up, `~` home, `-` back).
+      - Read files with `cat`, `less`, `head`, `tail` (`-f` to follow a log).
+      - Create and change with `mkdir`, `touch`, `cp`, `mv`; **`rm` deletes forever — read it twice**.
+      - Search with `find` (files by name) and `grep` (text inside files; `-r` for recursive).
+      - Stuck? `man command` or `command --help`. Lean on **Tab** and the **Up arrow**.

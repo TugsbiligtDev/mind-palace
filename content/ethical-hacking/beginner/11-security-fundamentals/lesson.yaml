@@ -1,0 +1,87 @@
+steps:
+  - kind: explain
+    title: The words professionals share
+    body: |
+      Up to now you have learned *systems*. This module is about *security* itself — the handful of ideas that let professionals talk precisely. Reports, certifications and job interviews all assume this vocabulary. Getting it exactly right is part of sounding, and thinking, like a professional rather than a tinkerer.
+
+  - kind: explain
+    title: The CIA triad
+    body: |
+      Security protects three properties of information. Remember them as **CIA**:
+
+      | Property | Means | Broken when… |
+      |---|---|---|
+      | **Confidentiality** | Only authorised people can read it | A data breach leaks customer records |
+      | **Integrity** | Data is correct and unaltered | An attacker changes a bank balance |
+      | **Availability** | The system is there when needed | A denial-of-service attack takes a site down |
+
+      Every attack and every defence maps to one or more of these. When you write a finding, you will say *which* property is at risk — "this exposes customer data (confidentiality)" — because that is how impact is judged.
+
+  - kind: explain
+    title: Vulnerability, threat, risk
+    body: |
+      These three words are not interchangeable, and mixing them up is a tell:
+
+      - A **vulnerability** is a weakness — an unlocked window.
+      - A **threat** is something that could exploit it — a burglar in the neighbourhood.
+      - **Risk** is the combination: how likely, and how bad — a valuable, unlocked, ground-floor window on a busy street is high risk; the same window on the fourth floor is low.
+
+      A tester *finds vulnerabilities*. The value to the client is helping them judge **risk**, so they fix the dangerous windows first. "You have 400 issues" is noise; "these three could expose every customer record" is the message.
+
+  - kind: explain
+    title: Authentication vs. authorization
+    body: |
+      Two words that sound alike and are constantly confused:
+
+      - **Authentication** (authn) — *who are you?* Proving identity: a password, a code, a fingerprint.
+      - **Authorization** (authz) — *what are you allowed to do?* Your permissions once your identity is known.
+
+      You can pass one and fail the other. Logging in correctly (authenticated) and then reaching the admin panel you should not see (authorization failure) is a whole class of bug — **broken access control** (Module 22). Keep the two ideas in separate boxes and these flaws become easy to spot.
+
+  - kind: explain
+    title: Hashing vs. encryption vs. encoding
+    body: |
+      This trio is the single most common mix-up among beginners, so pin it down now:
+
+      | | Purpose | Reversible? | Needs a key? | Example |
+      |---|---|---|---|---|
+      | **Encoding** | Format data for transport | Yes, by anyone | No | Base64, URL-encoding |
+      | **Encryption** | Keep data secret | Yes, *with the key* | Yes | AES, TLS |
+      | **Hashing** | Verify/fingerprint | **No** (one-way) | No | SHA-256, bcrypt |
+
+      The rules that follow from this:
+
+      - **Encoding is not security.** Base64 looks scrambled but anyone can decode it instantly. Finding a "secret" that is merely base64-encoded is finding no protection at all.
+      - **Passwords should be hashed, not encrypted.** A site never needs to turn your password back into text; it only checks whether your input hashes to the same value. A database of *encrypted* passwords (reversible) is a far worse design than *hashed* ones.
+      - Hashes are also how we fingerprint files and verify integrity.
+
+  - kind: explain
+    title: The major categories of attack
+    body: |
+      A rough map of where attacks come from — you will spend the course going deeper into each:
+
+      - **Network attacks** — abusing exposed services and protocols.
+      - **Web application attacks** — injection, broken access control, and the rest of the OWASP Top 10.
+      - **Password/credential attacks** — guessing, cracking, reusing stolen logins.
+      - **Social engineering** — attacking the *person*: phishing, pretexting. Often the easiest way in, because it skips the technology entirely.
+      - **Physical** — getting bodily access to hardware.
+      - **Misconfiguration** — not a clever exploit at all, but a default password, an open share, a 777 file. In the real world, this quietly causes more breaches than exotic hacks.
+
+      A theme worth absorbing early: the flashy exploits get the headlines, but **misconfigurations and reused passwords** cause most actual breaches. Good testing looks for the boring stuff first.
+
+  - kind: info
+    title: "🔹 Salting, briefly"
+    body: |
+      When hashing passwords, good systems add a **salt** — a random value mixed in before hashing — so that two people with the same password get different hashes, and precomputed "rainbow table" lookups fail. You only need to recognise the word for now: "hashed and salted" is good; "encrypted" or "encoded" passwords are warning signs.
+
+  - kind: why
+    body: |
+      Every report you ever write will use these words, and using them wrongly undermines everything else you say. "This base64 string is encrypted" or "the user was authorized but not authenticated" marks you instantly as a beginner. More deeply, this vocabulary *is* the thinking: naming which CIA property is at risk, separating a vulnerability from the risk it creates, and knowing that encoding is not protection are the mental moves of a professional.
+
+  - kind: recap
+    body: |
+      - **CIA**: **C**onfidentiality (only authorised can read), **I**ntegrity (unaltered), **A**vailability (there when needed). Name the property a finding threatens.
+      - **Vulnerability** (a weakness) + **threat** (who'd exploit it) → **risk** (likelihood × impact). Clients pay for risk judgement, not raw issue counts.
+      - **Authentication** = who you are; **authorization** = what you may do. Passing one, failing the other is **broken access control**.
+      - **Encoding** (reversible by anyone, *not* security) ≠ **encryption** (reversible with a key) ≠ **hashing** (one-way). Passwords should be **hashed and salted**, never encoded or merely encrypted.
+      - Attacks span network, web, credentials, social engineering, physical and **misconfiguration** — and the dull misconfigs and reused passwords cause most real breaches.

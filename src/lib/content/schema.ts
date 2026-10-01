@@ -9,7 +9,10 @@ export const trackSchema = z.object({
   title: z.string(),
   tagline: z.string(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  engine: z.enum(["postgres", "python", "javascript"]),
+  // "none" is a knowledge-based course (e.g. Ethical Hacking): lessons are reading and safe
+  // "on your Mac" steps, quizzes are multiple-choice. No code runs in the browser, so these
+  // courses never use `try`/`code` lesson steps or `predict` quiz questions.
+  engine: z.enum(["postgres", "python", "javascript", "none"]),
   engine_version: z.string(),
   last_reviewed: z.string(),
   // Named practice databases. Each is a list of SQL files in public/downloads/<track>/, run in

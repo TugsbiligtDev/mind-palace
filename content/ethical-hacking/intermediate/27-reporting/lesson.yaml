@@ -1,0 +1,79 @@
+steps:
+  - kind: explain
+    title: The report is the product
+    body: |
+      It is tempting to think the exciting part of a test is getting in. But a client cannot act on your access — they can only act on your **report**. The report is the thing they paid for, the thing they keep, and the thing a manager, a developer and an auditor will all read long after you have moved on. A brilliant test with a muddled report helps no one; a modest test written up clearly can transform a team's security.
+
+      So treat writing as a core skill, equal to the technical work. The whole point of this course — learn how attacks work so you can defend against them — lands here, in a document someone uses to fix things.
+
+  - kind: explain
+    title: Take notes as you go, not after
+    body: |
+      You cannot reconstruct a day of work from memory, and you should never try. Write everything down **while** you work:
+
+      - What you did (the command or the step), against which target, and **when**.
+      - What you saw (the key output — save it, don't paraphrase it later).
+      - What it means and what you did next.
+
+      Good notes make the report almost write itself, let you prove exactly what you touched if a client asks, and mean you can re-trace your steps instead of re-running a noisy scan just to recover a detail. This is the habit from Module 13, now non-negotiable. Keep screenshots and saved tool output organised per target from the first minute.
+
+  - kind: explain
+    title: What a findings report contains
+    body: |
+      A professional report has a predictable shape, because different readers need different parts:
+
+      - **Executive summary:** a page a non-technical manager can read — what you tested, the overall risk, and the few things that matter most. No jargon.
+      - **Scope and method:** exactly what was in scope, the dates, and how you tested. This is also where your authorisation is recorded.
+      - **Findings:** the heart of the report — one entry per issue (see the next step).
+      - **Remediation summary:** the fixes, usually prioritised, so the team knows what to do first.
+
+      The structure serves the reader. An executive reads the summary; a developer reads the findings; both must be able to find their part fast.
+
+  - kind: explain
+    title: Anatomy of a single finding
+    body: |
+      Each finding is a small, self-contained story. A reliable template:
+
+      - **Title:** plain and specific ("Customer invoices viewable by any logged-in user").
+      - **Severity/risk rating:** how bad it is (next step).
+      - **Description:** what the flaw is, in words the team will understand.
+      - **Evidence:** the proof — the request, the output, the screenshot — enough to reproduce it, no more.
+      - **Impact:** what it means for *this* business ("any customer can read every other customer's invoices").
+      - **Remediation:** the concrete fix, and ideally a reference (an OWASP page, a vendor advisory).
+
+      Impact and remediation are where you earn your fee. Anyone can say "IDOR on the invoice page"; the professional says what it costs this client and exactly how to close it.
+
+  - kind: explain
+    title: Rating severity and risk
+    body: |
+      A client has limited time, so you must help them fix the worst things first. Severity combines two ideas you met in Module 11: **how likely** a flaw is to be exploited, and **how much damage** it would do. A missing security header on an internal page is low; unauthenticated access to customer data is critical.
+
+      Many teams use **CVSS** (Module 17) for a defensible numeric score, but always pair the number with business context. A "medium" by the formula can be the client's top priority if it exposes their crown-jewel data — say so. Consistent, honest ratings are what make a report trustworthy: don't inflate findings to look impressive, and don't bury a serious one.
+
+  - kind: explain
+    title: Remediation advice that can actually be followed
+    body: |
+      The best finding tells the team exactly what to change. Compare:
+
+      - Weak: "Fix the access control."
+      - Strong: "On every request to `/invoice`, verify server-side that the logged-in user owns the requested invoice before returning it; do not rely on the ID being unguessable."
+
+      Be specific, be constructive, and where you can, point to the root cause rather than the single instance — if one endpoint forgot the authorisation check, others probably did too. Offer the defensive principle alongside the fix (least privilege, validate on the server, never trust the client) so the team improves beyond the one bug. You are not just reporting problems; you are handing them a better way to build.
+
+  - kind: info
+    title: "🔹 Tone and the retest"
+    body: |
+      Write professionally and without blame — a developer will read this, and you want them fixing bugs, not defending themselves. Many engagements end with a **retest**: after the client fixes the findings, you verify each one is actually closed and update its status. Clear original findings make the retest quick, which is one more reason to write each one so it can be reproduced.
+
+  - kind: why
+    body: |
+      Every other skill in this course produces a finding; this module turns findings into change. In real work, the report is what gets read in a boardroom, what a developer implements from, and what proves the engagement happened. Testers who can write clear, prioritised, actionable reports are far rarer and more valuable than testers who can only break in — and it is the report, not the break-in, that actually makes an organisation safer.
+
+  - kind: recap
+    body: |
+      - The **report is the deliverable** — the client acts on your writing, not your access.
+      - **Take notes while you work:** what you did, against what, when, and what you saw (save the output).
+      - A report is layered for its readers: **executive summary, scope/method, findings, remediation summary**.
+      - Each **finding** = title, severity, description, evidence, business impact, concrete fix.
+      - **Rate severity** by likelihood × impact (CVSS helps), but always add business context and stay honest.
+      - **Remediation** must be specific and address the root cause; teach the defensive principle, not just the one-off patch.

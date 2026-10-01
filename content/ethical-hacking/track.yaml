@@ -1,0 +1,11 @@
+id: ethical-hacking
+title: Ethical Hacking
+tagline: How attacks work, so you can defend against them.
+color: "#059669"
+# A knowledge-based course: no code runs in the browser. Lessons are reading plus safe,
+# legal "on your Mac" commands; knowledge checks are multiple choice. The hands-on hacking
+# happens in the learner's own isolated lab (see docs/ethical-hacking-course.md).
+engine: none
+engine_version: "2026"
+last_reviewed: "2026-10-01"
+levels: [beginner, intermediate, advanced]

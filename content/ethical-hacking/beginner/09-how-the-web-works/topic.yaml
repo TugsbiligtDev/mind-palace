@@ -1,0 +1,4 @@
+title: "How the Web Works"
+module: 9
+summary: "The request–response cycle behind every web page: HTTP methods, status codes, headers, cookies and sessions, URL structure, and where HTML, CSS and JavaScript fit."
+minutes: 35

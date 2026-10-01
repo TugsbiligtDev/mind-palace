@@ -1,0 +1,4 @@
+title: "Web Hacking Toolkit & OWASP"
+module: 20
+summary: "The map and the tools for web testing: the OWASP Top 10 as a checklist of what goes wrong, Burp Suite as the proxy that lets you see and edit every request, and content discovery with gobuster and ffuf."
+minutes: 35

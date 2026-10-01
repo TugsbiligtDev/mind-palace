@@ -1,0 +1,29 @@
+id: intermediate
+title: Intermediate
+season: 2
+season_title: The Assessment
+season_pitch: |
+  Now you work a case end to end against a single target you are allowed to test: gather
+  intelligence, scan and enumerate services, find and exploit known weaknesses, break into web
+  apps, escalate your access, and — most important — write the report the client actually pays for.
+status: open
+topics:
+  - 14-passive-recon-osint
+  - 15-nmap-scanning
+  - 16-service-enumeration
+  - review-4-recon-enum
+  - 17-vulnerability-assessment
+  - 18-metasploit
+  - 19-password-attacks
+  - review-5-exploitation
+  - 20-owasp-toolkit
+  - 21-web-vulns-1
+  - 22-web-vulns-2
+  - review-6-web
+  - 23-post-exploitation
+  - 24-privilege-escalation
+  - 25-pivoting-tunneling
+  - review-7-post-exploitation
+  - 26-ctfs-practice
+  - 27-reporting
+  - capstone-2-full-compromise

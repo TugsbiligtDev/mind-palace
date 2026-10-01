@@ -1,0 +1,74 @@
+steps:
+  - kind: explain
+    title: When the logic is the flaw
+    body: |
+      The injection flaws in Module 21 were about *data becoming code*. This module covers a different family: flaws in the application's **logic and access rules** — who is allowed to do what, and whether the server actually checks. These often need no special payload at all, just a clear head and the willingness to ask "what if I change this?" They are among the most common and most impactful findings in real tests. (Lab or sanctioned range only, as always.)
+
+  - kind: explain
+    title: Broken authentication and session flaws
+    body: |
+      **Authentication** is proving who you are (Module 11); when it is weak, attackers get in without the real password. Common problems:
+
+      - No protection against password guessing (no lockout, no MFA) — ties straight to Module 19.
+      - Weak password reset ("security questions," guessable reset tokens).
+      - **Session flaws:** session tokens that are predictable, that do not change after login, that never expire, or that travel over plain HTTP where they can be stolen (Module 8's capture lesson).
+
+      Remember the session token *is* the logged-in identity (Module 9). If it can be guessed, stolen or reused, the password did not matter. **Fixes:** MFA, strong random session tokens, rotate them on login, expire them, mark cookies `HttpOnly` and `Secure`, and always use HTTPS.
+
+  - kind: explain
+    title: "IDOR and broken access control — the big one"
+    body: |
+      **Broken access control** sits at the very top of the OWASP Top 10, and the clearest example is **IDOR** (Insecure Direct Object Reference). Recall the URL from Module 9:
+
+      ```
+      /invoice?id=42
+      ```
+
+      If you change `42` to `43` and the server shows you *someone else's* invoice, that is IDOR: the app used your input to pick a record but never checked that *you* are allowed to see it. The same bug appears with account numbers, document IDs, API paths — anywhere an identifier is user-controlled.
+
+      It needs no clever payload, just incrementing a number, which is exactly why it is so common and so often missed. **Fix:** the server must enforce an authorization check on *every* request — "does the logged-in user own or have rights to this object?" — not merely hide the link or trust the ID.
+
+  - kind: explain
+    title: Insecure file upload
+    body: |
+      Many apps let users upload files — a profile picture, a document. The danger is uploading a file that the server will later *execute* as code (for example, a script disguised as an image) and then requesting it, turning an upload into code execution on the server.
+
+      **Finding it (in a lab):** test whether the app checks file type properly, whether checks can be bypassed (a double extension, a faked content-type), and whether uploaded files land somewhere they could be executed. **Fix:** validate type by content not just extension, store uploads outside the web root (so they cannot be requested and run), rename files, and serve them as inert downloads. Least privilege again limits the blast radius.
+
+  - kind: explain
+    title: "SSRF — making the server fetch for you"
+    body: |
+      **SSRF** (Server-Side Request Forgery) abuses a feature where the *server* fetches a URL you supply (an app that grabs an image from a link you give it, say). If the server will fetch *any* URL, an attacker can point it at things *they* cannot reach directly — internal-only services, other machines on the internal network, or cloud **metadata endpoints** that hand out credentials.
+
+      It is powerful precisely because the server is trusted and sits inside the network (recall NAT and internal addresses, Module 6). **Fix:** validate and allow-list exactly which destinations the server may fetch, block requests to internal/private addresses and metadata endpoints, and do not let user input choose arbitrary internal targets.
+
+  - kind: explain
+    title: "CSRF — riding the user's session"
+    body: |
+      **CSRF** (Cross-Site Request Forgery) tricks a *logged-in* victim's browser into making a state-changing request they did not intend — because the browser automatically attaches their session cookie to any request to that site (Module 9). A victim who visits a malicious page could have their browser silently submit, say, a "change my email" request to a site they are logged into.
+
+      Note the difference from XSS: CSRF abuses the *trust the site has in the browser's cookie*, without running script on the target site. **Fix:** anti-CSRF tokens (a secret value the attacker's page cannot know, required on state-changing requests), the `SameSite` cookie attribute (so cookies are not sent on cross-site requests), and re-authentication for sensitive actions.
+
+  - kind: info
+    title: "🔹 XXE, briefly"
+    body: |
+      **XXE** (XML External Entity) is an injection flaw in applications that parse **XML** unsafely: a crafted XML document can make the parser read local files or make server-side requests (an SSRF cousin). You only need to recognise it for now. The fix is to configure XML parsers to disable external entities — and, better, to prefer safer data formats like JSON where possible.
+
+  - kind: explain
+    title: The pattern across all of these
+    body: |
+      Step back and the theme is clear: these are failures of **trust and checking**. The server trusted that the user would not change an ID (IDOR), that an uploaded file was really an image, that a supplied URL was safe to fetch (SSRF), that a request came from its own page (CSRF), that a session could not be stolen. The defence, every time, is **the server verifying on its own, on every request** — never trusting the client, the input, or "no one will try that." That mindset, more than any single fix, is what you teach a client.
+
+  - kind: why
+    body: |
+      Access-control and logic flaws are consistently the most common serious findings in web tests, and they are the ones automated scanners miss, because they require understanding what the app *should* allow. Learning to ask "what am I not supposed to be able to do here — and does the server actually stop me?" is the core skill of web testing, and the source of the highest-impact fixes you will ever recommend.
+
+  - kind: recap
+    body: |
+      - This family is about **logic and access**, not payloads: who may do what, and whether the server checks.
+      - **Broken auth/session:** weak login or stealable/predictable tokens — fix with MFA, strong rotated tokens, expiry, `HttpOnly`/`Secure`, HTTPS.
+      - **IDOR / broken access control** (top of the OWASP list): changing an ID to reach another user's data — fix with a server-side authorization check on **every** request.
+      - **Insecure file upload** can lead to code execution — validate by content, store outside the web root, serve inert.
+      - **SSRF** makes the trusted server fetch attacker-chosen URLs (internal services, metadata) — allow-list destinations, block internal addresses.
+      - **CSRF** rides a logged-in victim's cookie into unwanted actions — anti-CSRF tokens and `SameSite`. 🔹 **XXE**: unsafe XML parsing; disable external entities.
+      - The throughline: the **server must verify on every request** and trust nothing from the client.

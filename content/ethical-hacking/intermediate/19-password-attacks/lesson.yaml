@@ -1,0 +1,93 @@
+steps:
+  - kind: explain
+    title: The weakest link, usually
+    body: |
+      Passwords are how most systems decide who you are, and they are frequently the easiest thing to break — not because the cryptography is weak, but because people choose weak passwords and reuse them everywhere. This module explains how password attacks work so you can explain, in a report, exactly why "use a password manager and enable MFA" is not nagging but the single highest-value fix most organisations can make.
+
+      Everything here is for authorised testing (cracking hashes you obtained legally in your engagement or lab) and for understanding defence. The same techniques against accounts you have no right to are, again, crimes.
+
+  - kind: explain
+    title: Hashes, briefly (recall Module 11)
+    body: |
+      Good systems never store your password as text. They store a **hash** — a one-way fingerprint. When you log in, the system hashes what you typed and compares fingerprints. It can check a match without ever knowing your actual password.
+
+      Because hashing is one-way, an attacker who steals a database of hashes cannot simply reverse them. Instead they **guess**: hash a candidate password with the same algorithm and see if the fingerprint matches. The whole game of "password cracking" is making and checking guesses very fast. That means the strength of a password is really about *how many guesses* it would take.
+
+  - kind: explain
+    title: Offline vs. online attacks
+    body: |
+      There are two very different situations, and they are not equally noisy:
+
+      - **Offline:** you have obtained the **hashes** (say, from a database dump during an authorised test) and crack them on *your own* hardware. No login attempts touch the target, so there is no lockout and no alarm — you can try billions of guesses. This is where fast hardware shines.
+      - **Online:** you try to log in to a *live* service, one attempt at a time. This is slow, noisy, and usually stopped by account lockouts, rate limits and logging.
+
+      The lesson for defenders falls out immediately: once hashes leak, only the *strength of the password and the hashing* protects it — which is why how passwords are stored matters as much as the passwords themselves.
+
+  - kind: explain
+    title: Dictionary vs. brute force
+    body: |
+      Two ways to generate guesses:
+
+      - A **dictionary (wordlist) attack** tries a list of likely passwords — real leaked passwords, common words, and variations. The famous **`rockyou.txt`** (millions of passwords from a real breach, included in Kali) cracks a depressing share of weak passwords in seconds, because people reuse the same handful.
+      - A **brute-force attack** tries every possible combination. It always works *eventually*, but "eventually" grows astronomically with length: each extra character multiplies the effort. A short password falls fast; a long passphrase is effectively out of reach.
+
+      This is the mathematical heart of password advice: **length beats complexity**. "P@ss1!" is short and in every wordlist; "correct horse battery staple" is long and absurdly expensive to brute-force.
+
+  - kind: explain
+    title: The cracking tools
+    body: |
+      Two tools dominate offline cracking, used on hashes obtained during authorised work:
+
+      - **Hashcat** — uses the GPU (graphics card) for enormous speed; the standard for serious cracking.
+      - **John the Ripper** ("John") — flexible, great at identifying hash types and applying smart mutation rules (adding numbers, capitalising, leet-speak) to a wordlist.
+
+      Both take a file of hashes and a wordlist and report which ones they recovered. The takeaway is sobering and useful: modern hardware tries billions of guesses per second against a *fast* hash — which is precisely why passwords should be stored with a *deliberately slow*, salted algorithm (next step).
+
+  - kind: explain
+    title: Online attacks, spraying, and reuse
+    body: |
+      When you must attack a live service (within scope), the approach changes to avoid lockouts:
+
+      - **Hydra** and similar tools automate login attempts across services (SSH, web forms, FTP, etc.).
+      - **Password spraying** flips brute force around: instead of many passwords against one account (which triggers lockout), it tries *one* common password (like the season and year) against *many* accounts. It stays under per-account limits and often succeeds, because in any large group someone picked the obvious password.
+      - **Credential reuse / stuffing** uses usernames and passwords from *other* breaches, betting that people reuse them. This is why one leaked site compromises accounts everywhere.
+
+      These three — spraying, reuse and lockout-awareness — are how real intrusions get in far more often than dramatic exploits.
+
+  - kind: mac
+    title: See a hash for yourself (safe)
+    body: |
+      No cracking here — just watch how hashing turns text into a fixed fingerprint, and how a tiny change gives a completely different one. This is the one-way function at the centre of the whole module.
+    commands: |
+      echo -n "password123" | shasum -a 256
+      echo -n "password124" | shasum -a 256
+      echo -n "correct horse battery staple" | shasum -a 256
+  - kind: info
+    title: "🔹 Salting and slow hashes"
+    body: |
+      Two design choices decide whether stolen hashes survive an attacker. A **salt** (recall Module 11) is random data mixed into each password before hashing, so identical passwords get different hashes and precomputed "rainbow table" lookups fail. A **slow hash** — **bcrypt**, **scrypt** or **Argon2** — is deliberately expensive to compute, so an attacker's billions-per-second drops to thousands. Passwords stored with a fast hash like plain SHA-256 and no salt are a finding; `bcrypt`/`Argon2` with a salt is what you want to see.
+
+  - kind: explain
+    title: What actually stops password attacks
+    body: |
+      The defences are clear, cheap and under-used — and this list is often the most valuable page in a report:
+
+      - **Multi-factor authentication (MFA).** Even a cracked password is useless without the second factor. This is the big one.
+      - **Length over complexity.** Encourage long passphrases; drop silly complexity rules that produce `P@ssw0rd1`.
+      - **A password manager**, so every account has a unique, long, random password — killing reuse and stuffing.
+      - **Slow, salted hashing** (bcrypt/Argon2) server-side.
+      - **Lockouts, rate limiting and monitoring** to blunt online and spraying attacks.
+      - **Block known-breached passwords** at the point users set them.
+
+  - kind: why
+    body: |
+      Password attacks are one of the most reliable routes into real organisations, and one of the most preventable. Understanding offline vs. online, dictionary vs. brute force, spraying and reuse lets you both find the weakness during a test and — more importantly — write the handful of fixes (MFA, passphrases, a manager, slow hashing) that close it. This is defensive security at its most practical.
+
+  - kind: recap
+    body: |
+      - Passwords are stored as one-way **hashes**; cracking is making and checking guesses fast, so strength = number of guesses needed.
+      - **Offline** (crack stolen hashes on your hardware) is fast and silent; **online** (attack a live login) is slow and noisy with lockouts.
+      - **Dictionary** attacks (e.g. `rockyou.txt`) beat reused/weak passwords instantly; **brute force** always works but length makes it infeasible — **length beats complexity**.
+      - **Hashcat** (GPU) and **John** crack offline; **Hydra** drives online attempts; **spraying** (one password, many accounts) and **credential reuse/stuffing** dodge lockouts.
+      - Store passwords **salted** with a **slow hash** (bcrypt/scrypt/Argon2).
+      - The winning defences: **MFA**, long passphrases, a **password manager**, slow salted hashing, lockouts/monitoring, and blocking breached passwords.

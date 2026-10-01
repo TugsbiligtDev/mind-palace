@@ -1,0 +1,4 @@
+title: "Password Attacks"
+module: 19
+summary: "Why weak passwords fall: how hashes work, offline cracking with hashcat and John, wordlists, dictionary vs. brute force, online attacks and spraying — and the defences that beat all of them."
+minutes: 40

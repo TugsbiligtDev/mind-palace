@@ -1,0 +1,130 @@
+steps:
+  - kind: explain
+    title: From typing commands to building tools
+    body: |
+      A **script** is a file full of commands that the shell runs top to bottom. The moment you find yourself typing the same three commands against ten targets, you write a script instead. Automation is most of what separates a slow tester from a fast one.
+
+      A bash script is a plain text file. By habit its first line is the **shebang**, which tells the system what should run the file:
+
+      ```
+      #!/bin/bash
+      echo "Hello from a script"
+      ```
+
+      `echo` simply prints text. Save that as `hello.sh`, make it executable with `chmod +x hello.sh` (Module 4!), and run it with `./hello.sh`.
+
+  - kind: explain
+    title: Variables
+    body: |
+      A **variable** is a named box holding a value. In bash:
+
+      ```
+      target="scanme.nmap.org"
+      echo "Scanning $target"
+      ```
+
+      Two rules trip up everyone at the start:
+
+      - **No spaces around the `=`.** `target = "x"` is an error; `target="x"` is correct.
+      - **Set without `$`, use with `$`.** You create `target`, but you read it as `$target`.
+
+      Wrapping the value in double quotes (`"$target"`) keeps it as one piece even if it contains spaces — skipping the quotes is the number-one source of weird bugs.
+
+  - kind: explain
+    title: Arguments — input from the command line
+    body: |
+      A useful script takes **arguments**, the words typed after its name. Inside the script they appear as `$1`, `$2`, and so on, with `$0` being the script's own name:
+
+      ```
+      #!/bin/bash
+      echo "You asked me to look at $1"
+      ```
+
+      Run it as `./look.sh example.com` and `$1` becomes `example.com`. This is how a real recon script is told *which* target to work on, instead of hard-coding one.
+
+  - kind: explain
+    title: Making decisions — if
+    body: |
+      Scripts choose what to do with **if**:
+
+      ```
+      if [ "$1" = "" ]; then
+        echo "Usage: ./look.sh <target>"
+        exit 1
+      fi
+      echo "Looking at $1"
+      ```
+
+      Read it as: *if* the first argument is empty, print how to use the script and stop (`exit 1` means "stopped with an error"). The spaces inside `[ ]` are required — `["$1"=""]` without them is an error. Checking that the user actually gave you input is the mark of a script you can trust.
+
+  - kind: explain
+    title: Repeating work — loops
+    body: |
+      A **loop** repeats commands. The most useful form walks through a list:
+
+      ```
+      for host in 10.0.0.1 10.0.0.2 10.0.0.3; do
+        echo "Would check $host"
+      done
+      ```
+
+      Feed the list from a file instead and you have the skeleton of real tooling:
+
+      ```
+      for host in $(cat hosts.txt); do
+        echo "Checking $host"
+      done
+      ```
+
+      That shape — read a list of targets you are *authorised* to test, do the same thing to each — is behind countless recon scripts.
+
+  - kind: explain
+    title: Pipes and redirection — the real superpower
+    body: |
+      Linux tools are small and do one thing. You combine them. Two symbols do the joining:
+
+      | Symbol | Meaning | Example |
+      |---|---|---|
+      | `\|` (pipe) | send one command's output *into* the next | `cat log.txt \| grep "error"` |
+      | `>` | write output to a file (**overwrites** it) | `ls > files.txt` |
+      | `>>` | **append** output to a file | `echo "done" >> log.txt` |
+
+      So `ps aux | grep ssh` lists processes and keeps only the lines about ssh. `nmap ... > scan.txt` saves a scan's output for your notes. The pipe is the idea that makes the whole toolkit multiply: each tool's output becomes the next tool's input.
+
+  - kind: mac
+    title: Write and run a tiny script
+    body: |
+      This is completely safe — it only prints text and loops over three words. You will create the file, make it executable, and run it on your own Mac.
+
+      (The `cat > greet.sh <<'EOF' ... EOF` trick writes everything between the markers into the file.)
+    commands: |
+      cd ~/Desktop/hacking-practice
+      cat > greet.sh <<'EOF'
+      #!/bin/bash
+      if [ "$1" = "" ]; then
+        echo "Usage: ./greet.sh <name>"
+        exit 1
+      fi
+      echo "Hello, $1"
+      for n in 1 2 3; do
+        echo "Line $n"
+      done
+      EOF
+      chmod +x greet.sh
+      ./greet.sh detective
+  - kind: info
+    title: "🔹 Bash is not the only scripting language"
+    body: |
+      Bash is perfect for gluing commands together. For anything with real logic — parsing data, talking to web APIs, building a custom tool — most testers reach for **Python** instead (an Advanced module covers it). A good rule: if a bash script grows past a screen of `if`s, it probably wants to be Python.
+
+  - kind: why
+    body: |
+      Reconnaissance, the next big phase of your training, is repetitive by nature: the same handful of checks against many hosts, ports and services. The tester who can wrap those checks in a ten-line script covers far more ground, makes fewer mistakes, and leaves cleaner notes. And because so many public hacking tools *are* bash scripts, being able to read one tells you exactly what it will do before you run it.
+
+  - kind: recap
+    body: |
+      - A **script** starts with `#!/bin/bash`, is made runnable with `chmod +x`, and is run with `./name.sh`.
+      - **Variables**: `name="value"` (no spaces), read as `$name`; quote them as `"$name"`.
+      - **Arguments** arrive as `$1`, `$2`, …; always check the user supplied them.
+      - **`if [ ... ]`** decides (mind the spaces); **`for ... do ... done`** repeats over a list.
+      - **Pipes** `|` feed one command into the next; `>` overwrites a file, `>>` appends. This is how small tools combine into big ones.

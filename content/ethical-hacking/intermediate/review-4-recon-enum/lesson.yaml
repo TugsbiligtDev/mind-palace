@@ -1,0 +1,46 @@
+steps:
+  - kind: explain
+    title: The first hours of an engagement
+    body: |
+      Recon and enumeration are the opening of every test, and the habits you build here decide the rest. These scenarios rehearse the judgement: when are you invisible and when are you touching the target, how to read what a scan tells you, and which thread to pull first. Read each, decide, then take the check.
+
+  - kind: explain
+    title: "Scene 1 — before you touch anything"
+    body: |
+      You have a signed scope. Before sending a single packet, you spend an hour on WHOIS, certificate-transparency logs and search results, and build a list of twelve subdomains — including `staging-api.example.com`.
+
+      This is **passive** recon: you touched registries and search engines, not the target, so you are invisible and well within the law. And it already paid off — a `staging` API is exactly the kind of soft, forgotten surface to prioritise once you move to active scanning. An hour of quiet research just shaped the whole active phase.
+
+  - kind: explain
+    title: "Scene 2 — reading the scan"
+    body: |
+      `nmap -sV` against an in-scope host returns:
+
+      ```
+      21/tcp  open  ftp      vsftpd 2.3.4
+      22/tcp  open  ssh      OpenSSH 8.2
+      445/tcp open  smb      Samba 4.x
+      ```
+
+      Three services, three leads. The **version numbers** are the prize: `vsftpd 2.3.4` is specific enough to look up for known vulnerabilities (next module). FTP invites an anonymous-login check; SMB invites share and null-session enumeration. You are not exploiting yet — you are turning a port list into a to-do list of things to interrogate.
+
+  - kind: explain
+    title: "Scene 3 — don't trust the ping"
+    body: |
+      Host discovery (`nmap -sn`) on an in-scope subnet shows only two live hosts, but the client's inventory says there are ten.
+
+      The likely explanation is not that eight machines vanished — it is that they are configured to ignore ping while still running services. The fix is to scan the suspected addresses directly with `-Pn` ("treat as up") instead of trusting the sweep. "No ping reply" is never "not there," a caution that saves testers from missing half a network.
+
+  - kind: explain
+    title: "Scene 4 — the quiet win"
+    body: |
+      Enumerating SMB on a target, you find a share called `backups` readable with no credentials, and inside it an old configuration file containing a database username and password.
+
+      This is why enumeration is the job. You have not run a single exploit, yet you may now hold valid credentials — a combination finding (readable share → leaked config → credentials) that only appears because you enumerated patiently and wrote down what you saw. Note it carefully; those credentials likely unlock the next step.
+
+  - kind: recap
+    body: |
+      - Reading public data (WHOIS, CT logs, search) is **passive** and invisible; sending packets to the target is **active** and needs scope.
+      - On a scan, the **version numbers** are the prize — they drive the vulnerability lookups to come.
+      - "No ping reply" ≠ down; scan suspected hosts directly with `-Pn`.
+      - The way in is often a **combination** (readable share → leaked config → credentials); enumerate patiently and record everything.

@@ -1,0 +1,77 @@
+steps:
+  - kind: explain
+    title: The only thing that separates you from a criminal
+    body: |
+      The techniques an ethical hacker uses and the techniques a criminal uses are often *identical*. The difference is not skill, and it is not intent in your head. It is one thing: **authorization**. Permission, in writing, from someone who owns the system and is allowed to grant it.
+
+      This module comes *before* a single scanning or exploitation module on purpose. Everything after this assumes you have permission. Without it, the most basic scan can be a crime. "I was only learning" and "I didn't cause harm" are not defences. Read this one twice.
+
+  - kind: explain
+    title: The law is real and it has teeth
+    body: |
+      Accessing a computer system without authorisation is a criminal offence almost everywhere:
+
+      - **United States:** the **Computer Fraud and Abuse Act (CFAA)** — unauthorised access, even without damage, is a federal crime.
+      - **United Kingdom:** the **Computer Misuse Act**.
+      - **European Union, Canada, Australia** and most other countries have equivalent laws.
+
+      People have been prosecuted for port-scanning or for "just looking." The law generally cares about whether you had *permission*, not whether you meant well or caused loss. You are responsible for knowing the law where you are and where your target is — they can differ. When unsure, the answer is simple: **do not touch it.**
+
+  - kind: explain
+    title: Scope and rules of engagement
+    body: |
+      When a test is authorised, the permission is written down precisely. Two documents matter:
+
+      - **Scope** — exactly *what* you may test: which IP ranges (remember CIDR), which domains, which applications. Anything not listed is off-limits, full stop. Wandering one subnet over, however interesting, is unauthorised.
+      - **Rules of Engagement (RoE)** — *how* you may test: the time window, whether denial-of-service is allowed (usually not), who to call if something breaks, what to do if you find evidence of a *prior* breach or stumble onto sensitive data, and emergency contacts.
+
+      A professional reads these before touching anything and keeps carefully inside them. Straying outside scope is the fastest way to turn an authorised test into a crime — and to lose the trust the whole profession runs on.
+
+  - kind: explain
+    title: Get it in writing
+    body: |
+      A verbal "yeah, go ahead" is worth nothing if things go wrong. Real engagements have a signed document — often called a **"get-out-of-jail" letter** or authorisation-to-test letter — that states who authorised the work, exactly what is in scope, and the dates. It is signed by someone with the actual authority to grant it (a manager who does not own the system cannot authorise testing it).
+
+      Keep a copy. If a scan trips an alarm and the security team or the police come asking, that letter is the difference between "authorised penetration test" and "unauthorised intrusion." No letter, no testing. This is not bureaucracy — it is the thing that keeps you employed and free.
+
+  - kind: explain
+    title: Responsible disclosure
+    body: |
+      What if you find a serious flaw in something you *weren't* hired to test — a bug in a product you use, say? You do not post it publicly, and you do not exploit it. You practise **responsible (coordinated) disclosure**:
+
+      1. Report the flaw privately to the owner (many have a `security.txt` file or a security contact).
+      2. Give them reasonable time to fix it before any public mention.
+      3. Never access more data than needed to demonstrate the issue, and never hold it to ransom.
+
+      The goal is to get the problem fixed with the least harm — not fame, not leverage. Doing it well builds the reputation a career is made of; doing it badly (public "drops," extortion) is how good researchers end up in court.
+
+  - kind: explain
+    title: Three kinds of authorised work
+    body: |
+      "Ethical hacking" covers several arrangements, differing mainly in *scope and permission*:
+
+      | | What it is | Authorisation |
+      |---|---|---|
+      | **Bug bounty** | Independent researchers test a company's systems for rewards | A public **program** with published rules and scope you must obey exactly |
+      | **Penetration test** | A contracted, time-boxed assessment of defined targets | A signed contract, scope and RoE with one client |
+      | **Red team** | A goal-driven, stealthy simulation of a real adversary | A contract, usually with very few people aware it is happening |
+
+      In every case, someone with authority has said yes, in writing, with defined limits. A bug bounty's published scope is just as binding as a pentest contract — testing a company that has *no* program, or going outside a program's listed scope, is unauthorised no matter how good your intentions.
+
+  - kind: info
+    title: "🔹 Where to practise legally"
+    body: |
+      You never need an unauthorised target to learn. Legitimate practice grounds exist precisely so you can hack freely and legally: your **own lab VMs** (the next capstone), **TryHackMe** and **Hack The Box**, **PortSwigger's Web Security Academy**, CTF competitions, and `scanme.nmap.org` (provided by Nmap's authors for scan practice). There is a lifetime of learning on these. Use them — never a system you do not own or have explicit permission to test.
+
+  - kind: why
+    body: |
+      Skill without ethics is just crime with extra steps, and the industry knows it. Clients hand testers the keys to their most sensitive systems; that only works on a foundation of trust, authorisation and discretion. Every later module in this course — scanning, exploitation, post-exploitation — is taught on the unbreakable assumption that you have written permission and stay inside scope. Internalise this now and the rest of your career has a floor under it.
+
+  - kind: recap
+    body: |
+      - The one thing separating ethical from criminal hacking is **authorization** — explicit, in writing, from someone with the authority to grant it.
+      - Unauthorised access is a crime (**CFAA** in the US, **Computer Misuse Act** in the UK, equivalents elsewhere); good intentions are not a defence.
+      - **Scope** defines *what* you may test; **Rules of Engagement** define *how*. Staying inside both is non-negotiable.
+      - Always have the signed authorisation ("get-out-of-jail") letter before you start.
+      - Report flaws you stumble on via **responsible disclosure**, privately and without exploiting them.
+      - **Bug bounty**, **pentest** and **red team** all rest on written permission and defined scope. Practise only on your own lab or sanctioned ranges.

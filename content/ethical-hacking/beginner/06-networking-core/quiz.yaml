@@ -1,0 +1,46 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "A client scopes your engagement as `192.168.1.0/24`. Roughly how many host addresses does that cover, and what is fixed?"
+    options:
+      - "One machine; all four numbers are fixed"
+      - "About 254 machines; the first three numbers (192.168.1) are fixed and the last varies"
+      - "About 65,000 machines; only 192.168 is fixed"
+      - "The entire internet"
+    answer: 1
+    explanation: "`/24` fixes the first 24 bits — the first three numbers — leaving the last number (1–254) free, so about 254 hosts. Staying inside this range is your legal boundary."
+  - type: mcq
+    prompt: Which of these is a *private* IP address that would normally sit behind NAT?
+    options:
+      - "8.8.8.8"
+      - "10.0.0.5"
+      - "172.217.0.1"
+      - "93.184.216.34"
+    answer: 1
+    explanation: "`10.0.0.0/8` is one of the private ranges (along with 172.16–31.x.x and 192.168.x.x). Private addresses are reused everywhere and hidden behind a public IP by NAT."
+  - type: mcq
+    prompt: What is the key difference between a switch and a router?
+    options:
+      - A switch is faster; a router is slower
+      - A switch connects machines within one local network (by MAC); a router connects different networks (by IP)
+      - A switch is software; a router is hardware
+      - There is no difference
+    answer: 1
+    explanation: Switches forward frames inside a single network using MAC addresses; routers forward packets between networks using IP addresses, choosing the next hop.
+  - type: mcq
+    prompt: Why can your laptop, phone and TV all share one public IP address?
+    options:
+      - They take turns being online
+      - The router uses NAT to translate their private addresses to its single public address and back
+      - They secretly use IPv6
+      - Public IPs are unlimited
+    answer: 1
+    explanation: NAT (Network Address Translation) lets many private addresses share one public address. From outside, you often see only the router, not the machines behind it.
+  - type: fill
+    prompt: "An address written as six hex pairs like `00:1b:44:11:3a:b7`, burned into a network card and meaningful only on the local segment, is called a ____ address."
+    code: "00:1b:44:11:3a:b7 is a ____ address"
+    answer: "MAC"
+    runnable: false
+    accept:
+      - mac
+    explanation: That is a MAC address — the fixed hardware identifier. An IP address, by contrast, is assigned and routes across networks.

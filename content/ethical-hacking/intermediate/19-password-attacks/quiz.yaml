@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Why is an offline password attack so much more dangerous than an online one?
+    options:
+      - It uses a different alphabet
+      - With the hashes in hand, the attacker guesses on their own hardware — no lockouts, no alarms, billions of attempts possible
+      - Offline attacks are illegal and online ones are not
+      - Online attacks never work
+    answer: 1
+    explanation: Offline, you crack stolen hashes locally with no rate limit or lockout. Online attacks hit a live service and are slowed by lockouts, limits and logging.
+  - type: mcq
+    prompt: Why do security professionals say "length beats complexity" for passwords?
+    options:
+      - Long passwords look nicer
+      - Each extra character multiplies brute-force effort enormously, while short "complex" passwords like P@ss1! are already in common wordlists
+      - Complexity is illegal
+      - Length makes hashing faster
+    answer: 1
+    explanation: Brute force grows astronomically with length, but short complex passwords are predictable and in wordlists. A long passphrase is far stronger than a short, symbol-stuffed one.
+  - type: mcq
+    prompt: What is password spraying, and why does it evade account lockouts?
+    options:
+      - Trying many passwords against one account very fast
+      - Trying one common password against many accounts, staying under each account's attempt limit while betting someone chose the obvious password
+      - Spraying water on a server
+      - Guessing usernames only
+    answer: 1
+    explanation: "Spraying flips brute force — one common password across many accounts avoids per-account lockout, and in a large group someone usually picked the predictable password."
+  - type: mcq
+    prompt: Which single control most reduces the impact of a cracked or stolen password?
+    options:
+      - A longer username
+      - Multi-factor authentication (MFA) — the password alone is useless without the second factor
+      - Changing passwords daily
+      - Hiding the login page
+    answer: 1
+    explanation: MFA means a cracked password is not enough to log in. It is consistently the highest-value defence against password attacks.
+  - type: mcq
+    prompt: A client stores passwords as plain, unsalted SHA-256. What do you recommend?
+    options:
+      - Nothing; SHA-256 is fine for passwords
+      - Switch to a salted, deliberately slow hash such as bcrypt, scrypt or Argon2
+      - Encrypt the passwords instead
+      - Store them in plaintext for speed
+    answer: 1
+    explanation: Fast, unsalted hashes let attackers try billions of guesses per second and reuse rainbow tables. Salted, slow hashes (bcrypt/scrypt/Argon2) are the correct choice.

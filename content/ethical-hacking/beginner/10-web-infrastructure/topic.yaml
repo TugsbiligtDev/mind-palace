@@ -1,0 +1,4 @@
+title: "Web Infrastructure"
+module: 10
+summary: "What sits behind a web page: web servers, databases and SQL, APIs and REST, and TLS/certificates — plus using the browser's own developer tools to inspect it all."
+minutes: 30

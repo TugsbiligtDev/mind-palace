@@ -1,0 +1,78 @@
+steps:
+  - kind: explain
+    title: Why the web gets three modules
+    body: |
+      Most organisations expose far more web application than anything else, so web apps are where a large share of real testing happens. The good news: you already learned how the web works (Modules 9–10). Web hacking is just reading and manipulating that request/response conversation deliberately. This module sets up the *map* of what tends to go wrong and the *tools* for looking — the next two go deep on the specific flaws.
+
+      As always: you practise against your own lab (Juice Shop, DVWA) or a sanctioned range like PortSwigger's Web Security Academy — never a live site you do not own.
+
+  - kind: explain
+    title: The OWASP Top 10 — a map of what goes wrong
+    body: |
+      **OWASP** (the Open Worldwide Application Security Project) publishes the **Top 10**: the ten most critical categories of web application risk, updated every few years from real-world data. It is not a tool; it is the shared checklist the whole industry uses. Current categories include, among others:
+
+      - **Broken Access Control** — users doing things they should not (Module 22).
+      - **Injection** — SQL, command and similar (Module 21).
+      - **Cryptographic Failures** — weak or missing encryption of sensitive data.
+      - **Security Misconfiguration** — defaults, verbose errors, unnecessary features left on.
+      - **Vulnerable and Outdated Components** — using libraries with known flaws.
+
+      Treat the Top 10 as your coverage list: a thorough web test considers each category against the target. For a defender, it is a prioritised syllabus of what to get right.
+
+  - kind: explain
+    title: Burp Suite — sit in the middle of the conversation
+    body: |
+      The central web-testing tool is **Burp Suite** (the free Community edition is enough to learn on). Burp is an **intercepting proxy**: you point your browser through it, and Burp sits between you and the server, showing — and letting you edit — every request and response.
+
+      This is the key move of web testing. The browser enforces rules (hidden fields, length limits, JavaScript checks) that exist only on the *client*. By editing the request *after* the browser sends it, you test what the **server** actually accepts — because the server is the only thing that can really enforce security. Anything checked only in the browser can be changed in Burp.
+
+  - kind: explain
+    title: The parts of Burp you will use
+    body: |
+      Four features cover most work:
+
+      - **Proxy / Intercept** — pause a request in flight, read it, modify it, and send it on. The foundation.
+      - **HTTP history** — a log of every request the browser made, to review and re-examine.
+      - **Repeater** — take one request and send it over and over with small changes, watching how the response differs. This is how you probe a parameter by hand, methodically.
+      - **Intruder** — automate sending many variations of a request (useful for testing a parameter across many values; the Community edition is deliberately rate-limited).
+
+      Repeater is where real understanding happens: change one thing, read the response, learn, repeat — the scientific method applied to a web app.
+
+  - kind: explain
+    title: Content discovery — finding the unlinked
+    body: |
+      A site shows you its menu, but the kitchen has many more doors. **Content (directory) discovery** finds pages and files that exist but are not linked anywhere, by requesting many likely names from a wordlist:
+
+      - **gobuster**, **ffuf** and **dirb/dirbuster** are the common tools.
+      - They look for `/admin`, `/backup`, `/.git`, `/api`, old pages, config files, and more.
+
+      Finding `/admin` or an exposed `/.git` folder (which can leak the whole source code) is a routine, high-value result. It connects back to enumeration (Module 16): the web surface is far bigger than the visible links suggest, and discovery is how you see the rest of it.
+
+  - kind: explain
+    title: A sane testing workflow
+    body: |
+      Putting the tools together, a typical web test flows like this:
+
+      1. **Map** the application: browse every feature with Burp recording the HTTP history, so you have a full picture of its requests.
+      2. **Discover** hidden content with gobuster/ffuf.
+      3. **Probe** interesting requests in Repeater, one parameter at a time, guided by the OWASP Top 10.
+      4. **Verify and record** anything that behaves wrongly, with the exact request that triggered it.
+
+      The structure matters: without it, a complex app is overwhelming. With the Top 10 as a checklist and Burp as your lens, it becomes a systematic survey.
+
+  - kind: info
+    title: "🔹 Automated scanners have limits"
+    body: |
+      Tools like OWASP **ZAP** (a free Burp alternative) and Burp's own scanner can crawl an app and flag likely issues automatically. They are useful for coverage, but web flaws — especially access-control and logic bugs — frequently need a human who understands the application's *intent*. A scanner does not know that user A should not see user B's invoice; you do. Automation assists; it does not replace judgement.
+
+  - kind: why
+    body: |
+      This module is the lens and the checklist for the two that follow. Burp lets you see and bend the real request/response traffic; the OWASP Top 10 tells you what to look for; content discovery reveals the hidden surface. With these in place, "web hacking" stops being mysterious and becomes a methodical search for the specific flaws you will study next.
+
+  - kind: recap
+    body: |
+      - Web apps are most organisations' largest surface; web hacking is deliberate manipulation of the Module 9–10 request/response conversation — practised only on your lab or a sanctioned range.
+      - The **OWASP Top 10** is the industry's shared checklist of critical web risks (broken access control, injection, misconfiguration, outdated components, …) — use it as coverage.
+      - **Burp Suite** is an **intercepting proxy**: edit requests *after* the browser to test what the **server** really enforces. Key parts: **Proxy/Intercept**, **HTTP history**, **Repeater**, **Intruder**.
+      - **Content discovery** (gobuster, ffuf, dirb) finds unlinked pages and files — `/admin`, `/backup`, `/.git`.
+      - Workflow: map → discover → probe in Repeater against the Top 10 → verify and record. Automated scanners help with coverage but miss logic and access-control flaws.

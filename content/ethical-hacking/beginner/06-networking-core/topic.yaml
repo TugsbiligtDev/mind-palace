@@ -1,0 +1,4 @@
+title: "Networking Core"
+module: 6
+summary: "How machines talk: the TCP/IP and OSI models, IP addresses and MAC addresses, subnets and CIDR, packets through routers and switches, private vs. public IPs and NAT."
+minutes: 35

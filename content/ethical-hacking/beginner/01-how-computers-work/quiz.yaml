@@ -1,0 +1,46 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A program captures a password and it is stored "in the clear while the program runs." Which part of the computer is that talking about?
+    options:
+      - Storage (the SSD)
+      - RAM (memory)
+      - The CPU's instruction set
+      - The hypervisor
+    answer: 1
+    explanation: RAM holds what a program is working on right now. Secrets often sit there unencrypted while in use, which is why memory is a target. Storage is the long-term disk.
+  - type: mcq
+    prompt: Why does almost all hands-on security practice happen inside virtual machines?
+    options:
+      - VMs run faster than real hardware
+      - VMs isolate risky work, can be rolled back with snapshots, and can be put on a private network
+      - VMs are the only place Linux will run
+      - VMs make attacks legal
+    answer: 1
+    explanation: Isolation, snapshots and a private VM-only network keep your real machine and other people safe. A VM does not make an unauthorised attack legal.
+  - type: mcq
+    prompt: You see the value `3a` written in hexadecimal. How much data is that?
+    options:
+      - One bit
+      - One byte
+      - Eight bytes
+      - One kilobyte
+    answer: 1
+    explanation: Each hex digit is four bits, so two hex digits (`3a`) make one byte. That is why bytes are so often written as pairs of hex characters.
+  - type: mcq
+    prompt: Your browser asks a website for a page and the website sends it back. In that exchange, which is the client?
+    options:
+      - The website
+      - The browser
+      - The database behind the website
+      - The operating system
+    answer: 1
+    explanation: The client is whatever makes the request — here, the browser. The website is the server. Note that the server may itself be a client to a database behind it.
+  - type: fill
+    prompt: "A running program that the operating system starts, stops and keeps separate from others is called a ____."
+    code: "A running program is a ____."
+    answer: process
+    runnable: false
+    accept:
+      - processes
+    explanation: The OS manages running programs as processes, giving each its own slice of memory and keeping them apart.

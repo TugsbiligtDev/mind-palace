@@ -1,0 +1,44 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A scan reports port 22 open. Which service would you expect behind it, and what does that suggest?
+    options:
+      - HTTPS — an encrypted website
+      - SSH — secure remote login, a shell into the machine
+      - SMB — Windows file sharing
+      - DNS — name resolution
+    answer: 1
+    explanation: Port 22 is SSH by convention — remote shell access. Recognising the well-known ports lets you read a scan at a glance.
+  - type: mcq
+    prompt: Which describes the TCP three-way handshake in order?
+    options:
+      - "ACK, SYN, RST"
+      - "SYN, SYN-ACK, ACK"
+      - "GET, POST, PUT"
+      - "PING, PONG, ACK"
+    answer: 1
+    explanation: "The client sends SYN, the server replies SYN-ACK, the client sends ACK — then data flows. A scanner uses this handshake: a SYN-ACK means the port is open, a RST means closed."
+  - type: mcq
+    prompt: When would a service use UDP rather than TCP?
+    options:
+      - When it needs every byte delivered in order, like a file transfer
+      - When speed matters more than guaranteed delivery, like DNS lookups or video calls
+      - When it wants to be more secure
+      - UDP is never used
+    answer: 1
+    explanation: UDP is fast and connectionless — good for DNS, streaming and games, where an occasional lost packet is fine. TCP is for when reliability and order matter.
+  - type: mcq
+    prompt: What job does DNS do?
+    options:
+      - It encrypts web traffic
+      - It translates human-friendly names like example.com into IP addresses
+      - It assigns IP addresses to new devices
+      - It blocks malicious ports
+    answer: 1
+    explanation: DNS is the internet's phone book, mapping names to addresses (usually over UDP 53). DHCP is the one that assigns addresses to new devices.
+  - type: fill
+    prompt: "An encrypted website is served over HTTPS. Fill in the standard port number HTTPS uses."
+    code: "HTTPS listens on port ____"
+    answer: "443"
+    runnable: false
+    explanation: HTTPS uses port 443; plain HTTP uses port 80. These two are among the most important ports to recognise.

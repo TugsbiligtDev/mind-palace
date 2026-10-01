@@ -1,0 +1,5 @@
+title: "Build your legal home lab"
+module: 13
+kind: capstone
+summary: "Plan and build a free, isolated practice lab (Kali VM + one vulnerable target on a private network), then run passive and active reconnaissance against a target you own, and write up what you find — your first end-to-end exercise."
+minutes: 90

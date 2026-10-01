@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Why do experienced testers say enumeration is "80% of the work"?
+    options:
+      - It takes the most clicks
+      - Exploitation is usually quick once you know where to aim; enumeration is the patient detail-gathering that tells you where to aim
+      - It is the only legal phase
+      - It requires the most expensive tools
+    answer: 1
+    explanation: The way into a target is almost always a detail — a readable share, a hidden page, a valid username — that only thorough enumeration surfaces. Exploitation then follows quickly.
+  - type: mcq
+    prompt: You find FTP (port 21) open during enumeration. What is a classic thing to check?
+    options:
+      - Whether it supports video
+      - Whether anonymous login is allowed and exposes files
+      - Its battery level
+      - Whether it can send email
+    answer: 1
+    explanation: Misconfigured anonymous FTP (log in as `anonymous` with any password) that exposes files is a common, still-current finding.
+  - type: mcq
+    prompt: Directory discovery tools like gobuster and ffuf are used against a web server to do what?
+    options:
+      - Encrypt the traffic
+      - Request many likely paths to find hidden content — /admin, /backup, /.git, old pages not linked anywhere
+      - Crash the server
+      - Change the homepage
+    answer: 1
+    explanation: They brute-force likely paths to reveal unlinked content such as admin panels, backups and exposed .git folders — doorways into the web-hacking phase.
+  - type: mcq
+    prompt: Why is an exposed, unauthenticated database (like an open MongoDB) such a serious finding?
+    options:
+      - Databases are illegal to run
+      - Anyone who can reach it over the network can read or change the data with no credentials — effectively a breach already
+      - It slows the network
+      - It only affects Windows
+    answer: 1
+    explanation: A database reachable on the network with no authentication exposes all its data to anyone who connects. Open MongoDB and Redis instances have caused many real breaches.
+  - type: mcq
+    prompt: Why keep structured notes (IP, port, service, version, findings) during enumeration?
+    options:
+      - It is required by law
+      - The way in is often a combination of details you only connect when both are written down — and the notes become your report
+      - To slow yourself down
+      - Notes are only for beginners
+    answer: 1
+    explanation: A username from one service plus a weakness in another is a combination you spot only with good notes. Those same notes feed directly into the final report (Module 27).

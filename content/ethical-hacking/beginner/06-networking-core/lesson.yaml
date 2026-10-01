@@ -1,0 +1,102 @@
+steps:
+  - kind: explain
+    title: Why networking is half the job
+    body: |
+      Almost every attack crosses a network: a scan reaching a server, a browser talking to a web app, a compromised machine phoning home. If you cannot picture how data moves between two computers, the rest is guesswork. This module builds that picture.
+
+      The key idea: when your computer sends data, it does not go in one lump. It is chopped into small **packets**, each labelled with *where it is going* and *where it came from*, and sent hop by hop across the network. Addressing those labels correctly is what the whole system is about.
+
+  - kind: explain
+    title: Two models, layer by layer
+    body: |
+      Networking is taught as **layers**, each handling one job and trusting the layer below. Two models describe the same reality:
+
+      | TCP/IP layer | Rough job | Example |
+      |---|---|---|
+      | Application | The actual content | HTTP, DNS, SSH |
+      | Transport | Reliable delivery, port numbers | TCP, UDP |
+      | Internet | Addressing and routing between networks | IP |
+      | Link | The local physical hop | Ethernet, Wi-Fi, MAC |
+
+      The older **OSI model** splits the same thing into seven layers (Physical, Data Link, Network, Transport, Session, Presentation, Application). You do not need to memorise all seven, but you will hear people say "that is a layer 7 problem" (application) or "a layer 3 device" (routing). Thinking in layers lets you locate a problem — or an attack — at the right level.
+
+  - kind: explain
+    title: IP addresses — the postal address
+    body: |
+      An **IP address** identifies a machine on a network. The common form, IPv4, is four numbers 0–255 separated by dots:
+
+      ```
+      192.168.1.42
+      ```
+
+      Each number is one byte (remember Module 1: one byte holds 0–255). An IP address has two parts: the **network** part (which network you are on) and the **host** part (which machine on it). A **subnet mask** marks where the split falls.
+
+  - kind: explain
+    title: Subnets and CIDR
+    body: |
+      You will constantly see an address with a slash and a number:
+
+      ```
+      192.168.1.0/24
+      ```
+
+      That `/24` is **CIDR** notation. It says "the first 24 bits are the network part." Since each of the four numbers is 8 bits, `/24` means the first three numbers (192.168.1) are fixed and the last can be anything 1–254 — so this range covers **192.168.1.1 to 192.168.1.254**, about 254 machines.
+
+      A few to recognise:
+
+      | CIDR | Means | Size |
+      |---|---|---|
+      | `/24` | first 3 numbers fixed | ~254 hosts |
+      | `/16` | first 2 numbers fixed | ~65,000 hosts |
+      | `/32` | all four fixed | exactly one machine |
+
+      When a client scopes a test as "`10.10.0.0/16`, nothing else," CIDR is how they draw the fence — and staying inside it is your legal obligation.
+
+  - kind: explain
+    title: MAC addresses — the hardware name
+    body: |
+      Below the IP address is the **MAC address**: a permanent id burned into each network card, written as six hex pairs:
+
+      ```
+      00:1b:44:11:3a:b7
+      ```
+
+      The difference matters. An **IP address** can change (it is assigned, and it routes across the whole internet). A **MAC address** is fixed to the hardware and only matters on the *local* network segment — it is how a switch knows which physical port to send a frame to. Attacks like ARP spoofing (an Advanced topic) abuse the link between the two.
+
+  - kind: explain
+    title: Routers, switches, and the journey of a packet
+    body: |
+      Two devices move your packets:
+
+      - A **switch** connects machines *within* one local network and forwards frames by MAC address. Think of the hallway inside one building.
+      - A **router** connects *different* networks and forwards packets by IP address, choosing the next hop toward the destination. Think of the roads between buildings.
+
+      So a packet from your laptop to a website: switch to your router, router to your ISP, hop by hop across many routers, to the server's network, to its switch, to the server. Each hop reads the labels and passes it on. (You will literally watch these hops with `traceroute` in Module 8.)
+
+  - kind: explain
+    title: Private vs. public IPs, and NAT
+    body: |
+      There are not enough IPv4 addresses for every device, so most machines use a **private** address that is reused on every home and office network. You will recognise these ranges instantly:
+
+      - `10.0.0.0/8` (10.anything)
+      - `172.16.0.0/12` (172.16–31.x.x)
+      - `192.168.0.0/16` (192.168.x.x)
+
+      These are not routable on the public internet. Your router performs **NAT** (Network Address Translation): it swaps your private source address for its one **public** address on the way out, and remembers how to send replies back. That is why your phone and laptop can share a single public IP — and why, from the outside, you often see only the router, not the machines behind it. Getting *behind* NAT to reach those internal machines is a whole skill (pivoting, in Advanced).
+
+  - kind: info
+    title: "🔹 IPv6 — the newer, longer address"
+    body: |
+      IPv4 ran out of addresses, so **IPv6** was created. Its addresses are much longer and written in hex with colons: `2001:0db8:85a3::8a2e:0370:7334`. You only need to *recognise* it for now and know it exists alongside IPv4. One security note worth filing away: people sometimes firewall their IPv4 carefully and forget IPv6 entirely, leaving an unguarded back door.
+
+  - kind: why
+    body: |
+      Scanning (Module 15) means asking a *range* of IP addresses what they are running — so you must read CIDR to know exactly which machines are in scope. Traffic analysis (Module 8) means reading packets and their addresses. Pivoting (Advanced) means reaching private addresses behind NAT. All of it assumes the picture in this module: layered models, IP and MAC addresses, subnets, and packets hopping through switches and routers.
+
+  - kind: recap
+    body: |
+      - Data travels in **packets** labelled with source and destination, across **layers** (TCP/IP's four, or OSI's seven) that each do one job.
+      - An **IP address** (IPv4: four bytes like `192.168.1.42`) has a **network** and a **host** part; the split is given by a subnet mask or **CIDR** (`/24` = first three numbers fixed, ~254 hosts). CIDR is how a test's scope is drawn.
+      - A **MAC address** (six hex pairs) is the fixed hardware name, meaningful only on the local segment.
+      - **Switches** move frames within a network (by MAC); **routers** move packets between networks (by IP).
+      - **Private IP** ranges (10.x, 172.16–31.x, 192.168.x) are reused everywhere and hidden behind one **public** IP by **NAT**.

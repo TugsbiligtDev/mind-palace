@@ -1,0 +1,44 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Which line correctly creates a variable in bash?"
+    options:
+      - "target = scanme.nmap.org"
+      - "target=\"scanme.nmap.org\""
+      - "$target = scanme.nmap.org"
+      - "set target scanme.nmap.org"
+    answer: 1
+    explanation: No spaces around the `=`, and you set the name *without* the `$`. You only add `$` when you read it back, as `$target`.
+  - type: mcq
+    prompt: "In the command `ps aux | grep ssh`, what does the pipe `|` do?"
+    options:
+      - It runs the two commands at the same time
+      - It sends the output of `ps aux` into `grep` as its input
+      - It saves the output to a file called ssh
+      - It deletes the ssh process
+    answer: 1
+    explanation: A pipe feeds the first command's output into the next command. Here, the full process list is filtered down to lines mentioning ssh.
+  - type: mcq
+    prompt: "What is the difference between `>` and `>>` when writing to a file?"
+    options:
+      - There is none
+      - "`>` overwrites the file; `>>` appends to the end of it"
+      - "`>` appends; `>>` overwrites"
+      - "`>` writes text; `>>` writes numbers"
+    answer: 1
+    explanation: "`>` replaces the file's contents (easy to lose data), while `>>` adds to the end. Reach for `>>` when you want to keep what is already there."
+  - type: mcq
+    prompt: Inside a script run as `./look.sh example.com`, what does `$1` contain?
+    options:
+      - The script's own name
+      - "example.com"
+      - The number 1
+      - Nothing
+    answer: 1
+    explanation: "`$1` is the first argument after the script name (`example.com`). `$0` would be the script name itself."
+  - type: fill
+    prompt: "A bash script's first line tells the system to run it with bash. Fill in that line (the 'shebang')."
+    code: "____/bin/bash"
+    answer: "#!"
+    runnable: false
+    explanation: "The shebang `#!/bin/bash` on the first line tells the system which interpreter should run the script."

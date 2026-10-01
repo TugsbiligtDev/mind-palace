@@ -1,0 +1,47 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A web server responds with status code 500 right after you submit an unusual value in a form field. Why is that interesting to a tester?
+    options:
+      - 500 means everything is fine
+      - A 500 (server error) suggests your input broke something, often a sign the input was handled carelessly — a possible bug
+      - 500 means the page does not exist
+      - 500 means you are logged in
+    answer: 1
+    explanation: 5xx codes mean the server itself failed. Input that triggers a 500 often reveals careless handling worth investigating. (404 = not found, 401/403 = auth problems.)
+  - type: mcq
+    prompt: Why should a password never be sent using a GET request?
+    options:
+      - GET is slower than POST
+      - GET puts data in the URL, so the password ends up in browser history, bookmarks and server logs
+      - GET is only for images
+      - It would not work at all
+    answer: 1
+    explanation: GET data travels in the URL and is logged and stored in many places. Sensitive data belongs in a POST request body.
+  - type: mcq
+    prompt: "After you log in, the server sends `Set-Cookie: session=abc123` and your browser includes it on later requests. What is that cookie, in security terms?"
+    options:
+      - A harmless preference like your language
+      - Effectively your logged-in identity — stealing or guessing it can let someone become you without your password
+      - The server's password
+      - An advertisement
+    answer: 1
+    explanation: The session token represents your authenticated identity. If an attacker obtains it, they are treated as you — which is why session security matters so much.
+  - type: mcq
+    prompt: "In the URL `https://shop.example.com/products?id=42`, which part is user-controlled input the server acts on?"
+    options:
+      - "https"
+      - "shop.example.com"
+      - "id=42 (the query parameter)"
+      - "/products"
+    answer: 2
+    explanation: Query parameters like `id=42` are user input. Tampering with them (e.g. `id=43`) is the basis of access-control flaws such as IDOR.
+  - type: fill
+    prompt: "HTTP is described as 'stateless' — the server does not remember you between requests on its own. The small token stored in your browser that keeps you logged in is called a ____."
+    code: "The server keeps you logged in with a ____"
+    answer: "cookie"
+    runnable: false
+    accept:
+      - cookies
+      - session cookie
+    explanation: A cookie (carrying a session token) is how a stateless protocol remembers who you are from one request to the next.

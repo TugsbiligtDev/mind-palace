@@ -34,6 +34,10 @@ async function main() {
       await checkCodeTrack(bundle);
       continue;
     }
+    if (bundle.track.engine === "none") {
+      checkReadingTrack(bundle);
+      continue;
+    }
     if (bundle.track.engine !== "postgres") {
       if (bundle.levels.some((l) => l.topics.length))
         fail(bundle.track.id, `there's no automatic checker for ${bundle.track.engine} lessons yet, so they can't go live`);
@@ -233,6 +237,32 @@ async function checkCodeTrack(bundle: ReturnType<typeof loadTrack>) {
           const out = await safely(where, "the code with the answer filled in", () => r.run(q.code.replace("____", q.answer), q.stdin));
           if (out?.error) fail(where, `code with the answer filled in errors: ${out.error.message}`);
         }
+      }
+    }
+    console.log(`  checked ${bundle.track.id}/${level.id} (${topics.length} topics)`);
+  }
+}
+
+// A knowledge-based course (engine "none", e.g. Ethical Hacking). Nothing runs in the browser,
+// so there is nothing to execute: we only confirm the content obeys the no-runner rules.
+// Lessons may use explain/info/why/recap/mac steps but not try/code; quizzes must be multiple
+// choice (or fill with runnable:false), never predict, since those need a running engine.
+function checkReadingTrack(bundle: ReturnType<typeof loadTrack>) {
+  for (const { level, topics } of bundle.levels) {
+    for (const t of topics) {
+      if (only && !t.key.includes(only)) continue;
+      for (const [i, step] of t.lesson.steps.entries()) {
+        checks++;
+        if (step.kind === "try" || step.kind === "code")
+          fail(`${t.key} lesson step ${i + 1}`, `a reading course can't run code, so it can't use "${step.kind}" steps (use explain/info/mac)`);
+      }
+      if (t.quiz.pass > t.quiz.questions.length) fail(`${t.key} quiz`, "pass mark is higher than the number of questions");
+      for (const [i, q] of t.quiz.questions.entries()) {
+        const where = `${t.key} quiz Q${i + 1}`;
+        checks++;
+        if (q.type === "predict") fail(where, "a reading course can't run code, so it can't use predict-the-output questions");
+        else if (q.type === "fill" && q.runnable) fail(where, "a reading course can't run code: set `runnable: false` on fill questions");
+        else if (q.type === "mcq" && (q.answer < 0 || q.answer >= q.options.length)) fail(where, "answer index is out of range");
       }
     }
     console.log(`  checked ${bundle.track.id}/${level.id} (${topics.length} topics)`);

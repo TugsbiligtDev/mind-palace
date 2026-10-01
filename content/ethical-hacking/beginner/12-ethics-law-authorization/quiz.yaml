@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: What is the single thing that separates legal, ethical hacking from a criminal offence?
+    options:
+      - Using the right tools
+      - Having explicit, written authorization from someone entitled to grant it
+      - Not causing any damage
+      - Being a good person
+    answer: 1
+    explanation: The techniques are the same; authorization is the difference. Without written permission from someone with authority, even a basic scan can be a crime — and "no harm done" is not a defence.
+  - type: mcq
+    prompt: Your signed scope is `203.0.113.0/24`. During testing you notice an interesting server at `203.0.114.10`. What is the correct action?
+    options:
+      - Test it quickly before anyone notices
+      - Leave it alone and note it; it is outside the authorised scope
+      - Test it but leave it out of the report
+      - Assume it is fine because it is close
+    answer: 1
+    explanation: Scope is a hard boundary. `203.0.114.10` is a different subnet and not authorised. Testing it would be unlawful regardless of how tempting it is.
+  - type: mcq
+    prompt: You discover a serious vulnerability in a product you use at home, which you were not hired to test. What is the responsible path?
+    options:
+      - Post a full exploit publicly so everyone knows
+      - Report it privately to the owner and give them time to fix it before any disclosure
+      - Use it to access their data and then tell them
+      - Sell it to the highest bidder
+    answer: 1
+    explanation: Responsible (coordinated) disclosure means reporting privately, not exploiting beyond a minimal proof, and allowing time to fix before any public mention.
+  - type: mcq
+    prompt: Why insist on a signed authorization letter before a penetration test, rather than a verbal go-ahead?
+    options:
+      - It looks professional
+      - It is the documented proof of permission, scope and dates that protects you legally if a test triggers alarms
+      - It is required to install the tools
+      - Verbal permission is illegal
+    answer: 1
+    explanation: The signed "get-out-of-jail" letter proves who authorised the work, what was in scope and when. It is the line between an authorised test and an intrusion if questions arise.
+  - type: mcq
+    prompt: How does a bug bounty program's scope compare, legally, to a pentest contract's scope?
+    options:
+      - Bug bounty scope is just a suggestion
+      - Both are binding — testing outside a bounty's published scope (or a company with no program) is unauthorised, exactly like exceeding a pentest contract
+      - Bug bounties have no scope
+      - Only pentests have legal weight
+    answer: 1
+    explanation: A published bounty scope is as binding as a contract. Going outside it, or testing a company that runs no program, is unauthorised no matter your intentions.

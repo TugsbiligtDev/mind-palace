@@ -1,0 +1,4 @@
+title: "Network Tools & Traffic Analysis"
+module: 8
+summary: "The everyday commands for seeing a network — ping, traceroute, ip/ifconfig, netstat/ss, dig/nslookup — and a first look at reading real packets in Wireshark."
+minutes: 35

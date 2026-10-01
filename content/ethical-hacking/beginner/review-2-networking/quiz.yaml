@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "Your scope is `10.10.50.0/24`. A scan result for `10.10.51.5` looks juicy. What do you do?"
+    options:
+      - "Test it — it is almost in range"
+      - "Leave it alone; it is outside the scoped /24 and therefore out of authorisation"
+      - "Test it but do not write it down"
+      - "Ask the client to widen scope, then test it anyway while you wait"
+    answer: 1
+    explanation: "`/24` covers only 10.10.50.1–254. `10.10.51.5` is a different subnet and out of scope. Touching it is unauthorised, however tempting."
+  - type: mcq
+    prompt: "A host shows ports 80 and 3389 open. What is a reasonable first read?"
+    options:
+      - "It is a printer"
+      - "It runs a website (HTTP) and Windows Remote Desktop (RDP), so likely a Windows machine serving web content"
+      - "It is offline"
+      - "It only does DNS"
+    answer: 1
+    explanation: Port 80 is HTTP (a website) and 3389 is RDP (Windows remote desktop). The combination points to a Windows host — ports tell a story.
+  - type: mcq
+    prompt: "Which of these is a public IP address?"
+    options:
+      - "192.168.1.1"
+      - "10.4.4.4"
+      - "8.8.8.8"
+      - "172.16.0.9"
+    answer: 2
+    explanation: "`8.8.8.8` is public. The others are in private ranges (192.168.x, 10.x, 172.16–31.x) used internally behind NAT."
+  - type: mcq
+    prompt: You can read a login in plaintext from a capture of an internal app on port 80. What is the finding and the fix?
+    options:
+      - "Finding: the server is down. Fix: reboot it"
+      - "Finding: credentials are sent in cleartext over HTTP. Fix: use HTTPS (TLS)"
+      - "Finding: Wireshark is misconfigured. Fix: reinstall it"
+      - "There is no problem"
+    answer: 1
+    explanation: Plain HTTP exposes credentials to anyone in the path. The remediation is to serve the app over HTTPS so the traffic is encrypted.
+  - type: mcq
+    prompt: Why is the exact same packet capture fine in your lab but a crime on a café's Wi-Fi?
+    options:
+      - "Café Wi-Fi is faster"
+      - "In the lab you own/are authorised on the network; on café Wi-Fi you would intercept strangers' data without consent"
+      - "Wireshark behaves differently on each"
+      - "It is never fine anywhere"
+    answer: 1
+    explanation: Authorisation is the whole difference. Capturing your own lab traffic is legitimate; capturing strangers' traffic without consent is unlawful interception.

@@ -1,0 +1,278 @@
+steps:
+  - kind: explain
+    title: The crime scene
+    body: |
+      Inspector Bold drops a printout on your desk: Inkwell's stylesheet, covered in `!important`, ids and selectors five levels deep. *"Nobody touches it, because touching it breaks it. Make it safe to change."*
+
+      Four briefs. Module 39–42 tools only: layers, scope, BEM-style names, tokens. No `!important` and no new ids allowed in any answer.
+
+  - kind: web
+    title: "1. Disarm the war"
+    body: |
+      > *Without changing any selector: the reset is weakest, then base element styles, then components, then utilities, which must always win. The `!important` must go. Result: the button's text is white, the `.u-hidden` button is hidden, and the base link color still applies to ordinary links.*
+    html: |
+      <main id="content">
+        <p>Read <a href="about.html">our story</a>.</p>
+        <a class="btn" href="shop.html">Shop</a>
+        <a class="btn u-hidden" href="sale.html">Sale</a>
+      </main>
+    css: |
+      * {
+        margin: 0;
+      }
+
+      main#content p a, main#content a {
+        color: #7c2d12;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #7c2d12;
+        color: white !important;
+      }
+
+      .u-hidden {
+        display: none;
+      }
+    tests:
+      - "layers()"
+      - "css('p a', 'color') + ' / ' + css('.btn', 'color')"
+      - "cssAll('.btn', 'display')"
+      - "$('style[data-file]').textContent.includes('!important')"
+      - "selectors().includes('main#content p a,main#content a')"
+    solution:
+      css: |
+        @layer reset, base, components, utilities;
+
+        @layer reset {
+          * {
+            margin: 0;
+          }
+        }
+
+        @layer base {
+          main#content p a, main#content a {
+            color: #7c2d12;
+          }
+        }
+
+        @layer components {
+          .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #7c2d12;
+            color: white;
+          }
+        }
+
+        @layer utilities {
+          .u-hidden {
+            display: none;
+          }
+        }
+    hint: "Declare `@layer reset, base, components, utilities;` and wrap each rule in its layer. With layers, `.btn` beats the id rule without `!important`."
+
+  - kind: web
+    title: "2. A self-contained component"
+    body: |
+      > *The review card styles its own paragraphs, links and images with plain element selectors that must not leak onto the rest of the page. The quoted review in `.review__quote` is user content: the card's link color must not reach links inside it. Card styles: padding 1rem, a 1px solid #e7e5e4 border; its images 64px wide and round; its paragraphs #57534e; its links white on #7c2d12.*
+    html: |
+      <p>Page text with a <a href="x.html">page link</a>.</p>
+      <img class="banner" src="images/logo.svg" alt="Inkwell" width="160" height="48">
+      <article class="review">
+        <img src="images/cover-beloved.svg" alt="" width="300" height="450">
+        <p>Reviewed by <a href="ada.html">Ada</a></p>
+        <blockquote class="review__quote"><p>Haunting. See <a href="more.html">my other reviews</a>.</p></blockquote>
+      </article>
+    css: |
+      a {
+        color: #1d4ed8;
+      }
+    tests:
+      - "css('.review', 'padding') + ' / ' + css('.review', 'border-top-width')"
+      - "css('.review > img', 'width') + ' ' + css('.review > img', 'border-radius') + ' / page image: ' + css('.banner', 'border-radius')"
+      - "css('.review > p', 'color') + ' / page p: ' + css('body > p', 'color')"
+      - "css('.review > p a', 'color') + ' / quote link: ' + css('.review__quote a', 'color') + ' / page link: ' + css('body > p a', 'color')"
+    solution:
+      css: |
+        a {
+          color: #1d4ed8;
+        }
+
+        @scope (.review) to (.review__quote) {
+          :scope {
+            padding: 1rem;
+            border: 1px solid #e7e5e4;
+          }
+
+          img {
+            width: 64px;
+            height: auto;
+            border-radius: 50%;
+          }
+
+          p {
+            color: #57534e;
+          }
+
+          a {
+            color: white;
+            background: #7c2d12;
+          }
+        }
+    hint: "A donut scope: `@scope (.review) to (.review__quote) { :scope { … } img { … } p { … } a { … } }`."
+
+  - kind: web
+    title: "3. Tokens with a theme"
+    body: |
+      > *Primitives: --ink-900 #1c1917, --ink-100 #e5e7eb, --paper-50 #fafaf9, --paper-950 #0b0f19, --rust-700 #7c2d12, --rust-300 #fdba74. Semantic tokens --surface, --text and --accent map to paper-50, ink-900 and rust-700 by default, and to paper-950, ink-100 and rust-300 inside [data-theme="dark"]. The `.panel` uses --surface and --text; its heading uses --accent. No raw colors outside the primitives.*
+    html: |
+      <div class="panel"><h2>Light</h2><p>Default theme</p></div>
+      <div class="panel" data-theme="dark"><h2>Dark</h2><p>Dark theme</p></div>
+    css: |
+      .panel {
+        padding: 1rem;
+      }
+    tests:
+      - "cssAll('.panel', 'background-color') + ' / ' + cssAll('.panel', 'color') + ' / ' + cssAll('.panel h2', 'color')"
+      - "[declared(':root', '--surface'), declared('[data-theme=\"dark\"]', '--surface')]"
+      - "[declared('.panel', 'background') || declared('.panel', 'background-color'), declared('.panel', 'color'), declared(['.panel h2', 'h2'], 'color')]"
+    solution:
+      css: |
+        :root {
+          --ink-900: #1c1917;
+          --ink-100: #e5e7eb;
+          --paper-50: #fafaf9;
+          --paper-950: #0b0f19;
+          --rust-700: #7c2d12;
+          --rust-300: #fdba74;
+
+          --surface: var(--paper-50);
+          --text: var(--ink-900);
+          --accent: var(--rust-700);
+        }
+
+        [data-theme="dark"] {
+          --surface: var(--paper-950);
+          --text: var(--ink-100);
+          --accent: var(--rust-300);
+        }
+
+        .panel {
+          padding: 1rem;
+          background: var(--surface);
+          color: var(--text);
+        }
+
+        .panel h2 {
+          color: var(--accent);
+        }
+    hint: "Primitives and the default semantic mapping on `:root`; only the three semantic tokens again inside `[data-theme=\"dark\"]`."
+
+  - kind: web
+    title: "4. Architecture bugs"
+    broken_starter: true
+    body: |
+      > *Moth: "I tidied the CSS into layers and tokens, and now three things are wrong: utilities lose to components, the dark card's button is still brown, and the article spacing vanished."*
+
+      Find and fix the three bugs without adding `!important` or ids.
+    html: |
+      <article class="flow">
+        <h2>Autumn list</h2>
+        <p>Twelve books.</p>
+        <p>Chosen by staff.</p>
+      </article>
+      <div class="card" data-theme="dark">
+        <a class="button" href="#">Shop</a>
+        <a class="button u-hidden" href="#">Hidden</a>
+      </div>
+    css: |
+      @layer reset, base, utilities, components;
+
+      @layer reset {
+        * {
+          margin: 0;
+        }
+      }
+
+      @layer base {
+        :root {
+          --color-action: #7c2d12;
+          --button-bg: var(--color-action);
+        }
+
+        [data-theme="dark"] {
+          --color-action: #fdba74;
+        }
+
+        .flow > * + * {
+          margin-block-start: 1em;
+        }
+      }
+
+      @layer components {
+        .flow > * {
+          margin: 0;
+        }
+
+        .button {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          background: var(--button-bg);
+        }
+      }
+
+      @layer utilities {
+        .u-hidden {
+          display: none;
+        }
+      }
+    tests:
+      - "layers()"
+      - "cssAll('.button', 'display')"
+      - "css('.button', 'background-color')"
+      - "cssAll('.flow > *', 'margin-top')"
+    solution:
+      css: |
+        @layer reset, base, components, utilities;
+
+        @layer reset {
+          * {
+            margin: 0;
+          }
+        }
+
+        @layer base {
+          :root {
+            --color-action: #7c2d12;
+          }
+
+          [data-theme="dark"] {
+            --color-action: #fdba74;
+          }
+        }
+
+        @layer components {
+          .button {
+            --button-bg: var(--color-action);
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--button-bg);
+          }
+        }
+
+        @layer utilities {
+          .flow > * + * {
+            margin-block-start: 1em;
+          }
+
+          .u-hidden {
+            display: none;
+          }
+        }
+    hint: "Check the order in the first line; check where the component token is declared; and check which layer resets the flow children's margins after the flow rule set them."
+
+  - kind: recap
+    body: |
+      The stylesheet is now safe to change: priority set by layers, components fenced off by scope, colors flowing through tiered tokens, and themes that work by remapping a handful of semantic values. Part 9 brings the newest layout and interaction features.

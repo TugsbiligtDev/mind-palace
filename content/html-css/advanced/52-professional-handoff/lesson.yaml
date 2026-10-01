@@ -1,0 +1,225 @@
+steps:
+  - kind: explain
+    title: From design file to code
+    body: |
+      In most teams, a **designer** draws the interface in a design tool, usually **Figma**, and a **developer** builds it. The handoff between them is where many bugs and arguments start.
+
+      Figma's **Dev Mode** is the developer's view of a design:
+
+      - **Inspect** any layer to see its size, spacing, colors, fonts, radius, shadows, with a CSS-like code snippet.
+      - **Measure**: select one layer and hover another (or hold ⌥) to see the distance between them.
+      - **Variables and styles**: named colors, spacing and text styles. These map directly to your **design tokens** (Module 42), so ask the designer for the token names, not hex codes.
+      - **Auto layout** frames correspond to Flexbox: direction, gap, padding, alignment, and "fill/hug" sizing (`flex: 1` / `width: fit-content`).
+      - **Export**: select a layer → Export → SVG for icons and logos, PNG/JPG at 1×/2× (or WebP) for photos.
+
+  - kind: explain
+    title: Reading a spec
+    body: |
+      Here's what Dev Mode shows for Inkwell's new book card (a typical spec):
+
+      | Property | Value |
+      |---|---|
+      | Auto layout | vertical, gap 12, padding 24 |
+      | Width | 320 (hug height) |
+      | Fill | `color/surface` = #FFFFFF |
+      | Stroke | 1, inside, `color/border` = #E7E5E4 |
+      | Radius | 12 |
+      | Effect | drop shadow 0 4 16, #000000 at 8% |
+      | Title text | `heading/m`: 20/28, weight 600 |
+      | Price text | `body/strong`: 16/24, weight 700, `color/success` = #15803D |
+
+      Translating: auto layout vertical → `display: flex; flex-direction: column; gap: 12px`; "20/28" means font-size 20px, line-height 28px; an **inside** stroke behaves like a border with `box-sizing: border-box`; drop shadow → `box-shadow: 0 4px 16px rgb(0 0 0 / 8%)`. Design tools speak pixels: convert font sizes to rem in your code (20px = 1.25rem).
+
+  - kind: web
+    title: Build the card from the spec
+    body: |
+      Build `.book-card` from the spec in the previous step, using the tokens already defined on `:root`:
+
+      - vertical flex layout, `12px` gap, `24px` padding; at most `320px` wide and fluid below that (`width: 100%` + `max-width: 320px`), border-box;
+      - background `var(--color-surface)`, `1px solid var(--color-border)` border, `12px` radius, shadow `0 4px 16px rgb(0 0 0 / 8%)`;
+      - `.book-card__title`: `1.25rem` / line-height `1.75rem`, weight `600`, margin `0`;
+      - `.book-card__price`: `1rem` / `1.5rem`, weight `700`, color `var(--color-success)`, margin `0`.
+    html: |
+      <article class="book-card">
+        <img src="images/cover-dune.svg" alt="" width="300" height="450" style="max-width: 100%; height: auto">
+        <h3 class="book-card__title">Dune</h3>
+        <p class="book-card__price">£8.99</p>
+      </article>
+    css: |
+      :root {
+        --color-surface: #ffffff;
+        --color-border: #e7e5e4;
+        --color-success: #15803d;
+      }
+
+      body {
+        font-family: system-ui, sans-serif;
+        background: #f5f5f4;
+      }
+    widths: [300, 800]
+    tests:
+      - "css('.book-card', 'display') + ' ' + css('.book-card', 'flex-direction') + ' gap ' + css('.book-card', 'row-gap') + ' pad ' + css('.book-card', 'padding')"
+      - "box('.book-card').width"
+      - "css('.book-card', 'background-color') + ' / ' + css('.book-card', 'border') + ' / ' + css('.book-card', 'border-radius') + ' / ' + css('.book-card', 'box-shadow')"
+      - "['font-size', 'line-height', 'font-weight', 'margin-top'].map((p) => css('.book-card__title', p))"
+      - "['font-size', 'line-height', 'font-weight', 'color'].map((p) => css('.book-card__price', p))"
+      - "[declared('.book-card', 'background') || declared('.book-card', 'background-color'), declared('.book-card__price', 'color')]"
+    solution:
+      css: |
+        :root {
+          --color-surface: #ffffff;
+          --color-border: #e7e5e4;
+          --color-success: #15803d;
+        }
+
+        body {
+          font-family: system-ui, sans-serif;
+          background: #f5f5f4;
+        }
+
+        .book-card {
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          width: 100%;
+          max-width: 320px;
+          padding: 24px;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
+          border-radius: 12px;
+          box-shadow: 0 4px 16px rgb(0 0 0 / 8%);
+        }
+
+        .book-card__title {
+          margin: 0;
+          font-size: 1.25rem;
+          line-height: 1.75rem;
+          font-weight: 600;
+        }
+
+        .book-card__price {
+          margin: 0;
+          font-size: 1rem;
+          line-height: 1.5rem;
+          font-weight: 700;
+          color: var(--color-success);
+        }
+    hint: "Spec → CSS: auto layout = flex column + gap; 320 wide = `width: 100%; max-width: 320px`; the colors come from the `var(--…)` tokens; 20/28 = `font-size: 1.25rem; line-height: 1.75rem`."
+
+  - kind: explain
+    title: Pixel accuracy vs. responsive intent
+    body: |
+      A design file shows **one** width, often a 1440px desktop and a 390px phone. The browser has **every** width in between, every font size setting, every language length. So the job isn't to copy pixels; it's to build the **intent**:
+
+      - "320 wide" usually means "**up to** 320": `max-width`, not `width`.
+      - Fixed heights in the design are almost always "hug content": use `min-height` or nothing.
+      - Spacing that looks like 23px or 25px is probably the 24px token, a designer's slip. Use the scale, and ask.
+      - Text in designs is short and perfect. Test with long titles, long words (German!), bigger font sizes and 400% zoom.
+      - Ask about states the design doesn't show: hover, focus, error, empty, loading, very long, very short.
+
+      Agree with the designer on what "done" means: matches at the agreed breakpoints, uses the tokens, behaves sensibly in between, and meets accessibility requirements. Then compare side by side (overlay tools like PerfectPixel help) and discuss differences, rather than chasing every pixel.
+
+  - kind: explain
+    title: Code review
+    body: |
+      In teams, every change is reviewed by someone else before it's merged, usually as a **pull request** on GitHub. As a reviewer of CSS, look for:
+
+      - **Correctness**: does it work at all widths, in the supported browsers, in every state and theme?
+      - **Accessibility**: focus visible, contrast, reduced motion, semantics untouched.
+      - **Consistency**: tokens instead of magic numbers; the project's naming and layers.
+      - **Scope**: could this rule affect things outside the component? New global selectors, ids, `!important`?
+      - **Simplicity**: is there a shorter, more robust way (Grid instead of positioning hacks)?
+
+      Be kind and specific: explain *why*, suggest a fix, and separate must-fix issues from nitpicks ("nit: …"). When receiving a review, assume good intent, ask when you don't understand, and say thanks.
+
+  - kind: web
+    title: Review and fix a pull request
+    broken_starter: true
+    body: |
+      A teammate's pull request styles the newsletter box. It looks right, but it would fail review. Fix it without changing how it looks:
+
+      1. Replace the magic numbers with the project's tokens: `#7c2d12` → `var(--color-brand)`, `16px` gaps/padding → `var(--space-m)`.
+      2. Remove the id selector: style it through its class `.newsletter`.
+      3. Remove the `!important`.
+      4. It has `outline: none` on focus with nothing instead. Replace it with `outline: 3px solid var(--color-brand)` on `:focus-visible`.
+    html: |
+      <aside class="newsletter" id="newsletter">
+        <h2>Join the newsletter</h2>
+        <a class="newsletter__button" href="#">Sign up</a>
+      </aside>
+    css: |
+      :root {
+        --color-brand: #7c2d12;
+        --space-m: 16px;
+      }
+
+      #newsletter {
+        display: grid;
+        gap: 16px;
+        padding: 16px;
+        border: 2px solid #7c2d12;
+      }
+
+      .newsletter__button {
+        padding: 8px 16px;
+        background: #7c2d12 !important;
+        color: white;
+      }
+
+      .newsletter__button:focus {
+        outline: none;
+      }
+    tests:
+      - "css('.newsletter', 'gap') + ' / ' + css('.newsletter', 'padding') + ' / ' + css('.newsletter', 'border') + ' / ' + css('.newsletter__button', 'background-color')"
+      - "selectors().some((s) => s.includes('#')) + ' / ' + $('style[data-file]').textContent.includes('!important')"
+      - "/#7c2d12/i.test($('style[data-file]').textContent.replace(/:root\\s*\\{[^}]*\\}/, ''))"
+      - "rule(['.newsletter__button:focus-visible'], 'outline') + ' / ' + (rule('.newsletter__button:focus', 'outline-style') || 'no :focus override')"
+    solution:
+      css: |
+        :root {
+          --color-brand: #7c2d12;
+          --space-m: 16px;
+        }
+
+        .newsletter {
+          display: grid;
+          gap: var(--space-m);
+          padding: var(--space-m);
+          border: 2px solid var(--color-brand);
+        }
+
+        .newsletter__button {
+          padding: 8px var(--space-m);
+          background: var(--color-brand);
+          color: white;
+        }
+
+        .newsletter__button:focus-visible {
+          outline: 3px solid var(--color-brand);
+        }
+    hint: "Swap `#newsletter` for `.newsletter`, replace each raw `#7c2d12` and `16px` with its token, drop `!important`, and replace the `:focus { outline: none }` rule with a `:focus-visible` outline."
+
+  - kind: explain
+    title: CSS a team can maintain
+    body: |
+      Habits that keep a shared stylesheet healthy for years:
+
+      - **One way to do things**: agreed naming (BEM or similar), layers, tokens. Write them down in the README or the showcase page.
+      - **Tokens over raw values**; scales over one-offs.
+      - **Low, flat specificity**: classes, `:where()` for defaults, layers for priority. No ids, no `!important` (except utilities).
+      - **Components own their styles**: one file per component, scoped or BEM-named; no reaching into other components' insides.
+      - **Delete fearlessly**: unused CSS is debt. Coverage in DevTools, and search the codebase for a class before deleting it.
+      - **Comment the why**: `/* 1px less than the header so the shadow overlaps */`, not `/* set margin */`.
+      - **Automate**: Prettier, Stylelint and visual checks in CI, so reviewers can focus on design and accessibility.
+
+  - kind: why
+    body: |
+      Front-end work is teamwork: designers, other developers, reviewers and future maintainers. Translating designs into robust, token-based, responsive code, reviewing kindly and precisely, and writing CSS others can understand is what separates a professional from someone who can only make a page look right once.
+
+  - kind: recap
+    body: |
+      - Figma Dev Mode: inspect, measure, variables (= tokens), auto layout (= Flexbox), export (SVG for icons).
+      - Build the **intent**, not the pixels: max-width, hug content, the spacing scale, real content, every state.
+      - Review for correctness, accessibility, consistency, scope and simplicity; be kind and specific.
+      - Maintainable CSS: one agreed way, tokens, flat specificity, component-owned styles, delete unused CSS, comment the why, automate checks.

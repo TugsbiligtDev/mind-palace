@@ -52,6 +52,9 @@ export function buildPage({ html, css }: WebFiles): string {
 //   css(sel, prop, pseudo) the computed value, e.g. css('h1', 'color') or css('li', 'content', '::before')
 //   cssAll(sel, prop, pseudo) the same for every match, as a list
 //   box(sel)               rounded position and size: { x, y, width, height }
+//   boxes(sel)             box() for every match, as a list
+//   topAt(sel)             what's painted on top at the centre of sel's box: "is on top", or the
+//                          class (or tag) of the element covering it
 //   edges(sel, outer)      how far sel's box sits inside outer's box: { top, right, bottom, left }
 //   scrolled(y, sel)       box(sel) after scrolling the page down y pixels (then scrolls back)
 //   contrast(sel)          the WCAG contrast ratio of sel's text color against the background
@@ -71,6 +74,7 @@ export function buildPage({ html, css }: WebFiles): string {
 //                          rules whose condition contains `within`, e.g. 'prefers-reduced-motion'.
 //   declared(selector, prop, within) the value exactly as written in the stylesheet (lowercased),
 //                          e.g. to check that a size was given in rem; same matching as rule()
+//   layers()               the cascade layer names in the order the browser set them (first mention)
 //   keyframes(name)        the steps of @keyframes name, e.g. ["100%: rotate: 360deg;"], or null
 //   selectors()            the selector of every style rule in the page's stylesheets
 //   doc, win               the page's document and window
@@ -91,6 +95,19 @@ export const CHECK_RUNTIME = String.raw`
   function box(sel) {
     var r = need(sel).getBoundingClientRect();
     return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) };
+  }
+  function boxes(sel) {
+    return $$(sel).map(function (el) {
+      var r = el.getBoundingClientRect();
+      return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) };
+    });
+  }
+  function topAt(sel) {
+    var el = need(sel), r = el.getBoundingClientRect();
+    var hit = doc.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    if (!hit) return "nothing (off screen)";
+    if (hit === el || el.contains(hit)) return "is on top";
+    return "covered by " + (hit.className ? "." + String(hit.className).split(" ")[0] : hit.localName);
   }
   function edges(sel, outer) {
     var a = need(sel).getBoundingClientRect(), b = need(outer).getBoundingClientRect();
@@ -202,6 +219,15 @@ export const CHECK_RUNTIME = String.raw`
     probe.remove();
     return value || found.trim();
   }
+  function layers() {
+    var out = [];
+    function add(n) { if (out.indexOf(n) < 0) out.push(n); }
+    eachRule(function (r) {
+      if (r.nameList) Array.prototype.forEach.call(r.nameList, add);
+      else if (r.constructor && r.constructor.name === "CSSLayerBlockRule" && r.name) add(r.name);
+    });
+    return out;
+  }
   function keyframes(name) {
     var found = null;
     eachRule(function (r) {
@@ -225,8 +251,8 @@ export const CHECK_RUNTIME = String.raw`
   var out = [];
   for (var i = 0; i < tests.length; i++) {
     try {
-      var value = new Function("$", "$$", "css", "cssAll", "box", "edges", "scrolled", "contrast", "valid", "scheme", "click", "text", "attr", "count", "rule", "declared", "keyframes", "selectors", "doc", "win",
-        '"use strict"; return (' + tests[i] + "\n);")($, $$, css, cssAll, box, edges, scrolled, contrast, valid, scheme, click, text, attr, count, rule, declared, keyframes, selectors, doc, win);
+      var value = new Function("$", "$$", "css", "cssAll", "box", "boxes", "topAt", "edges", "scrolled", "contrast", "valid", "scheme", "click", "text", "attr", "count", "rule", "declared", "keyframes", "layers", "selectors", "doc", "win",
+        '"use strict"; return (' + tests[i] + "\n);")($, $$, css, cssAll, box, boxes, topAt, edges, scrolled, contrast, valid, scheme, click, text, attr, count, rule, declared, keyframes, layers, selectors, doc, win);
       var s = shown(value);
       out.push({ call: tests[i], value: s, key: s, threw: false });
     } catch (err) {

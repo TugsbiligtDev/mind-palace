@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What color is the link?"
+    code: |
+      @layer base, components;
+      @layer base       { #nav a.link { color: red; } }
+      @layer components { a { color: green; } }
+    options: ["green", "red", "black", "It depends on the HTML order"]
+    answer: 0
+    explanation: "components is the later layer, so it wins before specificity is even compared."
+  - type: mcq
+    prompt: "Where do styles that aren't inside any @layer rank?"
+    options: ["Above every layer", "Below every layer", "In the first layer", "They're ignored"]
+    answer: 0
+    explanation: "Unlayered styles act like a final layer and beat all layered ones."
+  - type: mcq
+    prompt: "Why put `@layer reset, base, components, utilities;` at the very top?"
+    options:
+      - "It fixes the layer order explicitly, regardless of which file or rule mentions a layer first"
+      - "Browsers require it on line 1"
+      - "It loads the layers faster"
+      - "It's only a comment"
+    answer: 0
+    explanation: "Layer order is set by first mention; declaring it up front makes it deliberate."
+  - type: mcq
+    prompt: "How do you stop a library's heavy selectors from overriding your styles?"
+    options:
+      - "Import it into an early layer: `@import url(lib.css) layer(vendor);`"
+      - "Add !important to all your rules"
+      - "Copy its selectors and add an id"
+      - "Load it last"
+    answer: 0
+    explanation: "Every later layer beats it, regardless of specificity."
+  - type: mcq
+    prompt: "For `!important` declarations, how does layer order behave?"
+    options: ["It reverses: earlier layers win", "It's the same: later layers win", "Layers are ignored", "Only unlayered !important works"]
+    answer: 0
+    explanation: "Important declarations in earlier layers beat those in later layers."

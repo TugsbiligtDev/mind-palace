@@ -7,20 +7,22 @@ season_pitch: |
   architecture, cascade layers, scoping and design tokens. Then use the newest CSS (container
   queries, subgrid, anchor positioning, view transitions) and finish with performance,
   professional accessibility and turning designs into production code.
-status: coming_soon
-topics: []
-planned:
-  - "Methodologies"
-  - "Cascade Layers"
-  - "Scoping Styles"
-  - "Design Systems & Tokens"
-  - "Container Queries"
-  - "Subgrid & Advanced Grid"
-  - "Anchor Positioning"
-  - "View Transitions & Scroll-Linked Effects"
-  - "Advanced Visual Effects"
-  - "Rendering Performance"
-  - "Accessibility at Professional Level"
-  - "Build Tools & Frameworks Overview"
-  - "Debugging Mastery"
-  - "Professional Handoff"
+status: open
+topics:
+  - 39-methodologies
+  - 40-cascade-layers
+  - 41-scoping
+  - 42-design-tokens
+  - review-5-architecture
+  - 43-container-queries
+  - 44-subgrid
+  - 45-anchor-positioning
+  - 46-view-transitions-scroll
+  - 47-visual-effects
+  - review-6-modern-css
+  - 48-rendering-performance
+  - 49-accessibility-pro
+  - 50-build-tools
+  - 51-debugging-mastery
+  - 52-professional-handoff
+  - capstone-3-design-system

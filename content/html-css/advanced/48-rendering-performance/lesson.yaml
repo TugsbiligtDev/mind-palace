@@ -1,0 +1,230 @@
+steps:
+  - kind: explain
+    title: From code to pixels
+    body: |
+      Every time a page loads or changes, the browser runs a **rendering pipeline**:
+
+      1. **Parse**: read the HTML into the DOM and the CSS into rules. CSS in the `<head>` is **render-blocking**: nothing is drawn until it's downloaded and parsed.
+      2. **Style**: work out the computed styles of every element.
+      3. **Layout**: work out every box's size and position.
+      4. **Paint**: fill in the pixels: text, colors, borders, shadows, images.
+      5. **Composite**: stack the painted layers and send them to the screen.
+
+      Changes re-run the pipeline **from the step they affect**. Changing `width` re-runs layout, paint and composite for possibly the whole page; changing `color` only paint and composite; changing `transform` or `opacity` often only composite (Module 32). Less work per frame means smoother scrolling and animation, and better battery life.
+
+  - kind: explain
+    title: Core Web Vitals
+    body: |
+      Google's **Core Web Vitals** measure what users feel. They're used in search ranking, and Lighthouse and Chrome DevTools report them:
+
+      | Metric | Measures | Good |
+      |---|---|---|
+      | **LCP**, Largest Contentful Paint | when the biggest thing at the top (usually the hero image or headline) appears | ≤ 2.5 s |
+      | **CLS**, Cumulative Layout Shift | how much content jumps around unexpectedly | ≤ 0.1 |
+      | **INP**, Interaction to Next Paint | how quickly the page visibly responds to clicks and taps | ≤ 200 ms |
+
+      What HTML and CSS can do:
+
+      - **LCP**: `fetchpriority="high"` and no `loading="lazy"` on the hero (Module 26), modern image formats, small render-blocking CSS, preloaded fonts.
+      - **CLS**: reserve space for everything that loads late: images, embeds, ads, fonts.
+      - **INP**: mostly JavaScript's job, but huge DOMs and expensive CSS (giant shadows, blur over large areas, layout-triggering animations) slow every update down.
+
+  - kind: explain
+    title: Preventing layout shift
+    body: |
+      Content jumps when the browser doesn't know an element's size until it arrives:
+
+      - **Images and video** without `width`/`height` (Module 7). Fix: always set them, or use `aspect-ratio` in CSS.
+      - **Embeds and ads** injected later. Fix: reserve a box with `min-height` or `aspect-ratio`.
+      - **Web fonts** swapping in with different letter widths. Fix: a fallback font with similar metrics, and `size-adjust` in `@font-face` to match them.
+      - **Banners inserted at the top** (cookie notices, "new version" bars). Fix: overlay them (`position: fixed`) or reserve their space from the start.
+
+      DevTools' Performance panel marks each **layout shift** in red; Lighthouse lists the elements that moved.
+
+  - kind: web
+    title: Stop the jumps
+    body: |
+      This article jumps three times while it loads. Reserve the space:
+
+      1. The hero `<img>` has no size: add `width="800"` and `height="500"`.
+      2. The video embed slot (`.embed`) is empty until a script fills it: give it `aspect-ratio: 16 / 9`.
+      3. The ad slot (`.ad`) will hold a 250px-tall ad: give it `min-height: 250px`.
+
+      The checker measures the layout **before** anything has loaded.
+    html: |
+      <article>
+        <h1>The making of Margin</h1>
+        <img class="hero" src="images/missing-on-purpose.jpg" alt="Margin notebooks on a desk">
+        <p>How we designed a reading journal.</p>
+        <div class="embed"></div>
+        <div class="ad"></div>
+        <p>Read on for the details.</p>
+      </article>
+    css: |
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .embed, .ad {
+        background: #f5f0e8;
+      }
+    widths: [800]
+    tests:
+      - "box('.hero').width + 'x' + box('.hero').height"
+      - "box('.embed').width + 'x' + box('.embed').height"
+      - "box('.ad').height"
+      - "box('article p:last-child').y"
+    solution:
+      html: |
+        <article>
+          <h1>The making of Margin</h1>
+          <img class="hero" src="images/missing-on-purpose.jpg" alt="Margin notebooks on a desk" width="800" height="500">
+          <p>How we designed a reading journal.</p>
+          <div class="embed"></div>
+          <div class="ad"></div>
+          <p>Read on for the details.</p>
+        </article>
+      css: |
+        img {
+          max-width: 100%;
+          height: auto;
+          display: block;
+        }
+
+        .embed, .ad {
+          background: #f5f0e8;
+        }
+
+        .embed {
+          aspect-ratio: 16 / 9;
+        }
+
+        .ad {
+          min-height: 250px;
+        }
+    hint: "Two attributes on the `<img>`, `aspect-ratio: 16 / 9` on `.embed`, and `min-height: 250px` on `.ad`."
+
+  - kind: explain
+    title: content-visibility
+    body: |
+      A long page (a book catalogue with 500 entries) makes the browser lay out and paint everything, even the parts far below the screen. `content-visibility: auto` lets it **skip rendering** sections that are off-screen until you scroll near them:
+
+      ```css
+      .catalogue-section {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 800px;   /* a placeholder height while skipped */
+      }
+      ```
+
+      `contain-intrinsic-size` gives the skipped section an estimated height, so the scrollbar doesn't jump; `auto` makes the browser remember the real height once it has rendered it. Use it on large, independent sections, not on small items or the content at the top.
+
+  - kind: explain
+    title: will-change, sparingly
+    body: |
+      `will-change: transform` tells the browser an element is about to animate, so it can promote it to its own **compositor layer** in advance and avoid a stutter on the first frame.
+
+      But each layer costs memory, especially on phones. The classic mistake:
+
+      ```css
+      * { will-change: transform; }   /* ✗ hundreds of layers, slower and memory-hungry */
+      ```
+
+      Rules: apply it only to the few elements that really animate (a drawer, a carousel track), ideally just before the animation starts, and only when you've measured a problem. Most of the time, animating `transform` and `opacity` is already smooth without it.
+
+  - kind: web
+    title: Tune the catalogue
+    body: |
+      1. Remove the `will-change` from the universal rule; put `will-change: transform` only on `.drawer` (the slide-out panel that animates).
+      2. Give each `.section` `content-visibility: auto` with `contain-intrinsic-size: auto 600px`.
+      3. The `.card` hover animates `top`, which triggers layout. Switch it to `translate: 0 -4px` and transition `translate` instead (`200ms`).
+    html: |
+      <aside class="drawer">Filters</aside>
+      <section class="section"><h2>A–C</h2><div class="card">Austen</div></section>
+      <section class="section"><h2>D–F</h2><div class="card">Dickens</div></section>
+      <section class="section"><h2>G–I</h2><div class="card">Hardy</div></section>
+    css: |
+      * {
+        will-change: transform;
+      }
+
+      .card {
+        position: relative;
+        top: 0;
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+        transition: top 200ms;
+      }
+
+      .card:hover {
+        top: -4px;
+      }
+    tests:
+      - "cssAll('.drawer, .section, .card, h2', 'will-change')"
+      - "cssAll('.section', 'content-visibility') + ' / ' + css('.section', 'contain-intrinsic-height')"
+      - "css('.card', 'transition-property') + ' ' + css('.card', 'transition-duration') + ' / hover: ' + rule('.card:hover', 'translate') + ' top=' + declared('.card:hover', 'top')"
+    solution:
+      css: |
+        .drawer {
+          will-change: transform;
+        }
+
+        .section {
+          content-visibility: auto;
+          contain-intrinsic-size: auto 600px;
+        }
+
+        .card {
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+          transition: translate 200ms;
+        }
+
+        .card:hover {
+          translate: 0 -4px;
+        }
+    hint: "Replace the `*` rule with `.drawer { will-change: transform; }`; add the two `content-visibility` lines to `.section`; animate `translate` instead of `top`."
+
+  - kind: explain
+    title: Critical CSS and render-blocking
+    body: |
+      CSS in the head blocks the first paint until it's downloaded. Ways to shorten that wait:
+
+      - **Keep CSS small**: delete unused rules (Coverage tab in Chrome DevTools shows what's unused), minify it (Module 50).
+      - **Critical CSS**: inline the few rules needed for the top of the page in a `<style>` in the head, and load the rest normally. Worth it for big sites; tools generate it.
+      - **Avoid `@import` inside CSS files**: each one is a separate request discovered late. Use `<link>`s or a build tool to combine files.
+      - **Fonts**: preload the one or two above-the-fold fonts, use `font-display: swap`, and WOFF2 (Modules 16 and 26).
+      - **media attributes**: `<link rel="stylesheet" href="print.css" media="print">` doesn't block screen rendering.
+
+  - kind: mac
+    title: Measure, don't guess
+    body: |
+      On your published capstone site (or any site), in Chrome:
+
+      1. **Lighthouse** → Performance → *Analyze page load*. Read LCP, CLS and the list of opportunities ("Largest Contentful Paint element", "Avoid large layout shifts", "Eliminate render-blocking resources").
+      2. **Performance panel** → the reload button (*Start profiling and reload page*). Find the **LCP** marker and the **Layout shifts** track; click a shift to see which element moved.
+      3. Turn on **CPU throttling** (4× slowdown) and **Network: Slow 4G** to feel what a cheap phone experiences.
+      4. The **Rendering** drawer (⋮ → More tools → Rendering) can flash repainted areas green ("Paint flashing") and show layer borders: watch what repaints when you hover or scroll.
+
+      Paste your Performance score and the LCP and CLS values.
+    commands: |
+      # Lighthouse → Mobile → Performance → Analyze page load
+      # Performance panel: ⟳ "Start profiling and reload page"
+      # More tools → Rendering → Paint flashing / Layer borders
+    expect_output:
+      - "LCP"
+      - "CLS"
+
+  - kind: why
+    body: |
+      Speed is a feature people feel before they read a word: slow, jumpy pages lose visitors and search ranking. Knowing the pipeline tells you which CSS is cheap and which is expensive, and the Web Vitals tell you what to fix first. Always measure before and after.
+
+  - kind: recap
+    body: |
+      - Pipeline: parse → style → layout → paint → composite; layout changes cost the most.
+      - Core Web Vitals: **LCP** ≤ 2.5 s, **CLS** ≤ 0.1, **INP** ≤ 200 ms.
+      - Prevent layout shift: image dimensions, `aspect-ratio` and `min-height` for late content, careful font fallbacks.
+      - `content-visibility: auto` + `contain-intrinsic-size` for long off-screen sections.
+      - `will-change` only on the few elements that animate; animate transform/opacity.
+      - Small render-blocking CSS, no CSS `@import`, preloaded key fonts. Measure with Lighthouse and the Performance panel.

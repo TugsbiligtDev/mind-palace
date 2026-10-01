@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Why use `outline` rather than `border` for the debugging trick?"
+    options:
+      - "Outlines take up no space, so they reveal boxes without changing the layout"
+      - "Borders can't be red"
+      - "Outlines are inherited"
+      - "Borders only work on block elements"
+    answer: 0
+    explanation: "A border would add width and could change the very bug you're investigating."
+  - type: mcq
+    prompt: "A page scrolls sideways on phones. Which is NOT a proper fix?"
+    options:
+      - "Adding `overflow-x: hidden` to body and moving on"
+      - "Replacing a fixed image width with `max-width: 100%`"
+      - "Letting a long URL wrap with `overflow-wrap: break-word`"
+      - "Using `minmax(min(400px, 100%), 1fr)` in the grid"
+    answer: 0
+    explanation: "Hiding overflow hides the symptom, can cut off content and breaks position: sticky."
+  - type: mcq
+    prompt: "Which property does NOT create a stacking context on its own?"
+    options: ["`margin: auto`", "`transform: translateZ(0)`", "`opacity: 0.99`", "`isolation: isolate`"]
+    answer: 0
+    explanation: "Transforms, opacity below 1 and isolation all create stacking contexts; margins don't."
+  - type: mcq
+    prompt: "Which part of an MDN property page tells you whether `width` applies to inline elements?"
+    options: ["Formal definition (Applies to)", "The page title", "The browser compatibility table", "The See also links"]
+    answer: 0
+    explanation: "The formal definition lists the initial value, inheritance and what the property applies to."
+  - type: mcq
+    prompt: "A layout breaks only in Safari. What's the best first step?"
+    options:
+      - "Inspect it in Safari's own Web Inspector and check the feature's support on MDN"
+      - "Add -webkit- to every property"
+      - "Rewrite the layout with floats"
+      - "Tell users to switch browser"
+    answer: 0
+    explanation: "Confirm what Safari actually computes, then check support before working around it."

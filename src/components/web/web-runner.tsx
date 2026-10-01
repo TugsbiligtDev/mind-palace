@@ -85,7 +85,7 @@ export function WebRunner({
   const check = useCallback(() => onCheck?.(filesRef.current), [onCheck]);
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <div className="overflow-hidden rounded-xl border border-border">
         <div className="flex border-b border-border bg-subtle text-xs" role="tablist" aria-label="Files">
           {(showCss ? (["html", "css"] as const) : (["html"] as const)).map((t) => (

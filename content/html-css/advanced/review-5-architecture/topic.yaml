@@ -1,0 +1,5 @@
+title: "The architecture case file"
+module: 42
+kind: review
+summary: "Inkwell's inherited stylesheet is a crime scene of ids and !important. Four briefs to restore order: layer it, scope a component, build tiered tokens with a theme, and hunt the architecture bugs. Uses Modules 39 to 42."
+minutes: 50

@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Three cards should have their prices aligned even when titles wrap differently. What does each card need?"
+    options:
+      - "To span the parent's rows and use `grid-template-rows: subgrid`"
+      - "A fixed height"
+      - "`position: absolute` on the price"
+      - "`align-items: center`"
+    answer: 0
+    explanation: "Subgrid makes the cards share row tracks, so matching parts line up."
+  - type: mcq
+    prompt: "With columns `[full-start] 1fr [content-start] 60ch [content-end] 1fr [full-end]`, what does `grid-column: content` do?"
+    options:
+      - "Places the item from content-start to content-end"
+      - "Nothing; areas must be named in grid-template-areas"
+      - "Places it in the first column"
+      - "Spans all columns"
+    answer: 0
+    explanation: "Lines named x-start and x-end define an implicit area x."
+  - type: mcq
+    prompt: "What's the risk of `grid-auto-flow: dense`?"
+    options:
+      - "Items can appear in a different visual order from the HTML, confusing keyboard and screen reader users"
+      - "It only works with 2 columns"
+      - "It disables gap"
+      - "It makes rows 0px tall"
+    answer: 0
+    explanation: "Use it where order doesn't matter, like decorative galleries."
+  - type: mcq
+    prompt: "Why overlap with `grid-area: 1 / 1` instead of `position: absolute`?"
+    options:
+      - "The container grows to fit the tallest layer, so long text never overflows"
+      - "Absolute positioning doesn't work on images"
+      - "Grid is faster"
+      - "z-index doesn't work with position"
+    answer: 0
+    explanation: "Both layers stay in the layout, so sizes are respected."

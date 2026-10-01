@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "In Figma, a frame uses vertical auto layout with gap 16 and padding 24. Which CSS matches?"
+    options:
+      - "`display: flex; flex-direction: column; gap: 16px; padding: 24px;`"
+      - "`display: grid; grid-template-rows: 16px 24px;`"
+      - "`position: absolute; top: 16px; left: 24px;`"
+      - "`margin: 16px 24px;`"
+    answer: 0
+    explanation: "Auto layout is Figma's Flexbox."
+  - type: mcq
+    prompt: "The design shows a card exactly 320px wide. How should you usually build it?"
+    options:
+      - "`width: 100%; max-width: 320px;` so it shrinks on small screens"
+      - "`width: 320px;` exactly"
+      - "`min-width: 320px;`"
+      - "Scale the whole page with `zoom`"
+    answer: 0
+    explanation: "Designs show one size; the intent is usually \"up to\" that size."
+  - type: mcq
+    prompt: "The spec says spacing 23px, but every other gap is 24px and the scale has 24. What do you do?"
+    options:
+      - "Use the 24px token and check with the designer"
+      - "Use 23px exactly"
+      - "Use 23.5px as a compromise"
+      - "Ignore spacing"
+    answer: 0
+    explanation: "Off-scale values are usually slips; consistency wins, and a quick question confirms it."
+  - type: mcq
+    prompt: "Which review comment is most helpful?"
+    options:
+      - "\"This uses `!important` to beat `.card a`; moving it to the components layer avoids that. Want me to pair on it?\""
+      - "\"This CSS is bad.\""
+      - "\"Why would you do this?\""
+      - "\"LGTM\" without reading it"
+    answer: 0
+    explanation: "Specific, explains why, suggests a fix, and is kind."

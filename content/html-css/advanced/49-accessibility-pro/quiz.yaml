@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Which is a new WCAG 2.2 AA criterion?"
+    options:
+      - "Focus Not Obscured: a focused element mustn't be hidden behind sticky content"
+      - "Every page must have a dark mode"
+      - "Text must be at least 18px"
+      - "Images must be under 100 KB"
+    answer: 0
+    explanation: "WCAG 2.2 added focus not obscured, minimum target size, dragging alternatives and more."
+  - type: mcq
+    prompt: "What minimum target size does WCAG 2.2 AA ask for (unless targets are spaced out)?"
+    options: ["24 × 24 CSS pixels", "44 × 44 CSS pixels", "16 × 16 CSS pixels", "No minimum"]
+    answer: 0
+    explanation: "24 × 24 is the AA minimum; 44 × 44 is the stricter AAA guideline."
+  - type: mcq
+    prompt: "In the APG tabs pattern, how do keyboard users move between tabs?"
+    options:
+      - "With the arrow keys; only the selected tab is in the Tab order"
+      - "With Tab, one tab at a time"
+      - "Only with the mouse"
+      - "With Escape"
+    answer: 0
+    explanation: "Tab enters and leaves the tab list; arrows move within it."
+  - type: mcq
+    prompt: "In Windows High Contrast (forced colors), what happens to a focus style made only with box-shadow?"
+    options: ["It disappears", "It becomes thicker", "It turns red", "Nothing changes"]
+    answer: 0
+    explanation: "Forced colors removes shadows. Use outline, which it keeps."
+  - type: mcq
+    prompt: "Why never use `tabindex=\"5\"`?"
+    options:
+      - "Positive values pull elements ahead of the natural order, scrambling navigation for everyone"
+      - "It's invalid HTML"
+      - "It hides the element"
+      - "It only works on links"
+    answer: 0
+    explanation: "Use 0 (natural order) or -1 (script focus only), never positive values."

@@ -1,0 +1,34 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What can a container query do that a media query can't?"
+    options:
+      - "Change a component based on the width of the element it sits in, not the screen"
+      - "Detect dark mode"
+      - "Change the HTML"
+      - "Work without CSS"
+    answer: 0
+    explanation: "The same card can adapt differently in a sidebar and in a main column on the same screen."
+  - type: mcq
+    prompt: "An element has `container-type: inline-size`. Can a rule in `@container (width > 500px)` style that element itself?"
+    options:
+      - "No, only its descendants"
+      - "Yes, any property"
+      - "Only its height"
+      - "Only if it's named"
+    answer: 0
+    explanation: "A container can't query itself; wrap the component or style its inner parts."
+  - type: mcq
+    prompt: "In a 600px-wide container, how big is `5cqi`?"
+    options: ["30px", "5px", "60px", "5% of the screen"]
+    answer: 0
+    explanation: "1cqi is 1% of the container's inline size: 6px, so 5cqi is 30px."
+  - type: mcq
+    prompt: "How do you target a specific ancestor container rather than the nearest one?"
+    options:
+      - "Give it a `container-name` and write `@container thatname (…)`"
+      - "Use a higher z-index"
+      - "Use `@media` instead"
+      - "Add an id to the query"
+    answer: 0
+    explanation: "Named containers can be targeted directly."

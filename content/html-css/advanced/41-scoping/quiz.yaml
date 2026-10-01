@@ -1,0 +1,26 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Inside `@scope (.card) { … }`, what does `:scope` select?"
+    options: ["The .card element itself", "Every element on the page", "The first child of .card", "Nothing; it's invalid"]
+    answer: 0
+    explanation: ":scope refers to the scope root."
+  - type: mcq
+    prompt: "What does `@scope (.card) to (.card__body) { p { … } }` style?"
+    options:
+      - "Paragraphs inside .card but not those inside .card__body"
+      - "Only paragraphs inside .card__body"
+      - "Every paragraph between two cards"
+      - "Paragraphs after .card"
+    answer: 0
+    explanation: "The `to` limit cuts a hole: a donut scope."
+  - type: mcq
+    prompt: "Two scoped rules have equal specificity and both match. Which wins?"
+    options: ["The one whose scope root is closest to the element", "The first one written", "The longer selector", "Neither applies"]
+    answer: 0
+    explanation: "Scoping proximity is a cascade step after specificity and before order."
+  - type: mcq
+    prompt: "What does CSS Modules need that @scope doesn't?"
+    options: ["A build tool that renames classes", "A newer browser", "JavaScript in the page at runtime", "Inline styles"]
+    answer: 0
+    explanation: "CSS Modules is a build-time technique; @scope is native CSS."

@@ -1,0 +1,35 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Which is a semantic token?"
+    options: ["`--color-danger`", "`--red-600`", "`--button-border`", "`#dc2626`"]
+    answer: 0
+    explanation: "Semantic tokens name a purpose. --red-600 is a primitive; --button-border is a component token."
+  - type: mcq
+    prompt: "Inkwell rebrands from brown to green. Which tier do you change?"
+    options: ["The primitive palette (or the semantic mapping to it)", "Every component rule", "The HTML", "The type scale"]
+    answer: 0
+    explanation: "Components only read semantic and component tokens, so they follow automatically."
+  - type: mcq
+    prompt: "Why does `--button-bg: var(--color-action)` on `:root` ignore a dark theme set on a section?"
+    options:
+      - "It was resolved on :root using the light value; the section inherits that result"
+      - "Custom properties don't inherit"
+      - "data attributes can't hold themes"
+      - "var() only works once"
+    answer: 0
+    explanation: "Declare component tokens on the component so var() is resolved where the theme applies."
+  - type: mcq
+    prompt: "With `--step-0: 1rem` and a ratio of 2, what is `--step-2`?"
+    options: ["4rem", "2rem", "3rem", "1.5rem"]
+    answer: 0
+    explanation: "Each step multiplies by the ratio: 1 × 2 × 2 = 4."
+  - type: mcq
+    prompt: "What belongs on a component showcase page?"
+    options:
+      - "Every component in all its variants and states, live, with usage and accessibility notes"
+      - "Only screenshots"
+      - "The site's privacy policy"
+      - "The Git log"
+    answer: 0
+    explanation: "A living page that renders the real CSS keeps documentation honest."

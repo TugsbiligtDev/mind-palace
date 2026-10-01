@@ -1,0 +1,30 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "`.card { container-type: inline-size; }` with `@container (…) { .card { … } }` has no effect. Why?"
+    options:
+      - "A container can't query itself; make the card's parent the container"
+      - "Container queries need a name"
+      - "inline-size is invalid"
+      - "The query needs @media"
+    answer: 0
+    explanation: "Queries style descendants of the container."
+  - type: mcq
+    prompt: "`anchor-name: help` doesn't work. What's wrong?"
+    options: ["Anchor names must start with two dashes, like `--help`", "Names must be uppercase", "It needs quotes", "Only ids can be anchors"]
+    answer: 0
+    explanation: "Anchor names are dashed idents, like custom properties."
+  - type: mcq
+    prompt: "Why might `color-mix(in oklch, var(--brand) 15%)` render nothing?"
+    options: ["color-mix needs two colors to mix", "oklch isn't supported", "15% is too small", "var() can't be used inside it"]
+    answer: 0
+    explanation: "The invalid value makes the declaration fail, so the background stays transparent."
+  - type: mcq
+    prompt: "Several cards share one view-transition-name. What's the fix?"
+    options:
+      - "Give each a unique name (or use `match-element`)"
+      - "Add z-index"
+      - "Wrap them in a container"
+      - "Use @supports"
+    answer: 0
+    explanation: "Names must be unique on the page during the transition."

@@ -1,0 +1,4 @@
+title: Container Queries
+module: 43
+summary: "Components that respond to the space they're given, not the screen: container-type and container-name, @container size queries, container units like cqi, and a first look at container style queries."
+minutes: 50

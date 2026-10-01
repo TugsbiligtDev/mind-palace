@@ -1,0 +1,326 @@
+steps:
+  - kind: explain
+    title: Tethering, without JavaScript
+    body: |
+      Tooltips, dropdown menus and "more info" panels need to appear **next to** the thing that opened them, and stay there when the page scrolls or the layout changes. For years that took a JavaScript positioning library.
+
+      **Anchor positioning** does it in CSS:
+
+      ```css
+      .info-button {
+        anchor-name: --info;            /* 1. name the anchor (a dashed ident, like a variable) */
+      }
+
+      .tooltip {
+        position: absolute;             /* 2. the tethered element is positioned… */
+        position-anchor: --info;        /* 3. …relative to that anchor */
+        position-area: bottom;          /* 4. …in the area below it */
+      }
+      ```
+
+      The tooltip now sits below the button, wherever the button is.
+
+  - kind: explain
+    title: position-area
+    body: |
+      `position-area` imagines a **3 × 3 grid** around the anchor, with the anchor in the centre cell, and places the element in one of the surrounding areas:
+
+      ```
+      top left     │  top center     │  top right
+      ─────────────┼─────────────────┼─────────────
+      left center  │   [ ANCHOR ]    │  right center
+      ─────────────┼─────────────────┼─────────────
+      bottom left  │  bottom center  │  bottom right
+      ```
+
+      - `position-area: bottom` (= `bottom center`) centres it below.
+      - `position-area: top` above; `right` to the right, and so on.
+      - `span-` values stretch over two cells: `bottom span-right` starts under the anchor and extends to the right (handy for dropdown menus aligned to the button's left edge).
+
+      Add a small `margin` on the tethered element to leave a gap.
+
+  - kind: web
+    title: An anchored tooltip
+    body: |
+      1. Name the `.help` button as the anchor `--help`.
+      2. Tether `.tip` to it: absolutely positioned, `position-anchor: --help`, `position-area: bottom`, with `margin-top: 6px`.
+
+      The tip should appear centred just below the button.
+    html: |
+      <p style="margin: 3rem">
+        Delivery is free over £20
+        <button class="help" type="button">?</button>
+      </p>
+      <span class="tip" role="tooltip">UK addresses only</span>
+    css: |
+      .tip {
+        padding: 0.25rem 0.5rem;
+        background: #1c1917;
+        color: white;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+    tests:
+      - "css('.help', 'anchor-name') + ' / ' + css('.tip', 'position-anchor') + ' / ' + css('.tip', 'position-area')"
+      - "box('.tip').y - (box('.help').y + box('.help').height)"
+      - "Math.abs((box('.tip').x + box('.tip').width / 2) - (box('.help').x + box('.help').width / 2)) <= 1"
+    solution:
+      css: |
+        .help {
+          anchor-name: --help;
+        }
+
+        .tip {
+          position: absolute;
+          position-anchor: --help;
+          position-area: bottom;
+          margin-top: 6px;
+          padding: 0.25rem 0.5rem;
+          background: #1c1917;
+          color: white;
+          border-radius: 4px;
+          white-space: nowrap;
+        }
+    hint: "`.help { anchor-name: --help; }` and on `.tip`: `position: absolute; position-anchor: --help; position-area: bottom; margin-top: 6px;`."
+
+  - kind: explain
+    title: The anchor() function
+    body: |
+      For exact control, use `anchor()` inside the inset properties. It returns the position of one of the anchor's edges:
+
+      ```css
+      .badge {
+        position: absolute;
+        position-anchor: --cover;
+        top: anchor(top);          /* align my top with the anchor's top */
+        left: anchor(right);       /* put my left edge at the anchor's right edge */
+      }
+      ```
+
+      You can do maths with it: `top: calc(anchor(bottom) + 8px)`. And `anchor-size(width)` gives the anchor's size: `width: anchor-size(width)` makes a dropdown exactly as wide as its button.
+
+  - kind: web
+    title: Pin a label to the cover
+    body: |
+      Pin the `.label` to the **top-right corner** of the cover image, with its own top-left corner touching it:
+
+      1. Name the cover `--cover`.
+      2. The label is absolutely positioned against `--cover`, with `top: anchor(top)` and `left: anchor(right)`.
+    html: |
+      <div style="padding: 2rem">
+        <img class="cover" src="images/cover-dune.svg" alt="Dune" width="120" height="180">
+        <span class="label">Signed copy</span>
+      </div>
+    css: |
+      .label {
+        padding: 0.25rem 0.5rem;
+        background: #7c2d12;
+        color: white;
+        font-size: 0.875rem;
+      }
+    tests:
+      - "box('.label').y - box('.cover').y"
+      - "box('.label').x - (box('.cover').x + box('.cover').width)"
+      - "css('.label', 'position-anchor')"
+    solution:
+      css: |
+        .cover {
+          anchor-name: --cover;
+        }
+
+        .label {
+          position: absolute;
+          position-anchor: --cover;
+          top: anchor(top);
+          left: anchor(right);
+          padding: 0.25rem 0.5rem;
+          background: #7c2d12;
+          color: white;
+          font-size: 0.875rem;
+        }
+    hint: "`top: anchor(top); left: anchor(right);` with `position: absolute; position-anchor: --cover;`."
+
+  - kind: explain
+    title: Fallbacks with position-try
+    body: |
+      A tooltip below a button near the **bottom** of the screen would be cut off. `position-try-fallbacks` lists other positions to try when the first one overflows:
+
+      ```css
+      .tip {
+        position-area: bottom;
+        position-try-fallbacks: flip-block;   /* if there's no room below, mirror to above */
+      }
+      ```
+
+      - `flip-block` mirrors vertically (bottom ↔ top), `flip-inline` horizontally, and you can combine them: `flip-block, flip-inline`.
+      - You can also list other areas: `position-try-fallbacks: top, right`.
+      - For full control, define named options with `@position-try --name { … }`.
+
+      The browser tries each in order and uses the first that fits.
+
+  - kind: web
+    title: Flip when there's no room
+    body: |
+      The second help button is near the bottom of a short page, and its tip runs off the bottom.
+
+      Add `position-try-fallbacks: flip-block` to `.tip` so it flips above when there's no room below. Both tips use the same rule; each button anchors its own tip (set already with inline `anchor-name`/`position-anchor`).
+    html: |
+      <div style="height: 560px; display: flex; flex-direction: column; justify-content: space-between; padding: 1rem">
+        <p>Top <button type="button" style="anchor-name: --a">?</button></p>
+        <p>Bottom <button type="button" style="anchor-name: --b">?</button></p>
+      </div>
+      <span class="tip one" style="position-anchor: --a">Room below</span>
+      <span class="tip two" style="position-anchor: --b">No room below</span>
+    css: |
+      body {
+        margin: 0;
+        height: 600px;
+        overflow: hidden;
+      }
+
+      .tip {
+        position: fixed;
+        position-area: bottom;
+        margin-block: 6px;
+        padding: 1.5rem 0.5rem;
+        background: #1c1917;
+        color: white;
+      }
+    widths: [600]
+    tests:
+      - "css('.tip', 'position-try-fallbacks')"
+      - "box('.one').y > 0 && box('.one').y < 200 ? 'first tip below its button' : 'first tip misplaced'"
+      - "box('.two').y + box('.two').height <= 600 ? 'second tip fits on screen' : 'second tip cut off'"
+    solution:
+      css: |
+        body {
+          margin: 0;
+          height: 600px;
+          overflow: hidden;
+        }
+
+        .tip {
+          position: fixed;
+          position-area: bottom;
+          position-try-fallbacks: flip-block;
+          margin-block: 6px;
+          padding: 1.5rem 0.5rem;
+          background: #1c1917;
+          color: white;
+        }
+    hint: "One line on `.tip`: `position-try-fallbacks: flip-block;`."
+
+  - kind: explain
+    title: Popovers + anchors
+    body: |
+      Anchor positioning pairs perfectly with Module 25's popovers. A popover opened by a `popovertarget` button is **automatically anchored** to that button, so you only need to place it:
+
+      ```html
+      <button popovertarget="menu">Account</button>
+      <div id="menu" popover>…</div>
+      ```
+
+      ```css
+      #menu {
+        inset: auto;                          /* undo the popover's default centring */
+        margin: 0;
+        position-area: bottom span-right;     /* below the button, extending right */
+        position-try-fallbacks: flip-block;
+      }
+      ```
+
+      That's a fully accessible dropdown (keyboard, Escape, light dismiss, top layer) with **no JavaScript**. Popovers default to `inset: 0; margin: auto` (centred), which is why those two lines come first.
+
+  - kind: web
+    title: A dropdown menu
+    body: |
+      Make the account menu a proper dropdown:
+
+      1. The button opens the `#menu` popover (`popovertarget`), and `#menu` is a popover.
+      2. Style `#menu`: `inset: auto`, `margin: 0`, `position-area: bottom span-right`, and a `4px` top margin (`margin-top: 4px` after the `margin: 0`).
+
+      Open it in the preview: it drops down from the button.
+    html: |
+      <header style="padding: 1rem">
+        <button type="button" class="account">Account</button>
+      </header>
+      <div id="menu">
+        <a href="orders.html">Orders</a>
+        <a href="logout.html">Log out</a>
+      </div>
+    css: |
+      #menu {
+        padding: 0.5rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      #menu a {
+        display: block;
+      }
+    tests:
+      - "attr('.account', 'popovertarget') + ' / ' + (attr('#menu', 'popover') !== null)"
+      - "click('.account')"
+      - "$('#menu').matches(':popover-open')"
+      - "box('#menu').y - (box('.account').y + box('.account').height)"
+      - "box('#menu').x - box('.account').x"
+    solution:
+      html: |
+        <header style="padding: 1rem">
+          <button type="button" class="account" popovertarget="menu">Account</button>
+        </header>
+        <div id="menu" popover>
+          <a href="orders.html">Orders</a>
+          <a href="logout.html">Log out</a>
+        </div>
+      css: |
+        #menu {
+          inset: auto;
+          margin: 0;
+          margin-top: 4px;
+          position-area: bottom span-right;
+          padding: 0.5rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        #menu a {
+          display: block;
+        }
+    hint: "HTML: `popovertarget=\"menu\"` and `popover`. CSS: `inset: auto; margin: 0; margin-top: 4px; position-area: bottom span-right;`."
+
+  - kind: explain
+    title: Browser support and @supports
+    body: |
+      Anchor positioning is new: it's in Chrome and Edge (since 2024) and Safari (since 2025), and Firefox has been catching up. Check its **Baseline** status on MDN before relying on it (Module 38).
+
+      Without support, an anchored element falls back to plain `position: absolute`, which may put it somewhere odd. Provide a sensible fallback and enhance:
+
+      ```css
+      .tip {
+        position: absolute;           /* fallback: plain placement */
+        margin-top: 0.5rem;
+      }
+
+      @supports (anchor-name: --x) {
+        .help { anchor-name: --help; }
+        .tip {
+          position-anchor: --help;
+          position-area: bottom;
+          position-try-fallbacks: flip-block;
+        }
+      }
+      ```
+
+      For popover menus, the fallback is simply the centred popover, which still works fine.
+
+  - kind: why
+    body: |
+      Tooltips, menus and popovers are everywhere, and positioning them used to mean a JavaScript library and scroll listeners. Anchor positioning plus the Popover API gives you accessible, correctly placed, flip-when-needed overlays in a few lines of CSS.
+
+  - kind: recap
+    body: |
+      - `anchor-name: --x` on the anchor; `position: absolute|fixed; position-anchor: --x` on the tethered element.
+      - `position-area: bottom | top | right span-bottom …` places it in the 3 × 3 grid around the anchor.
+      - `anchor(top|bottom|left|right)` inside inset properties for exact placement; `anchor-size()` for matching sizes.
+      - `position-try-fallbacks: flip-block, flip-inline` (or `@position-try`) when space runs out.
+      - Popovers opened by `popovertarget` are anchored to their button automatically; reset `inset` and `margin`.
+      - Newer feature: wrap it in `@supports (anchor-name: --x)` with a fallback.

@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "In Ink's layer order `reset, tokens, base, layouts, components, utilities`, why are utilities last?"
+    options:
+      - "So single-purpose helpers like `.visually-hidden` always win over component styles"
+      - "Because they're loaded last over the network"
+      - "Utilities can't be in a layer"
+      - "Alphabetical order"
+    answer: 0
+    explanation: "Later layers win regardless of specificity."
+  - type: mcq
+    prompt: "Why does the card use a container query rather than a media query?"
+    options:
+      - "So it adapts to whatever slot it's placed in, on any page"
+      - "Media queries don't work with grid"
+      - "Container queries are faster"
+      - "To support older browsers"
+    answer: 0
+    explanation: "Design-system components must work in sidebars, grids and dialogs alike."
+  - type: mcq
+    prompt: "Why wrap the tooltip's anchor rules in `@supports (anchor-name: --x)`?"
+    options:
+      - "Browsers without anchor positioning keep a working (centred) popover instead of a misplaced one"
+      - "Anchor positioning only works inside @supports"
+      - "It makes the tooltip faster"
+      - "To hide the tooltip from screen readers"
+    answer: 0
+    explanation: "Progressive enhancement: the popover works everywhere, the anchoring where supported."
+  - type: mcq
+    prompt: "What should every component page in the showcase include?"
+    options:
+      - "Live demos of every variant and state, the HTML to copy, and usage and accessibility notes"
+      - "Only a screenshot"
+      - "The full CSS file"
+      - "A changelog of every commit"
+    answer: 0
+    explanation: "A living, honest reference is what makes a design system usable by others."

@@ -1,0 +1,240 @@
+steps:
+  - kind: explain
+    title: The media query's blind spot
+    body: |
+      A media query asks about the **screen**. But a book card might sit in a wide main column on one page and a narrow sidebar on another, **on the same screen**. A screen-width breakpoint can't tell those apart, so the card ends up squashed in the sidebar.
+
+      **Container queries** ask about the **container**: the element the component sits in.
+
+      ```css
+      .card-slot {
+        container-type: inline-size;     /* "my children may query my width" */
+      }
+
+      @container (width >= 400px) {
+        .card { display: grid; grid-template-columns: 120px 1fr; }
+      }
+      ```
+
+      Now the same card is stacked in a narrow slot and side-by-side in a wide one, anywhere on the page. Components finally become truly reusable.
+
+  - kind: explain
+    title: The rules
+    body: |
+      - `container-type: inline-size` turns an element into a **query container** for its width (the usual choice). `size` allows height queries too, but then the element needs an explicit height.
+      - A container **can't query itself**: you style its **descendants** inside `@container`. So the container is usually a wrapper around the component, or the component's outer element styling its inner parts.
+      - `@container (…)` uses the same conditions as media queries: `(width >= 400px)`, `(400px <= width < 700px)`.
+      - It finds the **nearest** ancestor that's a container.
+      - `container-type: inline-size` stops the element from sizing itself from its contents' width (it can't depend on what it measures), so give it a width from its layout (a grid cell, a block that fills its parent).
+
+  - kind: web
+    title: One card, two slots
+    body: |
+      The same `.card` appears in the wide `.main` and the narrow `.sidebar`.
+
+      1. Make `.slot` (both columns have this class) a container with `container-type: inline-size`.
+      2. With `@container (width >= 400px)`, lay `.card` out as a grid with columns `100px 1fr` and a `1rem` gap.
+
+      In the wide column the card goes side-by-side; in the sidebar it stays stacked, on the same screen.
+    html: |
+      <div class="layout">
+        <div class="slot main">
+          <article class="card"><img src="images/cover-dune.svg" alt="" width="100" height="150"><div><h3>Dune</h3><p>Frank Herbert</p></div></article>
+        </div>
+        <div class="slot sidebar">
+          <article class="card"><img src="images/cover-emma.svg" alt="" width="100" height="150"><div><h3>Emma</h3><p>Jane Austen</p></div></article>
+        </div>
+      </div>
+    css: |
+      .layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1rem;
+      }
+
+      .card {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .card img {
+        max-width: 100%;
+        height: auto;
+      }
+    widths: [1000]
+    tests:
+      - "cssAll('.slot', 'container-type')"
+      - "css('.main .card', 'display') + ' / ' + css('.main .card', 'grid-template-columns')"
+      - "css('.sidebar .card', 'display')"
+      - "box('.main .card img').y === box('.main .card h3').y ? 'side by side' : 'stacked'"
+      - "box('.sidebar .card img').y === box('.sidebar .card h3').y ? 'side by side' : 'stacked'"
+    solution:
+      css: |
+        .layout {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 1rem;
+        }
+
+        .slot {
+          container-type: inline-size;
+        }
+
+        .card {
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        .card img {
+          max-width: 100%;
+          height: auto;
+        }
+
+        @container (width >= 400px) {
+          .card {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 1rem;
+          }
+        }
+    hint: "`.slot { container-type: inline-size; }`, then `@container (width >= 400px) { .card { display: grid; grid-template-columns: 100px 1fr; gap: 1rem; } }`."
+    reject:
+      - css: |
+          .layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+          }
+
+          .card {
+            padding: 1rem;
+            border: 1px solid #e7e5e4;
+          }
+
+          .card img {
+            max-width: 100%;
+            height: auto;
+          }
+
+          @media (width >= 400px) {
+            .card {
+              display: grid;
+              grid-template-columns: 100px 1fr;
+              gap: 1rem;
+            }
+          }
+
+  - kind: explain
+    title: Named containers
+    body: |
+      Containers can be nested, and `@container` targets the **nearest** one. To target a specific one, name it:
+
+      ```css
+      .sidebar {
+        container-type: inline-size;
+        container-name: sidebar;
+        /* shorthand: container: sidebar / inline-size; */
+      }
+
+      @container sidebar (width < 300px) {
+        .widget-title { font-size: 1rem; }
+      }
+      ```
+
+      A name also documents intent: `@container card (…)` reads clearly in a big stylesheet.
+
+  - kind: explain
+    title: Container units
+    body: |
+      Like `vw` for the viewport, **container units** measure the nearest container:
+
+      | Unit | 1% of the container's… |
+      |---|---|
+      | `cqi` | inline size (width, in English) |
+      | `cqb` | block size (height) |
+      | `cqw` / `cqh` | width / height |
+      | `cqmin` / `cqmax` | smaller / larger dimension |
+
+      They make **fluid sizes inside components**:
+
+      ```css
+      .card h3 {
+        font-size: clamp(1rem, 0.75rem + 3cqi, 1.75rem);   /* grows with the card, not the screen */
+      }
+      ```
+
+      `cqi` is the one you'll use most.
+
+  - kind: web
+    title: Name it and size the title
+    body: |
+      1. Give `.shelf` the container shorthand `container: shelf / inline-size`.
+      2. With `@container shelf (width >= 500px)`, make `.shelf-list` a grid of 3 equal columns.
+      3. Make `.shelf-title`'s `font-size` `clamp(1rem, 0.5rem + 4cqi, 2rem)`: fluid with the shelf.
+
+      The two shelves have different widths.
+    html: |
+      <section class="shelf" style="width: 320px">
+        <h2 class="shelf-title">Poetry</h2>
+        <ul class="shelf-list"><li>One</li><li>Two</li><li>Three</li></ul>
+      </section>
+      <section class="shelf" style="width: 700px">
+        <h2 class="shelf-title">Fiction</h2>
+        <ul class="shelf-list"><li>One</li><li>Two</li><li>Three</li></ul>
+      </section>
+    css: |
+      .shelf {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+    widths: [1000]
+    tests:
+      - "cssAll('.shelf', 'container-name') + ' / ' + cssAll('.shelf', 'container-type')"
+      - "cssAll('.shelf-list', 'display') + ' / ' + cssAll('.shelf-list', 'grid-template-columns').map((c) => c.split(' ').length)"
+      - "cssAll('.shelf-title', 'font-size')"
+    solution:
+      css: |
+        .shelf {
+          container: shelf / inline-size;
+          margin-bottom: 1rem;
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        .shelf-title {
+          font-size: clamp(1rem, 0.5rem + 4cqi, 2rem);
+        }
+
+        @container shelf (width >= 500px) {
+          .shelf-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+    hint: "`container: shelf / inline-size;` on `.shelf`; the query is `@container shelf (width >= 500px) { … }`; the title uses `4cqi` inside clamp."
+
+  - kind: info
+    title: "🔹 Container style queries"
+    body: |
+      Containers can also be queried for the value of a **custom property**:
+
+      ```css
+      @container style(--variant: featured) {
+        .card { border-color: gold; }
+      }
+      ```
+
+      Any element is a style container by default, so no `container-type` is needed. Supported in Chrome, Edge and Safari; Firefox support is still arriving, so treat it as an enhancement for now.
+
+  - kind: why
+    body: |
+      Media queries made pages responsive; container queries make **components** responsive. A card that adapts to its slot can be dropped into a sidebar, a grid or a modal without new CSS, which is exactly what a design system needs.
+
+  - kind: recap
+    body: |
+      - `container-type: inline-size` makes a query container; `@container (width >= 400px) { … }` styles its descendants.
+      - A container can't query itself; it styles what's inside.
+      - Name containers with `container-name` (or `container: name / inline-size`) and query them by name.
+      - Container units: `cqi` (inline size), `cqb`, `cqw`, `cqh`, `cqmin`, `cqmax`.
+      - 🔹 `@container style(--x: y)` queries custom properties.

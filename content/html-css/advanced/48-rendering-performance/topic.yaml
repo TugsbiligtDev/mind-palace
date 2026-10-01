@@ -1,0 +1,4 @@
+title: Rendering Performance
+module: 48
+summary: "How browsers turn HTML and CSS into pixels (parse, style, layout, paint, composite), the Core Web Vitals (LCP, CLS, INP) and what HTML and CSS do to them, preventing layout shift, content-visibility, will-change used sparingly, critical CSS, and measuring with the Performance panel and Lighthouse."
+minutes: 55

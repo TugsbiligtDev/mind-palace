@@ -1,0 +1,467 @@
+steps:
+  - kind: explain
+    title: The final brief
+    body: |
+      Inspector Bold: *"The stylesheet case is closed. Now make sure it never happens again. Give Inkwell a design system, and prove it works."*
+
+      You'll build **Ink**, a small design system:
+
+      - **Tokens** in three tiers, with light and dark themes.
+      - A **layered architecture**: `reset, tokens, base, layouts, components, utilities`.
+      - **At least ten components**, for example: button, link, badge, alert, card, form field, checkbox/radio group, accordion (`details`), dialog, tooltip, navigation bar, breadcrumb.
+      - Components that use **container queries** (the card), **anchor positioning** (the tooltip) and **view transitions** (the showcase's page-to-page navigation).
+      - A **showcase site** documenting every token and component, with live examples, states and usage notes.
+      - A **WCAG 2.2 AA audit** and a **performance report** for the showcase.
+
+      The next five steps build and check the core pieces. Then you build the rest and the showcase on your Mac.
+
+  - kind: web
+    title: "1. Tokens and layers"
+    body: |
+      Write the foundation (CSS only):
+
+      1. The layer order, first line: `reset, tokens, base, layouts, components, utilities`.
+      2. In `@layer tokens`, on `:root`:
+         - `color-scheme: light dark`;
+         - primitives: `--ink-950: #0b0f19`, `--ink-900: #1c1917`, `--ink-100: #e5e7eb`, `--paper-50: #fafaf9`, `--rust-700: #7c2d12`, `--rust-300: #fdba74`;
+         - semantic tokens with `light-dark()`: `--color-bg` (paper-50 / ink-950), `--color-text` (ink-900 / ink-100), `--color-action` (rust-700 / rust-300), `--color-on-action` (paper-50 / ink-950);
+         - a space scale: `--space-s: 0.5rem`, `--space-m: 1rem`, `--space-l: 2rem`.
+      3. In `@layer reset`: the box-sizing rule and `* { margin: 0; }`.
+      4. In `@layer base`: `body` uses `--color-bg` and `--color-text`, `font-family: system-ui, sans-serif`, `line-height: 1.5`.
+    html: |
+      <h1>Ink</h1>
+      <p>Inkwell's design system.</p>
+    css: |
+      /* ink.css */
+    tests:
+      - "layers()"
+      - "['light', 'dark'].map((m) => scheme(m, 'body', 'background-color') + ' ' + scheme(m, 'body', 'color'))"
+      - "['--color-action', '--color-on-action'].map((t) => declared(':root', t))"
+      - "[declared(':root', '--space-s'), declared(':root', '--space-m'), declared(':root', '--space-l')]"
+      - "css('h1', 'margin-top') + ' / ' + css('p', 'box-sizing') + ' / ' + css('body', 'line-height') + ' / ' + css('body', 'font-family')"
+    solution:
+      css: |
+        @layer reset, tokens, base, layouts, components, utilities;
+
+        @layer reset {
+          *, *::before, *::after {
+            box-sizing: border-box;
+          }
+
+          * {
+            margin: 0;
+          }
+        }
+
+        @layer tokens {
+          :root {
+            color-scheme: light dark;
+
+            --ink-950: #0b0f19;
+            --ink-900: #1c1917;
+            --ink-100: #e5e7eb;
+            --paper-50: #fafaf9;
+            --rust-700: #7c2d12;
+            --rust-300: #fdba74;
+
+            --color-bg: light-dark(var(--paper-50), var(--ink-950));
+            --color-text: light-dark(var(--ink-900), var(--ink-100));
+            --color-action: light-dark(var(--rust-700), var(--rust-300));
+            --color-on-action: light-dark(var(--paper-50), var(--ink-950));
+
+            --space-s: 0.5rem;
+            --space-m: 1rem;
+            --space-l: 2rem;
+          }
+        }
+
+        @layer base {
+          body {
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-family: system-ui, sans-serif;
+            line-height: 1.5;
+          }
+        }
+    hint: "Modules 39, 40 and 42 together: declare the layers, then one `@layer name { … }` block each for reset, tokens and base. `light-dark()` can take `var()` values."
+
+  - kind: web
+    title: "2. The button component"
+    body: |
+      In `@layer components`, build `.ink-button` (the tokens from step 1 are provided):
+
+      - `inline-flex`, items centred, `gap: var(--space-s)`, padding `var(--space-s) var(--space-m)`, `min-height: 2.75rem` (above the 24px target minimum), `border: 2px solid transparent` (so it survives forced colors), `border-radius: 8px`, `font: inherit`, no underline.
+      - Default (primary): background `var(--color-action)`, color `var(--color-on-action)`.
+      - Variant `.ink-button--secondary`: transparent background, color `var(--color-action)`, border color `var(--color-action)`.
+      - `:focus-visible`: `outline: 3px solid var(--color-action)`, `outline-offset: 2px`.
+      - `:disabled` and `[aria-disabled="true"]`: `opacity: 0.5`, `cursor: not-allowed`.
+
+      Use native nesting inside `.ink-button`.
+    html: |
+      <button class="ink-button" type="button">Pre-order</button>
+      <a class="ink-button ink-button--secondary" href="#">Learn more</a>
+      <button class="ink-button" type="button" disabled>Sold out</button>
+    css: |
+      @layer reset, tokens, base, layouts, components, utilities;
+
+      @layer tokens {
+        :root {
+          color-scheme: light dark;
+          --color-action: light-dark(#7c2d12, #fdba74);
+          --color-on-action: light-dark(#fafaf9, #0b0f19);
+          --space-s: 0.5rem;
+          --space-m: 1rem;
+        }
+      }
+    tests:
+      - "['display', 'align-items', 'column-gap', 'padding', 'min-height', 'border-radius', 'text-decoration-line'].map((p) => css('.ink-button', p))"
+      - "boxes('.ink-button').every((b) => b.height >= 24 && b.width >= 24)"
+      - "cssAll('.ink-button', 'background-color') + ' / ' + cssAll('.ink-button', 'color')"
+      - "css('.ink-button--secondary', 'border-top-color') + ' / primary border ' + css('.ink-button:not(.ink-button--secondary)', 'border-top-style') + ' ' + css('.ink-button:not(.ink-button--secondary)', 'border-top-color')"
+      - "rule('.ink-button:focus-visible', 'outline') + ' / ' + rule('.ink-button:focus-visible', 'outline-offset')"
+      - "css('.ink-button:disabled', 'opacity') + ' / ' + css('.ink-button:disabled', 'cursor')"
+      - "layers().includes('components') && selectors().some((s) => s.startsWith('&'))"
+    solution:
+      css: |
+        @layer reset, tokens, base, layouts, components, utilities;
+
+        @layer tokens {
+          :root {
+            color-scheme: light dark;
+            --color-action: light-dark(#7c2d12, #fdba74);
+            --color-on-action: light-dark(#fafaf9, #0b0f19);
+            --space-s: 0.5rem;
+            --space-m: 1rem;
+          }
+        }
+
+        @layer components {
+          .ink-button {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-s);
+            padding: var(--space-s) var(--space-m);
+            min-height: 2.75rem;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font: inherit;
+            text-decoration: none;
+            background: var(--color-action);
+            color: var(--color-on-action);
+
+            &.ink-button--secondary {
+              background: transparent;
+              color: var(--color-action);
+              border-color: var(--color-action);
+            }
+
+            &:focus-visible {
+              outline: 3px solid var(--color-action);
+              outline-offset: 2px;
+            }
+
+            &:disabled, &[aria-disabled="true"] {
+              opacity: 0.5;
+              cursor: not-allowed;
+            }
+          }
+        }
+    hint: "One nested rule: the base declarations, then `&.ink-button--secondary`, `&:focus-visible` and `&:disabled, &[aria-disabled=\"true\"]` blocks, all inside `@layer components`."
+
+  - kind: web
+    title: "3. The card component"
+    body: |
+      Build `.ink-card` so it adapts to **its container**, not the screen:
+
+      - Any element with the class `ink-slot` is an inline-size container named `slot`.
+      - `.ink-card`: padding `var(--space-m)`, `1px solid #e7e5e4` border, `12px` radius, a grid with `gap: var(--space-s)`.
+      - When its slot is at least `440px` wide: two columns, `7rem 1fr`, with the image spanning all rows (`grid-row: 1 / span 3` on `.ink-card__media`).
+      - `.ink-card__title` font size `clamp(1.125rem, 0.75rem + 2.5cqi, 1.5rem)`.
+
+      Put the rules in `@layer components` (the layers line is given).
+    html: |
+      <div class="ink-slot" style="width: 640px">
+        <article class="ink-card">
+          <img class="ink-card__media" src="images/cover-dune.svg" alt="" width="300" height="450" style="max-width: 100%; height: auto">
+          <h3 class="ink-card__title">Dune</h3>
+          <p>Frank Herbert</p>
+          <p>£8.99</p>
+        </article>
+      </div>
+      <div class="ink-slot" style="width: 300px">
+        <article class="ink-card">
+          <img class="ink-card__media" src="images/cover-emma.svg" alt="" width="300" height="450" style="max-width: 100%; height: auto">
+          <h3 class="ink-card__title">Emma</h3>
+          <p>Jane Austen</p>
+          <p>£5.50</p>
+        </article>
+      </div>
+    css: |
+      @layer reset, tokens, base, layouts, components, utilities;
+
+      @layer tokens {
+        :root {
+          --space-s: 0.5rem;
+          --space-m: 1rem;
+        }
+      }
+
+      @layer reset {
+        * {
+          margin: 0;
+        }
+      }
+    widths: [1000]
+    tests:
+      - "cssAll('.ink-slot', 'container-name') + ' / ' + cssAll('.ink-slot', 'container-type')"
+      - "cssAll('.ink-card', 'display') + ' / ' + cssAll('.ink-card', 'grid-template-columns').map((c) => c.split(' ').length) + ' / ' + css('.ink-card', 'row-gap') + ' / ' + css('.ink-card', 'border-radius')"
+      - "boxes('.ink-card__media').map((b) => b.width)"
+      - "box('.ink-slot:first-child .ink-card__title').x > box('.ink-slot:first-child .ink-card__media').x ? 'wide card: title beside image' : 'wide card: stacked'"
+      - "cssAll('.ink-card__title', 'font-size')"
+    solution:
+      css: |
+        @layer reset, tokens, base, layouts, components, utilities;
+
+        @layer tokens {
+          :root {
+            --space-s: 0.5rem;
+            --space-m: 1rem;
+          }
+        }
+
+        @layer reset {
+          * {
+            margin: 0;
+          }
+        }
+
+        @layer components {
+          .ink-slot {
+            container: slot / inline-size;
+          }
+
+          .ink-card {
+            display: grid;
+            gap: var(--space-s);
+            padding: var(--space-m);
+            border: 1px solid #e7e5e4;
+            border-radius: 12px;
+          }
+
+          .ink-card__title {
+            font-size: clamp(1.125rem, 0.75rem + 2.5cqi, 1.5rem);
+          }
+
+          @container slot (width >= 440px) {
+            .ink-card {
+              grid-template-columns: 7rem 1fr;
+            }
+
+            .ink-card__media {
+              grid-row: 1 / span 3;
+            }
+          }
+        }
+    hint: "`.ink-slot { container: slot / inline-size; }`, the card grid, the cqi title, and a named `@container slot (width >= 440px)` with the two-column layout and the image's `grid-row`."
+
+  - kind: web
+    title: "4. The tooltip component"
+    body: |
+      Build an accessible tooltip from a popover, anchored to its trigger, with a fallback:
+
+      - HTML: the `ⓘ` button toggles the popover `#tip-ship` (`popovertarget`), has `aria-label="Shipping info"`, and the popover has `role="tooltip"`.
+      - CSS (in `@layer components`): `.ink-tooltip` gets padding `var(--space-s)`, a dark background `#1c1917`, white text, `6px` radius.
+      - Enhancement inside `@supports (anchor-name: --x)`: `.ink-tooltip` resets `inset: auto` and `margin: 0`, sits at `position-area: top`, flips with `position-try-fallbacks: flip-block`, and keeps a `6px` gap (`margin-bottom: 6px`).
+    html: |
+      <p style="padding: 6rem 2rem 2rem">Free delivery over £20
+        <button type="button" class="ink-icon-button">ⓘ</button>
+      </p>
+      <div id="tip-ship" class="ink-tooltip">UK addresses, 2 working days.</div>
+    css: |
+      @layer reset, tokens, base, layouts, components, utilities;
+
+      @layer tokens {
+        :root {
+          --space-s: 0.5rem;
+        }
+      }
+    tests:
+      - "attr('.ink-icon-button', 'popovertarget') + ' / ' + attr('.ink-icon-button', 'aria-label') + ' / ' + (attr('#tip-ship', 'popover') !== null) + ' / ' + attr('#tip-ship', 'role')"
+      - "declared('.ink-tooltip', 'position-area', 'anchor-name') + ' / ' + declared('.ink-tooltip', 'position-try-fallbacks', 'anchor-name')"
+      - "click('.ink-icon-button')"
+      - "$('#tip-ship').matches(':popover-open') + ' / gap above button: ' + ((box('.ink-icon-button').y) - (box('#tip-ship').y + box('#tip-ship').height))"
+      - "css('.ink-tooltip', 'background-color') + ' / ' + css('.ink-tooltip', 'color') + ' / ' + css('.ink-tooltip', 'border-radius') + ' / ' + css('.ink-tooltip', 'padding')"
+    solution:
+      html: |
+        <p style="padding: 6rem 2rem 2rem">Free delivery over £20
+          <button type="button" class="ink-icon-button" popovertarget="tip-ship" aria-label="Shipping info">ⓘ</button>
+        </p>
+        <div id="tip-ship" class="ink-tooltip" popover role="tooltip">UK addresses, 2 working days.</div>
+      css: |
+        @layer reset, tokens, base, layouts, components, utilities;
+
+        @layer tokens {
+          :root {
+            --space-s: 0.5rem;
+          }
+        }
+
+        @layer components {
+          .ink-tooltip {
+            padding: var(--space-s);
+            background: #1c1917;
+            color: white;
+            border-radius: 6px;
+          }
+
+          @supports (anchor-name: --x) {
+            .ink-tooltip {
+              inset: auto;
+              margin: 0;
+              margin-bottom: 6px;
+              position-area: top;
+              position-try-fallbacks: flip-block;
+            }
+          }
+        }
+    hint: "HTML: `popovertarget`, `aria-label`, `popover` and `role=\"tooltip\"`. CSS: base tooltip styles, then the anchor rules inside `@supports (anchor-name: --x)`."
+
+  - kind: web
+    title: "5. The showcase page shell"
+    body: |
+      The showcase site documents every component on its own page, with smooth page-to-page transitions. Build the shell's CSS:
+
+      1. Turn on cross-document view transitions.
+      2. The showcase layout: `.showcase` is a grid with a `14rem` sidebar and a flexible main column from `800px` wide (one column below), with `gap: var(--space-l)`.
+      3. The component preview area `.demo` keeps its identity across pages: `view-transition-name: demo`.
+      4. Under reduced motion, `::view-transition-group(*)` has `animation: none`.
+      5. The current page in the sidebar nav is marked with `aria-current="page"` (already in the HTML): make it bold.
+    html: |
+      <div class="showcase">
+        <nav aria-label="Components">
+          <a href="tokens.html">Tokens</a>
+          <a href="button.html" aria-current="page">Button</a>
+          <a href="card.html">Card</a>
+        </nav>
+        <main>
+          <h1>Button</h1>
+          <div class="demo"><button type="button">Pre-order</button></div>
+          <p>Use the primary button for the single main action on a page.</p>
+        </main>
+      </div>
+    css: |
+      :root {
+        --space-l: 2rem;
+      }
+
+      nav {
+        display: grid;
+        align-content: start;
+      }
+    widths: [600, 1100]
+    tests:
+      - "/@view-transition\\s*\\{[^}]*navigation\\s*:\\s*auto/.test($('style[data-file]').textContent)"
+      - "css('.showcase', 'display') + ' / ' + css('.showcase', 'grid-template-columns').split(' ').length + ' / ' + css('.showcase', 'gap')"
+      - "box('nav').width"
+      - "css('.demo', 'view-transition-name')"
+      - "declared('::view-transition-group(*)', 'animation', 'prefers-reduced-motion:reduce')"
+      - "cssAll('nav a', 'font-weight')"
+    solution:
+      css: |
+        @view-transition {
+          navigation: auto;
+        }
+
+        :root {
+          --space-l: 2rem;
+        }
+
+        .showcase {
+          display: grid;
+          gap: var(--space-l);
+        }
+
+        @media (width >= 800px) {
+          .showcase {
+            grid-template-columns: 14rem 1fr;
+          }
+        }
+
+        nav {
+          display: grid;
+          align-content: start;
+        }
+
+        nav a[aria-current="page"] {
+          font-weight: bold;
+        }
+
+        .demo {
+          view-transition-name: demo;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          ::view-transition-group(*) {
+            animation: none;
+          }
+        }
+    hint: "The `@view-transition` rule; a mobile-first grid with the two columns inside `@media (width >= 800px)`; `view-transition-name` on `.demo`; the reduced-motion block; and an attribute selector for the current link."
+
+  - kind: mac
+    title: "6. Build the system and the showcase"
+    body: |
+      On your Mac, as a Git repository (`~/websites/ink`):
+
+      ```
+      ink/
+        css/
+          ink.css                 ← @layer order + @import of the files below, each into its layer
+          reset.css  tokens.css  base.css  layouts.css  utilities.css
+          components/             ← one file per component (10+)
+        showcase/
+          index.html              ← overview: what Ink is, how to use it
+          tokens.html             ← every color (with contrast ratios), the type and space scales
+          button.html  card.html  tooltip.html  …   ← one page per component
+      ```
+
+      For **each component page**: a live demo of every variant and state (default, hover, focus, disabled, error, long content, dark theme), the HTML to copy, and usage and accessibility notes.
+
+      Components to include (at least ten): button, link, badge, alert, card, form field (label, hint, error), checkbox/radio group, accordion, dialog, tooltip, navigation bar, breadcrumb.
+
+      Run Prettier and Stylelint, commit in small steps, push to GitHub and publish with Pages. Paste the published showcase address.
+    commands: |
+      mkdir -p ~/websites/ink/css/components ~/websites/ink/showcase
+      cd ~/websites/ink && git init && code .
+      # …build…
+      npx prettier --write . && npx stylelint "**/*.css"
+      git add . && git commit -m "Add Ink tokens, layers and the button component"
+      gh repo create ink --public --source=. --push
+      gh api -X POST "repos/{owner}/{repo}/pages" -f "source[branch]=main" -f "source[path]=/"
+      gh api "repos/{owner}/{repo}/pages" --jq .html_url
+    expect_output:
+      - "github.io"
+
+  - kind: mac
+    title: "7. Audit and report"
+    body: |
+      Write two short reports as Markdown files in the repo (`docs/accessibility-audit.md` and `docs/performance-report.md`), based on the published showcase:
+
+      **Accessibility (WCAG 2.2 AA)**, following Module 49's workflow: automated (axe, Lighthouse), keyboard, VoiceOver, 400% zoom and reflow, text spacing, forced colors, reduced motion, contrast in both themes. For each issue: the WCAG criterion, where, who it affects, the fix, and whether it's fixed. Pay special attention to the 2.2 additions: focus not obscured, 24 × 24 targets.
+
+      **Performance**, following Module 48: Lighthouse (mobile) scores, LCP, CLS and INP from the Performance panel, the total CSS size (Network tab) and unused CSS (Coverage tab), and what you changed to improve them.
+
+      Paste the summary lines of both reports.
+    commands: |
+      # docs/accessibility-audit.md: summary line, e.g.
+      WCAG 2.2 AA: 0 open issues (7 found, 7 fixed)
+      # docs/performance-report.md: summary line, e.g.
+      Lighthouse mobile: Performance 98, LCP 1.2 s, CLS 0.00, CSS 14 KB
+    expect_output:
+      - "WCAG"
+      - "LCP"
+
+  - kind: recap
+    body: |
+      You've built what professional teams build: a token-driven, layered design system with adaptive, accessible components, a living showcase, and evidence (an audit and a performance report) that it works for everyone.
+
+      That completes the course. From here, the natural next step is **JavaScript**, to make these pages interactive: the switching script for tabs, form validation messages, and fetching data. Everything you've learned about HTML and CSS stays the foundation.

@@ -110,7 +110,7 @@ export function LessonPlayer({
       </div>
 
       <div className={isExercise ? "grid gap-6 lg:grid-cols-2" : "mx-auto max-w-2xl"}>
-        <article className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+        <article className="min-w-0 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
           <p className="mb-2 text-xs font-medium tracking-wide text-brand uppercase">{KIND_LABEL[step.kind]}</p>
           {"title" in step && <h1 className="mb-4 text-2xl font-semibold tracking-tight">{step.title}</h1>}
           <Markdown>{step.body}</Markdown>
@@ -223,7 +223,7 @@ function TryPanel({
   );
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <SqlRunner
         engine={engine}
         initial={p?.code[slot] ?? step.sql}
@@ -288,7 +288,7 @@ function CodePanel({
   );
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       {language === "python" ? (
         <PyRunner initial={p?.code[slot] ?? step.code} starter={step.code} slot={slot} onRan={onRan} stdin={step.stdin} minHeight="200px" />
       ) : (
@@ -356,7 +356,7 @@ function WebPanel({
     : undefined;
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <WebRunner initial={initial} starter={starter} slot={slot} showCss={step.css !== undefined} onCheck={check ? onCheck : undefined} checking={checking} />
       {feedback && (
         <p className={`rounded-lg px-3 py-2 text-sm ${feedback.ok ? "bg-success/10 text-success" : "bg-xp/10 text-text"}`}>

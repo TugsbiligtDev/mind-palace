@@ -1,0 +1,34 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "`@layer reset, base, utilities, components;` What's the problem?"
+    options:
+      - "Components come after utilities, so components beat utilities"
+      - "reset must be last"
+      - "There can only be three layers"
+      - "Nothing"
+    answer: 0
+    explanation: "Later layers win. Utilities should be last so they always override."
+  - type: mcq
+    prompt: "Which tool keeps a component's plain `p` and `a` selectors from leaking onto the rest of the page?"
+    options: ["`@scope (.component)`", "`@layer components`", "`:where()`", "`!important`"]
+    answer: 0
+    explanation: "Layers set priority but don't limit where a selector matches; scope does."
+  - type: mcq
+    prompt: "A dark-themed section still shows the light button color. The button reads `--button-bg`, defined on :root as `var(--color-action)`. Fix?"
+    options:
+      - "Declare `--button-bg` on `.button` so it resolves inside the theme"
+      - "Add !important to the dark theme"
+      - "Use an id selector for the dark section"
+      - "Move the theme to a later layer"
+    answer: 0
+    explanation: "Component tokens resolved on :root carry the light value down; resolve them on the component."
+  - type: mcq
+    prompt: "A `.flow > * + *` spacing rule loses to `.flow > * { margin: 0 }` in a later layer. What's the cleanest fix?"
+    options:
+      - "Put the flow composition in a layer after the one that resets margins (or remove the reset rule)"
+      - "Add !important to the flow rule"
+      - "Use pixel margins on every element"
+      - "Delete the layers"
+    answer: 0
+    explanation: "Layer order beats specificity, so place the composition where it should win."

@@ -1,0 +1,315 @@
+steps:
+  - kind: explain
+    title: The misaligned cards
+    body: |
+      Three book cards sit side by side. One title wraps onto two lines, so in that card the price sits lower than in the others. The cards are separate grids (or flex columns), so they can't line up their insides with each other.
+
+      **Subgrid** fixes it: a grid item can **adopt its parent's tracks** instead of making its own.
+
+      ```css
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+      }
+      .card {
+        display: grid;
+        grid-row: span 3;              /* each card covers three of the parent's rows */
+        grid-template-rows: subgrid;   /* and uses those rows for its own children */
+      }
+      ```
+
+      Now every card's title, text and price sit in **shared rows**: the tallest title in the row sets the height for all of them, and the prices line up.
+
+  - kind: web
+    title: Align the prices
+    body: |
+      Each card has three parts: title, author, price. Make the parts line up across cards:
+
+      1. Each `.card` spans **3 rows** of the `.cards` grid.
+      2. Each `.card` is a grid whose rows are `subgrid`.
+      3. Keep the gap between a card's parts at `0.5rem` with `row-gap: 0.5rem` on `.card` (a subgrid can override its parent's gap).
+    html: |
+      <div class="cards">
+        <article class="card"><h3>Dune</h3><p>Frank Herbert</p><p class="price">£8.99</p></article>
+        <article class="card"><h3>The Hitchhiker's Guide to the Galaxy</h3><p>Douglas Adams</p><p class="price">£7.50</p></article>
+        <article class="card"><h3>Emma</h3><p>Jane Austen</p><p class="price">£5.50</p></article>
+      </div>
+    css: |
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+      }
+
+      .card {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .card > * {
+        margin: 0;
+      }
+    widths: [700]
+    tests:
+      - "new Set($$('.price').map((p) => Math.round(p.getBoundingClientRect().y))).size === 1 ? 'prices aligned' : 'prices at different heights'"
+      - "cssAll('.card', 'grid-template-rows').map((r) => r.split(' ').length)"
+      - "css('.card', 'row-gap')"
+      - "/subgrid/.test(declared('.card', 'grid-template-rows') || '')"
+    solution:
+      css: |
+        .cards {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem;
+        }
+
+        .card {
+          display: grid;
+          grid-row: span 3;
+          grid-template-rows: subgrid;
+          row-gap: 0.5rem;
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        .card > * {
+          margin: 0;
+        }
+    hint: "`.card { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0.5rem; }`."
+
+  - kind: explain
+    title: Named lines
+    body: |
+      Line numbers (`1 / 3`) break when you add a column. **Name** the lines instead, in square brackets:
+
+      ```css
+      .page {
+        display: grid;
+        grid-template-columns:
+          [full-start] 1fr
+          [content-start] min(65ch, 100% - 2rem) [content-end]
+          1fr [full-end];
+      }
+      .page > *         { grid-column: content; }   /* content-start / content-end */
+      .page > .full     { grid-column: full; }
+      ```
+
+      Lines named `x-start` and `x-end` create an implicit **area** called `x`, so `grid-column: content` is enough. This is Module 34's full-bleed pattern, readable at a glance.
+
+  - kind: web
+    title: Name the lines
+    body: |
+      Rewrite the full-bleed layout with named lines:
+
+      1. `.page` columns: `[full-start] 1fr [content-start] min(60ch, 100% - 2rem) [content-end] 1fr [full-end]`.
+      2. Children default to `grid-column: content`; `.full` uses `grid-column: full`.
+
+      No line numbers anywhere.
+    html: |
+      <div class="page">
+        <h1>Autumn at Inkwell</h1>
+        <div class="full banner">Book club: Sundays at 4</div>
+        <p>Twelve books chosen by our staff.</p>
+      </div>
+    css: |
+      body {
+        margin: 0;
+      }
+
+      .banner {
+        padding: 2rem;
+        background: #7c2d12;
+        color: white;
+      }
+    widths: [400, 1200]
+    tests:
+      - "box('h1').x + ' ' + box('h1').width + ' / ' + box('.banner').x + ' ' + box('.banner').width"
+      - "/full-start/.test(declared('.page', 'grid-template-columns') || '')"
+      - "[declared('.page > *', 'grid-column'), declared(['.page > .full', '.full', '.page .full'], 'grid-column')]"
+    solution:
+      css: |
+        body {
+          margin: 0;
+        }
+
+        .page {
+          display: grid;
+          grid-template-columns: [full-start] 1fr [content-start] min(60ch, 100% - 2rem) [content-end] 1fr [full-end];
+        }
+
+        .page > * {
+          grid-column: content;
+        }
+
+        .page > .full {
+          grid-column: full;
+        }
+
+        .banner {
+          padding: 2rem;
+          background: #7c2d12;
+          color: white;
+        }
+    hint: "Copy the column definition exactly. Then `.page > * { grid-column: content; }` and `.page > .full { grid-column: full; }`."
+
+  - kind: explain
+    title: The implicit grid and dense packing
+    body: |
+      You define some tracks (the **explicit** grid); when items don't fit, Grid adds more (the **implicit** grid). Control those extra tracks with `grid-auto-rows` / `grid-auto-columns`:
+
+      ```css
+      .gallery {
+        grid-template-columns: repeat(4, 1fr);
+        grid-auto-rows: 120px;          /* every row Grid creates is 120px */
+      }
+      ```
+
+      Items are placed **in order**. When a wide item doesn't fit at the end of a row, it moves to the next row and leaves a **hole**. `grid-auto-flow: dense` lets later, smaller items **backfill** those holes.
+
+      ⚠️ Dense packing changes the visual order without changing the HTML order. Fine for a photo gallery; bad when order means something (Module 20's warning about `order`).
+
+  - kind: web
+    title: Pack the gallery
+    body: |
+      The gallery has 4 columns and some wide tiles (`.wide` spans 2 columns), which leave holes.
+
+      1. Make every implicit row `100px` tall with `grid-auto-rows`.
+      2. Make `.wide` tiles span 2 columns.
+      3. Turn on dense packing so small tiles fill the holes.
+    html: |
+      <div class="gallery">
+        <div class="tile">1</div>
+        <div class="tile wide">2</div>
+        <div class="tile wide">3</div>
+        <div class="tile">4</div>
+        <div class="tile">5</div>
+        <div class="tile wide">6</div>
+        <div class="tile">7</div>
+      </div>
+    css: |
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+      }
+
+      .tile {
+        background: #f5f0e8;
+        display: grid;
+        place-items: center;
+      }
+    tests:
+      - "boxes('.tile')"
+      - "css('.gallery', 'grid-auto-flow') + ' / ' + css('.gallery', 'grid-auto-rows')"
+    solution:
+      css: |
+        .gallery {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          grid-auto-rows: 100px;
+          grid-auto-flow: dense;
+          gap: 0.5rem;
+        }
+
+        .tile {
+          background: #f5f0e8;
+          display: grid;
+          place-items: center;
+        }
+
+        .wide {
+          grid-column: span 2;
+        }
+    hint: "On `.gallery`: `grid-auto-rows: 100px; grid-auto-flow: dense;`. On `.wide`: `grid-column: span 2;`."
+
+  - kind: explain
+    title: Overlapping items
+    body: |
+      Two items can be placed in the **same** cells; they simply stack (later in the HTML on top, or by `z-index`). That gives you layered layouts without `position: absolute`:
+
+      ```css
+      .hero {
+        display: grid;
+      }
+      .hero > * {
+        grid-area: 1 / 1;          /* everything in row 1, column 1 */
+      }
+      .hero__text {
+        align-self: end;            /* text sits at the bottom of the shared cell */
+        z-index: 1;
+      }
+      ```
+
+      Unlike absolute positioning, the container still grows to fit the **tallest** layer, so long text never spills out of the image.
+
+  - kind: web
+    title: Caption over the photo
+    body: |
+      Put the caption **on top of** the photo, at the bottom of it, without `position`:
+
+      1. `.hero` is a grid.
+      2. Both children go in `grid-area: 1 / 1`.
+      3. `.hero__text` aligns to the **end** (bottom) of the cell and has `z-index: 1`.
+    html: |
+      <figure class="hero">
+        <img src="images/shop.jpg" alt="Shelves of books" width="800" height="500">
+        <figcaption class="hero__text">Three floors of books on Harbour Street</figcaption>
+      </figure>
+    css: |
+      .hero {
+        margin: 0;
+      }
+
+      .hero img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .hero__text {
+        padding: 1rem;
+        color: white;
+        background: rgb(0 0 0 / 60%);
+      }
+    widths: [800]
+    tests:
+      - "box('.hero').height === box('.hero img').height ? 'figure is as tall as the photo' : 'figure height ' + box('.hero').height"
+      - "box('.hero__text').y + box('.hero__text').height === box('.hero img').y + box('.hero img').height ? 'caption at the bottom of the photo' : 'caption not on the photo bottom'"
+      - "css('.hero__text', 'z-index') + ' / ' + css('.hero__text', 'position')"
+    solution:
+      css: |
+        .hero {
+          display: grid;
+          margin: 0;
+        }
+
+        .hero > * {
+          grid-area: 1 / 1;
+        }
+
+        .hero img {
+          width: 100%;
+          height: auto;
+          display: block;
+        }
+
+        .hero__text {
+          align-self: end;
+          z-index: 1;
+          padding: 1rem;
+          color: white;
+          background: rgb(0 0 0 / 60%);
+        }
+    hint: "`.hero { display: grid; }`, `.hero > * { grid-area: 1 / 1; }`, and `align-self: end; z-index: 1;` on the caption."
+
+  - kind: why
+    body: |
+      Subgrid solves the oldest annoyance in card layouts, misaligned insides, in two lines. Named lines make complex grids readable, dense packing tidies galleries, and overlapping grid items replace fragile absolute positioning for layered designs.
+
+  - kind: recap
+    body: |
+      - `grid-template-rows: subgrid` (or columns) + spanning the parent's tracks: children align across siblings.
+      - Named lines `[content-start] … [content-end]` → `grid-column: content`.
+      - Implicit tracks: `grid-auto-rows`/`grid-auto-columns`; `grid-auto-flow: dense` backfills holes (visual order only).
+      - Overlap: several items in `grid-area: 1 / 1`, aligned with `align-self`/`justify-self`, stacked with `z-index`.

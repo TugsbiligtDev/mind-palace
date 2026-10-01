@@ -1,0 +1,235 @@
+steps:
+  - kind: explain
+    title: Styles that stay put
+    body: |
+      BEM keeps styles apart by **naming** (`.card__title`). `@scope` does it with the **browser's help**: rules inside a scope only match elements inside a chosen root.
+
+      ```css
+      @scope (.card) {
+        :scope { padding: 1rem; border: 1px solid #e7e5e4; }   /* the .card itself */
+        img    { border-radius: 8px; }                            /* only images inside a card */
+        h3     { margin: 0; }                                     /* only headings inside a card */
+      }
+      ```
+
+      Inside the block you can use **short, plain selectors** (`img`, `h3`) without worrying that they'll leak out to the rest of the page. `:scope` means the root element itself. Selectors inside a scope keep low specificity: `img` here is just (0,0,1).
+
+  - kind: web
+    title: Scope the card
+    body: |
+      The plain `img` and `h3` rules restyle **every** image and heading on the page, including the page's own logo and title. Move them into an `@scope (.card)` block so they only affect cards, and move the `.card` rule's declarations onto `:scope` inside it.
+    html: |
+      <header>
+        <img class="logo" src="images/logo.svg" alt="Inkwell Books" width="160" height="48">
+        <h3>Recommended this week</h3>
+      </header>
+      <article class="card">
+        <img src="images/cover-dune.svg" alt="Dune" width="120" height="180">
+        <h3>Dune</h3>
+      </article>
+    css: |
+      .card {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      img {
+        border-radius: 8px;
+        border: 3px solid #7c2d12;
+      }
+
+      h3 {
+        font-family: Georgia, serif;
+        color: #7c2d12;
+      }
+    tests:
+      - "css('.card', 'padding') + ' / ' + css('.card', 'border-top-width')"
+      - "css('.card img', 'border-radius') + ' ' + css('.card img', 'border-top-width') + ' / logo: ' + css('.logo', 'border-radius') + ' ' + css('.logo', 'border-top-width')"
+      - "css('.card h3', 'color') + ' / header: ' + css('header h3', 'color')"
+      - "selectors().includes('img') && selectors().includes(':scope')"
+    solution:
+      css: |
+        @scope (.card) {
+          :scope {
+            padding: 1rem;
+            border: 1px solid #e7e5e4;
+          }
+
+          img {
+            border-radius: 8px;
+            border: 3px solid #7c2d12;
+          }
+
+          h3 {
+            font-family: Georgia, serif;
+            color: #7c2d12;
+          }
+        }
+    hint: "`@scope (.card) { :scope { … } img { … } h3 { … } }`: the same declarations, inside the block."
+
+  - kind: explain
+    title: Donut scopes
+    body: |
+      A scope can also have a **lower boundary**: `@scope (root) to (limit)`. Styles apply inside the root but **stop** at the limit, leaving a hole in the middle, like a doughnut:
+
+      ```css
+      @scope (.card) to (.card__content) {
+        a { color: white; }        /* links in the card's frame (header, footer)... */
+      }
+      ```
+
+      …but links inside `.card__content` (where someone pastes a review that has its own link styles) are left alone. Typical uses: a component that contains **slots** for other components or user content, which shouldn't inherit its styles.
+
+  - kind: web
+    title: Leave the content alone
+    body: |
+      The promo card's frame (its top and bottom bars) has white links on brown. Its middle `.promo-body` holds an article whose links must keep their normal colour.
+
+      Write `@scope (.promo) to (.promo-body)` with a rule making `a` white. Links inside `.promo-body` must not change.
+    html: |
+      <aside class="promo">
+        <div class="promo-bar"><a href="club.html">Book club</a></div>
+        <div class="promo-body">
+          <p>This month: <a href="beloved.html">Beloved</a>, by Toni Morrison.</p>
+        </div>
+        <div class="promo-bar"><a href="join.html">Join now</a></div>
+      </aside>
+    css: |
+      a {
+        color: #1d4ed8;
+      }
+
+      .promo-bar {
+        padding: 0.5rem;
+        background: #7c2d12;
+      }
+
+      .promo-body {
+        padding: 1rem;
+        background: #fafaf9;
+      }
+    tests:
+      - "cssAll('.promo-bar a', 'color')"
+      - "css('.promo-body a', 'color')"
+    solution:
+      css: |
+        a {
+          color: #1d4ed8;
+        }
+
+        .promo-bar {
+          padding: 0.5rem;
+          background: #7c2d12;
+        }
+
+        .promo-body {
+          padding: 1rem;
+          background: #fafaf9;
+        }
+
+        @scope (.promo) to (.promo-body) {
+          a {
+            color: white;
+          }
+        }
+    hint: "`@scope (.promo) to (.promo-body) { a { color: white; } }` after the other rules."
+    reject:
+      - css: |
+          a {
+            color: #1d4ed8;
+          }
+
+          .promo-bar {
+            padding: 0.5rem;
+            background: #7c2d12;
+          }
+
+          .promo-body {
+            padding: 1rem;
+            background: #fafaf9;
+          }
+
+          @scope (.promo) {
+            a {
+              color: white;
+            }
+          }
+
+  - kind: explain
+    title: Proximity
+    body: |
+      `@scope` adds one more tie-breaker to the cascade, after specificity: **scoping proximity**. When two scoped rules match with equal specificity, the one whose root is **closest** to the element wins, regardless of order.
+
+      ```css
+      @scope (.light) { p { color: black; } }
+      @scope (.dark)  { p { color: white; } }
+      ```
+
+      A `.light` box nested inside a `.dark` box gets black paragraphs, and a `.dark` box inside a `.light` one gets white paragraphs. Without scope, the later rule would win in both cases. This makes nested themes behave the way people expect.
+
+  - kind: web
+    title: Nested themes
+    body: |
+      A light panel sits inside a dark section, and a dark panel inside a light one. With plain selectors, whichever rule is later wins everywhere.
+
+      Replace the two rules with two `@scope` blocks (`@scope (.light)` and `@scope (.dark)`) so each paragraph takes the theme of its **nearest** themed ancestor: dark → `#e5e7eb` text; light → `#1c1917` text.
+    html: |
+      <section class="dark" style="background:#0b0f19;padding:1rem">
+        <p class="a">Dark section</p>
+        <div class="light" style="background:#fafaf9;padding:1rem">
+          <p class="b">Light panel inside dark</p>
+        </div>
+      </section>
+      <section class="light" style="background:#fafaf9;padding:1rem">
+        <p class="c">Light section</p>
+        <div class="dark" style="background:#0b0f19;padding:1rem">
+          <p class="d">Dark panel inside light</p>
+        </div>
+      </section>
+    css: |
+      .dark p {
+        color: #e5e7eb;
+      }
+
+      .light p {
+        color: #1c1917;
+      }
+    tests:
+      - "['.a', '.b', '.c', '.d'].map((s) => css(s, 'color'))"
+      - "selectors().filter((s) => s === '.dark p' || s === '.light p').length"
+    solution:
+      css: |
+        @scope (.dark) {
+          p {
+            color: #e5e7eb;
+          }
+        }
+
+        @scope (.light) {
+          p {
+            color: #1c1917;
+          }
+        }
+    hint: "Two blocks: `@scope (.dark) { p { color: #e5e7eb; } }` and the same for `.light`. Proximity does the rest."
+
+  - kind: explain
+    title: Scope, BEM or CSS Modules?
+    body: |
+      | Approach | How it isolates | Trade-off |
+      |---|---|---|
+      | **BEM** | unique class names, by convention | long names; relies on discipline; works everywhere |
+      | **@scope** | the browser limits matches to a root (and optional limit) | short selectors in HTML; newer (Baseline 2025 in all engines) |
+      | **CSS Modules** | a build tool renames classes to unique ones (`card_title__x7f2`) | needs a bundler and a framework (React, Vue…); not covered here |
+
+      `@scope` is worth it for components with **slots** (donut scopes), for **nested themes** (proximity), and when you want plain element selectors inside a component without leaking. For simple sites, BEM-style classes plus layers are often enough. They combine fine.
+
+  - kind: why
+    body: |
+      Global CSS leaks: a rule meant for one card restyles the whole page. `@scope` puts a fence around a component's styles, lets content slots opt out, and makes nested themes behave, all with short, readable selectors.
+
+  - kind: recap
+    body: |
+      - `@scope (.root) { … }`: rules only match inside `.root`; `:scope` is the root itself.
+      - Donut scope: `@scope (.root) to (.limit)` stops at the limit.
+      - Proximity: with equal specificity, the nearest scope root wins.
+      - BEM (naming), @scope (browser-enforced), CSS Modules (build tool): pick per project; they combine.

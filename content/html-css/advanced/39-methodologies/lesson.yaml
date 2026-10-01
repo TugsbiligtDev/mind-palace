@@ -1,0 +1,355 @@
+steps:
+  - kind: explain
+    title: The growing-stylesheet problem
+    body: |
+      Season 3 opens at a crime scene: Inkwell's stylesheet. Three years, four developers, 6,000 lines. Nobody dares delete a rule because nobody knows what uses it. Every change breaks something somewhere else.
+
+      CSS has no built-in modules: every rule is global, any selector can match anything. **Methodologies** are agreements a team makes to keep that manageable:
+
+      - how to **name** classes so it's obvious what they style and where they're used,
+      - how to **split** styles into files and layers,
+      - how much **specificity** to allow.
+
+      None is "correct". What matters is that a team picks one and sticks to it. This module covers the three you'll meet most.
+
+  - kind: explain
+    title: BEM
+    body: |
+      **BEM** (Block, Element, Modifier) is a naming convention:
+
+      - **Block**: a standalone component. `.card`
+      - **Element**: a part of a block, joined with two underscores. `.card__title`, `.card__price`
+      - **Modifier**: a variant or state, joined with two dashes. `.card--featured`, `.card__price--sale`
+
+      ```html
+      <article class="card card--featured">
+        <h3 class="card__title">Dune</h3>
+        <p class="card__price card__price--sale">£8.99</p>
+      </article>
+      ```
+
+      Every selector is a **single class**: same low specificity everywhere, no descendant chains, no fights. And the class name tells you exactly which component a rule belongs to. The cost: long class names in the HTML. A modifier never appears alone; it's always next to its base class.
+
+  - kind: web
+    title: Name it with BEM
+    body: |
+      Rewrite this book card in BEM, in both files. Block name: `book`.
+
+      | Old | BEM |
+      |---|---|
+      | `.book h3` | `.book__title` |
+      | `.book .author` | `.book__author` |
+      | `.book .price` | `.book__price` |
+      | `.book.highlight` | `.book--featured` |
+      | `.book .price.sale` | `.book__price--sale` (next to `book__price`) |
+
+      Every selector in the CSS should be a single class. The page must look the same.
+    html: |
+      <article class="book">
+        <h3>Dune</h3>
+        <p class="author">Frank Herbert</p>
+        <p class="price">£12.00</p>
+      </article>
+      <article class="book highlight">
+        <h3>Beloved</h3>
+        <p class="author">Toni Morrison</p>
+        <p class="price sale">£5.00</p>
+      </article>
+    css: |
+      .book {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .book h3 {
+        margin: 0;
+        font-family: Georgia, serif;
+      }
+
+      .book .author {
+        color: #57534e;
+      }
+
+      .book .price {
+        font-weight: bold;
+      }
+
+      .book.highlight {
+        border-color: #7c2d12;
+      }
+
+      .book .price.sale {
+        color: #b91c1c;
+      }
+    tests:
+      - "$$('[class]').map((e) => e.className)"
+      - "cssAll('article', 'border-top-color') + ' / ' + cssAll('h3', 'font-family') + ' / ' + cssAll('.book__price', 'color')"
+      - "selectors().every((s) => /^\\.[a-z]+(__[a-z]+)?(--[a-z]+)?$/.test(s))"
+    solution:
+      html: |
+        <article class="book">
+          <h3 class="book__title">Dune</h3>
+          <p class="book__author">Frank Herbert</p>
+          <p class="book__price">£12.00</p>
+        </article>
+        <article class="book book--featured">
+          <h3 class="book__title">Beloved</h3>
+          <p class="book__author">Toni Morrison</p>
+          <p class="book__price book__price--sale">£5.00</p>
+        </article>
+      css: |
+        .book {
+          padding: 1rem;
+          margin-bottom: 1rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        .book__title {
+          margin: 0;
+          font-family: Georgia, serif;
+        }
+
+        .book__author {
+          color: #57534e;
+        }
+
+        .book__price {
+          font-weight: bold;
+        }
+
+        .book--featured {
+          border-color: #7c2d12;
+        }
+
+        .book__price--sale {
+          color: #b91c1c;
+        }
+    hint: "Every element of the card gets its own `book__…` class; the variants get `book--featured` and `book__price--sale`, always alongside the base class."
+
+  - kind: explain
+    title: Utility-first vs. components
+    body: |
+      A different philosophy: instead of naming components, use many tiny **utility classes**, each doing one thing:
+
+      ```html
+      <article class="p-4 mb-4 border rounded-lg">
+        <h3 class="m-0 font-serif">Dune</h3>
+      </article>
+      ```
+
+      This is how **Tailwind CSS** works (Module 50).
+
+      | | Component classes (BEM) | Utility-first |
+      |---|---|---|
+      | HTML | short, meaningful names | long lists of classes |
+      | CSS | grows with every component | almost none written by hand |
+      | Changing a design | edit one rule | edit every place it's used (or a shared component in a framework) |
+      | Consistency | depends on discipline | built-in (a fixed scale of values) |
+      | Dead CSS | easy to accumulate | rare |
+
+      Most real projects mix them: components for the big pieces, a few utilities for one-off spacing and accessibility helpers.
+
+  - kind: explain
+    title: CUBE CSS
+    body: |
+      **CUBE CSS** (Composition, Utility, Block, Exception) is a middle path that leans on the cascade instead of fighting it:
+
+      - **Composition**: layout patterns that arrange things without caring what they are (Module 34's sidebar, grid, *flow*).
+      - **Utility**: single-purpose classes, often driven by design tokens (`.text-center`, `.visually-hidden`, `.color-brand`).
+      - **Block**: component styles, kept small because global styles and compositions already did most of the work.
+      - **Exception**: variants and states as **data attributes**: `.card[data-state="sold-out"]`.
+
+      A famous CUBE composition is **flow**: consistent space between any stacked elements, set once by the parent:
+
+      ```css
+      .flow > * + * {
+        margin-block-start: var(--flow-space, 1em);
+      }
+      ```
+
+      "Every child that follows another child gets space above it." No margins on the children themselves.
+
+  - kind: web
+    title: Compositions and utilities
+    body: |
+      Add three reusable classes to `style.css`:
+
+      1. A **flow** composition: every direct child of `.flow` that follows another child gets `margin-block-start: var(--flow-space, 1em)`.
+      2. A **visually-hidden** utility, exactly as in Module 23 (`position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap`).
+      3. An **exception**: `.card[data-state="sold-out"]` gets `opacity: 0.6`.
+
+      The HTML already uses them.
+    html: |
+      <article class="card flow">
+        <h3>Dune</h3>
+        <p>Frank Herbert</p>
+        <p>£8.99 <span class="visually-hidden">including VAT</span></p>
+      </article>
+      <article class="card flow" data-state="sold-out" style="--flow-space: 0.5em">
+        <h3>Emma</h3>
+        <p>Jane Austen</p>
+        <p>Sold out</p>
+      </article>
+    css: |
+      .card {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .card > * {
+        margin: 0;
+      }
+    tests:
+      - "cssAll('.card > *', 'margin-top')"
+      - "box('.visually-hidden').width + 'x' + box('.visually-hidden').height + ' ' + css('.visually-hidden', 'position') + ' ' + css('.visually-hidden', 'clip-path')"
+      - "cssAll('.card', 'opacity')"
+    solution:
+      css: |
+        .card {
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        .card > * {
+          margin: 0;
+        }
+
+        .flow > * + * {
+          margin-block-start: var(--flow-space, 1em);
+        }
+
+        .visually-hidden {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+          white-space: nowrap;
+        }
+
+        .card[data-state="sold-out"] {
+          opacity: 0.6;
+        }
+    hint: "The flow rule must come after `.card > * { margin: 0; }`, and its selector `.flow > * + *` is more specific, so it wins either way."
+
+  - kind: explain
+    title: Organising files
+    body: |
+      Whatever the naming, group styles from **most general to most specific**, so later files can override earlier ones without specificity tricks:
+
+      ```
+      css/
+        1-reset.css        box-sizing, margins, media defaults
+        2-tokens.css       custom properties
+        3-base.css         element styles: body, headings, links, forms
+        4-compositions.css layout patterns: flow, sidebar, grid, wrapper
+        5-components/      one file per block: card.css, button.css, nav.css
+        6-utilities.css    single-purpose helpers, last so they win
+      ```
+
+      This order (sometimes called ITCSS, "inverted triangle") matches how the cascade works: broad and weak first, narrow and strong last. Module 40's cascade layers enforce it.
+
+  - kind: explain
+    title: A modern reset
+    body: |
+      Browsers ship default styles that differ slightly and get in the way. A **reset** at the start of your CSS evens them out. Modern resets are short and only fix real annoyances:
+
+      ```css
+      *, *::before, *::after { box-sizing: border-box; }
+
+      * { margin: 0; }                       /* you add spacing deliberately (flow!) */
+
+      body {
+        min-height: 100svh;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      img, picture, video, canvas, svg {
+        display: block;
+        max-width: 100%;
+      }
+
+      input, button, textarea, select { font: inherit; }
+
+      p, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
+
+      h1, h2, h3 { text-wrap: balance; }
+      p { text-wrap: pretty; }
+      ```
+
+      Every line fixes something you've met in this course. Don't use older "reset everything" stylesheets that remove list bullets and heading sizes from every element: they make you rebuild accessibility-relevant defaults by hand.
+
+  - kind: web
+    title: Write the reset
+    body: |
+      Write a modern reset in `style.css` that does all of this:
+
+      1. Every element and pseudo-element uses `border-box`.
+      2. Every element's default `margin` is `0`.
+      3. `body` is at least `100svh` tall, with `line-height: 1.5`.
+      4. `img`, `picture`, `video`, `canvas` and `svg` are `display: block` and `max-width: 100%`.
+      5. `input`, `button`, `textarea` and `select` inherit the font.
+      6. Headings `h1`–`h3` use `text-wrap: balance`.
+    html: |
+      <h1>The autumn reading list for long evenings</h1>
+      <p>Twelve books chosen by the Inkwell staff.</p>
+      <img src="images/shop.jpg" alt="The shop" width="800" height="500">
+      <button type="button">Save the list</button>
+    css: |
+      body {
+        font-family: Georgia, serif;
+      }
+    tests:
+      - "cssAll('h1, p, img, button', 'box-sizing') + ' / ' + css('p', 'box-sizing', '::before')"
+      - "cssAll('body, h1, p', 'margin-top')"
+      - "css('body', 'min-height') !== '0px' && box('body').height >= 600"
+      - "css('body', 'line-height')"
+      - "css('img', 'display') + ' ' + css('img', 'max-width')"
+      - "css('button', 'font-family')"
+      - "css('h1', 'text-wrap')"
+    solution:
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        * {
+          margin: 0;
+        }
+
+        body {
+          min-height: 100svh;
+          line-height: 1.5;
+        }
+
+        img, picture, video, canvas, svg {
+          display: block;
+          max-width: 100%;
+        }
+
+        input, button, textarea, select {
+          font: inherit;
+        }
+
+        h1, h2, h3 {
+          text-wrap: balance;
+        }
+
+        body {
+          font-family: Georgia, serif;
+        }
+    hint: "Copy the reset from the previous step; `text-wrap: pretty` and the overflow-wrap line are optional."
+
+  - kind: why
+    body: |
+      CSS's global nature is why big stylesheets rot. A methodology (BEM names, CUBE's layers of responsibility, utilities) plus a clear file order and a small modern reset is what lets a team change one component without fear of breaking the other forty.
+
+  - kind: recap
+    body: |
+      - **BEM**: `.block`, `.block__element`, `.block--modifier`; every selector is one class.
+      - **Utility-first** (Tailwind) vs. **component** classes; most projects mix them.
+      - **CUBE**: Composition (layout, e.g. `.flow > * + *`), Utility, Block, Exception (`[data-state]`).
+      - Files from general to specific: reset → tokens → base → compositions → components → utilities.
+      - A short modern reset fixes box-sizing, margins, media, form fonts and text wrapping.

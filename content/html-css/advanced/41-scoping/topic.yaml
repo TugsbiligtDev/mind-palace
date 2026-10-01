@@ -1,0 +1,4 @@
+title: Scoping Styles
+module: 41
+summary: "Limit where styles apply with @scope: scope roots, :scope, donut scopes that stop at a boundary, and proximity, where the nearest scope wins. How it compares with BEM and CSS Modules, and when scoping is worth it."
+minutes: 40

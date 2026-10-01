@@ -1,0 +1,279 @@
+steps:
+  - kind: explain
+    title: WCAG 2.2 in one page
+    body: |
+      **WCAG 2.2** (2023) is the current standard; level **AA** is what laws and contracts ask for. Its criteria are grouped under four principles, **POUR**:
+
+      | Principle | Means | Examples you know |
+      |---|---|---|
+      | **Perceivable** | everyone can perceive the content | alt text, captions, 4.5:1 contrast, works at 400% zoom / 320px wide (reflow), text spacing can be increased |
+      | **Operable** | everyone can operate it | keyboard access, visible focus, skip links, no keyboard traps, enough time, no flashing |
+      | **Understandable** | it's predictable and clear | `lang`, labels and instructions, helpful error messages, consistent navigation |
+      | **Robust** | assistive tech can read it | valid HTML, correct names, roles and states |
+
+      **New in 2.2** (AA): **Focus Not Obscured** (a focused element mustn't be hidden behind sticky headers or banners), **Target Size (Minimum)** (click/tap targets at least **24 × 24 px**, or spaced out), **Dragging Movements** (anything done by dragging also works with a simple click), **Consistent Help** (help links in the same place on every page), **Redundant Entry** (don't make people type the same thing twice) and **Accessible Authentication** (no memory puzzles to log in; allow paste and password managers).
+
+  - kind: web
+    title: Big enough, never hidden
+    body: |
+      Two WCAG 2.2 failures on Inkwell's book page:
+
+      1. **Target size**: the tiny `.icon-btn` buttons are 16px. Give them `min-width: 24px` and `min-height: 24px`.
+      2. **Focus not obscured**: the sticky header (`64px` tall) covers elements when keyboard focus scrolls to them, or when jumping to `#reviews`. Fix it on the page's scroll container: `html { scroll-padding-top: 64px; }`.
+    html: |
+      <header class="bar">Inkwell Books <a href="#reviews">Reviews</a></header>
+      <main>
+        <p>Quantity
+          <button class="icon-btn" type="button" aria-label="Fewer">−</button>
+          <button class="icon-btn" type="button" aria-label="More">+</button>
+        </p>
+        <div style="height: 900px"></div>
+        <h2 id="reviews">Reviews</h2>
+      </main>
+    css: |
+      body {
+        margin: 0;
+      }
+
+      .bar {
+        position: sticky;
+        top: 0;
+        height: 64px;
+        background: white;
+        border-bottom: 1px solid #e7e5e4;
+      }
+
+      .icon-btn {
+        width: 16px;
+        height: 16px;
+        padding: 0;
+        line-height: 1;
+      }
+    tests:
+      - "boxes('.icon-btn').map((b) => b.width + 'x' + b.height)"
+      - "css('html', 'scroll-padding-top')"
+    solution:
+      css: |
+        html {
+          scroll-padding-top: 64px;
+        }
+
+        body {
+          margin: 0;
+        }
+
+        .bar {
+          position: sticky;
+          top: 0;
+          height: 64px;
+          background: white;
+          border-bottom: 1px solid #e7e5e4;
+        }
+
+        .icon-btn {
+          width: 16px;
+          height: 16px;
+          min-width: 24px;
+          min-height: 24px;
+          padding: 0;
+          line-height: 1;
+        }
+    hint: "`min-width` and `min-height` win over `width` and `height`. Then `html { scroll-padding-top: 64px; }`."
+
+  - kind: explain
+    title: Custom components and the APG
+    body: |
+      Sometimes there's no native element: **tabs**, a **menu button** with arrow-key navigation, a **combobox**, a **tree**. For these, the W3C's **ARIA Authoring Practices Guide** (APG, w3.org/WAI/ARIA/apg) describes exactly which roles, states and keyboard behaviour screen reader users expect, with working examples.
+
+      For **tabs**, the pattern is:
+
+      ```html
+      <div role="tablist" aria-label="Book details">
+        <button role="tab" id="tab-desc" aria-selected="true"  aria-controls="panel-desc">Description</button>
+        <button role="tab" id="tab-rev"  aria-selected="false" aria-controls="panel-rev" tabindex="-1">Reviews</button>
+      </div>
+      <div role="tabpanel" id="panel-desc" aria-labelledby="tab-desc">…</div>
+      <div role="tabpanel" id="panel-rev"  aria-labelledby="tab-rev" hidden>…</div>
+      ```
+
+      - Only the selected tab is in the Tab order (`tabindex="-1"` on the others); **arrow keys** move between tabs.
+      - `aria-selected` marks the active tab; each tab `aria-controls` its panel; each panel is labelled by its tab.
+
+      The markup and styling are HTML and CSS; the arrow-key handling and switching need a small script (the APG page provides one). Before building tabs, ask whether simple headings or `<details>` would do: often they would.
+
+  - kind: web
+    title: Mark up the tabs
+    body: |
+      Turn Inkwell's book details into a correctly marked-up tab set (the switching script comes from the APG and isn't part of this exercise):
+
+      1. The wrapper gets `role="tablist"` and `aria-label="Book details"`.
+      2. Each button gets `role="tab"`, an id (`tab-desc`, `tab-rev`), `aria-controls` pointing at its panel, and `aria-selected` (`true` for Description, `false` for Reviews). The unselected tab gets `tabindex="-1"`.
+      3. Each panel gets `role="tabpanel"`, an id (`panel-desc`, `panel-rev`) and `aria-labelledby` pointing at its tab. The Reviews panel is `hidden`.
+      4. CSS: style the selected tab with `[role="tab"][aria-selected="true"] { border-bottom: 3px solid #7c2d12; }` (style the state, not a class).
+    html: |
+      <div class="tabs">
+        <button type="button">Description</button>
+        <button type="button">Reviews</button>
+      </div>
+      <div>A desert planet, a powerful family, and the most valuable substance in the universe.</div>
+      <div>"A desert you can taste." ★★★★★</div>
+    css: |
+      .tabs button {
+        padding: 0.5rem 1rem;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        background: none;
+        font: inherit;
+      }
+    tests:
+      - "attr('.tabs', 'role') + ' / ' + attr('.tabs', 'aria-label')"
+      - "$$('.tabs button').map((b) => [b.getAttribute('role'), b.id, b.getAttribute('aria-controls'), b.getAttribute('aria-selected'), b.getAttribute('tabindex')].join(' '))"
+      - "$$('[role=tabpanel]').map((p) => [p.id, p.getAttribute('aria-labelledby'), p.hidden].join(' '))"
+      - "cssAll('.tabs button', 'border-bottom-color')"
+    solution:
+      html: |
+        <div class="tabs" role="tablist" aria-label="Book details">
+          <button type="button" role="tab" id="tab-desc" aria-controls="panel-desc" aria-selected="true">Description</button>
+          <button type="button" role="tab" id="tab-rev" aria-controls="panel-rev" aria-selected="false" tabindex="-1">Reviews</button>
+        </div>
+        <div role="tabpanel" id="panel-desc" aria-labelledby="tab-desc">A desert planet, a powerful family, and the most valuable substance in the universe.</div>
+        <div role="tabpanel" id="panel-rev" aria-labelledby="tab-rev" hidden>"A desert you can taste." ★★★★★</div>
+      css: |
+        .tabs button {
+          padding: 0.5rem 1rem;
+          border: 0;
+          border-bottom: 3px solid transparent;
+          background: none;
+          font: inherit;
+        }
+
+        [role="tab"][aria-selected="true"] {
+          border-bottom: 3px solid #7c2d12;
+        }
+    hint: "Follow the pattern in the previous step exactly; only the ids and texts differ. The state selector must come after `.tabs button` or be at least as specific."
+
+  - kind: explain
+    title: Focus management
+    body: |
+      When content changes without a page load, **where focus goes** decides whether keyboard and screen reader users can follow:
+
+      - Opening a dialog → focus moves **into** it; closing → focus returns to the button that opened it. (`<dialog>` does this for you.)
+      - Deleting an item from a list → move focus to the next item or the list heading, not into the void.
+      - Showing an error summary after submit → move focus to the summary.
+      - Never remove focus outlines; make sure focus is **visible**, **not obscured**, and has **3:1 contrast** against its surroundings.
+
+      To make a non-interactive element (a heading, a summary box) able to receive focus from a script, give it `tabindex="-1"`: focusable by script, but not added to the Tab order. **Never** use positive `tabindex` values (`tabindex="3"`): they scramble the Tab order for everyone.
+
+  - kind: explain
+    title: Forced colors (High Contrast mode)
+    body: |
+      Windows **Contrast themes** (and similar settings) replace your colors with a small set of user-chosen system colors, for people who need very high contrast. In that mode browsers **remove** background colors, shadows and background images, keeping text, borders and outlines.
+
+      Things that break:
+
+      - A button that's only visible because of its **background color** becomes plain text. Fix: give it a border (transparent normally; it becomes visible in forced colors).
+      - Focus shown only with a **box-shadow** disappears. Fix: use `outline` (even `outline: 2px solid transparent`, which forced colors makes visible).
+      - Icons drawn with background images vanish.
+
+      Test with `@media (forced-colors: active)` and use system colors like `CanvasText`, `ButtonText` and `Highlight` when you need to:
+
+      ```css
+      @media (forced-colors: active) {
+        .badge { border: 1px solid CanvasText; }
+      }
+      ```
+
+      Chrome DevTools can emulate it: Rendering → *Emulate CSS media feature forced-colors*.
+
+  - kind: web
+    title: Survive High Contrast
+    body: |
+      1. The `.button` relies on its background. Give it `border: 2px solid transparent` so it keeps an outline in forced-colors mode.
+      2. Its focus style uses only `box-shadow`. Add `outline: 2px solid transparent` to `.button:focus-visible` (forced colors will paint it).
+      3. Add a `@media (forced-colors: active)` rule giving `.badge` a `border: 1px solid CanvasText`.
+    html: |
+      <a class="button" href="#">Pre-order</a>
+      <span class="badge">New</span>
+    css: |
+      .button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #7c2d12;
+        color: white;
+        text-decoration: none;
+      }
+
+      .button:focus-visible {
+        box-shadow: 0 0 0 3px #fdba74;
+      }
+
+      .badge {
+        padding: 0 0.5rem;
+        background: #fef3c7;
+      }
+    tests:
+      - "css('.button', 'border-top-width') + ' ' + css('.button', 'border-top-style') + ' ' + css('.button', 'border-top-color')"
+      - "rule('.button:focus-visible', 'outline')"
+      - "declared('.badge', 'border', 'forced-colors:active')"
+    solution:
+      css: |
+        .button {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          background: #7c2d12;
+          color: white;
+          text-decoration: none;
+          border: 2px solid transparent;
+        }
+
+        .button:focus-visible {
+          box-shadow: 0 0 0 3px #fdba74;
+          outline: 2px solid transparent;
+        }
+
+        .badge {
+          padding: 0 0.5rem;
+          background: #fef3c7;
+        }
+
+        @media (forced-colors: active) {
+          .badge {
+            border: 1px solid CanvasText;
+          }
+        }
+    hint: "Transparent border and outline cost nothing in normal mode and become visible in forced colors. The badge rule goes inside `@media (forced-colors: active)`."
+
+  - kind: mac
+    title: A full audit
+    body: |
+      A professional accessibility audit of a page, in order:
+
+      1. **Automated**: Lighthouse and axe DevTools. Fix everything they find (about a third of real issues).
+      2. **Keyboard**: Tab through everything. Focus visible, never hidden, logical order, no traps, every action possible.
+      3. **Screen reader**: VoiceOver (⌘ + F5) with the Rotor: headings, landmarks, links, form controls. Do names, roles and states make sense?
+      4. **Zoom and reflow**: zoom to 400% (⌘ +) on a 1280px window. Everything readable with no sideways scrolling?
+      5. **Text spacing**: Rendering drawer or a bookmarklet that increases line height and letter spacing; nothing should clip.
+      6. **Forced colors and reduced motion**: emulate both in DevTools' Rendering drawer.
+      7. **Contrast**: text, UI parts and focus indicators, in every theme.
+      8. **Write it up**: each issue with the WCAG criterion, where it is, who it affects, and the fix.
+
+      Run steps 1–4 on your Intermediate capstone and paste your axe summary line.
+    commands: |
+      # axe DevTools (browser extension) → Scan all of my page
+      # VoiceOver: ⌘ + F5, Rotor: ⌃ + ⌥ + U
+      # Zoom: ⌘ + (to 400%)
+      # Rendering drawer: emulate forced-colors, prefers-reduced-motion
+    expect_output:
+      - "issues"
+
+  - kind: why
+    body: |
+      At a professional level, accessibility is a structured practice: known criteria (WCAG 2.2), known patterns (APG), and a repeatable audit. It's how you make sure a site works for the one in six people who need it, and how you meet the legal requirements that now apply to most organisations.
+
+  - kind: recap
+    body: |
+      - WCAG 2.2 AA under **POUR**; new: focus not obscured, 24 × 24 px targets, dragging alternatives, consistent help, redundant entry, accessible authentication.
+      - Custom widgets follow the **APG** patterns (roles, states, keyboard); prefer native elements when they fit.
+      - Manage focus on dynamic changes; `tabindex="-1"` for script focus; never positive tabindex.
+      - Forced colors: borders and outlines survive, backgrounds and shadows don't; `@media (forced-colors: active)`.
+      - Audit: automated → keyboard → screen reader → zoom/reflow → spacing → forced colors/motion → contrast → report.

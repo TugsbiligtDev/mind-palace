@@ -1,0 +1,289 @@
+steps:
+  - kind: explain
+    title: What a design system is
+    body: |
+      A **design system** is a shared set of decisions and building blocks, so every page looks and behaves consistently, whoever builds it:
+
+      - **Tokens**: the raw decisions (colors, sizes, spacing, radii, shadows, motion) as named values.
+      - **Components**: buttons, cards, forms, built only from tokens.
+      - **Documentation**: a page showing every component, its variants and when to use it.
+
+      Big ones (GOV.UK, Shopify Polaris, GitHub Primer) are public; reading them is a great way to learn. Inkwell needs a small one.
+
+  - kind: explain
+    title: Three tiers of tokens
+    body: |
+      Module 28 put every value in a variable. A system organises them in **tiers**, each referring to the one below:
+
+      ```css
+      :root {
+        /* 1. primitive: the palette and raw scales. What exists. */
+        --brown-700: #7c2d12;
+        --brown-800: #5c2210;
+        --stone-50: #fafaf9;
+
+        /* 2. semantic: what a value is FOR. */
+        --color-action: var(--brown-700);
+        --color-action-hover: var(--brown-800);
+        --color-surface: var(--stone-50);
+
+        /* 3. component: one component's decisions. */
+        --button-bg: var(--color-action);
+        --button-bg-hover: var(--color-action-hover);
+      }
+      ```
+
+      Components use **only** component or semantic tokens, never primitives or raw values. Then a rebrand changes primitives, a dark theme changes semantic tokens, and a one-off button tweak changes a component token. Each change happens in exactly one place.
+
+  - kind: web
+    title: Tier the button tokens
+    body: |
+      Build the three tiers for Inkwell's button:
+
+      1. **Primitives** on `:root`: `--brown-700: #7c2d12`, `--brown-800: #5c2210`, `--white: #ffffff`.
+      2. **Semantic**: `--color-action: var(--brown-700)`, `--color-action-hover: var(--brown-800)`, `--color-on-action: var(--white)`.
+      3. **Component**: `--button-bg: var(--color-action)`, `--button-bg-hover: var(--color-action-hover)`, `--button-text: var(--color-on-action)`.
+      4. Make `.button` use `--button-bg` and `--button-text`, and `.button:hover` use `--button-bg-hover`. No raw colors in those rules.
+    html: |
+      <a class="button" href="shop.html">Shop now</a>
+    css: |
+      .button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        background: #7c2d12;
+        color: white;
+      }
+
+      .button:hover {
+        background: #5c2210;
+      }
+    tests:
+      - "css('.button', 'background-color') + ' / ' + css('.button', 'color') + ' / hover ' + rule('.button:hover', 'background-color')"
+      - "['--brown-700', '--brown-800', '--white'].map((t) => declared(':root', t))"
+      - "['--color-action', '--color-action-hover', '--color-on-action'].map((t) => declared(':root', t))"
+      - "['--button-bg', '--button-bg-hover', '--button-text'].map((t) => declared(':root', t))"
+      - "[declared('.button', 'background') || declared('.button', 'background-color'), declared('.button', 'color'), declared('.button:hover', 'background') || declared('.button:hover', 'background-color')]"
+    solution:
+      css: |
+        :root {
+          --brown-700: #7c2d12;
+          --brown-800: #5c2210;
+          --white: #ffffff;
+
+          --color-action: var(--brown-700);
+          --color-action-hover: var(--brown-800);
+          --color-on-action: var(--white);
+
+          --button-bg: var(--color-action);
+          --button-bg-hover: var(--color-action-hover);
+          --button-text: var(--color-on-action);
+        }
+
+        .button {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          text-decoration: none;
+          background: var(--button-bg);
+          color: var(--button-text);
+        }
+
+        .button:hover {
+          background: var(--button-bg-hover);
+        }
+    hint: "Each tier points at the tier below with `var(…)`. The button rules end up reading only `--button-…` tokens."
+
+  - kind: explain
+    title: Type and spacing scales
+    body: |
+      Instead of picking sizes ad hoc, a system uses **scales**: each step is the previous one times a ratio. A **modular type scale** with ratio 1.25:
+
+      ```css
+      :root {
+        --step-0: 1rem;                          /* body text */
+        --step-1: calc(var(--step-0) * 1.25);    /* 1.25rem */
+        --step-2: calc(var(--step-1) * 1.25);    /* 1.5625rem */
+        --step-3: calc(var(--step-2) * 1.25);    /* ~1.95rem */
+      }
+      h3 { font-size: var(--step-1); }
+      h2 { font-size: var(--step-2); }
+      h1 { font-size: var(--step-3); }
+      ```
+
+      Spacing works the same way (`--space-xs` to `--space-xl`), often on a simple 4px or 8px grid. Combine with `clamp()` (Module 31) and every step can be fluid: tools like *Utopia* (utopia.fyi) generate fluid scales for you.
+
+  - kind: web
+    title: A modular type scale
+    body: |
+      1. On `:root`, define `--ratio: 1.25`, `--step-0: 1rem`, and `--step-1` to `--step-3`, each the previous step times `var(--ratio)` (use `calc`).
+      2. Set `p` to `--step-0`, `h3` to `--step-1`, `h2` to `--step-2` and `h1` to `--step-3`.
+      3. Spacing: define `--space-s: 0.5rem` and `--space-m: 1rem`, and use `--space-m` as the `margin-block-end` of all four elements.
+    html: |
+      <h1>Inkwell Books</h1>
+      <h2>New arrivals</h2>
+      <h3>Fiction</h3>
+      <p>Twelve new titles this week.</p>
+    css: |
+      * {
+        margin: 0;
+      }
+    tests:
+      - "cssAll('h1, h2, h3, p', 'font-size')"
+      - "cssAll('h1, h2, h3, p', 'margin-bottom')"
+      - "[declared(':root', '--step-2'), declared('h2', 'font-size')]"
+    solution:
+      css: |
+        * {
+          margin: 0;
+        }
+
+        :root {
+          --ratio: 1.25;
+          --step-0: 1rem;
+          --step-1: calc(var(--step-0) * var(--ratio));
+          --step-2: calc(var(--step-1) * var(--ratio));
+          --step-3: calc(var(--step-2) * var(--ratio));
+          --space-s: 0.5rem;
+          --space-m: 1rem;
+        }
+
+        p {
+          font-size: var(--step-0);
+        }
+
+        h3 {
+          font-size: var(--step-1);
+        }
+
+        h2 {
+          font-size: var(--step-2);
+        }
+
+        h1 {
+          font-size: var(--step-3);
+        }
+
+        h1, h2, h3, p {
+          margin-block-end: var(--space-m);
+        }
+    hint: "`--step-2: calc(var(--step-1) * var(--ratio));`. The margin rule must come after `* { margin: 0; }`."
+
+  - kind: explain
+    title: Themes swap semantic tokens
+    body: |
+      With tiers in place, a theme is just a different mapping of **semantic** tokens. Components never change:
+
+      ```css
+      [data-theme="dark"] {
+        --color-surface: var(--stone-950);
+        --color-text: var(--stone-100);
+        --color-action: var(--orange-300);
+        --color-on-action: var(--stone-950);
+      }
+      ```
+
+      A wrinkle: component tokens defined on `:root` were already resolved there. If `--button-bg: var(--color-action)` sits on `:root`, a dark section inherits the *already computed* light value. The fix: declare component tokens on the **component** (`.button { --button-bg: var(--color-action); }`), so they're resolved where the theme applies.
+
+  - kind: web
+    title: A dark section
+    body: |
+      The second section has `data-theme="dark"`, but its button and text still look light.
+
+      1. Add a `[data-theme="dark"]` rule that remaps the semantic tokens: `--color-surface: #0b0f19`, `--color-text: #e5e7eb`, `--color-action: #fdba74`, `--color-on-action: #0b0f19`.
+      2. Move the **component** tokens (`--button-bg`, `--button-text`) from `:root` onto `.button`, so they resolve inside each theme.
+
+      Don't add any raw colors to `.button` or `.section`.
+    html: |
+      <section class="section">
+        <p>Light section</p>
+        <a class="button" href="#">Shop</a>
+      </section>
+      <section class="section" data-theme="dark">
+        <p>Dark section</p>
+        <a class="button" href="#">Shop</a>
+      </section>
+    css: |
+      :root {
+        --color-surface: #fafaf9;
+        --color-text: #1c1917;
+        --color-action: #7c2d12;
+        --color-on-action: #ffffff;
+
+        --button-bg: var(--color-action);
+        --button-text: var(--color-on-action);
+      }
+
+      .section {
+        padding: 1rem;
+        background: var(--color-surface);
+        color: var(--color-text);
+      }
+
+      .button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        background: var(--button-bg);
+        color: var(--button-text);
+      }
+    tests:
+      - "cssAll('.section', 'background-color') + ' / ' + cssAll('.section', 'color')"
+      - "cssAll('.button', 'background-color') + ' / ' + cssAll('.button', 'color')"
+      - "declared(':root', '--button-bg')"
+      - "declared('.button', '--button-bg')"
+    solution:
+      css: |
+        :root {
+          --color-surface: #fafaf9;
+          --color-text: #1c1917;
+          --color-action: #7c2d12;
+          --color-on-action: #ffffff;
+        }
+
+        [data-theme="dark"] {
+          --color-surface: #0b0f19;
+          --color-text: #e5e7eb;
+          --color-action: #fdba74;
+          --color-on-action: #0b0f19;
+        }
+
+        .section {
+          padding: 1rem;
+          background: var(--color-surface);
+          color: var(--color-text);
+        }
+
+        .button {
+          --button-bg: var(--color-action);
+          --button-text: var(--color-on-action);
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          text-decoration: none;
+          background: var(--button-bg);
+          color: var(--button-text);
+        }
+    hint: "The `[data-theme=\"dark\"]` block only redefines the four semantic tokens. Then cut the two `--button-…` lines from `:root` and paste them into `.button`."
+
+  - kind: explain
+    title: Documenting components
+    body: |
+      A design system without documentation is just a stylesheet. The usual form is a **component showcase** (or "style guide") page:
+
+      - Every **token** shown visually: color swatches with names and contrast ratios, the type scale, the spacing scale.
+      - Every **component** with all its variants and states (default, hover, focus, disabled, error), rendered live from the real CSS.
+      - **Usage notes**: when to use it, when not to, and its accessibility requirements ("icon-only buttons need an aria-label").
+      - The **HTML** to copy.
+
+      Tools like **Storybook** automate this for big teams; a hand-written `showcase.html` works perfectly for a small site, and it's what the Advanced capstone builds.
+
+  - kind: why
+    body: |
+      Consistency is what makes a site feel trustworthy, and tokens are how you get it without policing every page. Tiers let you rebrand, theme or tweak one component in one place, and a showcase page makes the system something everyone can see and reuse.
+
+  - kind: recap
+    body: |
+      - Design system = tokens + components + documentation.
+      - Token tiers: **primitive** (`--brown-700`) → **semantic** (`--color-action`) → **component** (`--button-bg`). Components use only the upper tiers.
+      - Type and spacing **scales**: a ratio (`calc(var(--step-1) * var(--ratio))`), optionally fluid.
+      - Themes remap semantic tokens; declare component tokens on the component so they resolve per theme.
+      - Document everything on a showcase page.

@@ -1,0 +1,34 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What turns on transitions between two pages of your site?"
+    options:
+      - "`@view-transition { navigation: auto; }` in both pages' CSS"
+      - "`transition: page 1s`"
+      - "A JavaScript library on every page"
+      - "`<meta name=\"transition\">`"
+    answer: 0
+    explanation: "Cross-document view transitions are enabled in CSS; unsupported browsers navigate normally."
+  - type: mcq
+    prompt: "Two visible elements on the page share `view-transition-name: cover`. What happens?"
+    options:
+      - "The transition is skipped: names must be unique at transition time"
+      - "Both morph into the same element"
+      - "The first one wins"
+      - "Nothing special"
+    answer: 0
+    explanation: "Duplicate names abort the view transition."
+  - type: mcq
+    prompt: "Which pseudo-element controls the movement and resizing of a named element?"
+    options: ["`::view-transition-group(name)`", "`::view-transition-old(name)`", "`::before`", "`::view-transition-root`"]
+    answer: 0
+    explanation: "The group animates position and size; old/new handle the cross-fade of the snapshots."
+  - type: mcq
+    prompt: "A carousel should always stop with a whole cover in view. Which pair?"
+    options:
+      - "`scroll-snap-type: x mandatory` on the container, `scroll-snap-align: start` on the covers"
+      - "`overflow: hidden` and `position: sticky`"
+      - "`scroll-behavior: smooth` alone"
+      - "`animation-timeline: scroll()`"
+    answer: 0
+    explanation: "Snap type on the scroller, snap alignment on the children."

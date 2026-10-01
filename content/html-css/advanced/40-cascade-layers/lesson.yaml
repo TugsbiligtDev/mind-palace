@@ -1,0 +1,228 @@
+steps:
+  - kind: explain
+    title: A new step in the cascade
+    body: |
+      Module 14's cascade compared **importance → specificity → order**. **Cascade layers** add a step *before* specificity:
+
+      1. origin and importance
+      2. **layer**: a later layer beats an earlier layer, **whatever the specificity**
+      3. specificity
+      4. order
+
+      So a single-class rule in a later layer beats an id selector in an earlier layer. You stop fighting with selector weight and decide priority deliberately.
+
+      ```css
+      @layer reset, base, components, utilities;   /* the order, declared once, at the top */
+
+      @layer base {
+        #content a { color: #7c2d12; }              /* (1,0,1), but in an early layer */
+      }
+      @layer utilities {
+        .text-white { color: white; }               /* (0,1,0), later layer: wins */
+      }
+      ```
+
+  - kind: explain
+    title: Declaring and filling layers
+    body: |
+      - `@layer a, b, c;` **declares the order**. Later names win. Put this line first, so the order is clear and doesn't depend on which file loads first.
+      - `@layer name { … }` adds rules to a layer. You can add to the same layer many times, from many files.
+      - Styles **not in any layer** beat every layer (they count as the last layer). Handy for quick overrides, but it's usually cleaner to layer everything.
+      - `@import url("vendor.css") layer(vendor);` puts a whole file into a layer.
+      - Layers can nest: `@layer components.cards { … }`.
+
+      One twist: for `!important` declarations, layer order **reverses** (an important rule in an early layer beats an important one in a later layer). That lets a reset protect something absolutely, but it's rarely needed.
+
+  - kind: web
+    title: Layer the stylesheet
+    body: |
+      Inkwell's stylesheet has a specificity war: the base link color uses an id, so the `.button` text stays brown.
+
+      1. At the very top, declare the layer order: `reset, base, components, utilities`.
+      2. Put the box-sizing rule in `reset`, the `#page a` rule in `base`, the `.button` rule in `components`, and the `.hidden` rule in `utilities`.
+      3. Don't change any selectors. The button text must become white, and the `.hidden` button must disappear, even though `.button` sets `display`.
+    html: |
+      <div id="page">
+        <p>Read <a href="about.html">our story</a>.</p>
+        <a class="button" href="shop.html">Shop now</a>
+        <a class="button hidden" href="sale.html">Sale</a>
+      </div>
+    css: |
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      #page a {
+        color: #7c2d12;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #7c2d12;
+        color: white;
+        text-decoration: none;
+      }
+
+      .hidden {
+        display: none;
+      }
+    tests:
+      - "layers()"
+      - "css('p a', 'color') + ' / ' + css('.button', 'color')"
+      - "cssAll('.button', 'display')"
+      - "selectors().includes('#page a') && selectors().includes('.button')"
+    solution:
+      css: |
+        @layer reset, base, components, utilities;
+
+        @layer reset {
+          *, *::before, *::after {
+            box-sizing: border-box;
+          }
+        }
+
+        @layer base {
+          #page a {
+            color: #7c2d12;
+          }
+        }
+
+        @layer components {
+          .button {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #7c2d12;
+            color: white;
+            text-decoration: none;
+          }
+        }
+
+        @layer utilities {
+          .hidden {
+            display: none;
+          }
+        }
+    hint: "First line: `@layer reset, base, components, utilities;`. Then wrap each rule in `@layer name { … }` with the matching name."
+    reject:
+      - css: |
+          @layer utilities, components, base, reset;
+
+          @layer reset {
+            *, *::before, *::after {
+              box-sizing: border-box;
+            }
+          }
+
+          @layer base {
+            #page a {
+              color: #7c2d12;
+            }
+          }
+
+          @layer components {
+            .button {
+              display: inline-block;
+              padding: 0.5rem 1rem;
+              background: #7c2d12;
+              color: white;
+              text-decoration: none;
+            }
+          }
+
+          @layer utilities {
+            .hidden {
+              display: none;
+            }
+          }
+
+  - kind: explain
+    title: Taming third-party CSS
+    body: |
+      A library's CSS (a date picker, a carousel, an old framework) often uses heavy selectors you can't win against without `!important`. Put it in an **early layer**, and every one of your layers beats it, whatever its selectors:
+
+      ```css
+      @layer vendor, reset, base, components, utilities;
+      @import url("datepicker.css") layer(vendor);
+      ```
+
+      Now `.my-calendar { color: … }` in `components` overrides the library's `div#dp-root .dp-wrapper table td.dp-day` without a fight.
+
+  - kind: web
+    title: Contain the vendor styles
+    body: |
+      A widget's CSS arrived with very specific selectors (the first block). Your own rules lose to it.
+
+      1. Declare the order `vendor, components` at the top.
+      2. Wrap the widget's rules in `@layer vendor`.
+      3. Wrap your rules in `@layer components`.
+
+      Don't change the widget's selectors; that's someone else's code. Your `.cal-day` styles must win.
+    html: |
+      <div id="calendar" class="widget">
+        <table>
+          <tr><td class="cal-day">1</td><td class="cal-day">2</td><td class="cal-day">3</td></tr>
+        </table>
+      </div>
+    css: |
+      /* --- third-party widget CSS: do not edit the selectors --- */
+      div#calendar.widget table tr td {
+        color: black;
+        background: #e5e7eb;
+        padding: 4px;
+      }
+
+      /* --- our styles --- */
+      .cal-day {
+        color: white;
+        background: #7c2d12;
+        padding: 0.75rem;
+      }
+    tests:
+      - "layers()"
+      - "cssAll('.cal-day', 'color') + ' / ' + css('.cal-day', 'background-color') + ' / ' + css('.cal-day', 'padding')"
+      - "selectors().includes('div#calendar.widget table tr td')"
+    solution:
+      css: |
+        @layer vendor, components;
+
+        /* --- third-party widget CSS: do not edit the selectors --- */
+        @layer vendor {
+          div#calendar.widget table tr td {
+            color: black;
+            background: #e5e7eb;
+            padding: 4px;
+          }
+        }
+
+        /* --- our styles --- */
+        @layer components {
+          .cal-day {
+            color: white;
+            background: #7c2d12;
+            padding: 0.75rem;
+          }
+        }
+    hint: "`@layer vendor, components;` first, then each block wrapped in its layer."
+
+  - kind: mac
+    title: Layers in DevTools
+    body: |
+      Chrome, Safari and Firefox show layers in the **Styles** pane: each rule is labelled with its layer (e.g. *@layer components*), and Chrome has a **layer view** button that lists every layer in priority order.
+
+      Inspect the button from the first exercise (right-click the preview → Inspect) and find the crossed-out `#page a` color, labelled *@layer base*, losing to the `@layer components` rule.
+    commands: |
+      # Elements → Styles: each rule shows its "@layer name"
+      # Chrome: the layers icon at the top of the Styles pane lists the layer order
+
+  - kind: why
+    body: |
+      Specificity wars are the main reason big stylesheets turn into piles of `!important`. Layers make priority an explicit, top-of-file decision (reset < base < components < utilities), so a short selector in the right layer always wins, and third-party CSS can be safely contained.
+
+  - kind: recap
+    body: |
+      - Layers come before specificity in the cascade: later layer wins, whatever the selectors.
+      - `@layer a, b, c;` declares order (put it first); `@layer a { … }` adds rules.
+      - Unlayered styles beat all layers; `!important` reverses layer order.
+      - `@import url(x.css) layer(vendor)`: put third-party CSS in an early layer.
+      - DevTools labels every rule with its layer.

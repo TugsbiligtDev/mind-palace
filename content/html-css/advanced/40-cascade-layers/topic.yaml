@@ -1,0 +1,4 @@
+title: Cascade Layers
+module: 40
+summary: "Take control of the cascade with @layer: declare the order once, put resets, base styles, components, utilities and third-party CSS in their own layers, and end specificity wars for good."
+minutes: 45

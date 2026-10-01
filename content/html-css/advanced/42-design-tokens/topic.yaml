@@ -1,0 +1,4 @@
+title: Design Systems & Tokens
+module: 42
+summary: "Turn variables into a design system: token tiers (primitive, semantic, component), type and spacing scales, themes that only swap semantic tokens, documenting components in a showcase page, and keeping pages consistent."
+minutes: 50

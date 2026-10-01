@@ -1,0 +1,196 @@
+steps:
+  - kind: explain
+    title: Why a build step?
+    body: |
+      Everything in this course works with plain files and no tools, and many sites should stay that way. Bigger projects add a **build step**: a program that processes your source files into optimised files for the browser.
+
+      What it typically does:
+
+      - **Bundles** many CSS (and JS) files into a few, so the browser makes fewer requests.
+      - **Minifies**: strips spaces and comments (often 20–40% smaller).
+      - **Adds vendor prefixes** and rewrites new syntax for older browsers you still support.
+      - **Fingerprints** file names (`style.a3f9c1.css`) so browsers can cache them forever and fetch the new one when it changes.
+      - Runs a **dev server** with instant reload.
+
+      The trade-off: more moving parts (Node, dependencies, configuration) to install and keep updated.
+
+  - kind: explain
+    title: Vite
+    body: |
+      **Vite** (French for "quick") is today's most popular front-end build tool:
+
+      - `npm run dev` starts a dev server; edits appear in the browser **instantly**, often without a full reload (hot module replacement).
+      - `npm run build` produces an optimised `dist/` folder: bundled, minified, fingerprinted. You deploy `dist/`.
+      - It handles HTML, CSS, images and JavaScript out of the box, and multi-page sites with a little configuration.
+
+      It replaces Live Server for bigger projects, and frameworks (React, Vue, Svelte, Astro) are commonly built on it.
+
+  - kind: mac
+    title: Try Vite
+    body: |
+      Create a small Vite project and look at what a build produces:
+
+      1. Create a project with the *vanilla* template (plain HTML, CSS and JS).
+      2. Install its dependencies and start the dev server; open the address it prints.
+      3. Edit `style.css` and watch the page update without a reload.
+      4. Stop the server (⌃C), build, and look inside `dist/`: compare the size and the file names to your source.
+
+      Paste the summary lines `vite build` printed.
+    commands: |
+      cd ~/websites
+      npm create vite@latest vite-try -- --template vanilla
+      cd vite-try
+      npm install
+      npm run dev
+      # ⌃C to stop, then:
+      npm run build
+      ls -la dist/assets
+    expect_output:
+      - "dist/"
+
+  - kind: explain
+    title: Lightning CSS and PostCSS
+    body: |
+      Two tools transform CSS:
+
+      - **PostCSS** is a framework of plugins. The famous one, **Autoprefixer**, adds vendor prefixes based on which browsers you target. Others minify or polyfill.
+      - **Lightning CSS** is a newer, very fast all-in-one: prefixing, minifying, and **lowering** modern syntax (nesting, `oklch()`, range media queries) into older equivalents when your target browsers need it.
+
+      Both read a **browserslist**: a description of the browsers you support, like `"> 0.5%, last 2 versions, not dead"`, usually in `package.json`. Vite uses one of them under the hood (Lightning CSS can be switched on in its config).
+
+      This is why you never write `-webkit-` prefixes by hand (Module 38): the build adds exactly the ones your targets need.
+
+  - kind: explain
+    title: Tailwind CSS v4
+    body: |
+      **Tailwind** is the leading utility-first framework (Module 39). You style by adding classes from its large, token-based vocabulary:
+
+      ```html
+      <article class="rounded-xl border border-stone-200 p-4 shadow-sm hover:-translate-y-1 transition md:grid md:grid-cols-[120px_1fr] md:gap-4">
+      ```
+
+      The build scans your files and generates only the CSS for classes you actually used. Version 4 (2025) is configured **in CSS**:
+
+      ```css
+      @import "tailwindcss";
+
+      @theme {
+        --color-brand: #7c2d12;      /* creates bg-brand, text-brand, border-brand… */
+        --font-serif: "Source Serif 4", Georgia, serif;
+      }
+      ```
+
+      | Pros | Cons |
+      |---|---|
+      | fast to build UI; no naming; consistent scales | long class lists in HTML; harder to read the markup |
+      | tiny CSS output; no dead CSS | another vocabulary to learn; tied to a build step |
+      | states and breakpoints inline (`hover:`, `md:`) | design changes may mean editing many templates (unless components are reused) |
+
+      It works best with a component system (React, Vue, Astro), where each component is written once. **This course's own website is styled with Tailwind v4.** Knowing real CSS is what makes Tailwind easy: every class is just one or two declarations you already understand.
+
+  - kind: mac
+    title: Add Tailwind to the Vite project
+    body: |
+      1. Install Tailwind and its Vite plugin.
+      2. Add the plugin to `vite.config.js` (create the file).
+      3. Replace `style.css` with `@import "tailwindcss";`.
+      4. In `index.html`, give an element some classes: `class="p-8 text-3xl font-bold text-orange-800 bg-stone-100 rounded-xl"`. Run the dev server.
+      5. Inspect the element in DevTools: each class is ordinary CSS you know.
+    commands: |
+      cd ~/websites/vite-try
+      npm install tailwindcss @tailwindcss/vite
+      cat > vite.config.js <<'END'
+      import { defineConfig } from "vite";
+      import tailwindcss from "@tailwindcss/vite";
+      export default defineConfig({ plugins: [tailwindcss()] });
+      END
+      echo '@import "tailwindcss";' > src/style.css
+      npm run dev
+
+  - kind: explain
+    title: "🔹 Reading Sass"
+    body: |
+      **Sass** (`.scss` files) was the standard CSS preprocessor for over a decade. You'll meet it in existing projects:
+
+      ```scss
+      $brand: #7c2d12;                 // a Sass variable (compiled away)
+
+      @mixin card-base {               // a reusable chunk
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .card {
+        @include card-base;
+        &:hover { border-color: $brand; }
+        .title { color: darken($brand, 10%); }
+      }
+      ```
+
+      Native CSS now covers most of it: `$variables` → custom properties, nesting → native nesting, `darken()` → `color-mix()` or relative colors. Mixins and loops still have no direct CSS equivalent. Recognise it, edit it carefully in old projects, and prefer native CSS in new ones.
+
+  - kind: web
+    title: From Sass to native CSS
+    body: |
+      Inkwell's old stylesheet was Sass. Rewrite it as **native CSS** in `style.css`:
+
+      ```scss
+      $brand: #7c2d12;
+      $radius: 8px;
+
+      .card {
+        padding: 1rem;
+        border: 2px solid $brand;
+        border-radius: $radius;
+
+        &:hover { background: #fff7ed; }
+        .title { color: $brand; margin: 0; }
+      }
+      ```
+
+      1. The two `$` variables become custom properties `--brand` and `--radius` on `:root`.
+      2. Keep the nesting (it's native now): `&:hover` and `.title` stay inside `.card`.
+    html: |
+      <article class="card"><h3 class="title">Dune</h3><p>£8.99</p></article>
+    css: |
+      /* native CSS version */
+    tests:
+      - "css('.card', 'border') + ' / ' + css('.card', 'border-radius') + ' / ' + css('.card', 'padding')"
+      - "css('.title', 'color') + ' / ' + css('.title', 'margin-top')"
+      - "rule('.card:hover', 'background-color')"
+      - "[declared(':root', '--brand'), declared(':root', '--radius'), declared('.card', 'border-radius')]"
+      - "selectors().includes('&:hover')"
+    solution:
+      css: |
+        :root {
+          --brand: #7c2d12;
+          --radius: 8px;
+        }
+
+        .card {
+          padding: 1rem;
+          border: 2px solid var(--brand);
+          border-radius: var(--radius);
+
+          &:hover {
+            background: #fff7ed;
+          }
+
+          .title {
+            color: var(--brand);
+            margin: 0;
+          }
+        }
+    hint: "`$brand` becomes `var(--brand)` (defined on `:root`). The nested parts can stay exactly as they were."
+
+  - kind: why
+    body: |
+      You'll join projects that use Vite, PostCSS, Tailwind or Sass, and you'll decide whether new projects need them. Knowing what each tool does (and that underneath it's all the CSS you've learned) lets you choose deliberately instead of adding tools by default.
+
+  - kind: recap
+    body: |
+      - Build steps bundle, minify, prefix, fingerprint, and run a dev server; they add complexity.
+      - **Vite**: `npm run dev` (instant reload), `npm run build` → `dist/`.
+      - **PostCSS** (Autoprefixer) and **Lightning CSS** transform CSS for your **browserslist** targets.
+      - **Tailwind v4**: utility classes, configured with `@import "tailwindcss"` and `@theme`; fast and consistent, verbose HTML.
+      - 🔹 **Sass**: `$vars`, mixins, nesting; mostly replaceable by native custom properties, nesting and color functions.

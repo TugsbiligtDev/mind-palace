@@ -1,0 +1,4 @@
+title: Build Tools & Frameworks Overview
+module: 50
+summary: "What professional front-end tooling does: Vite as a dev server and bundler, Lightning CSS and PostCSS for prefixing and minifying, the Tailwind CSS v4 utility workflow and its trade-offs against hand-written CSS, and how to read Sass in older codebases."
+minutes: 45

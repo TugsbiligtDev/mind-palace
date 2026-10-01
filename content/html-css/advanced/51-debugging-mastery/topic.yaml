@@ -1,0 +1,4 @@
+title: Debugging Mastery
+module: 51
+summary: "A systematic approach to CSS bugs: the outline trick and DevTools' Flex, Grid and Container overlays, stacking-context bugs, hunting down horizontal overflow, isolating cross-browser differences, and reading the spec and MDN effectively."
+minutes: 55

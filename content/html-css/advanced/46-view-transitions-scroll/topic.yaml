@@ -1,0 +1,4 @@
+title: View Transitions & Scroll-Linked Effects
+module: 46
+summary: "Animate between page states and even between pages: view-transition-name and the ::view-transition pseudo-elements, cross-document transitions with @view-transition as progressive enhancement, scroll snap for carousels, and a first look at scroll-driven animations."
+minutes: 50

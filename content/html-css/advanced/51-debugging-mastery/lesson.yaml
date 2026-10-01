@@ -1,0 +1,258 @@
+steps:
+  - kind: explain
+    title: Detective work
+    body: |
+      A CSS bug is a mystery with a culprit: one rule, one box, one missing property. Guessing and adding `!important` until it looks right is how stylesheets rot. Professionals work like detectives:
+
+      1. **Reproduce** it reliably: which page, which width, which browser, which state (hover, open, long text)?
+      2. **Isolate** it: find the smallest piece of HTML and CSS that still shows the problem.
+      3. **Inspect**: which box is the wrong size or in the wrong place? Which rules apply, which lost (crossed out), which are invalid (warning icon)?
+      4. **Form a theory** from what CSS does (box model, flow, stacking), and test it by toggling one thing at a time in DevTools.
+      5. **Fix the cause**, not the symptom, then check you haven't broken something else.
+
+  - kind: explain
+    title: Make the invisible visible
+    body: |
+      Layout bugs hide because boxes are invisible. Reveal them:
+
+      - **The outline trick**: temporarily add `* { outline: 1px solid red; }`. Every box gets a border that **doesn't change the layout** (outlines take no space, unlike borders). The culprit box often jumps out immediately.
+      - **DevTools overlays**: click the **flex**, **grid** or **container** badges in the Elements panel to draw tracks, gaps, line numbers and container sizes on the page. The Layout pane lists every grid and flex container.
+      - **The box-model diagram** (Computed tab): exact content, padding, border and margin of the selected element.
+      - **Force states**: in Styles, the `:hov` button forces `:hover`, `:focus`, `:focus-visible` and `:active`, so you can inspect states without holding the mouse still.
+
+  - kind: explain
+    title: Horizontal overflow
+    body: |
+      "The page scrolls sideways on phones" is the most common responsive bug. Usual suspects:
+
+      - a fixed `width` wider than the screen (an image, a table, a `min-width`);
+      - `width: 100vw` plus padding, or `100vw` with a vertical scrollbar;
+      - a long unbroken word or URL;
+      - a negative margin or an absolutely positioned element sticking out;
+      - a grid column with a big minimum (`minmax(400px, 1fr)`).
+
+      To find it: shrink the window, then in the Console run a one-liner that lists every element wider than the page, or use the outline trick and scroll right to see what sticks out. Fix the element, never just `overflow-x: hidden` on `body` (that hides the symptom and breaks `position: sticky`).
+
+  - kind: web
+    title: Hunt the overflow
+    broken_starter: true
+    body: |
+      On a 375px phone this page scrolls sideways. There are **four** culprits. Find and fix each one **at its cause**: no `overflow-x: hidden` on `html` or `body`.
+
+      Use the preview's **Phone** size and the outline trick to spot them.
+    html: |
+      <header class="banner">Autumn at Inkwell</header>
+      <main>
+        <img class="hero" src="images/shop.jpg" alt="The shop" width="800" height="500">
+        <p class="note">Full review: https://inkwellbooks.example.com/reviews/autumn-reading-list-twelve-books-for-long-evenings</p>
+        <div class="grid">
+          <div>Fiction</div><div>Poetry</div>
+        </div>
+      </main>
+    css: |
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+
+      .banner {
+        width: 100vw;
+        padding: 1rem;
+        background: #7c2d12;
+        color: white;
+      }
+
+      .hero {
+        width: 800px;
+        height: auto;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1rem;
+      }
+    widths: [375, 1000]
+    tests:
+      - "doc.scrollingElement.scrollWidth <= doc.scrollingElement.clientWidth ? 'no sideways scroll' : 'scrolls sideways by ' + (doc.scrollingElement.scrollWidth - doc.scrollingElement.clientWidth) + 'px'"
+      - "css('html', 'overflow-x') + ' / ' + css('body', 'overflow-x')"
+      - "box('.banner').width"
+      - "box('.hero').width"
+      - "box('.note').width <= doc.scrollingElement.clientWidth"
+      - "css('.grid', 'grid-template-columns').split(' ').length"
+    solution:
+      css: |
+        body {
+          margin: 0;
+          font-family: system-ui, sans-serif;
+        }
+
+        .banner {
+          padding: 1rem;
+          background: #7c2d12;
+          color: white;
+        }
+
+        .hero {
+          max-width: 100%;
+          height: auto;
+        }
+
+        .note {
+          overflow-wrap: break-word;
+        }
+
+        .grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
+          gap: 1rem;
+        }
+    hint: "Look at: a banner sized with `100vw` plus padding; an image with a fixed pixel width; a long URL that can't wrap; and a grid minimum bigger than a phone (`minmax(min(400px, 100%), 1fr)` is the classic fix)."
+
+  - kind: explain
+    title: Stacking-context bugs
+    body: |
+      "My dropdown has `z-index: 9999` and still appears **under** the next card." This is almost always a **stacking context** (Module 19): an ancestor of the dropdown forms a sealed group, and that whole group sits under the card.
+
+      Properties that create a stacking context include: `position` (non-static) **with** a `z-index`, `opacity` below 1, `transform`, `filter`, `will-change`, `isolation: isolate`, `contain: paint`, and flex/grid items with a `z-index`.
+
+      To debug: walk **up** from the hidden element, checking each ancestor for those properties (Chrome's Layers panel and the Computed tab help). Fixes, best first:
+
+      - **remove** the property that accidentally creates the context (often a `transform` left over from an animation, or `z-index: 1` added "just in case");
+      - give the ancestor's **context** a higher z-index than the thing covering it;
+      - move the dropdown out of the group, or render it in the **top layer** with `popover` (Module 25), which escapes every stacking context.
+
+  - kind: web
+    title: Free the dropdown
+    broken_starter: true
+    body: |
+      The account dropdown (`.menu`) opens **under** the promo card below the header, despite its huge z-index.
+
+      Find the ancestor that traps it in a low stacking context and fix the cause. Keep the menu's `position: absolute`, and don't touch `.promo`.
+    html: |
+      <header class="site-header">
+        <span>Inkwell</span>
+        <div class="account">
+          Account
+          <div class="menu">Orders · Wishlist · Log out</div>
+        </div>
+      </header>
+      <section class="promo">Autumn sale: up to 30% off</section>
+    css: |
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+
+      .site-header {
+        position: relative;
+        z-index: 1;
+        padding: 1rem;
+        background: white;
+        border-bottom: 1px solid #e7e5e4;
+        transform: translateZ(0);
+      }
+
+      .account {
+        position: relative;
+        display: inline-block;
+        margin-left: 2rem;
+      }
+
+      .menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 9999;
+        width: 220px;
+        height: 120px;
+        padding: 0.5rem;
+        background: #fef3c7;
+        border: 1px solid #d6d3d1;
+      }
+
+      .promo {
+        position: relative;
+        z-index: 2;
+        padding: 3rem 1rem;
+        background: #7c2d12;
+        color: white;
+      }
+    tests:
+      - "topAt('.menu')"
+      - "css('.menu', 'position') + ' / ' + css('.menu', 'z-index')"
+      - "css('.promo', 'z-index') + ' / ' + css('.promo', 'position')"
+    solution:
+      css: |
+        body {
+          margin: 0;
+          font-family: system-ui, sans-serif;
+        }
+
+        .site-header {
+          position: relative;
+          z-index: 3;
+          padding: 1rem;
+          background: white;
+          border-bottom: 1px solid #e7e5e4;
+        }
+
+        .account {
+          position: relative;
+          display: inline-block;
+          margin-left: 2rem;
+        }
+
+        .menu {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          z-index: 9999;
+          width: 220px;
+          height: 120px;
+          padding: 0.5rem;
+          background: #fef3c7;
+          border: 1px solid #d6d3d1;
+        }
+
+        .promo {
+          position: relative;
+          z-index: 2;
+          padding: 3rem 1rem;
+          background: #7c2d12;
+          color: white;
+        }
+    hint: "`.site-header` is a stacking context with z-index 1, below the promo's 2. Raise the header's context above the promo (and the leftover `transform` isn't needed at all)."
+
+  - kind: explain
+    title: Cross-browser bugs
+    body: |
+      "It works in Chrome but not in Safari." Isolate it:
+
+      1. **Confirm** it in the other browser's own DevTools, not by guessing. Is the property crossed out, missing, or flagged invalid there?
+      2. **Check support** on MDN (Baseline) and caniuse.com, including partial support notes ("supported, but not on `<select>`").
+      3. **Reduce** the case to a few lines in a blank page (CodePen, or a scratch file with Live Server). If the tiny case shows the bug, it's the browser; if not, something else in your page is involved.
+      4. **Work around** with progressive enhancement (`@supports`, a fallback value first), and **report** real browser bugs (bugs.webkit.org, bugzilla.mozilla.org, crbug.com). Search them first: someone has often found it already, with a workaround.
+
+  - kind: explain
+    title: Reading MDN and the spec
+    body: |
+      **MDN** (developer.mozilla.org) is the everyday reference. On a property's page, read:
+
+      - the **Baseline** badge and the **browser compatibility** table at the bottom;
+      - **Formal definition**: the initial value, whether it's **inherited**, what it **applies to** (many "it doesn't work" bugs are a property applied to the wrong kind of element, like `width` on an inline span), and how percentages are calculated;
+      - **Formal syntax**, and the examples.
+
+      The **specification** (drafts.csswg.org) is the source of truth that browsers implement. It's dense, but for edge cases ("what exactly does `auto` mean here?") the definition section is often clearer than any blog post. The CSS Working Group's GitHub issues show why things work the way they do.
+
+  - kind: why
+    body: |
+      Every developer writes bugs; the professionals find them fast. A method (reproduce, isolate, inspect, theorise, fix the cause) plus the right tools turns hours of frustrated guessing into minutes, and keeps your stylesheet free of `!important` scar tissue.
+
+  - kind: recap
+    body: |
+      - Method: reproduce → isolate → inspect → theorise → fix the cause.
+      - Reveal boxes: `* { outline: 1px solid red; }`, Flex/Grid/Container overlays, box-model diagram, forced `:hov` states.
+      - Overflow suspects: fixed widths, `100vw`, long words, big grid minimums. Never hide it on `body`.
+      - Stacking contexts: walk up the ancestors; remove the accidental context, raise the right one, or use the top layer.
+      - Cross-browser: confirm, check support, reduce, work around, report. MDN's formal definition and the spec answer the edge cases.

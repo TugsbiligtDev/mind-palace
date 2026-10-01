@@ -1,0 +1,4 @@
+title: Subgrid & Advanced Grid
+module: 44
+summary: "Line things up across components with subgrid, name your grid lines, let the implicit grid and grid-auto-flow: dense fill the gaps, and overlap items in the same cells for layered layouts."
+minutes: 50

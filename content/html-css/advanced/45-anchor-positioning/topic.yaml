@@ -1,0 +1,4 @@
+title: Anchor Positioning
+module: 45
+summary: "Tether one element to another in pure CSS: anchor-name and position-anchor, the anchor() function, position-area, automatic fallbacks with position-try, tooltips and dropdowns built from popovers, and @supports fallbacks for older browsers."
+minutes: 50

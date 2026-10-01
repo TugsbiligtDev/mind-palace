@@ -1,0 +1,5 @@
+title: "Inkwell's design system"
+module: 52
+kind: capstone
+summary: "Build a small design system for Inkwell: tiered tokens with light and dark themes, a layered architecture, 10+ components using container queries, anchor-positioned tooltips and view transitions, documented in a showcase site, plus a WCAG 2.2 AA audit and a performance report."
+minutes: 240

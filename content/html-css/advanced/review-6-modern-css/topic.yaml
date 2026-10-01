@@ -1,0 +1,5 @@
+title: "The new tools case file"
+module: 47
+kind: review
+summary: "Build Inkwell's self-adapting book card with the newest CSS: a container-aware layout, subgrid-aligned rows, an anchored info popover that flips when needed, a snapping shelf ready for view transitions, and a bug hunt. Uses Modules 43 to 47."
+minutes: 55

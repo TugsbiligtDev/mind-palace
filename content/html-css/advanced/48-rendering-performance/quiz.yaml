@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Which Core Web Vital is hurt when an ad loads and pushes the article down?"
+    options: ["CLS", "LCP", "INP", "TTFB"]
+    answer: 0
+    explanation: "Cumulative Layout Shift measures unexpected movement. Reserve the ad's space."
+  - type: mcq
+    prompt: "Which change re-runs layout, paint and composite?"
+    options: ["Changing an element's `width`", "Changing its `opacity`", "Changing its `transform`", "Changing a `will-change` hint"]
+    answer: 0
+    explanation: "Geometry changes force layout; opacity and transform can often skip straight to compositing."
+  - type: mcq
+    prompt: "What does `content-visibility: auto` do?"
+    options:
+      - "Lets the browser skip rendering an off-screen section until it's near the viewport"
+      - "Hides the content from screen readers"
+      - "Loads the content lazily from the server"
+      - "Makes the content invisible"
+    answer: 0
+    explanation: "Pair it with contain-intrinsic-size so the skipped section keeps a sensible height."
+  - type: mcq
+    prompt: "Why is `* { will-change: transform; }` a bad idea?"
+    options:
+      - "It creates a compositor layer for every element, using lots of memory and often slowing things down"
+      - "will-change only works on images"
+      - "It disables transitions"
+      - "It's invalid CSS"
+    answer: 0
+    explanation: "Use will-change only on the few elements that actually animate."
+  - type: mcq
+    prompt: "The hero image is the LCP element. Which helps it most?"
+    options:
+      - "`fetchpriority=\"high\"`, a modern format, correct dimensions, and no lazy loading"
+      - "`loading=\"lazy\"`"
+      - "Making it a CSS background image loaded by a late stylesheet"
+      - "Adding a box-shadow"
+    answer: 0
+    explanation: "Discover and fetch it early, small and with reserved space."

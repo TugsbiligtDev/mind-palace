@@ -1,0 +1,43 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What's the difference between `filter: blur(8px)` and `backdrop-filter: blur(8px)`?"
+    options:
+      - "filter blurs the element itself; backdrop-filter blurs what's behind it"
+      - "They're the same"
+      - "backdrop-filter only works on images"
+      - "filter only works on text"
+    answer: 0
+    explanation: "Frosted glass is backdrop-filter on an element with a semi-transparent background."
+  - type: mcq
+    prompt: "Why is `filter: drop-shadow()` sometimes better than `box-shadow`?"
+    options:
+      - "It follows the actual shape (e.g. a transparent PNG or SVG icon) instead of the rectangular box"
+      - "It's the only shadow that works in Safari"
+      - "It's faster in every case"
+      - "box-shadow can't be colored"
+    answer: 0
+    explanation: "box-shadow always traces the box; drop-shadow traces the visible pixels."
+  - type: mcq
+    prompt: "What does `oklch(from var(--brand) calc(l + 0.2) c h)` produce?"
+    options:
+      - "The brand color, lighter, with the same chroma and hue"
+      - "A random color"
+      - "The brand color at 20% opacity"
+      - "An invalid value"
+    answer: 0
+    explanation: "Relative color syntax unpacks the channels so you can adjust one."
+  - type: mcq
+    prompt: "Which property fades the bottom of a paragraph softly into the background?"
+    options: ["`mask-image: linear-gradient(to bottom, black 60%, transparent)`", "`opacity: 0.5`", "`clip-path: inset(0 0 40% 0)`", "`filter: blur(4px)`"]
+    answer: 0
+    explanation: "A gradient mask hides gradually; clip-path cuts sharply."
+  - type: mcq
+    prompt: "Why mix colors `in oklch` rather than `in srgb`?"
+    options:
+      - "Mixes look more natural and keep their vividness instead of going muddy grey in the middle"
+      - "srgb isn't supported"
+      - "oklch is faster"
+      - "There's no difference"
+    answer: 0
+    explanation: "OKLCH is designed so that changes look perceptually even."

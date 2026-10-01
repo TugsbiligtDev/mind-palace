@@ -1,0 +1,282 @@
+steps:
+  - kind: explain
+    title: filter and backdrop-filter
+    body: |
+      `filter` applies photo-editor effects to an element and everything in it:
+
+      ```css
+      img.out-of-stock { filter: grayscale(1) opacity(0.7); }
+      .card:hover img  { filter: brightness(1.1) saturate(1.2); }
+      .icon            { filter: drop-shadow(0 2px 4px rgb(0 0 0 / 30%)); }  /* follows the shape, unlike box-shadow */
+      ```
+
+      Functions: `blur()`, `brightness()`, `contrast()`, `grayscale()`, `saturate()`, `sepia()`, `hue-rotate()`, `invert()`, `opacity()`, `drop-shadow()`. Chain them with spaces.
+
+      `backdrop-filter` applies them to whatever is **behind** the element, the "frosted glass" look. The element needs a see-through background to show it:
+
+      ```css
+      .site-header {
+        background: rgb(255 255 255 / 60%);
+        backdrop-filter: blur(12px);
+      }
+      ```
+
+      Check text contrast on frosted surfaces: the background changes as content scrolls behind it.
+
+  - kind: web
+    title: Sold-out covers and a frosted label
+    body: |
+      1. Covers in a card marked `.sold-out` are greyed out: `filter: grayscale(1)`.
+      2. On hover, any `.card img` gets `filter: brightness(1.1)` (write it as `.card:hover img`).
+      3. The `.label` over the cover is frosted: background `rgb(255 255 255 / 50%)` and `backdrop-filter: blur(8px)`.
+    html: |
+      <div class="card">
+        <img src="images/cover-dune.svg" alt="Dune" width="150" height="225">
+        <span class="label">£8.99</span>
+      </div>
+      <div class="card sold-out">
+        <img src="images/cover-emma.svg" alt="Emma" width="150" height="225">
+        <span class="label">Sold out</span>
+      </div>
+    css: |
+      .card {
+        display: inline-grid;
+        margin: 1rem;
+      }
+
+      .card > * {
+        grid-area: 1 / 1;
+      }
+
+      .label {
+        align-self: end;
+        padding: 0.5rem;
+      }
+    tests:
+      - "cssAll('.card img', 'filter')"
+      - "rule('.card:hover img', 'filter')"
+      - "css('.label', 'background-color') + ' / ' + css('.label', 'backdrop-filter')"
+    solution:
+      css: |
+        .card {
+          display: inline-grid;
+          margin: 1rem;
+        }
+
+        .card > * {
+          grid-area: 1 / 1;
+        }
+
+        .sold-out img {
+          filter: grayscale(1);
+        }
+
+        .card:hover img {
+          filter: brightness(1.1);
+        }
+
+        .label {
+          align-self: end;
+          padding: 0.5rem;
+          background: rgb(255 255 255 / 50%);
+          backdrop-filter: blur(8px);
+        }
+    hint: "`.sold-out img { filter: grayscale(1); }`, `.card:hover img { filter: brightness(1.1); }`, and two declarations on `.label`."
+
+  - kind: explain
+    title: Blend modes, clip-path and mask
+    body: |
+      **mix-blend-mode** blends an element with what's behind it, like Photoshop layer modes: `multiply` (darkens: great for putting a logo on a coloured background), `screen` (lightens), `overlay`, `difference`… `background-blend-mode` does the same between an element's own background layers.
+
+      **clip-path** cuts the element to a shape; everything outside is invisible (and not clickable):
+
+      ```css
+      .avatar  { clip-path: circle(50%); }
+      .banner  { clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%); }  /* slanted bottom edge */
+      .reveal  { clip-path: inset(0 50% 0 0); }                         /* show the left half */
+      ```
+
+      **mask** uses an image or gradient as a stencil: opaque parts show, transparent parts hide. A gradient mask fades content out softly:
+
+      ```css
+      .excerpt {
+        mask-image: linear-gradient(to bottom, black 60%, transparent);   /* fade the last lines */
+      }
+      ```
+
+  - kind: web
+    title: Shape the banner, fade the excerpt
+    body: |
+      1. Give `.banner` a slanted bottom edge: `clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%)`.
+      2. Fade out the bottom of `.excerpt` with `mask-image: linear-gradient(to bottom, black 50%, transparent)`.
+      3. Make the `.stamp` image blend into the banner with `mix-blend-mode: multiply`.
+    html: |
+      <header class="banner">
+        <h1>Autumn sale</h1>
+        <img class="stamp" src="images/logo.svg" alt="" width="160" height="48">
+      </header>
+      <p class="excerpt">Few novels build a world as complete as Frank Herbert's Dune. Its desert planet has an ecology, an economy and a religion, and every one of them matters to the plot. Reading it again this year, we noticed how much of it is about water.</p>
+    css: |
+      .banner {
+        padding: 2rem 1rem 4rem;
+        background: #fdba74;
+      }
+    tests:
+      - "css('.banner', 'clip-path')"
+      - "css('.excerpt', 'mask-image')"
+      - "css('.stamp', 'mix-blend-mode')"
+    solution:
+      css: |
+        .banner {
+          padding: 2rem 1rem 4rem;
+          background: #fdba74;
+          clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%);
+        }
+
+        .excerpt {
+          mask-image: linear-gradient(to bottom, black 50%, transparent);
+        }
+
+        .stamp {
+          mix-blend-mode: multiply;
+        }
+    hint: "Copy the three values exactly; each goes on its own element."
+
+  - kind: explain
+    title: Layered gradients
+    body: |
+      `background` accepts **several layers**, separated by commas; the first is on top. Gradients can be layered into patterns and lighting effects without images:
+
+      ```css
+      .hero {
+        background:
+          radial-gradient(circle at 20% 20%, rgb(255 255 255 / 40%), transparent 40%),   /* soft highlight */
+          linear-gradient(135deg, #7c2d12, #c2410c);                                     /* base */
+      }
+
+      .notebook {
+        background:
+          linear-gradient(transparent 95%, #e7e5e4 95%) 0 0 / 100% 1.5rem,   /* ruled lines */
+          #fffdf7;
+      }
+      ```
+
+      `repeating-linear-gradient()` makes stripes; `conic-gradient()` sweeps around a point (pie charts, color wheels).
+
+  - kind: explain
+    title: Deriving colors
+    body: |
+      Instead of picking every shade by hand, derive them from one brand color.
+
+      **color-mix()** mixes two colors in a color space:
+
+      ```css
+      --brand: #7c2d12;
+      --brand-tint:  color-mix(in oklch, var(--brand) 15%, white);   /* a pale background */
+      --brand-shade: color-mix(in oklch, var(--brand), black 25%);
+      ```
+
+      **Relative color syntax** takes a color apart and rebuilds it with changes:
+
+      ```css
+      --brand-light: oklch(from var(--brand) calc(l + 0.2) c h);        /* lighter, same hue */
+      --brand-50:    oklch(from var(--brand) l c h / 50%);              /* 50% transparent */
+      ```
+
+      `l`, `c`, `h` are the channels of the original color in OKLCH (lightness, chroma, hue). Mixing **in oklch** gives more natural results than in sRGB, which tends to go muddy and grey in the middle.
+
+  - kind: web
+    title: A palette from one color
+    body: |
+      Derive Inkwell's palette from `--brand: #7c2d12` on `:root`:
+
+      1. `--brand-tint`: `color-mix(in oklch, var(--brand) 15%, white)`. Use it as `.notice`'s background.
+      2. `--brand-light`: `oklch(from var(--brand) calc(l + 0.25) c h)`. Use it as the `.button:hover` background.
+      3. `.button`'s background is `var(--brand)`.
+      4. Give `.hero` two background layers: on top `radial-gradient(circle at 20% 20%, rgb(255 255 255 / 40%), transparent 40%)`, underneath `linear-gradient(135deg, var(--brand), #c2410c)`.
+    html: |
+      <section class="hero"><h1>Autumn at Inkwell</h1></section>
+      <p class="notice">Free delivery this week.</p>
+      <a class="button" href="#">Shop</a>
+    css: |
+      .hero {
+        padding: 3rem 1rem;
+        color: white;
+      }
+
+      .notice {
+        padding: 1rem;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        color: white;
+      }
+    tests:
+      - "css('.notice', 'background-color')"
+      - "css('.button', 'background-color') + ' / hover ' + rule('.button:hover', 'background-color')"
+      - "css('.hero', 'background-image')"
+      - "[declared(':root', '--brand-tint'), declared(':root', '--brand-light')]"
+    solution:
+      css: |
+        :root {
+          --brand: #7c2d12;
+          --brand-tint: color-mix(in oklch, var(--brand) 15%, white);
+          --brand-light: oklch(from var(--brand) calc(l + 0.25) c h);
+        }
+
+        .hero {
+          padding: 3rem 1rem;
+          color: white;
+          background:
+            radial-gradient(circle at 20% 20%, rgb(255 255 255 / 40%), transparent 40%),
+            linear-gradient(135deg, var(--brand), #c2410c);
+        }
+
+        .notice {
+          padding: 1rem;
+          background: var(--brand-tint);
+        }
+
+        .button {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          color: white;
+          background: var(--brand);
+        }
+
+        .button:hover {
+          background: var(--brand-light);
+        }
+    hint: "Three custom properties on `:root`; `.notice` and `.button` read them; the hero's `background` lists the radial gradient first, then a comma, then the linear one."
+
+  - kind: explain
+    title: Wide-gamut color
+    body: |
+      Most screens sold in the last few years (every recent Mac and iPhone) can show **more vivid colors** than the old sRGB range that hex and `rgb()` describe. That wider range is called **Display P3**.
+
+      - `oklch()` can describe colors beyond sRGB: high chroma values like `oklch(65% 0.29 30)` give a red more intense than any hex color. On an older screen, the browser maps it to the closest color it can show.
+      - `color(display-p3 1 0.2 0.1)` names a P3 color directly.
+      - `@media (color-gamut: p3) { … }` lets you serve the vivid version only to capable screens.
+
+      ```css
+      .sale-badge {
+        background: #dc2626;                    /* sRGB fallback */
+        background: oklch(62% 0.26 28);         /* more vivid where supported */
+      }
+      ```
+
+      Use it sparingly, for accents that should pop, and check contrast as usual.
+
+  - kind: why
+    body: |
+      Grey-outs, frosted glass, shaped sections, soft fades and whole palettes derived from one brand color used to mean exported images and hand-picked hex codes. Now they're a line of CSS each, they adapt to themes, and they stay sharp at any size.
+
+  - kind: recap
+    body: |
+      - `filter: grayscale() brightness() blur() drop-shadow()…`; `backdrop-filter` blurs what's behind (needs a see-through background).
+      - `mix-blend-mode` (e.g. `multiply`); `clip-path: circle() | polygon() | inset()`; `mask-image` with a gradient for soft fades.
+      - `background` takes comma-separated layers, first on top.
+      - `color-mix(in oklch, a 20%, b)` and relative colors `oklch(from var(--c) calc(l + 0.2) c h)`.
+      - Wide gamut: high-chroma `oklch()` or `color(display-p3 …)`, with an sRGB fallback.

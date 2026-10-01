@@ -1,0 +1,256 @@
+steps:
+  - kind: explain
+    title: What a view transition is
+    body: |
+      Click a book in a list and its cover **glides** into place as the big cover on the detail page, while the rest cross-fades. That's a **view transition**: the browser takes a snapshot of the old state, shows the new state, and animates between the two.
+
+      Two kinds:
+
+      - **Same-document**: one page changes its content (a filter, a tab, a layout toggle). It's started by one line of JavaScript, `document.startViewTransition(() => updateTheDOM())`; everything about **how it looks** is CSS.
+      - **Cross-document**: navigating from one page of your site to another. Turned on purely in CSS, for **multi-page sites like the ones in this course**.
+
+      Without any extra CSS, you get a smooth cross-fade of the whole page. The CSS in this lesson customises it.
+
+  - kind: explain
+    title: Cross-document transitions
+    body: |
+      Add this to the CSS of **both** pages (usually your shared stylesheet):
+
+      ```css
+      @view-transition {
+        navigation: auto;
+      }
+      ```
+
+      Now same-site navigations (clicking a link, back and forward) cross-fade instead of flashing white. Browsers without support just navigate normally: **free progressive enhancement**.
+
+      Supported in Chrome, Edge and Safari; Firefox is catching up. It only applies between pages on the **same origin** (your own site).
+
+  - kind: explain
+    title: Morphing named elements
+    body: |
+      By default the whole page is one snapshot (named `root`). Give an element a **`view-transition-name`**, and it gets its own snapshot that **moves and resizes** from its old position to its new one:
+
+      ```css
+      /* list page */
+      .book-dune .cover  { view-transition-name: cover-dune; }
+      /* detail page */
+      .hero-cover        { view-transition-name: cover-dune; }
+      ```
+
+      Same name on both pages → the browser morphs one into the other. Rules:
+
+      - Each name must be **unique on the page at the moment of the transition**. Two visible elements with the same name cancel the transition.
+      - `view-transition-name: none` opts an element out.
+      - `view-transition-name: match-element` gives every element in a list its own automatic name, handy for animating reordered lists.
+
+  - kind: explain
+    title: Styling the animation
+    body: |
+      During a transition the browser builds a tree of pseudo-elements you can style like anything else:
+
+      ```
+      ::view-transition
+      └─ ::view-transition-group(cover-dune)      ← moves and resizes
+         └─ ::view-transition-image-pair(cover-dune)
+            ├─ ::view-transition-old(cover-dune)  ← snapshot of before (fades out)
+            └─ ::view-transition-new(cover-dune)  ← snapshot of after (fades in)
+      ```
+
+      ```css
+      ::view-transition-group(cover-dune) {
+        animation-duration: 400ms;
+        animation-timing-function: ease-in-out;
+      }
+
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation-duration: 200ms;            /* a quicker page cross-fade */
+      }
+      ```
+
+      And as always, respect Reduce motion:
+
+      ```css
+      @media (prefers-reduced-motion: reduce) {
+        ::view-transition-group(*) { animation: none; }
+      }
+      ```
+
+  - kind: web
+    title: Set up the transition CSS
+    body: |
+      Prepare Inkwell's book page for cross-document transitions:
+
+      1. Turn on cross-document view transitions with `@view-transition { navigation: auto; }`.
+      2. Give the cover image the name `book-cover` and the title the name `book-title`.
+      3. Make the `book-cover` group animate over `400ms`.
+      4. Under `prefers-reduced-motion: reduce`, set `animation: none` on `::view-transition-group(*)`.
+
+      (The preview can't navigate between pages, so you won't see it play here; the next step tries it on your Mac.)
+    html: |
+      <main>
+        <img class="cover" src="images/cover-dune.svg" alt="Dune" width="200" height="300">
+        <h1 class="title">Dune</h1>
+        <p>Frank Herbert · £8.99</p>
+      </main>
+    css: |
+      .cover {
+        display: block;
+      }
+    tests:
+      - "/@view-transition\\s*\\{[^}]*navigation\\s*:\\s*auto/.test($('style[data-file]').textContent)"
+      - "css('.cover', 'view-transition-name') + ' / ' + css('.title', 'view-transition-name')"
+      - "declared('::view-transition-group(book-cover)', 'animation-duration')"
+      - "declared('::view-transition-group(*)', 'animation', 'prefers-reduced-motion:reduce')"
+    solution:
+      css: |
+        @view-transition {
+          navigation: auto;
+        }
+
+        .cover {
+          display: block;
+          view-transition-name: book-cover;
+        }
+
+        .title {
+          view-transition-name: book-title;
+        }
+
+        ::view-transition-group(book-cover) {
+          animation-duration: 400ms;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          ::view-transition-group(*) {
+            animation: none;
+          }
+        }
+    hint: "`@view-transition { navigation: auto; }` at the top; `view-transition-name` on the two elements; then the group rule and the reduced-motion block."
+
+  - kind: mac
+    title: Watch a page morph
+    body: |
+      Try a real cross-document transition with two pages and Live Server (it needs a server, not double-clicked files):
+
+      1. Make `list.html` with a small cover image linking to `book.html`, and `book.html` with the same image large.
+      2. In a shared `style.css`: the `@view-transition` rule, and `view-transition-name: cover` on the image on **both** pages.
+      3. Open `list.html` with Live Server in Chrome or Safari and click the cover. It grows into place. Press Back: it shrinks back.
+      4. Turn on *Reduce motion* in System Settings → Accessibility → Display and try again.
+
+      In Chrome DevTools, the **Animations** panel (⋮ → More tools → Animations) can slow transitions down to inspect them.
+    commands: |
+      /* style.css, shared by both pages */
+      @view-transition { navigation: auto; }
+      .cover { view-transition-name: cover; }
+
+  - kind: explain
+    title: Scroll snap
+    body: |
+      A horizontal shelf of covers you swipe through should stop **neatly on a cover**, not halfway between two. **Scroll snap** does it:
+
+      ```css
+      .shelf {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;    /* snap on the x axis, always */
+        scroll-padding-inline: 1rem;      /* leave room at the snap edge */
+      }
+      .shelf > * {
+        scroll-snap-align: start;         /* each item's start edge is a snap point */
+      }
+      ```
+
+      - `mandatory` always snaps; `proximity` snaps only when the scroll ends near a snap point (gentler for long content).
+      - `scroll-snap-align`: `start`, `center` or `end`.
+      - `scroll-snap-stop: always` prevents a hard swipe from skipping items.
+
+      It works with touch, trackpads, the mouse wheel and the keyboard, with no JavaScript.
+
+  - kind: web
+    title: A snapping shelf
+    body: |
+      Make the cover shelf snap:
+
+      1. `.shelf`: horizontal scroll (`overflow-x: auto`), `scroll-snap-type: x mandatory`, `scroll-padding-inline: 1rem`.
+      2. Each `.shelf > img`: `scroll-snap-align: start`.
+
+      Scroll the preview's shelf sideways with a trackpad or Shift+wheel.
+    html: |
+      <div class="shelf">
+        <img src="images/cover-dune.svg" alt="Dune" width="150" height="225">
+        <img src="images/cover-emma.svg" alt="Emma" width="150" height="225">
+        <img src="images/cover-beloved.svg" alt="Beloved" width="150" height="225">
+        <img src="images/cover-odyssey.svg" alt="The Odyssey" width="150" height="225">
+        <img src="images/cover-dune.svg" alt="Dune again" width="150" height="225">
+        <img src="images/cover-emma.svg" alt="Emma again" width="150" height="225">
+      </div>
+    css: |
+      .shelf {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+      }
+
+      .shelf > img {
+        flex: none;
+      }
+    widths: [500]
+    tests:
+      - "css('.shelf', 'overflow-x') + ' / ' + css('.shelf', 'scroll-snap-type') + ' / ' + css('.shelf', 'scroll-padding-left')"
+      - "cssAll('.shelf > img', 'scroll-snap-align')"
+      - "$('.shelf').scrollWidth > $('.shelf').clientWidth ? 'scrolls sideways' : 'no overflow'"
+    solution:
+      css: |
+        .shelf {
+          display: flex;
+          gap: 1rem;
+          padding: 1rem;
+          overflow-x: auto;
+          scroll-snap-type: x mandatory;
+          scroll-padding-inline: 1rem;
+        }
+
+        .shelf > img {
+          flex: none;
+          scroll-snap-align: start;
+        }
+    hint: "Container: `overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 1rem;`. Items: `scroll-snap-align: start;`."
+
+  - kind: info
+    title: "🔹 Scroll-driven animations"
+    body: |
+      A keyframe animation can be driven by **scrolling** instead of time:
+
+      ```css
+      @keyframes grow { from { scale: 0 1; } to { scale: 1 1; } }
+
+      .reading-progress {
+        transform-origin: left;
+        animation: grow linear;
+        animation-timeline: scroll();     /* 0% at the top of the page, 100% at the bottom */
+      }
+
+      .card {
+        animation: fade-in linear both;
+        animation-timeline: view();       /* plays as the card scrolls into view */
+        animation-range: entry 0% entry 100%;
+      }
+      ```
+
+      `scroll()` follows a scroll container's position; `view()` follows an element's journey through the visible area. Great for reading-progress bars and reveal effects, with no scroll listeners. It's supported in Chrome and Safari and still being made consistent across browsers, so use it as an enhancement inside `@supports (animation-timeline: scroll())`, and turn it off for Reduce motion.
+
+  - kind: why
+    body: |
+      Motion that shows **continuity** (this cover became that page) helps people keep their place, and for multi-page sites it now costs one CSS rule. Scroll snap makes swipeable shelves feel native without a carousel library. Both degrade gracefully where unsupported.
+
+  - kind: recap
+    body: |
+      - `@view-transition { navigation: auto; }` on both pages: cross-document transitions, free fallback.
+      - `view-transition-name: x` (unique per page) morphs an element between states or pages.
+      - Style `::view-transition-group(x)`, `-old(x)`, `-new(x)`; `root` is the whole page; turn off for Reduce motion.
+      - Same-document transitions are started with `document.startViewTransition()` (JavaScript); the look is CSS.
+      - Scroll snap: `scroll-snap-type: x mandatory` on the container, `scroll-snap-align` on items.
+      - 🔹 `animation-timeline: scroll()` / `view()` for scroll-driven animations.

@@ -1,0 +1,31 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Which folder do you deploy after `npm run build` in a Vite project?"
+    options: ["`dist/`", "`src/`", "`node_modules/`", "The project root as-is"]
+    answer: 0
+    explanation: "dist/ holds the optimised output; the source stays in the repo."
+  - type: mcq
+    prompt: "What decides which vendor prefixes Autoprefixer or Lightning CSS adds?"
+    options: ["Your browserslist targets", "The number of CSS files", "Your operating system", "Nothing; they add all prefixes"]
+    answer: 0
+    explanation: "They add only what the browsers you target still need."
+  - type: mcq
+    prompt: "In Tailwind v4, where do you define your brand color so classes like `bg-brand` exist?"
+    options: ["In CSS, inside `@theme { --color-brand: …; }`", "In an HTML meta tag", "In `.gitignore`", "In a Sass variable"]
+    answer: 0
+    explanation: "Version 4 moved configuration into CSS with @theme."
+  - type: mcq
+    prompt: "Which native CSS feature replaces Sass's `$brand: #7c2d12;` most directly?"
+    options: ["A custom property: `--brand: #7c2d12;`", "`@layer`", "`@scope`", "`attr()`"]
+    answer: 0
+    explanation: "Custom properties are native variables, and unlike Sass variables they can change at runtime."
+  - type: mcq
+    prompt: "What's a fair criticism of utility-first CSS?"
+    options:
+      - "HTML gets long class lists and becomes harder to read"
+      - "It can't do responsive design"
+      - "It produces huge CSS files"
+      - "It doesn't support hover states"
+    answer: 0
+    explanation: "Tailwind's output is small and handles states and breakpoints; the cost is in the markup."

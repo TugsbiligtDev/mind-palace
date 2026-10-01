@@ -1,0 +1,288 @@
+steps:
+  - kind: explain
+    title: One card, everywhere
+    body: |
+      Inkwell's book card appears in the main grid, in a narrow sidebar, inside a shelf you swipe, and on the book's own page. Inspector Bold wants **one** card that adapts to all of them. Four briefs and a bug hunt, Modules 43 to 47.
+
+  - kind: web
+    title: "1. A container-aware card"
+    body: |
+      > *Every `.slot` is a width container named `slot`. When a slot is at least 420px wide, the card inside it becomes a grid of a 120px cover column and the text (gap 1rem). The card title's font size scales with the slot: `clamp(1rem, 0.6rem + 3cqi, 1.75rem)`. The slots are already sized on the page.*
+    html: |
+      <div class="slot" style="width: 640px">
+        <article class="card"><img src="images/cover-dune.svg" alt="" width="120" height="180"><div><h3 class="card__title">Dune</h3><p>£8.99</p></div></article>
+      </div>
+      <div class="slot" style="width: 300px">
+        <article class="card"><img src="images/cover-emma.svg" alt="" width="120" height="180"><div><h3 class="card__title">Emma</h3><p>£5.50</p></div></article>
+      </div>
+    css: |
+      .card {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+    widths: [1000]
+    tests:
+      - "cssAll('.slot', 'container-name') + ' / ' + cssAll('.slot', 'container-type')"
+      - "cssAll('.card', 'display') + ' / ' + cssAll('.card', 'grid-template-columns')"
+      - "cssAll('.card__title', 'font-size')"
+    solution:
+      css: |
+        .slot {
+          container: slot / inline-size;
+        }
+
+        .card {
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        .card__title {
+          font-size: clamp(1rem, 0.6rem + 3cqi, 1.75rem);
+        }
+
+        @container slot (width >= 420px) {
+          .card {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1rem;
+          }
+        }
+    hint: "`container: slot / inline-size;` on `.slot`, a named `@container slot (width >= 420px)` rule for `.card`, and the clamp with `cqi` on the title."
+
+  - kind: web
+    title: "2. Aligned rows"
+    body: |
+      > *In the "staff picks" row, every card has a title, a blurb and a "Details" link, and those three parts must line up across the cards even when one title is long. Each card spans three rows of the row grid and uses them for its parts, with 0.5rem between parts.*
+    html: |
+      <div class="picks">
+        <article class="pick"><h3>Dune</h3><p>Water, power and sand.</p><a href="#">Details</a></article>
+        <article class="pick"><h3>One Hundred Years of Solitude</h3><p>Seven generations of the Buendías.</p><a href="#">Details</a></article>
+        <article class="pick"><h3>Emma</h3><p>Matchmaking goes wrong.</p><a href="#">Details</a></article>
+      </div>
+    css: |
+      .picks {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+      }
+
+      .pick {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .pick > * {
+        margin: 0;
+      }
+    widths: [700]
+    tests:
+      - "new Set($$('.pick a').map((a) => Math.round(a.getBoundingClientRect().y))).size === 1 ? 'links aligned' : 'links misaligned'"
+      - "new Set($$('.pick p').map((p) => Math.round(p.getBoundingClientRect().y))).size === 1 ? 'blurbs aligned' : 'blurbs misaligned'"
+      - "css('.pick', 'row-gap')"
+    solution:
+      css: |
+        .picks {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem;
+        }
+
+        .pick {
+          display: grid;
+          grid-row: span 3;
+          grid-template-rows: subgrid;
+          row-gap: 0.5rem;
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        .pick > * {
+          margin: 0;
+        }
+    hint: "Subgrid: `display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0.5rem;` on `.pick`."
+
+  - kind: web
+    title: "3. The info popover"
+    body: |
+      > *The "ⓘ" button toggles the `#ship-info` popover, which appears directly below the button, starting at its left edge and extending right, 4px away, and flips above the button when there's no room below. It must not be centred on the screen.*
+    html: |
+      <p style="padding: 1rem">Ships in 2 days <button type="button" class="info" aria-label="Shipping details">ⓘ</button></p>
+      <div id="ship-info">Orders before 2pm leave the same day.</div>
+    css: |
+      #ship-info {
+        padding: 0.5rem;
+        border: 1px solid #e7e5e4;
+      }
+    tests:
+      - "attr('.info', 'popovertarget') + ' / ' + (attr('#ship-info', 'popover') !== null)"
+      - "css('#ship-info', 'position-area') + ' / ' + css('#ship-info', 'position-try-fallbacks')"
+      - "click('.info')"
+      - "(box('#ship-info').y - (box('.info').y + box('.info').height)) + ' / ' + (box('#ship-info').x - box('.info').x)"
+    solution:
+      html: |
+        <p style="padding: 1rem">Ships in 2 days <button type="button" class="info" aria-label="Shipping details" popovertarget="ship-info">ⓘ</button></p>
+        <div id="ship-info" popover>Orders before 2pm leave the same day.</div>
+      css: |
+        #ship-info {
+          inset: auto;
+          margin: 0;
+          margin-top: 4px;
+          position-area: bottom span-right;
+          position-try-fallbacks: flip-block;
+          padding: 0.5rem;
+          border: 1px solid #e7e5e4;
+        }
+    hint: "Module 45's dropdown: `popovertarget` + `popover` in the HTML; `inset: auto; margin: 0; margin-top: 4px; position-area: bottom span-right; position-try-fallbacks: flip-block;`."
+
+  - kind: web
+    title: "4. The shelf"
+    body: |
+      > *The shelf scrolls sideways and always stops with a cover's start edge aligned (1rem padding at the snap edge). Covers are frosted-grey when sold out (`grayscale(1)`). The first cover morphs into the book page's hero via a view transition named `cover-dune`, and cross-document transitions are on for the site.*
+    html: |
+      <div class="shelf">
+        <img class="cover-dune" src="images/cover-dune.svg" alt="Dune" width="150" height="225">
+        <img class="sold-out" src="images/cover-emma.svg" alt="Emma (sold out)" width="150" height="225">
+        <img src="images/cover-beloved.svg" alt="Beloved" width="150" height="225">
+        <img src="images/cover-odyssey.svg" alt="The Odyssey" width="150" height="225">
+      </div>
+    css: |
+      .shelf {
+        display: flex;
+        gap: 1rem;
+        width: 400px;
+      }
+
+      .shelf > img {
+        flex: none;
+      }
+    tests:
+      - "css('.shelf', 'overflow-x') + ' / ' + css('.shelf', 'scroll-snap-type') + ' / ' + css('.shelf', 'scroll-padding-left')"
+      - "cssAll('.shelf > img', 'scroll-snap-align')"
+      - "cssAll('.shelf > img', 'filter')"
+      - "css('.cover-dune', 'view-transition-name') + ' / ' + /@view-transition\\s*\\{[^}]*navigation\\s*:\\s*auto/.test($('style[data-file]').textContent)"
+    solution:
+      css: |
+        @view-transition {
+          navigation: auto;
+        }
+
+        .shelf {
+          display: flex;
+          gap: 1rem;
+          width: 400px;
+          overflow-x: auto;
+          scroll-snap-type: x mandatory;
+          scroll-padding-inline: 1rem;
+        }
+
+        .shelf > img {
+          flex: none;
+          scroll-snap-align: start;
+        }
+
+        .sold-out {
+          filter: grayscale(1);
+        }
+
+        .cover-dune {
+          view-transition-name: cover-dune;
+        }
+    hint: "Snap on the container and its children (Module 46), `filter` on `.sold-out`, a `view-transition-name` on the first cover, and the `@view-transition` rule."
+
+  - kind: web
+    title: "5. Find the bugs"
+    broken_starter: true
+    body: |
+      > *Moth: "Four things are broken: the sidebar card never changes layout, the tooltip floats in the corner, the two covers don't morph (the console says something about duplicate names), and the tinted panel is plain white."*
+
+      Find and fix the four bugs in `style.css`.
+    html: |
+      <aside class="sidebar">
+        <article class="card"><h3>Dune</h3><p>£8.99</p></article>
+      </aside>
+      <p style="padding: 2rem">Help <button type="button" class="help">?</button></p>
+      <span class="tip">Free over £20</span>
+      <img class="cover a" src="images/cover-dune.svg" alt="Dune" width="100" height="150">
+      <img class="cover b" src="images/cover-emma.svg" alt="Emma" width="100" height="150">
+      <div class="panel">Autumn offers</div>
+    css: |
+      :root {
+        --brand: #7c2d12;
+      }
+
+      .card {
+        container-type: inline-size;
+      }
+
+      @container (width < 400px) {
+        .card {
+          border: 3px solid var(--brand);
+        }
+      }
+
+      .help {
+        anchor-name: help;
+      }
+
+      .tip {
+        position: absolute;
+        position-anchor: --help;
+        position-area: bottom;
+      }
+
+      .cover {
+        view-transition-name: cover;
+      }
+
+      .panel {
+        padding: 1rem;
+        background: color-mix(in oklch, var(--brand) 15%);
+      }
+    tests:
+      - "css('.card', 'border-top-width')"
+      - "box('.tip').y > box('.help').y ? 'tip below the button' : 'tip not below the button'"
+      - "new Set(cssAll('.cover', 'view-transition-name')).size === 2"
+      - "css('.panel', 'background-color') !== 'rgba(0, 0, 0, 0)'"
+    solution:
+      css: |
+        :root {
+          --brand: #7c2d12;
+        }
+
+        .sidebar {
+          container-type: inline-size;
+        }
+
+        @container (width < 400px) {
+          .card {
+            border: 3px solid var(--brand);
+          }
+        }
+
+        .help {
+          anchor-name: --help;
+        }
+
+        .tip {
+          position: absolute;
+          position-anchor: --help;
+          position-area: bottom;
+        }
+
+        .cover.a {
+          view-transition-name: cover-a;
+        }
+
+        .cover.b {
+          view-transition-name: cover-b;
+        }
+
+        .panel {
+          padding: 1rem;
+          background: color-mix(in oklch, var(--brand) 15%, white);
+        }
+    hint: "A container can't query itself; anchor names start with two dashes; view-transition names must be unique; color-mix needs two colors."
+
+  - kind: recap
+    body: |
+      One card now adapts to any slot, rows line up across cards, the info popover sits where it should and flips when it must, and the shelf snaps and morphs. Part 10 turns to the professional side: performance, accessibility audits, tooling, debugging and handoff.

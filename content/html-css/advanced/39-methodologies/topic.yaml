@@ -1,0 +1,4 @@
+title: Methodologies
+module: 39
+summary: "Ways teams keep big stylesheets sane: BEM naming (block, element, modifier), utility-first vs. component styles, the ideas behind CUBE CSS, organising files into reset, base, layout, components and utilities, and a modern CSS reset."
+minutes: 50

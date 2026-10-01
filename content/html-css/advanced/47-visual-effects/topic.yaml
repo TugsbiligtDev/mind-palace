@@ -1,0 +1,4 @@
+title: Advanced Visual Effects
+module: 47
+summary: "Effects that used to need an image editor: filter and backdrop-filter, mix-blend-mode, clip-path and mask, layered gradients, color-mix() and relative color syntax for deriving colors, and wide-gamut color with oklch and display-p3."
+minutes: 50

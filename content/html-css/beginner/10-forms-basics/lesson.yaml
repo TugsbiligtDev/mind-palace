@@ -1,0 +1,230 @@
+steps:
+  - kind: explain
+    title: What a form does
+    body: |
+      A **form** collects information and sends it somewhere: a search box, a sign-up, a checkout.
+
+      ```html
+      <form action="/subscribe" method="post">
+        …fields…
+        <button type="submit">Subscribe</button>
+      </form>
+      ```
+
+      - `action` is **where** the data is sent: a URL on a server that will handle it.
+      - `method` is **how**: `get` puts the data in the URL (`/search?q=dune`), good for searches you might bookmark; `post` sends it hidden in the request body, right for anything that changes something or is private (sign-ups, orders, passwords).
+
+      HTML and CSS build the form. Something on the server (or a service like Formspree or Netlify Forms) has to receive the data. In these lessons the preview never sends anything.
+
+  - kind: explain
+    title: Inputs, names and values
+    body: |
+      `<input>` is a void element whose `type` decides what it is:
+
+      ```html
+      <input type="text" name="full_name">
+      <input type="email" name="email">
+      ```
+
+      The `name` is crucial: it's the **key** the data is sent under. A field without a `name` is not sent at all. Submitting the form above sends something like `full_name=Ada+Reed&email=ada@example.com`.
+
+      `value` sets what's in a field at the start, or, for checkboxes and radio buttons, what gets sent when it's ticked.
+
+  - kind: explain
+    title: Input types
+    body: |
+      Choosing the right `type` gives people the right keyboard on phones and free checking by the browser:
+
+      | type | For | Bonus |
+      |---|---|---|
+      | `text` | short text | |
+      | `email` | an email address | phone keyboard shows `@`; checks the format |
+      | `password` | secrets | hides the characters |
+      | `number` | a quantity | number keypad; `min`, `max`, `step` |
+      | `tel` | a phone number | phone keypad |
+      | `date` | a date | a calendar picker |
+      | `checkbox` | yes/no, or pick any of several | |
+      | `radio` | pick **exactly one** of several | |
+      | `file` | upload a file | `accept="image/*"` limits the choice |
+
+      `<textarea name="message" rows="5"></textarea>` is a multi-line text box. Unlike input, it has a closing tag, and any starting text goes between the tags.
+
+  - kind: explain
+    title: Every field needs a label
+    body: |
+      A `<label>` names a field. Connect it with `for`, which must match the input's `id`:
+
+      ```html
+      <label for="email">Email address</label>
+      <input type="email" id="email" name="email">
+      ```
+
+      The connection matters:
+
+      - Screen readers announce "Email address, edit text" when the field is focused. Without a label they just say "edit text".
+      - **Clicking the label focuses the field**, and ticks a checkbox. Tiny checkboxes become easy to hit.
+
+      You can also wrap the input inside the label, no `for` needed:
+
+      ```html
+      <label><input type="checkbox" name="newsletter"> Send me the newsletter</label>
+      ```
+
+  - kind: explain
+    title: "A placeholder is not a label"
+    body: |
+      `placeholder` puts grey hint text *inside* an empty field:
+
+      ```html
+      <input type="email" placeholder="you@example.com">   ✗ no label
+      ```
+
+      It's tempting to use it instead of a label. Don't:
+
+      - It **disappears as soon as you type**, so people forget what the field was for.
+      - Its pale grey text is often too faint to read.
+      - Many screen readers don't treat it as the field's name.
+
+      Use a real label for the name, and a placeholder (if at all) only for an *example* format.
+
+  - kind: web
+    title: Label the newsletter form
+    body: |
+      Inkwell's newsletter form uses placeholders as labels and its fields have no names, so nothing would be sent.
+
+      1. Give the name field `id="name"` and `name="name"`, and add a `<label for="name">` reading `Your name` before it.
+      2. Make the email field `type="email"`, with `id="email"` and `name="email"`, and a `<label for="email">` reading `Email address` before it.
+      3. Remove both placeholders.
+    html: |
+      <form action="/subscribe" method="post">
+        <input type="text" placeholder="Your name">
+        <input type="text" placeholder="Email address">
+        <button type="submit">Subscribe</button>
+      </form>
+    tests:
+      - "$$('input').map((i) => i.type + ':' + i.name)"
+      - "$$('input').map((i) => i.labels.length ? i.labels[0].textContent.trim() : '(no label)')"
+      - "count('[placeholder]')"
+      - "$$('form > *').map((e) => e.localName)"
+    solution:
+      html: |
+        <form action="/subscribe" method="post">
+          <label for="name">Your name</label>
+          <input type="text" id="name" name="name">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email">
+          <button type="submit">Subscribe</button>
+        </form>
+    hint: "The label's `for` must match the input's `id` exactly: `<label for=\"email\">` goes with `<input id=\"email\">`."
+    reject:
+      - html: |
+          <form action="/subscribe" method="post">
+            <label>Your name</label>
+            <input type="text" id="name" name="name">
+            <label>Email address</label>
+            <input type="email" id="email" name="email">
+            <button type="submit">Subscribe</button>
+          </form>
+
+  - kind: explain
+    title: Checkboxes, radio buttons and select
+    body: |
+      **Radio buttons** let people pick exactly one. They belong together when they share the **same `name`**; each has its own `value`:
+
+      ```html
+      <input type="radio" id="post" name="delivery" value="post"> <label for="post">Post</label>
+      <input type="radio" id="collect" name="delivery" value="collect"> <label for="collect">Collect in store</label>
+      ```
+
+      Choosing "Collect in store" sends `delivery=collect`. Add `checked` to pre-select one.
+
+      **Checkboxes** are independent yes/no choices.
+
+      **A dropdown** is `<select>` with `<option>`s. Use it when there are many choices and space is tight:
+
+      ```html
+      <label for="genre">Favourite genre</label>
+      <select id="genre" name="genre">
+        <option value="fiction">Fiction</option>
+        <option value="poetry">Poetry</option>
+      </select>
+      ```
+
+  - kind: explain
+    title: Buttons and fieldsets
+    body: |
+      `<button>` has a `type`, and you should always write it:
+
+      - `type="submit"` sends the form (the default inside a form, which surprises people).
+      - `type="button"` does nothing by itself (it's for JavaScript).
+      - `type="reset"` clears the form. Rarely a good idea: people hit it by accident.
+
+      `<fieldset>` groups related fields, and its `<legend>` is the group's caption. It's essential for a set of radio buttons: the legend is the question, the labels are the answers. A screen reader says "Delivery, group. Post, radio button, 1 of 2".
+
+      ```html
+      <fieldset>
+        <legend>Delivery</legend>
+        …radio buttons…
+      </fieldset>
+      ```
+
+  - kind: web
+    title: The order form
+    body: |
+      Finish the delivery part of Inkwell's order form:
+
+      1. Wrap the two radio buttons and their labels in a `<fieldset>` whose `<legend>` says `Delivery`.
+      2. The radios must work as **one group**: give both `name="delivery"`. Give them the values `post` and `collect`.
+      3. Connect each label to its radio (the radios already have ids).
+      4. Make the button a submit button, explicitly.
+    html: |
+      <form action="/order" method="post">
+        <input type="radio" id="post">
+        <label>Post (£2.50)</label>
+        <input type="radio" id="collect">
+        <label>Collect in store (free)</label>
+        <button>Place order</button>
+      </form>
+    tests:
+      - "text('fieldset > legend')"
+      - "$$('fieldset input[type=radio]').map((r) => r.name + '=' + r.value)"
+      - "$$('input[type=radio]').map((r) => r.labels.length ? r.labels[0].textContent.trim() : '(no label)')"
+      - "attr('button', 'type')"
+      - "$$('fieldset').length"
+    solution:
+      html: |
+        <form action="/order" method="post">
+          <fieldset>
+            <legend>Delivery</legend>
+            <input type="radio" id="post" name="delivery" value="post">
+            <label for="post">Post (£2.50)</label>
+            <input type="radio" id="collect" name="delivery" value="collect">
+            <label for="collect">Collect in store (free)</label>
+          </fieldset>
+          <button type="submit">Place order</button>
+        </form>
+    hint: "Both radios need the same `name=\"delivery\"` but different `value`s. Each label needs `for` matching its radio's `id`."
+    reject:
+      - html: |
+          <form action="/order" method="post">
+            <fieldset>
+              <legend>Delivery</legend>
+              <input type="radio" id="post" name="post" value="post">
+              <label for="post">Post (£2.50)</label>
+              <input type="radio" id="collect" name="collect" value="collect">
+              <label for="collect">Collect in store (free)</label>
+            </fieldset>
+            <button type="submit">Place order</button>
+          </form>
+
+  - kind: why
+    body: |
+      Forms are where websites earn their keep: orders, bookings, sign-ups. They're also where most accessibility failures happen. A form with real labels, the right input types and grouped choices is quicker to fill in on a phone, works with a screen reader, and actually sends the data you need.
+
+  - kind: recap
+    body: |
+      - `<form action method>`: `get` for searches, `post` for anything private or that changes data.
+      - Every field needs a `name` (or it isn't sent) and a `<label for>` matching its `id`.
+      - Pick the right `type`: email, number, tel, date, checkbox, radio, file…; `textarea` for long text, `select`/`option` for dropdowns.
+      - Radios in a group share a `name`; group them in `<fieldset>` with a `<legend>`.
+      - Always write `<button type>`. A placeholder is never a label.

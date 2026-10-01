@@ -1,0 +1,4 @@
+title: Flexbox
+module: 20
+summary: "Lay out a row or a column of items: flex containers and items, the main and cross axes, flex-direction, justify-content, align-items, flex-wrap and gap, flex-grow, shrink and basis, order, and the everyday patterns (navbars, centring, card rows)."
+minutes: 60

@@ -1,0 +1,43 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What does a browser usually do with broken HTML?
+    options:
+      - "Repairs it silently, as best it can, and shows the page with no error"
+      - "Shows an error message instead of the page"
+      - "Shows the raw code"
+      - "Refuses to load the page's CSS"
+    answer: 0
+    explanation: "Browsers are forgiving: they guess and keep going. That's why you need the validator and DevTools to find mistakes."
+  - type: mcq
+    prompt: The validator reports 14 errors. Where should you start?
+    options:
+      - "With the first one: fixing an early mistake often makes later errors disappear"
+      - "With the last one"
+      - "With the warnings"
+      - "Ignore them if the page looks right"
+    answer: 0
+    explanation: "One missing closing tag can confuse everything after it, so the first error is often the cause of many others."
+  - type: mcq
+    prompt: "You wrote `<p>Shelves: <ul><li>Fiction</li></ul></p>`. What does the Elements panel show?"
+    options:
+      - "The paragraph closed before the list, and an extra empty `<p></p>` after it"
+      - "Exactly what you wrote"
+      - "The list inside the paragraph"
+      - "Nothing; the list is deleted"
+    answer: 0
+    explanation: "A `<p>` can't contain a `<ul>`, so the browser closes it early. The leftover `</p>` becomes an empty paragraph."
+  - type: mcq
+    prompt: "What's the difference between View Source and the Elements panel?"
+    options:
+      - "View Source shows the file as written; Elements shows the DOM the browser built from it"
+      - "They're two names for the same view"
+      - "View Source shows the CSS; Elements shows the HTML"
+      - "Elements shows the page as it was last week"
+    answer: 0
+    explanation: "Comparing them reveals the browser's silent repairs."
+  - type: mcq
+    prompt: In the accessibility tree, an image shows the role "image" but an empty name. What's the likely cause?
+    options: ["It has no `alt` text", "It's an SVG", "It has no width", "It's inside a figure"]
+    answer: 0
+    explanation: "An image's accessible name comes from its `alt`."

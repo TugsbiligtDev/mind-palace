@@ -1,0 +1,4 @@
+title: The Box Model
+module: 17
+summary: "Every element is a box of content, padding, border and margin. Why everyone sets box-sizing: border-box, how vertical margins collapse, width and height with min- and max- limits, centring with auto margins, and what overflow does."
+minutes: 50

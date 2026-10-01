@@ -1,0 +1,234 @@
+steps:
+  - kind: explain
+    title: Pages have regions
+    body: |
+      Almost every web page has the same regions: a top bar with the logo and menu, the main content, maybe a sidebar, and a footer. HTML has an element for each one:
+
+      | Element | Holds |
+      |---|---|
+      | `<header>` | introductory content: logo, site name, often the navigation |
+      | `<nav>` | a block of **main** navigation links |
+      | `<main>` | the page's main content. **Exactly one** per page |
+      | `<aside>` | content related to the page but not part of its main flow: a sidebar, a "you might also like" box |
+      | `<footer>` | closing information: contact details, copyright, small links |
+
+      ```html
+      <header>
+        <img src="images/logo.svg" alt="Inkwell Books" width="200" height="60">
+        <nav>…</nav>
+      </header>
+      <main>…</main>
+      <footer>© 2026 Inkwell Books</footer>
+      ```
+
+  - kind: explain
+    title: section and article
+    body: |
+      Inside `<main>`, two elements group content:
+
+      - `<article>` is a **self-contained** piece that would make sense on its own, even copied to another site: a blog post, a news story, a book review, a product card.
+      - `<section>` is a **thematic group** of content, usually with its own heading: "New arrivals", "Opening hours", "Reviews".
+
+      A quick test: *could this be shared on its own, like a link to a post?* → `article`. *Is it a chapter of this page?* → `section`. Both normally start with a heading.
+
+      Articles can contain sections (a long review with "Plot" and "Verdict"), and sections can contain articles (a "Reviews" section holding several review articles).
+
+  - kind: explain
+    title: div and span, the generic boxes
+    body: |
+      `<div>` (a block) and `<span>` (inline, inside a line of text) mean **nothing at all**. They are plain boxes for when you need a hook for CSS and no meaningful element fits:
+
+      ```html
+      <div class="card-grid">…</div>        ← a wrapper purely for layout
+      <p>Price: <span class="price">£8.99</span></p>
+      ```
+
+      That's fine and normal. The problem is using `div` *instead of* an element that does have a meaning.
+
+  - kind: explain
+    title: "Common mistake: div soup"
+    body: |
+      Here's a page built only from divs:
+
+      ```html
+      <div class="header">
+        <div class="nav">…</div>
+      </div>
+      <div class="main">
+        <div class="post">…</div>
+      </div>
+      <div class="footer">…</div>
+      ```
+
+      It can be styled to look identical to the semantic version, so what's lost?
+
+      - **Screen readers** offer a list of *landmarks* (banner, navigation, main, footer) to jump straight to the content. Div soup has none.
+      - **Keyboard users** can't skip the menu to reach the main content.
+      - **Search engines** and reading modes (Safari's Reader, for example) can't tell the article from the clutter.
+      - **Developers** reading the code have to decode class names.
+
+  - kind: web
+    title: Drain the div soup
+    body: |
+      Here's the book page from the agency's first draft, built entirely of divs. Replace each `div` with the right element, keeping the classes off (you won't need them):
+
+      - `div class="top"` → the page's header
+      - `div class="menu"` → the navigation inside it
+      - `div class="content"` → the main content
+      - `div class="review"` → a self-contained review (there are two)
+      - `div class="related"` → the related-books box beside the main content
+      - `div class="bottom"` → the footer
+
+      Remember to change every closing `</div>` to match.
+    html: |
+      <div class="top">
+        <h1>Inkwell Books</h1>
+        <div class="menu">
+          <a href="index.html">Home</a>
+          <a href="books.html">Books</a>
+        </div>
+      </div>
+      <div class="content">
+        <h2>Dune: reader reviews</h2>
+        <div class="review">
+          <h3>A desert you can taste</h3>
+          <p>Five stars. I read it in one weekend.</p>
+        </div>
+        <div class="review">
+          <h3>Slow start, huge payoff</h3>
+          <p>Stick with the first hundred pages.</p>
+        </div>
+      </div>
+      <div class="related">
+        <h2>You might also like</h2>
+        <p>The Odyssey</p>
+      </div>
+      <div class="bottom">
+        <p>© 2026 Inkwell Books</p>
+      </div>
+    tests:
+      - "$$('body > *').map((e) => e.localName)"
+      - "count('header > nav')"
+      - "$$('nav a').length"
+      - "count('main > article')"
+      - "$$('article h3').map((h) => h.textContent)"
+      - "count('div')"
+      - "text('aside h2')"
+    solution:
+      html: |
+        <header>
+          <h1>Inkwell Books</h1>
+          <nav>
+            <a href="index.html">Home</a>
+            <a href="books.html">Books</a>
+          </nav>
+        </header>
+        <main>
+          <h2>Dune: reader reviews</h2>
+          <article>
+            <h3>A desert you can taste</h3>
+            <p>Five stars. I read it in one weekend.</p>
+          </article>
+          <article>
+            <h3>Slow start, huge payoff</h3>
+            <p>Stick with the first hundred pages.</p>
+          </article>
+        </main>
+        <aside>
+          <h2>You might also like</h2>
+          <p>The Odyssey</p>
+        </aside>
+        <footer>
+          <p>© 2026 Inkwell Books</p>
+        </footer>
+    hint: "Order from the top: `header` (with `nav` inside), `main` (with two `article`s inside), `aside`, `footer`. Every `div` disappears."
+    reject:
+      - html: |
+          <header>
+            <h1>Inkwell Books</h1>
+            <nav>
+              <a href="index.html">Home</a>
+              <a href="books.html">Books</a>
+            </nav>
+          </header>
+          <main>
+            <h2>Dune: reader reviews</h2>
+            <section>
+              <h3>A desert you can taste</h3>
+              <p>Five stars. I read it in one weekend.</p>
+            </section>
+            <section>
+              <h3>Slow start, huge payoff</h3>
+              <p>Stick with the first hundred pages.</p>
+            </section>
+          </main>
+          <aside>
+            <h2>You might also like</h2>
+            <p>The Odyssey</p>
+          </aside>
+          <footer>
+            <p>© 2026 Inkwell Books</p>
+          </footer>
+
+  - kind: explain
+    title: A few more rules
+    body: |
+      - **One `<main>`** per page (unless the others are `hidden`). It should hold the content that's unique to this page, not the header and footer that repeat everywhere.
+      - `<header>` and `<footer>` can also appear **inside** an `article` or `section`, for that piece's own intro and closing (a review's author and date, say). Only the top-level ones are the page's banner and footer landmarks.
+      - Use `<nav>` for **major** navigation blocks (the main menu, a table of contents), not every group of links. A footer's three small links don't need one.
+      - Don't skip the heading because the element "already says it's a section". Sections and articles should still have headings.
+
+  - kind: web
+    title: Section the home page
+    body: |
+      Inkwell's home page has two thematic chunks inside `<main>`. Wrap each heading and its content in a `<section>`:
+
+      1. *New arrivals* with its list.
+      2. *Opening hours* with its paragraph.
+
+      The `<main>` itself stays as it is.
+    html: |
+      <main>
+        <h1>Welcome to Inkwell</h1>
+        <h2>New arrivals</h2>
+        <ul>
+          <li>Beloved</li>
+          <li>The Odyssey</li>
+        </ul>
+        <h2>Opening hours</h2>
+        <p>Tuesday to Sunday, 10am to 6pm.</p>
+      </main>
+    tests:
+      - "count('main > section')"
+      - "$$('main > section').map((s) => s.firstElementChild.localName + ': ' + s.firstElementChild.textContent)"
+      - "count('main > section:first-of-type > ul > li')"
+      - "count('main > section:last-of-type > p')"
+      - "$$('main > *').map((e) => e.localName)"
+    solution:
+      html: |
+        <main>
+          <h1>Welcome to Inkwell</h1>
+          <section>
+            <h2>New arrivals</h2>
+            <ul>
+              <li>Beloved</li>
+              <li>The Odyssey</li>
+            </ul>
+          </section>
+          <section>
+            <h2>Opening hours</h2>
+            <p>Tuesday to Sunday, 10am to 6pm.</p>
+          </section>
+        </main>
+    hint: "Each `<section>` starts right before an `<h2>` and ends after that heading's content. The `<h1>` stays outside both."
+
+  - kind: why
+    body: |
+      Semantic HTML is free accessibility. A blind visitor using VoiceOver can press one key to jump to `main` or list every `article`; a search engine knows which text is the actual content. You get it all just by picking the right element names, and your code becomes easier to read too.
+
+  - kind: recap
+    body: |
+      - Page regions: `header`, `nav`, `main` (one), `aside`, `footer`.
+      - `article` = self-contained, could stand alone; `section` = a thematic part of the page with a heading.
+      - `div` and `span` are meaningless boxes: fine for styling hooks, wrong as a replacement for meaningful elements.
+      - Div soup looks the same but removes the landmarks screen readers and search engines rely on.

@@ -1,0 +1,5 @@
+title: "The HTML case file"
+module: 11
+kind: review
+summary: "Five briefs from Inkwell Books and no starter scaffolding: mark up a page's structure, a book with its cover, a price table and a contact form, then find the bugs in a broken page. Uses everything from Modules 4 to 11."
+minutes: 50

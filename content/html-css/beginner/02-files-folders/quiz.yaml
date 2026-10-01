@@ -1,0 +1,36 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which file name is best for a web project?
+    options: ["`team-photo-2026.jpg`", "`Team Photo 2026.jpg`", "`team_photo&final.JPG`", "`TeamPhoto2026.Jpg`"]
+    answer: 0
+    explanation: "Lowercase, dashes, no spaces or special characters. The others will break on a server or need `%20` in links."
+  - type: mcq
+    prompt: "Your page is `site/blog/post.html`. Which path reaches `site/css/style.css`?"
+    options: ["`../css/style.css`", "`css/style.css`", "`./css/style.css`", "`/blog/css/style.css`"]
+    answer: 0
+    explanation: "Start in `blog`, go up one (`..`) to `site`, then into `css`. `css/style.css` would look for `site/blog/css/style.css`."
+  - type: mcq
+    prompt: "An image works on your Mac but is missing once the site goes live. The file is `images/Logo.PNG` and the HTML says `images/logo.png`. Why?"
+    options:
+      - "Your Mac ignores capital letters in file names, but most web servers don't"
+      - "Servers can't show PNG files"
+      - "The image is too big for the server"
+      - "The path needs a `/` at the start"
+    answer: 0
+    explanation: "macOS treats `Logo.PNG` and `logo.png` as the same name; a typical server sees two different files and returns 404. All-lowercase names avoid this."
+  - type: mcq
+    prompt: Why are relative paths the default for linking your own files?
+    options:
+      - "The whole folder can move, to a server or another computer, and the links still work"
+      - "They load faster than absolute paths"
+      - "Browsers can't follow absolute paths"
+      - "They hide your files from search engines"
+    answer: 0
+    explanation: "A relative path only depends on where the files are relative to each other, so it survives moving the project."
+  - type: fill
+    prompt: "Type the two characters that mean \"go up one folder\" in a path."
+    code: "<img src=\"____/images/logo.svg\" alt=\"Inkwell\">"
+    answer: ".."
+    runnable: false
+    explanation: "`..` is the parent folder. `../images/logo.svg` goes up one level, then into `images`."

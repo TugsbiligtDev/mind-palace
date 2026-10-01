@@ -1,0 +1,391 @@
+steps:
+  - kind: explain
+    title: One line of boxes
+    body: |
+      **Flexbox** lays out items **in one direction**: a row or a column. You turn it on for a **container**, and its **direct children** become **flex items**:
+
+      ```css
+      .nav {
+        display: flex;
+      }
+      ```
+
+      ```html
+      <nav class="nav">
+        <a href="/">Home</a>       ← flex item
+        <a href="/books">Books</a> ← flex item
+      </nav>
+      ```
+
+      Instantly the items sit side by side, as tall as the tallest one. Only direct children are affected; grandchildren lay out normally inside their parent.
+
+  - kind: explain
+    title: Main axis and cross axis
+    body: |
+      Flexbox thinks in two axes:
+
+      - The **main axis** runs in the direction items are placed. With `flex-direction: row` (the default) it runs left → right; with `column`, top → bottom.
+      - The **cross axis** runs across it.
+
+      ```
+      flex-direction: row
+      main axis →→→→→→→→→→→→
+      ┌────┐┌────┐┌────┐      ↓ cross axis
+      │ A  ││ B  ││ C  │
+      └────┘└────┘└────┘
+      ```
+
+      Two properties line items up, one per axis:
+
+      - `justify-content` → along the **main** axis: `flex-start`, `center`, `flex-end`, `space-between`, `space-around`, `space-evenly`.
+      - `align-items` → along the **cross** axis: `stretch` (the default), `flex-start`, `center`, `flex-end`, `baseline`.
+
+      Switch to `flex-direction: column` and they swap roles: `justify-content` becomes vertical.
+
+  - kind: explain
+    title: gap and wrap
+    body: |
+      `gap` puts space **between** items (not before the first or after the last):
+
+      ```css
+      .row { display: flex; gap: 1rem; }
+      ```
+
+      It replaces fiddly margins on every item, and margins never collapse in flex layouts anyway.
+
+      By default all items squeeze onto **one line**, shrinking if needed. `flex-wrap: wrap` lets them flow onto new lines when there isn't room, which is what you want for a row of cards or tags.
+
+  - kind: web
+    title: The navbar
+    body: |
+      Build Inkwell's top bar with Flexbox:
+
+      1. `.bar`: a flex container with the logo on the **left** and the menu pushed to the **right** (all leftover space between them), both **centred vertically**.
+      2. `.menu`: also a flex container, with `1.5rem` of gap between links.
+
+      Don't use positioning or margins for this.
+    html: |
+      <header class="bar">
+        <a class="logo" href="index.html"><img src="images/logo.svg" alt="Inkwell Books home" width="160" height="48"></a>
+        <nav class="menu">
+          <a href="books.html">Books</a>
+          <a href="events.html">Events</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </header>
+    css: |
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+
+      .bar {
+        padding: 0.5rem 1rem;
+        border-bottom: 2px solid #7c2d12;
+      }
+
+      .menu a {
+        color: #7c2d12;
+      }
+    tests:
+      - "css('.bar', 'display') + ' / ' + css('.bar', 'justify-content') + ' / ' + css('.bar', 'align-items')"
+      - "box('.logo').x"
+      - "Math.round(box('.bar').width - (box('.menu').x + box('.menu').width))"
+      - "Math.round((box('.menu').y + box('.menu').height / 2) - (box('.logo').y + box('.logo').height / 2))"
+      - "css('.menu', 'display') + ' gap ' + css('.menu', 'column-gap')"
+    solution:
+      css: |
+        body {
+          margin: 0;
+          font-family: system-ui, sans-serif;
+        }
+
+        .bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.5rem 1rem;
+          border-bottom: 2px solid #7c2d12;
+        }
+
+        .menu {
+          display: flex;
+          gap: 1.5rem;
+        }
+
+        .menu a {
+          color: #7c2d12;
+        }
+    hint: "`.bar { display: flex; justify-content: space-between; align-items: center; }` and `.menu { display: flex; gap: 1.5rem; }`."
+
+  - kind: explain
+    title: Centring, finally easy
+    body: |
+      Centring something both ways used to be CSS's most famous puzzle. With Flexbox it's three lines on the **parent**:
+
+      ```css
+      .stage {
+        display: flex;
+        justify-content: center;   /* main axis: horizontally */
+        align-items: center;       /* cross axis: vertically */
+        min-height: 300px;         /* the parent needs some height to centre within */
+      }
+      ```
+
+      The parent must be taller than the child, or there's no vertical space to centre in. That's the usual reason "align-items: center doesn't work".
+
+  - kind: web
+    title: Centre the announcement
+    body: |
+      Centre the `.message` box **horizontally and vertically** inside `.stage`, which is `300px` tall. Use Flexbox on `.stage`; don't change `.message`.
+    html: |
+      <div class="stage">
+        <p class="message">Poetry night is back!</p>
+      </div>
+    css: |
+      .stage {
+        height: 300px;
+        background: #f5f0e8;
+      }
+
+      .message {
+        margin: 0;
+        padding: 1rem 2rem;
+        background: #7c2d12;
+        color: white;
+      }
+    tests:
+      - "edges('.message', '.stage').left - edges('.message', '.stage').right"
+      - "edges('.message', '.stage').top - edges('.message', '.stage').bottom"
+      - "box('.message').width < box('.stage').width && box('.message').height < box('.stage').height"
+    solution:
+      css: |
+        .stage {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 300px;
+          background: #f5f0e8;
+        }
+
+        .message {
+          margin: 0;
+          padding: 1rem 2rem;
+          background: #7c2d12;
+          color: white;
+        }
+    hint: "On `.stage`: `display: flex; justify-content: center; align-items: center;`."
+    reject:
+      - css: |
+          .stage {
+            display: flex;
+            justify-content: center;
+            height: 300px;
+            background: #f5f0e8;
+          }
+
+          .message {
+            margin: 0;
+            padding: 1rem 2rem;
+            background: #7c2d12;
+            color: white;
+          }
+
+  - kind: explain
+    title: grow, shrink and basis
+    body: |
+      Three properties on **items** decide how they share the space:
+
+      - `flex-basis`: the item's starting size before sharing (like a width along the main axis). `auto` means "use my width or content".
+      - `flex-grow`: how much of the **leftover** space it takes. `0` = none (the default), `1` = an equal share.
+      - `flex-shrink`: how much it gives up when there's **too little** space. `1` by default; `0` means "never shrink below my basis".
+
+      Use the `flex` shorthand, **grow shrink basis**:
+
+      ```css
+      .search  { flex: 1; }            /* = 1 1 0%: take all the spare room */
+      .card    { flex: 1 1 200px; }    /* start at 200px, grow and shrink evenly */
+      .logo    { flex: none; }         /* = 0 0 auto: stay exactly its own size */
+      ```
+
+      `flex: 1` on every item makes equal columns. `flex: 1 1 200px` plus `flex-wrap: wrap` makes a row of cards that wraps when they'd get narrower than 200px.
+
+  - kind: web
+    title: A row of cards that wraps
+    body: |
+      Lay out Inkwell's staff picks as a card row:
+
+      1. `.cards`: a flex container that **wraps**, with `1rem` gaps.
+      2. Each `.card` starts at `200px`, and grows and shrinks evenly to share the row.
+      3. In the search bar, the input should take all the spare room while the button keeps its natural size: give `.search input` `flex: 1`.
+
+      The checker tries a phone and a laptop width: on the phone the cards wrap onto more rows.
+    html: |
+      <form class="search">
+        <label for="q" class="visually-hidden">Search</label>
+        <input id="q" type="search">
+        <button type="submit">Search</button>
+      </form>
+      <div class="cards">
+        <article class="card"><h3>Dune</h3></article>
+        <article class="card"><h3>Emma</h3></article>
+        <article class="card"><h3>Beloved</h3></article>
+        <article class="card"><h3>The Odyssey</h3></article>
+      </div>
+    css: |
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 1rem;
+        font-family: system-ui, sans-serif;
+      }
+
+      .search {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+      }
+
+      .card {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+        border-radius: 12px;
+      }
+    widths: [400, 1000]
+    tests:
+      - "cssAll('.card', 'flex-basis')"
+      - "cssAll('.card', 'flex-grow') + ' / ' + cssAll('.card', 'flex-shrink')"
+      - "css('.cards', 'flex-wrap') + ' gap ' + css('.cards', 'gap')"
+      - "$$('.card').map((c) => Math.round(c.getBoundingClientRect().width))"
+      - "new Set($$('.card').map((c) => Math.round(c.getBoundingClientRect().y))).size"
+      - "box('.search input').width + box('.search button').width + 8 === box('.search').width"
+    solution:
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 1rem;
+          font-family: system-ui, sans-serif;
+        }
+
+        .search {
+          display: flex;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+        }
+
+        .search input {
+          flex: 1;
+        }
+
+        .visually-hidden {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+        }
+
+        .cards {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .card {
+          flex: 1 1 200px;
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+          border-radius: 12px;
+        }
+    hint: "`.cards { display: flex; flex-wrap: wrap; gap: 1rem; }`, `.card { flex: 1 1 200px; }` and `.search input { flex: 1; }`."
+    reject:
+      - css: |
+          *, *::before, *::after {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 1rem;
+            font-family: system-ui, sans-serif;
+          }
+
+          .search {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+          }
+
+          .search input {
+            flex: 1;
+          }
+
+          .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+          }
+
+          .cards {
+            display: flex;
+            gap: 1rem;
+          }
+
+          .card {
+            flex: 1 1 200px;
+            padding: 1rem;
+            border: 1px solid #e7e5e4;
+            border-radius: 12px;
+          }
+
+  - kind: explain
+    title: order, and a warning
+    body: |
+      `order` moves an item along the main axis without touching the HTML. Items default to `order: 0`; lower numbers come first.
+
+      ```css
+      .featured { order: -1; }   /* jump to the front */
+      ```
+
+      Use it sparingly. Screen readers and the Tab key follow the **HTML order**, not the visual one. If the two disagree, keyboard users see focus jump around the screen. When the order really matters, change the HTML.
+
+      Other handy item properties: `align-self` overrides `align-items` for one item, and `margin-left: auto` on one item pushes it (and everything after it) to the far end, a neat trick for a "Log in" link at the end of a menu.
+
+  - kind: mac
+    title: The Flexbox inspector
+    body: |
+      In Chrome or Firefox DevTools, a flex container has a small **flex** badge next to it in the Elements panel. Click it to draw the container's outline, the gaps and each item's box on the page.
+
+      In Chrome, the Styles pane also shows a small **flexbox editor** icon next to `display: flex`: click it to try every `justify-content` and `align-items` value with one click.
+
+      Try it on the navbar you built (in the preview, right-click → Inspect).
+    commands: |
+      # Elements panel: look for the [flex] badge beside a container
+      # Styles pane: click the icon next to "display: flex" for the visual editor
+
+  - kind: why
+    body: |
+      Most components are a row or a column of things: a navbar, a button with an icon, a card's footer, a form row, a list of tags. Flexbox handles all of them in a few lines, and it adapts to content of any size. It's the layout tool you'll use most often.
+
+  - kind: recap
+    body: |
+      - `display: flex` on the container; its direct children are flex items.
+      - Main axis (`flex-direction`: row/column) ↔ `justify-content`; cross axis ↔ `align-items`.
+      - `gap` for spacing; `flex-wrap: wrap` to allow new lines.
+      - Items: `flex: grow shrink basis`. `flex: 1` = take the spare room; `flex: 1 1 200px` = wrapping cards.
+      - Centre anything: `display: flex; justify-content: center; align-items: center` on a parent with height.
+      - `order` changes only the visual order; keep the HTML order meaningful.

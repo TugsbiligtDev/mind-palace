@@ -1,0 +1,159 @@
+steps:
+  - kind: explain
+    title: A site is a project folder
+    body: |
+      In Module 1 you learned that a website is a folder of files. On your Mac, that folder is a **project folder**. Everything the site needs lives inside it:
+
+      ```
+      inkwell/
+      ├── index.html        ← the home page
+      ├── about.html
+      ├── css/
+      │   └── style.css
+      ├── images/
+      │   ├── logo.svg
+      │   └── cover-dune.jpg
+      └── books/
+          └── index.html    ← the books page
+      ```
+
+      When you publish the site later, you upload this whole folder. If a file isn't inside it, the live site can't use it.
+
+  - kind: mac
+    title: Make the folder in Finder
+    body: |
+      Open **Finder** (the smiling face in the Dock). In the sidebar, click your **home folder** (the house icon with your name). If it's missing, use **Go → Home** in the menu bar (⇧⌘H).
+
+      1. Make a folder called `websites` (**File → New Folder**, or ⇧⌘N). Keep every web project in here.
+      2. Inside it, make `inkwell`, and inside that make `css` and `images`.
+      3. Turn on **View → Show Path Bar**. The bar at the bottom of the window now shows exactly where you are: `Macintosh HD › Users › you › websites › inkwell`.
+
+      You can also make the same folders in Terminal (Spotlight with ⌘ + Space, type *Terminal*):
+    commands: |
+      mkdir -p ~/websites/inkwell/css ~/websites/inkwell/images
+      ls ~/websites/inkwell
+
+  - kind: explain
+    title: Names and extensions
+    body: |
+      A file's **extension** (the part after the last dot) tells the computer and the browser what kind of file it is:
+
+      | Extension | What it holds |
+      |---|---|
+      | `.html` | a web page |
+      | `.css` | a stylesheet |
+      | `.js` | JavaScript |
+      | `.jpg` `.png` `.svg` `.webp` | images (Module 7) |
+
+      Finder hides extensions by default, which causes confusion (`index.html.txt` looks like `index.html`). Turn them on: **Finder → Settings → Advanced → Show all filename extensions**.
+
+      ⚠️ Don't make web pages in **TextEdit** unless you switch it to plain text. By default it saves rich text with hidden formatting, and the browser shows a mess. Use a code editor (Module 3).
+
+  - kind: explain
+    title: lowercase-with-dashes, always
+    body: |
+      Web file names follow three habits:
+
+      1. **No spaces.** In a URL a space becomes `%20`, so `my photo.jpg` turns into `my%20photo.jpg`, and links to it break easily. Use dashes: `my-photo.jpg`.
+      2. **Lowercase only.** Your Mac treats `Logo.png` and `logo.png` as the *same* file, so a wrong capital still works on your Mac. Most web servers treat them as **different** files. The site works for you and breaks the moment it goes live. All-lowercase means the problem never happens.
+      3. **Only letters, numbers and dashes.** Avoid `&`, `?`, `#`, `é` and friends. Some of them mean something special in a URL.
+
+      `Cover Photo (final) v2.JPG` → `cover-photo-final.jpg`.
+
+  - kind: explain
+    title: Absolute paths
+    body: |
+      A **path** is directions to a file. An **absolute** path gives the full address, so it works from anywhere:
+
+      - A full URL: `https://inkwellbooks.com/images/logo.svg` (scheme, domain and path).
+      - A **root-relative** path, starting with `/`: `/images/logo.svg` means "from the top folder of this website". It keeps working wherever the page is, but only once the site is on a server (or Live Server). Opened straight from Finder, `/` means the top of your whole disk.
+
+      Use full URLs for *other* sites. For your own files, use relative paths.
+
+  - kind: explain
+    title: Relative paths
+    body: |
+      A **relative** path starts from **the folder of the file you're writing in**:
+
+      | Path | Means |
+      |---|---|
+      | `about.html` | a file in the **same** folder |
+      | `css/style.css` | go **into** the `css` folder, then `style.css` |
+      | `../index.html` | go **up one** folder, then `index.html` |
+      | `../images/logo.svg` | up one, into `images`, then `logo.svg` |
+      | `./about.html` | `.` means "this folder", so the same as `about.html` |
+
+      From `inkwell/books/index.html`, the logo at `inkwell/images/logo.svg` is `../images/logo.svg`: up out of `books`, into `images`.
+
+      Relative paths are the default for your own files, because the whole folder can move (to another computer, to a server) and every link still works.
+
+  - kind: web
+    title: Point to the right files
+    body: |
+      This page lives at `inkwell/books/index.html`. The project looks like the tree from the first step:
+
+      ```
+      inkwell/
+      ├── index.html
+      ├── about.html
+      ├── images/logo.svg
+      ├── images/cover-dune.jpg
+      └── books/index.html   ← you are here
+      ```
+
+      Fix the four paths so they point at the right files, using **relative** paths:
+
+      1. the logo `<img>` → `images/logo.svg` in the top folder
+      2. the cover `<img>` → `images/cover-dune.jpg`
+      3. the *Home* link → the top folder's `index.html`
+      4. the *About us* link → `about.html` in the top folder
+
+      The preview can't show these images (they aren't real files here), so press **Check my page**: the checker works out which file each path really points to.
+    html: |
+      <img src="logo.svg" alt="Inkwell Books">
+      <img src="images/cover-dune.jpg" alt="Dune, cover">
+      <p><a href="index.html">Home</a> · <a href="about.html">About us</a></p>
+    tests:
+      - "new URL(attr('img:nth-of-type(1)', 'src'), 'https://site.test/inkwell/books/index.html').pathname"
+      - "new URL(attr('img:nth-of-type(2)', 'src'), 'https://site.test/inkwell/books/index.html').pathname"
+      - "new URL(attr('a:nth-of-type(1)', 'href'), 'https://site.test/inkwell/books/index.html').pathname"
+      - "new URL(attr('a:nth-of-type(2)', 'href'), 'https://site.test/inkwell/books/index.html').pathname"
+      - "$$('img, a').every((el) => !/^(\\/|https?:)/.test(el.getAttribute('src') || el.getAttribute('href')))"
+    solution:
+      html: |
+        <img src="../images/logo.svg" alt="Inkwell Books">
+        <img src="../images/cover-dune.jpg" alt="Dune, cover">
+        <p><a href="../index.html">Home</a> · <a href="../about.html">About us</a></p>
+    hint: "Every file you need is in the top folder or below it, and this page is one folder down (in `books`). So every path starts with `../`."
+    reject:
+      - html: |
+          <img src="/inkwell/images/logo.svg" alt="Inkwell Books">
+          <img src="/inkwell/images/cover-dune.jpg" alt="Dune, cover">
+          <p><a href="/inkwell/index.html">Home</a> · <a href="/inkwell/about.html">About us</a></p>
+      - html: |
+          <img src="../images/logo.svg" alt="Inkwell Books">
+          <img src="../images/cover-dune.jpg" alt="Dune, cover">
+          <p><a href="index.html">Home</a> · <a href="about.html">About us</a></p>
+
+  - kind: explain
+    title: "Common mistake: the path that works on your Mac only"
+    body: |
+      Three classic ways a path breaks:
+
+      1. **Wrong capitals.** `images/Logo.svg` finds `logo.svg` on your Mac, then 404s on the server.
+      2. **Spaces.** `cover dune.jpg` needs `cover%20dune.jpg` in the link. Just rename the file.
+      3. **Computer paths.** `file:///Users/you/websites/inkwell/images/logo.svg` or `/Users/you/...` points at *your* disk. It works on your Mac and nowhere else.
+
+      When an image or stylesheet silently doesn't load, check the path first. Module 3 shows how DevTools tells you exactly which file failed.
+
+  - kind: why
+    body: |
+      Broken paths are the single most common reason a beginner's page "loses" its styles or images, and they're invisible until you know to look. Clean names and relative paths mean your project works the same on your Mac, on a friend's computer and on the live web.
+
+  - kind: recap
+    body: |
+      - Keep each site in its own **project folder** (`~/websites/inkwell`), with subfolders like `css` and `images`.
+      - Show extensions in Finder. Name files **lowercase-with-dashes**, no spaces or special characters.
+      - **Relative** paths start where the current file is: `file.html`, `folder/file.html`, `../file.html`.
+      - **Absolute** paths: full URLs for other sites; `/path` means the site's top folder (needs a server).
+      - Broken image or CSS? Check the path's spelling, capitals and `../` first.

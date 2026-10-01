@@ -1,0 +1,36 @@
+id: beginner
+title: Beginner
+season: 1
+season_title: The Storefront
+season_pitch: |
+  Inkwell Books needs a website, and the agency has offered yours. Learn how the web actually
+  works, set up your tools, and write real HTML: text, links, images, tables and forms. Then
+  style it with CSS, master the box model and positioning, and lay pages out with Flexbox and
+  Grid so they work on a phone and a desktop.
+status: open
+topics:
+  - 01-the-web
+  - 02-files-folders
+  - 03-editor-devtools
+  - 04-document-anatomy
+  - 05-text-content
+  - 06-links
+  - 07-images-media
+  - 08-semantic-structure
+  - 09-tables
+  - 10-forms-basics
+  - 11-validating-html
+  - review-1-html
+  - 12-connecting-css
+  - 13-selectors
+  - 14-cascade-specificity
+  - 15-units-colors
+  - 16-typography
+  - 17-box-model
+  - 18-display-flow
+  - 19-positioning
+  - review-2-css
+  - 20-flexbox
+  - 21-grid
+  - 22-responsive-basics
+  - capstone-1-personal-site

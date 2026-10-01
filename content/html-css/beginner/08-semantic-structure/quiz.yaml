@@ -1,0 +1,31 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A blog page shows a list of posts. Each post preview has a title, a date and a summary. Which element fits one preview?
+    options: ["`<article>`", "`<aside>`", "`<nav>`", "`<main>`"]
+    answer: 0
+    explanation: "Each preview is self-contained and could stand on its own, so it's an `article`."
+  - type: mcq
+    prompt: How many `<main>` elements should a normal page have?
+    options: ["Exactly one", "One per section", "As many as you like", "None; it's optional and outdated"]
+    answer: 0
+    explanation: "`main` marks the page's unique main content, so there's one. Screen reader users jump to it directly."
+  - type: mcq
+    prompt: You need a wrapper around three cards purely so CSS can lay them out in a row. Which element?
+    options: ["`<div>`", "`<section>`", "`<article>`", "`<main>`"]
+    answer: 0
+    explanation: "A wrapper with no meaning of its own is exactly what `div` is for."
+  - type: mcq
+    prompt: "A page made only of divs looks identical to the semantic version. What does it lose?"
+    options:
+      - "Landmarks that screen readers, keyboard users and search engines use to find their way"
+      - "Nothing; only the look matters"
+      - "The ability to use CSS"
+      - "Links stop working inside divs"
+    answer: 0
+    explanation: "Semantic elements carry meaning that tools rely on, even when they look the same on screen."
+  - type: mcq
+    prompt: "Where should a \"You might also like\" box next to a book's description go?"
+    options: ["`<aside>`", "`<footer>`", "`<nav>`", "`<header>`"]
+    answer: 0
+    explanation: "It's related to the page but not part of its main content: that's an `aside`."

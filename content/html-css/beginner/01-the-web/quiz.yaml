@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: When you open a website, what does your browser actually receive from the server?
+    options:
+      - "Files, such as HTML, CSS and images, which the browser turns into a page"
+      - "A finished picture of the page, ready to display"
+      - "A copy of the server's whole hard drive"
+      - "Only the text; the browser invents the colors and layout"
+    answer: 0
+    explanation: "The server sends files. Your browser reads the HTML, requests the CSS and images it mentions, and draws the page itself."
+  - type: mcq
+    prompt: "In `https://shop.example.com/books/sale.html#top`, which part is the **path**?"
+    options: ["`/books/sale.html`", "`shop.example.com`", "`https`", "`#top`"]
+    answer: 0
+    explanation: "The path names the file on the server. `shop.example.com` is the domain, `https` the scheme, and `#top` the fragment (a spot in the page, never sent to the server)."
+  - type: mcq
+    prompt: You want the shop's prices to show in bold red. Which language is that job for?
+    options: ["CSS", "HTML", "JavaScript", "HTTP"]
+    answer: 0
+    explanation: "How things *look* is CSS's job. HTML says what the content is (for example, that it's a price); CSS decides it's bold and red."
+  - type: mcq
+    prompt: "You click a link and see **404 Not Found**. What happened?"
+    options:
+      - "The server has no file at the path you asked for"
+      - "The server crashed"
+      - "Your internet connection dropped"
+      - "The page loaded but has no CSS"
+    answer: 0
+    explanation: "404 means the request reached the server, but nothing lives at that path. A typo in a link is the usual cause. A crashed server sends a 500-range code."
+  - type: mcq
+    prompt: What does the padlock of **HTTPS** protect?
+    options:
+      - "It encrypts the traffic between your browser and the server, and confirms the server's identity"
+      - "It guarantees the website is honest and safe to buy from"
+      - "It makes the page load faster"
+      - "It hides the site's HTML from your browser"
+    answer: 0
+    explanation: "HTTPS protects the connection: nobody in between can read or change it, and the certificate proves which domain you're talking to. It says nothing about whether the site's owner is trustworthy."

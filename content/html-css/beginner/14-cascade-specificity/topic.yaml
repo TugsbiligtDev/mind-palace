@@ -1,0 +1,4 @@
+title: The Cascade, Specificity & Inheritance
+module: 14
+summary: "When two rules disagree, who wins? Origin, specificity and source order; calculating specificity; which properties inherit; inherit, initial and unset; why !important and id selectors cause wars; and reading DevTools' crossed-out rules and Computed tab."
+minutes: 50

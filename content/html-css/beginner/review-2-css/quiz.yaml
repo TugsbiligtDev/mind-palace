@@ -1,0 +1,36 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Which declaration silently does nothing?"
+    options: ["`colour: red;`", "`color: red;`", "`color: #f00;`", "`color: rgb(255 0 0);`"]
+    answer: 0
+    explanation: "CSS uses American spelling. An unknown property is skipped without any error."
+  - type: mcq
+    prompt: "In this CSS, which line is ignored?"
+    code: |
+      .review {
+        padding-left: 1rem
+        border-left: 4px solid brown;
+        margin: 0;
+      }
+    options:
+      - "Both `padding-left` and `border-left`, which have merged into one invalid declaration"
+      - "Only `margin`"
+      - "None; the browser adds the semicolon"
+      - "The whole rule"
+    answer: 0
+    explanation: "Without the semicolon, the browser reads `1rem border-left: 4px solid brown` as one broken value and drops it. `margin` still works."
+  - type: mcq
+    prompt: "Menu link padding overlaps the text above it. What's the simplest fix?"
+    options: ["`display: inline-block` on the links", "`position: absolute`", "`z-index: 10`", "`margin: auto`"]
+    answer: 0
+    explanation: "Inline boxes don't push lines apart with vertical padding. inline-block makes the padding take real space."
+  - type: mcq
+    prompt: "A card must be exactly 300px wide on screen, padding and border included. Which pair?"
+    options:
+      - "`box-sizing: border-box; width: 300px;`"
+      - "`width: 300px;` alone"
+      - "`max-width: 300px; padding: 0;`"
+      - "`width: calc(300px + padding);`"
+    answer: 0
+    explanation: "border-box makes width include padding and border."

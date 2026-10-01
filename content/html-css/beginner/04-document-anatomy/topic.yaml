@@ -1,0 +1,4 @@
+title: HTML Document Anatomy
+module: 4
+summary: "Tags, elements and attributes; void elements; nesting rules; the skeleton every page needs (DOCTYPE, html lang, head, body, meta charset, viewport, title); comments and indentation; and the classic unclosed or mis-nested tag."
+minutes: 45

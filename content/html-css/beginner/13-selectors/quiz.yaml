@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which selector matches only links that are direct children of a nav (not links nested deeper)?
+    options: ["`nav > a`", "`nav a`", "`nav + a`", "`nav, a`"]
+    answer: 0
+    explanation: "`>` means direct child. A space matches descendants at any depth; `,` groups two separate selectors."
+  - type: mcq
+    prompt: "What does `.card.featured` select?"
+    options:
+      - "Elements that have both the class card and the class featured"
+      - "Elements with class featured inside an element with class card"
+      - "Every card and every featured element"
+      - "Nothing; you can't chain classes"
+    answer: 0
+    explanation: "With no space between them, both classes must be on the same element. `.card .featured` (with a space) would mean \"inside\"."
+  - type: mcq
+    prompt: "A `::before` rule sets a color but nothing appears. What's missing?"
+    code: |
+      .new::before {
+        color: goldenrod;
+      }
+    options: ["A `content` property", "A `display: block`", "An id on the element", "A second colon"]
+    answer: 0
+    explanation: "`::before` and `::after` only exist when they have `content` (even `content: \"\"`)."
+  - type: mcq
+    prompt: Which selector matches every third list item (3rd, 6th, 9th…)?
+    options: ["`li:nth-child(3n)`", "`li:nth-child(3)`", "`li:third-child`", "`li + li + li`"]
+    answer: 0
+    explanation: "`3n` means multiples of 3. `:nth-child(3)` matches only the third one."
+  - type: mcq
+    prompt: You style `a:hover` with a bold underline. What else should you add for keyboard users?
+    options:
+      - "A matching `a:focus-visible` style"
+      - "Nothing; keyboards trigger :hover"
+      - "`outline: none` on all links"
+      - "An `::after` arrow"
+    answer: 0
+    explanation: "Keyboard users never hover. `:focus-visible` gives them the same feedback; removing outlines takes it away."

@@ -1,0 +1,4 @@
+title: Images & Media
+module: 7
+summary: "Add images with <img>: src, alt text (and when it should be empty), width and height to stop the page jumping; choose between JPEG, PNG, SVG, WebP and AVIF; caption with figure; play video and audio; embed maps and videos with iframe."
+minutes: 45

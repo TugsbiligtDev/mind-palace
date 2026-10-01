@@ -1,0 +1,4 @@
+title: Connecting CSS
+module: 12
+summary: "Three ways to add CSS (inline, a <style> element, an external stylesheet with <link>) and why external is the default. The anatomy of a rule: selector, property, value and declaration. And comments."
+minutes: 30

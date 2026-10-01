@@ -1,0 +1,335 @@
+steps:
+  - kind: explain
+    title: Everything is a box
+    body: |
+      To CSS, every element is a rectangle made of four layers, from the inside out:
+
+      ```
+      ┌──────────── margin ────────────┐   space outside, between boxes (transparent)
+      │ ┌────────── border ──────────┐ │   a line around the box
+      │ │ ┌──────── padding ───────┐ │ │   space inside, between border and content
+      │ │ │        content         │ │ │   the text or image itself
+      │ │ └────────────────────────┘ │ │
+      │ └────────────────────────────┘ │
+      └────────────────────────────────┘
+      ```
+
+      - **Padding** gets the element's background color. It's breathing room *inside* the box.
+      - **Margin** is always transparent. It pushes *other* boxes away.
+
+      DevTools draws this diagram for any element: Elements → **Computed** (or **Layout**) tab, the box at the top. Hover a layer and the page highlights it.
+
+  - kind: explain
+    title: Writing padding, border and margin
+    body: |
+      Each has four sides, and a shorthand that goes **clockwise from the top**:
+
+      ```css
+      padding: 10px;                 /* all four sides */
+      padding: 10px 20px;            /* top & bottom, left & right */
+      padding: 10px 20px 30px;       /* top, left & right, bottom */
+      padding: 10px 20px 30px 40px;  /* top, right, bottom, left */
+      padding-left: 20px;            /* one side */
+      ```
+
+      Border needs a width, a style and a color; the style is required, or nothing shows:
+
+      ```css
+      border: 2px solid #7c2d12;
+      border-bottom: 1px dashed gray;
+      ```
+
+      Styles include `solid`, `dashed`, `dotted`, `double` and `none`.
+
+  - kind: explain
+    title: "The size surprise, and box-sizing"
+    body: |
+      By default, `width` sets the size of the **content only**. Padding and border are added on top:
+
+      ```css
+      .card {
+        width: 300px;
+        padding: 20px;
+        border: 2px solid;
+      }
+      /* actual width on screen: 300 + 20 + 20 + 2 + 2 = 344px */
+      ```
+
+      That's `box-sizing: content-box`, and it makes layouts hard: add padding and everything gets wider.
+
+      With `box-sizing: border-box`, `width` means the **whole box including padding and border**. The card is 300px wide, and the content shrinks to make room. That's how people think about size, so nearly every stylesheet starts with:
+
+      ```css
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      ```
+
+  - kind: web
+    title: Make 300 mean 300
+    body: |
+      The three cards are supposed to be **300px wide** each, but they come out wider and don't match the 300px ruler.
+
+      Add the standard rule at the top of `style.css` that makes every element (and its `::before` and `::after`) use `box-sizing: border-box`. Don't change the widths or padding.
+    html: |
+      <div class="ruler">300px</div>
+      <div class="card">Dune</div>
+      <div class="card wide-pad">Emma</div>
+      <div class="card thick">Beloved</div>
+    css: |
+      .ruler {
+        width: 300px;
+        background: #7c2d12;
+        color: white;
+        margin-bottom: 8px;
+      }
+
+      .card {
+        width: 300px;
+        padding: 20px;
+        border: 2px solid #7c2d12;
+        margin-bottom: 8px;
+      }
+
+      .wide-pad {
+        padding: 40px;
+      }
+
+      .thick {
+        border-width: 10px;
+      }
+    tests:
+      - "$$('.card').map((c) => Math.round(c.getBoundingClientRect().width))"
+      - "css('.ruler', 'box-sizing')"
+      - "css('.card', 'box-sizing', '::before')"
+    solution:
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        .ruler {
+          width: 300px;
+          background: #7c2d12;
+          color: white;
+          margin-bottom: 8px;
+        }
+
+        .card {
+          width: 300px;
+          padding: 20px;
+          border: 2px solid #7c2d12;
+          margin-bottom: 8px;
+        }
+
+        .wide-pad {
+          padding: 40px;
+        }
+
+        .thick {
+          border-width: 10px;
+        }
+    hint: "`*, *::before, *::after { box-sizing: border-box; }` at the very top."
+    reject:
+      - css: |
+          .card {
+            box-sizing: border-box;
+          }
+
+          .ruler {
+            width: 300px;
+            background: #7c2d12;
+            color: white;
+            margin-bottom: 8px;
+          }
+
+          .card {
+            width: 300px;
+            padding: 20px;
+            border: 2px solid #7c2d12;
+            margin-bottom: 8px;
+          }
+
+          .wide-pad {
+            padding: 40px;
+          }
+
+          .thick {
+            border-width: 10px;
+          }
+
+  - kind: explain
+    title: Margin collapsing
+    body: |
+      When two block elements sit one above the other, their **vertical margins don't add up**. They **collapse** into one gap, the size of the larger margin:
+
+      ```css
+      h2 { margin-bottom: 24px; }
+      p  { margin-top: 16px; }
+      /* the gap between them is 24px, not 40px */
+      ```
+
+      It also happens between a parent and its first or last child when nothing (no padding, no border) separates them: the child's top margin "leaks" out above the parent. If a heading's margin seems to push its whole section down, that's why. Adding `padding` to the parent, or using `gap` in Flexbox and Grid layouts (Modules 20–21), avoids it. Horizontal margins never collapse.
+
+      A common habit to keep spacing predictable: give elements margin on **one side only**, usually the bottom.
+
+  - kind: explain
+    title: Width, height and their limits
+    body: |
+      Block elements fill the width available to them automatically. You rarely need `width: 100%`.
+
+      - `max-width` stops a box getting too wide but lets it shrink on small screens. **Far more useful than a fixed `width`.**
+      - `min-width` / `min-height` set a floor.
+      - Avoid fixed `height` on boxes containing text: when the text is longer than expected, or the reader's font is bigger, it overflows. Use `min-height` instead.
+
+      **Centring a block**: give it a `max-width` and set its left and right margins to `auto`. The browser splits the leftover space equally:
+
+      ```css
+      .container {
+        max-width: 960px;
+        margin: 0 auto;   /* top & bottom 0, left & right auto */
+      }
+      ```
+
+  - kind: web
+    title: Centre the page
+    body: |
+      Inkwell's content stretches edge to edge on wide screens.
+
+      1. Give `.container` a `max-width` of `600px` and centre it with `auto` left and right margins.
+      2. Give it `padding: 0 1rem` so text never touches the screen edge on phones.
+
+      The checker measures it on a phone-sized screen and a wide one.
+    html: |
+      <div class="container">
+        <h1>Inkwell Books</h1>
+        <p>Second-hand books, carefully chosen. Three floors on Harbour Street, open Tuesday to Sunday.</p>
+      </div>
+    css: |
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #f5f0e8;
+      }
+
+      .container {
+        background: white;
+      }
+    widths: [375, 1000]
+    tests:
+      - "box('.container')"
+      - "css('.container', 'padding-left') + ' ' + css('.container', 'padding-right')"
+    solution:
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          background: #f5f0e8;
+        }
+
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 0 1rem;
+          background: white;
+        }
+    hint: "`max-width: 600px; margin: 0 auto; padding: 0 1rem;`. A fixed `width: 600px` would overflow the phone screen."
+    reject:
+      - css: |
+          *, *::before, *::after {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 0;
+            background: #f5f0e8;
+          }
+
+          .container {
+            width: 600px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            background: white;
+          }
+
+  - kind: explain
+    title: overflow
+    body: |
+      When content is bigger than its box (usually because of a fixed height, or a very long word or URL), it spills out. `overflow` decides what happens:
+
+      | Value | Effect |
+      |---|---|
+      | `visible` | the default: content spills out and overlaps whatever is below |
+      | `hidden` | cut off: the extra is invisible and unreachable |
+      | `scroll` | always shows scrollbars |
+      | `auto` | scrollbars only when needed. Usually the right choice |
+
+      `overflow-x` and `overflow-y` control each direction. For long words or URLs that break a narrow box, `overflow-wrap: break-word` lets them wrap instead.
+
+  - kind: web
+    title: Tame the overflow
+    body: |
+      The reviews box has a fixed height, and the reviews spill out over the footer.
+
+      1. Make the box scroll when its content is too tall, with scrollbars **only when needed**.
+      2. The long URL inside it pokes out of the side: let it wrap with `overflow-wrap: break-word`.
+    html: |
+      <div class="reviews">
+        <p>"A desert you can taste." ★★★★★</p>
+        <p>"Slow start, huge payoff." ★★★★</p>
+        <p>"Read it twice in one summer." ★★★★★</p>
+        <p>"The best world-building I know." ★★★★★</p>
+        <p>Full review: https://inkwellbooks.example.com/reviews/dune-by-frank-herbert-a-desert-you-can-taste</p>
+      </div>
+      <footer>© 2026 Inkwell Books</footer>
+    css: |
+      .reviews {
+        width: 260px;
+        height: 150px;
+        border: 2px solid #7c2d12;
+        padding: 0 10px;
+      }
+    tests:
+      - "css('.reviews', 'overflow-y')"
+      - "css('.reviews', 'overflow-wrap')"
+      - "$('.reviews').scrollWidth <= $('.reviews').clientWidth"
+    solution:
+      css: |
+        .reviews {
+          width: 260px;
+          height: 150px;
+          border: 2px solid #7c2d12;
+          padding: 0 10px;
+          overflow: auto;
+          overflow-wrap: break-word;
+        }
+    hint: "`overflow: auto;` adds scrollbars only when needed. Add `overflow-wrap: break-word;` too."
+    reject:
+      - css: |
+          .reviews {
+            width: 260px;
+            height: 150px;
+            border: 2px solid #7c2d12;
+            padding: 0 10px;
+            overflow: hidden;
+            overflow-wrap: break-word;
+          }
+
+  - kind: why
+    body: |
+      Every layout problem is, in the end, a box problem: something's wider than you expect, a gap is bigger than you set, text spills out. The box model, border-box sizing and max-width explain and prevent most of them. When something looks off, inspect it and look at the box diagram first.
+
+  - kind: recap
+    body: |
+      - Box = content + **padding** (inside, gets the background) + **border** + **margin** (outside, transparent).
+      - Shorthands go clockwise: top, right, bottom, left.
+      - Start every stylesheet with `*, *::before, *::after { box-sizing: border-box; }`.
+      - Vertical margins **collapse** to the larger one.
+      - Prefer `max-width` and `min-height` over fixed sizes; centre with `margin: 0 auto`.
+      - `overflow: auto` scrolls only when needed; `overflow-wrap: break-word` for long words.

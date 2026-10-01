@@ -1,0 +1,49 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Without box-sizing changes, how wide does this box appear on screen?"
+    code: |
+      .box {
+        width: 200px;
+        padding: 10px;
+        border: 5px solid black;
+        margin: 20px;
+      }
+    options: ["230px", "200px", "270px", "215px"]
+    answer: 0
+    explanation: "Content-box adds padding and border: 200 + 10 + 10 + 5 + 5 = 230. The margin is outside the box."
+  - type: mcq
+    prompt: "The same box with `box-sizing: border-box`. How wide is it now?"
+    code: |
+      .box {
+        box-sizing: border-box;
+        width: 200px;
+        padding: 10px;
+        border: 5px solid black;
+      }
+    options: ["200px", "230px", "170px", "215px"]
+    answer: 0
+    explanation: "With border-box, width includes padding and border. The content area shrinks to 170px instead."
+  - type: mcq
+    prompt: "An `h2` has `margin-bottom: 30px` and the `p` below it has `margin-top: 20px`. How big is the gap?"
+    options: ["30px", "50px", "20px", "10px"]
+    answer: 0
+    explanation: "Vertical margins between blocks collapse into the larger of the two."
+  - type: mcq
+    prompt: "What does `margin: 10px 20px` mean?"
+    options:
+      - "10px top and bottom, 20px left and right"
+      - "10px left and right, 20px top and bottom"
+      - "10px top, 20px bottom"
+      - "10px on all sides, plus 20px extra"
+    answer: 0
+    explanation: "Two values: the first is vertical (top & bottom), the second horizontal (left & right)."
+  - type: mcq
+    prompt: "Which rule centres a 700px-wide container and still lets it shrink on phones?"
+    options:
+      - "`max-width: 700px; margin: 0 auto;`"
+      - "`width: 700px; margin: 0 auto;`"
+      - "`width: 700px; text-align: center;`"
+      - "`max-width: 700px; padding: auto;`"
+    answer: 0
+    explanation: "max-width lets it shrink; auto left and right margins split the leftover space. A fixed width would overflow a phone."

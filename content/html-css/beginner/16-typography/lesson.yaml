@@ -1,0 +1,212 @@
+steps:
+  - kind: explain
+    title: font-family and fallback stacks
+    body: |
+      `font-family` lists fonts **in order of preference**. The browser uses the first one it has:
+
+      ```css
+      body {
+        font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+      }
+      ```
+
+      - Names with spaces go in quotes.
+      - The list is a **fallback stack**: if the first font is missing or still downloading, the next is used.
+      - Always end with a **generic family**: `serif`, `sans-serif`, `monospace`, `system-ui`. That's the guaranteed last resort.
+
+      **System fonts** are already on the visitor's device: no download, instant. `system-ui` means "the operating system's interface font" (San Francisco on a Mac and iPhone, Segoe UI on Windows). A popular stack for clean interfaces is simply `font-family: system-ui, sans-serif;`.
+
+  - kind: explain
+    title: Web fonts
+    body: |
+      To use a font visitors may not have, the browser must download it.
+
+      **Google Fonts** (fonts.google.com) is the easy route: pick a font, choose its weights, and paste the `<link>` it gives you into your `<head>`, before your own stylesheet:
+
+      ```html
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;700&display=swap" rel="stylesheet">
+      ```
+
+      **Self-hosting** with `@font-face` means putting the font files in your own project:
+
+      ```css
+      @font-face {
+        font-family: "Inkwell Serif";
+        src: url("fonts/inkwell-serif.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      ```
+
+      Use the **WOFF2** format: it's compressed and supported everywhere. And only load the weights you use: each one is a separate download.
+
+  - kind: explain
+    title: font-display
+    body: |
+      While a web font downloads, what should the text do?
+
+      | Value | Behaviour |
+      |---|---|
+      | `swap` | show the fallback font **immediately**, swap in the web font when it arrives |
+      | `block` | hide the text for up to ~3 seconds while waiting (invisible text!) |
+      | `optional` | use the web font only if it arrives almost instantly; otherwise keep the fallback for this visit |
+
+      `swap` is the usual choice: people can start reading right away. (Google Fonts adds it with `&display=swap` in the URL.) Pick a fallback that's a similar size, so the page doesn't jump much when the swap happens.
+
+  - kind: web
+    title: Declare Inkwell's font
+    body: |
+      Inkwell has its own font file, `fonts/inkwell-serif.woff2`. (It doesn't exist in this lesson, so you'll see the fallback, which is exactly what `font-display: swap` is for.)
+
+      1. Write an `@font-face` rule that names the font `"Inkwell Serif"`, loads it from `url("fonts/inkwell-serif.woff2") format("woff2")`, and uses `font-display: swap`.
+      2. Set the `body` font to `"Inkwell Serif", Georgia, serif`.
+    html: |
+      <h1>Inkwell Books</h1>
+      <p>Second-hand books, carefully chosen.</p>
+    css: |
+      /* your rules */
+    tests:
+      - "[...doc.fonts].map((f) => f.family.replace(/\"/g, '') + ' / ' + f.display)"
+      - "css('body', 'font-family')"
+      - "css('p', 'font-family')"
+    solution:
+      css: |
+        @font-face {
+          font-family: "Inkwell Serif";
+          src: url("fonts/inkwell-serif.woff2") format("woff2");
+          font-display: swap;
+        }
+
+        body {
+          font-family: "Inkwell Serif", Georgia, serif;
+        }
+    hint: "Inside `@font-face { … }` you need `font-family`, `src` and `font-display`. The body rule is an ordinary rule with a three-font stack."
+
+  - kind: explain
+    title: Size, weight and line height
+    body: |
+      - `font-size`: use `rem` (Module 15). Body text around `1rem`–`1.125rem` (16–18px).
+      - `font-weight`: `400` is normal, `700` bold; `100`–`900` in steps of 100. A weight only looks right if the font has it; otherwise the browser fakes it ("faux bold").
+      - `line-height`: the height of each line. Write it **without a unit**, like `1.6`, meaning 1.6 × the font size. A unitless value is recalculated for each element; `1.6em` would be calculated once and inherited as a fixed size, cramping bigger headings.
+      - `letter-spacing`: space between letters. Small adjustments only (`0.05em`). Useful for small capitals and all-caps labels.
+
+      Body text reads best with a line height of about **1.5–1.7**; headings can be tighter, around 1.1–1.3.
+
+  - kind: explain
+    title: Alignment, decoration and case
+    body: |
+      - `text-align`: `left` (or `start`), `center`, `right`, `justify`. Keep long text left-aligned: centred paragraphs are hard to read, and `justify` leaves rivers of uneven gaps on the web.
+      - `text-decoration`: `underline`, `line-through` (crossed out, nice for old prices), `none`. Removing link underlines makes links harder to spot; if you do, give them another clear signal.
+      - `text-transform`: `uppercase`, `lowercase`, `capitalize`. Better than typing in capitals: the HTML keeps normal text (screen readers sometimes spell out all-caps words letter by letter), and you can change your mind in CSS.
+      - `font-style: italic`.
+
+  - kind: explain
+    title: Comfortable line length
+    body: |
+      Lines that are too long make the eye lose its place jumping back; too short and reading becomes choppy. The sweet spot is **45–75 characters per line**.
+
+      The `ch` unit is the width of the "0" character, so this keeps paragraphs readable on any screen:
+
+      ```css
+      p {
+        max-width: 65ch;
+      }
+      ```
+
+      On a phone the paragraph is simply as wide as the screen; on a big monitor it stops at a readable width.
+
+  - kind: web
+    title: Make the article readable
+    body: |
+      Inkwell's blog post is a wall of text. Using `style.css`:
+
+      1. Paragraphs: `line-height: 1.6` (no unit) and `max-width: 65ch`.
+      2. The `h1`: `line-height: 1.2` and `font-weight: 700`.
+      3. The small label `.kicker` above the title: `text-transform: uppercase` and `letter-spacing: 0.1em`.
+      4. The old price `.was`: `text-decoration: line-through`.
+    html: |
+      <p class="kicker">Staff picks</p>
+      <h1>Why we still love Dune, sixty years on</h1>
+      <p>Few novels build a world as complete as Frank Herbert's. Its desert planet has an ecology, an economy and a religion, and every one of them matters to the plot. Reading it again this year, we noticed how much of it is about water: who has it, who controls it, and what people will do to keep it.</p>
+      <p>Our copies: <span class="was">£12.00</span> £8.99.</p>
+    css: |
+      body {
+        font-family: Georgia, serif;
+      }
+    widths: [1200]
+    tests:
+      - "cssAll('p', 'line-height')"
+      - "cssAll('p', 'max-width')"
+      - "declared(['p', 'body p'], 'line-height')"
+      - "css('h1', 'line-height') + ' ' + css('h1', 'font-weight')"
+      - "css('.kicker', 'text-transform') + ' ' + css('.kicker', 'letter-spacing')"
+      - "css('.was', 'text-decoration-line')"
+      - "text('.kicker')"
+    solution:
+      css: |
+        body {
+          font-family: Georgia, serif;
+        }
+
+        p {
+          line-height: 1.6;
+          max-width: 65ch;
+        }
+
+        h1 {
+          line-height: 1.2;
+          font-weight: 700;
+        }
+
+        .kicker {
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+
+        .was {
+          text-decoration: line-through;
+        }
+    hint: "Four rules: `p`, `h1`, `.kicker` and `.was`. Write `line-height: 1.6` without any unit. Keep the HTML text as it is; CSS does the capitals."
+    reject:
+      - css: |
+          body {
+            font-family: Georgia, serif;
+          }
+
+          p {
+            line-height: 1.6em;
+            max-width: 65ch;
+          }
+
+          h1 {
+            line-height: 1.2;
+            font-weight: 700;
+          }
+
+          .kicker {
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+          }
+
+          .was {
+            text-decoration: line-through;
+          }
+
+  - kind: info
+    title: "🔹 Variable fonts"
+    body: |
+      A **variable font** is one file that contains a whole range of weights (and sometimes widths or slants). Instead of separate files for 400 and 700, you load one and use any weight in between, like `font-weight: 550`. Many Google Fonts are variable: their URL looks like `wght@200..900`. Fewer files, more freedom.
+
+  - kind: why
+    body: |
+      Most of the web is text. Good typography (a sensible font stack, comfortable line height and line length, restrained styling) is the difference between a page people read and a page they skim and leave. It's also where small accessibility wins hide: rem sizes, readable contrast, no all-caps HTML.
+
+  - kind: recap
+    body: |
+      - `font-family` is a fallback stack ending in a generic (`serif`, `sans-serif`, `system-ui`).
+      - Web fonts: Google Fonts `<link>` or `@font-face` with WOFF2; `font-display: swap`.
+      - `font-size` in rem; `font-weight` 400/700; **unitless** `line-height` (≈1.6 for body text).
+      - `text-transform`, `letter-spacing`, `text-decoration`, `text-align` (keep long text left-aligned).
+      - `max-width: 65ch` for comfortable line length. 🔹 Variable fonts: many weights, one file.

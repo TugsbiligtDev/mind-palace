@@ -1,0 +1,290 @@
+steps:
+  - kind: explain
+    title: One page, every screen
+    body: |
+      Inkwell's visitors use phones (most of them), tablets, laptops and huge monitors. **Responsive design** means one HTML page whose CSS adapts its layout to the space available.
+
+      You already have most of the tools:
+
+      - **Relative units** (rem, %, fr) instead of fixed pixels.
+      - **max-width** instead of width, so boxes can shrink.
+      - **Flex-wrap and auto-fit grids**, which reflow by themselves.
+
+      The last tool is the **media query**: CSS that applies only when the screen matches a condition.
+
+  - kind: explain
+    title: The viewport line, again
+    body: |
+      From Module 4, every page's `<head>` needs:
+
+      ```html
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      ```
+
+      Without it, phones pretend to be about 980px wide and shrink the whole page. With it, a phone reports its real width (say, 390px), and your media queries see the true size. Responsive CSS doesn't work without this line.
+
+  - kind: explain
+    title: Media queries
+    body: |
+      A media query wraps rules that apply only when a condition is true:
+
+      ```css
+      .books {
+        display: grid;
+        grid-template-columns: 1fr;            /* phones: one column */
+      }
+
+      @media (width >= 768px) {
+        .books {
+          grid-template-columns: 1fr 1fr;      /* wider screens: two */
+        }
+      }
+      ```
+
+      `width` is the width of the viewport (the browser window, or the preview panel here). The **range syntax** (`width >= 768px`, `width < 500px`, `500px <= width < 900px`) is the modern way to write it, supported in every current browser.
+
+      You'll often meet the older form in tutorials: `(min-width: 768px)` means the same as `(width >= 768px)`, and `(max-width: 767px)` roughly means `(width < 768px)`.
+
+  - kind: explain
+    title: Mobile first
+    body: |
+      Write the **phone layout first, with no media query**, then add queries that *enhance* it for bigger screens with `width >=`:
+
+      ```css
+      /* base: phones */
+      nav { display: flex; flex-direction: column; }
+
+      /* bigger screens: add, don't undo */
+      @media (width >= 700px) {
+        nav { flex-direction: row; }
+      }
+      ```
+
+      Why this order:
+
+      - The small-screen layout is usually the **simplest** (one column), so it makes a clean base.
+      - Bigger screens add columns; it's easier to **add** than to undo.
+      - Phones don't have to process desktop rules they'll never use.
+
+  - kind: web
+    title: A mobile-first book list
+    body: |
+      The list is written desktop-first: three columns everywhere, squashed on a phone. Rewrite it **mobile-first**:
+
+      1. Base rule (no query): **one** column, `1rem` gap.
+      2. From `600px` wide: **two** columns.
+      3. From `900px` wide: **three** columns.
+
+      Use the range syntax (`width >=`). The checker views it at 375px, 700px and 1000px.
+    html: |
+      <div class="books">
+        <article>Dune</article>
+        <article>Emma</article>
+        <article>Beloved</article>
+        <article>The Odyssey</article>
+        <article>Middlemarch</article>
+        <article>Persuasion</article>
+      </div>
+    css: |
+      .books {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+      }
+
+      .books article {
+        padding: 2rem 1rem;
+        background: #f5f0e8;
+      }
+    widths: [375, 700, 1000]
+    tests:
+      - "css('.books', 'grid-template-columns').split(' ').length"
+      - "css('.books', 'gap')"
+      - "/width\\s*>=\\s*600px/.test($('style[data-file]').textContent) && /width\\s*>=\\s*900px/.test($('style[data-file]').textContent)"
+    solution:
+      css: |
+        .books {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        @media (width >= 600px) {
+          .books {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (width >= 900px) {
+          .books {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        .books article {
+          padding: 2rem 1rem;
+          background: #f5f0e8;
+        }
+    hint: "Base: `grid-template-columns: 1fr;`. Then `@media (width >= 600px) { .books { grid-template-columns: repeat(2, 1fr); } }` and the same for 900px with 3."
+    reject:
+      - css: |
+          .books {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+          }
+
+          @media (width >= 900px) {
+            .books {
+              grid-template-columns: repeat(3, 1fr);
+            }
+          }
+
+          @media (width >= 600px) {
+            .books {
+              grid-template-columns: repeat(2, 1fr);
+            }
+          }
+
+          .books article {
+            padding: 2rem 1rem;
+            background: #f5f0e8;
+          }
+
+  - kind: explain
+    title: Breakpoints come from your content
+    body: |
+      A **breakpoint** is the width where a media query kicks in. Don't pick them from device lists ("iPhone is 390, iPad is 820"): there are thousands of screen sizes, and new ones every year.
+
+      Instead: make the browser window slowly wider (or drag the preview's corner) and **watch your content**. When the lines of text get too long, or the cards get too wide, or there's room for the sidebar, that's a breakpoint. Use rem or px, whichever you prefer, and keep the number of breakpoints small. Two or three per page is typical.
+
+      And remember auto-fit grids and flex-wrap often need **no** breakpoint at all.
+
+  - kind: explain
+    title: Fluid images
+    body: |
+      An image wider than its container breaks the layout on a phone: the page scrolls sideways. One rule, usually in every stylesheet's base section, fixes it for good:
+
+      ```css
+      img, video {
+        max-width: 100%;
+        height: auto;
+      }
+      ```
+
+      `max-width: 100%` lets images shrink to fit their container but never stretch beyond their real size. `height: auto` keeps the proportions, using the `width` and `height` attributes from the HTML (Module 7) to reserve the right space.
+
+  - kind: web
+    title: Fix the sideways scroll
+    body: |
+      On a phone, the shop photo is wider than the screen and the whole page scrolls sideways. And the menu doesn't fit in a row.
+
+      1. Make images fluid: never wider than their container, proportions kept.
+      2. The menu (`.menu`) should be a **column** on small screens and a **row** from `600px`, mobile-first. It's already a flex container.
+    html: |
+      <nav class="menu">
+        <a href="books.html">Books</a>
+        <a href="events.html">Events</a>
+        <a href="about.html">About us</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <img src="images/shop.jpg" alt="Tall wooden shelves full of colourful books" width="800" height="500">
+    css: |
+      body {
+        margin: 1rem;
+        font-family: system-ui, sans-serif;
+      }
+
+      .menu {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+    widths: [375, 900]
+    tests:
+      - "doc.scrollingElement.scrollWidth <= doc.scrollingElement.clientWidth"
+      - "box('img')"
+      - "css('.menu', 'flex-direction')"
+      - "css('img', 'max-width')"
+    solution:
+      css: |
+        body {
+          margin: 1rem;
+          font-family: system-ui, sans-serif;
+        }
+
+        img {
+          max-width: 100%;
+          height: auto;
+        }
+
+        .menu {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+        }
+
+        @media (width >= 600px) {
+          .menu {
+            flex-direction: row;
+          }
+        }
+    hint: "`img { max-width: 100%; height: auto; }`. For the menu, `flex-direction: column` in the base rule and `row` inside `@media (width >= 600px)`."
+    reject:
+      - css: |
+          body {
+            margin: 1rem;
+            font-family: system-ui, sans-serif;
+          }
+
+          img {
+            width: 100%;
+          }
+
+          .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+          }
+
+          @media (width >= 600px) {
+            .menu {
+              flex-direction: row;
+            }
+          }
+
+  - kind: mac
+    title: Device mode in DevTools
+    body: |
+      To see your page as a phone would:
+
+      1. Open DevTools (⌥⌘I) and click the **device toolbar** icon (phone and tablet, or ⇧⌘M in Chrome).
+      2. Choose a device from the list at the top, or pick **Responsive** and drag the edges to any width.
+      3. Drag slowly from narrow to wide and watch for the moment your layout looks wrong: that's where a breakpoint belongs.
+      4. Chrome shows bars above the page for each media query; click one to jump to that width.
+
+      It's a good simulation, not the real thing. Always open the finished site on a real phone too (Module 36).
+    commands: |
+      # Chrome:  ⌥⌘I, then ⇧⌘M for device mode
+      # Safari:  Develop → Enter Responsive Design Mode (⌃⌘R)
+      # Firefox: ⌥⌘M
+
+  - kind: info
+    title: "🔹 Floats for layout are legacy"
+    body: |
+      Older tutorials build columns with `float: left` and "clearfix" hacks. That was the only way before Flexbox and Grid. Today `float` has one proper job: letting text **wrap around** an image, like in a magazine. If you see floats used for page layout in old code, recognise them, and use Flexbox or Grid in your own.
+
+  - kind: why
+    body: |
+      More than half of all web visits come from phones. A site that only works on a laptop turns most visitors away. Mobile-first CSS, fluid images and a few content-based breakpoints make one page work everywhere, without a separate "mobile site".
+
+  - kind: recap
+    body: |
+      - The viewport meta tag makes phones report their real width.
+      - `@media (width >= 768px) { … }`: range syntax; same as `(min-width: 768px)`.
+      - **Mobile first**: phone styles as the base, `width >=` queries add to them.
+      - Choose breakpoints where your **content** breaks, not from device lists.
+      - `img, video { max-width: 100%; height: auto; }` in every stylesheet.
+      - Test with DevTools device mode, then on a real phone. 🔹 Floats for layout are legacy.

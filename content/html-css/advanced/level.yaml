@@ -1,0 +1,26 @@
+id: advanced
+title: Advanced
+season: 3
+season_title: The Blueprint
+season_pitch: |
+  Inkwell is growing, and its stylesheet has become a crime scene. Bring order with CSS
+  architecture, cascade layers, scoping and design tokens. Then use the newest CSS (container
+  queries, subgrid, anchor positioning, view transitions) and finish with performance,
+  professional accessibility and turning designs into production code.
+status: coming_soon
+topics: []
+planned:
+  - "Methodologies"
+  - "Cascade Layers"
+  - "Scoping Styles"
+  - "Design Systems & Tokens"
+  - "Container Queries"
+  - "Subgrid & Advanced Grid"
+  - "Anchor Positioning"
+  - "View Transitions & Scroll-Linked Effects"
+  - "Advanced Visual Effects"
+  - "Rendering Performance"
+  - "Accessibility at Professional Level"
+  - "Build Tools & Frameworks Overview"
+  - "Debugging Mastery"
+  - "Professional Handoff"

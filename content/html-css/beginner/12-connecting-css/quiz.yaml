@@ -1,0 +1,40 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "In `p { color: gray; }`, what is `color`?"
+    options: ["The property", "The selector", "The value", "The declaration block"]
+    answer: 0
+    explanation: "`p` is the selector, `color` the property, `gray` the value, and `color: gray;` together is a declaration."
+  - type: mcq
+    prompt: Your page has no styles at all, but style.css is full of rules. What's the most likely cause?
+    options:
+      - "The `<link>` is missing or its `href` path is wrong"
+      - "CSS files must be called main.css"
+      - "The rules need `!important`"
+      - "The browser doesn't support CSS"
+    answer: 0
+    explanation: "If the page never loads the file, none of it applies. Check the link and its path (and the Network tab for a 404)."
+  - type: mcq
+    prompt: Why is an external stylesheet the default choice?
+    options:
+      - "One cached file styles every page, and HTML stays about content"
+      - "Inline styles don't work in Safari"
+      - "External CSS is the only way to use colors"
+      - "It hides your CSS from visitors"
+    answer: 0
+    explanation: "One file, downloaded once, styles the whole site. (Visitors can still see your CSS, which is fine.)"
+  - type: mcq
+    prompt: "What happens to `colr: red;` in a rule?"
+    options:
+      - "The browser ignores that one declaration and applies the rest of the rule"
+      - "The whole stylesheet stops working"
+      - "The browser shows an error on the page"
+      - "The element turns red anyway"
+    answer: 0
+    explanation: "Unknown properties are skipped silently. DevTools shows them crossed out with a warning icon."
+  - type: fill
+    prompt: "Complete the line that connects a stylesheet."
+    code: "<link rel=\"____\" href=\"css/style.css\">"
+    answer: "stylesheet"
+    runnable: false
+    explanation: "`rel=\"stylesheet\"` tells the browser the linked file is CSS to apply."

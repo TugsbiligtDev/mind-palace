@@ -1,0 +1,119 @@
+steps:
+  - kind: explain
+    title: A website is a folder of files
+    body: |
+      Inkwell Books wants a website, and Inspector Bold has offered yours. Before writing a line of code, it helps to know what a website actually *is*.
+
+      A website is **a folder of ordinary files** sitting on a computer somewhere. Some are text files with names like `index.html` and `style.css`. Some are pictures (`cover.jpg`) or fonts. Nothing magic.
+
+      When you visit a site, your browser asks that computer for the files, downloads them, and turns them into the page you see. That's the whole trick, repeated billions of times a day.
+
+  - kind: explain
+    title: Browser, server and the internet
+    body: |
+      Three players are involved every time you open a page:
+
+      | Player | What it is | Example |
+      |---|---|---|
+      | **Browser** | The program on *your* device that asks for files and draws the page | Safari, Chrome, Firefox |
+      | **Server** | A computer, always on, that stores a site's files and hands them out | A machine in a data centre, run by a host like Vercel or GitHub |
+      | **The internet** | The network of cables, Wi-Fi and routers that carries the request and the files | Your home router, undersea cables |
+
+      The browser is the **client**: it asks. The server answers. One request, one response, over and over.
+
+  - kind: explain
+    title: Reading a URL
+    body: |
+      A **URL** (web address) tells the browser exactly which file to ask for, and from where:
+
+      ```
+      https://www.inkwellbooks.com/books/index.html#reviews
+      └─┬─┘   └────────┬────────┘└───────┬────────┘└──┬──┘
+      scheme       domain              path        fragment
+      ```
+
+      - **Scheme**: how to talk to the server. Today that's almost always `https`.
+      - **Domain**: which server. People rent domain names (like `inkwellbooks.com`) from a registrar, usually for a yearly fee.
+      - **Path**: which file on that server. It mirrors the server's folders: the `books` folder, the `index.html` file inside it.
+      - **Fragment** (after `#`): a spot *inside* the page. The browser scrolls there. It is never sent to the server.
+
+      If the path ends in a folder (`/books/`), the server usually sends that folder's `index.html`. That's why the home page of almost every site is a file called `index.html`.
+
+  - kind: explain
+    title: Three languages, three jobs
+    body: |
+      Web pages are written in three languages that work together. Think of a house:
+
+      - **HTML** is the **structure**: walls, rooms, doors. It says *what things are*: "this is a heading", "this is a list", "this is a link".
+      - **CSS** is the **appearance**: paint, wallpaper, furniture layout. It says *how things look*: colors, fonts, spacing, where boxes sit.
+      - **JavaScript** is the **behavior**: the electricity and plumbing. It makes things *happen* when you click or type.
+
+      This course teaches the first two. They are enough to build complete, beautiful, responsive websites. JavaScript is its own course and the natural next step.
+
+  - kind: web
+    title: See HTML and CSS working together
+    body: |
+      On the right is a real web page. The `index.html` tab holds the **HTML**, the `style.css` tab holds the **CSS**, and the preview below shows what a browser makes of them.
+
+      Try this (there's nothing to get wrong):
+
+      1. In `index.html`, change the words *Welcome to Inkwell Books* to anything you like. The preview updates as you type.
+      2. Switch to `style.css` and change `darkred` to `navy`, or `teal`, or `purple`.
+      3. Change `40px` to `20px`.
+
+      Notice the split: changing the **HTML** changed *what the page says*. Changing the **CSS** changed *how it looks*, without touching the words.
+    html: |
+      <h1>Welcome to Inkwell Books</h1>
+      <p>Second-hand books, carefully chosen.</p>
+    css: |
+      h1 {
+        color: darkred;
+        font-size: 40px;
+      }
+
+  - kind: explain
+    title: HTTP, the conversation
+    body: |
+      The browser and the server talk in a simple language called **HTTP**. The browser sends a **request**, the server sends back a **response** with a **status code**:
+
+      | Code | Meaning |
+      |---|---|
+      | `200 OK` | Here's the file you asked for |
+      | `301` / `308` | It moved; look over there instead |
+      | `404 Not Found` | There's no file at that path |
+      | `500` | The server itself broke |
+
+      One page usually needs many requests: the HTML first, then the browser reads it, finds the CSS, images and fonts it mentions, and asks for each of those too.
+
+  - kind: explain
+    title: HTTPS, the padlock
+    body: |
+      Plain HTTP sends everything as readable text, so anyone on the same café Wi-Fi could read or even change it. **HTTPS** is HTTP inside an encrypted tunnel: only your browser and the server can read what passes between them, and the browser checks a certificate to prove the server really is `inkwellbooks.com`.
+
+      Browsers now warn loudly about sites without HTTPS, and hosts like Vercel, Netlify and GitHub Pages give you HTTPS for free. You will never need to set it up by hand for this course.
+
+  - kind: info
+    title: "🔹 DNS: the internet's phone book"
+    body: |
+      Computers on the internet find each other by numbers called **IP addresses** (like `76.76.21.21`), not names. **DNS** (the Domain Name System) translates a domain name into that number. When you type `inkwellbooks.com`, your device first asks DNS "what's the number for this name?", then connects to that number.
+
+      You only need to recognise the word for now. It matters when you connect your own domain to a host (Module 36).
+
+  - kind: explain
+    title: Static sites and dynamic sites
+    body: |
+      A **static** site is exactly what we've described: the server hands out the same files to everyone. Blogs, portfolios, restaurant menus and documentation are often static. Everything you build in this course is static, and it can be hosted for free.
+
+      A **dynamic** site builds pages on the fly for each visitor, often from a database (your bank, your email). Under the hood it still sends HTML, CSS and JavaScript to your browser. The browser doesn't care how the files were made, so everything you learn here applies to every website.
+
+  - kind: why
+    body: |
+      Almost every "my page is broken" mystery comes down to this model. The file isn't where the URL says (404). The browser never asked for the CSS because the HTML didn't mention it. The server sent an old copy. When you know that a page is just *files requested by a browser*, you know where to look.
+
+  - kind: recap
+    body: |
+      - A website is a **folder of files** on a **server**. Your **browser** requests them over **the internet** and draws the page.
+      - A **URL** = scheme (`https`) + domain (`inkwellbooks.com`) + path (`/books/index.html`) + optional fragment (`#reviews`).
+      - **HTML** = structure and meaning, **CSS** = appearance, **JavaScript** = behavior.
+      - **HTTP** is the request/response conversation; status codes like `200` and `404` report how it went. **HTTPS** encrypts it.
+      - 🔹 **DNS** turns domain names into IP addresses.

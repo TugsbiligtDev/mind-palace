@@ -1,0 +1,4 @@
+title: CSS Grid
+module: 21
+summary: "Lay out rows and columns at once: grid-template-columns and rows, the fr unit, repeat(), minmax(), auto-fit and auto-fill, gap, placing items by line number, named grid-template-areas, Grid vs. Flexbox, and the Grid inspector."
+minutes: 60

@@ -1,0 +1,165 @@
+steps:
+  - kind: explain
+    title: Browsers forgive, and that's the problem
+    body: |
+      Make a mistake in most programming languages and you get an error. Make one in HTML and the browser **guesses what you meant**, draws something, and says nothing.
+
+      That forgiveness kept the early web working, but it means:
+
+      - A mistake can sit unnoticed for months, then break when you add CSS or someone uses a screen reader.
+      - Different tools may guess differently.
+      - What the browser *built* is not always what you *wrote*.
+
+      So you need ways to see mistakes the browser hides. There are three: the **validator**, the **Elements panel**, and the **accessibility tree**.
+
+  - kind: explain
+    title: The W3C validator
+    body: |
+      The **Nu HTML Checker** at **validator.w3.org/nu** reads your HTML and lists every rule it breaks. Three ways to use it: paste a page's address, upload a file, or paste code directly ("Check by text input").
+
+      It reports **errors** (broken rules, fix these) and **warnings** (suspicious, worth a look), each with a line number:
+
+      ```
+      Error: Duplicate ID "price".
+        From line 14, column 7
+      Error: Element "ul" not allowed as child of element "p" in this context.
+        From line 9, column 3
+      ```
+
+      Fix the **first** error first: one missing closing tag can cause a cascade of later errors that disappear once it's fixed.
+
+  - kind: mac
+    title: Validate a page
+    body: |
+      1. Open **validator.w3.org/nu** and choose **Check by text input**.
+      2. Paste this deliberately broken page and press **Check**.
+      3. Read each error, fix it in the box, and check again until it says *Document checking completed. No errors or warnings to show.*
+    commands: |
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <title>Broken on purpose</title>
+      </head>
+      <body>
+        <h1 id="top">Inkwell</h1>
+        <p>Our shelves:
+          <ul><li>Fiction</li></ul>
+        </p>
+        <img src="cover.jpg">
+        <a href="#top" id="top">Back to top</a>
+      </body>
+      </html>
+
+  - kind: explain
+    title: Source vs. the Elements panel
+    body: |
+      Two different views of a page:
+
+      - **View Source** (⌥⌘U in Chrome) shows the HTML file **exactly as you wrote it**.
+      - The **Elements panel** shows the **DOM**: the tree the browser actually *built* from it, after all its repairs.
+
+      When they differ, you've found a mistake. Classic repairs:
+
+      | You wrote | The browser built |
+      |---|---|
+      | `<p>Text <ul>…</ul></p>` | `<p>Text </p><ul>…</ul><p></p>`: a paragraph can't contain a list, so it's closed early, and the stray `</p>` becomes a new empty paragraph |
+      | `<table><tr>…</tr></table>` | adds a `<tbody>` you never wrote |
+      | `<strong>Bold<p>next</p>` with no `</strong>` | bold copied into later elements |
+      | text before `<html>` | moves it into `<body>` |
+
+      The Elements panel is also **live**: when you edit there, you're editing the DOM.
+
+  - kind: web
+    title: Spot the repairs
+    body: |
+      This snippet *looks* almost fine in the preview, but the browser rewrote it. Right-click the preview → **Inspect**, and compare the Elements panel with the code.
+
+      Then fix the code so the browser has nothing to repair:
+
+      1. A paragraph can't contain a list. End the paragraph after *Our shelves:* and let the `<ul>` follow it.
+      2. Two elements share `id="top"`. Ids must be unique: remove the id from the link (it should *point* to the top, not *be* it).
+      3. The image is missing its alt text. Describe it (the word *Dune* must appear).
+    html: |
+      <h1 id="top">Inkwell</h1>
+      <p>Our shelves:
+        <ul>
+          <li>Fiction</li>
+          <li>Poetry</li>
+        </ul>
+      </p>
+      <img src="images/cover-dune.svg" width="100" height="150">
+      <a href="#top" id="top">Back to top</a>
+    tests:
+      - "count('p')"
+      - "count('p:empty')"
+      - "text('p')"
+      - "count('body > ul > li')"
+      - "count('[id=top]')"
+      - "attr('a', 'href')"
+      - "/dune/i.test(attr('img', 'alt') || '')"
+    solution:
+      html: |
+        <h1 id="top">Inkwell</h1>
+        <p>Our shelves:</p>
+        <ul>
+          <li>Fiction</li>
+          <li>Poetry</li>
+        </ul>
+        <img src="images/cover-dune.svg" alt="Dune by Frank Herbert, cover" width="100" height="150">
+        <a href="#top">Back to top</a>
+    hint: "Move `</p>` up to right after *Our shelves:*, and delete the old `</p>` after the list. In the Elements panel the extra empty `<p></p>` disappears."
+
+  - kind: explain
+    title: The accessibility tree
+    body: |
+      Browsers build a second tree from the DOM: the **accessibility tree**. It's what screen readers and other assistive technology actually read. Each item has a **role** (heading, link, button, list…), a **name** (its text, label or alt) and sometimes a **state** (checked, expanded).
+
+      To see it in Chrome: Elements panel → select an element → the **Accessibility** tab on the right. You can also switch the whole panel to the accessibility tree with the small person icon.
+
+      What to look for:
+
+      - An image with **no name**: missing alt.
+      - A form field with **no name**: missing label.
+      - A link or button whose name is just "click here" or empty.
+      - A `div` that looks like a button but has role **generic**: it's invisible to keyboard and screen reader users (Module 23).
+
+  - kind: mac
+    title: Read a page's accessibility tree
+    body: |
+      On any website (try your own Live Server page from Module 3):
+
+      1. Right-click a link → **Inspect**.
+      2. In Chrome, open the **Accessibility** tab next to Styles. Read its **Name** and **Role**.
+      3. Inspect an image. Is there a name? It comes from the `alt`.
+      4. Inspect a search box. Does it have a name, or only a placeholder?
+
+      In Safari: Elements → Node → **Accessibility** section. In Firefox: the **Accessibility** panel.
+    commands: |
+      # Chrome:  right-click → Inspect → Accessibility tab (beside Styles)
+      # Firefox: ⌥⌘I → Accessibility panel
+      # Safari:  Inspect → Node tab → Accessibility
+
+  - kind: explain
+    title: A debugging routine
+    body: |
+      When an HTML page misbehaves:
+
+      1. **Validate** it and fix errors from the top.
+      2. **Inspect** the broken part and compare the Elements panel with your source. Is the element where you think it is? Are there elements you never wrote?
+      3. **Check the Console** for red errors, such as a 404 for an image or stylesheet.
+      4. **Check the accessibility tree** for missing names and wrong roles.
+
+      Most problems are a missing closing tag, a typo in a path, or a duplicate id. This routine finds them in minutes instead of hours.
+
+  - kind: why
+    body: |
+      Because browsers repair mistakes silently, "it looks fine" proves very little. Professionals validate their HTML and inspect what the browser built, the same way a detective checks a witness's story against the evidence. It's the fastest way to find a bug you can't see.
+
+  - kind: recap
+    body: |
+      - Browsers silently repair broken HTML, so mistakes hide.
+      - **validator.w3.org/nu** lists errors with line numbers; fix the first one first.
+      - **View Source** = what you wrote; **Elements** = the DOM the browser built. Differences point to mistakes.
+      - The **accessibility tree** shows each element's role and name, as assistive technology sees it.
+      - Routine: validate → inspect → console → accessibility tree.

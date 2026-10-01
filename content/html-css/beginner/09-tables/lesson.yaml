@@ -1,0 +1,214 @@
+steps:
+  - kind: explain
+    title: Rows and cells
+    body: |
+      A table is built **row by row**:
+
+      ```html
+      <table>
+        <tr>
+          <th>Title</th>
+          <th>Price</th>
+        </tr>
+        <tr>
+          <td>Dune</td>
+          <td>£8.99</td>
+        </tr>
+      </table>
+      ```
+
+      - `<table>` wraps the whole thing.
+      - `<tr>` is a **table row**.
+      - `<td>` is a **table data** cell.
+      - `<th>` is a **table header** cell: it labels a column or row. Browsers show it bold and centred by default.
+
+      Every row should have the same number of cells (unless cells are merged, which comes later).
+
+  - kind: explain
+    title: Caption, thead and tbody
+    body: |
+      Three elements give a table structure:
+
+      ```html
+      <table>
+        <caption>Books in stock, October</caption>
+        <thead>
+          <tr><th scope="col">Title</th><th scope="col">Author</th><th scope="col">Price</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Dune</td><td>Frank Herbert</td><td>£8.99</td></tr>
+          <tr><td>Emma</td><td>Jane Austen</td><td>£5.50</td></tr>
+        </tbody>
+      </table>
+      ```
+
+      - `<caption>` is the table's title. It goes **first**, right after `<table>`. Screen readers announce it so people know what the table is about before diving in.
+      - `<thead>` holds the header row(s), `<tbody>` the data rows. (A `<tfoot>` for totals also exists.) They make it easy to style the header differently, and long tables can repeat the header when printed.
+
+  - kind: explain
+    title: scope connects headers to cells
+    body: |
+      A sighted person sees that "£5.50" sits under "Price" and next to "Emma". A screen reader user hears cells one at a time, so the table must say which header belongs to which cell.
+
+      `scope` on a `<th>` does it:
+
+      - `scope="col"`: this header labels its **column**.
+      - `scope="row"`: this header labels its **row**.
+
+      ```html
+      <tr>
+        <th scope="row">Emma</th>
+        <td>Jane Austen</td>
+        <td>£5.50</td>
+      </tr>
+      ```
+
+      Now, reading "£5.50", a screen reader can say "Emma, Price, £5.50". The first cell of each data row is often a row header like this.
+
+  - kind: web
+    title: Build the stock table
+    body: |
+      Turn Inkwell's stock list into a proper table:
+
+      1. A `<caption>` reading `Books in stock`.
+      2. A `<thead>` with one row of three column headers: `Title`, `Author`, `Price`, each with `scope="col"`.
+      3. A `<tbody>` with one row per book. Make each book's **title** a row header (`<th scope="row">`) and the other two cells `<td>`.
+    html: |
+      <!-- Title, Author, Price -->
+      <!-- Dune, Frank Herbert, £8.99 -->
+      <!-- Emma, Jane Austen, £5.50 -->
+      <!-- Beloved, Toni Morrison, £7.25 -->
+      <table>
+
+      </table>
+    tests:
+      - "text('table > caption')"
+      - "$$('thead th').map((th) => th.textContent.trim() + '/' + th.getAttribute('scope'))"
+      - "count('tbody > tr')"
+      - "$$('tbody tr').map((tr) => [...tr.children].map((c) => c.localName + ':' + c.textContent.trim()).join(' | '))"
+      - "$$('tbody th').map((th) => th.getAttribute('scope'))"
+      - "doc.querySelector('table').firstElementChild.localName"
+    solution:
+      html: |
+        <table>
+          <caption>Books in stock</caption>
+          <thead>
+            <tr>
+              <th scope="col">Title</th>
+              <th scope="col">Author</th>
+              <th scope="col">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Dune</th>
+              <td>Frank Herbert</td>
+              <td>£8.99</td>
+            </tr>
+            <tr>
+              <th scope="row">Emma</th>
+              <td>Jane Austen</td>
+              <td>£5.50</td>
+            </tr>
+            <tr>
+              <th scope="row">Beloved</th>
+              <td>Toni Morrison</td>
+              <td>£7.25</td>
+            </tr>
+          </tbody>
+        </table>
+    hint: "Order inside `<table>`: `<caption>`, then `<thead>` (one `<tr>` of three `<th scope=\"col\">`), then `<tbody>` (three `<tr>`s, each starting with `<th scope=\"row\">`)."
+    reject:
+      - html: |
+          <table>
+            <caption>Books in stock</caption>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Dune</td><td>Frank Herbert</td><td>£8.99</td></tr>
+              <tr><td>Emma</td><td>Jane Austen</td><td>£5.50</td></tr>
+              <tr><td>Beloved</td><td>Toni Morrison</td><td>£7.25</td></tr>
+            </tbody>
+          </table>
+
+  - kind: explain
+    title: Merging cells
+    body: |
+      A cell can stretch across several columns with `colspan`, or down several rows with `rowspan`:
+
+      ```html
+      <tr>
+        <th scope="row">Saturday</th>
+        <td colspan="2">Closed for stocktake</td>
+      </tr>
+      ```
+
+      That cell takes the place of **two** cells, so its row has one `<td>` fewer. `rowspan="2"` does the same downwards: the next row leaves out the cell it covers.
+
+      Keep merging to a minimum. Heavily merged tables are hard to follow, for screen reader users most of all. Often two simple tables beat one clever one.
+
+  - kind: web
+    title: Merge the closed day
+    body: |
+      Inkwell's opening-hours table has an empty cell on Monday. Instead of two cells, Monday should have **one** cell reading `Closed` that spans both the *Opens* and *Closes* columns.
+    html: |
+      <table>
+        <caption>Opening hours</caption>
+        <thead>
+          <tr><th scope="col">Day</th><th scope="col">Opens</th><th scope="col">Closes</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Monday</th><td>Closed</td><td></td></tr>
+          <tr><th scope="row">Tuesday</th><td>10am</td><td>6pm</td></tr>
+          <tr><th scope="row">Wednesday</th><td>10am</td><td>8pm</td></tr>
+        </tbody>
+      </table>
+    tests:
+      - "$$('tbody tr:first-child td').length"
+      - "attr('tbody tr:first-child td', 'colspan')"
+      - "text('tbody tr:first-child td')"
+      - "$$('tbody tr').map((tr) => tr.children.length)"
+    solution:
+      html: |
+        <table>
+          <caption>Opening hours</caption>
+          <thead>
+            <tr><th scope="col">Day</th><th scope="col">Opens</th><th scope="col">Closes</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Monday</th><td colspan="2">Closed</td></tr>
+            <tr><th scope="row">Tuesday</th><td>10am</td><td>6pm</td></tr>
+            <tr><th scope="row">Wednesday</th><td>10am</td><td>8pm</td></tr>
+          </tbody>
+        </table>
+    hint: "Delete the empty `<td></td>` and give the `Closed` cell `colspan=\"2\"`."
+
+  - kind: explain
+    title: Tables are for data, never for layout
+    body: |
+      Before CSS could do layout, people built whole pages out of invisible tables: a row for the header, a cell for the sidebar, a cell for the content. You may still find this in old sites and HTML emails.
+
+      Don't do it:
+
+      - Screen readers announce it as a data table ("table, 3 columns, 4 rows") and read it cell by cell.
+      - It can't rearrange itself for a phone screen.
+      - It mixes appearance into the HTML, which is CSS's job.
+
+      **Use a table when the content is a grid of data**: something you'd put in a spreadsheet, where each cell relates to a row heading *and* a column heading. For page layout, use CSS Flexbox and Grid (Modules 20 and 21).
+
+  - kind: why
+    body: |
+      A timetable, a price list or a comparison chart is hard to read as paragraphs and easy as a table. Built properly, with a caption, header cells and `scope`, it's just as clear for someone listening to it as for someone looking at it.
+
+  - kind: recap
+    body: |
+      - `<table>` → `<tr>` rows → `<th>` header cells and `<td>` data cells.
+      - `<caption>` first; `<thead>` for header rows, `<tbody>` for data rows.
+      - `scope="col"` / `scope="row"` link each header to its cells.
+      - `colspan` / `rowspan` merge cells; the covered cells are left out. Use sparingly.
+      - Tables are for tabular **data**, never page layout.

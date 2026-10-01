@@ -1,0 +1,4 @@
+title: Tables
+module: 9
+summary: "Build data tables with table, tr, th and td; group rows with thead and tbody; add a caption; connect headers to cells with scope; merge cells with colspan and rowspan. Tables are for data, never for page layout."
+minutes: 40

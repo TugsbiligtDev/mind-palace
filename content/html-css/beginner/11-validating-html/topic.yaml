@@ -1,0 +1,4 @@
+title: Validation & Debugging HTML
+module: 11
+summary: "Browsers never complain about broken HTML; they silently rewrite it. Catch mistakes with the W3C validator, compare your code with the DevTools Elements panel, and check what assistive technology sees in the accessibility tree."
+minutes: 35

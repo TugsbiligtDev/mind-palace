@@ -1,0 +1,279 @@
+steps:
+  - kind: explain
+    title: Absolute and relative lengths
+    body: |
+      Every size in CSS needs a **unit** (only `0` can go without). Units come in two families:
+
+      - **Absolute**: `px` (CSS pixels). A fixed size. Easy to reason about.
+      - **Relative**: measured against something else, so they adapt.
+
+      | Unit | Relative to |
+      |---|---|
+      | `%` | the parent (for `width`: the parent's width) |
+      | `em` | the **element's own font size** (for `font-size` itself: the parent's) |
+      | `rem` | the **root** (`html`) font size: 16px by default |
+      | `vw` / `vh` | 1% of the browser window's width / height |
+      | `dvh` / `svh` / `lvh` | 1% of the **dynamic**, **small** or **large** viewport height (see below) |
+
+      A CSS pixel isn't a screen dot. On a Retina screen, one CSS pixel is drawn with several physical pixels, so `16px` text looks the same size on every device.
+
+  - kind: explain
+    title: rem for text, and why
+    body: |
+      People can set a bigger default font size in their browser, often because they need it to read. Text sized in `rem` **respects that choice**; text in `px` ignores it.
+
+      ```css
+      body { font-size: 1rem; }      /* 16px by default, bigger if the user asked */
+      h1   { font-size: 2.5rem; }    /* 40px by default */
+      ```
+
+      **rem vs. em**: `rem` always means "the root size", so it's predictable anywhere. `em` compounds: a `1.2em` list inside a `1.2em` list is 1.44 times the size. Use `em` when something should scale with **its own text**, like padding inside a button (`padding: 0.5em 1em` grows when the button's text grows).
+
+      A good default: **rem for font sizes**, `em` for spacing tied to a component's text, `px` for borders and hairlines, `%` and `fr` (Module 21) for layout widths.
+
+  - kind: web
+    title: Sizes that respect the reader
+    body: |
+      Inkwell's type is set in pixels. Convert it to `rem` (16px = 1rem):
+
+      1. `h1`: `32px` → `2rem`.
+      2. `p`: `18px` → `1.125rem`.
+      3. The `.button` padding should grow with the button's own text: `0.5em` top and bottom, `1em` left and right.
+
+      The preview looks the same. The difference only shows when a reader changes their default font size, so the checker reads the units you wrote.
+    html: |
+      <h1>Poetry night</h1>
+      <p>Thursday, 7pm. Bring a poem, or just listen.</p>
+      <a class="button" href="#book">Book a seat</a>
+    css: |
+      h1 {
+        font-size: 32px;
+      }
+
+      p {
+        font-size: 18px;
+      }
+
+      .button {
+        display: inline-block;
+        font-size: 1.25rem;
+        padding: 10px 20px;
+        background: #7c2d12;
+        color: white;
+      }
+    tests:
+      - "declared('h1', 'font-size')"
+      - "declared('p', 'font-size')"
+      - "declared('.button', 'padding')"
+      - "css('.button', 'padding')"
+    solution:
+      css: |
+        h1 {
+          font-size: 2rem;
+        }
+
+        p {
+          font-size: 1.125rem;
+        }
+
+        .button {
+          display: inline-block;
+          font-size: 1.25rem;
+          padding: 0.5em 1em;
+          background: #7c2d12;
+          color: white;
+        }
+    hint: "Divide pixels by 16: 32px is 2rem, 18px is 1.125rem. The padding is `padding: 0.5em 1em;` (top-and-bottom first, then left-and-right)."
+    reject:
+      - css: |
+          h1 {
+            font-size: 2rem;
+          }
+
+          p {
+            font-size: 1.125rem;
+          }
+
+          .button {
+            display: inline-block;
+            font-size: 1.25rem;
+            padding: 0.5rem 1rem;
+            background: #7c2d12;
+            color: white;
+          }
+
+  - kind: explain
+    title: Viewport units and the phone toolbar
+    body: |
+      `100vw` is the full window width; `100vh` the full window height. A hero banner with `min-height: 100vh` fills the screen.
+
+      Phones complicate it: their address bar slides away as you scroll, so the visible height changes. `100vh` uses the **largest** height, so a "full screen" section ends up taller than the screen when the toolbar is showing. Newer units fix this:
+
+      - `svh`: the **small** viewport (toolbar showing). Always fits.
+      - `lvh`: the **large** viewport (toolbar hidden).
+      - `dvh`: **dynamic**, follows the toolbar as it moves.
+
+      For "fill the screen", `min-height: 100svh` (or `100dvh`) is the modern choice. Width-based `vw` has a different catch: on desktops `100vw` includes the scrollbar, so `width: 100vw` can cause a small sideways scroll. Prefer `width: 100%`.
+
+  - kind: explain
+    title: Colors
+    body: |
+      The same color, written five ways:
+
+      | Format | Example | Notes |
+      |---|---|---|
+      | name | `teal` | 148 named colors; fine for quick tests |
+      | hex | `#0d9488` | red, green, blue as two hex digits each; `#0d948880` adds alpha |
+      | `rgb()` | `rgb(13 148 136)` | 0–255 each; alpha after a slash: `rgb(13 148 136 / 50%)` |
+      | `hsl()` | `hsl(174 84% 32%)` | **hue** (0–360° around the color wheel), **saturation**, **lightness**; easy to make lighter/darker versions |
+      | `oklch()` | `oklch(60% 0.11 182)` | **lightness**, **chroma** (colorfulness), **hue**; modern, and equal lightness numbers *look* equally light |
+
+      Older code writes `rgba(13, 148, 136, 0.5)` with commas. Same thing.
+
+      **Transparency (alpha)** goes from 0 (invisible) to 1 or 100% (solid). `transparent` is a keyword for fully see-through. Unlike `opacity`, which fades the whole element *and its children*, a color's alpha only affects that one color.
+
+  - kind: web
+    title: Mix your colors
+    body: |
+      Style Inkwell's notice box with exactly these values:
+
+      1. Text color: `#3b2f2f`.
+      2. Background: the brand brown `rgb(124 45 18)` at **10%** opacity: `rgb(124 45 18 / 10%)`.
+      3. Border: `2px solid` in `hsl(16 75% 28%)`.
+      4. The `strong` text inside the box: `oklch(50% 0.15 30)`.
+
+      Notice how the 10% background lets the page's color show through.
+    html: |
+      <div class="notice">
+        <p><strong>Closed Monday 14th</strong> for our yearly stocktake.</p>
+      </div>
+    css: |
+      body {
+        background: #fdf8f0;
+      }
+
+      .notice {
+        padding: 1rem;
+      }
+    tests:
+      - "css('.notice', 'color')"
+      - "css('.notice', 'background-color')"
+      - "css('.notice', 'border-top-color') + ' ' + css('.notice', 'border-top-width') + ' ' + css('.notice', 'border-top-style')"
+      - "css('.notice strong', 'color')"
+    solution:
+      css: |
+        body {
+          background: #fdf8f0;
+        }
+
+        .notice {
+          padding: 1rem;
+          color: #3b2f2f;
+          background: rgb(124 45 18 / 10%);
+          border: 2px solid hsl(16 75% 28%);
+        }
+
+        .notice strong {
+          color: oklch(50% 0.15 30);
+        }
+    hint: "All four go in `.notice` except the last, which needs its own rule: `.notice strong { color: oklch(50% 0.15 30); }`."
+    reject:
+      - css: |
+          body {
+            background: #fdf8f0;
+          }
+
+          .notice {
+            padding: 1rem;
+            color: #3b2f2f;
+            background: rgb(124 45 18);
+            opacity: 0.1;
+            border: 2px solid hsl(16 75% 28%);
+          }
+
+          .notice strong {
+            color: oklch(50% 0.15 30);
+          }
+
+  - kind: explain
+    title: calc()
+    body: |
+      `calc()` does arithmetic, and it can **mix units**, which nothing else can:
+
+      ```css
+      .content {
+        width: calc(100% - 2rem);          /* full width minus a gap */
+      }
+      .hero {
+        min-height: calc(100svh - 64px);   /* screen height minus the header */
+      }
+      ```
+
+      Put spaces around `+` and `-` (`calc(100%-2rem)` doesn't work). `*` and `/` work too, with a plain number on one side: `calc(1.5rem * 2)`.
+
+  - kind: web
+    title: Leave room for the sidebar
+    body: |
+      The main column sits next to a fixed `240px` sidebar. Give `.main` a width of **the full width minus 240px**, using `calc()`.
+
+      The checker measures it on two screen sizes, so a fixed pixel width won't pass.
+    html: |
+      <div class="layout">
+        <aside class="side">Filters</aside>
+        <main class="main">Books</main>
+      </div>
+    css: |
+      body {
+        margin: 0;
+      }
+
+      .layout {
+        display: flex;
+      }
+
+      .side {
+        width: 240px;
+        flex-shrink: 0;
+        background: #f5f0e8;
+      }
+
+      .main {
+        background: #fff7ed;
+      }
+    widths: [600, 1000]
+    tests:
+      - "box('.main').width"
+      - "declared('.main', 'width')"
+    solution:
+      css: |
+        body {
+          margin: 0;
+        }
+
+        .layout {
+          display: flex;
+        }
+
+        .side {
+          width: 240px;
+          flex-shrink: 0;
+          background: #f5f0e8;
+        }
+
+        .main {
+          width: calc(100% - 240px);
+          background: #fff7ed;
+        }
+    hint: "`width: calc(100% - 240px);`, with spaces around the minus."
+
+  - kind: why
+    body: |
+      Units decide whether a page adapts or breaks. Text in rem respects readers who need it bigger, viewport units handle screens of every size, and calc() fills the gaps between them. Colors with alpha and modern formats like oklch make it easy to build a palette that looks balanced.
+
+  - kind: recap
+    body: |
+      - `px` fixed; `%` of the parent; `em` own font size; `rem` root font size; `vw`/`vh` window.
+      - **rem for font sizes** (respects user settings); `em` for padding that scales with text.
+      - `svh`/`dvh` for full-screen heights on phones; prefer `width: 100%` over `100vw`.
+      - Colors: names, hex, `rgb()`, `hsl()`, `oklch()`; alpha with `/ 50%`. Alpha ≠ `opacity`.
+      - `calc()` mixes units: `calc(100% - 2rem)`, spaces around `+` and `-`.

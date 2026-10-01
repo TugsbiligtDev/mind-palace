@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">
+<rect width="300" height="450" fill="#c2410c"/>
+<rect x="14" y="14" width="272" height="422" fill="none" stroke="#fdba74" stroke-width="2" opacity=".6"/>
+<text x="150" y="110" text-anchor="middle" font-family="Georgia, serif" font-size="44" font-weight="bold" fill="#fdba74" letter-spacing="3">DUNE</text>
+<text x="150" y="150" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#fdba74">Frank Herbert</text>
+<circle cx="150" cy="250" r="70" fill="#fed7aa" opacity=".9"/><path d="M0 330 Q75 280 150 320 T300 300 V450 H0Z" fill="#9a3412"/>
+</svg>

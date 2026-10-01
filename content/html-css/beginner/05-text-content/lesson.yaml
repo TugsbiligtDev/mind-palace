@@ -1,0 +1,270 @@
+steps:
+  - kind: explain
+    title: Headings make an outline
+    body: |
+      HTML has six heading levels, `<h1>` (most important) to `<h6>` (least). They're not "big text" and "small text": they form the page's **outline**, like a book's chapters and sections.
+
+      ```html
+      <h1>Inkwell Books</h1>          ← the page's title: one per page
+        <h2>New arrivals</h2>         ← a main section
+          <h3>Fiction</h3>            ← a part of that section
+          <h3>Poetry</h3>
+        <h2>Visit us</h2>
+      ```
+
+      Rules of thumb:
+
+      - **One `<h1>`** per page, saying what the page is about.
+      - **Don't skip levels** going down: after an `h2` comes an `h3`, not an `h5`.
+      - **Never pick a heading for its size.** Want small bold text? That's CSS's job. Screen reader users jump around a page by its headings, so a wrong level misleads them.
+
+  - kind: web
+    title: Fix the outline
+    body: |
+      Inkwell's events page picked its headings by size. Fix the levels so the outline makes sense:
+
+      - The page title *Events at Inkwell* is the only `h1`.
+      - *This month* and *Every week* are main sections: `h2`.
+      - *Poetry night* and *Children's story hour* are parts of *This month*: `h3`.
+      - *Book club* is a part of *Every week*: `h3`.
+
+      Don't change any text.
+    html: |
+      <h3>Events at Inkwell</h3>
+      <h1>This month</h1>
+      <h5>Poetry night</h5>
+      <p>Thursday 7pm. Bring a poem, or just listen.</p>
+      <h5>Children's story hour</h5>
+      <p>Saturday 10am, for ages 4 to 8.</p>
+      <h1>Every week</h1>
+      <h4>Book club</h4>
+      <p>Sundays at 4pm. This month: <em>Beloved</em>.</p>
+    tests:
+      - "$$('h1, h2, h3, h4, h5, h6').map((h) => h.localName + ': ' + h.textContent.trim())"
+    solution:
+      html: |
+        <h1>Events at Inkwell</h1>
+        <h2>This month</h2>
+        <h3>Poetry night</h3>
+        <p>Thursday 7pm. Bring a poem, or just listen.</p>
+        <h3>Children's story hour</h3>
+        <p>Saturday 10am, for ages 4 to 8.</p>
+        <h2>Every week</h2>
+        <h3>Book club</h3>
+        <p>Sundays at 4pm. This month: <em>Beloved</em>.</p>
+    hint: "Read the headings as a table of contents: one title, two chapters, and sections inside each chapter. Change both the opening and the closing tag."
+    reject:
+      - html: |
+          <h1>Events at Inkwell</h1>
+          <h2>This month</h2>
+          <h3>Poetry night</h3>
+          <p>Thursday 7pm. Bring a poem, or just listen.</p>
+          <h3>Children's story hour</h3>
+          <p>Saturday 10am, for ages 4 to 8.</p>
+          <h2>Every week</h2>
+          <h4>Book club</h4>
+          <p>Sundays at 4pm. This month: <em>Beloved</em>.</p>
+
+  - kind: explain
+    title: Paragraphs and line breaks
+    body: |
+      Wrap each paragraph of text in `<p>`. The browser **collapses whitespace**: any run of spaces, tabs and new lines in your file becomes a single space on the page. Pressing Enter in your code does nothing visible.
+
+      `<br>` forces a line break **inside** one paragraph. Use it only where the line break is part of the content, like an address or a poem:
+
+      ```html
+      <p>Inkwell Books<br>
+      12 Harbour Street<br>
+      Bristol</p>
+      ```
+
+      Don't use `<br><br>` to make space between paragraphs. Use separate `<p>` elements, and CSS for the spacing.
+
+  - kind: explain
+    title: strong, em, b and i
+    body: |
+      Four elements look alike but mean different things:
+
+      | Element | Meaning | Default look |
+      |---|---|---|
+      | `<strong>` | **importance**, seriousness, urgency | bold |
+      | `<em>` | **stress** emphasis, which changes the meaning of the sentence | italic |
+      | `<b>` | bring attention, *without* extra importance (a keyword, a product name) | bold |
+      | `<i>` | a different voice: a book title in running text, a foreign word, a thought | italic |
+
+      "Do **not** feed the shop cat" → `<strong>`. "I *said* Tuesday" → `<em>` (the stress changes the meaning). Screen readers may change their tone for `strong` and `em`.
+
+      When in doubt, `<strong>` and `<em>` are the usual choice.
+
+  - kind: explain
+    title: Lists
+    body: |
+      - `<ul>` is an **unordered** list (bullets): the order doesn't matter.
+      - `<ol>` is an **ordered** list (numbers): steps, rankings, anything where order matters.
+      - Each item is an `<li>`, and **only** `<li>` elements may sit directly inside `<ul>` or `<ol>`.
+
+      To **nest** a list, put the inner list *inside* an `<li>`, after its text:
+
+      ```html
+      <ul>
+        <li>Fiction
+          <ul>
+            <li>Mystery</li>
+            <li>Science fiction</li>
+          </ul>
+        </li>
+        <li>Poetry</li>
+      </ul>
+      ```
+
+      `<ol>` has handy attributes: `start="5"` begins at 5, `reversed` counts down.
+
+  - kind: web
+    title: Build the shop's lists
+    body: |
+      Turn the plain text into proper lists:
+
+      1. *How to order* is a sequence of steps, so make the three steps an **ordered** list.
+      2. *We stock* is a bulleted list with two items, **Fiction** and **Non-fiction**.
+      3. Inside the **Fiction** item, nest a bulleted list: **Mystery** and **Fantasy**.
+
+      Keep the two `h2` headings as they are.
+    html: |
+      <h2>How to order</h2>
+      Find a book.
+      Add it to your basket.
+      Pay at the checkout.
+
+      <h2>We stock</h2>
+      Fiction: Mystery, Fantasy
+      Non-fiction
+    tests:
+      - "count('ol > li')"
+      - "$$('ol > li').map((li) => li.textContent.trim())"
+      - "count('ul')"
+      - "$$('body > ul > li').map((li) => li.firstChild.textContent.trim())"
+      - "$$('body > ul > li > ul > li').map((li) => li.textContent.trim())"
+      - "count('ul > :not(li), ol > :not(li)')"
+    solution:
+      html: |
+        <h2>How to order</h2>
+        <ol>
+          <li>Find a book.</li>
+          <li>Add it to your basket.</li>
+          <li>Pay at the checkout.</li>
+        </ol>
+
+        <h2>We stock</h2>
+        <ul>
+          <li>Fiction
+            <ul>
+              <li>Mystery</li>
+              <li>Fantasy</li>
+            </ul>
+          </li>
+          <li>Non-fiction</li>
+        </ul>
+    hint: "The nested `<ul>` goes inside the Fiction `<li>`, after the word *Fiction* and before that `</li>`."
+    reject:
+      - html: |
+          <h2>How to order</h2>
+          <ol>
+            <li>Find a book.</li>
+            <li>Add it to your basket.</li>
+            <li>Pay at the checkout.</li>
+          </ol>
+
+          <h2>We stock</h2>
+          <ul>
+            <li>Fiction</li>
+            <ul>
+              <li>Mystery</li>
+              <li>Fantasy</li>
+            </ul>
+            <li>Non-fiction</li>
+          </ul>
+
+  - kind: explain
+    title: Quotes and code
+    body: |
+      - `<blockquote>` is a longer quotation, usually shown indented. The optional `cite` attribute holds the source's URL. Short quotes inside a sentence use `<q>`, which adds quotation marks.
+      - `<code>` marks a piece of computer code inside a sentence: "set `<code>lang</code>` on the html element".
+      - `<pre>` (preformatted) keeps every space and line break exactly as typed, in a monospace font. Wrap code blocks as `<pre><code>…</code></pre>`.
+
+      ```html
+      <blockquote>
+        <p>A room without books is like a body without a soul.</p>
+      </blockquote>
+      <p>— Cicero</p>
+      ```
+
+  - kind: explain
+    title: HTML entities
+    body: |
+      Some characters mean something to HTML. A `<` starts a tag, so how do you *show* one? With an **entity**: an `&`, a name, and a `;`.
+
+      | You want | Write |
+      |---|---|
+      | `<` | `&lt;` (less than) |
+      | `>` | `&gt;` |
+      | `&` | `&amp;` |
+      | `"` inside an attribute | `&quot;` |
+      | a space that never breaks a line | `&nbsp;` |
+      | © | `&copy;` |
+
+      Since your file is UTF-8, you can type characters like é, — or © directly. Entities are only *needed* for `<` and `&`.
+
+      `&nbsp;` keeps two words together, as in `10&nbsp;am` or `Mr.&nbsp;Reed`, so a line never breaks between them. Don't use runs of `&nbsp;` for spacing; that's CSS's job.
+
+  - kind: web
+    title: Show the code, not run it
+    body: |
+      Inkwell's help page wants to *show* visitors a tag, but the browser treats it as a real tag. Look at the preview: the `<strong>` example went bold and vanished.
+
+      Rewrite the second paragraph with entities so the page shows the text exactly as:
+
+      `To make text important, wrap it in <strong> and </strong> tags.`
+
+      Then, as a good habit, write the ampersand in the third paragraph as `&amp;`. (A lone `&` followed by a space happens to work, which is why the checker can't tell the difference, but `&amp;` is always safe.)
+    html: |
+      <h1>Help</h1>
+      <p>To make text important, wrap it in <strong> and </strong> tags.</p>
+      <p>Our café's favourite cartoon: Tom & Jerry</p>
+    tests:
+      - "text('p:nth-of-type(1)')"
+      - "count('p strong')"
+      - "text('p:nth-of-type(2)')"
+    solution:
+      html: |
+        <h1>Help</h1>
+        <p>To make text important, wrap it in &lt;strong&gt; and &lt;/strong&gt; tags.</p>
+        <p>Our café's favourite cartoon: Tom &amp; Jerry</p>
+    hint: "Replace each `<` with `&lt;` and each `>` with `&gt;`. The ampersand becomes `&amp;`."
+
+  - kind: info
+    title: "🔹 Description lists: dl, dt, dd"
+    body: |
+      A **description list** pairs terms with their descriptions, like a glossary or a book's details:
+
+      ```html
+      <dl>
+        <dt>Author</dt>
+        <dd>Frank Herbert</dd>
+        <dt>Condition</dt>
+        <dd>Very good, light shelf wear</dd>
+      </dl>
+      ```
+
+      `<dt>` is the term, `<dd>` the description. Recognise it when you see it; you'll use it occasionally.
+
+  - kind: why
+    body: |
+      The right element gives content its **meaning**, not just its look. Search engines read the heading outline to understand the page, screen readers list the headings and announce "list, 3 items", and CSS can style every `ol` the same way. A page made of `<br>`s and big bold text looks fine to you and is a maze to everyone else.
+
+  - kind: recap
+    body: |
+      - Headings `h1`–`h6` form an outline: one `h1`, no skipped levels, never chosen for size.
+      - `<p>` for paragraphs; whitespace collapses; `<br>` only for line breaks that belong to the content.
+      - `<strong>` = importance, `<em>` = stress; `<b>` and `<i>` = different voice without extra importance.
+      - `<ul>`/`<ol>` hold only `<li>`; nested lists go inside an `<li>`.
+      - `<blockquote>`, `<code>`, `<pre>`; entities `&lt;` `&gt;` `&amp;` `&nbsp;`; 🔹 `<dl>` for term/description pairs.

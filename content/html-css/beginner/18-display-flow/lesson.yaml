@@ -1,0 +1,286 @@
+steps:
+  - kind: explain
+    title: Normal flow
+    body: |
+      With no layout CSS at all, the browser places boxes using **normal flow**:
+
+      - **Block** boxes (`div`, `p`, `h1`, `section`, `ul`, `li`…) stack **top to bottom**, each on its own line, as wide as their container.
+      - **Inline** boxes (`a`, `span`, `strong`, `em`, `img`…) sit **side by side within a line of text**, and wrap onto the next line like words.
+
+      That's why a page with no CSS still reads top to bottom sensibly. Good layout starts from normal flow and changes only what it must.
+
+  - kind: explain
+    title: block, inline and inline-block
+    body: |
+      The `display` property changes how a box behaves:
+
+      | | starts on a new line? | `width` / `height` work? | vertical padding/margin push other lines away? |
+      |---|---|---|---|
+      | `block` | yes | yes | yes |
+      | `inline` | no | **no** (sized by its content) | **no** (padding paints, but overlaps the lines above and below) |
+      | `inline-block` | no | yes | yes |
+
+      `inline-block` is the useful middle: it flows in a line like a word, but respects width, height and vertical spacing. Perfect for buttons, badges and tags.
+
+      Turning a link into a block or inline-block is common, so its **whole padded area** is clickable, not just the text.
+
+  - kind: web
+    title: Button-sized links
+    body: |
+      The menu links' padding overlaps the text above and below, because links are inline.
+
+      1. Make the `nav a` links `inline-block` so their padding takes up real space.
+      2. Make the `.tag` labels `inline-block` and give them a `width` of `80px`, with `text-align: center`.
+      3. The `.notice` is a `span` but should behave like a block: give it `display: block`.
+    html: |
+      <p>Welcome to Inkwell.</p>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="books.html">Books</a>
+      </nav>
+      <p>New:
+        <span class="tag">Poetry</span>
+        <span class="tag">Fiction</span>
+      </p>
+      <span class="notice">Closed Monday.</span>
+    css: |
+      nav a {
+        padding: 12px 16px;
+        background: #7c2d12;
+        color: white;
+      }
+
+      .tag {
+        background: #f5f0e8;
+        border: 1px solid #7c2d12;
+      }
+
+      .notice {
+        background: #fee2e2;
+        padding: 8px;
+      }
+    tests:
+      - "cssAll('nav a, .tag, .notice', 'display')"
+      - "cssAll('.tag', 'width')"
+      - "css('.tag', 'text-align')"
+      - "box('nav a').height"
+      - "box('.notice').width > box('.tag').width * 2"
+    solution:
+      css: |
+        nav a {
+          display: inline-block;
+          padding: 12px 16px;
+          background: #7c2d12;
+          color: white;
+        }
+
+        .tag {
+          display: inline-block;
+          width: 80px;
+          text-align: center;
+          background: #f5f0e8;
+          border: 1px solid #7c2d12;
+        }
+
+        .notice {
+          display: block;
+          background: #fee2e2;
+          padding: 8px;
+        }
+    hint: "Add `display: inline-block;` to `nav a` and `.tag` (plus the width and text-align), and `display: block;` to `.notice`."
+
+  - kind: explain
+    title: Hiding things
+    body: |
+      Two ways to hide, with different effects:
+
+      | | visible? | takes up space? | read by screen readers? |
+      |---|---|---|---|
+      | `display: none` | no | **no**: the page closes up around it | no |
+      | `visibility: hidden` | no | **yes**: an empty gap stays | no |
+
+      `display: none` is the usual choice (a menu that's closed, a tab that isn't selected). `visibility: hidden` is for when the layout must not jump.
+
+      The HTML `hidden` attribute (`<p hidden>`) does the same as `display: none`.
+
+      To hide something **visually but keep it for screen readers** (a "skip to content" link, extra context for an icon button), you need a special "visually hidden" class. Module 23 shows it.
+
+  - kind: web
+    title: Hide two ways
+    body: |
+      1. The sold-out book (`.sold-out`) must disappear completely, with the list closing up around it.
+      2. The `.spoiler` paragraph must be invisible but **keep its space**, so the text below doesn't move when it's revealed later.
+    html: |
+      <ul>
+        <li>Dune</li>
+        <li class="sold-out">Emma</li>
+        <li>Beloved</li>
+      </ul>
+      <p class="spoiler">The butler did it.</p>
+      <p class="after">Reviews continue below.</p>
+    css: |
+      /* your rules */
+    tests:
+      - "css('.sold-out', 'display')"
+      - "css('.spoiler', 'visibility')"
+      - "box('li:nth-child(3)').y - box('li:first-child').y"
+      - "box('.after').y - box('.spoiler').y"
+    solution:
+      css: |
+        .sold-out {
+          display: none;
+        }
+
+        .spoiler {
+          visibility: hidden;
+        }
+    hint: "`display: none` removes the box; `visibility: hidden` keeps its space."
+    reject:
+      - css: |
+          .sold-out {
+            visibility: hidden;
+          }
+
+          .spoiler {
+            display: none;
+          }
+
+  - kind: explain
+    title: Backgrounds
+    body: |
+      ```css
+      .hero {
+        background-color: #fdf8f0;
+        background-image: url("images/shop.jpg");
+        background-size: cover;        /* fill the box, cropping if needed */
+        background-position: center;   /* which part stays visible */
+        background-repeat: no-repeat;
+      }
+      ```
+
+      - `background-size: cover` fills the box (some cropping); `contain` shows the whole image (may leave gaps).
+      - The `background` shorthand sets all of them at once.
+      - Always set a `background-color` under an image, in case the image is slow or missing, and make sure text on top stays readable.
+
+      Background images are **decoration**: they have no alt text. If an image carries meaning, use an `<img>`.
+
+  - kind: explain
+    title: Gradients
+    body: |
+      A gradient is an image the browser draws itself, so it goes in `background-image` (or `background`):
+
+      ```css
+      background: linear-gradient(#7c2d12, #c2410c);              /* top to bottom */
+      background: linear-gradient(to right, #7c2d12, #c2410c);    /* left to right */
+      background: linear-gradient(135deg, #7c2d12 0%, #fdba74 100%);
+      background: radial-gradient(circle, white, #f5f0e8);
+      ```
+
+      Gradients can also darken a photo so white text on it stays readable: list the gradient first, then the image.
+
+      ```css
+      background: linear-gradient(rgb(0 0 0 / 50%), rgb(0 0 0 / 50%)), url("images/shop.jpg") center / cover;
+      ```
+
+  - kind: explain
+    title: Rounded corners and shadows
+    body: |
+      ```css
+      .card {
+        border-radius: 12px;                          /* rounded corners */
+        box-shadow: 0 4px 12px rgb(0 0 0 / 15%);      /* x y blur color */
+      }
+      .avatar {
+        border-radius: 50%;                           /* a circle, if the box is square */
+      }
+      ```
+
+      `box-shadow` takes: horizontal offset, vertical offset, blur, optional spread, color. Soft, low-opacity shadows look natural; hard black ones look dated. Several shadows can be layered, separated by commas.
+
+  - kind: web
+    title: Style the book card
+    body: |
+      Give the card a finished look, with exactly these values:
+
+      1. `.card`: `border-radius: 12px` and `box-shadow: 0 4px 12px rgb(0 0 0 / 15%)`.
+      2. `.card-top`: a background of `linear-gradient(135deg, #7c2d12, #c2410c)`.
+      3. `.avatar`: make it a circle with `border-radius: 50%`.
+    html: |
+      <div class="card">
+        <div class="card-top">Staff pick</div>
+        <div class="card-body">
+          <img class="avatar" src="images/cover-dune.svg" alt="" width="60" height="60">
+          <p>Chosen by Moth</p>
+        </div>
+      </div>
+    css: |
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      .card {
+        width: 260px;
+        overflow: hidden;
+        background: white;
+      }
+
+      .card-top {
+        padding: 24px;
+        color: white;
+        font-weight: bold;
+      }
+
+      .card-body {
+        padding: 16px;
+      }
+
+      .avatar {
+        object-fit: cover;
+      }
+    tests:
+      - "css('.card', 'border-radius')"
+      - "css('.card', 'box-shadow')"
+      - "css('.card-top', 'background-image')"
+      - "css('.avatar', 'border-radius')"
+    solution:
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        .card {
+          width: 260px;
+          overflow: hidden;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+        }
+
+        .card-top {
+          padding: 24px;
+          color: white;
+          font-weight: bold;
+          background: linear-gradient(135deg, #7c2d12, #c2410c);
+        }
+
+        .card-body {
+          padding: 16px;
+        }
+
+        .avatar {
+          object-fit: cover;
+          border-radius: 50%;
+        }
+    hint: "Add two lines to `.card`, `background: linear-gradient(135deg, #7c2d12, #c2410c);` to `.card-top`, and `border-radius: 50%;` to `.avatar`."
+
+  - kind: why
+    body: |
+      Before reaching for Flexbox or Grid, it pays to know what the browser does on its own. Many "layout bugs" are just inline elements ignoring a width, or a hidden element still taking space. And backgrounds, radius and shadows are most of what makes a plain box look designed.
+
+  - kind: recap
+    body: |
+      - Normal flow: blocks stack vertically and fill the width; inline boxes flow in lines like words.
+      - `inline` ignores width/height; `inline-block` flows inline but respects them.
+      - `display: none` removes the box; `visibility: hidden` keeps its space.
+      - Backgrounds: color, `url()` image, `size: cover`, `position`, gradients (`linear-gradient`, `radial-gradient`).
+      - `border-radius` (50% for circles) and soft `box-shadow`s.

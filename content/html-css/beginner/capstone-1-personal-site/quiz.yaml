@@ -1,0 +1,34 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Four pages share one header. What's the right way to style them?"
+    options:
+      - "One external stylesheet linked from every page"
+      - "A `<style>` block copied into each page"
+      - "Inline styles on each header"
+      - "A different stylesheet per page with the same rules"
+    answer: 0
+    explanation: "One file means one place to change, and the browser downloads it once for the whole site."
+  - type: mcq
+    prompt: "How should the current page's link be marked in the nav?"
+    options:
+      - "`aria-current=\"page\"`, styled with an attribute selector"
+      - "A `<strong>` around the link"
+      - "Removing the link's href"
+      - "An id of current"
+    answer: 0
+    explanation: "`aria-current=\"page\"` tells screen readers which page you're on, and `nav a[aria-current=\"page\"]` styles it."
+  - type: mcq
+    prompt: "The projects grid should show 1 column on a phone and 4 on a big screen, with no media queries. Which line?"
+    options:
+      - "`grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));`"
+      - "`grid-template-columns: repeat(4, 1fr);`"
+      - "`grid-template-columns: 240px;`"
+      - "`display: flex;`"
+    answer: 0
+    explanation: "auto-fit with a minimum lets the grid decide how many columns fit."
+  - type: mcq
+    prompt: "What's the quickest manual check that every link and form field is reachable?"
+    options: ["Press Tab through the page and watch the focus", "Read the CSS", "Resize the window", "Check the page title"]
+    answer: 0
+    explanation: "The keyboard test catches unreachable controls and invisible focus in seconds."

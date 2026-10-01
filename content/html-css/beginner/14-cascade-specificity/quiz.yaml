@@ -1,0 +1,37 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What color is the text?"
+    code: |
+      <p class="intro" id="hello">Welcome</p>
+
+      #hello  { color: green; }
+      p.intro { color: blue; }
+      .intro  { color: red; }
+    options: ["green", "blue", "red", "black"]
+    answer: 0
+    explanation: "`#hello` scores (1,0,0), which beats `p.intro` (0,1,1) and `.intro` (0,1,0). Order doesn't matter once specificity differs."
+  - type: mcq
+    prompt: "Two rules have identical specificity and both set `color`. Which wins?"
+    options: ["The one that comes later in the CSS", "The one that comes first", "The shorter one", "Neither; the browser picks black"]
+    answer: 0
+    explanation: "When specificity ties, source order decides: later wins."
+  - type: mcq
+    prompt: "Which property is NOT inherited by child elements?"
+    options: ["`border`", "`color`", "`font-family`", "`line-height`"]
+    answer: 0
+    explanation: "Box properties like border, padding, margin and background aren't inherited. Text properties are."
+  - type: mcq
+    prompt: "What is the specificity of `nav ul li a:hover`?"
+    options: ["(0, 1, 4)", "(0, 0, 5)", "(1, 0, 4)", "(0, 2, 3)"]
+    answer: 0
+    explanation: "Four type selectors (nav, ul, li, a) and one pseudo-class (:hover), which counts as a class."
+  - type: mcq
+    prompt: "In DevTools, a `color` declaration is crossed out. What does that mean?"
+    options:
+      - "Another rule with higher priority set color on this element"
+      - "The color name is misspelled"
+      - "The rule's selector doesn't match the element"
+      - "The stylesheet failed to load"
+    answer: 0
+    explanation: "Crossed out means it lost the cascade. A typo shows a warning triangle; a non-matching rule isn't listed at all."

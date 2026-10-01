@@ -1,0 +1,4 @@
+title: Display & Normal Flow
+module: 18
+summary: "How the browser lays out boxes by default: block, inline and inline-block, and normal document flow. display: none vs. visibility: hidden. Then decorate boxes with background colors, images and gradients, rounded corners and shadows."
+minutes: 45

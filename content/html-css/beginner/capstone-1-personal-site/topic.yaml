@@ -1,0 +1,5 @@
+title: "Your personal site"
+module: 22
+kind: capstone
+summary: "Build a responsive multi-page personal site (home, about, projects, contact) with semantic HTML, Flexbox and Grid. Each piece is checked here, then you assemble the real site on your Mac and test it on a phone-sized screen."
+minutes: 120

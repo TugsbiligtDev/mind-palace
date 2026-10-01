@@ -3,13 +3,17 @@
 //   pnpm check:content            everything
 //   pnpm check:content 19-ctes    only lessons whose key contains "19-ctes" (skips the Practice hub)
 import { PGlite, types } from "@electric-sql/pglite";
+import fs from "node:fs";
+import path from "node:path";
 import vm from "node:vm";
 import { loadPyodide } from "pyodide";
 import { gradeJs, logText, runJs, type Exec } from "../src/lib/js/core";
 import { gradePy, logText as pyLogText, runPy, type PyodideLike } from "../src/lib/py/core";
 import { loadAllTracks, loadStory, loadTrack } from "../src/lib/content/load";
 import { loadPractice } from "../src/lib/content/practice";
-import { codeStepCheck, pyStepCheck, tryStepCheck } from "../src/lib/content/step-check";
+import { codeStepCheck, pyStepCheck, tryStepCheck, webFiles, webStarter, webStepCheck } from "../src/lib/content/step-check";
+import { buildPage, CHECK_RUNTIME, checkInFrame, FRAME_HEIGHT, gradeWeb, type RunChecks } from "../src/lib/web/core";
+import { chromium, type Browser } from "playwright-core";
 import { freshCopy, grade, lastRows, rawTextParsers, resultText, runInput } from "../src/lib/sql/core";
 
 const only = process.argv[2];
@@ -18,6 +22,21 @@ let checks = 0;
 
 function fail(where: string, msg: string) {
   problems.push(`✗ ${where}: ${msg}`);
+}
+
+type CheckTopic = ReturnType<typeof loadTrack>["levels"][number]["topics"][number];
+
+// Quiz invariants every engine shares: a reachable pass mark, and in-range answer indices on
+// questions that have options (mcq/predict — fill answers are free text). Returns, per question,
+// whether its shape is sound, so callers can skip the ones that would index a missing option.
+function checkQuizShape(t: CheckTopic): boolean[] {
+  if (t.quiz.pass > t.quiz.questions.length) fail(`${t.key} quiz`, "pass mark is higher than the number of questions");
+  return t.quiz.questions.map((q, i) => {
+    checks++;
+    const ok = q.type === "fill" || (q.answer >= 0 && q.answer < q.options.length);
+    if (!ok) fail(`${t.key} quiz Q${i + 1}`, "answer index is out of range");
+    return ok;
+  });
 }
 
 async function makeBase(setup: string) {
@@ -36,6 +55,10 @@ async function main() {
     }
     if (bundle.track.engine === "none") {
       checkReadingTrack(bundle);
+      continue;
+    }
+    if (bundle.track.engine === "web") {
+      await checkWebTrack(bundle);
       continue;
     }
     if (bundle.track.engine !== "postgres") {
@@ -61,8 +84,8 @@ async function main() {
         if (!bases.has(t.engine.key)) bases.set(t.engine.key, await makeBase(t.engine.setup));
         lessonBase = bases.get(t.engine.key)!;
         for (const [i, step] of t.lesson.steps.entries()) {
-          if (step.kind === "code") {
-            fail(`${t.key} lesson step ${i + 1}`, 'a SQL course uses "try" steps, not "code" (JavaScript/Python) steps');
+          if (step.kind === "code" || step.kind === "web") {
+            fail(`${t.key} lesson step ${i + 1}`, `a SQL course uses "try" steps, not "${step.kind}" steps`);
             continue;
           }
           if (step.kind !== "try") continue;
@@ -89,14 +112,10 @@ async function main() {
           }
         }
 
-        if (t.quiz.pass > t.quiz.questions.length) fail(`${t.key} quiz`, "pass mark is higher than the number of questions");
+        const shapeOk = checkQuizShape(t);
         for (const [i, q] of t.quiz.questions.entries()) {
+          if (!shapeOk[i]) continue;
           const where = `${t.key} quiz Q${i + 1}`;
-          checks++;
-          if (q.type !== "fill" && (q.answer < 0 || q.answer >= q.options.length)) {
-            fail(where, "answer index is out of range");
-            continue;
-          }
           if (q.type === "predict") {
             const out = await runInput(await fresh(), q.code);
             if (out.error) fail(where, `code errors: ${out.error.message}`);
@@ -123,6 +142,7 @@ async function main() {
   }
 
   if (!only) await checkPractice();
+  await browser?.then((b) => b.close());
 
   if (problems.length) {
     console.error(`\nContent check failed: ${problems.length} problem(s)\n\n${problems.join("\n")}\n`);
@@ -193,8 +213,8 @@ async function checkCodeTrack(bundle: ReturnType<typeof loadTrack>) {
     for (const t of topics) {
       if (only && !t.key.includes(only)) continue;
       for (const [i, step] of t.lesson.steps.entries()) {
-        if (step.kind === "try") {
-          fail(`${t.key} lesson step ${i + 1}`, `a ${python ? "Python" : "JavaScript"} course uses "code" steps, not "try" (SQL) steps`);
+        if (step.kind === "try" || step.kind === "web") {
+          fail(`${t.key} lesson step ${i + 1}`, `a ${python ? "Python" : "JavaScript"} course uses "code" steps, not "${step.kind}" steps`);
           continue;
         }
         if (step.kind !== "code") continue;
@@ -212,14 +232,10 @@ async function checkCodeTrack(bundle: ReturnType<typeof loadTrack>) {
         }
       }
 
-      if (t.quiz.pass > t.quiz.questions.length) fail(`${t.key} quiz`, "pass mark is higher than the number of questions");
+      const shapeOk = checkQuizShape(t);
       for (const [i, q] of t.quiz.questions.entries()) {
+        if (!shapeOk[i]) continue;
         const where = `${t.key} quiz Q${i + 1}`;
-        checks++;
-        if (q.type !== "fill" && (q.answer < 0 || q.answer >= q.options.length)) {
-          fail(where, "answer index is out of range");
-          continue;
-        }
         if (q.type === "predict") {
           const out = await safely(where, "the code", () => r.run(q.code, q.stdin));
           if (!out) continue;
@@ -253,16 +269,85 @@ function checkReadingTrack(bundle: ReturnType<typeof loadTrack>) {
       if (only && !t.key.includes(only)) continue;
       for (const [i, step] of t.lesson.steps.entries()) {
         checks++;
-        if (step.kind === "try" || step.kind === "code")
+        if (step.kind === "try" || step.kind === "code" || step.kind === "web")
           fail(`${t.key} lesson step ${i + 1}`, `a reading course can't run code, so it can't use "${step.kind}" steps (use explain/info/mac)`);
       }
-      if (t.quiz.pass > t.quiz.questions.length) fail(`${t.key} quiz`, "pass mark is higher than the number of questions");
+      checkQuizShape(t);
       for (const [i, q] of t.quiz.questions.entries()) {
         const where = `${t.key} quiz Q${i + 1}`;
-        checks++;
         if (q.type === "predict") fail(where, "a reading course can't run code, so it can't use predict-the-output questions");
         else if (q.type === "fill" && q.runnable) fail(where, "a reading course can't run code: set `runnable: false` on fill questions");
-        else if (q.type === "mcq" && (q.answer < 0 || q.answer >= q.options.length)) fail(where, "answer index is out of range");
+      }
+    }
+    console.log(`  checked ${bundle.track.id}/${level.id} (${topics.length} topics)`);
+  }
+}
+
+// HTML & CSS: pages render in headless Chrome (Playwright's own build, installed once with
+// `pnpm exec playwright-core install chromium-headless-shell`), inside the same script-free
+// iframe the site uses, so the checks measure exactly what a learner's browser would.
+let browser: Promise<Browser> | undefined;
+async function webRunner(): Promise<RunChecks> {
+  browser ??= chromium.launch().catch((e: Error) => {
+    throw new Error(`${e.message.split("\n")[0]}\n  Install the checker's browser once with: pnpm exec playwright-core install chromium-headless-shell`);
+  });
+  const page = await (await browser).newPage();
+  // Pretend to be the site, so exercise images load from public/ just as they do in the browser.
+  await page.route("https://mindpalace.test/**", (route) => {
+    const file = path.join(process.cwd(), "public", decodeURIComponent(new URL(route.request().url()).pathname));
+    if (new URL(route.request().url()).pathname === "/") return route.fulfill({ contentType: "text/html", body: "<!DOCTYPE html><title>check</title>" });
+    return fs.existsSync(file) && fs.statSync(file).isFile() ? route.fulfill({ path: file }) : route.fulfill({ status: 404, body: "" });
+  });
+  await page.goto("https://mindpalace.test/");
+  const src = checkInFrame.toString();
+  return (html, tests, width) =>
+    page.evaluate(
+      ([src, html, tests, width, height, runtime]) => new Function(`return (${src});`)()(html, tests, width, height, runtime),
+      [src, html, tests, width, FRAME_HEIGHT, CHECK_RUNTIME] as const,
+    );
+}
+
+async function checkWebTrack(bundle: ReturnType<typeof loadTrack>) {
+  const run = await webRunner();
+  for (const { level, topics } of bundle.levels) {
+    for (const t of topics) {
+      if (only && !t.key.includes(only)) continue;
+      for (const [i, step] of t.lesson.steps.entries()) {
+        const where = `${t.key} lesson step ${i + 1}`;
+        if (step.kind === "try" || step.kind === "code") {
+          fail(where, `an HTML & CSS course uses "web" steps, not "${step.kind}" steps`);
+          continue;
+        }
+        if (step.kind !== "web") continue;
+        if (!!step.solution !== step.tests.length > 0) {
+          fail(where, "a graded step needs both `tests` and `solution` (or neither)");
+          continue;
+        }
+        const check = webStepCheck(step);
+        if (!check) {
+          // An "edit and look" step: the starter must at least render.
+          checks++;
+          await safely(where, "the starter page", () => run(buildPage(webStarter(step)), ["doc.body.localName"], step.widths[0]));
+          continue;
+        }
+        checks++;
+        const good = await safely(where, "the reference solution", () => gradeWeb(run, check.solution, check));
+        if (!good) continue;
+        if (!good.correct) fail(where, `the reference solution doesn't pass its own checks: ${good.message}`);
+        checks++;
+        const start = await safely(where, "the starter", () => gradeWeb(run, webStarter(step), check));
+        if (start?.correct) fail(where, "the starter already passes every check, so the step is free");
+        for (const [j, wrong] of step.reject.entries()) {
+          checks++;
+          const v = await safely(where, `wrong answer ${j + 1}`, () => gradeWeb(run, webFiles(step, wrong), check));
+          if (v?.correct) fail(where, `wrong answer ${j + 1} is accepted by the grader`);
+        }
+      }
+      checkQuizShape(t);
+      for (const [i, q] of t.quiz.questions.entries()) {
+        const where = `${t.key} quiz Q${i + 1}`;
+        if (q.type === "predict") fail(where, "an HTML & CSS course has no output to predict: use an mcq that shows the code");
+        else if (q.type === "fill" && q.runnable) fail(where, "set `runnable: false` on fill questions in an HTML & CSS course");
       }
     }
     console.log(`  checked ${bundle.track.id}/${level.id} (${topics.length} topics)`);

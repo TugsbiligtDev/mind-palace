@@ -1,0 +1,30 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Brief: \"a product card that could be shown on its own in a search result, with a heading, an image and a price\". Which element wraps it?"
+    options: ["`<article>`", "`<section>`", "`<aside>`", "`<span>`"]
+    answer: 0
+    explanation: "Self-contained content that makes sense on its own is an `article`."
+  - type: mcq
+    prompt: Which of these does the browser NOT silently repair for you?
+    options:
+      - "A missing `alt` on an image"
+      - "A `<ul>` written inside a `<p>`"
+      - "A missing `</strong>`"
+      - "A table without `<tbody>`"
+    answer: 0
+    explanation: "The browser restructures broken nesting, but it can't invent alt text. A missing alt simply leaves the image without a name."
+  - type: mcq
+    prompt: A form's email field has a label, an id, and type email. The submitted data has no email in it. What's missing?
+    options: ["The field's `name`", "A placeholder", "`method=\"get\"`", "A fieldset"]
+    answer: 0
+    explanation: "Only fields with a `name` are sent."
+  - type: mcq
+    prompt: "Which heading outline is correct for a page about one book with two sections?"
+    options:
+      - "h1 Dune → h2 Plot → h2 Reviews"
+      - "h1 Inkwell → h1 Dune → h1 Plot"
+      - "h3 Dune → h1 Plot → h2 Reviews"
+      - "h1 Dune → h4 Plot → h4 Reviews"
+    answer: 0
+    explanation: "One h1 for the page's subject, h2 for its main sections, no skipped levels."

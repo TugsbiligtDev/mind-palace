@@ -1,0 +1,277 @@
+steps:
+  - kind: explain
+    title: From plain to polished
+    body: |
+      Same rules as the first review: each brief says what Inkwell wants, not how to do it. The HTML is done in every task, so all your work is in `style.css` (unless a brief says otherwise).
+
+      Read each brief twice, write the CSS, and use **Check my page**. The message names the first value that differs. Hints unlock after one miss, an answer after three.
+
+  - kind: web
+    title: "1. The foundations"
+    body: |
+      > *Every box should be sized including its padding and border (all elements, plus before/after). The page uses the font stack Georgia, then "Times New Roman", then any serif font, in the color #3b2f2f, on a #fdf8f0 background, with no margin around the page. Body text has a line height of 1.6 and text is sized in rem, with paragraphs at 1.125rem. The heading is 2.5rem.*
+    html: |
+      <h1>Inkwell Books</h1>
+      <p>Second-hand books, carefully chosen. Three floors on Harbour Street.</p>
+    css: |
+      /* your stylesheet */
+    tests:
+      - "cssAll('*', 'box-sizing').every((v) => v === 'border-box') && css('p', 'box-sizing', '::before') === 'border-box'"
+      - "css('body', 'font-family')"
+      - "css('body', 'color') + ' on ' + css('body', 'background-color')"
+      - "css('body', 'margin')"
+      - "css('p', 'line-height')"
+      - "declared(['p', 'body p'], 'font-size') + ' / ' + declared(['h1', 'body h1'], 'font-size')"
+    solution:
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          font-family: Georgia, "Times New Roman", serif;
+          color: #3b2f2f;
+          background: #fdf8f0;
+          line-height: 1.6;
+        }
+
+        h1 {
+          font-size: 2.5rem;
+        }
+
+        p {
+          font-size: 1.125rem;
+        }
+    hint: "Start with the universal box-sizing rule. Most of the rest goes on `body`, where it's inherited. Then one rule each for `h1` and `p` with rem sizes."
+
+  - kind: web
+    title: "2. The layout"
+    body: |
+      > *The content sits in a column at most 720px wide, centred on wide screens, with 1.5rem of space on its left and right so text never touches a phone's edge. The page title area (the header) has 2rem of space above and below its content and a 4px solid #7c2d12 line along its bottom only.*
+
+      The checker measures on a phone and a wide screen.
+    html: |
+      <header class="site-header">
+        <div class="container">
+          <h1>Inkwell Books</h1>
+        </div>
+      </header>
+      <main class="container">
+        <p>Second-hand books, carefully chosen. Three floors on Harbour Street.</p>
+      </main>
+    css: |
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, serif;
+      }
+    widths: [375, 1200]
+    tests:
+      - "box('main.container')"
+      - "box('header .container')"
+      - "css('.site-header', 'padding-top') + ' ' + css('.site-header', 'padding-bottom')"
+      - "css('.site-header', 'border-bottom') + ' | top: ' + css('.site-header', 'border-top-width')"
+    solution:
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          font-family: Georgia, serif;
+        }
+
+        .container {
+          max-width: 720px;
+          margin: 0 auto;
+          padding: 0 1.5rem;
+        }
+
+        .site-header {
+          padding: 2rem 0;
+          border-bottom: 4px solid #7c2d12;
+        }
+    hint: "One `.container` rule (max-width, auto side margins, side padding) serves both places. The header gets vertical padding and a `border-bottom`."
+    reject:
+      - css: |
+          *, *::before, *::after {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 0;
+            font-family: Georgia, serif;
+          }
+
+          .container {
+            width: 720px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+          }
+
+          .site-header {
+            padding: 2rem 0;
+            border-bottom: 4px solid #7c2d12;
+          }
+
+  - kind: web
+    title: "3. The menu"
+    body: |
+      > *Menu links (only the ones in the nav) are white, not underlined, on a #7c2d12 background, with 0.5rem of space above and below the text and 1rem either side. That whole padded area must take up real space in the line. On hover the background becomes #9a3412. Keyboard focus shows a 3px solid #fbbf24 outline, 2px away from the link. The link in the paragraph stays as it is.*
+    html: |
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="books.html">Books</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <p>Read our <a href="returns.html">returns policy</a>.</p>
+    css: |
+      /* your rules */
+    tests:
+      - "cssAll('nav a', 'color')"
+      - "css('nav a', 'text-decoration-line') + ' / ' + css('nav a', 'display')"
+      - "css('nav a', 'background-color') + ' / ' + css('nav a', 'padding')"
+      - "rule('nav a:hover', 'background-color')"
+      - "rule('nav a:focus-visible', 'outline') + ' offset ' + rule('nav a:focus-visible', 'outline-offset')"
+      - "css('p a', 'color') + ' / ' + css('p a', 'text-decoration-line')"
+    solution:
+      css: |
+        nav a {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          color: white;
+          background: #7c2d12;
+          text-decoration: none;
+        }
+
+        nav a:hover {
+          background: #9a3412;
+        }
+
+        nav a:focus-visible {
+          outline: 3px solid #fbbf24;
+          outline-offset: 2px;
+        }
+    hint: "Everything is scoped with `nav a`. Padding only takes up space in the line if the link is `inline-block`. The two states are `nav a:hover` and `nav a:focus-visible`."
+
+  - kind: web
+    title: "4. The book card"
+    body: |
+      > *The card is 260px wide in total (including its padding of 1rem and its 1px solid #e7e5e4 border), with corners rounded by 12px and a shadow of 0 4px 12px at 15% black. The price is bold and colored #15803d. The "Sale" badge sits 12px from the card's top and right edges, whatever else is in the card, with a #b91c1c background and white text.*
+    html: |
+      <div class="card">
+        <span class="badge">Sale</span>
+        <img src="images/cover-dune.svg" alt="Dune by Frank Herbert, cover" width="100" height="150">
+        <h3>Dune</h3>
+        <p class="price">£8.99</p>
+      </div>
+    css: |
+      /* your rules */
+    tests:
+      - "box('.card').width"
+      - "css('.card', 'padding') + ' / ' + css('.card', 'border')"
+      - "css('.card', 'border-radius') + ' / ' + css('.card', 'box-shadow')"
+      - "css('.price', 'font-weight') + ' ' + css('.price', 'color')"
+      - "edges('.badge', '.card').top + ',' + edges('.badge', '.card').right"
+      - "css('.badge', 'background-color') + ' ' + css('.badge', 'color')"
+    solution:
+      css: |
+        .card {
+          position: relative;
+          box-sizing: border-box;
+          width: 260px;
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+        }
+
+        .price {
+          font-weight: bold;
+          color: #15803d;
+        }
+
+        .badge {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          background: #b91c1c;
+          color: white;
+        }
+    hint: "260px *including* padding and border means border-box. The badge is the relative-plus-absolute pair from Module 19."
+
+  - kind: web
+    title: "5. Find the bugs"
+    broken_starter: true
+    body: |
+      > *Moth: "Someone edited the stylesheet last night. Now the headings aren't brown, the prices aren't green, the newsletter button is in a tiny font, and the review quote has a weird gap. I didn't touch the HTML."*
+
+      There are **four** bugs in `style.css`. Find and fix them. Don't add `!important` or ids, and don't change the HTML.
+    html: |
+      <h2>New arrivals</h2>
+      <p>Beloved <span class="price">£7.25</span></p>
+      <blockquote class="review">"A haunting, essential novel."</blockquote>
+      <button type="button">Join the newsletter</button>
+    css: |
+      body {
+        font-family: Georgia, serif;
+        font-size: 1.125rem;
+      }
+
+      h2 {
+        colour: #7c2d12;
+      }
+
+      price {
+        color: #15803d;
+      }
+
+      button {
+        padding: 0.5em 1em;
+      }
+
+      .review {
+        margin: 0;
+        padding-left: 1rem
+        border-left: 4px solid #7c2d12;
+      }
+    tests:
+      - "css('h2', 'color')"
+      - "css('.price', 'color')"
+      - "css('button', 'font-family') + ' ' + css('button', 'font-size')"
+      - "css('.review', 'padding-left') + ' ' + css('.review', 'border-left')"
+    solution:
+      css: |
+        body {
+          font-family: Georgia, serif;
+          font-size: 1.125rem;
+        }
+
+        h2 {
+          color: #7c2d12;
+        }
+
+        .price {
+          color: #15803d;
+        }
+
+        button {
+          font: inherit;
+          padding: 0.5em 1em;
+        }
+
+        .review {
+          margin: 0;
+          padding-left: 1rem;
+          border-left: 4px solid #7c2d12;
+        }
+    hint: "Look for: a British spelling CSS doesn't know, a class selector missing its dot, a form control that doesn't inherit fonts, and a missing semicolon that swallows the next line."
+
+  - kind: recap
+    body: |
+      You took unstyled HTML to a finished look: base typography, a centred responsive column, an accessible menu with hover and focus states, a card with a pinned badge, and you debugged four classic stylesheet mistakes. Part 4 adds real layout: Flexbox and Grid.

@@ -1,0 +1,221 @@
+steps:
+  - kind: explain
+    title: The anchor element
+    body: |
+      Links are what make the web a *web*. A link is an `<a>` element (**a** for *anchor*) with an `href` attribute (*hypertext reference*) saying where it goes:
+
+      ```html
+      <a href="about.html">About Inkwell</a>
+      ```
+
+      The text between the tags is what people click. An `<a>` without `href` isn't a link at all: it isn't clickable and keyboard users can't reach it.
+
+      Links can wrap more than text. An image, or a whole card with a heading and a picture, can sit inside one `<a>`.
+
+  - kind: explain
+    title: Where a link can go
+    body: |
+      `href` takes any path from Module 2:
+
+      | href | Goes to |
+      |---|---|
+      | `about.html` | a page in the same folder |
+      | `books/dune.html` | a page in a subfolder |
+      | `../index.html` | a page one folder up |
+      | `/contact.html` | a page from the site's top folder |
+      | `https://en.wikipedia.org/wiki/Dune_(novel)` | another website: always a **full URL** |
+
+      ⚠️ Linking to another site without `https://` is a classic slip. `href="www.wikipedia.org"` is treated as a relative path, so the browser looks for a *file* called `www.wikipedia.org` in your folder.
+
+  - kind: web
+    title: Build the navigation
+    body: |
+      Every Inkwell page shares the same navigation. This one lives in the top folder, next to `index.html`, `books.html` and `contact.html`.
+
+      Turn the three words into links:
+
+      - **Home** → `index.html`
+      - **Books** → `books.html`
+      - **Contact** → `contact.html`
+
+      Then make the last line's **Visit the Dune page on Wikipedia** a link to `https://en.wikipedia.org/wiki/Dune_(novel)`.
+    html: |
+      <nav>
+        Home
+        Books
+        Contact
+      </nav>
+      <p>Visit the Dune page on Wikipedia</p>
+    tests:
+      - "$$('nav a').map((a) => a.textContent.trim() + ' → ' + a.getAttribute('href'))"
+      - "$$('p a').map((a) => a.href)"
+      - "count('a:not([href])')"
+    solution:
+      html: |
+        <nav>
+          <a href="index.html">Home</a>
+          <a href="books.html">Books</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+        <p><a href="https://en.wikipedia.org/wiki/Dune_(novel)">Visit the Dune page on Wikipedia</a></p>
+    hint: "Wrap each word: `<a href=\"index.html\">Home</a>`. The Wikipedia link needs the full address starting with `https://`."
+    reject:
+      - html: |
+          <nav>
+            <a href="index.html">Home</a>
+            <a href="books.html">Books</a>
+            <a href="contact.html">Contact</a>
+          </nav>
+          <p><a href="en.wikipedia.org/wiki/Dune_(novel)">Visit the Dune page on Wikipedia</a></p>
+
+  - kind: explain
+    title: Jumping within a page
+    body: |
+      Give any element an `id`, and a link can jump straight to it with `#` plus that id:
+
+      ```html
+      <a href="#hours">Opening hours</a>
+      …
+      <h2 id="hours">Opening hours</h2>
+      ```
+
+      Rules for `id`: it must be **unique** on the page, and it can't contain spaces (use dashes again). You can also jump into another page: `contact.html#map`.
+
+      `href="#top"` or `href="#"` jumps back to the top of the page. Long pages often have a small table of contents built this way.
+
+  - kind: web
+    title: A table of contents
+    body: |
+      Inkwell's FAQ page is long. Make the table of contents work:
+
+      1. Give the three `h2` headings the ids `delivery`, `returns` and `gift-cards`.
+      2. Link each item in the list to its heading with `#`.
+
+      Try clicking your links in the preview: they scroll to the heading.
+    html: |
+      <h1>Questions</h1>
+      <ul>
+        <li>Delivery</li>
+        <li>Returns</li>
+        <li>Gift cards</li>
+      </ul>
+      <h2>Delivery</h2>
+      <p>We post within two working days.</p>
+      <h2>Returns</h2>
+      <p>Return any book within 30 days.</p>
+      <h2>Gift cards</h2>
+      <p>Gift cards never expire.</p>
+    tests:
+      - "$$('h2').map((h) => h.id)"
+      - "$$('li a').map((a) => a.getAttribute('href'))"
+      - "$$('li a').every((a) => doc.getElementById(a.getAttribute('href').slice(1)) !== null)"
+      - "$$('li a').map((a) => a.textContent.trim())"
+    solution:
+      html: |
+        <h1>Questions</h1>
+        <ul>
+          <li><a href="#delivery">Delivery</a></li>
+          <li><a href="#returns">Returns</a></li>
+          <li><a href="#gift-cards">Gift cards</a></li>
+        </ul>
+        <h2 id="delivery">Delivery</h2>
+        <p>We post within two working days.</p>
+        <h2 id="returns">Returns</h2>
+        <p>Return any book within 30 days.</p>
+        <h2 id="gift-cards">Gift cards</h2>
+        <p>Gift cards never expire.</p>
+    hint: "The heading gets `id=\"delivery\"` (no `#`). The link gets `href=\"#delivery\"` (with the `#`)."
+    reject:
+      - html: |
+          <h1>Questions</h1>
+          <ul>
+            <li><a href="delivery">Delivery</a></li>
+            <li><a href="returns">Returns</a></li>
+            <li><a href="gift-cards">Gift cards</a></li>
+          </ul>
+          <h2 id="delivery">Delivery</h2>
+          <p>We post within two working days.</p>
+          <h2 id="returns">Returns</h2>
+          <p>Return any book within 30 days.</p>
+          <h2 id="gift-cards">Gift cards</h2>
+          <p>Gift cards never expire.</p>
+
+  - kind: explain
+    title: New tabs, email and phone
+    body: |
+      **Opening in a new tab.** `target="_blank"` opens the link in a new tab. Add `rel="noopener"` too: it stops the new page from getting a handle on yours (modern browsers now do this by default, but writing it is the safe, expected habit):
+
+      ```html
+      <a href="https://maps.example.com/inkwell" target="_blank" rel="noopener">Map (opens in a new tab)</a>
+      ```
+
+      Use new tabs sparingly. People can open any link in a new tab themselves (⌘-click), and a surprise new tab confuses many users. When you do it, say so in the link text.
+
+      **Email and phone.** `mailto:` opens the visitor's email app, `tel:` offers to call (handy on phones):
+
+      ```html
+      <a href="mailto:hello@inkwellbooks.com">hello@inkwellbooks.com</a>
+      <a href="tel:+441179460000">0117 946 0000</a>
+      ```
+
+      Write `tel:` numbers with the country code and no spaces.
+
+  - kind: web
+    title: The contact links
+    body: |
+      Finish Inkwell's contact box:
+
+      1. Make the email address a `mailto:` link to `hello@inkwellbooks.com`.
+      2. Make the phone number a `tel:` link to `+441179460000`.
+      3. Make **Find us on the map** open `https://maps.example.com/inkwell` **in a new tab**, safely, and add ` (opens in a new tab)` to the end of its text.
+    html: |
+      <h2>Contact</h2>
+      <p>Email: hello@inkwellbooks.com</p>
+      <p>Phone: 0117 946 0000</p>
+      <p>Find us on the map</p>
+    tests:
+      - "$$('a').map((a) => a.getAttribute('href'))"
+      - "attr('a[href^=\"https\"]', 'target')"
+      - "(attr('a[href^=\"https\"]', 'rel') || '').split(/\\s+/).includes('noopener')"
+      - "text('a[href^=\"https\"]')"
+      - "text('a[href^=\"mailto\"]')"
+    solution:
+      html: |
+        <h2>Contact</h2>
+        <p>Email: <a href="mailto:hello@inkwellbooks.com">hello@inkwellbooks.com</a></p>
+        <p>Phone: <a href="tel:+441179460000">0117 946 0000</a></p>
+        <p><a href="https://maps.example.com/inkwell" target="_blank" rel="noopener">Find us on the map (opens in a new tab)</a></p>
+    hint: "`<a href=\"mailto:hello@inkwellbooks.com\">…</a>`, `<a href=\"tel:+441179460000\">…</a>`, and the map link needs both `target=\"_blank\"` and `rel=\"noopener\"`."
+    reject:
+      - html: |
+          <h2>Contact</h2>
+          <p>Email: <a href="mailto:hello@inkwellbooks.com">hello@inkwellbooks.com</a></p>
+          <p>Phone: <a href="tel:+441179460000">0117 946 0000</a></p>
+          <p><a href="https://maps.example.com/inkwell" target="_blank">Find us on the map (opens in a new tab)</a></p>
+
+  - kind: explain
+    title: Link text that makes sense alone
+    body: |
+      Screen reader users often pull up a **list of all links** on a page to find their way. Imagine that list reads: *click here, click here, read more, here*. Useless.
+
+      Good link text says **where the link goes**, even out of context:
+
+      | ✗ | ✓ |
+      |---|---|
+      | To see our returns policy, <u>click here</u>. | Read our <u>returns policy</u>. |
+      | <u>Read more</u> | <u>Read more about poetry night</u> |
+      | <u>https://inkwellbooks.com/events/2026/october</u> | <u>October events</u> |
+
+      It also helps everyone who skims (that is, everyone) and search engines, which treat link text as a description of the page it points to.
+
+  - kind: why
+    body: |
+      Navigation is how people move through your site, and links are how the rest of the web finds it. Correct paths keep visitors out of 404 pages, ids let you point to exactly the right spot, and descriptive link text makes the site usable with a keyboard or a screen reader.
+
+  - kind: recap
+    body: |
+      - `<a href="…">text</a>`; no `href` means no link.
+      - Your own pages: relative paths. Other sites: full `https://` URLs.
+      - `id="x"` on an element, `href="#x"` to jump there; ids are unique, no spaces.
+      - New tab: `target="_blank" rel="noopener"`, used sparingly and announced in the text.
+      - `mailto:` and `tel:` links; link text that says where it goes, never "click here".

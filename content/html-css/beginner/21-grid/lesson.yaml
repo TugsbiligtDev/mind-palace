@@ -1,0 +1,360 @@
+steps:
+  - kind: explain
+    title: Two dimensions
+    body: |
+      Flexbox handles **one** direction. **Grid** handles **rows and columns at the same time**, like a spreadsheet you can place things on.
+
+      ```css
+      .books {
+        display: grid;
+        grid-template-columns: 200px 200px 200px;   /* three columns */
+        gap: 1rem;
+      }
+      ```
+
+      The container's direct children are **grid items** and fill the cells in order, left to right, then onto the next row. You define the columns; rows are created automatically as needed.
+
+  - kind: explain
+    title: The fr unit, repeat() and minmax()
+    body: |
+      `fr` means **a fraction of the free space**. It's what makes grids flexible:
+
+      ```css
+      grid-template-columns: 1fr 1fr 1fr;     /* three equal columns */
+      grid-template-columns: 2fr 1fr;         /* main column twice the sidebar */
+      grid-template-columns: 250px 1fr;       /* fixed sidebar, flexible main */
+      ```
+
+      `repeat()` saves typing: `repeat(4, 1fr)` is `1fr 1fr 1fr 1fr`.
+
+      `minmax(min, max)` sets a range for a track: `minmax(200px, 1fr)` is "at least 200px, otherwise share the space".
+
+      `gap` (or `row-gap` and `column-gap`) spaces rows and columns, exactly like in Flexbox.
+
+  - kind: web
+    title: A three-column shelf
+    body: |
+      Turn `.shelf` into a grid of **three equal columns** using `repeat()` and the `fr` unit, with a `1.5rem` gap.
+    html: |
+      <div class="shelf">
+        <img src="images/cover-dune.svg" alt="Dune" width="300" height="450">
+        <img src="images/cover-emma.svg" alt="Emma" width="300" height="450">
+        <img src="images/cover-beloved.svg" alt="Beloved" width="300" height="450">
+        <img src="images/cover-odyssey.svg" alt="The Odyssey" width="300" height="450">
+        <img src="images/cover-dune.svg" alt="Dune, second copy" width="300" height="450">
+        <img src="images/cover-emma.svg" alt="Emma, second copy" width="300" height="450">
+      </div>
+    css: |
+      .shelf img {
+        width: 100%;
+        height: auto;
+      }
+    tests:
+      - "css('.shelf', 'display')"
+      - "css('.shelf', 'grid-template-columns')"
+      - "css('.shelf', 'gap')"
+      - "/repeat\\(\\s*3/.test(declared('.shelf', 'grid-template-columns') || '')"
+    solution:
+      css: |
+        .shelf {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1.5rem;
+        }
+
+        .shelf img {
+          width: 100%;
+          height: auto;
+        }
+    hint: "`display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;`"
+
+  - kind: explain
+    title: "auto-fit: a grid with no media queries"
+    body: |
+      This one line is the most useful thing in CSS Grid:
+
+      ```css
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+      }
+      ```
+
+      Read it as: "fit **as many columns as will fit**, each **at least 180px**, and share any extra space equally". On a phone you get one or two columns, on a laptop four or five, with no media queries at all.
+
+      `auto-fill` is almost the same. The difference only shows when there are **few items**: `auto-fill` keeps empty columns, so the items stay 180px-ish; `auto-fit` collapses the empty columns, so the items stretch to fill the row.
+
+  - kind: web
+    title: The self-adjusting gallery
+    body: |
+      Make the gallery choose its own number of columns: as many as fit, each at least `180px` wide, sharing the extra space. Use a `1rem` gap.
+
+      The checker looks at a phone (375px) and a laptop (1000px).
+    html: |
+      <div class="gallery">
+        <div class="tile">Fiction</div><div class="tile">Poetry</div><div class="tile">History</div>
+        <div class="tile">Travel</div><div class="tile">Science</div><div class="tile">Children</div>
+        <div class="tile">Art</div><div class="tile">Music</div>
+      </div>
+    css: |
+      body {
+        margin: 1rem;
+        font-family: system-ui, sans-serif;
+      }
+
+      .tile {
+        padding: 2rem 1rem;
+        background: #f5f0e8;
+        border-radius: 8px;
+        text-align: center;
+      }
+    widths: [375, 1000]
+    tests:
+      - "css('.gallery', 'grid-template-columns')"
+      - "css('.gallery', 'gap')"
+      - "/auto-(fit|fill)/.test(declared('.gallery', 'grid-template-columns') || '')"
+    solution:
+      css: |
+        body {
+          margin: 1rem;
+          font-family: system-ui, sans-serif;
+        }
+
+        .gallery {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 1rem;
+        }
+
+        .tile {
+          padding: 2rem 1rem;
+          background: #f5f0e8;
+          border-radius: 8px;
+          text-align: center;
+        }
+    hint: "`grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));`"
+    reject:
+      - css: |
+          body {
+            margin: 1rem;
+            font-family: system-ui, sans-serif;
+          }
+
+          .gallery {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+          }
+
+          .tile {
+            padding: 2rem 1rem;
+            background: #f5f0e8;
+            border-radius: 8px;
+            text-align: center;
+          }
+
+  - kind: explain
+    title: Placing items on lines
+    body: |
+      Grid lines are numbered from 1, starting at the left (and top) edge. A three-column grid has lines 1, 2, 3 and 4:
+
+      ```
+      1      2      3      4
+      │  A   │  B   │  C   │
+      ```
+
+      Place an item by which lines it starts and ends on:
+
+      ```css
+      .featured {
+        grid-column: 1 / 3;     /* from line 1 to line 3: two columns wide */
+        grid-row: 1 / 3;        /* two rows tall */
+      }
+      .wide {
+        grid-column: span 2;    /* two columns wide, wherever it lands */
+      }
+      .full {
+        grid-column: 1 / -1;    /* -1 is the last line: the full width */
+      }
+      ```
+
+  - kind: web
+    title: Feature a book
+    body: |
+      In the three-column grid:
+
+      1. The `.featured` book should be **two columns wide and two rows tall**, starting in the top-left corner.
+      2. The `.banner` at the end should stretch across **the full width**, whatever the number of columns (use `-1`).
+    html: |
+      <div class="grid">
+        <div class="featured">Book of the month: Beloved</div>
+        <div>Dune</div>
+        <div>Emma</div>
+        <div>The Odyssey</div>
+        <div>Middlemarch</div>
+        <div>Persuasion</div>
+        <div class="banner">Free delivery on orders over £20</div>
+      </div>
+    css: |
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+      }
+
+      .grid > div {
+        padding: 1.5rem 1rem;
+        background: #f5f0e8;
+      }
+
+      .grid > .featured {
+        background: #7c2d12;
+        color: white;
+      }
+    tests:
+      - "box('.featured')"
+      - "box('.banner')"
+      - "box('.grid > div:nth-child(2)')"
+    solution:
+      css: |
+        .grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.5rem;
+        }
+
+        .grid > div {
+          padding: 1.5rem 1rem;
+          background: #f5f0e8;
+        }
+
+        .grid > .featured {
+          grid-column: 1 / 3;
+          grid-row: 1 / 3;
+          background: #7c2d12;
+          color: white;
+        }
+
+        .banner {
+          grid-column: 1 / -1;
+        }
+    hint: "`.featured { grid-column: 1 / 3; grid-row: 1 / 3; }` and `.banner { grid-column: 1 / -1; }`."
+
+  - kind: explain
+    title: Named areas
+    body: |
+      For whole-page layouts, you can **draw** the layout with names:
+
+      ```css
+      .page {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        grid-template-areas:
+          "header  header"
+          "sidebar main"
+          "footer  footer";
+        gap: 1rem;
+      }
+      .page > header { grid-area: header; }
+      .page > aside  { grid-area: sidebar; }
+      .page > main   { grid-area: main; }
+      .page > footer { grid-area: footer; }
+      ```
+
+      Each string is a row; each word is a cell. Repeating a name stretches that area across cells. A `.` leaves a cell empty. The areas must form rectangles.
+
+      Changing the layout later (for a phone, in Module 22) only means redrawing the strings.
+
+  - kind: web
+    title: Draw the page
+    body: |
+      Lay out Inkwell's page with `grid-template-areas`:
+
+      - Columns: a `200px` sidebar and a flexible main column (`1fr`).
+      - Row 1: the header across both columns. Row 2: sidebar on the left, main on the right. Row 3: the footer across both.
+      - Gap `1rem`. Use the area names `header`, `sidebar`, `main` and `footer`.
+    html: |
+      <div class="page">
+        <header>Inkwell Books</header>
+        <aside>Categories</aside>
+        <main>Book list</main>
+        <footer>© 2026</footer>
+      </div>
+    css: |
+      body {
+        margin: 0;
+      }
+
+      .page > * {
+        padding: 1rem;
+        background: #f5f0e8;
+      }
+    tests:
+      - "box('header')"
+      - "box('aside')"
+      - "box('main')"
+      - "box('footer')"
+      - "declared('.page', 'grid-template-areas') !== null"
+    solution:
+      css: |
+        body {
+          margin: 0;
+        }
+
+        .page {
+          display: grid;
+          grid-template-columns: 200px 1fr;
+          grid-template-areas:
+            "header header"
+            "sidebar main"
+            "footer footer";
+          gap: 1rem;
+        }
+
+        .page > header { grid-area: header; }
+        .page > aside { grid-area: sidebar; }
+        .page > main { grid-area: main; }
+        .page > footer { grid-area: footer; }
+
+        .page > * {
+          padding: 1rem;
+          background: #f5f0e8;
+        }
+    hint: "Three strings for three rows: `\"header header\"`, `\"sidebar main\"`, `\"footer footer\"`. Then give each element its `grid-area`."
+
+  - kind: explain
+    title: Grid or Flexbox?
+    body: |
+      They're partners, not rivals. A rough guide:
+
+      | Use **Flexbox** when… | Use **Grid** when… |
+      |---|---|
+      | it's one row **or** one column | you need rows **and** columns lined up |
+      | the content decides the sizes (a menu of different-length words) | the layout decides the sizes (equal columns, a page skeleton) |
+      | navbars, button groups, centring, a card's insides | galleries, card grids, whole-page layouts |
+
+      Real pages nest them: a Grid page layout, with a Flexbox navbar in the header and Flexbox inside each card.
+
+  - kind: mac
+    title: The Grid inspector
+    body: |
+      Grid containers get a **grid** badge in the Elements panel. Click it and DevTools overlays the grid on the page: every line **numbered**, the gaps shaded, and area names written in their areas.
+
+      The **Layout** pane (Chrome) lists every grid on the page with checkboxes to show line numbers, track sizes and area names. Open your Draw-the-page exercise in the preview, right-click → Inspect, and turn them on.
+    commands: |
+      # Elements panel: click the [grid] badge next to a grid container
+      # Chrome: Layout pane → Grid overlays → tick "Show line numbers" and "Show area names"
+
+  - kind: why
+    body: |
+      Before Grid, two-dimensional layouts meant hacks: floats, tables, fixed heights. Now a gallery that adapts to any screen is one line, and a whole page skeleton is a drawing in your CSS. Combined with Flexbox, it covers nearly every layout you'll ever need.
+
+  - kind: recap
+    body: |
+      - `display: grid` + `grid-template-columns`; `gap` for spacing.
+      - `fr` shares free space; `repeat(3, 1fr)`; `minmax(200px, 1fr)`.
+      - `repeat(auto-fit, minmax(180px, 1fr))`: responsive columns without media queries.
+      - Place by lines: `grid-column: 1 / 3`, `span 2`, `1 / -1` for full width.
+      - `grid-template-areas` draws the layout; items join with `grid-area`.
+      - Flexbox for one direction and content-sized things; Grid for rows and columns together.

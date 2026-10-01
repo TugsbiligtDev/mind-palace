@@ -1,0 +1,4 @@
+title: Your Code Editor & Browser Tools
+module: 3
+summary: "Set up VS Code (open a folder, create and save files, autosave), type faster with Emmet, preview with Live Server, and meet browser DevTools: inspect any element and edit its CSS live. Your first debugging skill."
+minutes: 40

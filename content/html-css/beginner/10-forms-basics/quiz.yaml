@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: A form field has a label and an id but no `name`. What happens when the form is submitted?
+    options:
+      - "That field's value isn't sent"
+      - "It's sent under its id instead"
+      - "It's sent under the label text"
+      - "The form refuses to submit"
+    answer: 0
+    explanation: "Only fields with a `name` are sent. The `name` is the key the data travels under."
+  - type: mcq
+    prompt: "How do you connect `<label>Email</label>` to `<input type=\"email\" id=\"em\">`?"
+    options: ["`<label for=\"em\">`", "`<label id=\"em\">`", "`<label name=\"em\">`", "`<label href=\"#em\">`"]
+    answer: 0
+    explanation: "A label's `for` must match the input's `id`. (Wrapping the input inside the label works too.)"
+  - type: mcq
+    prompt: Three radio buttons for "Small", "Medium" and "Large" all let you pick more than one at once. What's wrong?
+    options:
+      - "They don't share the same `name`"
+      - "They need `type=\"checkbox\"`"
+      - "They're missing a `<legend>`"
+      - "They need different ids"
+    answer: 0
+    explanation: "Radio buttons only form one pick-one group when they share a `name`."
+  - type: mcq
+    prompt: Why isn't a placeholder a good replacement for a label?
+    options:
+      - "It vanishes when you start typing, is often faint, and isn't reliably read out as the field's name"
+      - "Placeholders don't work in modern browsers"
+      - "Placeholders are sent to the server instead of the value"
+      - "It's fine; placeholders and labels are the same"
+    answer: 0
+    explanation: "Use a real label for the name. A placeholder can show an example format at most."
+  - type: mcq
+    prompt: Which `method` suits a login form?
+    options: ["`post`", "`get`", "Either; there's no difference", "Neither; logins don't use forms"]
+    answer: 0
+    explanation: "`get` puts the data in the URL, where it ends up in history and logs. Anything private uses `post`."

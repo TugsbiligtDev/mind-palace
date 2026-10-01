@@ -1,0 +1,8 @@
+id: html-css
+title: HTML & CSS
+tagline: Build web pages that look good and work for everyone.
+color: "#ea580c"
+engine: web
+engine_version: "HTML Living Standard + CSS (Baseline 2026)"
+last_reviewed: "2026-10-01"
+levels: [beginner, intermediate, advanced]

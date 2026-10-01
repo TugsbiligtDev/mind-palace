@@ -1,0 +1,40 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "A link written as `<a href=\"www.inkwellbooks.com\">` leads to a 404. Why?"
+    options:
+      - "Without `https://` the browser treats it as a relative path to a file in the current folder"
+      - "Links can't contain dots"
+      - "The domain should be in a `src` attribute"
+      - "It needs `target=\"_blank\"`"
+    answer: 0
+    explanation: "Links to other sites need the full URL, starting with `https://`."
+  - type: mcq
+    prompt: "Which pair makes a link jump to a section on the same page?"
+    options:
+      - "`<a href=\"#hours\">` and `<h2 id=\"hours\">`"
+      - "`<a href=\"hours\">` and `<h2 id=\"#hours\">`"
+      - "`<a id=\"hours\">` and `<h2 href=\"#hours\">`"
+      - "`<a href=\"#hours\">` and `<h2 class=\"hours\">`"
+    answer: 0
+    explanation: "The target gets an `id` (no `#`); the link points at it with `#` plus the id."
+  - type: mcq
+    prompt: Which link text is best?
+    options:
+      - "`Download the <a href=\"menu.pdf\">café menu (PDF)</a>`"
+      - "`To download the café menu, <a href=\"menu.pdf\">click here</a>`"
+      - "`<a href=\"menu.pdf\">Here</a> is the café menu`"
+      - "`<a href=\"menu.pdf\">menu.pdf</a>`"
+    answer: 0
+    explanation: "The link text alone says where it goes and what kind of file it is. \"Click here\" and \"here\" mean nothing in a list of links."
+  - type: fill
+    prompt: "Complete the link so it offers to call Inkwell."
+    code: "<a href=\"____+441179460000\">0117 946 0000</a>"
+    answer: "tel:"
+    runnable: false
+    explanation: "`tel:` links let phones call the number. Email links use `mailto:`."
+  - type: mcq
+    prompt: "What should accompany `target=\"_blank\"`?"
+    options: ["`rel=\"noopener\"`", "`rel=\"stylesheet\"`", "`id=\"_blank\"`", "`href=\"#\"`"]
+    answer: 0
+    explanation: "`rel=\"noopener\"` stops the new tab from controlling your page. It's the expected habit with `target=\"_blank\"`."

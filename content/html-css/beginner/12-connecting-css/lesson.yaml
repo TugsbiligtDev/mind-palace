@@ -1,0 +1,188 @@
+steps:
+  - kind: explain
+    title: Rule anatomy
+    body: |
+      CSS is a list of **rules**. Each rule says *which elements* and *how they should look*:
+
+      ```css
+      h1 {
+        color: darkred;
+        font-size: 40px;
+      }
+      ```
+
+      - `h1` is the **selector**: which elements this rule applies to (here, every `<h1>`).
+      - Inside the curly braces `{ }` are **declarations**, each a **property** and a **value** separated by a colon: `color: darkred`.
+      - Every declaration ends with a **semicolon**. The last one could skip it, but always write it: the day you add another line, a missing `;` silently breaks it.
+
+      If the browser doesn't understand a declaration (a typo like `colr: red`), it skips just that one line and carries on. No error, just no effect. DevTools shows it crossed out with a warning sign.
+
+  - kind: explain
+    title: Three places CSS can live
+    body: |
+      **1. Inline**, in a `style` attribute on one element:
+
+      ```html
+      <p style="color: gray;">Second-hand books.</p>
+      ```
+
+      **2. Internal**, in a `<style>` element in the page's `<head>`:
+
+      ```html
+      <style>
+        p { color: gray; }
+      </style>
+      ```
+
+      **3. External**, in a separate `.css` file, connected with `<link>` in the `<head>`:
+
+      ```html
+      <link rel="stylesheet" href="css/style.css">
+      ```
+
+      `rel="stylesheet"` says what the linked file is; `href` is its path (Module 2 rules apply: a wrong path means no styles at all).
+
+  - kind: explain
+    title: Why external is the default
+    body: |
+      Inkwell will have dozens of pages. With an external stylesheet:
+
+      - **One file styles every page.** Change the brand color once and the whole site updates.
+      - **The browser downloads it once**, caches it, and reuses it on every other page. Faster.
+      - **HTML stays about content**, CSS about looks. Each file is easier to read.
+
+      Inline styles are the opposite: they affect one element, repeat everywhere, and are hard to override (Module 14 shows why). Use them almost never. A `<style>` block is fine for a one-page experiment, or for these lesson exercises.
+
+  - kind: web
+    title: Connect the stylesheet
+    body: |
+      This is a full page, and its `style.css` (the second tab) is ready, but the page looks unstyled. The page never asks for the stylesheet.
+
+      Add the `<link>` element that connects `style.css`, in the right place in the `<head>`. The stylesheet sits in the same folder as the page.
+    html: |
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Inkwell Books</title>
+        </head>
+        <body>
+          <h1>Inkwell Books</h1>
+          <p>Second-hand books, carefully chosen.</p>
+        </body>
+      </html>
+    css: |
+      body {
+        background: #fdf8f0;
+        font-family: Georgia, serif;
+      }
+      h1 {
+        color: #7c2d12;
+      }
+    tests:
+      - "css('h1', 'color')"
+      - "css('body', 'background-color')"
+      - "$('head style[data-file]') !== null"
+      - "$('body style') === null"
+    solution:
+      html: |
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Inkwell Books</title>
+            <link rel="stylesheet" href="style.css">
+          </head>
+          <body>
+            <h1>Inkwell Books</h1>
+            <p>Second-hand books, carefully chosen.</p>
+          </body>
+        </html>
+    hint: "Inside `<head>`, add `<link rel=\"stylesheet\" href=\"style.css\">`."
+    reject:
+      - html: |
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>Inkwell Books</title>
+            </head>
+            <body>
+              <link rel="stylesheet" href="style.css">
+              <h1>Inkwell Books</h1>
+              <p>Second-hand books, carefully chosen.</p>
+            </body>
+          </html>
+
+  - kind: explain
+    title: How these lessons handle style.css
+    body: |
+      From now on, most exercises have two tabs. When the `index.html` tab holds just a snippet (no `<html>` or `<head>`), the lesson wraps it in a page that **already links `style.css`**, so you can focus on the CSS. When it holds a full page, it's up to the page to link the stylesheet, exactly like a real site.
+
+  - kind: web
+    title: Move inline styles out
+    body: |
+      Someone styled Inkwell's notice with inline `style` attributes. Move the styling into `style.css`:
+
+      1. Remove both `style` attributes from the HTML.
+      2. In `style.css`, write one rule for `h2` that makes it `color: teal`.
+      3. Write a rule for `p` that makes it `color: dimgray` and `font-size: 18px`.
+
+      The preview should look the same before and after. That's the point: same look, cleaner code.
+    html: |
+      <h2 style="color: teal;">Summer sale</h2>
+      <p style="color: dimgray; font-size: 18px;">Every poetry book is 20% off this week.</p>
+    css: |
+      /* your rules go here */
+    tests:
+      - "count('[style]')"
+      - "css('h2', 'color')"
+      - "css('p', 'color')"
+      - "css('p', 'font-size')"
+      - "rule('h2', 'color')"
+      - "rule('p', 'font-size')"
+    solution:
+      html: |
+        <h2>Summer sale</h2>
+        <p>Every poetry book is 20% off this week.</p>
+      css: |
+        h2 {
+          color: teal;
+        }
+
+        p {
+          color: dimgray;
+          font-size: 18px;
+        }
+    hint: "Each inline `style=\"…\"` becomes the inside of a rule: `h2 { color: teal; }`. Then delete the attribute."
+
+  - kind: explain
+    title: Comments and formatting
+    body: |
+      CSS comments use `/* */` and can span several lines:
+
+      ```css
+      /* ===== Header ===== */
+      header {
+        padding: 16px; /* matches the logo's height */
+      }
+      ```
+
+      There is no `//` single-line comment in CSS. Writing one quietly breaks the next rule.
+
+      Formatting conventions: one declaration per line, two-space indent, a space after the colon, and a blank line between rules. Browsers don't care; your future self does. (Prettier, in Module 37, does this automatically.)
+
+  - kind: why
+    body: |
+      Separating structure (HTML) from appearance (CSS) is the founding idea of modern web design. It lets you restyle a whole site from one file, lets the browser cache your styles, and keeps both files readable. Every exercise from here on works this way.
+
+  - kind: recap
+    body: |
+      - A rule = **selector** `{ property: value; … }`. One declaration per line, always end with `;`.
+      - Inline (`style=""`), internal (`<style>`), external (`<link rel="stylesheet" href="…">` in the head).
+      - External is the default: one file for every page, cached, clean separation.
+      - Unknown declarations are skipped silently; a wrong stylesheet path means no styles at all.
+      - Comments: `/* … */` only.

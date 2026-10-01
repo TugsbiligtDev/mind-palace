@@ -1,0 +1,4 @@
+title: Typography
+module: 16
+summary: "Make text a pleasure to read: font-family and fallback stacks, system fonts, web fonts from Google Fonts or @font-face with font-display, size, weight, line-height and letter-spacing, alignment, decoration and case, and a comfortable line length."
+minutes: 45

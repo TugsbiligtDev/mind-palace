@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "With `flex-direction: column`, which property spaces items out vertically?"
+    options: ["`justify-content`", "`align-items`", "`vertical-align`", "`text-align`"]
+    answer: 0
+    explanation: "justify-content always works on the main axis, and in a column the main axis is vertical."
+  - type: mcq
+    prompt: "A logo and a menu sit in a flex row. How do you push them to opposite ends?"
+    options: ["`justify-content: space-between`", "`align-items: space-between`", "`flex-wrap: wrap`", "`order: 2` on the menu"]
+    answer: 0
+    explanation: "space-between puts all the leftover space between the items."
+  - type: mcq
+    prompt: "What does `flex: 1` on a search input in a row with a button do?"
+    options:
+      - "The input takes all the spare space; the button stays its natural size"
+      - "The input becomes 1px wide"
+      - "The input and button become equal widths"
+      - "The input moves to the first position"
+    answer: 0
+    explanation: "flex-grow: 1 on just one item gives it all the leftover space."
+  - type: mcq
+    prompt: "`align-items: center` doesn't centre the child vertically. What's the usual reason?"
+    options:
+      - "The container is only as tall as the child, so there's no space to centre in"
+      - "align-items only works in Grid"
+      - "The child needs position: absolute"
+      - "You need `vertical-align: middle` too"
+    answer: 0
+    explanation: "Give the container a height or min-height taller than the child."
+  - type: mcq
+    prompt: "Why use `order` sparingly?"
+    options:
+      - "Keyboard and screen reader users follow the HTML order, so the visual order and focus order can disagree"
+      - "It's not supported in Safari"
+      - "It only accepts positive numbers"
+      - "It disables gap"
+    answer: 0
+    explanation: "If the order matters, change the HTML so everyone gets the same sequence."

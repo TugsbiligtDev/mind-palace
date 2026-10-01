@@ -1,0 +1,35 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "With the browser's default settings, how big is `1.5rem`?"
+    options: ["24px", "15px", "1.5px", "150% of the parent's width"]
+    answer: 0
+    explanation: "The root font size is 16px by default, and 1.5 × 16 = 24."
+  - type: mcq
+    prompt: Why size text in rem rather than px?
+    options:
+      - "rem text grows when a reader sets a larger default font size; px text doesn't"
+      - "rem is faster for the browser to calculate"
+      - "px doesn't work on Retina screens"
+      - "rem text is always bigger"
+    answer: 0
+    explanation: "rem follows the root size, which the reader can change. Respecting it is an accessibility basic."
+  - type: mcq
+    prompt: "What's the difference between `background: rgb(0 0 0 / 50%)` and `opacity: 0.5`?"
+    options:
+      - "The rgb alpha only makes the background see-through; opacity fades the whole element, including its text and children"
+      - "There is no difference"
+      - "opacity only affects the background"
+      - "rgb with a slash is invalid"
+    answer: 0
+    explanation: "Alpha belongs to one color. Opacity applies to everything the element draws."
+  - type: mcq
+    prompt: "A full-screen section uses `height: 100vh` and is cut off on phones. What's the modern fix?"
+    options: ["`min-height: 100svh` (or `100dvh`)", "`height: 100%`", "`height: 100vw`", "`height: 9999px`"]
+    answer: 0
+    explanation: "vh uses the largest viewport (toolbar hidden). svh fits the small viewport, and dvh follows the toolbar."
+  - type: mcq
+    prompt: Which calc() is written correctly?
+    options: ["`calc(100% - 2rem)`", "`calc(100%-2rem)`", "`calc(100% minus 2rem)`", "`100% - 2rem`"]
+    answer: 0
+    explanation: "Spaces are required around + and -, and the expression needs the calc() wrapper."

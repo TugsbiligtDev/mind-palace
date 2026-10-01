@@ -1,0 +1,4 @@
+title: Responsive Design Basics
+module: 22
+summary: "One page for every screen: the mobile-first approach, the viewport meta tag, media queries with the modern range syntax (width >= 768px), breakpoints chosen by content, fluid images, and testing with DevTools device mode."
+minutes: 50

@@ -1,0 +1,226 @@
+steps:
+  - kind: explain
+    title: Briefs, not instructions
+    body: |
+      Inspector Bold hands you Inkwell's notes. They say *what* the page needs, not which elements to use. That part is your job.
+
+      This review covers Modules 4 to 11. For each brief, sketch the structure first (which regions, which headings, which elements), then write it. The checker tells you the first thing that doesn't match. After a miss you can ask for a hint, and after three you can see one working answer. Try hard before you look.
+
+  - kind: web
+    title: "1. The page frame"
+    body: |
+      > *Every page has the logo text "Inkwell Books" as the main title at the top, with a menu of three links: Home (index.html), Books (books.html), Contact (contact.html). Below it is the page's own content, which for now is just a heading "Contact us". At the bottom: "© 2026 Inkwell Books".*
+
+      Mark it up with the right landmark elements. The menu belongs inside the top region.
+    html: |
+      <!-- your page frame -->
+    tests:
+      - "$$('body > *').map((e) => e.localName)"
+      - "text('header h1')"
+      - "$$('header nav a').map((a) => a.textContent.trim() + ' → ' + a.getAttribute('href'))"
+      - "$$('main h1, main h2').map((h) => h.textContent.trim())"
+      - "count('h1')"
+      - "text('footer')"
+    solution:
+      html: |
+        <header>
+          <h1>Inkwell Books</h1>
+          <nav>
+            <a href="index.html">Home</a>
+            <a href="books.html">Books</a>
+            <a href="contact.html">Contact</a>
+          </nav>
+        </header>
+        <main>
+          <h2>Contact us</h2>
+        </main>
+        <footer>
+          <p>© 2026 Inkwell Books</p>
+        </footer>
+    hint: "Three regions in order: `header` (with the `h1` and a `nav`), `main`, `footer`. The page may only have one `h1`, so *Contact us* is an `h2`."
+    reject:
+      - html: |
+          <header>
+            <h1>Inkwell Books</h1>
+          </header>
+          <nav>
+            <a href="index.html">Home</a>
+            <a href="books.html">Books</a>
+            <a href="contact.html">Contact</a>
+          </nav>
+          <main>
+            <h2>Contact us</h2>
+          </main>
+          <footer>
+            <p>© 2026 Inkwell Books</p>
+          </footer>
+
+  - kind: web
+    title: "2. A book on the shelf"
+    body: |
+      > *A self-contained listing for **Beloved** (heading level 2) by Toni Morrison. Show the cover (`images/cover-beloved.svg`, 300 × 450 pixels) with the caption "First edition, 1987". Then a short description paragraph: "A haunting novel about memory and freedom." and a link reading "Read reviews of Beloved" that jumps to the element with the id `reviews` further down this page.*
+
+      The reviews section is already there at the bottom. Write the listing above it.
+    html: |
+      <!-- the Beloved listing -->
+
+      <section id="reviews">
+        <h2>Reviews</h2>
+        <p>No reviews yet.</p>
+      </section>
+    tests:
+      - "count('article')"
+      - "text('article h2')"
+      - "count('article figure > img') + ':' + count('article figure > figcaption')"
+      - "text('article figcaption')"
+      - "attr('article img', 'width') + 'x' + attr('article img', 'height')"
+      - "/beloved/i.test(attr('article img', 'alt') || '')"
+      - "attr('article a', 'href')"
+      - "text('article a')"
+      - "/morrison/i.test(text('article'))"
+    solution:
+      html: |
+        <article>
+          <h2>Beloved</h2>
+          <p>by Toni Morrison</p>
+          <figure>
+            <img src="images/cover-beloved.svg" alt="Beloved by Toni Morrison, cover" width="300" height="450">
+            <figcaption>First edition, 1987</figcaption>
+          </figure>
+          <p>A haunting novel about memory and freedom.</p>
+          <a href="#reviews">Read reviews of Beloved</a>
+        </article>
+
+        <section id="reviews">
+          <h2>Reviews</h2>
+          <p>No reviews yet.</p>
+        </section>
+    hint: "\"Self-contained\" means `article`. The captioned cover is a `figure` with an `img` and a `figcaption`. The link's `href` is `#reviews`."
+
+  - kind: web
+    title: "3. The price list"
+    body: |
+      > *A table titled "Gift cards". Two columns, "Value" and "Bonus", which label their columns. Three rows: £10 / none, £25 / £2 extra, £50 / £5 extra. The value in each row labels its row.*
+    html: |
+      <!-- the gift card table -->
+    tests:
+      - "text('table > caption')"
+      - "$$('thead th').map((th) => th.textContent.trim() + '/' + th.getAttribute('scope'))"
+      - "$$('tbody tr').map((tr) => [...tr.children].map((c) => c.localName + (c.getAttribute('scope') ? '[' + c.getAttribute('scope') + ']' : '') + ':' + c.textContent.trim()).join(' | '))"
+    solution:
+      html: |
+        <table>
+          <caption>Gift cards</caption>
+          <thead>
+            <tr>
+              <th scope="col">Value</th>
+              <th scope="col">Bonus</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">£10</th><td>none</td></tr>
+            <tr><th scope="row">£25</th><td>£2 extra</td></tr>
+            <tr><th scope="row">£50</th><td>£5 extra</td></tr>
+          </tbody>
+        </table>
+    hint: "`caption`, then a `thead` row of two `th scope=\"col\"`, then a `tbody` where each row starts with a `th scope=\"row\"`."
+
+  - kind: web
+    title: "4. The contact form"
+    body: |
+      > *A form that posts to `/contact`. Fields, each with a visible label: "Name" (text), "Email" (an email address), "Topic" (a dropdown with the options Orders, Events, Something else, sent as `orders`, `events` and `other`) and "Message" (several lines of text). A button that sends the form, reading "Send message".*
+
+      Use the field names `name`, `email`, `topic` and `message`, and give each field an id of the same word.
+    html: |
+      <!-- the contact form -->
+    tests:
+      - "attr('form', 'action') + ' ' + (attr('form', 'method') || '').toLowerCase()"
+      - "$$('form [name]').map((f) => f.localName + (f.type && f.localName === 'input' ? '[' + f.type + ']' : '') + ':' + f.name)"
+      - "$$('form [name]').map((f) => f.labels && f.labels.length ? f.labels[0].textContent.trim() : '(no label)')"
+      - "$$('select option').map((o) => o.value + '=' + o.textContent.trim())"
+      - "attr('form button', 'type') + ':' + text('form button')"
+      - "count('[placeholder]')"
+    solution:
+      html: |
+        <form action="/contact" method="post">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name">
+
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email">
+
+          <label for="topic">Topic</label>
+          <select id="topic" name="topic">
+            <option value="orders">Orders</option>
+            <option value="events">Events</option>
+            <option value="other">Something else</option>
+          </select>
+
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="5"></textarea>
+
+          <button type="submit">Send message</button>
+        </form>
+    hint: "Each field: a `<label for=\"x\">` then the field with `id=\"x\" name=\"x\"`. The dropdown is `select` with three `option`s, the multi-line field is `textarea`."
+    reject:
+      - html: |
+          <form action="/contact" method="post">
+            <input type="text" id="name" name="name" placeholder="Name">
+            <input type="email" id="email" name="email" placeholder="Email">
+            <select id="topic" name="topic">
+              <option value="orders">Orders</option>
+              <option value="events">Events</option>
+              <option value="other">Something else</option>
+            </select>
+            <textarea id="message" name="message" placeholder="Message"></textarea>
+            <button type="submit">Send message</button>
+          </form>
+
+  - kind: web
+    title: "5. Find the bugs"
+    broken_starter: true
+    body: |
+      > *Moth: "The events page looks off, and a customer using a screen reader says the newsletter box is just 'edit text'. I can't see anything wrong!"*
+
+      There are **four** bugs. Use the preview, DevTools and what you've learned to find them all, and fix them without changing any text:
+
+      - something leaks styling into later content,
+      - a list isn't really a list,
+      - a field has no accessible name,
+      - two elements fight over one id.
+    html: |
+      <h2 id="events">Events</h2>
+      <p><em>Poetry night</em> is on Thursday. <strong>Booking is required.</p>
+      <p>Coming up:</p>
+      <ul>
+        Book club
+        Story hour
+      </ul>
+      <h2 id="events">Newsletter</h2>
+      <input type="email" id="news" name="email">
+      <button type="submit">Sign up</button>
+    tests:
+      - "count('strong') + ':' + text('strong')"
+      - "$$('ul > li').map((li) => li.textContent.trim())"
+      - "$$('input').map((i) => i.labels.length ? i.labels[0].textContent.trim().length > 0 : false)"
+      - "$$('[id]').map((e) => e.id).length === new Set($$('[id]').map((e) => e.id)).size"
+      - "$$('h2').map((h) => h.textContent)"
+      - "attr('input', 'type') + ':' + attr('input', 'name')"
+    solution:
+      html: |
+        <h2 id="events">Events</h2>
+        <p><em>Poetry night</em> is on Thursday. <strong>Booking is required.</strong></p>
+        <p>Coming up:</p>
+        <ul>
+          <li>Book club</li>
+          <li>Story hour</li>
+        </ul>
+        <h2 id="newsletter">Newsletter</h2>
+        <label for="news">Email address</label>
+        <input type="email" id="news" name="email">
+        <button type="submit">Sign up</button>
+    hint: "Look for: an unclosed `<strong>`, list text that isn't in `<li>`s, an input with no `<label>`, and the id `events` used twice."
+
+  - kind: recap
+    body: |
+      You built a page frame, a book listing, a data table and a form from plain-language briefs, and debugged a page the browser was quietly repairing. That's the whole of HTML structure. Next, Part 3 makes it look good with CSS.

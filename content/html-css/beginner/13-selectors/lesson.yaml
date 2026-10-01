@@ -1,0 +1,272 @@
+steps:
+  - kind: explain
+    title: Type, class and id
+    body: |
+      The three basic selectors:
+
+      | Selector | Matches | Example |
+      |---|---|---|
+      | `p` | every element of that **type** | all paragraphs |
+      | `.price` | every element with `class="price"` | `<span class="price">` |
+      | `#top` | the one element with `id="top"` | `<h1 id="top">` |
+
+      Classes are the workhorse of CSS. An element can have **several**, separated by spaces, and each can be targeted:
+
+      ```html
+      <p class="note urgent">Closed Monday.</p>
+      ```
+
+      ```css
+      .note   { color: dimgray; }
+      .urgent { font-weight: bold; }
+      .note.urgent { color: firebrick; }  /* both classes at once (no space) */
+      ```
+
+      Ids work too, but they're too powerful for styling (Module 14 explains). Use classes for styling, ids for links and labels.
+
+  - kind: explain
+    title: Grouping and combinators
+    body: |
+      **Grouping** with a comma applies one rule to several selectors:
+
+      ```css
+      h1, h2, h3 { font-family: Georgia, serif; }
+      ```
+
+      **Combinators** select elements by where they are:
+
+      | Selector | Means |
+      |---|---|
+      | `nav a` (space) | an `a` **anywhere inside** a `nav` (descendant) |
+      | `nav > a` | an `a` that is a **direct child** of a `nav` |
+      | `h2 + p` | the `p` **immediately after** an `h2` (🔹 adjacent sibling) |
+      | `h2 ~ p` | every `p` **after** an `h2`, with the same parent (🔹 general sibling) |
+
+      `nav a` is the one you'll use most: style the links in the menu differently from links in the text.
+
+  - kind: web
+    title: Style by class and position
+    body: |
+      Style Inkwell's book list:
+
+      1. Every element with the class `price`: `color: darkgreen` and `font-weight: bold`.
+      2. Links **inside the `nav`** only: `color: white`. (The link in the paragraph must keep its default color.)
+      3. Group `h1` and `h2` in **one** rule: `font-family: Georgia, serif`.
+    html: |
+      <nav style="background: #7c2d12; padding: 8px;">
+        <a href="index.html">Home</a>
+        <a href="books.html">Books</a>
+      </nav>
+      <h1>Books</h1>
+      <h2>Dune</h2>
+      <p>Frank Herbert. <span class="price">£8.99</span></p>
+      <h2>Emma</h2>
+      <p>Jane Austen. <span class="price">£5.50</span></p>
+      <p>Questions? <a href="contact.html">Contact us</a>.</p>
+    css: |
+      /* your rules */
+    tests:
+      - "cssAll('.price', 'color')"
+      - "cssAll('.price', 'font-weight')"
+      - "cssAll('nav a', 'color')"
+      - "css('p a', 'color')"
+      - "css('h1', 'font-family') + ' / ' + css('h2', 'font-family')"
+      - "selectors().some((s) => s.split(',').includes('h1') && s.split(',').includes('h2'))"
+    solution:
+      css: |
+        .price {
+          color: darkgreen;
+          font-weight: bold;
+        }
+
+        nav a {
+          color: white;
+        }
+
+        h1, h2 {
+          font-family: Georgia, serif;
+        }
+    hint: "`.price { … }` for the class (note the dot), `nav a { … }` for links inside the nav, and `h1, h2 { … }` for the grouped rule."
+    reject:
+      - css: |
+          .price {
+            color: darkgreen;
+            font-weight: bold;
+          }
+
+          a {
+            color: white;
+          }
+
+          h1, h2 {
+            font-family: Georgia, serif;
+          }
+
+  - kind: explain
+    title: Attribute selectors
+    body: |
+      Square brackets select by attribute:
+
+      | Selector | Matches |
+      |---|---|
+      | `[required]` | has the attribute at all |
+      | `[type="email"]` | the attribute equals this exactly |
+      | `a[href^="https"]` | the value **starts with** `https` (external links) |
+      | `a[href$=".pdf"]` | the value **ends with** `.pdf` |
+      | `[class*="card"]` | the value **contains** `card` |
+
+      Handy for forms (`input[type="checkbox"]`) and for marking links: `a[href$=".pdf"]::after { content: " (PDF)"; }`.
+
+  - kind: explain
+    title: Pseudo-classes, for states and positions
+    body: |
+      A **pseudo-class** (one colon) matches an element in a certain **state** or **position**:
+
+      | Pseudo-class | Matches |
+      |---|---|
+      | `a:hover` | while the mouse is over it |
+      | `a:focus` | while it has keyboard focus |
+      | `a:focus-visible` | has focus *and* the browser thinks a focus ring should show (keyboard, not mouse clicks) |
+      | `li:first-child`, `li:last-child` | the first or last child of its parent |
+      | `tr:nth-child(odd)`, `li:nth-child(3)`, `li:nth-child(3n)` | by position: odd rows, the third item, every third item |
+      | `li:not(.sold)` | every `li` **except** those with `class="sold"` |
+
+      Always pair a `:hover` style with a `:focus-visible` one, so keyboard users get the same feedback as mouse users. And never remove the focus outline without replacing it: keyboard users would lose track of where they are.
+
+  - kind: web
+    title: States and stripes
+    body: |
+      Make Inkwell's stock table easier to read and use:
+
+      1. Give **odd** rows of the table body a background of `#f5f0e8` (zebra stripes).
+      2. When a link in the table is **hovered**, make it `color: darkred`.
+      3. When a link has **visible keyboard focus**, give it `outline: 3px solid darkred`.
+      4. Every list item **except** those with the class `sold` gets `font-weight: bold`.
+    html: |
+      <table>
+        <tbody>
+          <tr><td><a href="dune.html">Dune</a></td><td>£8.99</td></tr>
+          <tr><td><a href="emma.html">Emma</a></td><td>£5.50</td></tr>
+          <tr><td><a href="beloved.html">Beloved</a></td><td>£7.25</td></tr>
+          <tr><td><a href="odyssey.html">The Odyssey</a></td><td>£6.00</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li>Dune</li>
+        <li class="sold">Emma</li>
+        <li>Beloved</li>
+      </ul>
+    css: |
+      /* your rules */
+    tests:
+      - "cssAll('tbody tr', 'background-color')"
+      - "rule(['a:hover', 'td a:hover', 'table a:hover', 'tbody a:hover'], 'color')"
+      - "rule(['a:focus-visible', 'td a:focus-visible', 'table a:focus-visible', 'tbody a:focus-visible'], 'outline')"
+      - "cssAll('li', 'font-weight')"
+    solution:
+      css: |
+        tbody tr:nth-child(odd) {
+          background: #f5f0e8;
+        }
+
+        a:hover {
+          color: darkred;
+        }
+
+        a:focus-visible {
+          outline: 3px solid darkred;
+        }
+
+        li:not(.sold) {
+          font-weight: bold;
+        }
+    hint: "`tbody tr:nth-child(odd)`, `a:hover`, `a:focus-visible` and `li:not(.sold)`. One colon for each pseudo-class."
+    reject:
+      - css: |
+          tbody tr:nth-child(even) {
+            background: #f5f0e8;
+          }
+
+          a:hover {
+            color: darkred;
+          }
+
+          a:focus-visible {
+            outline: 3px solid darkred;
+          }
+
+          li:not(.sold) {
+            font-weight: bold;
+          }
+
+  - kind: explain
+    title: Pseudo-elements
+    body: |
+      A **pseudo-element** (two colons) styles a *part* of an element, or adds content that isn't in the HTML:
+
+      | Pseudo-element | Targets |
+      |---|---|
+      | `::before`, `::after` | a generated box at the start or end of the element's content. Needs a `content` property, even `content: ""` |
+      | `::placeholder` | the placeholder text in an input |
+      | `::first-letter`, `::first-line` | the first letter or line of a paragraph |
+      | `::marker` | the bullet or number of a list item |
+      | `::selection` | text the visitor has highlighted |
+
+      ```css
+      .new::before {
+        content: "New: ";
+        color: darkred;
+        font-weight: bold;
+      }
+      ```
+
+      Generated `content` is for decoration. Screen readers may read it, but it can't be selected or copied, so never put essential information there.
+
+  - kind: web
+    title: Decorate with pseudo-elements
+    body: |
+      1. Before each list item with the class `new`, add the text `★ ` (a star and a space) in `color: goldenrod`.
+      2. Make the input's placeholder text `color: #666` (dark enough to read).
+      3. Make the list markers (the bullets) `color: darkred`.
+    html: |
+      <ul>
+        <li class="new">The Odyssey</li>
+        <li>Dune</li>
+        <li class="new">Beloved</li>
+      </ul>
+      <label for="q">Search</label>
+      <input id="q" type="search" placeholder="Title or author">
+    css: |
+      /* your rules */
+    tests:
+      - "cssAll('li', 'content', '::before')"
+      - "css('li.new', 'color', '::before')"
+      - "css('input', 'color', '::placeholder')"
+      - "css('li', 'color', '::marker')"
+    solution:
+      css: |
+        .new::before {
+          content: "★ ";
+          color: goldenrod;
+        }
+
+        input::placeholder {
+          color: #666;
+        }
+
+        li::marker {
+          color: darkred;
+        }
+    hint: "`.new::before { content: \"★ \"; color: goldenrod; }`. The other two use `::placeholder` and `::marker`."
+
+  - kind: why
+    body: |
+      Selectors are how you aim. Precise selectors mean you can style the menu's links without touching the rest, stripe a table without adding a class to every row, and give keyboard users visible focus. Clumsy selectors lead to fighting your own CSS, which is the next module's topic.
+
+  - kind: recap
+    body: |
+      - `p` type, `.class`, `#id`; `.a.b` = both classes; `a, b` = grouping.
+      - `nav a` descendant, `nav > a` child, 🔹 `h2 + p` next sibling, 🔹 `h2 ~ p` later siblings.
+      - `[attr]`, `[attr="x"]`, `^=` starts with, `$=` ends with, `*=` contains.
+      - Pseudo-classes (`:`): `:hover`, `:focus-visible`, `:first-child`, `:nth-child()`, `:not()`.
+      - Pseudo-elements (`::`): `::before`/`::after` (need `content`), `::placeholder`, `::marker`.

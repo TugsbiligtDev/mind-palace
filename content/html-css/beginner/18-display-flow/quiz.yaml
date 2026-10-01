@@ -1,0 +1,31 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "You set `width: 200px` on a `<span>` and nothing changes. Why?"
+    options:
+      - "A span is inline, and inline boxes ignore width; use inline-block or block"
+      - "Spans can't be styled"
+      - "Widths need percentages"
+      - "The span needs an id"
+    answer: 0
+    explanation: "Inline elements are sized by their content. `display: inline-block` makes width apply."
+  - type: mcq
+    prompt: "Which hides an element AND lets the content after it move up into its place?"
+    options: ["`display: none`", "`visibility: hidden`", "`opacity: 0`", "`color: transparent`"]
+    answer: 0
+    explanation: "display: none removes the box from the layout. The others leave an invisible box behind."
+  - type: mcq
+    prompt: "A hero photo must fill its box completely, whatever the screen shape. Which background-size?"
+    options: ["`cover`", "`contain`", "`auto`", "`100px`"]
+    answer: 0
+    explanation: "cover fills the box, cropping as needed. contain shows the whole image and may leave gaps."
+  - type: mcq
+    prompt: "How do you turn a square 80 × 80 image into a circle?"
+    options: ["`border-radius: 50%;`", "`border-radius: 80px circle;`", "`shape: circle;`", "`border: round;`"]
+    answer: 0
+    explanation: "50% rounds each corner by half the side length, making a perfect circle on a square box."
+  - type: mcq
+    prompt: "Where does a gradient go?"
+    options: ["In `background` or `background-image`", "In `color`", "In `border-color`", "In `background-color`"]
+    answer: 0
+    explanation: "Gradients are images drawn by the browser, so they go where images go. `background-color` only accepts a single color."

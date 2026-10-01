@@ -1,0 +1,453 @@
+steps:
+  - kind: explain
+    title: The brief
+    body: |
+      Inspector Bold: *"Every detective needs a calling card. Before Inkwell's site goes live, build your own."*
+
+      You'll build a four-page personal site:
+
+      ```
+      my-site/
+      ├── index.html      Home: who you are, in one line, and what you do
+      ├── about.html      About: a photo and a few paragraphs
+      ├── projects.html   Projects: a grid of cards
+      ├── contact.html    Contact: a form
+      ├── css/
+      │   └── style.css   one stylesheet for every page
+      └── images/
+      ```
+
+      Requirements: semantic HTML (landmarks, one `h1` per page, labelled form fields, alt text), one shared external stylesheet, a Flexbox header, Grid layouts, and it must work at 375px and at 1200px.
+
+      The next five steps build and check each piece. Use your own name and words if you like: the checker looks at structure and layout, not at your text, except where a step says otherwise. Then the last steps put it together on your Mac.
+
+  - kind: web
+    title: "1. The home page skeleton"
+    body: |
+      Write the **complete** `index.html` (a full document, not a snippet):
+
+      - Doctype, `lang="en"`, charset, viewport, and a `<title>` that contains the word `Home`.
+      - The stylesheet linked from `css/style.css` (the lesson will load the CSS tab for it).
+      - A `header` containing a `nav` with four links: `index.html`, `about.html`, `projects.html`, `contact.html`.
+      - A `main` with exactly one `h1` (your name) and a paragraph.
+      - A `footer` with a paragraph.
+    html: |
+      <!-- index.html: the whole page -->
+    css: |
+      body {
+        font-family: system-ui, sans-serif;
+        color: #1c1917;
+      }
+    tests:
+      - "(doc.doctype ? doc.doctype.name : null) + ' ' + doc.documentElement.lang"
+      - "($('meta[charset]') ? attr('meta[charset]', 'charset').toLowerCase() : null) + ' / ' + ($('meta[name=viewport]') ? 'viewport' : null)"
+      - "/home/i.test(doc.title)"
+      - "css('body', 'font-family')"
+      - "$$('body > *').filter((e) => !['script', 'style', 'link'].includes(e.localName)).map((e) => e.localName)"
+      - "$$('header nav a').map((a) => a.getAttribute('href'))"
+      - "count('h1') + ' h1, in main: ' + count('main h1')"
+      - "count('main p') > 0 && count('footer p') > 0"
+    solution:
+      html: |
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Home · Ada Reed</title>
+            <link rel="stylesheet" href="css/style.css">
+          </head>
+          <body>
+            <header>
+              <nav>
+                <a href="index.html">Home</a>
+                <a href="about.html">About</a>
+                <a href="projects.html">Projects</a>
+                <a href="contact.html">Contact</a>
+              </nav>
+            </header>
+            <main>
+              <h1>Ada Reed</h1>
+              <p>I build small, friendly websites for bookshops and cafés.</p>
+            </main>
+            <footer>
+              <p>© 2026 Ada Reed</p>
+            </footer>
+          </body>
+        </html>
+    hint: "Start with the skeleton from Module 4 (`!` + Tab in VS Code). The link is `<link rel=\"stylesheet\" href=\"css/style.css\">` in the head."
+
+  - kind: web
+    title: "2. The responsive header"
+    body: |
+      Style the header on its own (this is the CSS you'll reuse on every page):
+
+      - `.site-header` is a flex row with the name on the left and the `nav` on the right, vertically centred, **wrapping** onto two lines when there isn't room, with a `1rem` gap and `1rem` padding.
+      - The `nav` is a flex row with a `1rem` gap that also wraps.
+      - Links in the nav: not underlined, color `#7c2d12`. The link to the current page (it has `aria-current="page"`) gets `font-weight: bold` and a `2px solid` bottom border. Select it with an attribute selector.
+    html: |
+      <header class="site-header">
+        <a class="name" href="index.html">Ada Reed</a>
+        <nav>
+          <a href="index.html" aria-current="page">Home</a>
+          <a href="about.html">About</a>
+          <a href="projects.html">Projects</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </header>
+    css: |
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+    widths: [375, 1000]
+    tests:
+      - "css('.site-header', 'display') + ' / ' + css('.site-header', 'justify-content') + ' / ' + css('.site-header', 'align-items') + ' / ' + css('.site-header', 'flex-wrap')"
+      - "css('.site-header', 'gap') + ' / ' + css('.site-header', 'padding')"
+      - "css('.site-header nav', 'display') + ' / ' + css('.site-header nav', 'gap') + ' / ' + css('.site-header nav', 'flex-wrap')"
+      - "cssAll('nav a', 'text-decoration-line') + ' / ' + cssAll('nav a', 'color')"
+      - "cssAll('nav a', 'font-weight') + ' / ' + cssAll('nav a', 'border-bottom-width')"
+      - "box('nav').x + box('nav').width"
+      - "doc.scrollingElement.scrollWidth <= doc.scrollingElement.clientWidth"
+    solution:
+      css: |
+        body {
+          margin: 0;
+          font-family: system-ui, sans-serif;
+        }
+
+        .site-header {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          align-items: center;
+          gap: 1rem;
+          padding: 1rem;
+        }
+
+        .site-header nav {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        nav a {
+          color: #7c2d12;
+          text-decoration: none;
+        }
+
+        nav a[aria-current="page"] {
+          font-weight: bold;
+          border-bottom: 2px solid;
+        }
+    hint: "Two flex containers, both with `flex-wrap: wrap` and `gap: 1rem`. The current-page link is `nav a[aria-current=\"page\"]`."
+
+  - kind: web
+    title: "3. The projects grid"
+    body: |
+      The projects page shows cards in a grid that adapts on its own:
+
+      - `.projects`: as many columns as fit, each at least `240px`, sharing extra space, `1.5rem` gap. No media queries.
+      - Each `.project` card: `1px solid #e7e5e4` border, `12px` radius, `overflow: hidden`.
+      - Images inside cards are fluid: full card width, proportions kept (`width: 100%; height: auto; display: block`).
+      - The card's text area `.project-body`: `1rem` padding.
+    html: |
+      <main>
+        <h1>Projects</h1>
+        <div class="projects">
+          <article class="project">
+            <img src="images/cover-dune.svg" alt="" width="300" height="450">
+            <div class="project-body"><h2>Desert reading list</h2><p>A summer list for Inkwell.</p></div>
+          </article>
+          <article class="project">
+            <img src="images/cover-emma.svg" alt="" width="300" height="450">
+            <div class="project-body"><h2>Book club site</h2><p>Sign-ups and a calendar.</p></div>
+          </article>
+          <article class="project">
+            <img src="images/cover-beloved.svg" alt="" width="300" height="450">
+            <div class="project-body"><h2>Poetry night poster</h2><p>Print and web versions.</p></div>
+          </article>
+          <article class="project">
+            <img src="images/cover-odyssey.svg" alt="" width="300" height="450">
+            <div class="project-body"><h2>Travel shelf</h2><p>Maps and journeys.</p></div>
+          </article>
+        </div>
+      </main>
+    css: |
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 1rem;
+        font-family: system-ui, sans-serif;
+      }
+    widths: [375, 800, 1200]
+    tests:
+      - "css('.projects', 'grid-template-columns')"
+      - "css('.projects', 'gap')"
+      - "css('.project', 'border') + ' / ' + css('.project', 'border-radius') + ' / ' + css('.project', 'overflow')"
+      - "$$('.project img').every((img, i) => Math.round(img.getBoundingClientRect().width) === Math.round($$('.project')[i].clientWidth))"
+      - "box('.project img').height"
+      - "css('.project-body', 'padding')"
+      - "/auto-(fit|fill)/.test(declared('.projects', 'grid-template-columns') || '')"
+    solution:
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 1rem;
+          font-family: system-ui, sans-serif;
+        }
+
+        .projects {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 1.5rem;
+        }
+
+        .project {
+          border: 1px solid #e7e5e4;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        .project img {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
+
+        .project-body {
+          padding: 1rem;
+        }
+    hint: "`grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));` does the columns. The images need `display: block; width: 100%; height: auto;`."
+
+  - kind: web
+    title: "4. The about page"
+    body: |
+      The about page has a photo and text. Mobile-first:
+
+      - On phones, `.about` is a single column: the photo above the text.
+      - From `700px` wide, `.about` becomes a grid with a `250px` photo column and a flexible text column, a `2rem` gap, and the two items **aligned to the top** (`align-items: start`).
+      - The photo is fluid and gets `border-radius: 12px`.
+      - The text column's paragraphs are at most `65ch` wide.
+    html: |
+      <main>
+        <h1>About me</h1>
+        <div class="about">
+          <img class="photo" src="images/shop.jpg" alt="Ada among the shelves at Inkwell Books" width="800" height="500">
+          <div class="bio">
+            <p>I fell in love with the web while building a site for my local bookshop. Since then I've made pages for cafés, a choir and a very patient cat sitter.</p>
+            <p>I care about pages that load fast, read well, and work for everyone, whatever device or ability.</p>
+          </div>
+        </div>
+      </main>
+    css: |
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 1rem;
+        font-family: system-ui, sans-serif;
+        line-height: 1.6;
+      }
+    widths: [375, 1000]
+    tests:
+      - "css('.about', 'display') + ' / ' + css('.about', 'grid-template-columns')"
+      - "box('.photo')"
+      - "box('.bio').x"
+      - "css('.about', 'gap') + ' / ' + css('.about', 'align-items')"
+      - "css('.photo', 'border-radius')"
+      - "cssAll('.bio p', 'max-width')"
+      - "doc.scrollingElement.scrollWidth <= doc.scrollingElement.clientWidth"
+    solution:
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 1rem;
+          font-family: system-ui, sans-serif;
+          line-height: 1.6;
+        }
+
+        img {
+          max-width: 100%;
+          height: auto;
+        }
+
+        .photo {
+          border-radius: 12px;
+        }
+
+        .bio p {
+          max-width: 65ch;
+        }
+
+        @media (width >= 700px) {
+          .about {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+            align-items: start;
+          }
+        }
+    hint: "On phones nothing special is needed except fluid images. Put the grid, its columns, gap and `align-items: start` inside `@media (width >= 700px) { .about { … } }`."
+    reject:
+      - css: |
+          *, *::before, *::after {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 1rem;
+            font-family: system-ui, sans-serif;
+            line-height: 1.6;
+          }
+
+          img {
+            max-width: 100%;
+            height: auto;
+          }
+
+          .photo {
+            border-radius: 12px;
+          }
+
+          .bio p {
+            max-width: 65ch;
+          }
+
+          .about {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+            align-items: start;
+          }
+
+  - kind: web
+    title: "5. The contact form"
+    body: |
+      Write the contact page's form (HTML **and** CSS):
+
+      - The form posts to `https://formspree.io/f/your-id` (a free form service; you'll get your own id later).
+      - Fields, each with a label connected by `for`/`id`: Name (`name`, text, required), Email (`email`, email, required), Message (`message`, a textarea, required).
+      - A `fieldset` with the legend `How did you find me?`, holding two radio buttons sharing `name="source"`, values `friend` and `search`, each with a label.
+      - A submit button reading `Send`.
+      - CSS: the form is a flex **column** with a `0.75rem` gap and a `max-width` of `480px`. Inputs, the textarea and the button use the page's font (`font: inherit`) and get `0.5rem` padding.
+
+      Use `required` as a boolean attribute (no value); Module 24 explains it fully.
+    html: |
+      <main>
+        <h1>Contact</h1>
+        <!-- the form -->
+      </main>
+    css: |
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 1rem;
+        font-family: Georgia, serif;
+      }
+    tests:
+      - "attr('form', 'action') + ' ' + (attr('form', 'method') || '').toLowerCase()"
+      - "$$('form input:not([type=radio]), form textarea').map((f) => f.localName + ':' + (f.localName === 'input' ? f.type + ':' : '') + f.name + ':' + f.required + ':' + (f.labels.length ? 'labelled' : 'no label'))"
+      - "text('fieldset legend') + ' / ' + $$('fieldset input[type=radio]').map((r) => r.name + '=' + r.value + (r.labels.length ? ' labelled' : ' NO LABEL')).join(', ')"
+      - "attr('form button', 'type') + ':' + text('form button')"
+      - "css('form', 'display') + ' / ' + css('form', 'flex-direction') + ' / ' + css('form', 'gap') + ' / ' + css('form', 'max-width')"
+      - "cssAll('form input:not([type=radio]), form textarea, form button', 'font-family')"
+      - "cssAll('form input:not([type=radio]), form textarea, form button', 'padding-top')"
+    solution:
+      html: |
+        <main>
+          <h1>Contact</h1>
+          <form action="https://formspree.io/f/your-id" method="post">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="5" required></textarea>
+
+            <fieldset>
+              <legend>How did you find me?</legend>
+              <input type="radio" id="friend" name="source" value="friend">
+              <label for="friend">A friend</label>
+              <input type="radio" id="search" name="source" value="search">
+              <label for="search">A search engine</label>
+            </fieldset>
+
+            <button type="submit">Send</button>
+          </form>
+        </main>
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 1rem;
+          font-family: Georgia, serif;
+        }
+
+        form {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          max-width: 480px;
+        }
+
+        input, textarea, button {
+          font: inherit;
+          padding: 0.5rem;
+        }
+    hint: "Each field: `<label for=\"x\">` + a field with `id=\"x\" name=\"x\" required`. The CSS: `form { display: flex; flex-direction: column; gap: 0.75rem; max-width: 480px; }` and `input, textarea, button { font: inherit; padding: 0.5rem; }`."
+
+  - kind: mac
+    title: "6. Assemble the site"
+    body: |
+      Now build the real thing on your Mac, reusing your pieces:
+
+      1. Create the folders below in `~/websites/my-site` and open the folder in VS Code.
+      2. `index.html` from step 1. Copy its `<head>`, header and footer into `about.html`, `projects.html` and `contact.html`, change each `<title>`, and put each page's own `main` content in (steps 3–5).
+      3. In each page's nav, move `aria-current="page"` to that page's own link.
+      4. Combine the CSS from every step into **one** `css/style.css`. Put the shared parts first (box-sizing, body, images, header), then page parts (projects, about, form). Remove duplicates.
+      5. Put a photo of yourself (or anything) in `images/`, named in lowercase with dashes, and point the about page at it with alt text.
+    commands: |
+      mkdir -p ~/websites/my-site/css ~/websites/my-site/images
+      cd ~/websites/my-site
+      touch index.html about.html projects.html contact.html css/style.css
+      code .
+
+  - kind: mac
+    title: "7. Test it like a professional"
+    body: |
+      1. **Live Server**: right-click `index.html` → Open with Live Server. Click through every page. Every nav link should work and the current page should be highlighted.
+      2. **Device mode** (⇧⌘M in Chrome): check 375px and 1200px. Nothing should scroll sideways; the header should wrap, the projects grid reflow and the about page stack.
+      3. **Keyboard**: click the address bar, then press Tab repeatedly through each page. Can you see where the focus is? Can you reach every link and field?
+      4. **Validator**: paste each page into validator.w3.org/nu and fix every error.
+      5. **Accessibility tree**: inspect the photo and each form field. Does each have a name?
+
+      Then paste the validator's verdict for your home page below.
+    commands: |
+      # validator.w3.org/nu → Check by text input → paste index.html → Check
+      # expected verdict line:
+      Document checking completed. No errors or warnings to show.
+    expect_output:
+      - "Document checking completed"
+      - "No errors"
+
+  - kind: recap
+    body: |
+      You've built a complete, responsive, accessible four-page site from scratch: semantic HTML, one shared stylesheet, a wrapping Flexbox header, a self-adjusting Grid, a mobile-first two-column page and a labelled form. That's everything from the Beginner level working together.
+
+      Keep this site: in the Intermediate level you'll add themes, motion and accessibility polish, put it on GitHub and publish it at a real address.

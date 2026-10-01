@@ -1,0 +1,43 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: In VS Code, what should you open to work on a website?
+    options:
+      - "The project folder, with File → Open Folder"
+      - "Only the index.html file"
+      - "Your whole home folder"
+      - "The website in the browser"
+    answer: 0
+    explanation: "Opening the folder shows every file in the Explorer and lets VS Code search the whole project."
+  - type: mcq
+    prompt: "What does the Emmet abbreviation `ul>li*3` expand to?"
+    options:
+      - "A `<ul>` containing three `<li>` items"
+      - "Three separate `<ul>` lists"
+      - "A `<ul>` followed by three `<li>` items outside it"
+      - "A list with the text `li*3`"
+    answer: 0
+    explanation: "`>` means \"inside\" and `*3` means \"three times\", so you get one list holding three items."
+  - type: mcq
+    prompt: You changed a color in DevTools and the page looks perfect. You refresh. What happens?
+    options:
+      - "The change is gone: DevTools edits only affect the page in front of you until it reloads"
+      - "The change is saved into your style.css"
+      - "The change is saved on the website's server"
+      - "The browser asks whether to keep it"
+    answer: 0
+    explanation: "DevTools changes are temporary experiments. Copy the working value into your own CSS file."
+  - type: mcq
+    prompt: Which DevTools panel shows the HTML of the page as a tree, with the CSS rules for the selected element?
+    options: ["Elements (Inspector in Firefox)", "Console", "Network", "Application"]
+    answer: 0
+    explanation: "Elements is the HTML tree with Styles beside it. Console shows messages and errors, and Network lists each file the page loaded."
+  - type: mcq
+    prompt: Why use Live Server instead of double-clicking index.html?
+    options:
+      - "It serves the folder like a real web server and reloads the page every time you save"
+      - "It publishes your site to the internet"
+      - "It checks your HTML for mistakes"
+      - "It's the only way to see CSS"
+    answer: 0
+    explanation: "Live Server is a local server at 127.0.0.1: root paths work and the page reloads on save. Only you can see it."

@@ -1,0 +1,121 @@
+steps:
+  - kind: explain
+    title: Why a code editor?
+    body: |
+      HTML and CSS are plain text, so any plain-text editor works. A **code editor** adds what makes the job pleasant: colors for different parts of the code (syntax highlighting), automatic indenting, a file list, search across every file, and extensions.
+
+      This course uses **Visual Studio Code** (VS Code). It's free, made by Microsoft, and the most popular editor among web developers. The editor on the right of each lesson is a small cousin of it.
+
+  - kind: mac
+    title: Install VS Code and open your project
+    body: |
+      1. Download VS Code from **code.visualstudio.com** and drag it into **Applications**.
+      2. Open it, choose **File → Open Folder…**, and pick `~/websites/inkwell` from Module 2. Always open the **folder**, not a single file: the sidebar then shows the whole project.
+      3. Turn on **File → Auto Save**, so you never wonder whether you saved.
+      4. Optional: press ⇧⌘P, type *shell command*, and choose **Install 'code' command in PATH**. Now `code .` in Terminal opens the current folder in VS Code.
+    commands: |
+      cd ~/websites/inkwell
+      code .
+
+  - kind: explain
+    title: The parts of VS Code
+    body: |
+      - **Explorer** (top icon in the left bar, ⇧⌘E): your project's files. Hover the folder name to see the *New File* and *New Folder* buttons.
+      - **Editor**: the big area. Each open file is a tab. A dot on the tab means unsaved changes.
+      - **Command Palette** (⇧⌘P): every command, searchable. If you forget a shortcut, look here.
+      - **Extensions** (four squares, ⇧⌘X): add-ons like Live Server.
+
+      Handy keys: ⌘S save, ⌘P open a file by name, ⌘/ comment a line, ⌥↑/⌥↓ move a line, ⌘D select the next match.
+
+  - kind: explain
+    title: "Emmet: type less, write more"
+    body: |
+      **Emmet** is built into VS Code. You type a short abbreviation and press **Tab**, and it expands into full HTML:
+
+      | Type | Press Tab, get |
+      |---|---|
+      | `!` | a complete empty HTML page (Module 4 explains every line) |
+      | `p` | `<p></p>` |
+      | `ul>li*3` | a list with three items (`>` = inside, `*3` = three times) |
+      | `a.button` | `<a href="" class="button"></a>` |
+      | `h2+p` | an `h2` followed by a `p` (`+` = next to) |
+
+      You don't need Emmet to write HTML, but it saves thousands of keystrokes. Try `!` in a new `index.html` file.
+
+  - kind: mac
+    title: Live Server
+    body: |
+      Opening `index.html` by double-clicking works, but you must refresh the browser after every change, and root paths (`/images/...`) don't work. **Live Server** fixes both: it runs a tiny web server on your Mac and reloads the page whenever you save.
+
+      1. In Extensions, search **Live Server** (by Ritwick Dey) and install it.
+      2. Create `index.html`, type `!`, press Tab, and put `<h1>Hello, Inkwell</h1>` between `<body>` and `</body>`.
+      3. Right-click the file and choose **Open with Live Server**. The browser opens `http://127.0.0.1:5500/index.html`.
+      4. Change the heading and save. The browser updates by itself.
+
+      `127.0.0.1` means "this computer". The site is only visible to you.
+    commands: |
+      # nothing to type in Terminal: Live Server runs inside VS Code
+      # the browser address will look like this:
+      http://127.0.0.1:5500/index.html
+
+  - kind: explain
+    title: "DevTools: x-ray glasses for any web page"
+    body: |
+      Every browser has **developer tools** built in. Right-click anything on a page and choose **Inspect** (or press ⌥⌘I in Chrome and Firefox; in Safari first enable **Settings → Advanced → Show features for web developers**).
+
+      The panel that opens has tabs. The two you'll use most:
+
+      - **Elements** (Safari: *Elements* too, Firefox: *Inspector*): the page's HTML as a tree. Hover a line and that part of the page lights up. On the side, **Styles** lists every CSS rule that applies to the selected element.
+      - **Console**: errors and messages. A missing file shows up here as a red line, often with its **404**.
+
+      The **Network** tab lists every file the page asked for, with its status. Broken path? It shows in red.
+
+  - kind: web
+    title: Inspect this preview
+    body: |
+      DevTools work on this lesson page too, including inside the preview.
+
+      1. Right-click the heading **Inkwell Books** in the preview and choose **Inspect**.
+      2. In the Elements panel, find the selected `<h1>` line. Look at the Styles section: you'll see the `h1` rule from `style.css`, with `color` and `letter-spacing`.
+      3. Click the color value and type a new one, or untick the checkbox next to a property to switch it off. The preview changes instantly.
+      4. Double-click the text *Inkwell Books* in the Elements panel and edit it.
+
+      Now refresh this lesson page: everything you changed in DevTools is gone. **DevTools edits are temporary experiments.** When you find a fix, copy it into your real file.
+    html: |
+      <h1>Inkwell Books</h1>
+      <p class="tagline">Second-hand books, carefully chosen.</p>
+    css: |
+      h1 {
+        color: #7c2d12;
+        letter-spacing: 2px;
+      }
+      .tagline {
+        color: gray;
+      }
+
+  - kind: mac
+    title: Live-edit a real site
+    body: |
+      Open any website you like (a news site, a shop) and try:
+
+      1. Right-click a headline → **Inspect**. Double-click its text in the Elements panel and change it. The real site now "says" what you typed, but only on your screen until you refresh.
+      2. In Styles, find a `color` or `font-size` and change it.
+      3. Press the **device toolbar** button (Chrome: the phone-and-tablet icon, ⇧⌘M) to see the site at phone size. Module 22 uses this a lot.
+
+      This is your first debugging skill: when something looks wrong, **inspect it** and read which rules apply, instead of guessing.
+    commands: |
+      # Keyboard shortcuts for DevTools
+      # Chrome / Firefox:  ⌥⌘I   (open)    ⇧⌘C (pick an element)
+      # Safari:            ⌥⌘I   (after enabling web developer features)
+
+  - kind: why
+    body: |
+      Professionals don't write CSS perfectly the first time. They write something, **inspect** it, tweak values live in DevTools until it looks right, then copy the result into their files. Getting comfortable with the editor and DevTools now makes every later module faster.
+
+  - kind: recap
+    body: |
+      - **VS Code**: open the project **folder**, turn on Auto Save, use ⇧⌘P when lost.
+      - **Emmet**: `!` + Tab for a page skeleton, `ul>li*3` for nested HTML.
+      - **Live Server**: serves your folder at `127.0.0.1:5500` and reloads on save.
+      - **DevTools** (right-click → Inspect): Elements shows the HTML tree and the CSS rules on each element; Console and Network show errors and missing files.
+      - DevTools edits are temporary. Copy good fixes into your files.

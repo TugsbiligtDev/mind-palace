@@ -12,7 +12,8 @@ export const trackSchema = z.object({
   // "none" is a knowledge-based course (e.g. Ethical Hacking): lessons are reading and safe
   // "on your Mac" steps, quizzes are multiple-choice. No code runs in the browser, so these
   // courses never use `try`/`code` lesson steps or `predict` quiz questions.
-  engine: z.enum(["postgres", "python", "javascript", "none"]),
+  // "web" is HTML & CSS: lessons use `web` steps (an editor plus a live preview of the page).
+  engine: z.enum(["postgres", "python", "javascript", "none", "web"]),
   engine_version: z.string(),
   last_reviewed: z.string(),
   // Named practice databases. Each is a list of SQL files in public/downloads/<track>/, run in
@@ -92,6 +93,24 @@ const step = z.discriminatedUnion("kind", [
     broken_starter: z.boolean().default(false),
     // Python only: the typed answers handed to input() when the code runs.
     stdin: z.array(z.string()).default([]),
+  }),
+  // The HTML & CSS version of "try": two editor tabs (index.html and, when `css` is set,
+  // style.css) and a live preview. `tests` are check expressions such as "css('h1', 'color')"
+  // run on the learner's page and on `solution` (see src/lib/web/core.ts); the results must
+  // match at every width in `widths`. Without tests and solution the step is "edit and look".
+  z.object({
+    kind: z.literal("web"),
+    title: z.string(),
+    body: md,
+    html: z.string(),
+    css: z.string().optional(),
+    tests: z.array(z.string()).default([]),
+    solution: z.object({ html: z.string().optional(), css: z.string().optional() }).optional(),
+    widths: z.array(z.number().int().min(280).max(1600)).min(1).default([800]),
+    hint: md.optional(),
+    // Known wrong answers (each file left out is the starter's). The content check proves each is rejected.
+    reject: z.array(z.object({ html: z.string().optional(), css: z.string().optional() })).default([]),
+    broken_starter: z.boolean().default(false),
   }),
   z.object({ kind: z.literal("info"), title: z.string(), body: md }),
   z.object({

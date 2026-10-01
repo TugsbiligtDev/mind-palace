@@ -1,0 +1,187 @@
+steps:
+  - kind: explain
+    title: The img element
+    body: |
+      An image is a void element with two essential attributes:
+
+      ```html
+      <img src="images/cover-dune.svg" alt="Dune by Frank Herbert, cover">
+      ```
+
+      - `src` (*source*) is the path to the image file, exactly like a link's `href`.
+      - `alt` (*alternative text*) describes the image for anyone who can't see it: screen reader users, people whose images failed to load, and search engines.
+
+      In these lessons, `images/…` paths point at a few sample pictures we've provided: `logo.svg`, `shop.jpg`, `icon-cart.svg`, and the covers `cover-dune.svg`, `cover-emma.svg`, `cover-beloved.svg` and `cover-odyssey.svg`.
+
+  - kind: explain
+    title: Writing good alt text
+    body: |
+      Ask: *if I replaced the picture with words, what would I say?*
+
+      - **Say what matters in this context.** On a shop page, `alt="Dune by Frank Herbert, paperback cover"` beats `alt="orange picture"`.
+      - **Don't start with "Image of…"**. Screen readers already announce it's an image.
+      - **Pictures of text**: the alt is the text.
+      - **An image inside a link**: describe where the link goes. A logo linking home: `alt="Inkwell Books home"`.
+
+      **Decorative images** add nothing a reader would miss: a flourish, a background pattern, an icon right next to a word that says the same thing. Give them an **empty** alt, `alt=""`. That tells screen readers to skip it.
+
+      ⚠️ Empty is not the same as *missing*. With no `alt` at all, many screen readers read out the file name instead: "cover dash dune dot S V G".
+
+  - kind: explain
+    title: width and height stop the jump
+    body: |
+      The browser doesn't know an image's size until it has downloaded it. Without a hint, it reserves no space, then shoves the text down when the image arrives. You've felt this: you go to tap a link and the page jumps. It's called **layout shift**.
+
+      Give every image its real `width` and `height` (in pixels, without `px`):
+
+      ```html
+      <img src="images/cover-dune.svg" alt="Dune, cover" width="300" height="450">
+      ```
+
+      The browser now reserves the right space from the start. CSS can still resize the image later (Module 22); the browser keeps the same proportions.
+
+  - kind: web
+    title: Describe the shelf
+    body: |
+      Inkwell's "Staff picks" shelf has three problems. Fix them:
+
+      1. The **Dune** cover has no `alt` at all. Give it alt text that names the book (it must contain the word *Dune*).
+      2. The **Emma** cover's alt is just `"image"`. Write a real one containing the word *Emma*.
+      3. The small cart icon sits next to the words *Add to basket*, so it's **decorative**. Give it an empty alt.
+      4. Give both covers `width="150"` and `height="225"` so the page doesn't jump while they load.
+    html: |
+      <h2>Staff picks</h2>
+      <img src="images/cover-dune.svg">
+      <img src="images/cover-emma.svg" alt="image">
+      <p><img src="images/icon-cart.svg"> Add to basket</p>
+    tests:
+      - "/dune/i.test(attr('img[src*=dune]', 'alt') || '')"
+      - "/emma/i.test(attr('img[src*=emma]', 'alt') || '') && attr('img[src*=emma]', 'alt').trim().toLowerCase() !== 'emma'"
+      - "attr('img[src*=icon]', 'alt')"
+      - "$$('img[src*=cover]').map((i) => i.getAttribute('width') + 'x' + i.getAttribute('height'))"
+      - "/^(image|picture|photo) of/i.test(attr('img[src*=dune]', 'alt') || '')"
+    solution:
+      html: |
+        <h2>Staff picks</h2>
+        <img src="images/cover-dune.svg" alt="Dune by Frank Herbert, cover" width="150" height="225">
+        <img src="images/cover-emma.svg" alt="Emma by Jane Austen, cover" width="150" height="225">
+        <p><img src="images/icon-cart.svg" alt=""> Add to basket</p>
+    hint: "`alt=\"Dune by Frank Herbert, cover\"` is plenty. For the icon write `alt=\"\"`: empty, but present."
+    reject:
+      - html: |
+          <h2>Staff picks</h2>
+          <img src="images/cover-dune.svg" alt="Dune by Frank Herbert, cover" width="150" height="225">
+          <img src="images/cover-emma.svg" alt="Emma by Jane Austen, cover" width="150" height="225">
+          <p><img src="images/icon-cart.svg"> Add to basket</p>
+      - html: |
+          <h2>Staff picks</h2>
+          <img src="images/cover-dune.svg" alt="Image of Dune">
+          <img src="images/cover-emma.svg" alt="Emma by Jane Austen, cover">
+          <p><img src="images/icon-cart.svg" alt=""> Add to basket</p>
+
+  - kind: explain
+    title: Choosing a format
+    body: |
+      | Format | Best for | Notes |
+      |---|---|---|
+      | **JPEG** (`.jpg`) | photos | small files; no transparency; quality drops a little each time it's re-saved |
+      | **PNG** | screenshots, images with sharp edges or transparency | lossless, but photos come out huge |
+      | **SVG** | logos, icons, simple illustrations | drawn from shapes, so it's razor-sharp at any size and tiny; it's actually text (you can open it in VS Code) |
+      | **WebP** | photos *and* graphics | 25–35% smaller than JPEG/PNG; supported everywhere today |
+      | **AVIF** | photos | smaller still; supported in all current browsers |
+      | GIF | (avoid) | old and heavy; for animation, use a short `<video>` instead |
+
+      A good default today: **SVG** for logos and icons, **WebP or AVIF** for photos, with JPEG as a fallback (Module 26 shows how to offer several formats at once).
+
+      Also shrink photos to the size they're shown at. A 4000-pixel phone photo shown 400 pixels wide wastes 99% of its download.
+
+  - kind: explain
+    title: Figures and captions
+    body: |
+      When an image (or a chart, a code sample, a quote) has a **caption**, wrap both in `<figure>`, with the caption in `<figcaption>`:
+
+      ```html
+      <figure>
+        <img src="images/shop.jpg" alt="Tall shelves of second-hand books" width="800" height="500">
+        <figcaption>The poetry corner, upstairs at Harbour Street.</figcaption>
+      </figure>
+      ```
+
+      This ties the caption to the image for screen readers and search engines. The caption is visible to everyone, so the `alt` doesn't have to repeat it.
+
+  - kind: web
+    title: Caption the shop photo
+    body: |
+      Wrap the shop photo and its caption in a proper figure:
+
+      1. Put the `<img>` and the caption text inside a `<figure>`.
+      2. Put the caption text in a `<figcaption>` (not a `<p>`).
+      3. The photo has no alt yet. Add one that describes the picture (at least a few words).
+    html: |
+      <h2>Visit the shop</h2>
+      <img src="images/shop.jpg" width="400" height="250">
+      <p>Three floors of books on Harbour Street.</p>
+    tests:
+      - "count('figure > img')"
+      - "count('figure > figcaption')"
+      - "text('figcaption')"
+      - "(attr('img', 'alt') || '').trim().split(/\\s+/).length >= 3"
+      - "count('body > p')"
+    solution:
+      html: |
+        <h2>Visit the shop</h2>
+        <figure>
+          <img src="images/shop.jpg" alt="Tall wooden shelves full of colourful books" width="400" height="250">
+          <figcaption>Three floors of books on Harbour Street.</figcaption>
+        </figure>
+    hint: "`<figure>` wraps both. Inside it: the `<img>`, then `<figcaption>Three floors…</figcaption>`."
+
+  - kind: explain
+    title: Video and audio
+    body: |
+      HTML plays media without any plug-in:
+
+      ```html
+      <video src="tour.mp4" controls width="640" height="360" poster="tour-poster.jpg">
+        Your browser can't play this video. <a href="tour.mp4">Download it</a>.
+      </video>
+
+      <audio src="reading.mp3" controls></audio>
+      ```
+
+      - `controls` shows play, pause and volume. Without it, the visitor has no way to start or stop the media.
+      - `poster` is the picture shown before the video plays.
+      - Autoplay with sound is blocked by browsers (and annoys everyone). If you must autoplay, add `muted` too.
+      - Add captions for speech with a `<track kind="captions" src="tour.vtt">` inside the video. Deaf viewers, and anyone in a quiet carriage, will thank you.
+
+  - kind: explain
+    title: Embedding with iframe
+    body: |
+      An `<iframe>` shows **another web page inside yours**. Sites like YouTube and map services give you ready-made embed code under *Share → Embed*:
+
+      ```html
+      <iframe
+        src="https://www.youtube-nocookie.com/embed/VIDEO_ID"
+        title="A tour of Inkwell Books"
+        width="560" height="315"
+        loading="lazy"
+        allowfullscreen></iframe>
+      ```
+
+      - Always give an iframe a `title`: screen readers announce it.
+      - `loading="lazy"` waits to load it until the visitor scrolls near it, so a heavy embed doesn't slow down your page.
+      - Each embed pulls in another site's code and often its tracking cookies. YouTube's `youtube-nocookie.com` address reduces that.
+
+      (The preview in these lessons blocks embeds from other sites, so try this one on your Mac.)
+
+  - kind: why
+    body: |
+      Images are usually the heaviest part of a page and the part most often broken for blind visitors. Good alt text, the right format and reserved width and height are three small habits that make a page faster, steadier and readable by everyone.
+
+  - kind: recap
+    body: |
+      - `<img src alt width height>`: always an `alt`; `alt=""` for decorative images; real width and height to prevent layout shift.
+      - Formats: SVG for logos and icons, WebP/AVIF (or JPEG) for photos, PNG for sharp screenshots.
+      - `<figure>` + `<figcaption>` for captioned images.
+      - `<video controls>` and `<audio controls>`; captions with `<track>`.
+      - `<iframe>` embeds another page; give it a `title` and `loading="lazy"`.

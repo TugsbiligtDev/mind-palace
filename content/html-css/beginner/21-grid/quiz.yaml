@@ -1,0 +1,48 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "In a 900px-wide grid (no gap) with `grid-template-columns: 2fr 1fr`, how wide is the first column?"
+    options: ["600px", "450px", "300px", "200px"]
+    answer: 0
+    explanation: "3 fractions in total; the first gets 2 of them: 900 × 2/3 = 600."
+  - type: mcq
+    prompt: "What does `grid-column: 1 / -1` do?"
+    options:
+      - "Stretches the item from the first line to the last: the full width"
+      - "Removes the item from the grid"
+      - "Puts the item in the last column only"
+      - "Reverses the column order"
+    answer: 0
+    explanation: "Negative line numbers count from the end; -1 is the last line."
+  - type: mcq
+    prompt: "Which line makes as many columns as fit, each at least 200px?"
+    options:
+      - "`grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));`"
+      - "`grid-template-columns: repeat(200px, 1fr);`"
+      - "`grid-template-columns: auto 200px;`"
+      - "`grid-auto-columns: 200px;`"
+    answer: 0
+    explanation: "auto-fit decides the count; minmax sets each column's minimum and lets them share the rest."
+  - type: mcq
+    prompt: "Which job suits Flexbox better than Grid?"
+    options:
+      - "A navbar of links with different text lengths"
+      - "A photo gallery with aligned rows and columns"
+      - "A page with header, sidebar, main and footer"
+      - "A calendar month view"
+    answer: 0
+    explanation: "One row, sized by its content: that's Flexbox's home ground."
+  - type: mcq
+    prompt: "In `grid-template-areas`, what's wrong with this?"
+    code: |
+      grid-template-areas:
+        "header header"
+        "main   sidebar"
+        "header footer";
+    options:
+      - "The header area isn't a rectangle (it appears in two separate places)"
+      - "Area names can't repeat"
+      - "There must be exactly two rows"
+      - "Nothing is wrong"
+    answer: 0
+    explanation: "Each named area must form one rectangle. The browser ignores the whole declaration if it doesn't."

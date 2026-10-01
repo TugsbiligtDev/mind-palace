@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Markdown } from "@/components/markdown";
 import { JsRunner } from "@/components/js/js-runner";
 import { PyRunner } from "@/components/py/py-runner";
 import { SqlRunner, type Engine } from "@/components/sql/sql-runner";
+import { WebRunner } from "@/components/web/web-runner";
 import type { Step, Track } from "@/lib/content/schema";
-import { codeStepCheck, pyStepCheck, tryStepCheck } from "@/lib/content/step-check";
+import { codeStepCheck, pyStepCheck, tryStepCheck, webStarter, webStepCheck } from "@/lib/content/step-check";
 import { completeLesson, completeStep, setLast, setLessonStep, useProgress } from "@/lib/progress";
 import { gradeJavaScript } from "@/lib/js/client";
 import type { JsRunOutput } from "@/lib/js/core";
@@ -15,11 +16,14 @@ import { gradePython } from "@/lib/py/client";
 import type { PyRunOutput } from "@/lib/py/core";
 import type { RunOutput } from "@/lib/sql/core";
 import { gradeSql } from "@/lib/sql/client";
+import type { WebFiles } from "@/lib/web/core";
+import { gradeWebPage } from "@/lib/web/client";
 
 const KIND_LABEL: Record<Step["kind"], string> = {
   explain: "Learn",
   try: "Try it",
   code: "Try it",
+  web: "Try it",
   info: "Good to know",
   mac: "On your Mac",
   why: "Why this matters",
@@ -63,12 +67,14 @@ export function LessonPlayer({
 
   const step = steps[index];
   const done = saved?.stepsDone.includes(index) ?? false;
-  const isExercise = step.kind === "try" || step.kind === "code";
-  const needsAction = (isExercise || step.kind === "mac") && !done;
+  const isExercise = step.kind === "try" || step.kind === "code" || step.kind === "web";
+  // An ungraded HTML & CSS step is "edit and look": nothing to pass, so Continue stays open.
+  const graded = step.kind !== "web" || !!webStepCheck(step);
+  const needsAction = ((isExercise && graded) || step.kind === "mac") && !done;
   const last = index === steps.length - 1;
 
   function next() {
-    if (!isExercise && step.kind !== "mac") completeStep(topicKey, index!);
+    if ((!isExercise || !graded) && step.kind !== "mac") completeStep(topicKey, index!);
     advance();
   }
 
@@ -120,6 +126,9 @@ export function LessonPlayer({
         {step.kind === "code" && (
           <CodePanel key={`${topicKey}-${index}`} step={step} language={language} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />
         )}
+        {step.kind === "web" && (
+          <WebPanel key={`${topicKey}-${index}`} step={step} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />
+        )}
       </div>
 
       <div className={`mt-6 flex items-center gap-3 ${isExercise ? "" : "mx-auto max-w-2xl"}`}>
@@ -145,7 +154,9 @@ export function LessonPlayer({
             </button>
           )}
           {needsAction && isExercise && (
-            <span className="text-sm text-muted">Run the {step.kind === "code" ? "code" : "query"} to continue</span>
+            <span className="text-sm text-muted">
+              {step.kind === "web" ? "Pass the check to continue" : `Run the ${step.kind === "code" ? "code" : "query"} to continue`}
+            </span>
           )}
           <button
             onClick={next}
@@ -291,6 +302,70 @@ function CodePanel({
       )}
       {done && !feedback && <p className="text-sm text-success">✓ Step complete</p>}
       <HelpPanel hint={step.hint} answer={step.solution} answerLabel="Stuck? Show one working solution" misses={misses} done={done} />
+    </div>
+  );
+}
+
+// The HTML & CSS version: the preview is live, and "Check my page" grades a graded step
+// (hidden checks run on the learner's page and on the reference solution).
+function WebPanel({
+  step,
+  slot,
+  done,
+  onDone,
+}: {
+  step: Extract<Step, { kind: "web" }>;
+  slot: string;
+  done: boolean;
+  onDone: () => void;
+}) {
+  const p = useProgress();
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const [misses, setMisses] = useState(0);
+  const [checking, setChecking] = useState(false);
+  const check = useMemo(() => webStepCheck(step), [step]);
+  const starter = webStarter(step);
+  const initial = { html: p?.code[slot] ?? starter.html, css: p?.code[`${slot}:css`] ?? starter.css };
+
+  const onCheck = useCallback(
+    async (files: WebFiles) => {
+      if (!check) return;
+      setChecking(true);
+      try {
+        const v = await gradeWebPage(files, check);
+        if (v.correct) {
+          setFeedback({ ok: true, text: `Correct! All ${v.total} checks pass.` });
+          onDone();
+        } else {
+          setMisses((m) => m + 1);
+          setFeedback({ ok: false, text: v.message });
+        }
+      } catch (e) {
+        setFeedback({ ok: false, text: `The checker couldn't run: ${(e as Error).message}` });
+      } finally {
+        setChecking(false);
+      }
+    },
+    [check, onDone],
+  );
+
+  const answer = check
+    ? [step.solution?.html !== undefined && `<!-- index.html -->\n${check.solution.html.trim()}`, step.solution?.css !== undefined && `/* style.css */\n${check.solution.css.trim()}`]
+        .filter(Boolean)
+        .join("\n\n")
+    : undefined;
+
+  return (
+    <div className="space-y-3">
+      <WebRunner initial={initial} starter={starter} slot={slot} showCss={step.css !== undefined} onCheck={check ? onCheck : undefined} checking={checking} />
+      {feedback && (
+        <p className={`rounded-lg px-3 py-2 text-sm ${feedback.ok ? "bg-success/10 text-success" : "bg-xp/10 text-text"}`}>
+          {feedback.ok ? "✓ " : ""}
+          {feedback.text}
+        </p>
+      )}
+      {done && !feedback && check && <p className="text-sm text-success">✓ Step complete</p>}
+      <HelpPanel hint={step.hint} answer={answer} answerLabel="Stuck? Show one working answer" misses={misses} done={done} />
     </div>
   );
 }

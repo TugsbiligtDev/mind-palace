@@ -1,0 +1,4 @@
+title: Positioning
+module: 19
+summary: "Take boxes out of normal flow with position: relative, absolute, fixed and sticky; place them with top, left and inset; understand containing blocks and z-index; and fix the classic badge that escapes its card."
+minutes: 45

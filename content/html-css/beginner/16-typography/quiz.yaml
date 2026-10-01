@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Why end a font stack with a generic family like `serif`?"
+    options:
+      - "It's a guaranteed last resort if none of the named fonts is available"
+      - "It makes every font serif"
+      - "Browsers require exactly one generic"
+      - "It loads the font faster"
+    answer: 0
+    explanation: "If every named font fails, the browser still picks a font of the right kind."
+  - type: mcq
+    prompt: "What does `font-display: swap` do while a web font downloads?"
+    options:
+      - "Shows the text in the fallback font immediately, then swaps in the web font"
+      - "Hides the text until the font arrives"
+      - "Never uses the web font"
+      - "Swaps the order of the font stack"
+    answer: 0
+    explanation: "Readers can start reading at once. `block` would hide the text for a few seconds."
+  - type: mcq
+    prompt: Which line-height is the best choice for body text?
+    options: ["`line-height: 1.6;`", "`line-height: 1.6em;`", "`line-height: 16px;`", "`line-height: 0.8;`"]
+    answer: 0
+    explanation: "Unitless values are recalculated for each element's own size, so headings and small text all get proportional spacing."
+  - type: mcq
+    prompt: A paragraph stretches across a 2,000-pixel-wide monitor. What helps most?
+    options: ["`max-width: 65ch;`", "`text-align: justify;`", "`font-size: 3rem;`", "`letter-spacing: 1em;`"]
+    answer: 0
+    explanation: "About 45–75 characters per line is comfortable. `ch` measures in characters."
+  - type: mcq
+    prompt: You want a menu shown in capitals. What's the better approach?
+    options:
+      - "Write normal text in the HTML and use `text-transform: uppercase`"
+      - "Type the menu in capitals in the HTML"
+      - "Use `font-weight: 900`"
+      - "Use an image of the text"
+    answer: 0
+    explanation: "The HTML keeps readable text (some screen readers spell out all-caps words), and you can change the look later."

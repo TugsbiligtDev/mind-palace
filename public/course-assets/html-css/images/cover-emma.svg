@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">
+<rect width="300" height="450" fill="#be185d"/>
+<rect x="14" y="14" width="272" height="422" fill="none" stroke="#fbcfe8" stroke-width="2" opacity=".6"/>
+<text x="150" y="110" text-anchor="middle" font-family="Georgia, serif" font-size="44" font-weight="bold" fill="#fbcfe8" letter-spacing="3">EMMA</text>
+<text x="150" y="150" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#fbcfe8">Jane Austen</text>
+<ellipse cx="150" cy="270" rx="60" ry="80" fill="none" stroke="#fbcfe8" stroke-width="6"/><circle cx="150" cy="240" r="22" fill="#fbcfe8"/>
+</svg>

@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "In `<a href=\"about.html\">About us</a>`, what is `href=\"about.html\"`?"
+    options: ["An attribute", "An element", "A closing tag", "A comment"]
+    answer: 0
+    explanation: "Attributes live in the opening tag as `name=\"value\"`. The whole thing from `<a` to `</a>` is the element."
+  - type: mcq
+    prompt: Which of these is correctly nested?
+    options:
+      - "`<p><em>Rare</em> first edition</p>`"
+      - "`<p><em>Rare</p> first edition</em>`"
+      - "`<em><p>Rare</em> first edition</p>`"
+      - "`<p><em>Rare first edition</p>`"
+    answer: 0
+    explanation: "The element opened last (`em`) closes first, inside the paragraph."
+  - type: mcq
+    prompt: Which element is a void element (no closing tag)?
+    options: ["`<img>`", "`<p>`", "`<title>`", "`<strong>`"]
+    answer: 0
+    explanation: "`<img>` can't hold content, so it has no closing tag. The others all need one."
+  - type: mcq
+    prompt: "A page shows fine on your laptop but appears as tiny, zoomed-out text on phones. Which line is probably missing?"
+    options:
+      - "`<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">`"
+      - "`<meta charset=\"utf-8\">`"
+      - "`<html lang=\"en\">`"
+      - "`<title>`"
+    answer: 0
+    explanation: "Without the viewport line, phones pretend to be a desktop around 980px wide and shrink the whole page."
+  - type: mcq
+    prompt: Where does the text inside `<title>` appear?
+    options:
+      - "In the browser tab, bookmarks and search results, but not on the page itself"
+      - "As the biggest heading at the top of the page"
+      - "Nowhere; it's only for the developer"
+      - "In the page footer"
+    answer: 0
+    explanation: "The `<head>` describes the page and isn't drawn on it. The title shows in the tab and in search results. The visible heading is `<h1>`."

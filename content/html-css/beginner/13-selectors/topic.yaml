@@ -1,0 +1,4 @@
+title: Selectors
+module: 13
+summary: "Pick exactly the elements you mean: type, class and id selectors; grouping; descendant and child combinators; attribute selectors; pseudo-classes like :hover, :focus-visible, :nth-child() and :not(); pseudo-elements like ::before; and the sibling combinators."
+minutes: 55

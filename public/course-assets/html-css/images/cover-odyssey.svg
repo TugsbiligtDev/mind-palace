@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">
+<rect width="300" height="450" fill="#065f46"/>
+<rect x="14" y="14" width="272" height="422" fill="none" stroke="#a7f3d0" stroke-width="2" opacity=".6"/>
+<text x="150" y="110" text-anchor="middle" font-family="Georgia, serif" font-size="34" font-weight="bold" fill="#a7f3d0" letter-spacing="3">THE ODYSSEY</text>
+<text x="150" y="150" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#a7f3d0">Homer</text>
+<path d="M40 330 Q100 300 150 330 T260 330" stroke="#a7f3d0" stroke-width="6" fill="none"/><path d="M110 300 L150 220 L190 300Z" fill="#a7f3d0"/>
+</svg>

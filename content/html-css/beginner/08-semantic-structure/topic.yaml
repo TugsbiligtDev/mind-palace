@@ -1,0 +1,4 @@
+title: Semantic Page Structure
+module: 8
+summary: "Give a page its landmarks: header, nav, main, section, article, aside and footer. When div and span are the right choice, why meaning matters for accessibility and search, and how to clean up div soup."
+minutes: 40

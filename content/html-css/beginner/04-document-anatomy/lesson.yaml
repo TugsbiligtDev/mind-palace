@@ -1,0 +1,230 @@
+steps:
+  - kind: explain
+    title: Tags and elements
+    body: |
+      HTML marks up content with **tags**: words in angle brackets. Most come in pairs:
+
+      ```html
+      <p>Second-hand books, carefully chosen.</p>
+      ```
+
+      - `<p>` is the **opening tag**, `</p>` (with a slash) the **closing tag**.
+      - Together with the content between them they make an **element**: here, a paragraph.
+
+      The tag name says *what the content is*. `p` is a paragraph, `h1` a top-level heading, `a` a link. The browser has a default look for each (headings big and bold, paragraphs with space around them), and CSS can change any of it later.
+
+  - kind: explain
+    title: Attributes
+    body: |
+      **Attributes** add extra information to an element. They go inside the **opening** tag, as `name="value"`:
+
+      ```html
+      <a href="about.html">About us</a>
+      <p class="tagline" id="intro">Second-hand books.</p>
+      ```
+
+      - `href` tells a link where to go.
+      - `class` and `id` give the element names that CSS can use (Module 13).
+      - Order doesn't matter, separate them with spaces, and always wrap values in **double quotes**.
+
+      Some attributes are **boolean**: just being there means "yes". `<input required>` is a required field; there's no value to write.
+
+  - kind: explain
+    title: Void elements
+    body: |
+      A few elements can't hold content, so they have **no closing tag**. They're called **void elements**:
+
+      ```html
+      <img src="logo.svg" alt="Inkwell Books">
+      <br>
+      <hr>
+      <input type="email">
+      <meta charset="utf-8">
+      <link rel="stylesheet" href="style.css">
+      ```
+
+      You may see them written `<br />` with a slash. That's an old habit from a stricter language (XHTML). Browsers accept it, but it does nothing. This course writes `<br>`.
+
+  - kind: explain
+    title: Nesting
+    body: |
+      Elements go **inside** other elements. The inner one is the **child**, the outer one its **parent**:
+
+      ```html
+      <p>This book is <strong>signed by the author</strong>.</p>
+      ```
+
+      The rule: **close in the reverse order you opened**, like boxes inside boxes. Whatever opened last must close first.
+
+      ```html
+      <p>Wrong: <strong>signed</p></strong>     ✗ crossed
+      <p>Right: <strong>signed</strong></p>     ✓ nested
+      ```
+
+      Browsers try to repair crossed tags silently, and sometimes they guess right. Don't rely on it: other tools (and the next person to edit the file) won't guess the same way.
+
+      Indenting children by two spaces makes the nesting visible at a glance. Browsers ignore the spaces; people don't.
+
+  - kind: web
+    title: Close what you opened
+    body: |
+      Moth sent over Inkwell's opening-hours notice, and two closing tags went missing. Look at the preview: the bold and the italics leak into the paragraphs after them, because the browser keeps an unclosed `<strong>` or `<em>` going.
+
+      Add the two missing closing tags so that:
+
+      - only **"Closed on Mondays."** is bold, and
+      - only *"except holidays."* is in italics.
+
+      The third paragraph is already right; don't change it.
+    html: |
+      <p>Please note: <strong>Closed on Mondays.</p>
+      <p>Open every other day, <em>except holidays.</p>
+      <p>Ask about our <strong>gift cards</strong>.</p>
+    tests:
+      - "count('p')"
+      - "count('strong')"
+      - "count('em')"
+      - "text('p:nth-of-type(1) strong')"
+      - "text('p:nth-of-type(2) em')"
+      - "count('p:nth-of-type(2) strong, p:nth-of-type(3) em')"
+      - "text('p:nth-of-type(3) strong')"
+    solution:
+      html: |
+        <p>Please note: <strong>Closed on Mondays.</strong></p>
+        <p>Open every other day, <em>except holidays.</em></p>
+        <p>Ask about our <strong>gift cards</strong>.</p>
+    hint: "Whatever opened last closes first. In the first line `<strong>` opened after `<p>`, so `</strong>` goes right before `</p>`."
+    reject:
+      - html: |
+          <p>Please note: <strong>Closed on Mondays.</strong></p>
+          <p>Open every other day, <em>except holidays.</p>
+          <p>Ask about our <strong>gift cards</strong>.</p>
+
+  - kind: explain
+    title: The page skeleton
+    body: |
+      A complete HTML page always has the same skeleton. In VS Code, `!` + Tab writes it for you:
+
+      ```html
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Inkwell Books</title>
+        </head>
+        <body>
+          <h1>Inkwell Books</h1>
+        </body>
+      </html>
+      ```
+
+      - `<!DOCTYPE html>` tells the browser "this is modern HTML". Without it, browsers fall back to *quirks mode*, an old, buggy way of drawing pages.
+      - `<html lang="en">` wraps everything, and `lang` names the page's language. Screen readers use it to pick a voice and pronunciation; browsers use it to offer translation.
+      - `<head>` holds information **about** the page. Nothing in it shows on the page itself.
+      - `<body>` holds everything visitors **see**.
+
+  - kind: explain
+    title: What goes in the head
+    body: |
+      Three lines belong in every `<head>`:
+
+      - `<meta charset="utf-8">` says which **character encoding** the file uses. UTF-8 covers every language and emoji. Without it, `café` can show up as `cafÃ©`. Put it first.
+      - `<meta name="viewport" content="width=device-width, initial-scale=1">` tells phones to use their real screen width. Without it, a phone pretends to be a 980-pixel-wide desktop and shrinks your page to tiny text. Module 22 returns to this.
+      - `<title>` is the text in the **browser tab**, in bookmarks and as the headline in search results. Make it specific: `Contact · Inkwell Books`, not `Page`.
+
+      Later modules add the stylesheet `<link>` (Module 12) and sharing and search tags (Module 27).
+
+  - kind: web
+    title: Complete the skeleton
+    body: |
+      This page for Inkwell's contact page is a full document, but its head is incomplete.
+
+      1. Give `<html>` the language attribute for English: `lang="en"`.
+      2. Add `<meta charset="utf-8">` as the first line of the head.
+      3. Add the viewport meta line exactly as shown in the lesson.
+      4. Add a `<title>` with the text `Contact · Inkwell Books`.
+    html: |
+      <!DOCTYPE html>
+      <html>
+        <head>
+        </head>
+        <body>
+          <h1>Contact us</h1>
+          <p>Write to us any time.</p>
+        </body>
+      </html>
+    tests:
+      - "doc.documentElement.lang"
+      - "doc.title"
+      - "($('meta[charset]') || {}).getAttribute ? attr('meta[charset]', 'charset').toLowerCase() : null"
+      - "$('meta[name=viewport]') ? attr('meta[name=viewport]', 'content').replace(/\\s/g, '') : null"
+      - "doc.doctype ? doc.doctype.name : null"
+    solution:
+      html: |
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Contact · Inkwell Books</title>
+          </head>
+          <body>
+            <h1>Contact us</h1>
+            <p>Write to us any time.</p>
+          </body>
+        </html>
+    hint: "`lang` goes inside the opening `<html>` tag. The two `<meta>` lines and the `<title>` go between `<head>` and `</head>`."
+    reject:
+      - html: |
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>Contact · Inkwell Books</title>
+            </head>
+            <body>
+              <h1>Contact us</h1>
+              <p>Write to us any time.</p>
+            </body>
+          </html>
+
+  - kind: explain
+    title: Comments
+    body: |
+      A **comment** is a note for humans. The browser skips it:
+
+      ```html
+      <!-- Opening hours: update every December -->
+      <p>Open Tuesday to Sunday.</p>
+      ```
+
+      Use comments to explain *why*, or to switch off a piece of HTML for a moment while testing. In VS Code, ⌘/ comments out the current line.
+
+      ⚠️ Comments are **not secret**. Anyone can see them with View Source or DevTools. Never put passwords or private notes in them.
+
+  - kind: explain
+    title: "Common mistake: the unclosed tag"
+    body: |
+      Forget one closing tag and the effect spreads:
+
+      ```html
+      <p>Our <strong>best sellers this week:</p>
+      <p>Dune, Emma, Beloved</p>
+      ```
+
+      The `<strong>` never closes, so the browser keeps it going, and the next paragraph comes out bold too. Browsers never show an error for broken HTML. They quietly guess, and sometimes the guess is wrong. Module 11 shows how to catch these with the validator and DevTools.
+
+      Habits that prevent it: type the closing tag right after the opening one, then fill in the middle (Emmet does this for you), and indent nested elements.
+
+  - kind: why
+    body: |
+      Every page you will ever build sits on this skeleton, and every element follows the same rules of tags, attributes and nesting. A missing `lang`, `charset` or viewport line won't look broken on your laptop, but it will on a phone, in another language or for someone using a screen reader.
+
+  - kind: recap
+    body: |
+      - An **element** = opening tag + content + closing tag. **Attributes** go in the opening tag as `name="value"`.
+      - **Void elements** (`img`, `br`, `hr`, `input`, `meta`, `link`) have no closing tag.
+      - **Nesting**: close in the reverse order you opened. Indent children.
+      - Every page: `<!DOCTYPE html>`, `<html lang>`, `<head>` (charset, viewport, title), `<body>`.
+      - `<!-- comments -->` are visible to anyone who looks.

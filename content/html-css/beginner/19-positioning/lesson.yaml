@@ -1,0 +1,256 @@
+steps:
+  - kind: explain
+    title: Five kinds of position
+    body: |
+      | `position` | Placed relative to | Still takes up its normal space? |
+      |---|---|---|
+      | `static` | (normal flow: the default; offsets do nothing) | yes |
+      | `relative` | **its own normal spot** | yes: a ghost of it stays behind |
+      | `absolute` | its **containing block**: the nearest positioned ancestor | no: removed from the flow |
+      | `fixed` | the **browser window**: stays put when you scroll | no |
+      | `sticky` | scrolls normally until it reaches an offset, then **sticks** | yes |
+
+      The **offsets** `top`, `right`, `bottom`, `left` move a positioned box. `inset: 0` is shorthand for all four at 0.
+
+  - kind: explain
+    title: relative + absolute, the classic pair
+    body: |
+      To pin something to a corner of a card (a "Sale" badge, a close button), use the pair:
+
+      ```css
+      .card {
+        position: relative;   /* becomes the containing block; doesn't move */
+      }
+      .badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;           /* 8px in from the card's top-right corner */
+      }
+      ```
+
+      An absolutely positioned box looks up its ancestors for the nearest one whose `position` isn't `static`, and positions itself against that box. `position: relative` with no offsets is the standard way to say "measure from here" without moving anything.
+
+  - kind: explain
+    title: "Common mistake: the escaping badge"
+    body: |
+      Forget `position: relative` on the parent, and the badge keeps looking up… past the card, past the section, all the way to the page itself. It ends up in the top-right corner of the **whole page**, often overlapping the header.
+
+      If an absolute element is in a strange place, inspect its ancestors: which one is positioned? DevTools' Computed tab shows `position` for each.
+
+  - kind: web
+    title: Pin the sale badge
+    body: |
+      Each book card should show its **Sale** badge **10px from the card's top-right corner**, but both badges escaped to the corner of the page.
+
+      Fix it with the classic pair: the card becomes the containing block, the badge is absolutely positioned `10px` from its top and right.
+    html: |
+      <div class="card">
+        <span class="badge">Sale</span>
+        <h3>Dune</h3>
+        <p>£8.99</p>
+      </div>
+      <div class="card">
+        <span class="badge">Sale</span>
+        <h3>Emma</h3>
+        <p>£3.50</p>
+      </div>
+    css: |
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      .card {
+        width: 220px;
+        padding: 16px;
+        margin: 16px;
+        border: 2px solid #7c2d12;
+      }
+
+      .badge {
+        position: absolute;
+        background: #b91c1c;
+        color: white;
+        padding: 2px 8px;
+      }
+    tests:
+      - "edges('.card:nth-of-type(1) .badge', '.card:nth-of-type(1)')"
+      - "edges('.card:nth-of-type(2) .badge', '.card:nth-of-type(2)')"
+      - "css('.card', 'position')"
+      - "css('.badge', 'position')"
+    solution:
+      css: |
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        .card {
+          position: relative;
+          width: 220px;
+          padding: 16px;
+          margin: 16px;
+          border: 2px solid #7c2d12;
+        }
+
+        .badge {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: #b91c1c;
+          color: white;
+          padding: 2px 8px;
+        }
+    hint: "`.card` needs `position: relative;`. `.badge` keeps `position: absolute;` and gets `top: 10px; right: 10px;`."
+    reject:
+      - css: |
+          *, *::before, *::after {
+            box-sizing: border-box;
+          }
+
+          .card {
+            width: 220px;
+            padding: 16px;
+            margin: 16px;
+            border: 2px solid #7c2d12;
+          }
+
+          .badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #b91c1c;
+            color: white;
+            padding: 2px 8px;
+          }
+
+  - kind: explain
+    title: fixed and sticky
+    body: |
+      **fixed** pins a box to the window. It never scrolls:
+
+      ```css
+      .chat-button {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+      }
+      ```
+
+      **sticky** is a hybrid: the box scrolls with the page until it reaches its offset, then sticks there **while its parent is on screen**:
+
+      ```css
+      .site-header {
+        position: sticky;
+        top: 0;          /* stick to the top edge */
+      }
+      ```
+
+      Sticky needs an offset (`top: 0`), and it stops when its parent scrolls away, which makes it ideal for headers and table headings. Fixed and sticky elements cover content, so give the area beneath them enough space, and keep them small on phones.
+
+  - kind: web
+    title: A header that stays
+    body: |
+      Make Inkwell's header stay at the top of the screen as you scroll, without covering the start of the page: use `position: sticky` with `top: 0`. Give it a `background: white` so text doesn't show through, and `z-index: 10` so it stays above the content.
+
+      Scroll the preview to see it work.
+    html: |
+      <header class="site-header">Inkwell Books</header>
+      <main>
+        <p>Shelf 1: Fiction</p><p>Shelf 2: Poetry</p><p>Shelf 3: History</p><p>Shelf 4: Travel</p>
+        <p>Shelf 5: Science</p><p>Shelf 6: Children</p><p>Shelf 7: Art</p><p>Shelf 8: Music</p>
+        <p>Shelf 9: Cooking</p><p>Shelf 10: Rare books</p><p>Shelf 11: Maps</p><p>Shelf 12: Comics</p>
+      </main>
+    css: |
+      body {
+        margin: 0;
+      }
+
+      .site-header {
+        padding: 16px;
+        font-weight: bold;
+        border-bottom: 2px solid #7c2d12;
+      }
+
+      main p {
+        position: relative;
+        padding: 24px 16px;
+        margin: 0;
+        border-bottom: 1px solid #eee;
+      }
+    tests:
+      - "css('.site-header', 'position') + ' top:' + css('.site-header', 'top')"
+      - "css('.site-header', 'background-color')"
+      - "css('.site-header', 'z-index')"
+      - "scrolled(300, '.site-header').y"
+    solution:
+      css: |
+        body {
+          margin: 0;
+        }
+
+        .site-header {
+          position: sticky;
+          top: 0;
+          z-index: 10;
+          background: white;
+          padding: 16px;
+          font-weight: bold;
+          border-bottom: 2px solid #7c2d12;
+        }
+
+        main p {
+          position: relative;
+          padding: 24px 16px;
+          margin: 0;
+          border-bottom: 1px solid #eee;
+        }
+    hint: "`position: sticky; top: 0; z-index: 10; background: white;` on `.site-header`."
+    reject:
+      - css: |
+          body {
+            margin: 0;
+          }
+
+          .site-header {
+            position: sticky;
+            background: white;
+            z-index: 10;
+            padding: 16px;
+            font-weight: bold;
+            border-bottom: 2px solid #7c2d12;
+          }
+
+          main p {
+            position: relative;
+            padding: 24px 16px;
+            margin: 0;
+            border-bottom: 1px solid #eee;
+          }
+
+  - kind: explain
+    title: z-index and stacking
+    body: |
+      When positioned boxes overlap, which is on top? By default, **later in the HTML** paints on top. `z-index` overrides that: higher numbers come forward.
+
+      ```css
+      .modal    { position: fixed; z-index: 100; }
+      .header   { position: sticky; z-index: 10; }
+      ```
+
+      Two catches:
+
+      1. `z-index` only works on **positioned** boxes (anything but `static`) and on flex and grid items.
+      2. A parent with a `z-index` (or `opacity` below 1, or a `transform`) creates a **stacking context**: a sealed group. Its children can't rise above things outside the group, however big their z-index. If `z-index: 9999` "doesn't work", a parent's stacking context is the usual reason (Module 51 goes deeper).
+
+      Keep z-index values few and spaced out (1, 10, 100) so you know the order at a glance.
+
+  - kind: why
+    body: |
+      Positioning is for the exceptions: badges, sticky headers, overlays, tooltips. Main page layout belongs to normal flow, Flexbox and Grid. Used for those exceptions, relative + absolute and sticky are simple, and knowing about containing blocks and stacking contexts saves hours of "why is it over there?".
+
+  - kind: recap
+    body: |
+      - `relative`: nudged from its own spot, space kept. Also makes a containing block.
+      - `absolute`: out of the flow, placed against the nearest **positioned** ancestor. Pair with `relative` on the parent.
+      - `fixed`: pinned to the window. `sticky`: scrolls, then sticks (needs `top`).
+      - Offsets: `top`, `right`, `bottom`, `left`, `inset`.
+      - `z-index` works on positioned (and flex/grid) items; stacking contexts seal groups together.

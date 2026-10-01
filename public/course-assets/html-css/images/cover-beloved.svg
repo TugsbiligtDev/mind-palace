@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">
+<rect width="300" height="450" fill="#1e3a8a"/>
+<rect x="14" y="14" width="272" height="422" fill="none" stroke="#bfdbfe" stroke-width="2" opacity=".6"/>
+<text x="150" y="110" text-anchor="middle" font-family="Georgia, serif" font-size="44" font-weight="bold" fill="#bfdbfe" letter-spacing="3">BELOVED</text>
+<text x="150" y="150" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#bfdbfe">Toni Morrison</text>
+<path d="M150 330 C60 270 90 200 150 240 C210 200 240 270 150 330Z" fill="#bfdbfe"/>
+</svg>

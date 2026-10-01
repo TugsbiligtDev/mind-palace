@@ -1,0 +1,4 @@
+title: Units, Colors & Values
+module: 15
+summary: "Sizes in px, %, em, rem, vw and vh (and the newer dvh and svh), and when to pick rem over em. Colors as names, hex, rgb(), hsl() and oklch(), with transparency. And calc() for mixing units."
+minutes: 45

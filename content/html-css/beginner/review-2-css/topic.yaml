@@ -1,0 +1,5 @@
+title: "The style case file"
+module: 19
+kind: review
+summary: "Inkwell's book page is finished in HTML and completely unstyled. Five briefs, no hints about which properties to use: base typography, a centred layout, a styled menu, a book card with a sale badge, and a stylesheet bug hunt. Uses Modules 12 to 19."
+minutes: 50

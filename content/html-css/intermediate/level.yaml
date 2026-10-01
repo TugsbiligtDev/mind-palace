@@ -1,0 +1,28 @@
+id: intermediate
+title: Intermediate
+season: 2
+season_title: The Open House
+season_pitch: |
+  The storefront is open, and now everyone has to be able to use it: keyboard users, screen
+  reader users, phone users on slow networks. Make Inkwell's pages accessible, shareable and
+  fast, then learn the modern CSS that professionals use every day (variables, :has(), nesting,
+  fluid sizing, motion) and ship the site live with Git.
+status: coming_soon
+topics: []
+planned:
+  - "Accessibility (a11y) Core"
+  - "Advanced Forms"
+  - "Native Interactive Elements"
+  - "Responsive Images & Performance-Aware HTML"
+  - "Metadata, SEO & Sharing"
+  - "Custom Properties (CSS Variables)"
+  - "Modern Selectors"
+  - "Native CSS Nesting"
+  - "Fluid & Intrinsic Sizing"
+  - "Transitions & Transforms"
+  - "Keyframe Animations"
+  - "Layout Patterns"
+  - "Git & GitHub Basics"
+  - "Publishing a Site"
+  - "Code Quality Tooling"
+  - "Browser Compatibility"

@@ -1,0 +1,44 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "You want a small, bold line of text under a section heading. The heading is an `h2`. What should the small line be?"
+    options:
+      - "A `<p>`, made small and bold with CSS"
+      - "An `<h6>`, because it's the smallest heading"
+      - "An `<h3>`, because it comes after an h2"
+      - "A `<strong>` with several `<br>` around it"
+    answer: 0
+    explanation: "It isn't a heading of a new section, so it isn't a heading at all. Pick elements for meaning; CSS takes care of the size."
+  - type: mcq
+    prompt: Where does a nested list go?
+    code: |
+      <ul>
+        <li>Fiction</li>
+        <!-- where does the Mystery/Fantasy list go? -->
+      </ul>
+    options:
+      - "Inside the Fiction `<li>`, after the word Fiction"
+      - "Directly inside the outer `<ul>`, after the Fiction `<li>`"
+      - "After the closing `</ul>`"
+      - "Inside a `<br>`"
+    answer: 0
+    explanation: "Only `<li>` elements may sit directly inside a `<ul>`. The sub-list belongs to the Fiction item, so it goes inside that `<li>`."
+  - type: mcq
+    prompt: "How do you show the text `5 < 7` on a page safely?"
+    options: ["`5 &lt; 7`", "`5 < 7`", "`5 &gt; 7`", "`5 <lt> 7`"]
+    answer: 0
+    explanation: "`<` starts a tag, so write it as the entity `&lt;` (less than)."
+  - type: mcq
+    prompt: "\"Do **not** leave the shop door open.\" The word *not* is a serious warning. Which element fits it?"
+    options: ["`<strong>`", "`<b>`", "`<i>`", "`<h3>`"]
+    answer: 0
+    explanation: "`<strong>` means importance or urgency. `<b>` only draws attention without that meaning."
+  - type: mcq
+    prompt: "In your HTML file you put three blank lines between two words of a paragraph. What does the browser show?"
+    options:
+      - "The two words with a single space between them"
+      - "Three empty lines"
+      - "One empty line"
+      - "An error"
+    answer: 0
+    explanation: "Browsers collapse any run of whitespace into one space. Use separate `<p>` elements (or `<br>` for real line breaks) instead."

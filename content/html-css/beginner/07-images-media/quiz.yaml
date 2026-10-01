@@ -1,0 +1,37 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "A decorative swirl sits under every heading. What should its `alt` be?"
+    options: ["`alt=\"\"` (empty)", "No alt attribute at all", "`alt=\"decorative swirl image\"`", "`alt=\"swirl.svg\"`"]
+    answer: 0
+    explanation: "An empty alt tells screen readers to skip it. A missing alt often makes them read the file name aloud."
+  - type: mcq
+    prompt: Why give an `<img>` its `width` and `height` attributes?
+    options:
+      - "The browser can reserve the right space before the image loads, so the page doesn't jump"
+      - "Images won't display without them"
+      - "They make the file download faster"
+      - "They lock the image to that size forever, even on phones"
+    answer: 0
+    explanation: "They prevent layout shift. CSS can still resize the image, and the browser keeps the proportions."
+  - type: mcq
+    prompt: Which format suits the shop's logo, which must look sharp from a phone to a big screen?
+    options: ["SVG", "JPEG", "GIF", "A very large PNG"]
+    answer: 0
+    explanation: "SVG is drawn from shapes, so it stays sharp at any size and is usually tiny."
+  - type: mcq
+    prompt: "Which `alt` is best for a linked logo in the header that goes to the home page?"
+    code: |
+      <a href="index.html"><img src="images/logo.svg" alt="?"></a>
+    options: ["`Inkwell Books home`", "`logo`", "`Image of the Inkwell logo`", "`\"\"` (empty)"]
+    answer: 0
+    explanation: "When an image is the only content of a link, its alt is the link text, so it should say where the link goes. Empty would leave a link with no name."
+  - type: mcq
+    prompt: What does the `controls` attribute do on `<video>`?
+    options:
+      - "Shows the browser's play, pause and volume buttons"
+      - "Starts the video automatically"
+      - "Lets the site owner control who can watch"
+      - "Adds captions"
+    answer: 0
+    explanation: "Without `controls` the visitor has no built-in way to play or pause the video."

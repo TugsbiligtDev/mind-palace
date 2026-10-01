@@ -1,0 +1,242 @@
+steps:
+  - kind: explain
+    title: When rules disagree
+    body: |
+      Two rules can both set the same property on the same element:
+
+      ```css
+      p      { color: gray; }
+      .note  { color: darkred; }
+      ```
+
+      ```html
+      <p class="note">Closed Monday.</p>
+      ```
+
+      Gray or dark red? The browser settles every conflict with the **cascade** (the C in CSS). It compares the competing declarations in this order, and the first difference decides:
+
+      1. **Origin and importance**: browser defaults < your styles < your `!important` styles.
+      2. **Specificity**: the more *specific* selector wins.
+      3. **Order**: if all else is equal, the rule that comes **later** wins.
+
+      Here `.note` is more specific than `p`, so the text is dark red, wherever the rules appear in the file.
+
+  - kind: explain
+    title: Calculating specificity
+    body: |
+      Specificity is three numbers, compared left to right, like a score **(ids, classes, types)**:
+
+      | Counts as | What |
+      |---|---|
+      | **ids** | `#top` |
+      | **classes** | `.note`, attribute selectors `[type="email"]`, pseudo-classes `:hover` |
+      | **types** | `p`, `h1`, pseudo-elements `::before` |
+
+      | Selector | Score |
+      |---|---|
+      | `p` | 0, 0, 1 |
+      | `nav a` | 0, 0, 2 |
+      | `.note` | 0, 1, 0 |
+      | `p.note` | 0, 1, 1 |
+      | `nav a:hover` | 0, 1, 2 |
+      | `#top` | 1, 0, 0 |
+
+      Compare the first number; only if it ties, compare the second, and so on. So **one id beats any number of classes**, and one class beats any number of types: `.note` (0,1,0) beats `body main article p` (0,0,4).
+
+      `*` (everything) and combinators (`>`, `+`, space) add nothing. Inline `style=""` beats every selector.
+
+  - kind: web
+    title: Win without cheating
+    body: |
+      Inkwell wants sale prices in red, but they stay gray. The rule `.price.sale` is losing to `#books span`, which scores (1, 0, 1).
+
+      Someone tried `!important` on a *different* line. That's how specificity wars start. Fix it properly:
+
+      1. Remove the `!important`.
+      2. Change the selector `#books span` to the class selector `.price`, so it no longer outranks everything.
+
+      Afterwards: normal prices gray, sale prices red, the title black. Don't change the HTML.
+    html: |
+      <section id="books">
+        <h2>This week</h2>
+        <p>Dune <span class="price">£8.99</span></p>
+        <p>Emma <span class="price sale">£3.50</span></p>
+        <p class="title">Beloved <span class="price">£7.25</span></p>
+      </section>
+    css: |
+      #books span {
+        color: gray;
+      }
+
+      .price.sale {
+        color: red;
+      }
+
+      #books .title {
+        color: black !important;
+      }
+    tests:
+      - "cssAll('.price', 'color')"
+      - "css('.title', 'color')"
+      - "$('style[data-file]').textContent.includes('!important')"
+      - "selectors().some((s) => s.includes('#'))"
+    solution:
+      css: |
+        .price {
+          color: gray;
+        }
+
+        .price.sale {
+          color: red;
+        }
+
+        .title {
+          color: black;
+        }
+    hint: "With `.price` (0,1,0) for gray, `.price.sale` (0,2,0) wins for sale prices. The title rule needs neither the id nor `!important`: `.title { color: black; }`."
+    reject:
+      - css: |
+          #books span {
+            color: gray;
+          }
+
+          .price.sale {
+            color: red !important;
+          }
+
+          .title {
+            color: black;
+          }
+
+  - kind: explain
+    title: Why to avoid !important and ids for styling
+    body: |
+      `!important` jumps a declaration over all normal ones. It works, once. Then someone needs to override *that*, and adds another `!important` with a more specific selector, and soon every rule shouts.
+
+      Id selectors cause the same escalation more quietly: `#books span` (1,0,1) can only be beaten by another id. Everything else you write has to fight it.
+
+      The calm approach, which professionals use:
+
+      - Style with **classes**, keep selectors **short** (one or two parts).
+      - When two rules conflict, prefer fixing the **order** or making selectors **equally simple**, rather than piling on.
+      - Reserve `!important` for rare cases like a utility class that must always win (`.hidden { display: none !important; }`).
+
+      Module 40 (cascade layers) shows the modern way to keep large stylesheets peaceful.
+
+  - kind: explain
+    title: Inheritance
+    body: |
+      Some properties **pass down** from parent to children automatically. Set them on `body` and the whole page gets them:
+
+      - **Inherited**: text properties like `color`, `font-family`, `font-size`, `line-height`, `text-align`, `letter-spacing`, `visibility`, `list-style`.
+      - **Not inherited**: box properties like `background`, `border`, `margin`, `padding`, `width`, `height`, `display`. (Imagine every child repeating its parent's border.)
+
+      An inherited value is the **weakest** thing there is: any rule that targets the element directly beats it, even a plain type selector.
+
+      Gotcha: form controls (`button`, `input`, `select`, `textarea`) **don't inherit fonts** by default. Browsers give them their own small system font. Fix it once:
+
+      ```css
+      button, input, select, textarea {
+        font: inherit;
+      }
+      ```
+
+  - kind: explain
+    title: inherit, initial and unset
+    body: |
+      Three keywords work with **any** property:
+
+      | Keyword | Means |
+      |---|---|
+      | `inherit` | use the parent's value (even for a property that normally doesn't inherit) |
+      | `initial` | use the property's default from the CSS specification (for `color` that's black, for `display` it's `inline`!) |
+      | `unset` | inherit if the property normally inherits, otherwise `initial` |
+
+      `inherit` is the useful one day to day: `color: inherit` on links makes them match the surrounding text. `initial` surprises people: `display: initial` turns a `div` *inline*, because the spec default is inline, not "the browser's default for divs".
+
+  - kind: web
+    title: Let it flow down
+    body: |
+      Inkwell's fonts and colors are set element by element, and the buttons still use the system font.
+
+      1. Delete the separate `h1`, `p` and `li` rules, and set `font-family: Georgia, serif` and `color: #3b2f2f` **once**, on `body`.
+      2. Make the button inherit the font from its parent with `font: inherit`.
+      3. Make links in the footer use the surrounding text color with `color: inherit`.
+    html: |
+      <h1>Inkwell Books</h1>
+      <p>Second-hand books, carefully chosen.</p>
+      <ul><li>Poetry</li><li>Fiction</li></ul>
+      <button type="button">Browse the shelves</button>
+      <footer><p>Questions? <a href="contact.html">Contact us</a></p></footer>
+    css: |
+      h1 {
+        font-family: Georgia, serif;
+        color: #3b2f2f;
+      }
+
+      p {
+        font-family: Georgia, serif;
+        color: #3b2f2f;
+      }
+
+      li {
+        font-family: Georgia, serif;
+        color: #3b2f2f;
+      }
+    tests:
+      - "cssAll('h1, p, li, button', 'font-family')"
+      - "cssAll('h1, p, li', 'color')"
+      - "css('footer a', 'color')"
+      - "rule('body', 'font-family')"
+      - "selectors().filter((s) => ['h1', 'p', 'li'].includes(s)).length"
+    solution:
+      css: |
+        body {
+          font-family: Georgia, serif;
+          color: #3b2f2f;
+        }
+
+        button {
+          font: inherit;
+        }
+
+        footer a {
+          color: inherit;
+        }
+    hint: "One `body { … }` rule replaces the three rules. Then `button { font: inherit; }` and `footer a { color: inherit; }`."
+
+  - kind: explain
+    title: Debugging the cascade in DevTools
+    body: |
+      When a style "doesn't work", inspect the element:
+
+      - The **Styles** pane lists every rule that matches, **most specific first**. A declaration that lost is **crossed out**. Hover the crossed-out line and you can see which rule beat it.
+      - A declaration with a **yellow warning triangle** isn't valid: a typo or an impossible value.
+      - The **Computed** tab shows the final value of every property. Click the arrow beside one to see which rule it came from, or "inherited from body".
+
+      If your rule isn't in the list at all, the **selector doesn't match** the element: check spelling, the class in the HTML, and the combinator.
+
+  - kind: mac
+    title: Watch a rule lose
+    body: |
+      On your Live Server page (or any site):
+
+      1. Add `p { color: gray; }` and `.note { color: darkred; }` to your CSS, and a `<p class="note">` to the HTML.
+      2. Inspect the paragraph. In Styles, find `p { color: gray }` **crossed out** under `.note`.
+      3. Open the **Computed** tab, find `color`, and expand it to see which rule won.
+    commands: |
+      /* add to style.css */
+      p     { color: gray; }
+      .note { color: darkred; }
+
+  - kind: why
+    body: |
+      "My CSS doesn't work" almost always means "another rule is winning". Once you can read specificity and inheritance, and see the crossed-out lines in DevTools, those mysteries take seconds to solve instead of ending in `!important`.
+
+  - kind: recap
+    body: |
+      - The cascade: importance → **specificity** → **order** (later wins).
+      - Specificity = (ids, classes/attributes/pseudo-classes, types/pseudo-elements), compared left to right.
+      - Style with classes and short selectors; avoid ids and `!important` for styling.
+      - Text properties inherit; box properties don't. Form controls need `font: inherit`.
+      - `inherit`, `initial`, `unset`. DevTools: crossed out = lost; Computed = final value and its source.

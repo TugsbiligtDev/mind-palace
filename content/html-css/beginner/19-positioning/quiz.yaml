@@ -1,0 +1,43 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "A `position: absolute; top: 0; right: 0` button appears in the top-right of the whole page instead of its card. What's missing?"
+    options:
+      - "`position: relative` on the card"
+      - "`position: fixed` on the button"
+      - "A `z-index` on the button"
+      - "`display: block` on the card"
+    answer: 0
+    explanation: "Absolute boxes are placed against the nearest positioned ancestor. With none, they use the page."
+  - type: mcq
+    prompt: "Which position keeps a chat button in the bottom-right of the window, even while scrolling?"
+    options: ["`fixed`", "`sticky`", "`relative`", "`absolute`"]
+    answer: 0
+    explanation: "fixed is relative to the browser window, so it never scrolls away."
+  - type: mcq
+    prompt: "`position: sticky` on a header does nothing. What's the most likely cause?"
+    options:
+      - "No offset such as `top: 0` was set"
+      - "Sticky only works on images"
+      - "It needs `z-index: 9999`"
+      - "The header needs `display: inline`"
+    answer: 0
+    explanation: "Sticky needs to know where to stick. Without `top` (or another offset) it behaves like relative."
+  - type: mcq
+    prompt: "What happens to the space an element took up when you make it `position: absolute`?"
+    options:
+      - "It's gone: the following content moves up into it"
+      - "It stays as an empty gap"
+      - "It doubles"
+      - "The element is hidden"
+    answer: 0
+    explanation: "Absolute positioning removes the box from normal flow. Relative positioning is the one that leaves its space behind."
+  - type: mcq
+    prompt: "A dropdown has `z-index: 9999` but still appears under a card next to it. What could cause that?"
+    options:
+      - "One of the dropdown's ancestors creates a stacking context with a lower z-index"
+      - "z-index can't go above 1000"
+      - "The card is written earlier in the HTML"
+      - "The dropdown needs `display: none`"
+    answer: 0
+    explanation: "Inside a stacking context, children can't rise above things outside it, whatever their own z-index."

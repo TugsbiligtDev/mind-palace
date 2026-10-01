@@ -1,0 +1,4 @@
+title: Git & GitHub Basics
+module: 35
+summary: "Keep a history of your site with Git: what version control is, installing it, init, add, commit, status and log, a .gitignore, GitHub repositories, push and pull, and the habit of small commits with clear messages."
+minutes: 50

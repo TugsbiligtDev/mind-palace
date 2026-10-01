@@ -1,0 +1,30 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Once GitHub Pages is set up from your main branch, how do you update the live site?"
+    options: ["Commit and `git push`; it redeploys automatically", "Email the files to GitHub", "Delete and recreate the repository", "Upload each file in the browser"]
+    answer: 0
+    explanation: "Continuous deployment: every push to main republishes the site."
+  - type: mcq
+    prompt: "Images work locally but are missing on the live site. What's the most likely cause?"
+    options:
+      - "A capital-letter mismatch between the file name and the path in the HTML"
+      - "GitHub Pages doesn't support images"
+      - "The images are too big"
+      - "HTTPS blocks images"
+    answer: 0
+    explanation: "macOS ignores case in file names; web servers usually don't (Module 2)."
+  - type: mcq
+    prompt: "What connects a custom domain like inkwellbooks.com to your host?"
+    options: ["DNS records at the domain registrar", "A meta tag in the head", "A .gitignore entry", "The og:url tag"]
+    answer: 0
+    explanation: "DNS records (usually A and CNAME) point the domain at the host's servers."
+  - type: mcq
+    prompt: "Why check the live site on a real phone if device mode looks fine?"
+    options:
+      - "Real touch targets, keyboards, text-size settings and browser toolbars behave differently from the simulation"
+      - "Device mode is always wrong"
+      - "Phones use a different HTML"
+      - "It isn't necessary"
+    answer: 0
+    explanation: "Simulation is a good first pass, not proof."

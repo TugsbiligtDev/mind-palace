@@ -1,0 +1,4 @@
+title: Code Quality Tooling
+module: 37
+summary: "Let tools keep your code tidy: Prettier formats it, Stylelint catches CSS mistakes, a few VS Code extensions run them as you type, and consistent naming and file organisation keep a project readable."
+minutes: 40

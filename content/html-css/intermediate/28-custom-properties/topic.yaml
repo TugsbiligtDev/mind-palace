@@ -1,0 +1,4 @@
+title: Custom Properties (CSS Variables)
+module: 28
+summary: "Name your values once and reuse them: --name and var(), fallbacks, scope and inheritance, a design-token set for colors, spacing and type, theming components, and light and dark mode with prefers-color-scheme and light-dark()."
+minutes: 50

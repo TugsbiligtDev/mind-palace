@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Where should the `transition` property go so the effect plays both on hover and when the mouse leaves?"
+    options: ["On the normal state (e.g. `.button`)", "On `.button:hover` only", "On the body", "On both, with different durations"]
+    answer: 0
+    explanation: "On the normal state it applies in both directions. On :hover only, the change back is instant."
+  - type: mcq
+    prompt: "Which animation is cheapest for the browser?"
+    options: ["Moving a box with `translate`", "Moving a box with `left`", "Growing a box with `width`", "Changing `margin-top`"]
+    answer: 0
+    explanation: "translate (like transform and opacity) only needs compositing; the others re-run layout every frame."
+  - type: mcq
+    prompt: "What does `transition: all 2s` risk?"
+    options:
+      - "Animating properties you didn't intend, slowly, including expensive ones"
+      - "Nothing; it's best practice"
+      - "It disables hover"
+      - "It only works in Chrome"
+    answer: 0
+    explanation: "List the properties you mean, with a short duration."
+  - type: mcq
+    prompt: "A visitor has Reduce motion turned on. What should your CSS do?"
+    options:
+      - "Remove movement such as sliding, zooming and parallax, using `@media (prefers-reduced-motion: reduce)`"
+      - "Hide all images"
+      - "Nothing; it only affects the operating system"
+      - "Make animations faster"
+    answer: 0
+    explanation: "The media query exposes the setting so you can respect it."
+  - type: mcq
+    prompt: "Which pair does the same thing?"
+    options:
+      - "`transform: scale(1.1)` and `scale: 1.1`"
+      - "`transform: rotate(10deg)` and `rotate: 10px`"
+      - "`translate: 0 -4px` and `margin-top: -4px`"
+      - "`scale: 2` and `width: 200%`"
+    answer: 0
+    explanation: "The individual scale property matches transform: scale(). Margins and widths change layout; transforms don't."

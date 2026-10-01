@@ -1,0 +1,236 @@
+steps:
+  - kind: explain
+    title: Rules inside rules
+    body: |
+      A component's styles are often spread over several rules that all start the same way:
+
+      ```css
+      .card { padding: 1rem; }
+      .card h3 { margin: 0; }
+      .card p { color: #57534e; }
+      .card:hover { border-color: #7c2d12; }
+      ```
+
+      With **nesting** you write them inside the parent rule:
+
+      ```css
+      .card {
+        padding: 1rem;
+
+        h3 { margin: 0; }            /* = .card h3 */
+        p { color: #57534e; }        /* = .card p */
+
+        &:hover {                    /* = .card:hover */
+          border-color: #7c2d12;
+        }
+      }
+      ```
+
+      Everything about the card lives in one block. Nesting is native CSS, supported in every current browser; no tools needed.
+
+  - kind: explain
+    title: "The & symbol"
+    body: |
+      Inside a nested rule, `&` means **"the parent selector, right here"**.
+
+      | Nested | Means |
+      |---|---|
+      | `h3 { }` | `.card h3` (a descendant: a space is implied) |
+      | `& h3 { }` | `.card h3` (the same, written out) |
+      | `&:hover { }` | `.card:hover` (no space: the card itself, hovered) |
+      | `&.featured { }` | `.card.featured` (the card that also has this class) |
+      | `&::before { }` | `.card::before` |
+      | `.dark & { }` | `.dark .card` (the card inside something dark) |
+      | `& + & { }` | `.card + .card` |
+
+      The rule of thumb: when the nested selector is **attached** to the parent (a pseudo-class, a pseudo-element, another class), you need `&`. When it's a **descendant**, you can leave it out.
+
+  - kind: web
+    title: Nest the card
+    body: |
+      Rewrite the six flat `.book` rules as **one** nested `.book` rule. The page must look exactly the same, and there should be no separate rules starting with `.book` left over.
+    html: |
+      <article class="book">
+        <h3>Dune</h3>
+        <p>Frank Herbert</p>
+        <a href="dune.html">Details</a>
+      </article>
+      <article class="book featured">
+        <h3>Beloved</h3>
+        <p>Toni Morrison</p>
+        <a href="beloved.html">Details</a>
+      </article>
+    css: |
+      .book {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 2px solid #e7e5e4;
+      }
+
+      .book h3 {
+        margin: 0 0 0.25rem;
+      }
+
+      .book p {
+        color: #57534e;
+      }
+
+      .book a {
+        color: #7c2d12;
+      }
+
+      .book.featured {
+        border-color: #7c2d12;
+      }
+
+      .book::before {
+        content: "📖 ";
+      }
+    tests:
+      - "cssAll('.book', 'border-top-color')"
+      - "cssAll('.book h3', 'margin-bottom') + ' / ' + cssAll('.book p', 'color') + ' / ' + cssAll('.book a', 'color')"
+      - "cssAll('.book', 'content', '::before')"
+      - "selectors().filter((s) => s.startsWith('.book')).length"
+      - "selectors().some((s) => s.startsWith('&'))"
+    solution:
+      css: |
+        .book {
+          padding: 1rem;
+          margin-bottom: 1rem;
+          border: 2px solid #e7e5e4;
+
+          h3 {
+            margin: 0 0 0.25rem;
+          }
+
+          p {
+            color: #57534e;
+          }
+
+          a {
+            color: #7c2d12;
+          }
+
+          &.featured {
+            border-color: #7c2d12;
+          }
+
+          &::before {
+            content: "📖 ";
+          }
+        }
+    hint: "Descendants (`h3`, `p`, `a`) can go inside as they are. The class and the pseudo-element are attached to the book itself, so they need `&`: `&.featured`, `&::before`."
+    reject:
+      - css: |
+          .book {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 2px solid #e7e5e4;
+
+            h3 {
+              margin: 0 0 0.25rem;
+            }
+
+            p {
+              color: #57534e;
+            }
+
+            a {
+              color: #7c2d12;
+            }
+
+            .featured {
+              border-color: #7c2d12;
+            }
+
+            ::before {
+              content: "📖 ";
+            }
+          }
+
+  - kind: explain
+    title: Nesting media queries
+    body: |
+      Media queries (and other `@` rules) can nest too, keeping a component's responsive changes next to its normal styles:
+
+      ```css
+      .books {
+        display: grid;
+        grid-template-columns: 1fr;
+
+        @media (width >= 700px) {
+          grid-template-columns: repeat(3, 1fr);   /* applies to .books */
+        }
+      }
+      ```
+
+      Inside the nested `@media`, the declarations apply to the parent selector. No need to repeat `.books`.
+
+  - kind: web
+    title: Nest the breakpoint
+    body: |
+      Move the media query **inside** the `.shelf` rule, so all of the shelf's layout lives in one block. Behaviour must stay the same: one column on phones, three from `700px`.
+    html: |
+      <div class="shelf">
+        <div>Fiction</div><div>Poetry</div><div>History</div>
+      </div>
+    css: |
+      .shelf {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      @media (width >= 700px) {
+        .shelf {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+    widths: [375, 900]
+    tests:
+      - "css('.shelf', 'grid-template-columns').split(' ').length"
+      - "/\\.shelf\\s*\\{[^}]*@media/.test($('style[data-file]').textContent)"
+    solution:
+      css: |
+        .shelf {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1rem;
+
+          @media (width >= 700px) {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+    hint: "Put `@media (width >= 700px) { grid-template-columns: repeat(3, 1fr); }` inside the `.shelf { … }` block, and delete the old query."
+
+  - kind: explain
+    title: Keep it shallow
+    body: |
+      Nesting makes it tempting to mirror the whole HTML tree:
+
+      ```css
+      .page { main { .content { article { .card { h3 { … } } } } } }   /* ✗ */
+      ```
+
+      That produces long, highly specific selectors (`.page main .content article .card h3`), which are hard to override and break when the HTML changes. Guidelines:
+
+      - Nest **one or two levels**, mostly for states (`&:hover`), variants (`&.featured`), pseudo-elements and media queries.
+      - If you're nesting deeper, the inner thing probably deserves its **own class** and its own rule.
+      - Nested selectors still count specificity as if written out in full.
+
+  - kind: info
+    title: "Nesting and Sass"
+    body: |
+      For about fifteen years, the main reason teams used **Sass** (a language that compiles to CSS) was nesting, plus variables. Native CSS now has both: nesting and custom properties, and custom properties are *more* powerful because they change live in the browser. Many new projects use plain CSS with no Sass at all. You'll still meet Sass in existing codebases (Module 50 shows how to recognise it).
+
+  - kind: why
+    body: |
+      Nesting keeps everything about a component in one place: its parts, its states and its responsive changes. Used shallowly, it makes stylesheets shorter and easier to scan, with no build step.
+
+  - kind: recap
+    body: |
+      - Rules can live inside rules; descendants can be written plainly (`h3 { }`).
+      - `&` = the parent selector: `&:hover`, `&.variant`, `&::before`, `.theme &`.
+      - `@media` nests inside a rule and applies to it.
+      - Keep nesting to one or two levels; deeper usually means a new class.
+      - Native nesting + custom properties cover most of what Sass was used for.

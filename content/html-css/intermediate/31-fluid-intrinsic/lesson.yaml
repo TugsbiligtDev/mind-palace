@@ -1,0 +1,224 @@
+steps:
+  - kind: explain
+    title: min(), max() and clamp()
+    body: |
+      Three functions pick a size for you, recalculated as the screen changes:
+
+      - `min(a, b)` uses the **smaller** value. `width: min(100%, 700px)` = full width on small screens, 700px at most.
+      - `max(a, b)` uses the **larger** value. `padding: max(1rem, 3vw)` = at least 1rem.
+      - `clamp(MIN, PREFERRED, MAX)` uses the preferred value but **never below MIN or above MAX**.
+
+      ```css
+      h1 {
+        font-size: clamp(2rem, 1rem + 4vw, 4rem);
+      }
+      ```
+
+      The heading grows smoothly with the screen width (`1rem + 4vw`), but stays between 2rem and 4rem. Mixing a `rem` part with the `vw` part keeps it responsive to the reader's font-size setting too. This is **fluid typography**: no breakpoints, no jumps.
+
+  - kind: web
+    title: A fluid heading and container
+    body: |
+      1. Make the `h1` font size `clamp(2rem, 1rem + 4vw, 4rem)`.
+      2. Make `.wrap`'s width `min(100% - 2rem, 60ch)` and centre it with `margin-inline: auto`. (Inside `min()`, `clamp()` and `max()` you can do maths without writing `calc()`.)
+      3. Give `.wrap` a `padding-block` of `clamp(1rem, 5vw, 3rem)`: fluid space above and below.
+
+      The checker measures at three widths.
+    html: |
+      <div class="wrap">
+        <h1>Poetry night</h1>
+        <p>Thursday at 7pm, upstairs. Bring a poem, or just listen. Tea and biscuits provided.</p>
+      </div>
+    css: |
+      body {
+        margin: 0;
+        font-family: Georgia, serif;
+        background: #f5f0e8;
+      }
+
+      .wrap {
+        background: white;
+      }
+
+      h1 {
+        line-height: 1.1;
+        margin: 0;
+      }
+    widths: [360, 800, 1400]
+    tests:
+      - "css('h1', 'font-size')"
+      - "box('.wrap').width + ' at x=' + box('.wrap').x"
+      - "css('.wrap', 'padding-top') + ' / ' + css('.wrap', 'padding-bottom')"
+    solution:
+      css: |
+        body {
+          margin: 0;
+          font-family: Georgia, serif;
+          background: #f5f0e8;
+        }
+
+        .wrap {
+          width: min(100% - 2rem, 60ch);
+          margin-inline: auto;
+          padding-block: clamp(1rem, 5vw, 3rem);
+          background: white;
+        }
+
+        h1 {
+          font-size: clamp(2rem, 1rem + 4vw, 4rem);
+          line-height: 1.1;
+          margin: 0;
+        }
+    hint: "Copy the three values exactly: `font-size: clamp(2rem, 1rem + 4vw, 4rem);`, `width: min(100% - 2rem, 60ch);` and `padding-block: clamp(1rem, 5vw, 3rem);`."
+
+  - kind: explain
+    title: aspect-ratio and object-fit
+    body: |
+      `aspect-ratio` gives a box a **shape** that holds at any width:
+
+      ```css
+      .video  { aspect-ratio: 16 / 9; width: 100%; }
+      .avatar { aspect-ratio: 1; width: 64px; }       /* a square */
+      ```
+
+      When an image is forced into a shape that doesn't match the photo, it gets squashed. `object-fit` decides how the picture fills its box, like `background-size`:
+
+      | Value | Effect |
+      |---|---|
+      | `fill` | the default: stretch to fit (squashed!) |
+      | `cover` | fill the box, cropping the overflow |
+      | `contain` | show the whole picture, leaving empty bands |
+
+      `object-position` chooses which part stays visible when cropping: `object-position: top` keeps the top of a portrait.
+
+  - kind: web
+    title: Uniform covers
+    body: |
+      The thumbnails on Inkwell's "recently viewed" strip are different shapes and look messy.
+
+      1. Make every `.thumb img` fill its column (`width: 100%`), with an `aspect-ratio` of `1` (square).
+      2. Make the pictures crop instead of squashing: `object-fit: cover`.
+      3. Keep the **top** of each cover visible with `object-position: top`.
+    html: |
+      <div class="thumbs">
+        <div class="thumb"><img src="images/cover-dune.svg" alt="Dune" width="300" height="450"></div>
+        <div class="thumb"><img src="images/shop.jpg" alt="The shop" width="800" height="500"></div>
+        <div class="thumb"><img src="images/cover-beloved.svg" alt="Beloved" width="300" height="450"></div>
+      </div>
+    css: |
+      .thumbs {
+        display: grid;
+        grid-template-columns: repeat(3, 120px);
+        gap: 0.5rem;
+      }
+
+      .thumb img {
+        display: block;
+        height: auto;
+      }
+    tests:
+      - "$$('.thumb img').map((i) => Math.round(i.getBoundingClientRect().width) + 'x' + Math.round(i.getBoundingClientRect().height))"
+      - "cssAll('.thumb img', 'object-fit')"
+      - "cssAll('.thumb img', 'object-position')"
+    solution:
+      css: |
+        .thumbs {
+          display: grid;
+          grid-template-columns: repeat(3, 120px);
+          gap: 0.5rem;
+        }
+
+        .thumb img {
+          display: block;
+          width: 100%;
+          height: auto;
+          aspect-ratio: 1;
+          object-fit: cover;
+          object-position: top;
+        }
+    hint: "Add `width: 100%; aspect-ratio: 1; object-fit: cover; object-position: top;` to `.thumb img`."
+
+  - kind: explain
+    title: Intrinsic sizes
+    body: |
+      Three keywords size a box **by its content**:
+
+      - `min-content`: as narrow as possible, wrapping at every chance. (The longest word sets the width.)
+      - `max-content`: as wide as the content wants, never wrapping.
+      - `fit-content`: like `max-content`, but never wider than the space available. Perfect for a box that should hug its text without overflowing.
+
+      ```css
+      .tag     { width: fit-content; }          /* a block that hugs its text */
+      .sidebar { grid-template-columns: max-content 1fr; }  /* a column as wide as its labels */
+      ```
+
+      `width: fit-content` with `margin-inline: auto` centres a block that's only as wide as its content.
+
+  - kind: explain
+    title: Logical properties
+    body: |
+      `left`, `right`, `top` and `bottom` assume text runs left to right. In Arabic or Hebrew it runs right to left, and in some Japanese layouts top to bottom. **Logical properties** describe directions relative to the text instead:
+
+      | Physical | Logical |
+      |---|---|
+      | `margin-left` + `margin-right` | `margin-inline` (along a line of text) |
+      | `padding-top` + `padding-bottom` | `padding-block` (the direction lines stack) |
+      | `margin-left` | `margin-inline-start` |
+      | `width` / `height` | `inline-size` / `block-size` |
+      | `top/right/bottom/left: 0` | `inset: 0` |
+
+      Even for English-only sites they're handy shorthands: `margin-inline: auto` centres; `padding-block: 1rem` sets top and bottom in one go. Many teams now write logical properties by default.
+
+  - kind: web
+    title: Hug and centre
+    body: |
+      1. Make the `.badge` only as wide as its text (`width: fit-content`) and centre it with `margin-inline: auto`.
+      2. Give `.notice` `padding-block: 1rem` and `padding-inline: 1.5rem` (use the logical properties).
+    html: |
+      <p class="badge">Staff pick</p>
+      <p class="notice">Closed Monday 14th for stocktaking.</p>
+    css: |
+      .badge {
+        background: #7c2d12;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+      }
+
+      .notice {
+        background: #fef3c7;
+      }
+    tests:
+      - "box('.badge').width < 200 && Math.abs(edges('.badge', 'body').left - edges('.badge', 'body').right) <= 1"
+      - "declared('.badge', 'width')"
+      - "css('.notice', 'padding')"
+      - "[declared('.notice', 'padding-block'), declared('.notice', 'padding-inline')]"
+    solution:
+      css: |
+        .badge {
+          width: fit-content;
+          margin-inline: auto;
+          background: #7c2d12;
+          color: white;
+          padding: 0.25rem 0.75rem;
+          border-radius: 999px;
+        }
+
+        .notice {
+          padding-block: 1rem;
+          padding-inline: 1.5rem;
+          background: #fef3c7;
+        }
+    hint: "`.badge { width: fit-content; margin-inline: auto; }` and `.notice { padding-block: 1rem; padding-inline: 1.5rem; }`."
+
+  - kind: why
+    body: |
+      Breakpoints make layouts jump; fluid sizes make them glide. With clamp(), min() and intrinsic sizes, many components need no media queries at all, images keep tidy shapes, and logical properties make your CSS ready for any language.
+
+  - kind: recap
+    body: |
+      - `min()`, `max()`, `clamp(min, preferred, max)`; maths allowed inside without `calc()`.
+      - Fluid type: `font-size: clamp(2rem, 1rem + 4vw, 4rem)`; fluid space the same way.
+      - `aspect-ratio: 16 / 9`; `object-fit: cover | contain`; `object-position`.
+      - `min-content`, `max-content`, `fit-content` size boxes by their content.
+      - Logical properties: `margin-inline`, `padding-block`, `inline-size`, `inset`.

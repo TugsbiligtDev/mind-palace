@@ -1,0 +1,43 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What's the minimum contrast ratio for normal-size body text under WCAG AA?
+    options: ["4.5 : 1", "3 : 1", "7 : 1", "2 : 1"]
+    answer: 0
+    explanation: "4.5:1 for normal text; large text and UI parts need 3:1; 7:1 is the stricter AAA level."
+  - type: mcq
+    prompt: "A developer writes `<div class=\"btn\" onclick=\"buy()\">Buy</div>`. What's the main accessibility problem?"
+    options:
+      - "Keyboard users can't Tab to it or press it with Enter, and screen readers don't announce it as a button"
+      - "Divs can't have click handlers"
+      - "It needs an aria-label"
+      - "Nothing, if it looks like a button"
+    answer: 0
+    explanation: "A real `<button>` is focusable, keyboard-operable and announced correctly for free."
+  - type: mcq
+    prompt: "Which is the \"first rule of ARIA\"?"
+    options:
+      - "Don't use ARIA if a native HTML element or attribute does the job"
+      - "Add role to every element"
+      - "Always use aria-label instead of visible text"
+      - "ARIA must be added with JavaScript"
+    answer: 0
+    explanation: "Native elements come with behaviour and semantics built in. ARIA only changes what's announced."
+  - type: mcq
+    prompt: "How should text that's only for screen readers be hidden?"
+    options:
+      - "With a visually-hidden class (tiny, clipped, absolutely positioned)"
+      - "With `display: none`"
+      - "With `visibility: hidden`"
+      - "With white text on a white background"
+    answer: 0
+    explanation: "display: none and visibility: hidden remove it from screen readers too."
+  - type: mcq
+    prompt: "A form marks required fields only by making their labels red. Why is that a problem?"
+    options:
+      - "Color alone carries the meaning, so colour-blind and screen reader users miss it"
+      - "Red is not allowed in forms"
+      - "Labels can't be colored"
+      - "It isn't a problem"
+    answer: 0
+    explanation: "Add text (\"required\") or a symbol explained in the form, plus the `required` attribute."

@@ -1,0 +1,43 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "In `srcset=\"a.jpg 400w, b.jpg 800w\"`, what does `800w` mean?"
+    options:
+      - "b.jpg is 800 pixels wide"
+      - "Show b.jpg on screens wider than 800px"
+      - "b.jpg weighs 800 KB"
+      - "Show b.jpg at 800% zoom"
+    answer: 0
+    explanation: "w descriptors state each file's real width. The browser combines them with sizes and the screen density to choose."
+  - type: mcq
+    prompt: "What does the `sizes` attribute describe?"
+    options:
+      - "How wide the image will be displayed, in different conditions"
+      - "The file sizes of each image"
+      - "The image's natural height"
+      - "Which formats the browser supports"
+    answer: 0
+    explanation: "The browser needs the display width before the CSS loads, so sizes tells it."
+  - type: mcq
+    prompt: "Which image should NOT get `loading=\"lazy\"`?"
+    options:
+      - "The large hero image at the top of the page"
+      - "Book covers far down a long list"
+      - "Images in the footer"
+      - "Photos in an article's last section"
+    answer: 0
+    explanation: "Lazy-loading the first thing people see delays it. The hero should get fetchpriority=\"high\" instead."
+  - type: mcq
+    prompt: "In a `<picture>`, which element is required, and why?"
+    options:
+      - "The `<img>`: it's what displays, carries the alt text and is the fallback"
+      - "At least two `<source>` elements"
+      - "A `<figcaption>`"
+      - "Nothing; picture can be empty"
+    answer: 0
+    explanation: "Sources only choose a file for the img to show."
+  - type: mcq
+    prompt: "Sources in a `<picture>` are listed as WebP first, then AVIF. Chrome supports both. Which is shown?"
+    options: ["WebP, because it comes first", "AVIF, because it's smaller", "The JPEG fallback", "Both, side by side"]
+    answer: 0
+    explanation: "The browser takes the first source it can use, so put the best format first."

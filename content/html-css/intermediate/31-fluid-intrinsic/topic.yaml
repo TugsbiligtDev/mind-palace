@@ -1,0 +1,4 @@
+title: Fluid & Intrinsic Sizing
+module: 31
+summary: "Sizes that adapt smoothly instead of jumping at breakpoints: clamp(), min() and max(); fluid typography and spacing; aspect-ratio; object-fit and object-position; fit-content, min-content and max-content; and logical properties like margin-inline and padding-block."
+minutes: 45

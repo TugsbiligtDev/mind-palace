@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "MDN marks a feature \"Baseline Newly available\". What's the sensible approach?"
+    options:
+      - "Use it with a fallback, since some visitors on older devices won't have it yet"
+      - "Never use it"
+      - "Use it with no fallback; it works everywhere"
+      - "Use it only in Firefox"
+    answer: 0
+    explanation: "Newly available means it just landed in all current browsers; older ones are still around."
+  - type: mcq
+    prompt: "What does this do?"
+    code: |
+      @supports (display: grid) {
+        .gallery { display: grid; }
+      }
+    options:
+      - "Applies the rule only in browsers that understand `display: grid`"
+      - "Adds grid support to old browsers"
+      - "Applies the rule only in browsers without grid"
+      - "Nothing; @supports is for JavaScript"
+    answer: 0
+    explanation: "Feature queries apply their rules only where the condition is supported."
+  - type: mcq
+    prompt: "Which engine does every browser on an iPhone use today?"
+    options: ["WebKit", "Blink", "Gecko", "Each browser its own"]
+    answer: 0
+    explanation: "iOS browsers have been required to use WebKit, so test in Safari to see what iPhone users get."
+  - type: mcq
+    prompt: "What is progressive enhancement?"
+    options:
+      - "Building a version that works everywhere, then adding improvements where supported"
+      - "Showing a warning in old browsers"
+      - "Adding vendor prefixes to everything"
+      - "Updating the site every week"
+    answer: 0
+    explanation: "Nobody gets a broken page; capable browsers get extras."

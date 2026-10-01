@@ -1,0 +1,4 @@
+title: Native CSS Nesting
+module: 30
+summary: "Write rules inside rules: the nesting syntax and the & symbol, nesting states, pseudo-elements and media queries, why to keep nesting shallow, and how native nesting now covers most of what people used Sass for."
+minutes: 35

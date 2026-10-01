@@ -1,0 +1,250 @@
+steps:
+  - kind: explain
+    title: ":has(), the parent selector"
+    body: |
+      For twenty years CSS could only look **down** the tree: style a child based on its parent. `:has()` finally looks the other way. It matches an element **if something inside it (or after it) matches**:
+
+      ```css
+      .card:has(img)            { display: grid; grid-template-columns: 100px 1fr; }  /* cards with a picture */
+      .field:has(input:user-invalid) label { color: #b91c1c; }                      /* the label of a bad field */
+      li:has(> .sold-out)       { opacity: 0.5; }                                      /* a direct child, with > */
+      h2:has(+ p)               { margin-bottom: 0.25rem; }                            /* an h2 followed by a p */
+      body:has(dialog[open])    { overflow: hidden; }                                  /* stop scrolling behind a dialog */
+      ```
+
+      Things that used to need JavaScript (add a class to the parent when…) are now one selector. Its specificity is that of its most specific argument.
+
+  - kind: web
+    title: Cards that know what they contain
+    body: |
+      Some book cards have a cover image and some don't. Using `:has()`:
+
+      1. Cards **that contain an image** become a grid: `display: grid`, `grid-template-columns: 80px 1fr` and `gap: 1rem`.
+      2. Cards **that contain an element with the class `sold-out`** get `opacity: 0.6`.
+      3. In the form, the label inside a `.field` **whose input is checked** turns `font-weight: bold`.
+
+      Don't add any classes to the HTML.
+    html: |
+      <article class="card">
+        <img src="images/cover-dune.svg" alt="" width="80" height="120">
+        <div><h3>Dune</h3><p>£8.99</p></div>
+      </article>
+      <article class="card">
+        <div><h3>Middlemarch</h3><p>£6.50</p></div>
+      </article>
+      <article class="card">
+        <img src="images/cover-emma.svg" alt="" width="80" height="120">
+        <div><h3>Emma</h3><p class="sold-out">Sold out</p></div>
+      </article>
+      <form>
+        <div class="field"><input type="checkbox" id="gift" checked> <label for="gift">Gift wrap</label></div>
+        <div class="field"><input type="checkbox" id="card"> <label for="card">Add a card</label></div>
+      </form>
+    css: |
+      .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+    tests:
+      - "cssAll('.card', 'display')"
+      - "cssAll('.card', 'grid-template-columns')"
+      - "cssAll('.card', 'opacity')"
+      - "cssAll('.field label', 'font-weight')"
+      - "count('[class]')"
+    solution:
+      css: |
+        .card {
+          padding: 1rem;
+          margin-bottom: 1rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        .card:has(img) {
+          display: grid;
+          grid-template-columns: 80px 1fr;
+          gap: 1rem;
+        }
+
+        .card:has(.sold-out) {
+          opacity: 0.6;
+        }
+
+        .field:has(input:checked) label {
+          font-weight: bold;
+        }
+    hint: "`.card:has(img) { … }`, `.card:has(.sold-out) { … }` and `.field:has(input:checked) label { … }`."
+
+  - kind: explain
+    title: ":is() and :where()"
+    body: |
+      Both take a **list of selectors** and match any of them, which shortens long, repetitive selectors:
+
+      ```css
+      /* before */
+      header a:hover, nav a:hover, footer a:hover { color: darkred; }
+      /* after */
+      :is(header, nav, footer) a:hover { color: darkred; }
+      ```
+
+      The difference is **specificity**:
+
+      - `:is()` takes the specificity of its **most specific** argument. `:is(#main, p)` counts as an id!
+      - `:where()` always has **zero** specificity, whatever is inside.
+
+      That makes `:where()` perfect for **base styles you want to be easy to override**, such as a reset or a library's defaults:
+
+      ```css
+      :where(ul, ol)[role="list"] { list-style: none; padding: 0; }   /* (0,0,0): any class beats it */
+      ```
+
+  - kind: web
+    title: Easy-to-override defaults
+    body: |
+      Inkwell's base link style (`article a`, specificity 0,0,2) keeps beating the `.button` class (0,1,0), so the button text stays brown instead of white.
+
+      1. Rewrite the base rule with `:where()` so it has **zero** specificity: wrap the whole selector, `:where(article a)`. Now any class beats it.
+      2. Shorten the three heading rules into **one** rule using `:is(h1, h2, h3)`.
+    html: |
+      <article>
+        <h1>Events</h1>
+        <h2>Poetry night</h2>
+        <h3>Thursday</h3>
+        <p>Read more on <a href="poetry.html">the poetry page</a>.</p>
+        <a class="button" href="book.html">Book a seat</a>
+      </article>
+    css: |
+      article a {
+        color: #7c2d12;
+        text-decoration: underline;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #7c2d12;
+        color: white;
+        text-decoration: none;
+      }
+
+      h1 {
+        font-family: Georgia, serif;
+      }
+
+      h2 {
+        font-family: Georgia, serif;
+      }
+
+      h3 {
+        font-family: Georgia, serif;
+      }
+    tests:
+      - "css('.button', 'color') + ' / ' + css('.button', 'text-decoration-line')"
+      - "css('p a', 'color') + ' / ' + css('p a', 'text-decoration-line')"
+      - "cssAll('h1, h2, h3', 'font-family')"
+      - "selectors().filter((s) => ['h1', 'h2', 'h3'].includes(s)).length + ' separate heading rules'"
+      - "selectors().some((s) => s.startsWith(':is(') || s.startsWith(':where('))"
+    solution:
+      css: |
+        :where(article a) {
+          color: #7c2d12;
+          text-decoration: underline;
+        }
+
+        .button {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          background: #7c2d12;
+          color: white;
+          text-decoration: none;
+        }
+
+        :is(h1, h2, h3) {
+          font-family: Georgia, serif;
+        }
+    hint: "Replace `article a` with `:where(article a)`, and the three heading rules with one `:is(h1, h2, h3) { … }`."
+
+  - kind: explain
+    title: ":focus-within"
+    body: |
+      `:focus-within` matches an element when **it or anything inside it** has focus. It lets a whole group react while someone is using it:
+
+      ```css
+      .search:focus-within {
+        outline: 3px solid #1d4ed8;          /* highlight the whole search bar */
+      }
+      .menu:focus-within .submenu {
+        display: block;                      /* keep a dropdown open while tabbing through it */
+      }
+      ```
+
+      It's the keyboard-friendly partner of `:hover` for groups.
+
+  - kind: explain
+    title: ":nth-child(… of S)"
+    body: |
+      Plain `:nth-child(odd)` counts **every** sibling. Hide some table rows with a filter and the zebra stripes go wrong, because hidden rows are still counted.
+
+      The `of S` form counts **only siblings matching S**:
+
+      ```css
+      tr:nth-child(odd of :not([hidden])) { background: #f5f0e8; }
+      li:nth-child(1 of .featured)        { border: 2px solid gold; }  /* the first featured item */
+      ```
+
+      Compare `:nth-of-type()`, which counts only by element type (all `li`s), not by class or state.
+
+  - kind: web
+    title: Focus groups and filtered stripes
+    body: |
+      1. When anything inside `.search` has focus, give `.search` an `outline: 3px solid #1d4ed8`.
+      2. Stripe the **visible** rows of the stock table: odd rows among those that are **not** `[hidden]` get `background: #f5f0e8`. (Two rows are hidden by a filter.)
+    html: |
+      <form class="search">
+        <label for="q">Search</label>
+        <input id="q" type="search">
+        <button type="submit">Go</button>
+      </form>
+      <table>
+        <tbody>
+          <tr><td>Dune</td></tr>
+          <tr hidden><td>Emma</td></tr>
+          <tr><td>Beloved</td></tr>
+          <tr hidden><td>Middlemarch</td></tr>
+          <tr><td>The Odyssey</td></tr>
+          <tr><td>Persuasion</td></tr>
+        </tbody>
+      </table>
+    tests:
+      - "rule(['.search:focus-within', 'form.search:focus-within'], 'outline')"
+      - "cssAll('tbody tr:not([hidden])', 'background-color')"
+    solution:
+      css: |
+        .search:focus-within {
+          outline: 3px solid #1d4ed8;
+        }
+
+        tbody tr:nth-child(odd of :not([hidden])) {
+          background: #f5f0e8;
+        }
+    hint: "`.search:focus-within { outline: … }` and `tbody tr:nth-child(odd of :not([hidden])) { background: #f5f0e8; }`."
+    reject:
+      - css: |
+          .search:focus-within {
+            outline: 3px solid #1d4ed8;
+          }
+
+          tbody tr:nth-child(odd) {
+            background: #f5f0e8;
+          }
+
+  - kind: why
+    body: |
+      These selectors replace a lot of JavaScript and a lot of extra classes. `:has()` lets components adapt to their content, `:where()` ends specificity fights in base styles, and `:focus-within` makes groups keyboard-aware. They're all supported in every current browser.
+
+  - kind: recap
+    body: |
+      - `A:has(B)`: style A when it contains (or is followed by) B. The parent selector.
+      - `:is(a, b)`: shorthand list, specificity of its strongest part. `:where(a, b)`: same, but **zero** specificity.
+      - `:focus-within`: the element or anything inside it has focus.
+      - `:nth-child(odd of S)`: count only siblings that match S.

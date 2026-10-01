@@ -1,0 +1,237 @@
+steps:
+  - kind: explain
+    title: The head is for machines
+    body: |
+      Everything in `<head>` is invisible on the page, but other programs read it closely:
+
+      - **Search engines** use the title and description for the result snippet.
+      - **Social apps and messengers** (WhatsApp, Slack, iMessage, LinkedIn) build a link preview card from it.
+      - **Browsers and phones** take icons from it for tabs, bookmarks and the home screen.
+
+      **SEO** (search engine optimisation) is making pages easy for search engines to understand and show. Most of it is honest basics, not tricks.
+
+  - kind: explain
+    title: Title and meta description
+    body: |
+      ```html
+      <title>Dune by Frank Herbert · Inkwell Books</title>
+      <meta name="description" content="A second-hand paperback of Dune in very good condition. £8.99, posted within two days from Bristol.">
+      ```
+
+      - **Title**: unique per page, the specific thing first and the site name last, roughly 50–60 characters before search results cut it off.
+      - **Description**: one or two sentences, about 150–160 characters, written for **people** deciding whether to click. Search engines may rewrite it, but a good one is often used as-is.
+
+      Don't stuff keywords ("books cheap books buy books Bristol books"). Search engines ignore it at best, penalise it at worst.
+
+  - kind: explain
+    title: Open Graph, for link previews
+    body: |
+      Paste a link into a messenger and it shows a card with a picture, title and description. Those come from **Open Graph** tags (a standard Facebook created that everyone now uses):
+
+      ```html
+      <meta property="og:title" content="Dune by Frank Herbert">
+      <meta property="og:description" content="A second-hand paperback in very good condition.">
+      <meta property="og:image" content="https://inkwellbooks.com/images/og-dune.jpg">
+      <meta property="og:url" content="https://inkwellbooks.com/books/dune.html">
+      <meta property="og:type" content="website">
+      <meta name="twitter:card" content="summary_large_image">
+      ```
+
+      - Note `property=` (not `name=`) for `og:` tags.
+      - `og:image` must be a **full URL**. 1200 × 630 pixels is the common size.
+      - `twitter:card` with `summary_large_image` asks X/Twitter (and some others) for a big image card; they fall back to the `og:` tags for the rest.
+
+  - kind: web
+    title: Make the page shareable
+    body: |
+      Complete the `<head>` of Inkwell's Dune page:
+
+      1. A meta description: `A second-hand paperback of Dune in very good condition. £8.99, posted within two days.`
+      2. Open Graph tags: `og:title` = `Dune by Frank Herbert`, `og:image` = `https://inkwellbooks.com/images/og-dune.jpg`, `og:url` = `https://inkwellbooks.com/books/dune.html`, `og:type` = `website`.
+      3. `twitter:card` = `summary_large_image`.
+    html: |
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Dune by Frank Herbert · Inkwell Books</title>
+        </head>
+        <body>
+          <h1>Dune</h1>
+          <p>Frank Herbert · paperback · £8.99</p>
+        </body>
+      </html>
+    tests:
+      - "attr('meta[name=description]', 'content')"
+      - "['og:title', 'og:image', 'og:url', 'og:type'].map((p) => p + '=' + ($(`meta[property='${p}']`) ? $(`meta[property='${p}']`).content : 'missing'))"
+      - "$('meta[name=\"twitter:card\"]') ? $('meta[name=\"twitter:card\"]').content : 'missing'"
+      - "count('head meta[property^=\"og:\"]') + ' in head, ' + count('body meta') + ' in body'"
+    solution:
+      html: |
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Dune by Frank Herbert · Inkwell Books</title>
+            <meta name="description" content="A second-hand paperback of Dune in very good condition. £8.99, posted within two days.">
+            <meta property="og:title" content="Dune by Frank Herbert">
+            <meta property="og:image" content="https://inkwellbooks.com/images/og-dune.jpg">
+            <meta property="og:url" content="https://inkwellbooks.com/books/dune.html">
+            <meta property="og:type" content="website">
+            <meta name="twitter:card" content="summary_large_image">
+          </head>
+          <body>
+            <h1>Dune</h1>
+            <p>Frank Herbert · paperback · £8.99</p>
+          </body>
+        </html>
+    hint: "The description uses `name=\"description\"`; the og tags use `property=\"og:…\"`; the Twitter tag uses `name=\"twitter:card\"`. All go in the head."
+    reject:
+      - html: |
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>Dune by Frank Herbert · Inkwell Books</title>
+              <meta name="description" content="A second-hand paperback of Dune in very good condition. £8.99, posted within two days.">
+              <meta property="og:title" content="Dune by Frank Herbert">
+              <meta property="og:image" content="/images/og-dune.jpg">
+              <meta property="og:url" content="https://inkwellbooks.com/books/dune.html">
+              <meta property="og:type" content="website">
+              <meta name="twitter:card" content="summary_large_image">
+            </head>
+            <body>
+              <h1>Dune</h1>
+              <p>Frank Herbert · paperback · £8.99</p>
+            </body>
+          </html>
+
+  - kind: explain
+    title: Favicons and app icons
+    body: |
+      The **favicon** is the little icon in the browser tab. A modern, minimal set is three lines:
+
+      ```html
+      <link rel="icon" href="/favicon.ico" sizes="32x32">
+      <link rel="icon" href="/icon.svg" type="image/svg+xml">
+      <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+      ```
+
+      - `favicon.ico` for old browsers and tools that look for it automatically.
+      - An **SVG** icon stays sharp at every size; browsers that support it prefer it.
+      - `apple-touch-icon` (180 × 180 PNG) is used when someone adds your site to their iPhone home screen.
+
+      Bigger app-style setups add a `manifest.webmanifest` file with more icon sizes, for installable web apps.
+
+  - kind: explain
+    title: Canonical URLs
+    body: |
+      The same page is often reachable at several addresses: with and without `www`, with tracking codes (`?utm_source=newsletter`), or listed under two categories. Search engines might treat these as duplicate pages and split their ranking between them.
+
+      A **canonical** link names the one official address:
+
+      ```html
+      <link rel="canonical" href="https://inkwellbooks.com/books/dune.html">
+      ```
+
+      Put it on every page, pointing at itself (its clean, preferred URL). Use a full URL.
+
+  - kind: web
+    title: Icons and the canonical address
+    body: |
+      Add to the head:
+
+      1. An SVG favicon: `rel="icon"`, `href="/icon.svg"`, `type="image/svg+xml"`.
+      2. An Apple touch icon: `href="/apple-touch-icon.png"`.
+      3. A canonical link to `https://inkwellbooks.com/books/dune.html`.
+    html: |
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Dune by Frank Herbert · Inkwell Books</title>
+        </head>
+        <body>
+          <h1>Dune</h1>
+        </body>
+      </html>
+    tests:
+      - "$('link[rel=icon][type=\"image/svg+xml\"]') ? $('link[rel=icon][type=\"image/svg+xml\"]').getAttribute('href') : 'missing'"
+      - "$('link[rel=apple-touch-icon]') ? attr('link[rel=apple-touch-icon]', 'href') : 'missing'"
+      - "$('link[rel=canonical]') ? $('link[rel=canonical]').getAttribute('href') : 'missing'"
+    solution:
+      html: |
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Dune by Frank Herbert · Inkwell Books</title>
+            <link rel="icon" href="/icon.svg" type="image/svg+xml">
+            <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+            <link rel="canonical" href="https://inkwellbooks.com/books/dune.html">
+          </head>
+          <body>
+            <h1>Dune</h1>
+          </body>
+        </html>
+    hint: "Three `<link>` elements in the head, with `rel=\"icon\"`, `rel=\"apple-touch-icon\"` and `rel=\"canonical\"`."
+
+  - kind: explain
+    title: Semantic HTML is the foundation
+    body: |
+      Search engines read pages a bit like screen readers do. Everything from Part 2 helps both:
+
+      - **One clear `<h1>`** and a logical heading outline tell them what the page and its sections are about.
+      - **`<main>`, `<article>`, `<nav>`** separate the real content from the menu and footer.
+      - **Descriptive link text** describes the page it links to.
+      - **Alt text** is how images get understood (and found in image search).
+      - **Fast pages** (Module 26) and **mobile-friendly** layouts (Module 22) are ranking factors in their own right.
+
+      Good, accessible HTML and good SEO are mostly the same work.
+
+  - kind: info
+    title: "🔹 Structured data (JSON-LD)"
+    body: |
+      **Structured data** describes a page's content in a machine-readable vocabulary from schema.org (a book, its author, price and rating), so search engines can show rich results like star ratings or prices. It's written as JSON inside a script tag:
+
+      ```html
+      <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Book",
+        "name": "Dune",
+        "author": { "@type": "Person", "name": "Frank Herbert" }
+      }
+      </script>
+      ```
+
+      Recognise it when you see it; Google's Rich Results Test checks it.
+
+  - kind: mac
+    title: Preview your link card
+    body: |
+      Once your site is live (Module 36), check how links to it will look:
+
+      1. Paste a page's URL into **opengraph.xyz** (or LinkedIn's *Post Inspector*) to see the preview cards it generates.
+      2. Search Google for `site:yourdomain.com` to see which of your pages it has indexed and how their snippets read.
+      3. Run **Lighthouse** with the *SEO* category ticked: it flags missing descriptions, missing `lang`, bad link text and more.
+    commands: |
+      # Chrome DevTools → Lighthouse → Categories: SEO → Analyze page load
+      # Google: site:yourdomain.com
+
+  - kind: why
+    body: |
+      A great page nobody finds, or that shows up as a bare link with no picture when shared, loses most of its visitors. A few lines in the head (title, description, Open Graph, icons, canonical) make every page look professional in search results, tabs and chats.
+
+  - kind: recap
+    body: |
+      - Unique, specific `<title>` (~60 chars) and `<meta name="description">` (~155 chars) written for people.
+      - Open Graph: `og:title`, `og:description`, `og:image` (full URL, 1200×630), `og:url`, `og:type`; plus `twitter:card`.
+      - Icons: `favicon.ico`, an SVG `rel="icon"`, `apple-touch-icon`.
+      - `<link rel="canonical">` names each page's one official URL.
+      - Semantic, fast, mobile-friendly HTML is the real foundation of SEO. 🔹 JSON-LD structured data for rich results.

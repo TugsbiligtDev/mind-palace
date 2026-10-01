@@ -1,0 +1,138 @@
+steps:
+  - kind: explain
+    title: Save points for your project
+    body: |
+      You change the header, then the layout breaks somewhere else, and you can't remember what it looked like before. Or you'd like to try a bold redesign without losing the current site.
+
+      **Git** is a **version control** system: it records **snapshots** of your project folder, called **commits**, each with a message saying what changed. You can look back at any commit, compare versions, and undo mistakes. It's used by almost every software team in the world.
+
+      **GitHub** is a website that stores a copy of your Git project (a **repository**, or "repo") online: a backup, a way to work with others, and (Module 36) a way to publish your site.
+
+      Git runs in the **Terminal**. A few commands cover 90% of daily use.
+
+  - kind: mac
+    title: Install and introduce yourself
+    body: |
+      1. Open **Terminal** (⌘ + Space, type *Terminal*).
+      2. Run `git --version`. If macOS offers to install the **command line developer tools**, click Install and run it again when it finishes.
+      3. Tell Git your name and email (they're stamped on every commit). Use the email you'll use for GitHub.
+      4. Make `main` the default branch name.
+
+      Paste what `git --version` and the last command printed.
+    commands: |
+      git --version
+      git config --global user.name "Your Name"
+      git config --global user.email "you@example.com"
+      git config --global init.defaultBranch main
+      git config --global --list
+    expect_output:
+      - "git version"
+      - "user.name="
+
+  - kind: explain
+    title: The everyday loop
+    body: |
+      Git works in three places:
+
+      ```
+      your folder (working files)  →  staging area  →  history (commits)
+                         git add  ─┘        git commit ─┘
+      ```
+
+      1. You **edit** files as usual.
+      2. `git add` puts the changes you want into the **staging area**: the next snapshot.
+      3. `git commit -m "message"` takes the snapshot.
+
+      Two commands tell you where you are, all the time:
+
+      - `git status`: what's changed, what's staged, which branch you're on.
+      - `git log --oneline`: the list of commits, newest first.
+
+      Run `git status` whenever you're unsure. It also suggests the next command.
+
+  - kind: mac
+    title: Your first commits
+    body: |
+      Put your capstone site from Module 22 under version control:
+
+      1. `cd` into its folder.
+      2. `git init` creates a new, empty repository (a hidden `.git` folder).
+      3. `git add .` stages every file (`.` means "this folder").
+      4. Commit, then check the log.
+      5. Change something small in `index.html`, save, and run `git status` and `git diff` to see exactly what changed. Commit that too.
+
+      Paste the output of the final `git log --oneline`.
+    commands: |
+      cd ~/websites/my-site
+      git init
+      git add .
+      git commit -m "Add the first version of my personal site"
+      git status
+      # edit index.html, save, then:
+      git diff
+      git add index.html
+      git commit -m "Shorten the home page introduction"
+      git log --oneline
+    expect_output:
+      - "Add the first version of my personal site"
+
+  - kind: explain
+    title: .gitignore
+    body: |
+      Some files should **never** go into Git:
+
+      - system clutter like macOS's `.DS_Store` files,
+      - downloaded packages (`node_modules/`, Module 50),
+      - **secrets**: passwords, API keys, `.env` files. Once pushed to GitHub, assume a secret is public forever, even if you delete it later.
+
+      List them in a file called `.gitignore` in the project's top folder, one pattern per line:
+
+      ```
+      .DS_Store
+      node_modules/
+      .env
+      ```
+
+      Git then ignores them for `git add .` and `git status`.
+
+  - kind: explain
+    title: Good commits
+    body: |
+      - **Small and often.** One commit per meaningful change ("Add the contact form", "Fix the header wrapping on phones"), not one giant commit at the end of the week. Small commits are easy to understand and easy to undo.
+      - **Messages say what and why**, in the imperative, like an instruction: "Add dark mode tokens", not "stuff" or "changes" or "fixed it".
+      - **Commit working states.** Each commit should leave the site in a working condition.
+
+      Two handy undos: `git restore index.html` throws away unsaved-to-Git edits to a file (careful: that work is gone); `git restore --staged index.html` un-stages it but keeps your edits.
+
+  - kind: mac
+    title: Push to GitHub
+    body: |
+      1. Create a free account at **github.com**.
+      2. Install the GitHub command-line tool and log in (it handles passwords and keys for you): `brew install gh` (or download it from cli.github.com), then `gh auth login` and follow the prompts (choose GitHub.com, HTTPS, log in with a browser).
+      3. From your site's folder, create a GitHub repository and push your commits in one step.
+      4. Open the repo in the browser to see your files online.
+
+      From now on the loop is: edit → `git add` → `git commit` → `git push`. On another computer, `git clone` copies the repo down, and `git pull` brings in new commits.
+
+      Paste what the last command printed.
+    commands: |
+      gh auth login
+      cd ~/websites/my-site
+      gh repo create my-site --public --source=. --push
+      gh repo view --web
+      git remote -v
+    expect_output:
+      - "origin"
+      - "github.com"
+
+  - kind: why
+    body: |
+      Git is your project's memory and safety net: you can experiment freely, see what changed when something breaks, and roll back mistakes. GitHub keeps a copy safe off your laptop, lets others contribute, and, in the next module, publishes your site to the world.
+
+  - kind: recap
+    body: |
+      - Git = snapshots (commits) of your project; GitHub = online home for repos.
+      - `git init`, `git status`, `git add .`, `git commit -m "…"`, `git log --oneline`, `git diff`.
+      - `.gitignore` for clutter and **never** commit secrets.
+      - Small, frequent commits with clear, imperative messages.
+      - `gh repo create … --push`, then `git push` / `git pull` / `git clone`.

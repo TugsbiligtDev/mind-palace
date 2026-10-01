@@ -1,0 +1,278 @@
+steps:
+  - kind: explain
+    title: Name a value once
+    body: |
+      Inkwell's brown, `#7c2d12`, appears 40 times in the stylesheet. Changing it means 40 edits and hoping you found them all. **Custom properties** (CSS variables) fix that:
+
+      ```css
+      :root {
+        --color-brand: #7c2d12;
+      }
+
+      h1      { color: var(--color-brand); }
+      .button { background: var(--color-brand); }
+      ```
+
+      - A custom property's name **starts with two dashes**. Pick clear names; they're case-sensitive.
+      - `var(--name)` reads it.
+      - `:root` is the `<html>` element, so properties defined there are available everywhere.
+
+      Change one line, and every use updates.
+
+  - kind: web
+    title: Extract the brand colors
+    body: |
+      Inkwell's stylesheet repeats the same values. Replace them with custom properties:
+
+      1. On `:root`, define `--color-brand: #7c2d12`, `--color-text: #3b2f2f` and `--radius: 8px`.
+      2. Replace **every** hard-coded use of those three values below with `var(…)`.
+
+      The page must look exactly the same.
+    html: |
+      <h1>Inkwell Books</h1>
+      <p>Second-hand books, carefully chosen.</p>
+      <a class="button" href="books.html">Browse</a>
+      <div class="card">Staff pick: Dune</div>
+    css: |
+      body {
+        color: #3b2f2f;
+        font-family: Georgia, serif;
+      }
+
+      h1 {
+        color: #7c2d12;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #7c2d12;
+        color: white;
+        border-radius: 8px;
+      }
+
+      .card {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 2px solid #7c2d12;
+        border-radius: 8px;
+      }
+    tests:
+      - "css('h1', 'color') + ' / ' + css('.button', 'background-color') + ' / ' + css('.card', 'border-top-color') + ' / ' + css('body', 'color')"
+      - "css('.button', 'border-radius') + ' / ' + css('.card', 'border-radius')"
+      - "[rule(':root', '--color-brand'), rule(':root', '--color-text'), rule(':root', '--radius')]"
+      - "/#7c2d12|#3b2f2f|:\\s*8px/i.test($('style[data-file]').textContent.replace(/:root\\s*\\{[^}]*\\}/, ''))"
+    solution:
+      css: |
+        :root {
+          --color-brand: #7c2d12;
+          --color-text: #3b2f2f;
+          --radius: 8px;
+        }
+
+        body {
+          color: var(--color-text);
+          font-family: Georgia, serif;
+        }
+
+        h1 {
+          color: var(--color-brand);
+        }
+
+        .button {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          background: var(--color-brand);
+          color: white;
+          border-radius: var(--radius);
+        }
+
+        .card {
+          margin-top: 1rem;
+          padding: 1rem;
+          border: 2px solid var(--color-brand);
+          border-radius: var(--radius);
+        }
+    hint: "Add the `:root { … }` block at the top, then swap `#7c2d12` for `var(--color-brand)`, `#3b2f2f` for `var(--color-text)` and `8px` for `var(--radius)`."
+
+  - kind: explain
+    title: Fallbacks, scope and inheritance
+    body: |
+      **Fallbacks**: `var(--name, fallback)` uses the fallback if `--name` isn't defined: `color: var(--color-accent, teal);`.
+
+      **Scope**: a custom property is defined on an element and **inherited by its descendants**, like `color`. Define it on `:root` for the whole page, or on a component to change it just there:
+
+      ```css
+      :root       { --surface: white;   --ink: #1c1917; }
+      .card       { background: var(--surface); color: var(--ink); }
+      .card.dark  { --surface: #1c1917; --ink: #fafaf9; }   /* only redefine the variables */
+      ```
+
+      The `.card` rule never changes; the dark card just gives it different values. That's the core trick of **theming**: components read variables, and themes set them.
+
+      Custom properties are live: change one in DevTools and every use updates instantly.
+
+  - kind: web
+    title: A themed card
+    body: |
+      The `.card` rule already reads `--surface` and `--ink`. Without touching that rule:
+
+      1. Define `--surface: white` and `--ink: #1c1917` on `:root`.
+      2. Make `.card.featured` set `--surface: #7c2d12` and `--ink: white`.
+      3. Make `.note` use `var(--note-color, #57534e)` for its color: a fallback, since `--note-color` is never defined.
+    html: |
+      <div class="card">
+        <h3>Emma</h3>
+        <p class="note">Jane Austen</p>
+      </div>
+      <div class="card featured">
+        <h3>Dune</h3>
+        <p>Book of the month</p>
+      </div>
+    css: |
+      .card {
+        background: var(--surface);
+        color: var(--ink);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .note {
+        font-style: italic;
+      }
+    tests:
+      - "css('.card:not(.featured)', 'background-color') + ' / ' + css('.card:not(.featured)', 'color')"
+      - "css('.card.featured', 'background-color') + ' / ' + css('.card.featured', 'color')"
+      - "css('.note', 'color')"
+      - "declared('.card', 'background') + ' / ' + declared('.card', 'color')"
+      - "declared('.note', 'color')"
+    solution:
+      css: |
+        :root {
+          --surface: white;
+          --ink: #1c1917;
+        }
+
+        .card {
+          background: var(--surface);
+          color: var(--ink);
+          padding: 1rem;
+          margin-bottom: 1rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        .card.featured {
+          --surface: #7c2d12;
+          --ink: white;
+        }
+
+        .note {
+          font-style: italic;
+          color: var(--note-color, #57534e);
+        }
+    hint: "`.card.featured { --surface: #7c2d12; --ink: white; }` redefines just the variables. The note gets `color: var(--note-color, #57534e);`."
+
+  - kind: explain
+    title: Design tokens
+    body: |
+      Professional stylesheets put **every** design decision in variables, called **design tokens**:
+
+      ```css
+      :root {
+        /* colors */
+        --color-brand: #7c2d12;
+        --color-text: #1c1917;
+        --color-muted: #57534e;
+        --color-surface: #ffffff;
+
+        /* spacing scale */
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 1rem;
+        --space-4: 1.5rem;
+        --space-5: 2.5rem;
+
+        /* type scale */
+        --text-sm: 0.875rem;
+        --text-base: 1rem;
+        --text-lg: 1.25rem;
+        --text-xl: 2rem;
+      }
+      ```
+
+      With a **scale**, you choose from a few sizes instead of inventing new ones (`13px` here, `14.5px` there). Pages look consistent, and redesigns become a matter of adjusting tokens. Module 42 builds a full token system.
+
+  - kind: explain
+    title: Light and dark mode
+    body: |
+      Many people set their device to dark mode. CSS can follow it in two ways.
+
+      **1. The `prefers-color-scheme` media query**, redefining your tokens:
+
+      ```css
+      :root { --bg: #fafaf9; --text: #1c1917; }
+
+      @media (prefers-color-scheme: dark) {
+        :root { --bg: #0b0f19; --text: #e5e7eb; }
+      }
+      ```
+
+      **2. `light-dark()`**, newer and shorter: give both colors at once. It needs `color-scheme` set, which also switches the browser's own parts (scrollbars, form controls) to match:
+
+      ```css
+      :root {
+        color-scheme: light dark;
+        --bg: light-dark(#fafaf9, #0b0f19);
+        --text: light-dark(#1c1917, #e5e7eb);
+      }
+      ```
+
+      Both follow the visitor's setting automatically. Dark mode isn't just inverted colors: avoid pure black backgrounds and pure white text (too harsh), and re-check contrast in both themes.
+
+  - kind: web
+    title: Follow the visitor's theme
+    body: |
+      Make Inkwell follow light and dark mode with `light-dark()`:
+
+      1. On `:root`, set `color-scheme: light dark`.
+      2. Define `--bg` as `light-dark(#fafaf9, #0b0f19)` and `--text` as `light-dark(#1c1917, #e5e7eb)`.
+      3. Make `body` use them for `background` and `color`.
+
+      The checker looks at the page in both themes. You can see it here too: switch your Mac between Light and Dark in System Settings → Appearance.
+    html: |
+      <h1>Inkwell Books</h1>
+      <p>Open late on Thursdays.</p>
+    css: |
+      body {
+        font-family: Georgia, serif;
+      }
+    tests:
+      - "scheme('light', 'body', 'background-color') + ' / ' + scheme('light', 'body', 'color')"
+      - "scheme('dark', 'body', 'background-color') + ' / ' + scheme('dark', 'body', 'color')"
+      - "css(':root', 'color-scheme')"
+    solution:
+      css: |
+        :root {
+          color-scheme: light dark;
+          --bg: light-dark(#fafaf9, #0b0f19);
+          --text: light-dark(#1c1917, #e5e7eb);
+        }
+
+        body {
+          font-family: Georgia, serif;
+          background: var(--bg);
+          color: var(--text);
+        }
+    hint: "Everything goes on `:root` except the last part: `body { background: var(--bg); color: var(--text); }`."
+
+  - kind: why
+    body: |
+      Custom properties turn a stylesheet from a pile of repeated numbers into a small set of named decisions. They make themes, dark mode and consistent spacing almost free, and they're the foundation of every modern design system, including the one you'll build in the Advanced level.
+
+  - kind: recap
+    body: |
+      - Define `--name: value` (usually on `:root`), read with `var(--name)`; `var(--name, fallback)`.
+      - Custom properties inherit: redefine them on a component to theme it, without touching its rules.
+      - **Design tokens**: colors, a spacing scale and a type scale as variables.
+      - Dark mode: `@media (prefers-color-scheme: dark)` redefining tokens, or `color-scheme: light dark` + `light-dark(light, dark)`.

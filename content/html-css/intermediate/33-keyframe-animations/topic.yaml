@@ -1,0 +1,4 @@
+title: Keyframe Animations
+module: 33
+summary: "Animations that run by themselves: @keyframes, the animation shorthand, iteration count, direction and fill-mode, a loading spinner and an entrance effect, and restraint as the best practice."
+minutes: 40

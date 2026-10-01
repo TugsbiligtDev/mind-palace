@@ -1,0 +1,4 @@
+title: Modern Selectors
+module: 29
+summary: "Select by what an element contains with :has(), the long-awaited parent selector; shorten selector lists with :is() and :where() and understand their different specificity; style a whole form while it has focus with :focus-within; and count only some siblings with :nth-child(… of S)."
+minutes: 45

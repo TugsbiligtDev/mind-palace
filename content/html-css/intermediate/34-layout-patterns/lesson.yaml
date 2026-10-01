@@ -1,0 +1,304 @@
+steps:
+  - kind: explain
+    title: Patterns, not puzzles
+    body: |
+      Most pages are built from a handful of layout **patterns**. Once you know them, a new design stops being a puzzle and becomes "a holy-grail page with a card grid and a full-bleed banner".
+
+      This lesson builds the most common ones with Grid and Flexbox, mobile-first, and where possible with **no media queries at all**: layouts that adapt to their content and space by themselves (sometimes called *intrinsic* layout).
+
+  - kind: explain
+    title: The holy-grail page
+    body: |
+      Header on top, footer at the bottom, and between them a main column with a sidebar on each side (or one). Its classic problem: on a short page the footer floats up to the middle of the screen.
+
+      Grid solves both:
+
+      ```css
+      body {
+        min-height: 100svh;                 /* at least the full screen height */
+        display: grid;
+        grid-template-rows: auto 1fr auto;  /* header, everything else, footer */
+      }
+      ```
+
+      The middle row takes all the spare height (`1fr`), so the footer is always at the bottom of the screen or below the content, whichever is lower. Inside, `grid-template-areas` arranges the columns, redrawn at a breakpoint.
+
+  - kind: web
+    title: Build the holy grail
+    body: |
+      Lay out `.page` (mobile-first):
+
+      1. `.page` is a grid at least `100svh` tall, with `1rem` gap.
+      2. **Phones**: one column, areas stacked: `header`, `nav`, `main`, `aside`, `footer`. The `main` row takes the spare height (`1fr`); the others are `auto`.
+      3. **From 800px**: three columns `180px 1fr 180px`, rows `auto 1fr auto`, with header and footer across all three, and `nav main aside` in the middle row.
+
+      Use the area names `header`, `nav`, `main`, `aside`, `footer` (the CSS that assigns them is already written).
+    html: |
+      <div class="page">
+        <header>Inkwell Books</header>
+        <nav>Categories</nav>
+        <main>Book list</main>
+        <aside>Offers</aside>
+        <footer>© 2026</footer>
+      </div>
+    css: |
+      body {
+        margin: 0;
+      }
+
+      .page > * {
+        padding: 1rem;
+        background: #f5f0e8;
+      }
+
+      .page > header { grid-area: header; }
+      .page > nav { grid-area: nav; }
+      .page > main { grid-area: main; }
+      .page > aside { grid-area: aside; }
+      .page > footer { grid-area: footer; }
+    widths: [375, 1000]
+    tests:
+      - "box('.page').height >= 600"
+      - "['header', 'nav', 'main', 'aside', 'footer'].map((s) => box(s).x + ',' + box(s).width)"
+      - "box('footer').y + box('footer').height"
+      - "box('main').height > box('nav').height"
+    solution:
+      css: |
+        body {
+          margin: 0;
+        }
+
+        .page {
+          display: grid;
+          gap: 1rem;
+          min-height: 100svh;
+          grid-template-rows: auto auto 1fr auto auto;
+          grid-template-areas:
+            "header"
+            "nav"
+            "main"
+            "aside"
+            "footer";
+        }
+
+        @media (width >= 800px) {
+          .page {
+            grid-template-columns: 180px 1fr 180px;
+            grid-template-rows: auto 1fr auto;
+            grid-template-areas:
+              "header header header"
+              "nav main aside"
+              "footer footer footer";
+          }
+        }
+
+        .page > * {
+          padding: 1rem;
+          background: #f5f0e8;
+        }
+
+        .page > header { grid-area: header; }
+        .page > nav { grid-area: nav; }
+        .page > main { grid-area: main; }
+        .page > aside { grid-area: aside; }
+        .page > footer { grid-area: footer; }
+    hint: "Phone rows: `auto auto 1fr auto auto` with five one-word area strings. At 800px: three columns, rows `auto 1fr auto`, and three area strings."
+
+  - kind: explain
+    title: A sidebar that wraps itself
+    body: |
+      A sidebar next to the content on wide screens and above it on narrow ones usually needs a media query. This Flexbox pattern decides by **available space** instead:
+
+      ```css
+      .with-sidebar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .sidebar {
+        flex-basis: 15rem;    /* the sidebar's ideal width */
+        flex-grow: 1;
+      }
+      .content {
+        flex-basis: 0;
+        flex-grow: 999;       /* takes nearly all the spare room */
+        min-inline-size: 60%; /* when it would get narrower than this, everything wraps */
+      }
+      ```
+
+      Side by side when there's room; stacked when the content would be squeezed below 60%. It works the same in a narrow column of a wide page, which a screen-width media query can't do.
+
+  - kind: web
+    title: The self-wrapping sidebar
+    body: |
+      Apply the pattern to `.with-sidebar`, `.filters` (the sidebar, ideal width `15rem`) and `.results` (min `60%`), with a `1rem` gap.
+
+      The checker views it at 500px (stacked) and 1000px (side by side).
+    html: |
+      <div class="with-sidebar">
+        <aside class="filters">Filters: genre, price, condition</aside>
+        <main class="results">Results: 42 books</main>
+      </div>
+    css: |
+      body {
+        margin: 1rem;
+      }
+
+      .filters, .results {
+        padding: 1rem;
+        background: #f5f0e8;
+      }
+    widths: [500, 1000]
+    tests:
+      - "box('.filters').y === box('.results').y ? 'side by side' : 'stacked'"
+      - "box('.filters').width + ' / ' + box('.results').width"
+      - "css('.with-sidebar', 'gap')"
+    solution:
+      css: |
+        body {
+          margin: 1rem;
+        }
+
+        .with-sidebar {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .filters {
+          flex-basis: 15rem;
+          flex-grow: 1;
+        }
+
+        .results {
+          flex-basis: 0;
+          flex-grow: 999;
+          min-inline-size: 60%;
+        }
+
+        .filters, .results {
+          padding: 1rem;
+          background: #f5f0e8;
+        }
+    hint: "Copy the pattern from the lesson: `.with-sidebar` flex + wrap + gap; `.filters` basis 15rem, grow 1; `.results` basis 0, grow 999, `min-inline-size: 60%`."
+
+  - kind: explain
+    title: Centering, every way
+    body: |
+      | To centre… | Use |
+      |---|---|
+      | inline content (text, an inline image) in its box | `text-align: center` |
+      | a block of known max width, horizontally | `margin-inline: auto` + a `max-width` |
+      | anything, both ways, in a parent | `display: grid; place-items: center` (shortest) |
+      | anything, both ways, with Flexbox | `display: flex; justify-content: center; align-items: center` |
+      | a positioned overlay | `position: absolute; inset: 0; margin: auto` + a size |
+      | a dialog or popover | the browser centres them for you |
+
+      `place-items: center` is shorthand for `align-items` + `justify-items`. It's the quickest "put this in the middle" in CSS.
+
+  - kind: explain
+    title: Full-bleed sections
+    body: |
+      A reading column is centred and narrow, but some things (a photo, a coloured banner) should stretch **edge to edge**. With Grid, give the page three columns, with the middle one as the reading column:
+
+      ```css
+      .article {
+        display: grid;
+        grid-template-columns: 1fr min(65ch, 100% - 2rem) 1fr;
+      }
+      .article > * {
+        grid-column: 2;          /* everything sits in the middle column */
+      }
+      .article > .full-bleed {
+        grid-column: 1 / -1;     /* …except full-bleed items, which span all three */
+      }
+      ```
+
+      No negative margins, no `100vw` hacks (which cause sideways scrolling).
+
+  - kind: web
+    title: A full-bleed banner
+    body: |
+      Build the article layout:
+
+      1. `.article` is a grid with columns `1fr min(65ch, 100% - 2rem) 1fr`.
+      2. Every direct child sits in column `2`.
+      3. `.full-bleed` children span all columns (`1 / -1`).
+      4. Centre the banner's text both ways with `display: grid; place-items: center` on `.banner`.
+    html: |
+      <article class="article">
+        <h1>Sixty years of Dune</h1>
+        <p>Frank Herbert's novel was turned down by more than twenty publishers before a small press took a chance on it.</p>
+        <div class="banner full-bleed"><p>Book club: first Sunday of the month</p></div>
+        <p>Today it is one of the best-selling science fiction novels ever written.</p>
+      </article>
+    css: |
+      body {
+        margin: 0;
+        font-family: Georgia, serif;
+      }
+
+      .banner {
+        min-height: 160px;
+        background: #7c2d12;
+        color: white;
+      }
+    widths: [400, 1200]
+    tests:
+      - "box('h1').x + ' / ' + box('h1').width"
+      - "box('.banner').x + ' / ' + box('.banner').width"
+      - "box('p:last-child').x + ' / ' + box('p:last-child').width"
+      - "edges('.banner p', '.banner').left - edges('.banner p', '.banner').right"
+      - "edges('.banner p', '.banner').top - edges('.banner p', '.banner').bottom"
+    solution:
+      css: |
+        body {
+          margin: 0;
+          font-family: Georgia, serif;
+        }
+
+        .article {
+          display: grid;
+          grid-template-columns: 1fr min(65ch, 100% - 2rem) 1fr;
+        }
+
+        .article > * {
+          grid-column: 2;
+        }
+
+        .article > .full-bleed {
+          grid-column: 1 / -1;
+        }
+
+        .banner {
+          display: grid;
+          place-items: center;
+          min-height: 160px;
+          background: #7c2d12;
+          color: white;
+        }
+    hint: "`.article > * { grid-column: 2; }` and `.article > .full-bleed { grid-column: 1 / -1; }`. The second selector must be at least as specific as the first, and come after it."
+
+  - kind: explain
+    title: Card grids, sticky headers and footers
+    body: |
+      You've built these already; here they are as named patterns:
+
+      - **Card grid** (Module 21): `grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr))`. Responsive with no media queries.
+      - **Sticky header** (Module 19): `position: sticky; top: 0; z-index: 10` plus a background.
+      - **Sticky footer** (this lesson): `min-height: 100svh` + `grid-template-rows: auto 1fr auto` on the page.
+      - **Switcher**: a row of items that becomes a column all at once below a width: `display: flex; flex-wrap: wrap` with `flex-basis: calc((40rem - 100%) * 999)` on the items. (A clever trick from the *Every Layout* book; recognise it when you see it.)
+
+      Most real pages are three or four of these patterns nested inside each other.
+
+  - kind: why
+    body: |
+      Layout is where beginners lose the most time, rebuilding the same structures with fragile hacks. These patterns are tested, short and mostly media-query-free, so they keep working as content and screens change. Learn them once and reuse them everywhere.
+
+  - kind: recap
+    body: |
+      - Holy grail: `min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto` + areas redrawn at a breakpoint.
+      - Self-wrapping sidebar: flex-wrap, sidebar `flex-basis`, content `flex-grow: 999; min-inline-size: 60%`.
+      - Centre anything: `display: grid; place-items: center`.
+      - Full-bleed: three-column grid, children in column 2, `.full-bleed` spans `1 / -1`.
+      - Card grid with `auto-fit`/`minmax`; sticky header; sticky footer.

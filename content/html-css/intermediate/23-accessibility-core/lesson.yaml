@@ -1,0 +1,400 @@
+steps:
+  - kind: explain
+    title: Who we're building for
+    body: |
+      Season 2 opens with a complaint. A regular Inkwell customer, who is blind, can't buy books on the new site. Inspector Bold: *"A shop with a step at the door turns some customers away. So does a website."*
+
+      **Accessibility** (shortened to **a11y**: a, 11 letters, y) means people with disabilities can use the site:
+
+      - **Blind and low-vision** people use screen readers, which read the page aloud, or zoom to 200–400%.
+      - **Motor impairments**: many people can't use a mouse and rely on a keyboard, a switch or voice control.
+      - **Deaf and hard of hearing** people need captions.
+      - **Cognitive** differences: clear language, predictable layouts, no time pressure.
+
+      Around one in six people has a significant disability, and everyone is temporarily impaired sometimes: a broken arm, bright sunlight on a phone, a noisy train. In many countries it's also the **law**: the European Accessibility Act (in force since June 2025), the US ADA and the UK Equality Act all apply to websites. The shared yardstick is **WCAG** (Web Content Accessibility Guidelines); level **AA** is what laws and contracts usually require.
+
+  - kind: explain
+    title: The keyboard test
+    body: |
+      Unplug the mouse (figuratively) and press **Tab**. Focus should move through every link, button and form field **in a sensible order**, and you should always **see** where it is. **Shift+Tab** goes back; **Enter** follows links and presses buttons; **Space** presses buttons and ticks checkboxes; arrow keys move between radio buttons.
+
+      What breaks it:
+
+      - **Removing the focus outline** (`outline: none`) without a replacement. Keyboard users are then lost.
+      - **Fake buttons**: a `<div>` with a click handler can't be reached with Tab and ignores Enter.
+      - **Visual order differing from HTML order** (Module 20's `order`, absolute positioning).
+
+      The fix for the first: style `:focus-visible` with a clear outline. The fix for the second: use real `<button>` and `<a>` elements, which are keyboard-ready for free.
+
+  - kind: web
+    title: Bring back the focus ring
+    body: |
+      A designer removed the focus outline "because it looked ugly". Keyboard users can no longer see where they are.
+
+      1. Delete the `outline: none` rule.
+      2. Add a `:focus-visible` style for links and buttons: `outline: 3px solid #1d4ed8` with `outline-offset: 2px`.
+      3. The "Add to basket" control is a `div` pretending to be a button. Replace it with a real `<button type="button">` with the same class and text.
+    html: |
+      <nav>
+        <a href="books.html">Books</a>
+        <a href="events.html">Events</a>
+      </nav>
+      <h2>Dune</h2>
+      <div class="buy">Add to basket</div>
+    css: |
+      a, button, .buy {
+        font: inherit;
+      }
+
+      *:focus {
+        outline: none;
+      }
+
+      .buy {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #7c2d12;
+        color: white;
+        border: 0;
+        cursor: pointer;
+      }
+    tests:
+      - "selectors().includes('*:focus') || selectors().includes(':focus')"
+      - "rule(['a:focus-visible', ':focus-visible', '*:focus-visible'], 'outline')"
+      - "rule(['button:focus-visible', ':focus-visible', '*:focus-visible'], 'outline-offset')"
+      - "count('button.buy[type=button]') + ':' + text('.buy') + ':' + count('div.buy')"
+    solution:
+      html: |
+        <nav>
+          <a href="books.html">Books</a>
+          <a href="events.html">Events</a>
+        </nav>
+        <h2>Dune</h2>
+        <button type="button" class="buy">Add to basket</button>
+      css: |
+        a, button, .buy {
+          font: inherit;
+        }
+
+        a:focus-visible, button:focus-visible {
+          outline: 3px solid #1d4ed8;
+          outline-offset: 2px;
+        }
+
+        .buy {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          background: #7c2d12;
+          color: white;
+          border: 0;
+          cursor: pointer;
+        }
+    hint: "Replace the `*:focus` rule with `a:focus-visible, button:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }`. In the HTML, swap `<div class=\"buy\">…</div>` for `<button type=\"button\" class=\"buy\">…</button>`."
+
+  - kind: explain
+    title: Structure is accessibility
+    body: |
+      Most of accessibility is the HTML you already know, done right:
+
+      - **Headings in order** (Module 5): screen reader users jump between headings like a table of contents. It's the most common way they explore a page.
+      - **Landmarks** (Module 8): `header`, `nav`, `main`, `footer` let them jump straight to the content.
+      - **Labels** on every form field (Module 10).
+      - **Alt text** on meaningful images, empty alt on decorative ones (Module 7).
+      - **Link text** that makes sense out of context (Module 6).
+      - **`lang`** on `<html>` so the right voice reads the page (Module 4).
+
+      Before reaching for anything fancy, check these. They fix most real-world problems.
+
+  - kind: explain
+    title: Color contrast
+    body: |
+      Text must stand out from its background. WCAG measures this as a **contrast ratio** from 1:1 (invisible) to 21:1 (black on white):
+
+      | Text | AA minimum |
+      |---|---|
+      | normal text | **4.5 : 1** |
+      | large text (24px+, or 18.66px+ bold) | **3 : 1** |
+      | icons, input borders, focus rings | **3 : 1** |
+
+      Pale grey on white is the classic failure: `#999` on white is only 2.85:1. `#767676` is the lightest grey that passes on white (4.54:1).
+
+      Check contrast with DevTools (inspect text, click the color swatch in Styles: it shows the ratio and AA/AAA ticks) or webaim.org/resources/contrastchecker. And **never use color alone** to carry meaning ("fields in red are required"): add text or an icon too, for colour-blind visitors.
+
+  - kind: web
+    title: Pass the contrast check
+    body: |
+      Three pieces of text on Inkwell's book card fail WCAG AA. Change **only their colors** so each passes:
+
+      1. `.meta` (small grey text on white) needs at least **4.5:1**.
+      2. `.price` (white text on the orange badge) needs at least **4.5:1**: darken the badge's **background** instead of changing the text.
+      3. `.hint` (normal-size placeholder-like text on the beige panel) needs at least **4.5:1**.
+
+      Pick any colors you like that pass. The checker measures the real ratio.
+    html: |
+      <article class="card">
+        <h3>Dune</h3>
+        <p class="meta">Frank Herbert · paperback · 1965</p>
+        <span class="price">£8.99</span>
+        <p class="panel"><span class="hint">Usually ships in 2 days</span></p>
+      </article>
+    css: |
+      .card {
+        font-family: system-ui, sans-serif;
+        background: white;
+        padding: 1rem;
+      }
+
+      .meta {
+        color: #aaa;
+        font-size: 0.875rem;
+      }
+
+      .price {
+        background: #fb923c;
+        color: white;
+        padding: 0.25rem 0.5rem;
+      }
+
+      .panel {
+        background: #f5f0e8;
+        padding: 0.5rem;
+      }
+
+      .hint {
+        color: #b8a99a;
+      }
+    tests:
+      - "contrast('.meta') >= 4.5"
+      - "contrast('.price') >= 4.5"
+      - "contrast('.hint') >= 4.5"
+      - "css('.price', 'color')"
+    solution:
+      css: |
+        .card {
+          font-family: system-ui, sans-serif;
+          background: white;
+          padding: 1rem;
+        }
+
+        .meta {
+          color: #595959;
+          font-size: 0.875rem;
+        }
+
+        .price {
+          background: #9a3412;
+          color: white;
+          padding: 0.25rem 0.5rem;
+        }
+
+        .panel {
+          background: #f5f0e8;
+          padding: 0.5rem;
+        }
+
+        .hint {
+          color: #5c4a3d;
+        }
+    hint: "Use darker colors: around `#595959` for the grey, a deep orange like `#9a3412` for the badge, and a dark brown like `#5c4a3d` for the hint. The DevTools color picker shows the ratio live."
+    reject:
+      - css: |
+          .card {
+            font-family: system-ui, sans-serif;
+            background: white;
+            padding: 1rem;
+          }
+
+          .meta {
+            color: #999;
+            font-size: 0.875rem;
+          }
+
+          .price {
+            background: #fb923c;
+            color: black;
+            padding: 0.25rem 0.5rem;
+          }
+
+          .panel {
+            background: #f5f0e8;
+            padding: 0.5rem;
+          }
+
+          .hint {
+            color: #5c4a3d;
+          }
+
+  - kind: explain
+    title: Skip links and visually hidden text
+    body: |
+      A keyboard user arriving on a page must Tab through the whole menu before reaching the content, on **every** page. A **skip link** is the first link on the page, jumping to `main`:
+
+      ```html
+      <a class="skip-link" href="#main">Skip to main content</a>
+      …
+      <main id="main">…</main>
+      ```
+
+      It's hidden off-screen until it receives focus, then slides into view. Mouse users never see it; keyboard users get it first.
+
+      Sometimes text should exist for screen readers only: a label for a search box whose purpose is visually obvious, or "(opens in a new tab)". The standard **visually hidden** class keeps text in the accessibility tree while hiding it on screen:
+
+      ```css
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+      ```
+
+      Never use `display: none` for this: it hides the text from screen readers too.
+
+  - kind: web
+    title: Add a skip link
+    body: |
+      1. Add a link as the **very first** element in the body: text `Skip to main content`, class `skip-link`, pointing to `#main`.
+      2. Give `<main>` the id `main`.
+      3. In the CSS, position `.skip-link` absolutely at `left: 1rem` and `top: -100px` (off-screen), and when it has focus (`.skip-link:focus`), move it to `top: 1rem`.
+    html: |
+      <header>
+        <nav>
+          <a href="books.html">Books</a>
+          <a href="events.html">Events</a>
+          <a href="about.html">About</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </header>
+      <main>
+        <h1>Poetry night</h1>
+        <p>Thursday at 7pm.</p>
+      </main>
+    css: |
+      .skip-link {
+        background: #1d4ed8;
+        color: white;
+        padding: 0.5rem 1rem;
+      }
+    tests:
+      - "doc.body.firstElementChild.localName + '.' + doc.body.firstElementChild.className + ' → ' + doc.body.firstElementChild.getAttribute('href')"
+      - "text('.skip-link')"
+      - "$('main').id"
+      - "css('.skip-link', 'position') + ' left ' + css('.skip-link', 'left') + ' top ' + css('.skip-link', 'top')"
+      - "rule('.skip-link:focus', 'top')"
+    solution:
+      html: |
+        <a class="skip-link" href="#main">Skip to main content</a>
+        <header>
+          <nav>
+            <a href="books.html">Books</a>
+            <a href="events.html">Events</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+          </nav>
+        </header>
+        <main id="main">
+          <h1>Poetry night</h1>
+          <p>Thursday at 7pm.</p>
+        </main>
+      css: |
+        .skip-link {
+          position: absolute;
+          left: 1rem;
+          top: -100px;
+          background: #1d4ed8;
+          color: white;
+          padding: 0.5rem 1rem;
+        }
+
+        .skip-link:focus {
+          top: 1rem;
+        }
+    hint: "The link goes before `<header>`. CSS: `position: absolute; left: 1rem; top: -100px;` on `.skip-link`, and `.skip-link:focus { top: 1rem; }`."
+
+  - kind: explain
+    title: "ARIA, and its first rule"
+    body: |
+      **ARIA** (Accessible Rich Internet Applications) is a set of attributes that add accessibility information HTML can't express by itself. Three you'll use:
+
+      - `aria-label="…"` gives an element a name when it has no visible text, like an icon-only button: `<button aria-label="Close">✕</button>`.
+      - `aria-hidden="true"` hides decoration from screen readers (an icon next to text that already says the same thing).
+      - `aria-expanded="true|false"` on a button that opens and closes something (a menu), so screen readers announce "collapsed" or "expanded".
+
+      And the most important rule: **no ARIA is better than bad ARIA**. The first rule of ARIA is *don't use it if a native HTML element does the job*. A `<button>` beats `<div role="button" tabindex="0">` (which still needs JavaScript for the keyboard). ARIA changes what's *announced*, never what an element *does*. Pages with ARIA average more accessibility errors than pages without it, because it's so easy to get wrong.
+
+  - kind: web
+    title: Name the icon buttons
+    body: |
+      The header has three icon-only buttons. A screen reader announces them as just "button", three times.
+
+      1. Give each button an `aria-label`: `Search`, `Basket` and `Menu`.
+      2. The emoji inside each button are decoration once the button has a name: wrap each emoji in a `<span aria-hidden="true">`.
+      3. The Menu button controls a menu that's currently closed: add `aria-expanded="false"`.
+    html: |
+      <header>
+        <button type="button">🔍</button>
+        <button type="button">🧺</button>
+        <button type="button">☰</button>
+      </header>
+    tests:
+      - "$$('button').map((b) => b.getAttribute('aria-label'))"
+      - "$$('button').map((b) => b.querySelector('span[aria-hidden=true]') ? 'hidden icon' : 'icon exposed')"
+      - "$$('button').map((b) => b.getAttribute('aria-expanded'))"
+      - "$$('button').map((b) => b.textContent.trim())"
+    solution:
+      html: |
+        <header>
+          <button type="button" aria-label="Search"><span aria-hidden="true">🔍</span></button>
+          <button type="button" aria-label="Basket"><span aria-hidden="true">🧺</span></button>
+          <button type="button" aria-label="Menu" aria-expanded="false"><span aria-hidden="true">☰</span></button>
+        </header>
+    hint: "`<button type=\"button\" aria-label=\"Search\"><span aria-hidden=\"true\">🔍</span></button>`. Only the Menu button gets `aria-expanded=\"false\"`."
+
+  - kind: mac
+    title: Listen with VoiceOver
+    body: |
+      Your Mac has a screen reader built in. Try it on your Module 22 capstone site (or any site):
+
+      1. Press **⌘ + F5** to turn VoiceOver on (press it again to turn it off). On a MacBook with a Touch ID button, triple-press Touch ID instead.
+      2. Press **Tab** to move between links and controls and listen to what's announced.
+      3. Press **⌃ + ⌥ + U** to open the **Rotor**. Use ← → to switch between Headings, Links, Landmarks and Form Controls lists. This is how screen reader users skim a page.
+      4. Listen for: images without alt, fields without labels, "link" with no name, headings out of order.
+
+      It's strange at first. Five minutes of listening teaches more than an hour of reading about it.
+    commands: |
+      # VoiceOver on/off:   ⌘ + F5
+      # Rotor:              ⌃ + ⌥ + U   (← → to change list, ↑ ↓ to move)
+      # Read from here:     ⌃ + ⌥ + A
+      # Stop speaking:      ⌃
+
+  - kind: mac
+    title: Automated checks with Lighthouse and axe
+    body: |
+      Automated tools catch about a third of accessibility problems: missing alt, missing labels, low contrast, wrong ARIA. Use them first, then test by hand.
+
+      - **Lighthouse** is built into Chrome: DevTools → **Lighthouse** tab → tick *Accessibility* → **Analyze page load**. You get a score and a list of failures with links to explanations.
+      - **axe DevTools** (a free browser extension from Deque) gives a more detailed list and highlights each problem on the page.
+
+      Run Lighthouse on your capstone site. Fix what it finds, then paste the line with your accessibility score below.
+    commands: |
+      # Chrome DevTools → Lighthouse → Categories: Accessibility → Analyze page load
+      # The report starts with the score, e.g.:
+      Accessibility 100
+    expect_output:
+      - "Accessibility"
+
+  - kind: why
+    body: |
+      Accessibility isn't an extra feature: it's whether the site works. The good news is that most of it comes from habits you already have (semantic HTML, labels, alt text) plus a few new ones: visible focus, enough contrast, a skip link, and ARIA only where HTML runs out. Accessible sites are also faster to use for everyone, and easier for search engines to understand.
+
+  - kind: recap
+    body: |
+      - Disabled users, temporary impairments and the law (EAA, ADA): aim for **WCAG 2.2 AA**.
+      - Everything works with **Tab, Enter, Space**; focus is always **visible** (`:focus-visible`); use real buttons and links.
+      - Headings in order, landmarks, labels, alt text, `lang`.
+      - Contrast: **4.5:1** for normal text, 3:1 for large text and UI parts; never color alone.
+      - Skip link to `#main`; `.visually-hidden` for screen-reader-only text.
+      - ARIA: `aria-label`, `aria-hidden`, `aria-expanded`; **no ARIA is better than bad ARIA**.
+      - Test with the keyboard, VoiceOver, Lighthouse and axe.

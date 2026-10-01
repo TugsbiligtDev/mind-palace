@@ -1,0 +1,35 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What's the difference between a transition and an animation?"
+    options:
+      - "A transition animates a change between two states; an animation runs by itself through keyframes, once or repeatedly"
+      - "Transitions are only for color"
+      - "Animations can't be repeated"
+      - "They're identical"
+    answer: 0
+    explanation: "Transitions react to changes; animations play on their own schedule."
+  - type: mcq
+    prompt: "Which timing function suits a spinning loader?"
+    options: ["`linear`", "`ease-in-out`", "`steps(1)`", "`ease`"]
+    answer: 0
+    explanation: "A spinner should turn at constant speed; easing would make it speed up and slow down every turn."
+  - type: mcq
+    prompt: "An element with `animation: fade 300ms 1s` is visible during the 1-second delay, then vanishes and fades in. What fixes it?"
+    options: ["Add `backwards` (or `both`) fill-mode", "Add `infinite`", "Use `alternate`", "Remove the duration"]
+    answer: 0
+    explanation: "backwards applies the first keyframe (opacity 0) during the delay."
+  - type: mcq
+    prompt: "What does `animation-direction: alternate` do with 4 iterations?"
+    options: ["Plays forwards, backwards, forwards, backwards", "Plays backwards 4 times", "Picks a random direction", "Plays only the middle keyframe"]
+    answer: 0
+    explanation: "alternate reverses on every other cycle, great for a gentle pulse."
+  - type: mcq
+    prompt: "Which is the most responsible use of an infinite animation?"
+    options:
+      - "A loading spinner that's removed when loading finishes"
+      - "A bouncing logo in the header"
+      - "Constantly flashing sale prices"
+      - "A rotating background on every page"
+    answer: 0
+    explanation: "Endless motion should only signal ongoing activity. Flashing faster than three times a second can trigger seizures."

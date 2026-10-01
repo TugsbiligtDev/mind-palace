@@ -1,0 +1,271 @@
+steps:
+  - kind: explain
+    title: The storefront refresh
+    body: |
+      Inkwell wants the storefront refreshed for the autumn season, using the modern CSS from Part 6. Five briefs again; this time every brief is CSS only. Check, hint after a miss, answer after three.
+
+  - kind: web
+    title: "1. Tokens and themes"
+    body: |
+      > *All colors come from tokens on the root: `--bg` (#fafaf9 in light mode, #0b0f19 in dark), `--text` (#1c1917 / #e5e7eb) and `--brand` (#7c2d12 / #fdba74), written with light-dark(), and the page must follow the visitor's theme, browser controls included. The body uses --bg and --text; the h1 and links use --brand.*
+    html: |
+      <h1>Autumn at Inkwell</h1>
+      <p>New arrivals every Thursday. <a href="new.html">See what's in</a>.</p>
+    css: |
+      /* your stylesheet */
+    tests:
+      - "css(':root', 'color-scheme')"
+      - "['light', 'dark'].map((m) => scheme(m, 'body', 'background-color') + ' ' + scheme(m, 'body', 'color'))"
+      - "['light', 'dark'].map((m) => scheme(m, 'h1', 'color') + ' ' + scheme(m, 'a', 'color'))"
+      - "[declared('body', 'background'), declared('body', 'background-color'), declared('h1', 'color')].filter(Boolean).every((v) => v.includes('var('))"
+    solution:
+      css: |
+        :root {
+          color-scheme: light dark;
+          --bg: light-dark(#fafaf9, #0b0f19);
+          --text: light-dark(#1c1917, #e5e7eb);
+          --brand: light-dark(#7c2d12, #fdba74);
+        }
+
+        body {
+          background: var(--bg);
+          color: var(--text);
+        }
+
+        h1, a {
+          color: var(--brand);
+        }
+    hint: "`:root { color-scheme: light dark; --bg: light-dark(#fafaf9, #0b0f19); … }`, then use `var(--bg)`, `var(--text)` and `var(--brand)`."
+
+  - kind: web
+    title: "2. Fluid type and width"
+    body: |
+      > *The page title scales smoothly between 2rem and 3.5rem, preferring 1.25rem + 3vw. The content column is never wider than 70ch and always leaves 1rem either side on small screens (hint: 100% - 2rem), centred with logical margins. The intro paragraph's text scales between 1rem and 1.25rem, preferring 0.9rem + 0.5vw.*
+    html: |
+      <main class="wrap">
+        <h1>Autumn at Inkwell</h1>
+        <p class="intro">Crisp days, long evenings and a shop full of books that suit them.</p>
+      </main>
+    css: |
+      body {
+        margin: 0;
+      }
+    widths: [360, 900, 1600]
+    tests:
+      - "css('h1', 'font-size')"
+      - "css('.intro', 'font-size')"
+      - "box('.wrap').x + ' / ' + box('.wrap').width"
+      - "declared('.wrap', 'margin-inline')"
+    solution:
+      css: |
+        body {
+          margin: 0;
+        }
+
+        .wrap {
+          width: min(100% - 2rem, 70ch);
+          margin-inline: auto;
+        }
+
+        h1 {
+          font-size: clamp(2rem, 1.25rem + 3vw, 3.5rem);
+        }
+
+        .intro {
+          font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
+        }
+    hint: "`clamp(min, preferred, max)` for both font sizes; `width: min(100% - 2rem, 70ch); margin-inline: auto;` for the column."
+
+  - kind: web
+    title: "3. The new-arrivals grid"
+    body: |
+      > *Cards sit in as many columns as fit, each at least 14rem, with a 1rem gap. A card containing an image lays out as a grid with a 70px picture column and the text beside it (gap 1rem). On hover, cards lift by 4px using translate, animating only translate over 200ms with ease-out; for visitors who ask for reduced motion there's no transition and no lift.*
+    html: |
+      <div class="arrivals">
+        <article class="card"><img src="images/cover-dune.svg" alt="" width="70" height="105"><div><h3>Dune</h3><p>£8.99</p></div></article>
+        <article class="card"><div><h3>Middlemarch</h3><p>£6.50</p></div></article>
+        <article class="card"><img src="images/cover-odyssey.svg" alt="" width="70" height="105"><div><h3>The Odyssey</h3><p>£6.00</p></div></article>
+      </div>
+    css: |
+      .card {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+        border-radius: 12px;
+      }
+    widths: [400, 1100]
+    tests:
+      - "css('.arrivals', 'grid-template-columns') + ' gap ' + css('.arrivals', 'gap')"
+      - "cssAll('.card', 'display') + ' / ' + cssAll('.card', 'grid-template-columns')"
+      - "css('.card', 'transition-property') + ' ' + css('.card', 'transition-duration') + ' ' + css('.card', 'transition-timing-function')"
+      - "rule('.card:hover', 'translate')"
+      - "[declared('.card', 'transition', 'prefers-reduced-motion:reduce'), declared('.card:hover', 'translate', 'prefers-reduced-motion:reduce')]"
+    solution:
+      css: |
+        .arrivals {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+          gap: 1rem;
+        }
+
+        .card {
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+          border-radius: 12px;
+          transition: translate 200ms ease-out;
+        }
+
+        .card:has(img) {
+          display: grid;
+          grid-template-columns: 70px 1fr;
+          gap: 1rem;
+        }
+
+        .card:hover {
+          translate: 0 -4px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .card {
+            transition: none;
+          }
+
+          .card:hover {
+            translate: none;
+          }
+        }
+    hint: "auto-fit + minmax for the grid; `.card:has(img)` for picture cards; the transition on `.card`, the lift on `.card:hover`, and both undone inside `@media (prefers-reduced-motion: reduce)`."
+
+  - kind: web
+    title: "4. One nested button"
+    body: |
+      > *All of the button's styles live in one nested `.button` rule: its base look; a hover state with background #9a3412; a keyboard-focus state with a 3px solid #1d4ed8 outline; a `.button.secondary` variant with a transparent background, #7c2d12 text and a 2px solid #7c2d12 border. The plain link style must have zero specificity so the button beats it.*
+    html: |
+      <p>Read <a href="about.html">our story</a>.</p>
+      <a class="button" href="shop.html">Shop now</a>
+      <a class="button secondary" href="events.html">Events</a>
+    css: |
+      main a, a {
+        color: #7c2d12;
+        text-decoration: underline;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #7c2d12;
+        color: white;
+        text-decoration: none;
+        border: 2px solid transparent;
+      }
+    tests:
+      - "cssAll('.button', 'color') + ' / ' + cssAll('.button', 'text-decoration-line')"
+      - "rule('.button:hover', 'background-color') + ' / ' + rule('.button:focus-visible', 'outline')"
+      - "css('.secondary', 'background-color') + ' / ' + css('.secondary', 'border')"
+      - "css('p a', 'color') + ' / ' + css('p a', 'text-decoration-line')"
+      - "selectors().filter((s) => s.startsWith('.button')).length + ' top-level .button rules; nested: ' + selectors().filter((s) => s.startsWith('&')).length"
+    solution:
+      css: |
+        :where(a) {
+          color: #7c2d12;
+          text-decoration: underline;
+        }
+
+        .button {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          background: #7c2d12;
+          color: white;
+          text-decoration: none;
+          border: 2px solid transparent;
+
+          &:hover {
+            background: #9a3412;
+          }
+
+          &:focus-visible {
+            outline: 3px solid #1d4ed8;
+          }
+
+          &.secondary {
+            background: transparent;
+            color: #7c2d12;
+            border-color: #7c2d12;
+          }
+        }
+    hint: "Make the link rule `:where(a) { … }`. Inside `.button { … }` add `&:hover`, `&:focus-visible` and `&.secondary` blocks."
+
+  - kind: web
+    title: "5. Find the bugs"
+    broken_starter: true
+    body: |
+      > *Moth: "The autumn styles went live and four things are broken: the title isn't brown, dark mode does nothing, the banner's fade-in never plays, and the sale cards aren't highlighted."*
+
+      Find and fix the four bugs in `style.css` without changing the HTML.
+    html: |
+      <h1>Autumn sale</h1>
+      <div class="banner">Up to 30% off poetry</div>
+      <article class="card"><h3>Selected poems</h3><span class="sale">Sale</span></article>
+      <article class="card"><h3>Middlemarch</h3></article>
+    css: |
+      :root {
+        --color-brand: #7c2d12;
+        --bg: light-dark(#ffffff, #0b0f19);
+      }
+
+      body {
+        background: var(--bg);
+      }
+
+      h1 {
+        color: var(--colour-brand);
+      }
+
+      @keyframes fade-in {
+        from { opacity: 0; }
+      }
+
+      .banner {
+        animation: fadein 600ms ease-out;
+      }
+
+      .card:has(sale) {
+        border: 2px solid var(--color-brand);
+      }
+    tests:
+      - "css('h1', 'color')"
+      - "css(':root', 'color-scheme')"
+      - "scheme('dark', 'body', 'background-color')"
+      - "css('.banner', 'animation-name') + ' → ' + (keyframes(css('.banner', 'animation-name')) ? 'found' : 'no such keyframes')"
+      - "cssAll('.card', 'border-top-width')"
+    solution:
+      css: |
+        :root {
+          color-scheme: light dark;
+          --color-brand: #7c2d12;
+          --bg: light-dark(#ffffff, #0b0f19);
+        }
+
+        body {
+          background: var(--bg);
+        }
+
+        h1 {
+          color: var(--color-brand);
+        }
+
+        @keyframes fade-in {
+          from { opacity: 0; }
+        }
+
+        .banner {
+          animation: fade-in 600ms ease-out;
+        }
+
+        .card:has(.sale) {
+          border: 2px solid var(--color-brand);
+        }
+    hint: "Look for: a British spelling in a variable name, a missing `color-scheme`, an animation name that doesn't match its @keyframes, and a class selector missing its dot."
+
+  - kind: recap
+    body: |
+      The storefront now has a themeable token set with automatic dark mode, fluid type, a self-adjusting grid that adapts to its content and respects Reduce motion, and tidy nested components. Part 7 puts it all under version control and on the internet.

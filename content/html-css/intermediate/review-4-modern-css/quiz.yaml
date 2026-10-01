@@ -1,0 +1,30 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "`color: var(--colour-brand)` shows black, but `--color-brand` is defined. Why?"
+    options:
+      - "The names don't match; an undefined variable with no fallback makes the declaration fall back to the inherited/initial value"
+      - "Variables can't be used for color"
+      - "var() needs a fallback always"
+      - "The variable must be defined on the h1"
+    answer: 0
+    explanation: "Custom property names must match exactly. A fallback like var(--x, brown) would have hidden the typo."
+  - type: mcq
+    prompt: "Which change makes `light-dark()` follow dark mode?"
+    options: ["`color-scheme: light dark` on :root", "A JavaScript theme switcher", "`@media print`", "`prefers-contrast: more`"]
+    answer: 0
+    explanation: "light-dark() reads the element's color scheme, which color-scheme enables."
+  - type: mcq
+    prompt: "An animation never plays. The CSS says `animation: fadein 1s` and `@keyframes fade-in { … }`. What's wrong?"
+    options: ["The names differ", "1s is too short", "Keyframes must use percentages", "Animations need infinite"]
+    answer: 0
+    explanation: "The animation-name must match the @keyframes name exactly."
+  - type: mcq
+    prompt: "What does `.card:has(sale)` match?"
+    options:
+      - "A card containing a `<sale>` element (which doesn't exist), so nothing"
+      - "A card containing an element with class sale"
+      - "Every card"
+      - "A card with an id of sale"
+    answer: 0
+    explanation: "Without the dot it's a type selector. `.card:has(.sale)` was intended."

@@ -1,0 +1,197 @@
+steps:
+  - kind: explain
+    title: Transitions vs. animations
+    body: |
+      A **transition** animates between two states when something changes (hover, a class added). An **animation** runs by itself, with as many steps as you like, once or forever.
+
+      You define the steps with `@keyframes`, then attach them to an element:
+
+      ```css
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+
+      .notice {
+        animation: fade-in 400ms ease-out;
+      }
+      ```
+
+      `from` and `to` are the same as `0%` and `100%`; add steps in between with percentages:
+
+      ```css
+      @keyframes pulse {
+        0%, 100% { scale: 1; }
+        50%      { scale: 1.08; }
+      }
+      ```
+
+  - kind: explain
+    title: The animation properties
+    body: |
+      The shorthand takes, in any order: **name duration easing delay iteration-count direction fill-mode**.
+
+      | Property | Values |
+      |---|---|
+      | `animation-name` | your `@keyframes` name |
+      | `animation-duration` | `400ms`, `1s` |
+      | `animation-timing-function` | `ease`, `linear` (constant speed, right for spinners), `ease-out`… |
+      | `animation-delay` | wait before starting |
+      | `animation-iteration-count` | `1` (default), `3`, `infinite` |
+      | `animation-direction` | `normal`, `reverse`, `alternate` (forwards then backwards) |
+      | `animation-fill-mode` | `forwards` keeps the last frame after it ends; `backwards` applies the first frame during the delay; `both` |
+
+      ```css
+      .spinner { animation: spin 1s linear infinite; }
+      .toast   { animation: slide-in 300ms ease-out 200ms both; }
+      ```
+
+  - kind: web
+    title: A loading spinner
+    body: |
+      Build Inkwell's "searching the shelves" spinner:
+
+      1. Write `@keyframes spin` that goes **to** `rotate: 360deg` (from the default 0).
+      2. Give `.spinner` the animation: `spin`, `1s`, `linear`, `infinite`.
+
+      The ring itself is already styled.
+    html: |
+      <div class="spinner" role="status" aria-label="Searching the shelves"></div>
+    css: |
+      .spinner {
+        width: 40px;
+        height: 40px;
+        margin: 2rem;
+        border: 4px solid #e7e5e4;
+        border-top-color: #7c2d12;
+        border-radius: 50%;
+      }
+    tests:
+      - "css('.spinner', 'animation-name') + ' / ' + css('.spinner', 'animation-duration') + ' / ' + css('.spinner', 'animation-timing-function') + ' / ' + css('.spinner', 'animation-iteration-count')"
+      - "keyframes('spin')"
+    solution:
+      css: |
+        @keyframes spin {
+          to {
+            rotate: 360deg;
+          }
+        }
+
+        .spinner {
+          width: 40px;
+          height: 40px;
+          margin: 2rem;
+          border: 4px solid #e7e5e4;
+          border-top-color: #7c2d12;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+    hint: "`@keyframes spin { to { rotate: 360deg; } }` and `animation: spin 1s linear infinite;` on `.spinner`."
+
+  - kind: explain
+    title: Entrance effects and fill-mode
+    body: |
+      A gentle entrance makes new content (a notification, a modal) feel smooth:
+
+      ```css
+      @keyframes rise {
+        from { opacity: 0; translate: 0 12px; }
+      }
+
+      .toast {
+        animation: rise 300ms ease-out both;
+      }
+      ```
+
+      Leaving out the `to` block means "animate to the element's normal styles". With a **delay**, the element would sit visible and still during the wait, then jump to the `from` state. `fill-mode: backwards` (or `both`) applies the first keyframe during the delay, so it starts invisible. Staggering a few items with growing delays (`100ms`, `200ms`, `300ms`) makes a list appear one by one.
+
+  - kind: web
+    title: Stagger the staff picks
+    body: |
+      1. Write `@keyframes rise` that starts **from** `opacity: 0` and `translate: 0 12px` (no `to` block needed).
+      2. Give `.pick` the animation `rise 400ms ease-out both`.
+      3. Delay the second pick by `100ms` and the third by `200ms` with `animation-delay` (use `:nth-child`).
+    html: |
+      <ul class="picks">
+        <li class="pick">Dune</li>
+        <li class="pick">Emma</li>
+        <li class="pick">Beloved</li>
+      </ul>
+    css: |
+      .picks {
+        list-style: none;
+        padding: 0;
+      }
+
+      .pick {
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        background: #f5f0e8;
+      }
+    tests:
+      - "cssAll('.pick', 'animation-name') + ' / ' + css('.pick', 'animation-duration') + ' / ' + css('.pick', 'animation-fill-mode') + ' / ' + css('.pick', 'animation-timing-function')"
+      - "cssAll('.pick', 'animation-delay')"
+      - "keyframes('rise')"
+    solution:
+      css: |
+        @keyframes rise {
+          from {
+            opacity: 0;
+            translate: 0 12px;
+          }
+        }
+
+        .picks {
+          list-style: none;
+          padding: 0;
+        }
+
+        .pick {
+          padding: 1rem;
+          margin-bottom: 0.5rem;
+          background: #f5f0e8;
+          animation: rise 400ms ease-out both;
+        }
+
+        .pick:nth-child(2) {
+          animation-delay: 100ms;
+        }
+
+        .pick:nth-child(3) {
+          animation-delay: 200ms;
+        }
+    hint: "Set the shorthand on `.pick`, then only `animation-delay` in `.pick:nth-child(2)` and `.pick:nth-child(3)`. They must come after the `.pick` rule, or the shorthand resets the delay."
+
+  - kind: explain
+    title: Restraint
+    body: |
+      Animation is seasoning, not the meal:
+
+      - **Have a reason.** Show that something changed, where something came from, or that the site is working. Never just for decoration on every scroll.
+      - **Keep it short.** Most UI animations finish in under 400ms. People wait for long ones.
+      - **Don't loop for ever** unless it's a loading indicator that disappears when loading ends.
+      - **Never flash** more than three times a second: it can trigger seizures (WCAG 2.3.1).
+      - **Respect Reduce motion** (Module 32): turn animations off or swap movement for a simple fade.
+
+      ```css
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+      ```
+
+      That blanket rule (with `!important`, one of its rare honest uses) is common in resets.
+
+  - kind: why
+    body: |
+      A spinner tells people the site hasn't frozen; a quick entrance shows where new content came from. Too much animation does the opposite: it slows people down and can make some of them unwell. Keyframes give you the power; restraint and reduced-motion support make it professional.
+
+  - kind: recap
+    body: |
+      - `@keyframes name { from {…} 50% {…} to {…} }`; leave out `to` to end at the normal styles.
+      - `animation: name duration easing delay count direction fill-mode`.
+      - `linear infinite` for spinners; `both`/`backwards` fill-mode with delays; stagger with `animation-delay`.
+      - Short, purposeful, few loops, no flashing, and a reduced-motion fallback.

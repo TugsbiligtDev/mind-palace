@@ -1,0 +1,5 @@
+title: "The modern style case file"
+module: 34
+kind: review
+summary: "Restyle the Inkwell storefront with today's CSS: tokens and light and dark themes, fluid type, a self-adjusting card grid with motion that respects Reduce motion, nested component styles, and a modern-CSS bug hunt. Uses Modules 28 to 34."
+minutes: 55

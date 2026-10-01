@@ -1,0 +1,34 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "On a short page, the footer floats up to the middle of the screen. Which CSS keeps it at the bottom?"
+    options:
+      - "`body { min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto; }`"
+      - "`footer { position: absolute; }`"
+      - "`footer { margin-top: 500px; }`"
+      - "`body { height: 100%; }`"
+    answer: 0
+    explanation: "The middle row grows to fill the screen, pushing the footer down."
+  - type: mcq
+    prompt: "What's the shortest way to centre a child both horizontally and vertically in its parent?"
+    options: ["`display: grid; place-items: center;` on the parent", "`text-align: center;`", "`margin: auto;` on the parent", "`vertical-align: middle;`"]
+    answer: 0
+    explanation: "place-items centres along both axes in one declaration."
+  - type: mcq
+    prompt: "Why avoid `width: 100vw` for full-bleed sections?"
+    options:
+      - "100vw includes the scrollbar on desktops, causing a sideways scroll"
+      - "vw doesn't work in grids"
+      - "It's only supported in Safari"
+      - "It makes text too large"
+    answer: 0
+    explanation: "The three-column grid pattern spans the real available width instead."
+  - type: mcq
+    prompt: "What makes the self-wrapping sidebar pattern wrap?"
+    options:
+      - "The content's `min-inline-size` (e.g. 60%): when it can't fit beside the sidebar, the flex items wrap"
+      - "A media query at 768px"
+      - "`order: -1` on the sidebar"
+      - "`position: sticky`"
+    answer: 0
+    explanation: "It responds to its own available space, not the screen width."

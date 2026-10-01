@@ -1,0 +1,39 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "How do you make a group of `<details>` elements behave so only one can be open at a time?"
+    options: ["Give them all the same `name`", "Wrap them in a `<form>`", "Add `exclusive` to each", "Use `popover`"]
+    answer: 0
+    explanation: "details elements sharing a name form an exclusive accordion."
+  - type: mcq
+    prompt: "What does opening a `<dialog>` as a modal give you that a styled `<div>` doesn't?"
+    options:
+      - "The page behind becomes inert, focus moves into the dialog, and Escape closes it"
+      - "A colored border"
+      - "Automatic translation"
+      - "Nothing; they're the same"
+    answer: 0
+    explanation: "Modal dialogs handle focus, keyboard and the backdrop correctly with no extra code."
+  - type: mcq
+    prompt: "Which markup makes a button open a dialog as a modal without JavaScript?"
+    options:
+      - "`<button commandfor=\"d\" command=\"show-modal\">`"
+      - "`<button popovertarget=\"d\">`"
+      - "`<button href=\"#d\">`"
+      - "`<button open=\"d\">`"
+    answer: 0
+    explanation: "Invoker commands: commandfor names the dialog, command says what to do."
+  - type: mcq
+    prompt: "What is \"light dismiss\" on a popover?"
+    options:
+      - "Clicking outside it or pressing Escape closes it"
+      - "It fades out slowly"
+      - "It uses a light color scheme"
+      - "It closes after 5 seconds"
+    answer: 0
+    explanation: "Auto popovers close when you click elsewhere or press Escape."
+  - type: mcq
+    prompt: "Which selector styles the dimmed area behind an open modal dialog?"
+    options: ["`dialog::backdrop`", "`dialog:behind`", "`body:modal`", "`dialog::before`"]
+    answer: 0
+    explanation: "::backdrop is drawn behind modal dialogs (and popovers) in the top layer."

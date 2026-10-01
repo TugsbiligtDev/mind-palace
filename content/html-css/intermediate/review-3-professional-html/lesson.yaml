@@ -1,0 +1,263 @@
+steps:
+  - kind: explain
+    title: The complaint
+    body: |
+      Remember the customer who couldn't buy a book? Here's their email, forwarded by Inspector Bold:
+
+      > *"I use VoiceOver. On your checkout every box is just 'edit text', I can't tell when something's wrong, the menu button says nothing, and Tab gets lost. I gave up."*
+
+      Five briefs, no step-by-step instructions. They cover Modules 23 to 27. Check your work, use a hint after a miss, and see an answer after three.
+
+  - kind: web
+    title: "1. The checkout"
+    body: |
+      > *The checkout asks for the customer's full name, email and postcode. Every field must have a visible, connected label ("Full name", "Email", "Postcode"); be required; let the browser fill it in from saved details; and the email field must only accept email addresses. Postcodes are 5 to 8 letters, digits or spaces (pattern `[A-Za-z0-9 ]{5,8}`). Under the postcode field is the hint "For example BS1 4XE" (id `pc-hint`), which screen readers should read with the field. The fields only turn red (border #b91c1c) after the customer has interacted with them.*
+
+      Use the ids and names `name`, `email` and `postcode`.
+    html: |
+      <form action="/checkout" method="post">
+        <!-- your fields -->
+        <button type="submit">Pay now</button>
+      </form>
+    css: |
+      input {
+        font: inherit;
+        border: 2px solid #78716c;
+      }
+    tests:
+      - "$$('input').map((i) => i.name + ':' + i.type + ':' + i.required + ':' + i.getAttribute('autocomplete') + ':' + (i.labels.length ? i.labels[0].textContent.trim() : 'NO LABEL'))"
+      - "[valid('#postcode', 'BS1'), valid('#postcode', 'BS1 4XE'), valid('#email', 'ada'), valid('#email', 'ada@example.com')]"
+      - "attr('#postcode', 'aria-describedby') + ' → ' + text('#pc-hint')"
+      - "rule(['input:user-invalid', ':user-invalid'], 'border-color')"
+      - "rule(['input:invalid', ':invalid'], 'border-color')"
+    solution:
+      html: |
+        <form action="/checkout" method="post">
+          <label for="name">Full name</label>
+          <input id="name" name="name" required autocomplete="name">
+
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="email">
+
+          <label for="postcode">Postcode</label>
+          <input id="postcode" name="postcode" required autocomplete="postal-code" pattern="[A-Za-z0-9 ]{5,8}" aria-describedby="pc-hint">
+          <p id="pc-hint">For example BS1 4XE</p>
+
+          <button type="submit">Pay now</button>
+        </form>
+      css: |
+        input {
+          font: inherit;
+          border: 2px solid #78716c;
+        }
+
+        input:user-invalid {
+          border-color: #b91c1c;
+        }
+    hint: "Each field needs `required` and an `autocomplete` (`name`, `email`, `postal-code`). The hint is linked with `aria-describedby=\"pc-hint\"`. Style `input:user-invalid`, not `:invalid`."
+
+  - kind: web
+    title: "2. The book page, by keyboard"
+    body: |
+      > *The first thing a keyboard user can reach must be a "Skip to main content" link (class `skip-link`) to the main area, which needs a matching id. Links and buttons show a 3px solid #1d4ed8 outline when focused by keyboard. The basket button shows only an icon and must be announced as "Basket", with its emoji hidden from screen readers. The grey author line must reach 4.5:1 contrast.*
+    html: |
+      <header>
+        <a href="index.html">Inkwell Books</a>
+        <button type="button">🧺</button>
+      </header>
+      <main>
+        <h1>Dune</h1>
+        <p class="author">by Frank Herbert</p>
+      </main>
+    css: |
+      .author {
+        color: #a8a29e;
+      }
+
+      .skip-link {
+        position: absolute;
+        top: -100px;
+      }
+
+      .skip-link:focus {
+        top: 0;
+      }
+    tests:
+      - "doc.body.firstElementChild.className + ' → ' + doc.body.firstElementChild.getAttribute('href') + ' → ' + (doc.querySelector(doc.body.firstElementChild.getAttribute('href') || 'x') || {}).localName"
+      - "text('.skip-link')"
+      - "rule(['a:focus-visible', ':focus-visible', '*:focus-visible'], 'outline') + ' / ' + rule(['button:focus-visible', ':focus-visible', '*:focus-visible'], 'outline')"
+      - "attr('header button', 'aria-label') + ' / ' + count('header button [aria-hidden=true]')"
+      - "contrast('.author') >= 4.5"
+    solution:
+      html: |
+        <a class="skip-link" href="#main">Skip to main content</a>
+        <header>
+          <a href="index.html">Inkwell Books</a>
+          <button type="button" aria-label="Basket"><span aria-hidden="true">🧺</span></button>
+        </header>
+        <main id="main">
+          <h1>Dune</h1>
+          <p class="author">by Frank Herbert</p>
+        </main>
+      css: |
+        .author {
+          color: #57534e;
+        }
+
+        .skip-link {
+          position: absolute;
+          top: -100px;
+        }
+
+        .skip-link:focus {
+          top: 0;
+        }
+
+        a:focus-visible, button:focus-visible {
+          outline: 3px solid #1d4ed8;
+        }
+    hint: "The skip link goes first in the body and points at `#main`; `<main id=\"main\">`. Wrap the emoji in `<span aria-hidden=\"true\">` and label the button. A darker grey such as `#57534e` passes."
+
+  - kind: web
+    title: "3. The extras"
+    body: |
+      > *A "Shipping questions" section where only one answer is open at a time: "How much is postage?" (answer: "£2.50 in the UK.") and "How fast is it?" (answer: "Two working days."), both closed at first, grouped under the name `ship`. And a "Gift wrap" button that opens, as a modal, a dialog (id `wrap`, labelled by its heading "Gift wrapping", id `wrap-title`) containing a Close button that closes it.*
+    html: |
+      <h2>Shipping questions</h2>
+      <!-- the questions -->
+
+      <!-- the gift wrap button and dialog -->
+    tests:
+      - "$$('details').map((d) => d.name + ':' + d.open + ':' + d.querySelector('summary').textContent.trim())"
+      - "$$('details').map((d) => d.querySelector('summary + *') ? d.querySelector('summary + *').textContent.trim() : 'NO ANSWER')"
+      - "click('button[commandfor=wrap]')"
+      - "$('#wrap').open + ' modal:' + $('#wrap').matches(':modal') + ' label:' + attr('#wrap', 'aria-labelledby') + ' → ' + text('#wrap-title')"
+      - "click('#wrap button')"
+      - "$('#wrap').open"
+    solution:
+      html: |
+        <h2>Shipping questions</h2>
+        <details name="ship">
+          <summary>How much is postage?</summary>
+          <p>£2.50 in the UK.</p>
+        </details>
+        <details name="ship">
+          <summary>How fast is it?</summary>
+          <p>Two working days.</p>
+        </details>
+
+        <button type="button" commandfor="wrap" command="show-modal">Gift wrap</button>
+        <dialog id="wrap" aria-labelledby="wrap-title">
+          <h2 id="wrap-title">Gift wrapping</h2>
+          <button type="button" commandfor="wrap" command="close">Close</button>
+        </dialog>
+    hint: "Two `<details name=\"ship\">`, each with a `<summary>` and a `<p>`. The button uses `commandfor=\"wrap\" command=\"show-modal\"`; the Close button `command=\"close\"`."
+
+  - kind: web
+    title: "4. Fast and shareable"
+    body: |
+      > *The page's head needs a meta description ("Second-hand Dune, £8.99."), an Open Graph title ("Dune at Inkwell") and image (https://inkwellbooks.com/og/dune.jpg), and a canonical address of https://inkwellbooks.com/books/dune.html. The hero photo is the first thing people see and must load first; offer it as AVIF (`images/shop-800.avif`), then WebP (`images/shop-800.webp`), with the existing JPEG as the fallback. The two covers further down load only when needed.*
+    html: |
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Dune · Inkwell Books</title>
+        </head>
+        <body>
+          <img class="hero" src="images/shop-800.jpg" alt="Inside Inkwell Books" width="800" height="500">
+          <h1>Dune</h1>
+          <img src="images/cover-dune.svg" alt="Dune, front cover" width="150" height="225">
+          <img src="images/cover-emma.svg" alt="Emma, front cover" width="150" height="225">
+        </body>
+      </html>
+    tests:
+      - "attr('meta[name=description]', 'content')"
+      - "($('meta[property=\"og:title\"]') || {}).content + ' / ' + ($('meta[property=\"og:image\"]') || {}).content"
+      - "$('link[rel=canonical]') ? attr('link[rel=canonical]', 'href') : 'missing'"
+      - "$$('picture > *').map((e) => e.localName + (e.type ? '[' + e.type + ']' : '') + ':' + (e.getAttribute('srcset') || e.getAttribute('src')))"
+      - "attr('.hero', 'fetchpriority') + ' / ' + attr('.hero', 'loading')"
+      - "$$('img:not(.hero)').map((i) => i.getAttribute('loading'))"
+    solution:
+      html: |
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Dune · Inkwell Books</title>
+            <meta name="description" content="Second-hand Dune, £8.99.">
+            <meta property="og:title" content="Dune at Inkwell">
+            <meta property="og:image" content="https://inkwellbooks.com/og/dune.jpg">
+            <link rel="canonical" href="https://inkwellbooks.com/books/dune.html">
+          </head>
+          <body>
+            <picture>
+              <source type="image/avif" srcset="images/shop-800.avif">
+              <source type="image/webp" srcset="images/shop-800.webp">
+              <img class="hero" src="images/shop-800.jpg" alt="Inside Inkwell Books" width="800" height="500" fetchpriority="high">
+            </picture>
+            <h1>Dune</h1>
+            <img src="images/cover-dune.svg" alt="Dune, front cover" width="150" height="225" loading="lazy">
+            <img src="images/cover-emma.svg" alt="Emma, front cover" width="150" height="225" loading="lazy">
+          </body>
+        </html>
+    hint: "Head: one `meta name`, two `meta property`, one `link rel=\"canonical\"`. Body: wrap the hero in `<picture>` with AVIF then WebP sources, give it `fetchpriority=\"high\"`, and `loading=\"lazy\"` on the covers."
+
+  - kind: web
+    title: "5. The accessibility bug hunt"
+    broken_starter: true
+    body: |
+      > *Moth ran a quick audit and found five problems on the newsletter box but didn't fix them: "focus disappears", "the close control isn't a real button", "the search field has no name", "an image has no alt" and "something focusable is hidden from screen readers".*
+
+      Find and fix all five, keeping the look and the text the same.
+    html: |
+      <aside class="news">
+        <div class="close" onclick="">✕</div>
+        <img src="images/logo.svg" width="160" height="48">
+        <h2>Join the newsletter</h2>
+        <input type="email" placeholder="Your email">
+        <a href="privacy.html" aria-hidden="true">Privacy policy</a>
+      </aside>
+    css: |
+      .news *:focus {
+        outline: none;
+      }
+
+      .close {
+        float: right;
+        cursor: pointer;
+        background: none;
+        border: 0;
+        font: inherit;
+      }
+    tests:
+      - "selectors().some((s) => /:focus$/.test(s) && rule(s, 'outline-style') === 'none')"
+      - "count('button.close') + ' ' + attr('.close', 'aria-label')"
+      - "$('input').labels.length > 0 || !!attr('input', 'aria-label')"
+      - "(attr('.news img', 'alt') || '').toLowerCase().includes('inkwell')"
+      - "count('[aria-hidden=true]:is(a, button, input), [aria-hidden=true] :is(a, button, input)')"
+    solution:
+      html: |
+        <aside class="news">
+          <button type="button" class="close" aria-label="Close">✕</button>
+          <img src="images/logo.svg" alt="Inkwell Books" width="160" height="48">
+          <h2>Join the newsletter</h2>
+          <label for="news-email">Your email</label>
+          <input id="news-email" type="email">
+          <a href="privacy.html">Privacy policy</a>
+        </aside>
+      css: |
+        .close {
+          float: right;
+          cursor: pointer;
+          background: none;
+          border: 0;
+          font: inherit;
+        }
+    hint: "Delete the `outline: none` rule; make the ✕ a `<button>` with an `aria-label`; give the input a real `<label>`; give the logo alt text naming Inkwell; and remove `aria-hidden` from the link."
+
+  - kind: recap
+    body: |
+      The customer can now check out with VoiceOver: labelled, validated fields that explain themselves, a skip link and visible focus, named buttons, native accordions and dialogs, plus a page that loads fast and previews well when shared. Next, Part 6 brings modern CSS: variables, `:has()`, nesting and motion.

@@ -1,0 +1,350 @@
+steps:
+  - kind: explain
+    title: Free validation
+    body: |
+      Browsers can check form input **before** it's sent, with no JavaScript. Attributes describe what's allowed:
+
+      | Attribute | Rule |
+      |---|---|
+      | `required` | can't be empty |
+      | `type="email"`, `type="url"`, `type="number"` | must look like that kind of value |
+      | `minlength="2"`, `maxlength="40"` | text length |
+      | `min="1"`, `max="10"`, `step="1"` | number and date ranges |
+      | `pattern="[0-9]{5}"` | must match a regular expression (the whole value) |
+
+      When someone submits a form that breaks a rule, the browser stops it, focuses the first bad field, and shows a message in the visitor's own language.
+
+      ⚠️ This is a **convenience for the visitor**, not security. Anyone can switch it off, so the server that receives the form must check everything again.
+
+  - kind: web
+    title: Validate the order form
+    body: |
+      Add validation to Inkwell's order form:
+
+      1. **Name**: required, at least `2` characters.
+      2. **Email**: required, and a real email field.
+      3. **Quantity**: a number from `1` to `10`.
+      4. **Postcode**: required, and it must match the pattern `[A-Za-z0-9 ]{5,8}` (5 to 8 letters, digits or spaces).
+
+      The checker types sample values into each field and asks the browser whether they're accepted.
+    html: |
+      <form action="/order" method="post">
+        <label for="name">Name</label>
+        <input id="name" name="name">
+
+        <label for="email">Email</label>
+        <input id="email" name="email">
+
+        <label for="qty">Quantity</label>
+        <input id="qty" name="qty">
+
+        <label for="postcode">Postcode</label>
+        <input id="postcode" name="postcode">
+
+        <button type="submit">Order</button>
+      </form>
+    tests:
+      - "[valid('#name', ''), valid('#name', 'A'), valid('#name', 'Ada')]"
+      - "[valid('#email', ''), valid('#email', 'ada'), valid('#email', 'ada@example.com')]"
+      - "[valid('#qty', '0'), valid('#qty', '1'), valid('#qty', '10'), valid('#qty', '11'), valid('#qty', 'two')]"
+      - "[valid('#postcode', ''), valid('#postcode', 'BS1'), valid('#postcode', 'BS1 4XE'), valid('#postcode', 'BS1-4XE')]"
+      - "attr('#email', 'type') + ' / ' + attr('#qty', 'type')"
+    solution:
+      html: |
+        <form action="/order" method="post">
+          <label for="name">Name</label>
+          <input id="name" name="name" required minlength="2">
+
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required>
+
+          <label for="qty">Quantity</label>
+          <input id="qty" name="qty" type="number" min="1" max="10">
+
+          <label for="postcode">Postcode</label>
+          <input id="postcode" name="postcode" required pattern="[A-Za-z0-9 ]{5,8}">
+
+          <button type="submit">Order</button>
+        </form>
+    hint: "`required minlength=\"2\"`; `type=\"email\" required`; `type=\"number\" min=\"1\" max=\"10\"`; `required pattern=\"[A-Za-z0-9 ]{5,8}\"`."
+    reject:
+      - html: |
+          <form action="/order" method="post">
+            <label for="name">Name</label>
+            <input id="name" name="name" required minlength="2">
+
+            <label for="email">Email</label>
+            <input id="email" name="email" type="text" required>
+
+            <label for="qty">Quantity</label>
+            <input id="qty" name="qty" type="number" min="1" max="10">
+
+            <label for="postcode">Postcode</label>
+            <input id="postcode" name="postcode" required pattern="[A-Za-z0-9 ]{5,8}">
+
+            <button type="submit">Order</button>
+          </form>
+
+  - kind: explain
+    title: ":valid, :invalid and :user-invalid"
+    body: |
+      CSS can style fields by their validation state:
+
+      - `:valid` / `:invalid`: the field currently passes or fails its rules.
+      - `:required` / `:optional`.
+      - `:user-invalid`: invalid **and the person has interacted with it** (typed and left the field, or tried to submit).
+
+      The trouble with `:invalid` is that an empty required field is invalid **from the start**, so the form loads covered in red before anyone has typed a thing. That's alarming and unhelpful. `:user-invalid` waits until the visitor has had a go, which is what you almost always want:
+
+      ```css
+      input:user-invalid {
+        border-color: #b91c1c;
+        background: #fef2f2;
+      }
+      ```
+
+  - kind: explain
+    title: Error messages everyone gets
+    body: |
+      A red border alone fails people who can't see color, and says nothing about *how* to fix the problem. Good error messages:
+
+      - are **text**, next to the field: "Enter a postcode like BS1 4XE";
+      - are **connected** to the field with `aria-describedby`, so a screen reader reads them when the field gets focus;
+      - mark the field with `aria-invalid="true"` while it's wrong.
+
+      ```html
+      <label for="postcode">Postcode</label>
+      <input id="postcode" aria-describedby="postcode-hint postcode-error" aria-invalid="true">
+      <p id="postcode-hint">For example BS1 4XE</p>
+      <p id="postcode-error" class="error">That postcode looks too short.</p>
+      ```
+
+      `aria-describedby` takes one or more ids, separated by spaces. Hints (format examples) belong there too: they're better than placeholders, because they don't vanish.
+
+      Showing and hiding messages as people type needs a little JavaScript; the HTML structure above is what that script fills in.
+
+  - kind: web
+    title: Style and describe the errors
+    body: |
+      1. In CSS, give fields that are invalid **after the visitor has interacted** a border color of `#b91c1c`. Don't use plain `:invalid`.
+      2. Connect the email field to both its hint (`email-hint`) and its error message (`email-error`) with `aria-describedby`, in that order.
+      3. Mark the email field `aria-invalid="true"` (the error is currently showing).
+    html: |
+      <form>
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required value="ada@">
+        <p id="email-hint" class="hint">We'll only use it to confirm your order.</p>
+        <p id="email-error" class="error">Enter an email like ada@example.com.</p>
+        <button type="submit">Next</button>
+      </form>
+    css: |
+      input {
+        font: inherit;
+        padding: 0.5rem;
+        border: 2px solid #78716c;
+      }
+
+      .error {
+        color: #b91c1c;
+      }
+    tests:
+      - "rule(['input:user-invalid', ':user-invalid', '*:user-invalid'], 'border-color')"
+      - "rule(['input:invalid', ':invalid'], 'border-color')"
+      - "attr('#email', 'aria-describedby')"
+      - "attr('#email', 'aria-invalid')"
+    solution:
+      html: |
+        <form>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required value="ada@" aria-describedby="email-hint email-error" aria-invalid="true">
+          <p id="email-hint" class="hint">We'll only use it to confirm your order.</p>
+          <p id="email-error" class="error">Enter an email like ada@example.com.</p>
+          <button type="submit">Next</button>
+        </form>
+      css: |
+        input {
+          font: inherit;
+          padding: 0.5rem;
+          border: 2px solid #78716c;
+        }
+
+        input:user-invalid {
+          border-color: #b91c1c;
+        }
+
+        .error {
+          color: #b91c1c;
+        }
+    hint: "CSS: `input:user-invalid { border-color: #b91c1c; }`. HTML: `aria-describedby=\"email-hint email-error\" aria-invalid=\"true\"` on the input."
+    reject:
+      - css: |
+          input {
+            font: inherit;
+            padding: 0.5rem;
+            border: 2px solid #78716c;
+          }
+
+          input:invalid {
+            border-color: #b91c1c;
+          }
+
+          .error {
+            color: #b91c1c;
+          }
+        html: |
+          <form>
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required value="ada@" aria-describedby="email-hint email-error" aria-invalid="true">
+            <p id="email-hint" class="hint">We'll only use it to confirm your order.</p>
+            <p id="email-error" class="error">Enter an email like ada@example.com.</p>
+            <button type="submit">Next</button>
+          </form>
+
+  - kind: explain
+    title: autocomplete
+    body: |
+      `autocomplete` tells the browser exactly what a field is for, so it can fill it in from the visitor's saved details. On a phone that turns a minute of typing into one tap. It's also a WCAG requirement for fields about the user (success criterion 1.3.5).
+
+      | Field | autocomplete |
+      |---|---|
+      | full name | `name` |
+      | email | `email` |
+      | phone | `tel` |
+      | address line | `street-address` (or `address-line1`, `address-line2`) |
+      | town/city | `address-level2` |
+      | postcode | `postal-code` |
+      | country | `country-name` |
+      | new password | `new-password` (lets the browser suggest a strong one) |
+      | password at login | `current-password` |
+      | one-time code from SMS | `one-time-code` |
+
+      `autocomplete="off"` is rarely right; browsers often ignore it on login fields anyway.
+
+  - kind: web
+    title: Make the address form fill itself
+    body: |
+      Add the right `autocomplete` value to each field of the delivery address: full name, email, phone, street address, town (`address-level2`) and postcode.
+
+      The phone field also needs `type="tel"`, which gives phones a number keypad.
+    html: |
+      <form>
+        <label for="n">Full name</label> <input id="n" name="name">
+        <label for="e">Email</label> <input id="e" name="email" type="email">
+        <label for="p">Phone</label> <input id="p" name="phone">
+        <label for="a">Street address</label> <input id="a" name="address">
+        <label for="t">Town or city</label> <input id="t" name="town">
+        <label for="pc">Postcode</label> <input id="pc" name="postcode">
+      </form>
+    tests:
+      - "$$('input').map((i) => i.name + '=' + i.getAttribute('autocomplete'))"
+      - "attr('#p', 'type')"
+    solution:
+      html: |
+        <form>
+          <label for="n">Full name</label> <input id="n" name="name" autocomplete="name">
+          <label for="e">Email</label> <input id="e" name="email" type="email" autocomplete="email">
+          <label for="p">Phone</label> <input id="p" name="phone" type="tel" autocomplete="tel">
+          <label for="a">Street address</label> <input id="a" name="address" autocomplete="street-address">
+          <label for="t">Town or city</label> <input id="t" name="town" autocomplete="address-level2">
+          <label for="pc">Postcode</label> <input id="pc" name="postcode" autocomplete="postal-code">
+        </form>
+    hint: "The values are in the table above: `name`, `email`, `tel`, `street-address`, `address-level2`, `postal-code`."
+
+  - kind: explain
+    title: accent-color and datalist
+    body: |
+      **accent-color** recolors the browser's own checkboxes, radio buttons, range sliders and progress bars in one line, while keeping them accessible and native:
+
+      ```css
+      :root { accent-color: #7c2d12; }
+      ```
+
+      **datalist** offers suggestions for a text field while still allowing anything to be typed:
+
+      ```html
+      <label for="genre">Genre</label>
+      <input id="genre" name="genre" list="genres">
+      <datalist id="genres">
+        <option value="Fiction">
+        <option value="Poetry">
+        <option value="History">
+      </datalist>
+      ```
+
+      The input's `list` attribute matches the datalist's `id`. Unlike `<select>`, the visitor isn't limited to the options.
+
+  - kind: web
+    title: Brand the controls, suggest the genres
+    body: |
+      1. Make every checkbox and radio on the page use Inkwell brown, `#7c2d12`, with `accent-color` set once on `:root`.
+      2. Connect the genre field to a `<datalist>` with the id `genres` and three options: `Fiction`, `Poetry`, `History`.
+    html: |
+      <form>
+        <label><input type="checkbox" name="news" checked> Send me the newsletter</label>
+        <fieldset>
+          <legend>Format</legend>
+          <label><input type="radio" name="format" value="paper" checked> Paperback</label>
+          <label><input type="radio" name="format" value="hard"> Hardback</label>
+        </fieldset>
+        <label for="genre">Favourite genre</label>
+        <input id="genre" name="genre">
+      </form>
+    css: |
+      body {
+        font-family: system-ui, sans-serif;
+      }
+    tests:
+      - "cssAll('input[type=checkbox], input[type=radio]', 'accent-color')"
+      - "rule(':root', 'accent-color')"
+      - "attr('#genre', 'list')"
+      - "$$('datalist#genres option').map((o) => o.value)"
+      - "$('#genre').list ? $('#genre').list.id : null"
+    solution:
+      html: |
+        <form>
+          <label><input type="checkbox" name="news" checked> Send me the newsletter</label>
+          <fieldset>
+            <legend>Format</legend>
+            <label><input type="radio" name="format" value="paper" checked> Paperback</label>
+            <label><input type="radio" name="format" value="hard"> Hardback</label>
+          </fieldset>
+          <label for="genre">Favourite genre</label>
+          <input id="genre" name="genre" list="genres">
+          <datalist id="genres">
+            <option value="Fiction">
+            <option value="Poetry">
+            <option value="History">
+          </datalist>
+        </form>
+      css: |
+        :root {
+          accent-color: #7c2d12;
+        }
+
+        body {
+          font-family: system-ui, sans-serif;
+        }
+    hint: "CSS: `:root { accent-color: #7c2d12; }`. HTML: `list=\"genres\"` on the input and a `<datalist id=\"genres\">` holding three `<option value=\"…\">`."
+
+  - kind: info
+    title: "🔹 output, progress and meter"
+    body: |
+      Three small elements for showing values:
+
+      - `<output for="price qty">` holds the **result of a calculation** (a total that updates as you change a quantity, with a line of JavaScript).
+      - `<progress value="3" max="5">3 of 5</progress>` shows **progress through a task** (an upload, step 3 of 5 in checkout).
+      - `<meter value="0.8" low="0.3" high="0.7">80%</meter>` shows **a measurement within a range** (stock level, disk space, password strength).
+
+      Each is announced properly by screen readers, which a styled `div` bar isn't.
+
+  - kind: why
+    body: |
+      Forms are where visitors do business with you, and every extra second or confusing error costs orders. Built-in validation, clear and connected error messages, and autocomplete make forms faster for everyone and usable for people with disabilities, mostly with attributes rather than code.
+
+  - kind: recap
+    body: |
+      - Validation attributes: `required`, `type`, `minlength`/`maxlength`, `min`/`max`, `pattern`. Always re-check on the server.
+      - Style with `:user-invalid` (after interaction), not `:invalid` (which is red from page load).
+      - Errors as text, linked with `aria-describedby`; `aria-invalid="true"` while wrong.
+      - `autocomplete` values (`name`, `email`, `postal-code`, `new-password`…) speed up filling in.
+      - `accent-color` themes native controls; `<datalist>` suggests values. 🔹 `<output>`, `<progress>`, `<meter>`.

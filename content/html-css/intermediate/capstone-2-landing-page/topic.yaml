@@ -1,0 +1,5 @@
+title: "A product landing page"
+module: 38
+kind: capstone
+summary: "Build a polished, accessible landing page for Margin, a fictional pocket reading journal: light and dark themes, fluid type, a responsive hero image, a card grid with safe motion, a native pre-order dialog and FAQ, then publish it from GitHub and pass a Lighthouse audit."
+minutes: 150

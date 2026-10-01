@@ -1,0 +1,31 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "With `font-size: clamp(1rem, 4vw, 2rem)` and a default 16px root, how big is the text on a 1600px-wide screen?"
+    options: ["32px (the 2rem maximum)", "64px", "16px", "24px"]
+    answer: 0
+    explanation: "4vw of 1600px is 64px, which is above the 2rem (32px) maximum, so the maximum wins."
+  - type: mcq
+    prompt: "What does `width: min(100%, 700px)` do?"
+    options:
+      - "Full width on small screens, but never wider than 700px"
+      - "Always 700px"
+      - "At least 700px"
+      - "Half of 700px"
+    answer: 0
+    explanation: "min() picks the smaller of the two at every screen size."
+  - type: mcq
+    prompt: "Photos squash when forced into square boxes. Which property makes them crop instead?"
+    options: ["`object-fit: cover`", "`aspect-ratio: auto`", "`background-size: cover`", "`overflow: hidden`"]
+    answer: 0
+    explanation: "object-fit controls how replaced content like images fills its box. background-size is only for background images."
+  - type: mcq
+    prompt: "Which logical property sets the left and right margins in English text?"
+    options: ["`margin-inline`", "`margin-block`", "`margin-x`", "`margin-sides`"]
+    answer: 0
+    explanation: "Inline is the direction text runs; block is the direction lines stack."
+  - type: mcq
+    prompt: "A block should be only as wide as its text but never overflow its container. Which width?"
+    options: ["`fit-content`", "`max-content`", "`min-content`", "`100%`"]
+    answer: 0
+    explanation: "fit-content hugs the content but stops at the available space."

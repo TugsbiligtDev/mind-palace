@@ -1,0 +1,35 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Which attribute do Open Graph tags use for their name?"
+    options: ["`property`, as in `<meta property=\"og:title\" …>`", "`name`", "`rel`", "`og`"]
+    answer: 0
+    explanation: "Open Graph uses property=. The description and twitter:card use name=."
+  - type: mcq
+    prompt: "A shared link shows no picture in WhatsApp. Which tag is most likely missing or wrong?"
+    options: ["`og:image` (with a full URL)", "`<title>`", "`<link rel=\"canonical\">`", "`<meta charset>`"]
+    answer: 0
+    explanation: "Preview images come from og:image, which must be an absolute URL the app can download."
+  - type: mcq
+    prompt: "What does a canonical link tell search engines?"
+    options:
+      - "Which URL is the official one when the same page has several addresses"
+      - "Which pages to ignore"
+      - "Where the sitemap is"
+      - "The page's language"
+    answer: 0
+    explanation: "It stops duplicates (with tracking codes, with/without www) from splitting the page's ranking."
+  - type: mcq
+    prompt: "Which meta description is best?"
+    options:
+      - "\"Second-hand paperback of Dune in very good condition. £8.99, posted within two days.\""
+      - "\"Dune, books, cheap books, buy books, second-hand books, Bristol books\""
+      - "\"Welcome to our website\""
+      - "No description: search engines will write one"
+    answer: 0
+    explanation: "Write a specific, honest summary for people. Keyword stuffing is ignored or penalised."
+  - type: mcq
+    prompt: "Which icon is used when someone adds your site to an iPhone home screen?"
+    options: ["`apple-touch-icon`", "`favicon.ico`", "`og:image`", "`mask-icon`"]
+    answer: 0
+    explanation: "iOS looks for a link with rel=\"apple-touch-icon\" (a 180×180 PNG)."

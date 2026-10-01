@@ -54,12 +54,24 @@ export function buildPage({ html, css }: WebFiles): string {
 //   box(sel)               rounded position and size: { x, y, width, height }
 //   edges(sel, outer)      how far sel's box sits inside outer's box: { top, right, bottom, left }
 //   scrolled(y, sel)       box(sel) after scrolling the page down y pixels (then scrolls back)
+//   contrast(sel)          the WCAG contrast ratio of sel's text color against the background
+//                          behind it (the nearest ancestor with a solid background, else white)
+//   valid(sel, value)      whether the form field would accept `value` (its built-in validation:
+//                          required, type, pattern, min/max…); the field is left as it was
+//   scheme(mode, sel, prop) css(sel, prop) with the page forced to the "light" or "dark" color
+//                          scheme (works with light-dark(); @media prefers-color-scheme can't be forced)
+//   click(sel)             clicks the element (checks run in order, so later checks see the result)
 //   text(sel), attr(sel, name), count(sel)
 //   rule(selector, prop)   the value a stylesheet rule sets (for :hover, :focus and other states
 //                          a check can't trigger), computed so "red" and "#f00" compare equal.
 //                          `selector` may be a list of acceptable selectors; the last match wins.
-//   declared(selector, prop) the value exactly as written in the stylesheet (lowercased), e.g. to
-//                          check that a size was given in rem; same selector rules as rule()
+//                          A rule for "a, button" counts as a rule for "a" and for "button", and
+//                          nested rules count by their full selector ("&:hover" in ".card" = ".card:hover").
+//                          rule(selector, prop, within) only looks inside @media/@supports/@container
+//                          rules whose condition contains `within`, e.g. 'prefers-reduced-motion'.
+//   declared(selector, prop, within) the value exactly as written in the stylesheet (lowercased),
+//                          e.g. to check that a size was given in rem; same matching as rule()
+//   keyframes(name)        the steps of @keyframes name, e.g. ["100%: rotate: 360deg;"], or null
 //   selectors()            the selector of every style rule in the page's stylesheets
 //   doc, win               the page's document and window
 export const CHECK_RUNTIME = String.raw`
@@ -89,17 +101,64 @@ export const CHECK_RUNTIME = String.raw`
     root.scrollTop = y;
     try { return box(sel); } finally { root.scrollTop = before; }
   }
+  var paint = null;
+  function rgba(color) {
+    paint = paint || doc.createElement("canvas").getContext("2d", { willReadFrequently: true });
+    paint.clearRect(0, 0, 1, 1);
+    paint.fillStyle = "#000";
+    paint.fillStyle = color;
+    paint.fillRect(0, 0, 1, 1);
+    var d = paint.getImageData(0, 0, 1, 1).data;
+    return [d[0], d[1], d[2], d[3] / 255];
+  }
+  function luminance(c) {
+    var v = c.slice(0, 3).map(function (x) { x /= 255; return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+    return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+  }
+  function contrast(sel) {
+    var el = need(sel), fg = rgba(win.getComputedStyle(el).color), bg = [255, 255, 255, 1];
+    for (var n = el; n && n.nodeType === 1; n = n.parentElement) {
+      var c = rgba(win.getComputedStyle(n).backgroundColor);
+      if (c[3] > 0.99) { bg = c; break; }
+    }
+    // A see-through text color shows some of the background through it.
+    var mixed = [0, 1, 2].map(function (i) { return fg[i] * fg[3] + bg[i] * (1 - fg[3]); });
+    var a = luminance(mixed), b = luminance(bg);
+    return Math.round(((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)) * 100) / 100;
+  }
+  function valid(sel, value) {
+    var el = need(sel), before = el.value;
+    el.value = value;
+    try { return el.checkValidity(); } finally { el.value = before; }
+  }
+  function scheme(mode, sel, prop) {
+    var root = doc.documentElement, before = root.style.colorScheme;
+    root.style.colorScheme = mode;
+    try { return css(sel, prop); } finally { root.style.colorScheme = before; }
+  }
+  function click(sel) {
+    need(sel).click();
+    return "clicked " + sel;
+  }
   function text(sel) { return need(sel).textContent.replace(/\s+/g, " ").trim(); }
   function attr(sel, name) { return need(sel).getAttribute(name); }
   function count(sel) { return doc.querySelectorAll(sel).length; }
+  // Visits every rule, with the conditions of the @media/@supports/@container rules around it
+  // and, for nested rules, the selector written out in full ("&:hover" inside ".card" → ".card:hover").
   function eachRule(fn) {
-    function walk(rules) {
+    function full(sel, parent) {
+      if (!parent) return sel;
+      var p = parts(parent).length > 1 ? ":is(" + parent + ")" : parent;
+      return parts(sel).map(function (one) { return one.indexOf("&") >= 0 ? one.replace(/&/g, p) : p + " " + one; }).join(",");
+    }
+    function walk(rules, conds, parent) {
       for (var i = 0; i < rules.length; i++) {
-        fn(rules[i]);
-        if (rules[i].cssRules) walk(rules[i].cssRules);
+        var r = rules[i], sel = r.selectorText !== undefined ? full(r.selectorText, parent) : undefined;
+        fn(r, conds, sel);
+        if (r.cssRules) walk(r.cssRules, r.conditionText !== undefined ? conds.concat([r.conditionText]) : conds, sel !== undefined ? sel : parent);
       }
     }
-    for (var s = 0; s < doc.styleSheets.length; s++) walk(doc.styleSheets[s].cssRules);
+    for (var s = 0; s < doc.styleSheets.length; s++) walk(doc.styleSheets[s].cssRules, [], undefined);
   }
   function selectors() {
     var out = [];
@@ -107,18 +166,34 @@ export const CHECK_RUNTIME = String.raw`
     return out;
   }
   function squash(s) { return s.replace(/\s+/g, " ").replace(/\s*([>+~,])\s*/g, "$1").trim(); }
-  function declared(selector, prop) {
+  // "a, b:is(c, d)" → ["a", "b:is(c,d)"]: split on the commas that aren't inside brackets.
+  function parts(selectorText) {
+    var out = [], depth = 0, cur = "";
+    for (var i = 0; i < selectorText.length; i++) {
+      var ch = selectorText[i];
+      if (ch === "(") depth++;
+      if (ch === ")") depth--;
+      if (ch === "," && depth === 0) { out.push(squash(cur)); cur = ""; } else cur += ch;
+    }
+    out.push(squash(cur));
+    return out;
+  }
+  function declared(selector, prop, within) {
     var wants = [].concat(selector).map(squash), found = null;
-    eachRule(function (r) {
-      if (r.selectorText !== undefined && wants.indexOf(squash(r.selectorText)) >= 0) {
+    var inside = within ? within.replace(/\s+/g, "").toLowerCase() : null;
+    eachRule(function (r, conds, sel) {
+      if (sel === undefined) return;
+      if (inside && !conds.some(function (c) { return c.replace(/\s+/g, "").toLowerCase().indexOf(inside) >= 0; })) return;
+      var hit = wants.indexOf(squash(sel)) >= 0 || parts(sel).some(function (p) { return wants.indexOf(p) >= 0; });
+      if (hit) {
         var v = r.style.getPropertyValue(prop);
         if (v) found = v.trim().toLowerCase();
       }
     });
     return found;
   }
-  function rule(selector, prop) {
-    var found = declared(selector, prop);
+  function rule(selector, prop, within) {
+    var found = declared(selector, prop, within);
     if (found === null) return null;
     var probe = doc.createElement("div");
     probe.style.setProperty(prop, found);
@@ -126,6 +201,15 @@ export const CHECK_RUNTIME = String.raw`
     var value = win.getComputedStyle(probe).getPropertyValue(prop).trim();
     probe.remove();
     return value || found.trim();
+  }
+  function keyframes(name) {
+    var found = null;
+    eachRule(function (r) {
+      if (r.type === 7 && r.name === name) {
+        found = Array.prototype.map.call(r.cssRules, function (f) { return f.keyText + ": " + f.style.cssText; });
+      }
+    });
+    return found;
   }
   function shown(v) {
     if (v === undefined) return "undefined";
@@ -141,8 +225,8 @@ export const CHECK_RUNTIME = String.raw`
   var out = [];
   for (var i = 0; i < tests.length; i++) {
     try {
-      var value = new Function("$", "$$", "css", "cssAll", "box", "edges", "scrolled", "text", "attr", "count", "rule", "declared", "selectors", "doc", "win",
-        '"use strict"; return (' + tests[i] + "\n);")($, $$, css, cssAll, box, edges, scrolled, text, attr, count, rule, declared, selectors, doc, win);
+      var value = new Function("$", "$$", "css", "cssAll", "box", "edges", "scrolled", "contrast", "valid", "scheme", "click", "text", "attr", "count", "rule", "declared", "keyframes", "selectors", "doc", "win",
+        '"use strict"; return (' + tests[i] + "\n);")($, $$, css, cssAll, box, edges, scrolled, contrast, valid, scheme, click, text, attr, count, rule, declared, keyframes, selectors, doc, win);
       var s = shown(value);
       out.push({ call: tests[i], value: s, key: s, threw: false });
     } catch (err) {

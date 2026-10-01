@@ -1,0 +1,377 @@
+steps:
+  - kind: explain
+    title: The brief
+    body: |
+      Inkwell is launching its own product: **Margin**, a pocket reading journal for noting quotes and thoughts. They need a one-page **landing page** to take pre-orders.
+
+      Requirements, all from the Intermediate level:
+
+      - Semantic, accessible HTML: skip link, landmarks, one `h1`, visible focus, enough contrast in **both** themes.
+      - A token-based theme with **light and dark** modes that follow the visitor's setting.
+      - **Fluid** typography and spacing.
+      - A responsive, modern-format **hero image** that loads first.
+      - A **features** grid that adapts with no media queries, with motion that respects Reduce motion.
+      - A native **pre-order dialog** with a validated, autocompleting form, and a native **FAQ** accordion.
+      - Search and sharing **metadata**.
+      - Published from **GitHub**, tested on a phone, and passing **Lighthouse** with 90+ in every category.
+
+      The next five steps build and check each section. Then you assemble, publish and audit it on your Mac.
+
+  - kind: web
+    title: "1. The document and its head"
+    body: |
+      Write the complete document skeleton (a full page):
+
+      - Doctype, `lang="en"`, charset, viewport; `<title>` = `Margin · a pocket reading journal`.
+      - Meta description: `Margin is a pocket journal for the lines you want to remember.`
+      - Open Graph: `og:title` = `Margin`, `og:image` = `https://margin.example.com/og.jpg`, `og:type` = `website`.
+      - The stylesheet `css/style.css`.
+      - Body: a skip link (class `skip-link`, text `Skip to main content`, to `#main`) as the first element; a `header` holding a `nav` with links to `#features`, `#faq` and `#preorder`; a `main` with `id="main"` containing one `h1` reading `Margin`; and a `footer`.
+    html: |
+      <!-- index.html -->
+    css: |
+      body {
+        margin: 0;
+      }
+    tests:
+      - "doc.doctype ? doc.doctype.name + ' ' + doc.documentElement.lang + ' ' + doc.title : 'no doctype'"
+      - "attr('meta[name=description]', 'content')"
+      - "['og:title', 'og:image', 'og:type'].map((p) => ($(`meta[property='${p}']`) || {}).content || 'missing')"
+      - "css('body', 'margin')"
+      - "doc.body.firstElementChild.className + ' → ' + doc.body.firstElementChild.getAttribute('href') + ' / ' + text('.skip-link')"
+      - "$$('header nav a').map((a) => a.getAttribute('href'))"
+      - "attr('main', 'id') + ' / h1 count ' + count('h1') + ' / ' + text('main h1')"
+      - "$$('body > *').map((e) => e.localName)"
+    solution:
+      html: |
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Margin · a pocket reading journal</title>
+            <meta name="description" content="Margin is a pocket journal for the lines you want to remember.">
+            <meta property="og:title" content="Margin">
+            <meta property="og:image" content="https://margin.example.com/og.jpg">
+            <meta property="og:type" content="website">
+            <link rel="stylesheet" href="css/style.css">
+          </head>
+          <body>
+            <a class="skip-link" href="#main">Skip to main content</a>
+            <header>
+              <nav>
+                <a href="#features">Features</a>
+                <a href="#faq">FAQ</a>
+                <a href="#preorder">Pre-order</a>
+              </nav>
+            </header>
+            <main id="main">
+              <h1>Margin</h1>
+            </main>
+            <footer>
+              <p>© 2026 Inkwell Books</p>
+            </footer>
+          </body>
+        </html>
+    hint: "Start from the Module 4 skeleton, add the head tags from Module 27, and the skip link from Module 23 as the first thing in `<body>`."
+
+  - kind: web
+    title: "2. Theme and type"
+    body: |
+      Write the base stylesheet:
+
+      - `:root`: `color-scheme: light dark`; tokens `--bg` (`#fafaf9` / `#0b0f19`), `--text` (`#1c1917` / `#e5e7eb`), `--brand` (`#7c2d12` / `#fdba74`) using `light-dark()`, and `--space` = `clamp(1rem, 4vw, 2.5rem)`.
+      - `body`: background `--bg`, color `--text`, `font-family: system-ui, sans-serif`, `line-height: 1.6`, `margin: 0`.
+      - `h1`: color `--brand`, `font-size: clamp(2.5rem, 1.5rem + 5vw, 5rem)`, `line-height: 1.1`.
+      - `section`: `padding-block: var(--space)` and `padding-inline: 1rem`.
+      - `a:focus-visible, button:focus-visible`: `outline: 3px solid var(--brand)` with `outline-offset: 2px`.
+
+      Body text must reach 4.5:1 contrast in both themes (it will with these values).
+    html: |
+      <main>
+        <section>
+          <h1>Margin</h1>
+          <p>A pocket journal for the lines you want to remember.</p>
+          <a href="#preorder">Pre-order</a>
+        </section>
+      </main>
+    css: |
+      /* style.css */
+    widths: [375, 1200]
+    tests:
+      - "['light', 'dark'].map((m) => [scheme(m, 'body', 'background-color'), scheme(m, 'body', 'color'), scheme(m, 'h1', 'color')].join(' '))"
+      - "css('body', 'font-family') + ' / ' + css('body', 'line-height') + ' / ' + css('body', 'margin')"
+      - "css('h1', 'font-size') + ' / ' + css('h1', 'line-height')"
+      - "css('section', 'padding-top') + ' / ' + css('section', 'padding-left')"
+      - "rule('a:focus-visible', 'outline') + ' / ' + rule('button:focus-visible', 'outline-offset')"
+      - "contrast('p') >= 4.5"
+    solution:
+      css: |
+        :root {
+          color-scheme: light dark;
+          --bg: light-dark(#fafaf9, #0b0f19);
+          --text: light-dark(#1c1917, #e5e7eb);
+          --brand: light-dark(#7c2d12, #fdba74);
+          --space: clamp(1rem, 4vw, 2.5rem);
+        }
+
+        body {
+          margin: 0;
+          background: var(--bg);
+          color: var(--text);
+          font-family: system-ui, sans-serif;
+          line-height: 1.6;
+        }
+
+        h1 {
+          color: var(--brand);
+          font-size: clamp(2.5rem, 1.5rem + 5vw, 5rem);
+          line-height: 1.1;
+        }
+
+        section {
+          padding-block: var(--space);
+          padding-inline: 1rem;
+        }
+
+        a:focus-visible, button:focus-visible {
+          outline: 3px solid var(--brand);
+          outline-offset: 2px;
+        }
+    hint: "This is Modules 28 and 31 together: tokens with `light-dark()` on `:root`, `clamp()` for the sizes, then the rules use `var(…)`."
+
+  - kind: web
+    title: "3. The hero"
+    body: |
+      Build the hero section (`class="hero"`), mobile-first:
+
+      - HTML: an `h1` (`Margin`), a paragraph, a pre-order link with class `button`, and a `<picture>` offering `images/shop-800.avif` (`image/avif`), then `images/shop-800.webp` (`image/webp`), with an `<img>` fallback `images/shop-800.jpg` (alt: `An open notebook among bookshop shelves`, width 800, height 500) that loads with **high priority**.
+      - CSS: images are fluid (`max-width: 100%; height: auto`) with `border-radius: 12px`. From `800px` wide, `.hero` becomes a two-column grid (`1fr 1fr`), `2rem` gap, items centred vertically (`align-items: center`).
+    html: |
+      <section class="hero">
+        <!-- heading, text, button, picture -->
+      </section>
+    css: |
+      body {
+        margin: 1rem;
+        font-family: system-ui, sans-serif;
+      }
+    widths: [375, 1100]
+    tests:
+      - "$$('.hero picture > *').map((e) => e.localName + (e.type ? '[' + e.type + ']' : '') + ':' + (e.getAttribute('srcset') || e.getAttribute('src')))"
+      - "attr('.hero img', 'fetchpriority') + ' / ' + attr('.hero img', 'loading') + ' / ' + attr('.hero img', 'alt') + ' / ' + attr('.hero img', 'width') + 'x' + attr('.hero img', 'height')"
+      - "text('.hero h1') + ' / ' + count('.hero p') + ' / ' + count('.hero a.button')"
+      - "css('.hero img', 'max-width') + ' / ' + css('.hero img', 'border-radius')"
+      - "css('.hero', 'display') + ' / ' + css('.hero', 'grid-template-columns').split(' ').length + ' / ' + css('.hero', 'align-items')"
+      - "doc.scrollingElement.scrollWidth <= doc.scrollingElement.clientWidth"
+    solution:
+      html: |
+        <section class="hero">
+          <div>
+            <h1>Margin</h1>
+            <p>A pocket journal for the lines you want to remember.</p>
+            <a class="button" href="#preorder">Pre-order</a>
+          </div>
+          <picture>
+            <source type="image/avif" srcset="images/shop-800.avif">
+            <source type="image/webp" srcset="images/shop-800.webp">
+            <img src="images/shop-800.jpg" alt="An open notebook among bookshop shelves" width="800" height="500" fetchpriority="high">
+          </picture>
+        </section>
+      css: |
+        body {
+          margin: 1rem;
+          font-family: system-ui, sans-serif;
+        }
+
+        img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 12px;
+        }
+
+        @media (width >= 800px) {
+          .hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: center;
+          }
+        }
+    hint: "Wrap the text in a `div` so the grid has two items: the text and the picture. The grid itself only appears inside `@media (width >= 800px)`."
+
+  - kind: web
+    title: "4. Features, with safe motion"
+    body: |
+      Style the features section:
+
+      - `.features` is a grid with as many columns as fit, each at least `15rem`, and a `1rem` gap.
+      - Each `.feature`: `padding: 1.5rem`, `border-radius: 12px`, `border: 1px solid #e7e5e4`, and a transition of `translate 200ms ease-out`.
+      - `.feature:hover` lifts with `translate: 0 -4px`.
+      - Features that contain an `.icon` get `display: grid` and `gap: 0.5rem`.
+      - Under `prefers-reduced-motion: reduce`, features have no transition and no lift.
+    html: |
+      <section id="features">
+        <h2>Why Margin</h2>
+        <div class="features">
+          <article class="feature"><span class="icon" aria-hidden="true">✒️</span><h3>Fits a pocket</h3><p>A6, lay-flat binding.</p></article>
+          <article class="feature"><span class="icon" aria-hidden="true">🔖</span><h3>Built-in index</h3><p>Find any quote in seconds.</p></article>
+          <article class="feature"><h3>Recycled paper</h3><p>100% post-consumer, ink-friendly.</p></article>
+        </div>
+      </section>
+    css: |
+      body {
+        margin: 1rem;
+        font-family: system-ui, sans-serif;
+      }
+    widths: [400, 1100]
+    tests:
+      - "css('.features', 'grid-template-columns') + ' gap ' + css('.features', 'gap')"
+      - "css('.feature', 'padding') + ' / ' + css('.feature', 'border-radius') + ' / ' + css('.feature', 'border')"
+      - "css('.feature', 'transition-property') + ' ' + css('.feature', 'transition-duration') + ' ' + css('.feature', 'transition-timing-function') + ' / hover ' + rule('.feature:hover', 'translate')"
+      - "cssAll('.feature', 'display') + ' / ' + cssAll('.feature', 'row-gap')"
+      - "[declared('.feature', 'transition', 'prefers-reduced-motion:reduce'), declared('.feature:hover', 'translate', 'prefers-reduced-motion:reduce')]"
+    solution:
+      css: |
+        body {
+          margin: 1rem;
+          font-family: system-ui, sans-serif;
+        }
+
+        .features {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+          gap: 1rem;
+        }
+
+        .feature {
+          padding: 1.5rem;
+          border: 1px solid #e7e5e4;
+          border-radius: 12px;
+          transition: translate 200ms ease-out;
+        }
+
+        .feature:has(.icon) {
+          display: grid;
+          gap: 0.5rem;
+        }
+
+        .feature:hover {
+          translate: 0 -4px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .feature {
+            transition: none;
+          }
+
+          .feature:hover {
+            translate: none;
+          }
+        }
+    hint: "Modules 21, 29, 32 together: auto-fit grid, `.feature:has(.icon)`, the transition on `.feature`, and the reduced-motion block at the end."
+
+  - kind: web
+    title: "5. Pre-order dialog and FAQ"
+    body: |
+      Write the HTML for the pre-order and FAQ sections:
+
+      - A button `Pre-order Margin` that opens the dialog `#preorder` **as a modal**. The dialog is labelled by its `h2` (id `preorder-title`, text `Pre-order Margin`).
+      - Inside the dialog, a form (`action="/preorder"`, `method="post"`) with labelled, required fields: **Name** (`name`, autocomplete `name`), **Email** (`email`, a real email field, autocomplete `email`), **Copies** (`copies`, a number from `1` to `5`); a submit button `Place pre-order`; and a `Cancel` button that closes the dialog.
+      - An FAQ section with id `faq` and two exclusive `<details>` (name `faq`): `When does it ship?` / `In November.` and `Is it refillable?` / `Yes, with Margin refills.`
+    html: |
+      <!-- pre-order button and dialog -->
+
+      <!-- FAQ -->
+    tests:
+      - "attr('button[command=show-modal]', 'commandfor') + ' → ' + attr('#preorder', 'aria-labelledby') + ' → ' + text('#preorder-title')"
+      - "attr('#preorder form', 'action') + ' ' + (attr('#preorder form', 'method') || '').toLowerCase()"
+      - "$$('#preorder input').map((i) => i.name + ':' + i.type + ':' + i.required + ':' + (i.getAttribute('autocomplete') || '-') + ':' + (i.labels.length ? i.labels[0].textContent.trim() : 'NO LABEL'))"
+      - "[valid('#preorder [name=copies]', '0'), valid('#preorder [name=copies]', '3'), valid('#preorder [name=copies]', '6'), valid('#preorder [name=email]', 'x')]"
+      - "click('button[command=show-modal]')"
+      - "$('#preorder').matches(':modal')"
+      - "click('#preorder button[command=close]')"
+      - "$('#preorder').open + ' / submit: ' + text('#preorder button[type=submit]')"
+      - "attr('#faq', 'id') + ' / ' + $$('#faq details').map((d) => d.name + ':' + d.querySelector('summary').textContent.trim() + ' → ' + d.querySelector('summary + *').textContent.trim()).join(' | ')"
+    solution:
+      html: |
+        <button type="button" commandfor="preorder" command="show-modal">Pre-order Margin</button>
+
+        <dialog id="preorder" aria-labelledby="preorder-title">
+          <h2 id="preorder-title">Pre-order Margin</h2>
+          <form action="/preorder" method="post">
+            <label for="po-name">Name</label>
+            <input id="po-name" name="name" required autocomplete="name">
+
+            <label for="po-email">Email</label>
+            <input id="po-email" name="email" type="email" required autocomplete="email">
+
+            <label for="po-copies">Copies</label>
+            <input id="po-copies" name="copies" type="number" min="1" max="5" required>
+
+            <button type="submit">Place pre-order</button>
+            <button type="button" commandfor="preorder" command="close">Cancel</button>
+          </form>
+        </dialog>
+
+        <section id="faq">
+          <h2>Questions</h2>
+          <details name="faq">
+            <summary>When does it ship?</summary>
+            <p>In November.</p>
+          </details>
+          <details name="faq">
+            <summary>Is it refillable?</summary>
+            <p>Yes, with Margin refills.</p>
+          </details>
+        </section>
+    hint: "Modules 24 and 25: invoker commands for the dialog, labelled required fields with autocomplete and min/max, and `<details name=\"faq\">` pairs."
+
+  - kind: mac
+    title: "6. Assemble, commit and publish"
+    body: |
+      1. Make a new folder `~/websites/margin`, with `index.html`, `css/style.css` and `images/`. Download the three sample images from this lesson's preview (right-click an image → *Save Image As…*) or use your own photo in three formats.
+      2. Combine steps 1–5 into `index.html` (the hero, features, dialog and FAQ go inside `main`) and the CSS into `css/style.css`. Add a `.skip-link` hide-until-focused style from Module 23.
+      3. Run Prettier and Stylelint (Module 37) and fix what they report.
+      4. `git init`, commit, create a GitHub repo and push (Module 35); turn on GitHub Pages (Module 36).
+
+      Paste the live address.
+    commands: |
+      mkdir -p ~/websites/margin/css ~/websites/margin/images
+      cd ~/websites/margin && code .
+      # …assemble the files…
+      git init && git add . && git commit -m "Build the Margin landing page"
+      gh repo create margin --public --source=. --push
+      gh api -X POST "repos/{owner}/{repo}/pages" -f "source[branch]=main" -f "source[path]=/"
+      gh api "repos/{owner}/{repo}/pages" --jq .html_url
+    expect_output:
+      - "github.io"
+
+  - kind: mac
+    title: "7. Audit and test"
+    body: |
+      On the **live** site:
+
+      1. **Lighthouse** (Chrome DevTools → Lighthouse, mode *Navigation*, device *Mobile*, all categories). Aim for **90+** in Performance, Accessibility, Best Practices and SEO. Fix what it lists and push again.
+      2. **Keyboard**: Tab from the address bar. The skip link appears first; every control shows focus; the dialog opens with Enter, traps focus, and closes with Escape.
+      3. **VoiceOver** (⌘ + F5): use the Rotor to list headings and landmarks.
+      4. **Dark mode**: switch your Mac's appearance; check contrast still looks right.
+      5. **Phone**: open the live address on your phone, in both orientations.
+
+      Paste the Lighthouse category scores.
+    commands: |
+      # Chrome DevTools → Lighthouse → Mobile → all categories → Analyze page load
+      Performance 9x
+      Accessibility 100
+      Best Practices 100
+      SEO 100
+    expect_output:
+      - "Performance"
+      - "Accessibility"
+      - "SEO"
+
+  - kind: recap
+    body: |
+      You've shipped a real, public page that would pass a professional review: themeable, fluid, accessible, fast, shareable, and deployed from version control. That's the level of most junior front-end work.
+
+      The Advanced level is about scale: keeping big stylesheets maintainable, the newest layout and interaction features, and auditing performance and accessibility like a professional.

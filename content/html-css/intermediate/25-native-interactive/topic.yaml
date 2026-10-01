@@ -1,0 +1,4 @@
+title: Native Interactive Elements
+module: 25
+summary: "Interactive pieces with no JavaScript framework: details and summary accordions, dialog modals, and the Popover API for menus and tooltips. Why native beats custom widgets, and the small bit of JavaScript some of them need, shown as copy-paste only."
+minutes: 45

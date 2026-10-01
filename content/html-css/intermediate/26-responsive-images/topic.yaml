@@ -1,0 +1,4 @@
+title: Responsive Images & Performance-Aware HTML
+module: 26
+summary: "Send each device the right image: srcset and sizes, picture for art direction and modern formats with fallbacks, loading=\"lazy\", decoding and fetchpriority, preloading fonts, and preconnect."
+minutes: 50

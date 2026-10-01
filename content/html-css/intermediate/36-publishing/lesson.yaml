@@ -1,0 +1,96 @@
+steps:
+  - kind: explain
+    title: Static hosting
+    body: |
+      Your site is a folder of HTML, CSS and images: a **static site** (Module 1). To publish it, you need a server that hands those files to browsers. For static sites, several services do that **for free**, including HTTPS:
+
+      | Service | How you publish | Good for |
+      |---|---|---|
+      | **GitHub Pages** | from a GitHub repository | the simplest option once your site is on GitHub |
+      | **Netlify** | drag a folder onto the page, or connect a Git repo | quick experiments, form handling |
+      | **Vercel** | connect a Git repo (or its CLI) | sites that later grow into apps (this course's site runs on it) |
+
+      All three give you an address like `yourname.github.io/my-site` or `my-site.netlify.app` within a minute, and redeploy automatically when you push new commits.
+
+  - kind: mac
+    title: Publish with GitHub Pages
+    body: |
+      Your capstone site is on GitHub from Module 35. Turn on Pages:
+
+      1. Open the repository on github.com → **Settings** → **Pages**.
+      2. Under *Build and deployment*, choose **Deploy from a branch**, branch **main**, folder **/ (root)**, and **Save**.
+      3. Wait a minute, then refresh the Pages settings: it shows *Your site is live at https://YOURNAME.github.io/my-site/*.
+      4. Open it. Click through every page and check images and styles load. (A broken image here but not locally almost always means a capital letter in a file name: Module 2!)
+
+      You can also turn it on from Terminal with `gh`. Paste the live address.
+    commands: |
+      cd ~/websites/my-site
+      gh api -X POST "repos/{owner}/{repo}/pages" -f "source[branch]=main" -f "source[path]=/"
+      gh api "repos/{owner}/{repo}/pages" --jq .html_url
+    expect_output:
+      - "github.io"
+
+  - kind: explain
+    title: Updating the live site
+    body: |
+      Publishing is now part of your Git loop:
+
+      ```
+      edit → git add → git commit → git push   →   live in about a minute
+      ```
+
+      Every push rebuilds the site. If something goes wrong, the previous version is one `git revert` away. That's **continuous deployment**: the live site always matches the `main` branch.
+
+      Tip: check changes locally with Live Server **before** pushing. The live site is not the place to experiment.
+
+  - kind: mac
+    title: "Alternative: Netlify drop or Vercel"
+    body: |
+      To try another host:
+
+      - **Netlify Drop**: go to *app.netlify.com/drop*, sign in, and drag your site folder onto the page. It's live instantly at a random `*.netlify.app` address you can rename. To keep it updated, connect it to your GitHub repo instead (*Add new site → Import an existing project*).
+      - **Vercel**: sign in at *vercel.com* with GitHub, *Add New → Project*, pick the repo, and **Deploy**. It detects a plain static site automatically.
+
+      Both redeploy on every `git push` once connected, and both make a separate **preview URL** for other branches, which is how changes to this course's site are reviewed before going live.
+    commands: |
+      # Netlify Drop: https://app.netlify.com/drop   (drag the folder)
+      # Vercel:       https://vercel.com/new         (import the GitHub repo)
+
+  - kind: explain
+    title: Custom domains and HTTPS
+    body: |
+      `yourname.github.io` works, but `yourname.com` looks professional.
+
+      1. **Buy a domain** from a registrar (Cloudflare, Porkbun, Namecheap…), usually £8–15 a year.
+      2. In your host's settings, **add the custom domain**.
+      3. At the registrar, **add DNS records** that point the domain at the host (Module 1's DNS: the phone book entry). The host tells you exactly which records: usually an `A` record for `yourname.com` and a `CNAME` for `www`.
+      4. Wait for DNS to update (minutes to a few hours), then switch on **Enforce HTTPS**. The host gets a free certificate for you.
+
+      Never let a domain expire: someone else can buy it and put anything on your old address.
+
+  - kind: mac
+    title: Check it on your phone
+    body: |
+      DevTools device mode is a simulation. Before calling a site finished, check it on a **real phone**:
+
+      1. Open the live address on your phone (send it to yourself, or scan a QR code: in Chrome on the Mac, right-click the page → *Create QR code for this page*).
+      2. Check: is text readable without zooming? Can you tap every link easily? Does anything scroll sideways? Do forms bring up the right keyboard (email, number, tel)?
+      3. Try it in landscape, and with your phone's text size turned up in its settings.
+
+      On an iPhone connected by cable, **Safari's Develop menu** on the Mac can inspect the phone's page live, DevTools style.
+    commands: |
+      # Chrome (Mac): right-click the page → "Create QR code for this page"
+      # iPhone: Settings → Apps → Safari → Advanced → Web Inspector (on)
+      # Mac Safari: Develop → [your iPhone] → [the page]
+
+  - kind: why
+    body: |
+      A site on your laptop is a draft; a site at a real address is something you can share, put on a CV, or hand to a client. Free static hosting plus Git means publishing takes a minute, every update is one push, and every past version is recoverable.
+
+  - kind: recap
+    body: |
+      - Static sites host free: GitHub Pages, Netlify, Vercel, all with HTTPS.
+      - GitHub Pages: repo Settings → Pages → deploy from `main`; live at `username.github.io/repo`.
+      - Every `git push` redeploys; test locally first.
+      - Custom domain: buy it, add it at the host, add the DNS records, enforce HTTPS.
+      - Always test the live site on a real phone.

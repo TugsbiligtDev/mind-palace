@@ -1,0 +1,230 @@
+steps:
+  - kind: explain
+    title: One image doesn't fit all
+    body: |
+      Module 22 made images *fit* any screen with `max-width: 100%`. But the file is still the same size everywhere: a phone downloads a 1600-pixel photo to show it 375 pixels wide. That's wasted data and a slower page, and images are usually the heaviest thing on a page.
+
+      HTML lets you offer **several versions** and have the browser pick the best one for the screen. In this lesson's `images` folder there are versions of the shop photo you can use:
+
+      | File | Size |
+      |---|---|
+      | `shop-400.jpg` | 400 × 250 |
+      | `shop-800.jpg` | 800 × 500 (63 KB) |
+      | `shop-1600.jpg` | 1600 × 1000 |
+      | `shop-800.webp` | 800 × 500 (10 KB) |
+      | `shop-800.avif` | 800 × 500 (15 KB) |
+      | `shop-square.jpg` | 500 × 500, cropped |
+
+  - kind: explain
+    title: srcset and sizes
+    body: |
+      ```html
+      <img
+        src="images/shop-800.jpg"
+        srcset="images/shop-400.jpg 400w, images/shop-800.jpg 800w, images/shop-1600.jpg 1600w"
+        sizes="(width >= 700px) 50vw, 100vw"
+        alt="Tall wooden shelves full of colourful books"
+        width="800" height="500">
+      ```
+
+      - `srcset` lists the files and their real **pixel widths** (`400w` = 400 pixels wide).
+      - `sizes` tells the browser how wide the image will be **shown**, before the CSS has loaded: here, half the screen on screens 700px and up, otherwise the full width.
+      - `src` is the fallback for very old browsers.
+
+      The browser does the maths: shown width × the screen's pixel density (2× on a Retina screen), then picks the smallest file that's big enough. A phone gets the 400 or 800 version; a big Retina monitor gets 1600. You don't decide; you give it the options.
+
+      For a fixed-size image (a logo always 200px wide), use density descriptors instead: `srcset="logo.png 1x, logo@2x.png 2x"`.
+
+  - kind: web
+    title: Offer three sizes
+    body: |
+      Give the shop photo a `srcset` with all three JPEG sizes (`shop-400.jpg`, `shop-800.jpg`, `shop-1600.jpg`, each with its `w` width), and a `sizes` saying: **50vw on screens 700px and wider, otherwise 100vw**.
+
+      Keep the `src`, `alt`, `width` and `height` as they are. Then drag the preview's width buttons with DevTools' Network tab open to watch the browser pick different files.
+    html: |
+      <img src="images/shop-800.jpg" alt="Tall wooden shelves full of colourful books" width="800" height="500">
+    css: |
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      @media (width >= 700px) {
+        img {
+          width: 50vw;
+        }
+      }
+    tests:
+      - "(attr('img', 'srcset') || '').split(',').map((c) => c.trim().split(/\\s+/).map((x) => x.split('/').pop()).join(' ')).sort()"
+      - "(attr('img', 'sizes') || '').replace(/\\s+/g, '')"
+      - "attr('img', 'src') + ' / ' + attr('img', 'width')"
+    solution:
+      html: |
+        <img src="images/shop-800.jpg"
+          srcset="images/shop-400.jpg 400w, images/shop-800.jpg 800w, images/shop-1600.jpg 1600w"
+          sizes="(width >= 700px) 50vw, 100vw"
+          alt="Tall wooden shelves full of colourful books" width="800" height="500">
+    hint: "`srcset=\"images/shop-400.jpg 400w, images/shop-800.jpg 800w, images/shop-1600.jpg 1600w\"` and `sizes=\"(width >= 700px) 50vw, 100vw\"`."
+
+  - kind: explain
+    title: picture, for formats and art direction
+    body: |
+      `<picture>` wraps an `<img>` and offers **alternatives** in `<source>` elements. The browser uses the **first** source it can, else the `<img>`.
+
+      **Modern formats with a fallback**:
+
+      ```html
+      <picture>
+        <source type="image/avif" srcset="images/shop-800.avif">
+        <source type="image/webp" srcset="images/shop-800.webp">
+        <img src="images/shop-800.jpg" alt="…" width="800" height="500">
+      </picture>
+      ```
+
+      **Art direction** (a different crop for small screens):
+
+      ```html
+      <picture>
+        <source media="(width < 600px)" srcset="images/shop-square.jpg">
+        <img src="images/shop-800.jpg" alt="…" width="800" height="500">
+      </picture>
+      ```
+
+      The `<img>` is required: it's what actually displays, it carries the `alt`, and the CSS styles it. Sources just change which file it shows.
+
+  - kind: web
+    title: Modern formats, square on phones
+    body: |
+      Wrap the photo in a `<picture>` with three sources, in this order:
+
+      1. For screens **narrower than 600px**: the square crop `images/shop-square.jpg` (use `media="(width < 600px)"`).
+      2. AVIF: `images/shop-800.avif` with `type="image/avif"`.
+      3. WebP: `images/shop-800.webp` with `type="image/webp"`.
+
+      The `<img>` (JPEG fallback) stays last, inside the picture.
+    html: |
+      <img src="images/shop-800.jpg" alt="Tall wooden shelves full of colourful books" width="800" height="500">
+    css: |
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+    tests:
+      - "$$('picture > *').map((e) => e.localName + (e.type ? '[' + e.type + ']' : '') + (e.media ? '[' + e.media.replace(/\\s+/g, '') + ']' : ''))"
+      - "$$('picture source').map((s) => s.getAttribute('srcset'))"
+      - "attr('picture img', 'alt')"
+    solution:
+      html: |
+        <picture>
+          <source media="(width < 600px)" srcset="images/shop-square.jpg">
+          <source type="image/avif" srcset="images/shop-800.avif">
+          <source type="image/webp" srcset="images/shop-800.webp">
+          <img src="images/shop-800.jpg" alt="Tall wooden shelves full of colourful books" width="800" height="500">
+        </picture>
+    hint: "Sources are tried top to bottom, so the narrow-screen one comes first. Each source uses `srcset`, not `src`."
+    reject:
+      - html: |
+          <picture>
+            <source type="image/avif" srcset="images/shop-800.avif">
+            <source type="image/webp" srcset="images/shop-800.webp">
+            <source media="(width < 600px)" srcset="images/shop-square.jpg">
+            <img src="images/shop-800.jpg" alt="Tall wooden shelves full of colourful books" width="800" height="500">
+          </picture>
+
+  - kind: explain
+    title: Lazy loading and priorities
+    body: |
+      Three attributes tell the browser **when** and **how urgently** to fetch an image:
+
+      - `loading="lazy"` waits until the image is **near the screen** before downloading it. Use it on images further down the page (a long product list, the footer). Never on the main image at the top: that would delay what people see first.
+      - `fetchpriority="high"` says "this one first". Use it on the **largest image at the top** (the hero), which is usually what Lighthouse calls the *Largest Contentful Paint*.
+      - `decoding="async"` lets the browser decode the image without holding up the rest of the page.
+
+      ```html
+      <img src="hero.jpg" fetchpriority="high" alt="…" width="1600" height="900">
+      …
+      <img src="cover.jpg" loading="lazy" decoding="async" alt="…" width="300" height="450">
+      ```
+
+      `loading="lazy"` also works on `<iframe>`, which is great for heavy embeds like maps and videos.
+
+  - kind: web
+    title: Prioritise the page
+    body: |
+      1. The hero image at the top should load **first**: give it `fetchpriority="high"`. It must **not** be lazy.
+      2. The four covers further down should load **lazily** and decode asynchronously: `loading="lazy"` and `decoding="async"` on each.
+      3. The map embed at the bottom should load lazily too.
+    html: |
+      <img class="hero" src="images/shop-1600.jpg" alt="Inside Inkwell Books" width="1600" height="1000" loading="lazy">
+      <h1>Inkwell Books</h1>
+      <h2>Staff picks</h2>
+      <img src="images/cover-dune.svg" alt="Dune" width="150" height="225">
+      <img src="images/cover-emma.svg" alt="Emma" width="150" height="225">
+      <img src="images/cover-beloved.svg" alt="Beloved" width="150" height="225">
+      <img src="images/cover-odyssey.svg" alt="The Odyssey" width="150" height="225">
+      <h2>Find us</h2>
+      <iframe title="Map to Inkwell Books" src="about:blank" width="600" height="300"></iframe>
+    css: |
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+    tests:
+      - "attr('.hero', 'fetchpriority') + ' / loading=' + attr('.hero', 'loading')"
+      - "$$('img:not(.hero)').map((i) => i.getAttribute('loading') + ',' + i.getAttribute('decoding'))"
+      - "attr('iframe', 'loading')"
+    solution:
+      html: |
+        <img class="hero" src="images/shop-1600.jpg" alt="Inside Inkwell Books" width="1600" height="1000" fetchpriority="high">
+        <h1>Inkwell Books</h1>
+        <h2>Staff picks</h2>
+        <img src="images/cover-dune.svg" alt="Dune" width="150" height="225" loading="lazy" decoding="async">
+        <img src="images/cover-emma.svg" alt="Emma" width="150" height="225" loading="lazy" decoding="async">
+        <img src="images/cover-beloved.svg" alt="Beloved" width="150" height="225" loading="lazy" decoding="async">
+        <img src="images/cover-odyssey.svg" alt="The Odyssey" width="150" height="225" loading="lazy" decoding="async">
+        <h2>Find us</h2>
+        <iframe title="Map to Inkwell Books" src="about:blank" width="600" height="300" loading="lazy"></iframe>
+    hint: "Remove `loading=\"lazy\"` from the hero and add `fetchpriority=\"high\"`. Add `loading=\"lazy\" decoding=\"async\"` to each cover, and `loading=\"lazy\"` to the iframe."
+
+  - kind: explain
+    title: Preloading fonts, and preconnect
+    body: |
+      The browser finds a web font late: it reads the HTML, then the CSS, and only then learns it needs the font file. **Preloading** tells it at the very start:
+
+      ```html
+      <link rel="preload" href="fonts/inkwell-serif.woff2" as="font" type="font/woff2" crossorigin>
+      ```
+
+      `as="font"` and `crossorigin` are both required for fonts, even your own (otherwise it's downloaded twice). Preload only the one or two fonts used at the top of the page; preloading everything makes everything slow.
+
+      🔹 **preconnect** warms up the connection to another server you'll need soon, saving a few hundred milliseconds:
+
+      ```html
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      ```
+
+      You saw it in the Google Fonts snippet in Module 16. Use it for one or two important outside servers, no more.
+
+  - kind: mac
+    title: See what you saved
+    body: |
+      On any image-heavy site (or your own capstone with these techniques):
+
+      1. Open DevTools → **Network**, filter by **Img**, and reload.
+      2. Look at the **Size** column, and hover an image's name to see which file was chosen.
+      3. Turn on device mode (⇧⌘M), pick a phone, and reload: smaller files should be downloaded.
+      4. Scroll down slowly with the Network tab open and watch lazy images appear in the list only as you approach them.
+    commands: |
+      # DevTools → Network → filter: Img → reload (⌘R)
+      # Tick "Disable cache" while testing so every reload downloads fresh
+
+  - kind: why
+    body: |
+      Images are typically more than half of a page's weight. Sending the right size and format can cut that by 80% on phones, and lazy loading plus priorities make the important part of the page appear first. Faster pages keep visitors, rank better in search, and cost people on limited data plans less.
+
+  - kind: recap
+    body: |
+      - `srcset` with `w` widths + `sizes` (how wide it's shown): the browser picks the smallest file that's big enough.
+      - `<picture>` + `<source>`: modern formats (`type="image/avif"`, `image/webp`) with a JPEG `<img>` fallback, and art direction with `media`.
+      - `loading="lazy"` below the fold (and on iframes); `fetchpriority="high"` on the hero; `decoding="async"`.
+      - `<link rel="preload" as="font" crossorigin>` for key fonts. 🔹 `rel="preconnect"` for important outside servers.

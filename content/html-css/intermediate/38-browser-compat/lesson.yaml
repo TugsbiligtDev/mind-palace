@@ -1,0 +1,131 @@
+steps:
+  - kind: explain
+    title: Three engines, one web
+    body: |
+      Every browser is built on a **rendering engine**: Chrome, Edge, Brave and Opera use **Blink**; Safari uses **WebKit** (and every browser on an iPhone does too, for now); Firefox uses **Gecko**. New CSS features arrive in each engine at different times.
+
+      So before using something new, ask: **can my visitors' browsers do this?** And if some can't, **what happens to them?**
+
+  - kind: explain
+    title: Baseline and caniuse
+    body: |
+      Two places answer "is it supported?":
+
+      - **MDN** (developer.mozilla.org) shows a **Baseline** badge at the top of each feature's page:
+        - **Baseline Widely available**: has worked in all major browsers for 2.5 years or more. Use freely.
+        - **Baseline Newly available**: now works in all the latest browsers, but people on older devices may not have it yet. Use with a fallback.
+        - **Limited availability**: not in every major browser yet. Use only as an enhancement.
+      - **caniuse.com** shows a version-by-version table and the share of real-world users who can use the feature.
+
+      Everything taught up to Module 34 is Widely available, except a few newer pieces flagged along the way (`command`/`commandfor`, `light-dark()` on older devices). Advanced-level features like anchor positioning are newer still.
+
+  - kind: explain
+    title: "@supports and progressive enhancement"
+    body: |
+      **Progressive enhancement** means: build a solid version that works everywhere, then **add** improvements for browsers that support them. Nobody gets a broken page; some get a nicer one.
+
+      CSS does this naturally (an unknown property is simply skipped), and `@supports` makes it explicit:
+
+      ```css
+      .card {
+        background: #f5f0e8;                          /* everyone */
+      }
+
+      @supports (backdrop-filter: blur(8px)) {
+        .card {
+          background: rgb(255 255 255 / 60%);         /* only where blur works */
+          backdrop-filter: blur(8px);
+        }
+      }
+      ```
+
+      `@supports not (…)` targets browsers **without** the feature; `selector(:has(a))` tests selector support: `@supports selector(:has(a)) { … }`.
+
+  - kind: web
+    title: Enhance, don't break
+    body: |
+      Inkwell wants headings with nicely balanced line breaks (`text-wrap: balance`) and a frosted-glass header. Use progressive enhancement:
+
+      1. Give `.site-header` a solid fallback background of `#fafaf9` (outside any `@supports`).
+      2. Inside `@supports (backdrop-filter: blur(8px))`, change `.site-header`'s background to `rgb(250 250 249 / 70%)` and add `backdrop-filter: blur(8px)`.
+      3. Inside `@supports (text-wrap: balance)`, give `h1` `text-wrap: balance`.
+    html: |
+      <header class="site-header">Inkwell Books</header>
+      <h1>The autumn reading list: twelve books for long evenings by the fire</h1>
+    css: |
+      .site-header {
+        position: sticky;
+        top: 0;
+        padding: 1rem;
+      }
+    tests:
+      - "declared('.site-header', 'background') || declared('.site-header', 'background-color')"
+      - "[declared('.site-header', 'background', 'backdrop-filter'), declared('.site-header', 'background-color', 'backdrop-filter')].find(Boolean) || null"
+      - "declared('.site-header', 'backdrop-filter', 'backdrop-filter')"
+      - "declared('h1', 'text-wrap', 'text-wrap')"
+      - "css('.site-header', 'background-color') + ' / ' + css('h1', 'text-wrap')"
+    solution:
+      css: |
+        .site-header {
+          position: sticky;
+          top: 0;
+          padding: 1rem;
+          background: #fafaf9;
+        }
+
+        @supports (backdrop-filter: blur(8px)) {
+          .site-header {
+            background: rgb(250 250 249 / 70%);
+            backdrop-filter: blur(8px);
+          }
+        }
+
+        @supports (text-wrap: balance) {
+          h1 {
+            text-wrap: balance;
+          }
+        }
+    hint: "The fallback background goes in the normal `.site-header` rule. Each enhancement goes in its own `@supports (…) { … }` block, after it."
+
+  - kind: info
+    title: "🔹 Vendor prefixes"
+    body: |
+      In old CSS you'll see the same property written several times with prefixes:
+
+      ```css
+      -webkit-transition: opacity 0.3s;
+      -moz-transition: opacity 0.3s;
+      transition: opacity 0.3s;
+      ```
+
+      Browsers once shipped experimental features under their own prefix (`-webkit-` for Safari and Chrome, `-moz-` for Firefox). That practice has stopped: new features now ship behind settings until they're ready, then unprefixed. A few prefixed properties survive (for example `-webkit-text-stroke`, `-webkit-line-clamp`), and tools like Lightning CSS add any needed prefixes automatically (Module 50). Don't write them by hand.
+
+  - kind: mac
+    title: Test in three browsers
+    body: |
+      Your Mac can run all three engines:
+
+      1. **Safari** is built in. Turn on its developer tools: Settings → Advanced → *Show features for web developers*.
+      2. Install **Chrome** (or Edge) and **Firefox**.
+      3. Open your published site (Module 36) in all three. Check the layout, fonts, forms and anything new you used.
+      4. If something differs, inspect it in that browser's DevTools and look up the property on MDN: is it supported there?
+
+      Paste the version line from each browser's *About* window, e.g. *Version 26.1* for Safari.
+    commands: |
+      # Safari:  Safari → About Safari
+      # Chrome:  Chrome → About Google Chrome
+      # Firefox: Firefox → About Firefox
+    expect_output:
+      - "Version"
+
+  - kind: why
+    body: |
+      Your visitors use dozens of browser versions. Knowing where to check support, building a solid base first and layering improvements with `@supports` lets you use modern CSS today without leaving anyone with a broken page.
+
+  - kind: recap
+    body: |
+      - Three engines: Blink (Chrome and friends), WebKit (Safari, all iPhone browsers), Gecko (Firefox).
+      - MDN **Baseline**: Widely available = use freely; Newly available = add a fallback; Limited = enhancement only. caniuse.com for details.
+      - Progressive enhancement: a solid base for everyone, `@supports (…)` for extras.
+      - 🔹 Vendor prefixes are legacy; tools add any that are still needed.
+      - Test in Safari, Chrome and Firefox.

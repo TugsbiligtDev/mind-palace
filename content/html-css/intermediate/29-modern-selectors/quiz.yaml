@@ -1,0 +1,31 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Which selector matches a `.card` that contains a button?"
+    options: ["`.card:has(button)`", "`.card button`", "`.card > button`", "`button:has(.card)`"]
+    answer: 0
+    explanation: "`.card button` selects the button; `.card:has(button)` selects the card."
+  - type: mcq
+    prompt: "What is the specificity of `:where(#main .nav a)`?"
+    options: ["(0, 0, 0)", "(1, 1, 1)", "(0, 1, 1)", "(1, 0, 0)"]
+    answer: 0
+    explanation: ":where() always contributes zero specificity, whatever it contains."
+  - type: mcq
+    prompt: "What is the specificity of `:is(#main, .nav) a`?"
+    options: ["(1, 0, 1)", "(0, 1, 1)", "(0, 0, 1)", "(0, 0, 0)"]
+    answer: 0
+    explanation: ":is() takes its most specific argument (#main, an id), plus the `a`."
+  - type: mcq
+    prompt: "You want a search box's whole border to highlight while its input or button has keyboard focus. Which pseudo-class goes on the box?"
+    options: ["`:focus-within`", "`:focus`", "`:hover`", "`:active`"]
+    answer: 0
+    explanation: "`:focus-within` matches when the element or any descendant has focus."
+  - type: mcq
+    prompt: "Rows hidden by a filter break your zebra stripes. Which selector fixes it?"
+    options:
+      - "`tr:nth-child(odd of :not([hidden]))`"
+      - "`tr:nth-of-type(odd)`"
+      - "`tr:nth-child(odd):not([hidden])`"
+      - "`tr:odd`"
+    answer: 0
+    explanation: "Only the `of S` form changes what's counted. `:nth-child(odd):not([hidden])` still counts the hidden rows."

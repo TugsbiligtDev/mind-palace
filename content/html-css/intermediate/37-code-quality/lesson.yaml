@@ -1,0 +1,166 @@
+steps:
+  - kind: explain
+    title: Why tools?
+    body: |
+      Two people (or you, on two different days) format code differently: tabs or spaces, quotes, where braces go. Every difference makes changes harder to read in Git. And small mistakes (a misspelled property, an invalid value, a duplicated rule) slip through because the browser never complains.
+
+      Two tools fix both:
+
+      - **Prettier** is a **formatter**: it rewrites your HTML and CSS into one consistent style, automatically. No more debating spacing.
+      - **Stylelint** is a **linter** for CSS: it reads your stylesheet and reports likely mistakes and bad practices, with line numbers.
+
+      They run on your Mac, from Terminal or inside VS Code.
+
+  - kind: mac
+    title: Install Node and the tools
+    body: |
+      Both tools are written in JavaScript, so they need **Node.js** (a program that runs JavaScript outside the browser; it comes with `npm`, which installs packages).
+
+      1. Install Node from **nodejs.org** (the LTS version), or with Homebrew: `brew install node`.
+      2. In your site's folder, create a `package.json` (a list of the project's tools) and install Prettier, Stylelint and its standard rules as **dev dependencies** (tools for developing, not part of the site).
+      3. Add `node_modules/` to your `.gitignore`: that folder is huge and can always be re-installed from `package.json`.
+
+      Paste what `npx prettier --version` printed.
+    commands: |
+      node --version
+      cd ~/websites/my-site
+      npm init -y
+      npm install --save-dev prettier stylelint stylelint-config-standard
+      echo "node_modules/" >> .gitignore
+      npx prettier --version
+    expect_output:
+      - "."
+
+  - kind: mac
+    title: Format with Prettier
+    body: |
+      1. Check which files Prettier would change.
+      2. Let it rewrite them.
+      3. Look at `git diff`: only spacing and quotes change, never what the code does.
+      4. Commit the formatting on its own ("Format with Prettier"), so it doesn't hide real changes.
+    commands: |
+      npx prettier --check .
+      npx prettier --write .
+      git diff --stat
+      git commit -am "Format with Prettier"
+
+  - kind: mac
+    title: Lint your CSS with Stylelint
+    body: |
+      1. Create a config file that switches on the standard rule set.
+      2. Run Stylelint on every CSS file.
+      3. Read each problem: file, line, a message and the rule's name. Search the rule's name to learn why it exists.
+      4. Fix them (`--fix` repairs the simple ones for you), and run it again until it prints nothing.
+    commands: |
+      echo '{ "extends": "stylelint-config-standard" }' > .stylelintrc.json
+      npx stylelint "**/*.css"
+      npx stylelint "**/*.css" --fix
+
+  - kind: explain
+    title: VS Code does it as you type
+    body: |
+      Running tools by hand is easy to forget. Extensions run them for you:
+
+      - **Prettier – Code formatter**: then in Settings, set *Editor: Default Formatter* to Prettier and tick *Editor: Format On Save*. Every save tidies the file.
+      - **Stylelint**: underlines CSS problems in the editor as you type, like a spell-checker.
+      - **Code Spell Checker**: catches typos in text and class names.
+      - Built in already: HTML and CSS **IntelliSense** suggest property names and values (and warn about unknown ones), and **Emmet** (Module 3).
+
+      Settings you choose live in a `.vscode/settings.json` file in the project, so everyone on the project gets the same setup.
+
+  - kind: explain
+    title: Consistent names and files
+    body: |
+      Tools can't choose good names for you. Habits that keep projects readable:
+
+      - **Class names in kebab-case** (lowercase, words joined by dashes): `book-card`, `site-header`. Not `BookCard`, `book_card` and `bookCard` in the same project.
+      - **Name by purpose, not appearance**: `.warning` survives a redesign; `.red-text` becomes a lie the day the warning turns orange.
+      - **One file layout**, and stick to it:
+
+      ```
+      css/
+        reset.css        ← the box-sizing rule and other resets
+        tokens.css       ← custom properties
+        base.css         ← body, headings, links, forms
+        layout.css       ← page patterns (Module 34)
+        components/      ← one file per component: card.css, button.css…
+      ```
+
+      Module 39 turns this into a full methodology.
+
+  - kind: web
+    title: Tidy the names
+    body: |
+      Someone mixed three naming styles. Rename the classes to kebab-case **in both files**, and rename the appearance-based class to a purpose-based one:
+
+      - `BookCard` → `book-card`, `book_title` → `book-title`, `bookPrice` → `book-price`
+      - `red-text` (it marks an out-of-stock warning) → `stock-warning`
+
+      The page must look exactly the same afterwards.
+    html: |
+      <article class="BookCard">
+        <h3 class="book_title">Emma</h3>
+        <p class="bookPrice">£5.50</p>
+        <p class="red-text">Only 1 left</p>
+      </article>
+    css: |
+      .BookCard {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .book_title {
+        margin: 0;
+        font-family: Georgia, serif;
+      }
+
+      .bookPrice {
+        color: #15803d;
+        font-weight: bold;
+      }
+
+      .red-text {
+        color: #b91c1c;
+      }
+    tests:
+      - "$$('[class]').map((e) => e.className)"
+      - "css('.book-card', 'padding') + ' / ' + css('.book-title', 'font-family') + ' / ' + css('.book-price', 'color') + ' / ' + css('.stock-warning', 'color')"
+      - "selectors().every((s) => /^\\.[a-z]+(-[a-z]+)*$/.test(s))"
+    solution:
+      html: |
+        <article class="book-card">
+          <h3 class="book-title">Emma</h3>
+          <p class="book-price">£5.50</p>
+          <p class="stock-warning">Only 1 left</p>
+        </article>
+      css: |
+        .book-card {
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+        }
+
+        .book-title {
+          margin: 0;
+          font-family: Georgia, serif;
+        }
+
+        .book-price {
+          color: #15803d;
+          font-weight: bold;
+        }
+
+        .stock-warning {
+          color: #b91c1c;
+        }
+    hint: "Change each class in the HTML and its matching selector in the CSS. Class names are case-sensitive: `.BookCard` doesn't match `book-card`."
+
+  - kind: why
+    body: |
+      Formatting and simple mistakes are exactly the kind of work computers do better than people. Let Prettier and Stylelint handle them, and your attention goes to what matters: structure, design and accessibility. Consistent names and files are the human half: they make a project easy to pick up months later.
+
+  - kind: recap
+    body: |
+      - **Prettier** formats (`npx prettier --write .`); **Stylelint** lints CSS (`npx stylelint "**/*.css"`).
+      - Install with Node's `npm` as dev dependencies; ignore `node_modules/`.
+      - VS Code: Prettier as default formatter + format on save; the Stylelint extension underlines problems.
+      - kebab-case class names, named by purpose; a consistent folder layout.

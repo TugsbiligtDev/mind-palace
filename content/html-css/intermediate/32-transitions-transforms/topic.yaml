@@ -1,0 +1,4 @@
+title: Transitions & Transforms
+module: 32
+summary: "Smooth changes between states with transition (property, duration, easing, delay); move, scale and rotate with transform and the individual translate, scale and rotate properties; animate only the cheap properties; and respect prefers-reduced-motion."
+minutes: 45

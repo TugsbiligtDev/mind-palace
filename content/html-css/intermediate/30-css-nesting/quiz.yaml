@@ -1,0 +1,34 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Inside `.btn { … }`, which nested selector means `.btn:hover`?"
+    options: ["`&:hover`", "`:hover`", "`& :hover`", "`.btn &:hover`"]
+    answer: 0
+    explanation: "`&:hover` attaches the state to the button itself. `& :hover` (with a space) would mean a hovered descendant."
+  - type: mcq
+    prompt: "What does this nested rule select?"
+    code: |
+      .card {
+        .dark & { color: white; }
+      }
+    options: ["`.dark .card`", "`.card .dark`", "`.card.dark`", "`.dark.card`"]
+    answer: 0
+    explanation: "& stands for the parent, wherever it's placed: a .card inside a .dark element."
+  - type: mcq
+    prompt: "Why keep nesting shallow?"
+    options:
+      - "Deep nesting creates long, very specific selectors that are hard to override and tied to the HTML structure"
+      - "Browsers only support two levels"
+      - "Nesting is slower than flat CSS"
+      - "Media queries can't be nested deeply"
+    answer: 0
+    explanation: "Each level adds to the selector and its specificity."
+  - type: mcq
+    prompt: "Inside `.nav { … }`, what does a nested `@media (width >= 800px) { display: flex; }` do?"
+    options:
+      - "Makes `.nav` a flex container on screens 800px and wider"
+      - "Nothing; declarations can't go directly in a nested media query"
+      - "Makes every element flex"
+      - "Applies only to `.nav`'s children"
+    answer: 0
+    explanation: "Declarations in a nested media query apply to the parent selector."

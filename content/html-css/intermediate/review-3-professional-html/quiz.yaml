@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "A screen reader announces a field as just \"edit text\". What fixes it best?"
+    options:
+      - "A visible `<label>` connected with `for` and `id`"
+      - "A placeholder"
+      - "A title attribute"
+      - "Making the field bigger"
+    answer: 0
+    explanation: "A connected label gives the field its accessible name, visibly and for screen readers."
+  - type: mcq
+    prompt: "Why is `aria-hidden=\"true\"` on a link a bug?"
+    options:
+      - "The link can still get keyboard focus, but screen readers say nothing about it"
+      - "It hides the link visually"
+      - "It breaks the href"
+      - "It isn't a bug"
+    answer: 0
+    explanation: "Never hide focusable elements from assistive technology; users land on something silent."
+  - type: mcq
+    prompt: "Which pair makes the hero image fast?"
+    options:
+      - "`fetchpriority=\"high\"` and no `loading=\"lazy\"`"
+      - "`loading=\"lazy\"` and `decoding=\"async\"`"
+      - "`fetchpriority=\"low\"`"
+      - "A huge JPEG with no width or height"
+    answer: 0
+    explanation: "The first big image should be fetched early, never lazily."
+  - type: mcq
+    prompt: "An icon-only button must be announced as \"Close\". Which markup?"
+    options:
+      - "`<button type=\"button\" aria-label=\"Close\">✕</button>`"
+      - "`<div aria-label=\"Close\">✕</div>`"
+      - "`<button aria-hidden=\"true\">✕</button>`"
+      - "`<button title=\"✕\">Close</button>`"
+    answer: 0
+    explanation: "A real button with an aria-label: focusable, operable and named."

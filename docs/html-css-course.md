@@ -9,7 +9,7 @@ The owner's full roadmap for the HTML & CSS course: 52 modules across three leve
 | Level | Modules | Status |
 |---|---|---|
 | Beginner: Fundamentals | 1–22, two case reviews, capstone | Built (branch `content/html-css`) |
-| Intermediate: Essential+ | 23–38, two case reviews, capstone | Planned (built after Beginner) |
+| Intermediate: Essential+ | 23–38, two case reviews, capstone | Built (same branch) |
 | Advanced: Mastery | 39–52, two case reviews, capstone | Planned (built after Intermediate) |
 
 ## What runs where

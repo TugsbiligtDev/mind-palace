@@ -1,0 +1,4 @@
+title: Accessibility (a11y) Core
+module: 23
+summary: "Build for everyone: why accessibility matters (people and the law), keyboard navigation and visible focus, headings and landmarks, color contrast (WCAG AA), alt-text strategy, skip links, ARIA basics and the first rule of ARIA, and testing with VoiceOver, Lighthouse and axe."
+minutes: 60

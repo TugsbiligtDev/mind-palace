@@ -1,0 +1,276 @@
+steps:
+  - kind: explain
+    title: Why native widgets win
+    body: |
+      Accordions, pop-up dialogs and menus used to need a JavaScript library, and most home-made versions were broken for keyboard and screen reader users: focus escaping behind the dialog, Escape not closing it, no announcement that something opened.
+
+      Browsers now ship these as **HTML elements**. You get for free:
+
+      - keyboard support (Enter, Space, **Escape** to close),
+      - correct screen reader announcements,
+      - focus moved in and back out properly,
+      - the "top layer": dialogs and popovers appear above everything, no `z-index` battles.
+
+      Use these before reaching for a library. (The lesson preview doesn't run JavaScript, and all three work without it.)
+
+  - kind: explain
+    title: details and summary
+    body: |
+      ```html
+      <details>
+        <summary>Do you buy second-hand books?</summary>
+        <p>Yes! Bring them to the shop any weekday morning.</p>
+      </details>
+      ```
+
+      The `<summary>` is the always-visible, clickable heading; everything else inside `<details>` shows when it's opened. Add the `open` attribute to start it open.
+
+      **Exclusive accordions**: give several `<details>` the **same `name`**, and opening one closes the others, like radio buttons.
+
+      Style the marker with `summary::marker` (or hide it with `summary { list-style: none; }` and draw your own), and the open state with `details[open]`.
+
+  - kind: web
+    title: The FAQ accordion
+    body: |
+      Turn Inkwell's FAQ into an accordion:
+
+      1. Each question/answer pair becomes a `<details>` with the question in a `<summary>` and the answer in a `<p>`.
+      2. Give all three the same `name="faq"`, so only one is open at a time.
+      3. The first one starts **open**.
+      4. CSS: make the open item's summary `font-weight: bold` (select `details[open] > summary`).
+    html: |
+      <h2>Questions</h2>
+      <h3>Do you buy second-hand books?</h3>
+      <p>Yes! Bring them to the shop any weekday morning.</p>
+      <h3>Do you post abroad?</h3>
+      <p>We post to most of Europe. Delivery takes five to ten days.</p>
+      <h3>Can I reserve a book?</h3>
+      <p>Call us and we'll keep it for three days.</p>
+    css: |
+      details {
+        border-bottom: 1px solid #e7e5e4;
+        padding: 0.5rem 0;
+      }
+    tests:
+      - "$$('details').map((d) => d.querySelector('summary').textContent.trim())"
+      - "$$('details').map((d) => d.name + (d.open ? ' (open)' : ''))"
+      - "$$('details > p').length"
+      - "cssAll('details > summary', 'font-weight')"
+      - "count('h3')"
+      - "click('details:nth-of-type(3) > summary')"
+      - "$$('details').map((d) => d.open)"
+    solution:
+      html: |
+        <h2>Questions</h2>
+        <details name="faq" open>
+          <summary>Do you buy second-hand books?</summary>
+          <p>Yes! Bring them to the shop any weekday morning.</p>
+        </details>
+        <details name="faq">
+          <summary>Do you post abroad?</summary>
+          <p>We post to most of Europe. Delivery takes five to ten days.</p>
+        </details>
+        <details name="faq">
+          <summary>Can I reserve a book?</summary>
+          <p>Call us and we'll keep it for three days.</p>
+        </details>
+      css: |
+        details {
+          border-bottom: 1px solid #e7e5e4;
+          padding: 0.5rem 0;
+        }
+
+        details[open] > summary {
+          font-weight: bold;
+        }
+    hint: "Each `h3` becomes a `<summary>`, and the pair is wrapped in `<details name=\"faq\">`. Only the first gets `open`."
+
+  - kind: explain
+    title: dialog
+    body: |
+      `<dialog>` is a box that appears above the page. Opened **as a modal** it also:
+
+      - dims the page behind it (the `::backdrop`) and makes it inert: you can't click or Tab to anything behind;
+      - moves focus into the dialog, closes on **Escape**, and returns focus to the button that opened it.
+
+      Buttons can open and close it with **invoker commands**, no script needed:
+
+      ```html
+      <button commandfor="signup" command="show-modal">Join the book club</button>
+
+      <dialog id="signup" aria-labelledby="signup-title">
+        <h2 id="signup-title">Join the book club</h2>
+        <p>…</p>
+        <button commandfor="signup" command="close">Close</button>
+      </dialog>
+      ```
+
+      A `<form method="dialog">` inside a dialog also closes it when submitted. Style the dimmed background with `dialog::backdrop`.
+
+  - kind: explain
+    title: The JavaScript you'd see elsewhere
+    body: |
+      `command`/`commandfor` are new (supported in all current browsers since late 2025). Older code and tutorials open dialogs with a line of JavaScript, which you'll recognise:
+
+      ```html
+      <button id="open">Join the book club</button>
+      <dialog id="signup">…</dialog>
+      <script>
+        document.getElementById("open").addEventListener("click", () => {
+          document.getElementById("signup").showModal();
+        });
+      </script>
+      ```
+
+      `showModal()` opens it as a modal; `show()` opens it without the backdrop; `close()` closes it. This course doesn't teach JavaScript, so copy this as-is when you meet a browser that needs it (Module 38 covers checking support).
+
+  - kind: web
+    title: The book club dialog
+    body: |
+      1. Make the **Join the book club** button open the dialog `#club` **as a modal**, using `commandfor` and `command`.
+      2. Inside the dialog, make the **Close** button close it the same way.
+      3. Connect the dialog to its heading with `aria-labelledby` (give the heading the id `club-title`).
+      4. CSS: dim the page behind the open dialog with `dialog::backdrop { background: rgb(0 0 0 / 50%); }`.
+
+      Try your buttons in the preview.
+    html: |
+      <button type="button">Join the book club</button>
+
+      <dialog id="club">
+        <h2>Join the book club</h2>
+        <p>We meet on the first Sunday of every month at 4pm.</p>
+        <button type="button">Close</button>
+      </dialog>
+    css: |
+      dialog {
+        border: 0;
+        border-radius: 12px;
+        padding: 1.5rem;
+      }
+    tests:
+      - "attr('body > button', 'commandfor') + ' ' + attr('body > button', 'command')"
+      - "click('body > button')"
+      - "$('#club').open + ' modal:' + $('#club').matches(':modal')"
+      - "css('#club', 'background-color', '::backdrop')"
+      - "click('#club button')"
+      - "$('#club').open"
+      - "attr('#club', 'aria-labelledby') + ' → ' + (doc.getElementById(attr('#club', 'aria-labelledby') || 'x') || {}).localName"
+    solution:
+      html: |
+        <button type="button" commandfor="club" command="show-modal">Join the book club</button>
+
+        <dialog id="club" aria-labelledby="club-title">
+          <h2 id="club-title">Join the book club</h2>
+          <p>We meet on the first Sunday of every month at 4pm.</p>
+          <button type="button" commandfor="club" command="close">Close</button>
+        </dialog>
+      css: |
+        dialog {
+          border: 0;
+          border-radius: 12px;
+          padding: 1.5rem;
+        }
+
+        dialog::backdrop {
+          background: rgb(0 0 0 / 50%);
+        }
+    hint: "Open: `commandfor=\"club\" command=\"show-modal\"`. Close: `commandfor=\"club\" command=\"close\"`. Then `aria-labelledby=\"club-title\"` on the dialog and `id=\"club-title\"` on the h2."
+    reject:
+      - html: |
+          <button type="button" commandfor="club" command="show">Join the book club</button>
+
+          <dialog id="club" aria-labelledby="club-title">
+            <h2 id="club-title">Join the book club</h2>
+            <p>We meet on the first Sunday of every month at 4pm.</p>
+            <button type="button" commandfor="club" command="close">Close</button>
+          </dialog>
+        css: |
+          dialog {
+            border: 0;
+            border-radius: 12px;
+            padding: 1.5rem;
+          }
+
+          dialog::backdrop {
+            background: rgb(0 0 0 / 50%);
+          }
+
+  - kind: explain
+    title: The Popover API
+    body: |
+      A **popover** is a lighter-weight pop-up: a dropdown menu, a tooltip-like note, a little panel. Unlike a modal dialog, the rest of the page stays usable.
+
+      ```html
+      <button popovertarget="account">Account</button>
+      <div id="account" popover>
+        <a href="orders.html">My orders</a>
+        <a href="logout.html">Log out</a>
+      </div>
+      ```
+
+      - The `popover` attribute makes the element hidden until opened, then shows it in the top layer.
+      - `popovertarget` on a button toggles it. Screen readers are told the button controls it.
+      - "Light dismiss": clicking outside or pressing **Escape** closes it. `popover="manual"` turns that off.
+      - Opening one auto popover closes other auto popovers.
+
+      Style it with `[popover]` and its open state with `:popover-open`. Positioning it next to its button is Module 45's anchor positioning; until then it appears centred.
+
+  - kind: web
+    title: The account menu
+    body: |
+      Make the **Account** button toggle the `#account` menu as a popover:
+
+      1. Give the menu `div` the `popover` attribute.
+      2. Point the button at it with `popovertarget`.
+      3. CSS: when the menu is open (`#account:popover-open`), give it `display: flex`, `flex-direction: column` and `gap: 0.5rem`.
+    html: |
+      <button type="button">Account</button>
+      <div id="account">
+        <a href="orders.html">My orders</a>
+        <a href="wishlist.html">Wishlist</a>
+        <a href="logout.html">Log out</a>
+      </div>
+    css: |
+      #account {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+        border-radius: 8px;
+      }
+    tests:
+      - "attr('#account', 'popover') !== null"
+      - "css('#account', 'display')"
+      - "click('button')"
+      - "$('#account').matches(':popover-open')"
+      - "css('#account', 'display') + ' ' + css('#account', 'flex-direction') + ' ' + css('#account', 'gap')"
+    solution:
+      html: |
+        <button type="button" popovertarget="account">Account</button>
+        <div id="account" popover>
+          <a href="orders.html">My orders</a>
+          <a href="wishlist.html">Wishlist</a>
+          <a href="logout.html">Log out</a>
+        </div>
+      css: |
+        #account {
+          padding: 1rem;
+          border: 1px solid #e7e5e4;
+          border-radius: 8px;
+        }
+
+        #account:popover-open {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+    hint: "`<button popovertarget=\"account\">` and `<div id=\"account\" popover>`. The open-state rule is `#account:popover-open { … }`."
+
+  - kind: why
+    body: |
+      Custom-built widgets are where many sites become unusable by keyboard and screen reader users. `<details>`, `<dialog>` and `popover` give you the correct behaviour (focus, Escape, announcements, top layer) for free, in a line or two of HTML. That's less code, fewer bugs and better accessibility.
+
+  - kind: recap
+    body: |
+      - `<details>` + `<summary>`: open/close sections; `open` to start open; shared `name` = exclusive accordion.
+      - `<dialog>`: modal with `command="show-modal"` + `commandfor`; `command="close"`; `::backdrop`; label it with `aria-labelledby`. (Older code: `showModal()` in JavaScript.)
+      - `popover` + `popovertarget`: menus and small panels, light dismiss, top layer; style `:popover-open`.
+      - Native beats custom: keyboard, focus and screen reader support come built in.

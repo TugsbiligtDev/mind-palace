@@ -1,0 +1,4 @@
+title: Advanced Forms
+module: 24
+summary: "Let the browser check input for you with required, type, pattern, min and max; style fields with :valid, :invalid and :user-invalid; speed people up with autocomplete; write error messages screen readers announce; color controls with accent-color; suggest values with datalist."
+minutes: 50

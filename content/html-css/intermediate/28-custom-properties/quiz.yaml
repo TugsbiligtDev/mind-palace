@@ -1,0 +1,45 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "Which line correctly defines and then uses a custom property?"
+    options:
+      - "`:root { --gap: 1rem; } .row { gap: var(--gap); }`"
+      - "`:root { $gap: 1rem; } .row { gap: $gap; }`"
+      - "`:root { gap: --1rem; } .row { gap: gap; }`"
+      - "`:root { var(--gap): 1rem; } .row { gap: --gap; }`"
+    answer: 0
+    explanation: "Define with two dashes, read with var(). The $ syntax is Sass, not CSS."
+  - type: mcq
+    prompt: "What color is the paragraph?"
+    code: |
+      :root  { --ink: black; }
+      .promo { --ink: darkred; }
+      p      { color: var(--ink); }
+
+      <div class="promo"><p>Sale!</p></div>
+    options: ["darkred", "black", "The browser default", "Nothing; it's invalid"]
+    answer: 0
+    explanation: "The paragraph inherits --ink from its nearest ancestor that defines it: .promo."
+  - type: mcq
+    prompt: "What does `var(--accent, teal)` do if `--accent` is never defined?"
+    options: ["Uses teal", "Uses black", "Breaks the whole rule", "Uses the accent-color property"]
+    answer: 0
+    explanation: "The second argument is the fallback."
+  - type: mcq
+    prompt: "What does `light-dark()` need in order to work?"
+    options:
+      - "A `color-scheme` that includes both, such as `color-scheme: light dark`"
+      - "JavaScript"
+      - "A media query around it"
+      - "Two separate stylesheets"
+    answer: 0
+    explanation: "light-dark() picks a value based on the element's color scheme, which color-scheme enables."
+  - type: mcq
+    prompt: "Why use a spacing scale (--space-1, --space-2…) instead of any value you like?"
+    options:
+      - "Fewer, consistent sizes make every page look coherent and easy to change"
+      - "Browsers render scale values faster"
+      - "Custom values are invalid"
+      - "It's required for dark mode"
+    answer: 0
+    explanation: "A scale limits choices to a harmonious set, so spacing stays consistent across pages and people."

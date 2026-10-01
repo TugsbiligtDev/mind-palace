@@ -1,0 +1,34 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What's the difference between Prettier and Stylelint?"
+    options:
+      - "Prettier rewrites code into a consistent format; Stylelint reports likely mistakes and bad practices in CSS"
+      - "They do the same job"
+      - "Prettier checks accessibility; Stylelint checks HTML"
+      - "Stylelint formats; Prettier finds bugs"
+    answer: 0
+    explanation: "One is a formatter, the other a linter. Use both."
+  - type: mcq
+    prompt: "Why put `node_modules/` in `.gitignore`?"
+    options:
+      - "It's large and can be re-installed from package.json at any time"
+      - "It contains secrets"
+      - "GitHub refuses folders"
+      - "Prettier requires it"
+    answer: 0
+    explanation: "package.json (and its lock file) record what to install; the folder itself doesn't belong in Git."
+  - type: mcq
+    prompt: "Which class name follows the conventions from this lesson?"
+    options: ["`.newsletter-form`", "`.NewsletterForm`", "`.blue-box`", "`.newsletter_form2`"]
+    answer: 0
+    explanation: "kebab-case, and named for what it is rather than how it looks."
+  - type: mcq
+    prompt: "Why commit Prettier's formatting changes separately?"
+    options:
+      - "So real changes aren't buried in hundreds of spacing changes in the history"
+      - "Git can't commit them with other changes"
+      - "Prettier requires it"
+      - "It makes the site faster"
+    answer: 0
+    explanation: "A clean history makes it easy to see what actually changed in each commit."

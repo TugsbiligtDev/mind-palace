@@ -1,0 +1,34 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "The landing page passes Lighthouse in light mode, but body text is hard to read in dark mode. What should you check?"
+    options:
+      - "The contrast of the dark-mode token values"
+      - "The meta description"
+      - "The image formats"
+      - "The Git history"
+    answer: 0
+    explanation: "Each theme needs its own contrast check; light-dark() makes it easy to adjust just the dark values."
+  - type: mcq
+    prompt: "Which attribute combination makes the hero image a good Largest Contentful Paint candidate?"
+    options:
+      - "`fetchpriority=\"high\"` and no `loading=\"lazy\"`, with width and height set"
+      - "`loading=\"lazy\"` only"
+      - "`decoding=\"sync\"` and no dimensions"
+      - "A CSS background image"
+    answer: 0
+    explanation: "Fetch it early, never lazily, and reserve its space to avoid layout shift."
+  - type: mcq
+    prompt: "What should happen when a keyboard user presses Escape in the open pre-order dialog?"
+    options:
+      - "The dialog closes and focus returns to the button that opened it"
+      - "The page reloads"
+      - "Nothing; Escape is ignored"
+      - "The form submits"
+    answer: 0
+    explanation: "Modal dialogs opened natively handle Escape and focus return for you."
+  - type: mcq
+    prompt: "Which part of this project needs no media query at all?"
+    options: ["The features grid with `repeat(auto-fit, minmax(15rem, 1fr))`", "The two-column hero", "Dark mode with prefers-color-scheme", "The reduced-motion rule"]
+    answer: 0
+    explanation: "auto-fit with minmax decides the column count from the available space."

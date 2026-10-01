@@ -2,16 +2,24 @@ steps:
   - kind: explain
     title: Put the network picture to work
     body: |
-      Networking is where a lot of beginners stall, so spend a few minutes using Modules 6 to 8 together. Each scene below is the kind of judgement you make in the first hour of an engagement. Read, reason, then take the check.
+      Networking is where a lot of beginners stall, so spend a few minutes using Modules 6 to 8 together. Each scene below is the kind of judgement you make in the first hour of an engagement. Each scene ends with a question: pick your answer, and the explanation opens once you get it right.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 1 — the scope email"
     body: |
       A client writes: *"You are authorised to test `10.10.50.0/24` only. Anything else is out of scope."*
 
+      **Which of these addresses may you scan?**
+    options:
+      - "`10.10.51.5`"
+      - "`10.10.0.1`"
+      - "`10.10.50.77`"
+      - "Anything that starts with `10.`"
+    answer: 2
+    explanation: |
       Translate it before you touch a thing. `/24` fixes the first three numbers, so you may touch **10.10.50.1 through 10.10.50.254** — roughly 254 addresses — and nothing else. If a scan strays to `10.10.51.5`, you are outside your authorisation, which is a legal problem no matter how interesting the target. CIDR is not maths trivia; it is the fence line.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 2 — the scan result"
     body: |
       A scan of one in-scope host returns:
@@ -22,20 +30,44 @@ steps:
       3389/tcp open   ms-wbt-server
       ```
 
+      **What kind of machine is this most likely to be?**
+    options:
+      - "A Windows machine (remote desktop on 3389) that also runs SSH and a website"
+      - "A network printer"
+      - "A Linux mail server"
+      - "You can't tell anything about a machine from its ports"
+    answer: 0
+    explanation: |
       Read the story in the ports. **22** says there is SSH (remote shell). **80** says a website (unencrypted). **3389** is RDP — Windows remote desktop. SSH *and* RDP together suggest a Windows machine that also runs an SSH service. Each open port is a door to investigate further, and the mix already tells you what kind of building you are standing in front of.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 3 — which address is which"
     body: |
       You note three addresses during recon: `192.168.0.14`, `8.8.8.8`, and `172.16.4.9`.
 
+      **Which address is out on the public internet?**
+    options:
+      - "`192.168.0.14`"
+      - "`8.8.8.8`"
+      - "`172.16.4.9`"
+      - "All three"
+    answer: 1
+    explanation: |
       Two of them — `192.168.0.14` and `172.16.4.9` — fall in the private ranges (192.168.x.x and 172.16–31.x.x), so they are internal machines behind NAT. `8.8.8.8` is public (a well-known DNS resolver). Telling private from public instantly tells you what is "inside" the network you are testing and what is out on the open internet.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 4 — the capture"
     body: |
       In your lab you capture traffic and, filtering on `http`, you can read a full login — username and password in plain text — sent to an internal web app over port 80.
 
+      **What's the finding, and when is capturing like this acceptable?**
+    options:
+      - "Wireshark itself is the vulnerability"
+      - "Nothing: traffic on port 80 is always encrypted"
+      - "Unencrypted traffic is fair game to capture on any network"
+      - "The app sends logins over plain HTTP; capturing is only acceptable on a network you're authorised to monitor"
+    answer: 3
+    explanation: |
       Two conclusions. First, the finding: the app uses plain **HTTP**, so credentials cross the wire in the clear; the fix is **HTTPS (TLS)**. Second, the ethics: this is fine because it is *your lab*. The identical capture on a network you do not own would be unlawful interception. Same tool, different permission.
 
   - kind: recap

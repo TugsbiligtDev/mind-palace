@@ -8,7 +8,7 @@ import { clearSignedOutCopy, empty, load, onWrite, readStored, save, setOwner, u
 
 const PUSH_DELAY_MS = 1500;
 
-export type SyncStatus = "local" | "saving" | "saved" | "error";
+type SyncStatus = "local" | "saving" | "saved" | "error";
 let status: SyncStatus = "local";
 const statusListeners = new Set<() => void>();
 

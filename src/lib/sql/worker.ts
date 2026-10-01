@@ -1,12 +1,12 @@
-// Web Worker that owns the in-browser PostgreSQL (PGlite). Each setup (course dataset,
-// or dataset + a case's evidence) is loaded once; every run gets a fresh clone, so a
-// learner's DELETE or DROP never leaks into the next attempt.
+// Web Worker that owns the in-browser PostgreSQL (PGlite). Each course dataset is loaded
+// once; every run gets a fresh clone, so a learner's DELETE or DROP never leaks into the
+// next attempt.
 import type { PGlite } from "@electric-sql/pglite";
-import { freshCopy, grade, prepareCopies, rawTextParsers, runInput, type CaseCheck } from "./core";
+import { freshCopy, grade, prepareCopies, rawTextParsers, runInput, type SqlCheck } from "./core";
 
 type Request =
   | { id: number; type: "run"; key: string; setup: string; input: string }
-  | { id: number; type: "grade"; key: string; setup: string; input: string; check: CaseCheck }
+  | { id: number; type: "grade"; key: string; setup: string; input: string; check: SqlCheck }
   | { id: number; type: "warm"; key: string; setup: string };
 
 type PGliteModule = typeof import("@electric-sql/pglite");

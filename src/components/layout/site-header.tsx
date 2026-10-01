@@ -7,7 +7,6 @@ import { ThemeToggle } from "./theme-toggle";
 
 const NAV = [
   { href: "/courses", label: "Courses" },
-  { href: "/practice", label: "Practice" },
 ];
 
 export function SiteHeader() {

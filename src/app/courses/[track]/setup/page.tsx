@@ -9,7 +9,7 @@ export const generateStaticParams = () =>
     .filter((t) => loadTrack(t).setup)
     .map((track) => ({ track }));
 
-export const metadata = { title: "Take it to your Mac" };
+export const metadata = { title: "Take it to your computer" };
 
 export default async function SetupPage({ params }: PageProps<"/courses/[track]/setup">) {
   const { track } = await params;

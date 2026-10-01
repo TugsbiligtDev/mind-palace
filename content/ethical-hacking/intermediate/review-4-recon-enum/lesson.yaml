@@ -2,16 +2,24 @@ steps:
   - kind: explain
     title: The first hours of an engagement
     body: |
-      Recon and enumeration are the opening of every test, and the habits you build here decide the rest. These scenarios rehearse the judgement: when are you invisible and when are you touching the target, how to read what a scan tells you, and which thread to pull first. Read each, decide, then take the check.
+      Recon and enumeration are the opening of every test, and the habits you build here decide the rest. These scenarios rehearse the judgement: when are you invisible and when are you touching the target, how to read what a scan tells you, and which thread to pull first. Each scene ends with a question: pick your answer, and the explanation opens once you get it right.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 1 — before you touch anything"
     body: |
       You have a signed scope. Before sending a single packet, you spend an hour on WHOIS, certificate-transparency logs and search results, and build a list of twelve subdomains — including `staging-api.example.com`.
 
+      **What kind of work was that hour, and what did it give you?**
+    options:
+      - "Active scanning, so the client should have been warned first"
+      - "Exploitation of the staging server"
+      - "Passive recon: invisible to the target, and `staging-api` is a lead to prioritise once you scan"
+      - "Wasted time: real testers start with Nmap"
+    answer: 2
+    explanation: |
       This is **passive** recon: you touched registries and search engines, not the target, so you are invisible and well within the law. And it already paid off — a `staging` API is exactly the kind of soft, forgotten surface to prioritise once you move to active scanning. An hour of quiet research just shaped the whole active phase.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 2 — reading the scan"
     body: |
       `nmap -sV` against an in-scope host returns:
@@ -22,20 +30,44 @@ steps:
       445/tcp open  smb      Samba 4.x
       ```
 
+      **What's the most useful next step?**
+    options:
+      - "Exploit all three ports at once"
+      - "Look up those exact versions for known vulnerabilities, and check FTP and SMB for anonymous access"
+      - "Nothing: three open ports is normal"
+      - "Run the scan again without `-sV`"
+    answer: 1
+    explanation: |
       Three services, three leads. The **version numbers** are the prize: `vsftpd 2.3.4` is specific enough to look up for known vulnerabilities (next module). FTP invites an anonymous-login check; SMB invites share and null-session enumeration. You are not exploiting yet — you are turning a port list into a to-do list of things to interrogate.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 3 — don't trust the ping"
     body: |
       Host discovery (`nmap -sn`) on an in-scope subnet shows only two live hosts, but the client's inventory says there are ten.
 
+      **What's the likely explanation, and what do you do?**
+    options:
+      - "Eight machines are switched off; report them as missing"
+      - "Your copy of Nmap is broken; reinstall it"
+      - "Widen the scan to the whole internet to find them"
+      - "They ignore ping; scan the suspected addresses directly with `-Pn`"
+    answer: 3
+    explanation: |
       The likely explanation is not that eight machines vanished — it is that they are configured to ignore ping while still running services. The fix is to scan the suspected addresses directly with `-Pn` ("treat as up") instead of trusting the sweep. "No ping reply" is never "not there," a caution that saves testers from missing half a network.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 4 — the quiet win"
     body: |
       Enumerating SMB on a target, you find a share called `backups` readable with no credentials, and inside it an old configuration file containing a database username and password.
 
+      **What have you got?**
+    options:
+      - "A finding: an open share leaked credentials. Record exactly how you got them"
+      - "Nothing yet: it isn't a finding until you run an exploit"
+      - "Something out of scope: config files don't count"
+      - "A false positive"
+    answer: 0
+    explanation: |
       This is why enumeration is the job. You have not run a single exploit, yet you may now hold valid credentials — a combination finding (readable share → leaked config → credentials) that only appears because you enumerated patiently and wrote down what you saw. Note it carefully; those credentials likely unlock the next step.
 
   - kind: recap

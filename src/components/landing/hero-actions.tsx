@@ -17,9 +17,6 @@ export function HeroActions() {
             Start learning →
           </Link>
         )}
-        <Link href="/practice" className="rounded-lg border border-border bg-card px-5 py-2.5 font-medium hover:bg-subtle">
-          Open the Practice hub
-        </Link>
       </div>
       {p?.last && <p className="mt-3 text-sm text-muted">Last time: {p.last.label}</p>}
     </div>

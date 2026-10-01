@@ -1,7 +1,8 @@
-// Content checks: every file must match its schema, and every piece of SQL must really
-// work on PostgreSQL. Runs before each build, so broken content never goes live.
+// Content checks: every file must match its schema, and every snippet and graded answer must
+// really work on its engine (PostgreSQL, Python, JavaScript, or a browser for HTML & CSS).
+// Runs on GitHub for main and pull requests (.github/workflows/check.yml); run it before pushing too.
 //   pnpm check:content            everything
-//   pnpm check:content 19-ctes    only lessons whose key contains "19-ctes" (skips the Practice hub)
+//   pnpm check:content 19-ctes    only lessons whose key contains "19-ctes"
 import { PGlite, types } from "@electric-sql/pglite";
 import fs from "node:fs";
 import path from "node:path";
@@ -10,7 +11,6 @@ import { loadPyodide } from "pyodide";
 import { gradeJs, logText, runJs, type Exec } from "../src/lib/js/core";
 import { gradePy, logText as pyLogText, runPy, type PyodideLike } from "../src/lib/py/core";
 import { loadAllTracks, loadStory, loadTrack } from "../src/lib/content/load";
-import { loadPractice } from "../src/lib/content/practice";
 import { codeStepCheck, pyStepCheck, tryStepCheck, webFiles, webStarter, webStepCheck } from "../src/lib/content/step-check";
 import { buildPage, CHECK_RUNTIME, checkInFrame, FRAME_HEIGHT, gradeWeb, type RunChecks } from "../src/lib/web/core";
 import { chromium, type Browser } from "playwright-core";
@@ -39,6 +39,18 @@ function checkQuizShape(t: CheckTopic): boolean[] {
   });
 }
 
+// "choice" steps work the same in every course: the marked answer must exist, and no two
+// options may read the same.
+function checkChoiceSteps(t: CheckTopic) {
+  for (const [i, step] of t.lesson.steps.entries()) {
+    if (step.kind !== "choice") continue;
+    checks++;
+    const where = `${t.key} lesson step ${i + 1}`;
+    if (step.answer < 0 || step.answer >= step.options.length) fail(where, "answer index is out of range");
+    if (new Set(step.options.map((o) => o.trim())).size !== step.options.length) fail(where, "two options are the same");
+  }
+}
+
 async function makeBase(setup: string) {
   const db = await PGlite.create({ parsers: rawTextParsers(types) });
   if (setup.trim()) await db.exec(setup);
@@ -49,6 +61,7 @@ async function makeBase(setup: string) {
 async function main() {
   loadStory();
   for (const bundle of loadAllTracks()) {
+    for (const t of bundle.levels.flatMap((l) => l.topics)) if (!only || t.key.includes(only)) checkChoiceSteps(t);
     if (bundle.track.engine === "javascript" || bundle.track.engine === "python") {
       await checkCodeTrack(bundle);
       continue;
@@ -141,7 +154,6 @@ async function main() {
     await Promise.all([...bases.values()].map((b) => b.close()));
   }
 
-  if (!only) await checkPractice();
   await browser?.then((b) => b.close());
 
   if (problems.length) {
@@ -261,7 +273,7 @@ async function checkCodeTrack(bundle: ReturnType<typeof loadTrack>) {
 
 // A knowledge-based course (engine "none", e.g. Ethical Hacking). Nothing runs in the browser,
 // so there is nothing to execute: we only confirm the content obeys the no-runner rules.
-// Lessons may use explain/info/why/recap/mac steps but not try/code; quizzes must be multiple
+// Lessons may use explain/info/why/recap/mac/choice steps but not try/code; quizzes must be multiple
 // choice (or fill with runnable:false), never predict, since those need a running engine.
 function checkReadingTrack(bundle: ReturnType<typeof loadTrack>) {
   for (const { level, topics } of bundle.levels) {
@@ -270,7 +282,7 @@ function checkReadingTrack(bundle: ReturnType<typeof loadTrack>) {
       for (const [i, step] of t.lesson.steps.entries()) {
         checks++;
         if (step.kind === "try" || step.kind === "code" || step.kind === "web")
-          fail(`${t.key} lesson step ${i + 1}`, `a reading course can't run code, so it can't use "${step.kind}" steps (use explain/info/mac)`);
+          fail(`${t.key} lesson step ${i + 1}`, `a reading course can't run code, so it can't use "${step.kind}" steps (use explain/info/mac/choice)`);
       }
       checkQuizShape(t);
       for (const [i, q] of t.quiz.questions.entries()) {
@@ -358,94 +370,6 @@ async function checkWebTrack(bundle: ReturnType<typeof loadTrack>) {
     }
     console.log(`  checked ${bundle.track.id}/${level.id} (${topics.length} topics)`);
   }
-}
-
-async function checkCodeCase(where: string, c: ReturnType<typeof loadPractice>[number], python: boolean) {
-  const want = python ? "py" : "js";
-  if (c.check.mode !== want) {
-    fail(where, `a ${python ? "Python" : "JavaScript"} course needs \`check: { mode: ${want}, tests: [...], solution: ... }\``);
-    return;
-  }
-  await checkGraded(python ? pyRunner : jsRunner, where, c.starter, c.check, []);
-}
-
-// Practice hub: every case's reference solution must pass its own check, and the
-// starter code must not. Story episodes must be numbered 1, 2, 3… with no gaps.
-// Each course gets at most MAX_PER_COURSE cases (the owner's rule: 10 per skill).
-const MAX_PER_COURSE = 10;
-
-async function checkPractice() {
-  const cases = loadPractice();
-  const perCourse = new Map<string, number>();
-  cases.forEach((c) => perCourse.set(c.track, (perCourse.get(c.track) ?? 0) + 1));
-  for (const [track, n] of perCourse)
-    if (n > MAX_PER_COURSE) fail(`practice/${track}`, `has ${n} cases; the limit is ${MAX_PER_COURSE} per course`);
-  const topicKeys = new Set(loadAllTracks().flatMap((b) => b.levels.flatMap((l) => l.topics.map((t) => t.key))));
-  const series = new Map<string, number[]>();
-  const titles = new Set<string>();
-
-  for (const c of cases) {
-    const where = `practice/${c.id}`;
-    if (c.topic && !topicKeys.has(c.topic)) fail(where, `topic "${c.topic}" doesn't exist`);
-    if (titles.has(`${c.track}:${c.title}`)) fail(where, `another ${c.track} case already has the title "${c.title}"`);
-    titles.add(`${c.track}:${c.title}`);
-    if (c.series) series.set(c.series.name, [...(series.get(c.series.name) ?? []), c.series.episode]);
-
-    let track;
-    try {
-      track = loadTrack(c.track);
-    } catch {
-      fail(where, `the folder "${c.track}" isn't a course id`);
-      continue;
-    }
-    if (track.track.engine === "javascript" || track.track.engine === "python") {
-      await checkCodeCase(where, c, track.track.engine === "python");
-      continue;
-    }
-    if (track.track.engine !== "postgres") {
-      fail(where, `there's no automatic checker for ${track.track.engine} cases yet, so it can't go live`);
-      continue;
-    }
-    if (c.check.mode === "js" || c.check.mode === "py") {
-      fail(where, `a ${c.check.mode === "js" ? "JavaScript" : "Python"} check (mode: ${c.check.mode}) can only be used in a ${c.check.mode === "js" ? "JavaScript" : "Python"} course`);
-      continue;
-    }
-
-    let base: PGlite;
-    try {
-      base = await makeBase(`${track.engine(c.dataset).setup}\n${c.evidence_setup}`);
-    } catch (e) {
-      fail(where, `evidence_setup errors: ${(e as Error).message}`);
-      continue;
-    }
-    // Every grade opens fresh copies of the database; close them all afterwards or memory runs out.
-    const copies: PGlite[] = [];
-    const fresh = async () => {
-      const copy = (await freshCopy(base, { PGlite, types }, "none")) as PGlite;
-      copies.push(copy);
-      return copy;
-    };
-    try {
-      const good = await grade(fresh, c.check.solution, c.check);
-      checks++;
-      if (!good.correct) fail(where, "the reference solution doesn't pass its own check");
-      if (c.check.mode === "result" && !lastRows(good.output)) fail(where, "the solution's last statement returns no rows");
-      const bad = await grade(fresh, c.starter, c.check);
-      checks++;
-      if (bad.correct) fail(where, "the starter code already solves the case");
-    } catch (e) {
-      fail(where, (e as Error).message);
-    }
-    await Promise.all(copies.map((c) => c.close()));
-    await base.close();
-  }
-
-  for (const [name, eps] of series) {
-    eps.sort((a, b) => a - b).forEach((e, i) => {
-      if (e !== i + 1) fail(`series "${name}"`, `episodes are ${eps.join(", ")}; expected 1 to ${eps.length} with no gaps`);
-    });
-  }
-  console.log(`  checked practice hub (${cases.length} cases)`);
 }
 
 main().catch((e) => {

@@ -193,7 +193,7 @@ export function lastRows(out: RunOutput): Extract<Block, { kind: "rows" }> | und
 
 // Two result sets match when they have the same number of columns and the same rows
 // (column names are ignored; order only matters when `ordered` is set).
-export function sameRows(
+function sameRows(
   a: Extract<Block, { kind: "rows" }> | undefined,
   b: Extract<Block, { kind: "rows" }> | undefined,
   ordered: boolean,
@@ -222,14 +222,14 @@ export function resultText(block: Extract<Block, { kind: "rows" }> | undefined):
   return block.rows.map((r) => r.map((v) => (v === null ? "NULL" : v)).join(" | ")).join("\n");
 }
 
-export type CaseCheck =
+export type SqlCheck =
   | { mode: "result"; solution: string; ordered?: boolean }
   | { mode: "state"; solution: string; state_query: string };
 
 export type Verdict = { correct: boolean; output: RunOutput; message: string };
 
 // Grade a learner's attempt. `fresh` must return a brand-new database copy each call.
-export async function grade(fresh: () => Promise<PGliteInterface>, input: string, check: CaseCheck): Promise<Verdict> {
+export async function grade(fresh: () => Promise<PGliteInterface>, input: string, check: SqlCheck): Promise<Verdict> {
   const mine = await fresh();
   const output = await runInput(mine, input);
   if (output.error) return { correct: false, output, message: "Your SQL hit an error, so fix that first." };

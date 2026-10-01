@@ -3,9 +3,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Markdown } from "@/components/markdown";
 import type { Question } from "@/lib/content/schema";
+import { OptionText } from "./option-text";
 import { recordQuiz, setLast } from "@/lib/progress";
 
-export function normalizeFill(s: string) {
+function normalizeFill(s: string) {
   return s.trim().replace(/;+$/, "").replace(/\s+/g, " ").toLowerCase();
 }
 
@@ -44,7 +45,6 @@ export function QuizPlayer({
   pass,
   href,
   lessonHref,
-  practiceHref,
   nextHref,
   nextLabel,
 }: {
@@ -55,7 +55,6 @@ export function QuizPlayer({
   pass: number;
   href: string;
   lessonHref: string;
-  practiceHref?: string;
   nextHref: string;
   nextLabel: string;
 }) {
@@ -142,15 +141,6 @@ export function QuizPlayer({
             </Link>
           )}
         </div>
-        {passed && practiceHref && (
-          <p className="mt-6 text-sm text-muted">
-            Want to lock it in?{" "}
-            <Link href={practiceHref} className="text-brand underline underline-offset-4">
-              Solve case files that use this module
-            </Link>{" "}
-            in the Practice hub.
-          </p>
-        )}
       </div>
     );
   }
@@ -206,7 +196,7 @@ export function QuizPlayer({
                   }`}
                 >
                   <span className="mt-0.5 font-mono text-xs text-muted">{String.fromCharCode(65 + shownAt)}</span>
-                  <span className={q.type === "predict" ? "font-mono whitespace-pre-wrap" : ""}>{opt}</span>
+                  <span className={q.type === "predict" ? "font-mono whitespace-pre-wrap" : ""}>{q.type === "predict" ? opt : <OptionText text={opt} />}</span>
                 </button>
               );
             })}

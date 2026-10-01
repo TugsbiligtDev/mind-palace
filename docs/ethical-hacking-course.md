@@ -40,9 +40,6 @@ Real practice happens in a free, isolated home lab the learner builds once and r
 
 The Beginner capstone is *building this lab* and running authorised recon against the learner's own target. Lessons point to it; the site doesn't host or require it.
 
-### Practice hub
-
-No runnable case files for this course yet (the hub's cases all auto-grade code/SQL, which this engine can't do). The practice hub stays empty for ethical hacking in v1; scenario-style case files can be added later if we design a non-runnable case type. This matches the other courses, which also have no live hub cases yet.
 
 ### Legal and ethical framing (non-negotiable)
 

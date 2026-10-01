@@ -31,6 +31,22 @@ steps:
 
       Good comments say **why**, not what. `# add 1 to count` is noise. `# skip the header row` is useful. And you can "comment out" a line to switch it off for a moment.
 
+  - kind: explain
+    title: "How the exercises are written: def, return and pass"
+    body: |
+      From here on, most exercises hand you a **function** to finish. You will learn functions properly in Module 14. For now you only need to read three words:
+
+      ```python
+      def double(n):        # def: "here is a block of code called double"
+          return n * 2      # return: "this is the answer"
+      ```
+
+      - **`def name(...):`** gives a block of code a name. Everything **indented** under it belongs to it. The names in the brackets (`n`) are the values the block is handed.
+      - **`return`** sends an answer back. The checker calls your function, for example `double(4)`, and compares what comes back (`8`) with the right answer.
+      - **`pass`** means "nothing here yet". It is a placeholder in an empty block, and you replace it with your own lines.
+
+      Your job in each exercise is the indented part inside. Keep the `def` line exactly as it is, because that is the name the checker calls. If an exercise says "prints", use `print()`; if it says "returns", use `return`.
+
   - kind: code
     title: An about-me card
     body: |

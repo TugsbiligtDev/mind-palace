@@ -15,12 +15,15 @@ export const trackSchema = z.object({
   // "web" is HTML & CSS: lessons use `web` steps (an editor plus a live preview of the page).
   engine: z.enum(["postgres", "python", "javascript", "none", "web"]),
   engine_version: z.string(),
+  // Shown at the top of the course page: what a learner needs before starting, and how the
+  // course's practice works.
+  before_you_start: md.optional(),
   last_reviewed: z.string(),
   // Named practice databases. Each is a list of SQL files in public/downloads/<track>/, run in
   // order, so learners can download the exact files the lessons use. `database` is the name
   // the in-browser psql pretends to be connected to (the files create it on a real server).
   datasets: z.record(z.string(), z.object({ database: z.string(), files: z.array(z.string()).min(1) })).default({}),
-  // The dataset used when a level, topic or case doesn't name one.
+  // The dataset used when a level or topic doesn't name one.
   dataset: z.string().optional(),
   levels: z.array(z.string()).length(3),
 });
@@ -121,6 +124,18 @@ const step = z.discriminatedUnion("kind", [
     // A Mac checkpoint: the learner pastes what Terminal printed, and it must contain each of these.
     expect_output: z.array(z.string()).optional(),
   }),
+  // A question inside the lesson, for any course (nothing runs): the learner picks an option and
+  // sees the explanation once they choose the right one. `code` is something to read, such as
+  // a scan result.
+  z.object({
+    kind: z.literal("choice"),
+    title: z.string(),
+    body: md,
+    code: z.string().optional(),
+    options: z.array(z.string()).min(2).max(5),
+    answer: z.number().int(),
+    explanation: md,
+  }),
   z.object({ kind: z.literal("why"), body: md }),
   z.object({ kind: z.literal("recap"), body: md }),
 ]);
@@ -164,41 +179,6 @@ export const quizSchema = z.object({
   questions: z.array(question).min(3).max(5),
 });
 
-// A practice problem ("case file") in the Practice hub. Content lives in
-// content/practice/<track>/<id>.yaml, independent of the courses.
-export const caseSchema = z.object({
-  difficulty: z.enum(["easy", "medium", "hard"]),
-  // The course topic whose skills this case practises, e.g. "postgresql/beginner/03-where".
-  topic: z.string().optional(),
-  concepts: z.array(z.string()).min(1),
-  // Story cases belong to a season and are numbered; standalone cases leave this out.
-  series: z.object({ name: z.string(), episode: z.number().int() }).optional(),
-  // Which of the course's datasets the case runs on (defaults to the course's default).
-  dataset: z.string().optional(),
-  title: z.string(),
-  briefing: md,
-  evidence_setup: z.string().default(""),
-  clues: z.array(md).default([]),
-  task: md,
-  starter: z.string(),
-  check: z.discriminatedUnion("mode", [
-    z.object({ mode: z.literal("result"), solution: z.string(), ordered: z.boolean().default(false) }),
-    z.object({ mode: z.literal("state"), solution: z.string(), state_query: z.string() }),
-    // JavaScript cases: `starter` is code, `tests` are calls run on the learner's code and the solution.
-    z.object({ mode: z.literal("js"), solution: z.string(), tests: z.array(z.string()).min(1), unordered: z.boolean().default(false) }),
-    // Python cases: the same idea. `stdin` is what input() receives when the code runs.
-    z.object({
-      mode: z.literal("py"),
-      solution: z.string(),
-      tests: z.array(z.string()).min(1),
-      unordered: z.boolean().default(false),
-      stdin: z.array(z.string()).default([]),
-    }),
-  ]),
-  hints: z.array(md).length(3),
-  reveal: md,
-});
-
 export const storySchema = z.object({
   agency: z.string(),
   client: z.string(),
@@ -213,6 +193,3 @@ export type Lesson = z.infer<typeof lessonSchema>;
 export type Step = Lesson["steps"][number];
 export type Quiz = z.infer<typeof quizSchema>;
 export type Question = Quiz["questions"][number];
-export type Case = z.infer<typeof caseSchema>;
-export type Difficulty = Case["difficulty"];
-export type Story = z.infer<typeof storySchema>;

@@ -1,0 +1,32 @@
+# Runs on every push to main and every pull request: code style, types, and the full content
+# check (every lesson's code, SQL, quiz and graded answer on the real engines). A red ✗ on GitHub means
+# something is broken; Vercel may still deploy, so look before sharing a new lesson.
+# The content check isn't part of `pnpm build` because it ran Vercel's build out of memory.
+name: Check
+
+# It takes ~20-40 minutes (private repos get 2,000 free minutes a month), so other branches
+# only run it through a pull request.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm exec tsc --noEmit
+      - name: Install the headless browser the HTML & CSS checks use
+        run: pnpm exec playwright-core install --with-deps chromium-headless-shell
+      - run: pnpm check:content

@@ -4,9 +4,9 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/home", destination: "/", permanent: false },
-      // Old addresses from before the Practice hub and profile existed.
+      // Old addresses: the case-files page became the profile, and topic case pages were removed.
       { source: "/case-files", destination: "/profile", permanent: false },
-      { source: "/courses/:track/:level/:topic/case", destination: "/practice?topic=:track/:level/:topic", permanent: false },
+      { source: "/courses/:track/:level/:topic/case", destination: "/courses/:track/:level/:topic", permanent: false },
     ];
   },
 };

@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { loadAllTracks, upcomingTracks } from "@/lib/content/load";
-import { loadPractice } from "@/lib/content/practice";
+import { loadAllTracks } from "@/lib/content/load";
 
-// Every course (live ones link in; upcoming ones are dimmed), shared by the landing and Courses pages.
+// Every course, shared by the landing and Courses pages.
 export function CourseCards() {
-  const cases = loadPractice();
   return (
     <div className="mt-8 grid gap-4 md:grid-cols-3">
       {loadAllTracks().map(({ track, levels }) => (
@@ -17,18 +15,9 @@ export function CourseCards() {
           <h3 className="mt-4 text-lg font-semibold">{track.title}</h3>
           <p className="mt-1 text-sm text-muted">{track.tagline}</p>
           <p className="mt-4 text-sm font-medium">
-            {levels.filter((l) => l.level.status === "open").length} of 3 levels open ·{" "}
-            {cases.filter((c) => c.track === track.id).length} case files
+            {levels.filter((l) => l.level.status === "open").length} of 3 levels open
           </p>
         </Link>
-      ))}
-      {upcomingTracks().map((c) => (
-        <div key={c.id} className="rounded-2xl border border-dashed border-border p-6 opacity-70">
-          <span className="inline-block size-9 rounded-xl opacity-60" style={{ background: c.color }} />
-          <h3 className="mt-4 text-lg font-semibold">{c.title}</h3>
-          <p className="mt-1 text-sm text-muted">{c.tagline}</p>
-          <p className="mt-4 text-sm text-muted">Coming soon</p>
-        </div>
       ))}
     </div>
   );

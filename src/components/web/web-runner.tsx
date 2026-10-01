@@ -7,6 +7,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveCode } from "@/lib/progress";
 import { buildPage, type WebFiles } from "@/lib/web/core";
+import { codeHighlighting } from "@/components/code/code-editor";
 
 type Tab = "html" | "css";
 
@@ -186,6 +187,7 @@ function FileEditor({
   const extensions = useMemo(
     () => [
       lang === "html" ? htmlLang() : cssLang(),
+      codeHighlighting,
       Prec.highest(
         keymap.of([
           {

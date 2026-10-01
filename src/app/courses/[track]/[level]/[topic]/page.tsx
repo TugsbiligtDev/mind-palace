@@ -22,7 +22,7 @@ export default async function LessonPage({ params }: PageProps<"/courses/[track]
       title={ctx.topic.topic.title}
       label={topicLabel(ctx.topic.topic)}
       steps={ctx.topic.lesson.steps}
-      engine={ctx.lessonEngine}
+      engine={ctx.topic.engine}
       language={ctx.bundle.track.engine}
       href={ctx.href}
       quizHref={ctx.quizHref}

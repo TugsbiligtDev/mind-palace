@@ -5,7 +5,7 @@ import { supabase } from "./supabase";
 
 export type User = { id: string; email: string };
 
-export type AuthState =
+type AuthState =
   | { status: "loading"; user: null }
   | { status: "disabled"; user: null } // Supabase keys aren't set
   | { status: "signed-out"; user: null }

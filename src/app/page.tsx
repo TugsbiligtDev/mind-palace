@@ -2,7 +2,6 @@ import Link from "next/link";
 import { CourseCards } from "@/components/course/course-cards";
 import { HeroActions } from "@/components/landing/hero-actions";
 import { loadAllTracks, loadStory } from "@/lib/content/load";
-import { loadPractice } from "@/lib/content/practice";
 
 const STEPS = [
   {
@@ -18,16 +17,14 @@ const STEPS = [
   {
     n: "03",
     title: "Solve",
-    body: "Case files in the Practice hub. Real data, a mystery to crack, hidden checks and three hints if you get stuck.",
+    body: "Reviews and capstone projects in every course pull the modules together: a bigger problem, hidden checks, no hand-holding.",
   },
 ];
 
 export default function Landing() {
   const story = loadStory();
   const tracks = loadAllTracks();
-  const cases = loadPractice();
   const lessons = tracks.reduce((n, t) => n + t.levels.reduce((m, l) => m + l.topics.length, 0), 0);
-  const sample = cases.find((c) => c.series?.episode === 4) ?? cases[0];
 
   return (
     <div className="flex flex-col">
@@ -38,15 +35,14 @@ export default function Landing() {
             Learn to code by solving mysteries.
           </h1>
           <p className="mt-6 max-w-xl text-lg text-muted">
-            Bite-sized lessons and quizzes teach the ideas. Case files put them to work: query real data, follow the clues
-            and close the case. Everything runs in your browser.
+            Bite-sized lessons and quizzes teach the ideas. Reviews and capstones put them to work on real data and real
+            code. Everything runs in your browser.
           </p>
           <HeroActions />
           <dl className="mt-10 flex gap-8 text-sm">
             {[
               [lessons, "lessons"],
               [lessons, "quizzes"],
-              ...(cases.length ? [[cases.length, "case files"]] : []),
             ].map(([n, label]) => (
               <div key={label}>
                 <dt className="sr-only">{label}</dt>
@@ -64,16 +60,16 @@ export default function Landing() {
           <article className="rotate-[-1.2deg] rounded-2xl border border-paper-border bg-paper p-6 shadow-lg sm:p-7">
             <div className="flex items-baseline justify-between border-b border-dashed border-paper-border pb-3">
               <p className="font-mono text-xs tracking-widest text-muted uppercase">
-                {sample ? `Case file · Episode ${sample.series?.episode ?? 1}` : "Case files"}
+                PostgreSQL · Inkwell Books
               </p>
               <span className="rotate-[-4deg] rounded border-2 border-clue px-2 py-0.5 font-mono text-[11px] font-bold text-clue">
-                {sample ? "OPEN" : "SOON"}
+                OPEN
               </span>
             </div>
-            <h2 className="mt-4 font-serif text-2xl leading-tight">{sample?.title ?? "New cases are on the way"}</h2>
+            <h2 className="mt-4 font-serif text-2xl leading-tight">Where did the refunds go?</h2>
             <p className="mt-3 font-serif text-[15px] leading-relaxed text-muted">
-              The case files are being rewritten for the bookstore data. Until then, every lesson runs on it: 39,419
-              orders, 997 refunds and thousands of customers, waiting for your questions&hellip;
+              Every PostgreSQL lesson runs on a real bookstore database: 39,419 orders, 997 refunds and thousands of
+              customers, waiting for your questions&hellip;
             </p>
           </article>
           <div className="relative mt-[-0.75rem] ml-6 rotate-[0.8deg] overflow-hidden rounded-2xl border border-border bg-card shadow-lg sm:ml-12">

@@ -1,23 +1,17 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Markdown } from "@/components/markdown";
-import { JsRunner } from "@/components/js/js-runner";
-import { PyRunner } from "@/components/py/py-runner";
-import { SqlRunner, type Engine } from "@/components/sql/sql-runner";
-import { WebRunner } from "@/components/web/web-runner";
+import type { Engine } from "@/lib/content/load";
 import type { Step, Track } from "@/lib/content/schema";
-import { codeStepCheck, pyStepCheck, tryStepCheck, webStarter, webStepCheck } from "@/lib/content/step-check";
+import { webStepCheck } from "@/lib/content/step-check";
 import { completeLesson, completeStep, setLast, setLessonStep, useProgress } from "@/lib/progress";
-import { gradeJavaScript } from "@/lib/js/client";
-import type { JsRunOutput } from "@/lib/js/core";
-import { gradePython } from "@/lib/py/client";
-import type { PyRunOutput } from "@/lib/py/core";
-import type { RunOutput } from "@/lib/sql/core";
-import { gradeSql } from "@/lib/sql/client";
-import type { WebFiles } from "@/lib/web/core";
-import { gradeWebPage } from "@/lib/web/client";
+import { ChoiceStep } from "./choice-step";
+import { CodePanel } from "./code-panel";
+import { MacCheck, MacCommands } from "./mac-step";
+import { SqlPanel } from "./sql-panel";
+import { WebPanel } from "./web-panel";
 
 const KIND_LABEL: Record<Step["kind"], string> = {
   explain: "Learn",
@@ -26,6 +20,7 @@ const KIND_LABEL: Record<Step["kind"], string> = {
   web: "Try it",
   info: "Good to know",
   mac: "On your Mac",
+  choice: "Your call",
   why: "Why this matters",
   recap: "Recap",
 };
@@ -70,11 +65,11 @@ export function LessonPlayer({
   const isExercise = step.kind === "try" || step.kind === "code" || step.kind === "web";
   // An ungraded HTML & CSS step is "edit and look": nothing to pass, so Continue stays open.
   const graded = step.kind !== "web" || !!webStepCheck(step);
-  const needsAction = ((isExercise && graded) || step.kind === "mac") && !done;
+  const needsAction = ((isExercise && graded) || step.kind === "mac" || step.kind === "choice") && !done;
   const last = index === steps.length - 1;
 
   function next() {
-    if ((!isExercise || !graded) && step.kind !== "mac") completeStep(topicKey, index!);
+    if ((!isExercise || !graded) && step.kind !== "mac" && step.kind !== "choice") completeStep(topicKey, index!);
     advance();
   }
 
@@ -88,20 +83,26 @@ export function LessonPlayer({
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-      <div className="mb-6 flex items-center gap-4">
-        <p className="text-sm text-muted">
+      {/* On phones the step bar gets its own full-width row; side by side it would be squeezed to nothing. */}
+      <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-3">
+        <p className="min-w-0 flex-1 text-sm text-muted sm:flex-none">
           {label} · <span className="text-text">{title}</span>
         </p>
-        <div className="flex flex-1 gap-1" aria-label={`Step ${index + 1} of ${steps.length}`}>
+        <div className="order-last flex w-full gap-1 sm:order-none sm:w-auto sm:flex-1" aria-label={`Step ${index + 1} of ${steps.length}`}>
           {steps.map((_, i) => (
             <button
               key={i}
               onClick={() => setIndex(i)}
               aria-label={`Go to step ${i + 1}`}
-              className={`h-1.5 flex-1 rounded-full transition-colors ${
-                i === index ? "bg-brand" : saved?.stepsDone.includes(i) ? "bg-brand/40" : "bg-border"
-              }`}
-            />
+              className="flex h-6 flex-1 items-center"
+            >
+              {/* A thin bar inside a taller button, so it's easy to tap on a phone. */}
+              <span
+                className={`h-1.5 w-full rounded-full transition-colors ${
+                  i === index ? "bg-brand" : saved?.stepsDone.includes(i) ? "bg-brand/40" : "bg-border"
+                }`}
+              />
+            </button>
           ))}
         </div>
         <p className="text-sm text-muted tabular-nums">
@@ -109,21 +110,32 @@ export function LessonPlayer({
         </p>
       </div>
 
-      <div className={isExercise ? "grid gap-6 lg:grid-cols-2" : "mx-auto max-w-2xl"}>
+      <div className={isExercise ? "grid items-start gap-6 lg:grid-cols-2" : "mx-auto max-w-2xl"}>
         <article className="min-w-0 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
           <p className="mb-2 text-xs font-medium tracking-wide text-brand uppercase">{KIND_LABEL[step.kind]}</p>
           {"title" in step && <h1 className="mb-4 text-2xl font-semibold tracking-tight">{step.title}</h1>}
           <Markdown>{step.body}</Markdown>
           {step.kind === "mac" && <MacCommands commands={step.commands} />}
+          {step.kind === "choice" && (
+            <ChoiceStep
+              key={`${topicKey}-${index}`}
+              code={step.code}
+              options={step.options}
+              answer={step.answer}
+              explanation={step.explanation}
+              done={done}
+              onDone={() => completeStep(topicKey, index)}
+            />
+          )}
           {step.kind === "mac" && step.expect_output && (
             <MacCheck key={`${topicKey}-${index}`} expected={step.expect_output} done={done} onDone={() => completeStep(topicKey, index)} />
           )}
         </article>
 
         {step.kind === "try" && (
-          <TryPanel key={`${topicKey}-${index}`} step={step} engine={engine} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />
+          <SqlPanel key={`${topicKey}-${index}`} step={step} engine={engine} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />
         )}
-        {step.kind === "code" && (
+        {step.kind === "code" && (language === "python" || language === "javascript") && (
           <CodePanel key={`${topicKey}-${index}`} step={step} language={language} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />
         )}
         {step.kind === "web" && (
@@ -153,6 +165,7 @@ export function LessonPlayer({
               I ran it ✓
             </button>
           )}
+          {needsAction && step.kind === "choice" && <span className="text-sm text-muted">Pick the right answer to continue</span>}
           {needsAction && isExercise && (
             <span className="text-sm text-muted">
               {step.kind === "web" ? "Pass the check to continue" : `Run the ${step.kind === "code" ? "code" : "query"} to continue`}
@@ -170,309 +183,6 @@ export function LessonPlayer({
       <p className="mt-10 text-center text-sm text-muted">
         Already confident? <Link href={quizHref} className="text-brand underline underline-offset-4">Jump to the quiz</Link>
       </p>
-    </div>
-  );
-}
-
-function TryPanel({
-  step,
-  engine,
-  slot,
-  done,
-  onDone,
-}: {
-  step: Extract<Step, { kind: "try" }>;
-  engine: Engine;
-  slot: string;
-  done: boolean;
-  onDone: () => void;
-}) {
-  const p = useProgress();
-  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
-  const [misses, setMisses] = useState(0);
-
-  const onRan = useCallback(
-    async (input: string, out: RunOutput) => {
-      if (step.expect_error) {
-        if (out.error) {
-          setFeedback({ ok: true, text: "That's the error we wanted to see. Read it carefully: the ERROR line says what went wrong, and LINE points to where." });
-          onDone();
-        } else setFeedback({ ok: false, text: "No error this time. Run the broken version to see the message." });
-        return;
-      }
-      if (out.error) {
-        setFeedback({ ok: false, text: "An error. Read the message, fix the query, and run it again." });
-        return;
-      }
-      const check = tryStepCheck(step);
-      if (!check) {
-        onDone();
-        setFeedback(null);
-        return;
-      }
-      const v = await gradeSql(engine.key, engine.setup, input, check);
-      if (v.correct) {
-        setFeedback({ ok: true, text: "Correct! That's exactly the result we were after." });
-        onDone();
-      } else {
-        setMisses((m) => m + 1);
-        setFeedback({ ok: false, text: v.message });
-      }
-    },
-    [step, engine, onDone],
-  );
-
-  return (
-    <div className="min-w-0 space-y-3">
-      <SqlRunner
-        engine={engine}
-        initial={p?.code[slot] ?? step.sql}
-        starter={step.sql}
-        slot={slot}
-        onRan={onRan}
-        minHeight="160px"
-      />
-      {feedback && (
-        <p className={`rounded-lg px-3 py-2 text-sm ${feedback.ok ? "bg-success/10 text-success" : "bg-xp/10 text-text"}`}>
-          {feedback.ok ? "✓ " : ""}
-          {feedback.text}
-        </p>
-      )}
-      {done && !feedback && <p className="text-sm text-success">✓ Step complete</p>}
-      <HelpPanel hint={step.hint} answer={step.expect} answerLabel="Stuck? Show one working answer" misses={misses} done={done} />
-    </div>
-  );
-}
-
-// The JavaScript version of TryPanel. Run executes the code; when the step has tests, Run also
-// grades it (hidden test calls run on the learner's code and on the reference solution).
-function CodePanel({
-  step,
-  language,
-  slot,
-  done,
-  onDone,
-}: {
-  step: Extract<Step, { kind: "code" }>;
-  language: Track["engine"];
-  slot: string;
-  done: boolean;
-  onDone: () => void;
-}) {
-  const p = useProgress();
-  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
-  const [misses, setMisses] = useState(0);
-
-  const onRan = useCallback(
-    async (code: string, out: JsRunOutput | PyRunOutput) => {
-      if (out.error) {
-        setFeedback({ ok: false, text: "An error. Read the message, fix the code, and run it again." });
-        return;
-      }
-      const check = language === "python" ? pyStepCheck(step) : codeStepCheck(step);
-      if (!check) {
-        onDone();
-        setFeedback(null);
-        return;
-      }
-      const v = language === "python" ? await gradePython(code, check) : await gradeJavaScript(code, check);
-      if (v.correct) {
-        setFeedback({ ok: true, text: `Correct! All ${v.total} tests pass.` });
-        onDone();
-      } else {
-        setMisses((m) => m + 1);
-        setFeedback({ ok: false, text: v.message });
-      }
-    },
-    [step, language, onDone],
-  );
-
-  return (
-    <div className="min-w-0 space-y-3">
-      {language === "python" ? (
-        <PyRunner initial={p?.code[slot] ?? step.code} starter={step.code} slot={slot} onRan={onRan} stdin={step.stdin} minHeight="200px" />
-      ) : (
-        <JsRunner initial={p?.code[slot] ?? step.code} starter={step.code} slot={slot} onRan={onRan} minHeight="200px" />
-      )}
-      {feedback && (
-        <p className={`rounded-lg px-3 py-2 text-sm ${feedback.ok ? "bg-success/10 text-success" : "bg-xp/10 text-text"}`}>
-          {feedback.ok ? "✓ " : ""}
-          {feedback.text}
-        </p>
-      )}
-      {done && !feedback && <p className="text-sm text-success">✓ Step complete</p>}
-      <HelpPanel hint={step.hint} answer={step.solution} answerLabel="Stuck? Show one working solution" misses={misses} done={done} />
-    </div>
-  );
-}
-
-// The HTML & CSS version: the preview is live, and "Check my page" grades a graded step
-// (hidden checks run on the learner's page and on the reference solution).
-function WebPanel({
-  step,
-  slot,
-  done,
-  onDone,
-}: {
-  step: Extract<Step, { kind: "web" }>;
-  slot: string;
-  done: boolean;
-  onDone: () => void;
-}) {
-  const p = useProgress();
-  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
-  const [misses, setMisses] = useState(0);
-  const [checking, setChecking] = useState(false);
-  const check = useMemo(() => webStepCheck(step), [step]);
-  const starter = webStarter(step);
-  const initial = { html: p?.code[slot] ?? starter.html, css: p?.code[`${slot}:css`] ?? starter.css };
-
-  const running = useRef(false);
-  const onCheck = useCallback(
-    async (files: WebFiles) => {
-      if (!check || running.current) return;
-      running.current = true;
-      setChecking(true);
-      try {
-        const v = await gradeWebPage(files, check);
-        if (v.correct) {
-          setFeedback({ ok: true, text: `Correct! All ${v.total} checks pass.` });
-          onDone();
-        } else {
-          setMisses((m) => m + 1);
-          setFeedback({ ok: false, text: v.message });
-        }
-      } catch (e) {
-        setFeedback({ ok: false, text: `The checker couldn't run: ${(e as Error).message}` });
-      } finally {
-        running.current = false;
-        setChecking(false);
-      }
-    },
-    [check, onDone],
-  );
-
-  const answer = check
-    ? [step.solution?.html !== undefined && `<!-- index.html -->\n${check.solution.html.trim()}`, step.solution?.css !== undefined && `/* style.css */\n${check.solution.css.trim()}`]
-        .filter(Boolean)
-        .join("\n\n")
-    : undefined;
-
-  return (
-    <div className="min-w-0 space-y-3">
-      <WebRunner initial={initial} starter={starter} slot={slot} showCss={step.css !== undefined} onCheck={check ? onCheck : undefined} checking={checking} />
-      {feedback && (
-        <p className={`rounded-lg px-3 py-2 text-sm ${feedback.ok ? "bg-success/10 text-success" : "bg-xp/10 text-text"}`}>
-          {feedback.ok ? "✓ " : ""}
-          {feedback.text}
-        </p>
-      )}
-      {done && !feedback && check && <p className="text-sm text-success">✓ Step complete</p>}
-      <HelpPanel hint={step.hint} answer={answer} answerLabel="Stuck? Show one working answer" misses={misses} done={done} />
-    </div>
-  );
-}
-
-// "Need a hint?" after the first miss, "Show one working answer" after three.
-function HelpPanel({
-  hint,
-  answer,
-  answerLabel,
-  misses,
-  done,
-}: {
-  hint?: string;
-  answer?: string;
-  answerLabel: string;
-  misses: number;
-  done: boolean;
-}) {
-  const [showHint, setShowHint] = useState(false);
-  const [showAnswer, setShowAnswer] = useState(false);
-  return (
-    <>
-      {hint && misses >= 1 && !done && (
-        <div className="text-sm">
-          {showHint ? (
-            <div className="rounded-lg border border-border px-3 py-2">
-              <Markdown>{hint}</Markdown>
-            </div>
-          ) : (
-            <button onClick={() => setShowHint(true)} className="text-muted underline underline-offset-4 hover:text-text">
-              Need a hint?
-            </button>
-          )}
-        </div>
-      )}
-      {answer && misses >= 3 && !done && (
-        <div className="text-sm">
-          {showAnswer ? (
-            <pre className="overflow-x-auto rounded-lg border border-border bg-code p-3 font-mono text-xs">{answer}</pre>
-          ) : (
-            <button onClick={() => setShowAnswer(true)} className="text-muted underline underline-offset-4 hover:text-text">
-              {answerLabel}
-            </button>
-          )}
-        </div>
-      )}
-    </>
-  );
-}
-
-// A light self-check for work done on the learner's Mac: the pasted Terminal output must
-// contain every expected piece (spaces don't matter).
-function MacCheck({ expected, done, onDone }: { expected: string[]; done: boolean; onDone: () => void }) {
-  const [text, setText] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const squash = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
-  function check() {
-    const missing = expected.filter((e) => !squash(text).includes(squash(e)));
-    if (missing.length === 0) {
-      setFeedback(null);
-      onDone();
-    } else setFeedback("That doesn't look like the expected output yet. Did every command run without an error?");
-  }
-  if (done) return <p className="mt-5 text-sm text-success">✓ Checkpoint passed</p>;
-  return (
-    <div className="mt-5 space-y-2">
-      <label className="block text-sm font-medium" htmlFor="mac-output">
-        Checkpoint: paste what your Terminal printed
-      </label>
-      <textarea
-        id="mac-output"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={6}
-        spellCheck={false}
-        className="w-full rounded-lg border border-border bg-code p-3 font-mono text-xs"
-      />
-      <button onClick={check} className="rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-subtle">
-        Check my output
-      </button>
-      {feedback && <p className="rounded-lg bg-xp/10 px-3 py-2 text-sm">{feedback}</p>}
-    </div>
-  );
-}
-
-function MacCommands({ commands }: { commands: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="mt-5">
-      <div className="mb-1.5 flex items-center justify-between text-xs text-muted">
-        <span>Terminal</span>
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(commands).then(() => {
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1500);
-            });
-          }}
-          className="hover:text-text"
-        >
-          {copied ? "Copied ✓" : "Copy"}
-        </button>
-      </div>
-      <pre className="overflow-x-auto rounded-xl bg-[#0b0f19] p-4 font-mono text-[0.82rem] leading-relaxed text-[#e5e7eb]">{commands}</pre>
     </div>
   );
 }

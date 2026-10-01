@@ -2,34 +2,66 @@ steps:
   - kind: explain
     title: The web-testing loop
     body: |
-      A web assessment is a loop: **map** the application, **probe** its inputs, **recognise** a flaw from how the app responds, and **name the fix**. These scenarios rehearse that loop across Modules 20 to 22. Read each, decide what it is and how you would close it, then take the check. Throughout, assume the app is in your lab, on a sanctioned range like PortSwigger's Web Security Academy, or inside a signed scope.
+      A web assessment is a loop: **map** the application, **probe** its inputs, **recognise** a flaw from how the app responds, and **name the fix**. These scenarios rehearse that loop across Modules 20 to 22. Each scene ends with a question: decide what it is and how you would close it, and the explanation opens once you get it right. Throughout, assume the app is in your lab, on a sanctioned range like PortSwigger's Web Security Academy, or inside a signed scope.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 1 — the page no menu links to"
     body: |
       The site's menu offers only Home, Shop and Account, but your scope is the whole application.
 
+      **How do you find pages the menu doesn't show?**
+    options:
+      - "Ask the developers for a list"
+      - "Content discovery with a wordlist tool such as gobuster or ffuf"
+      - "You don't: if a page isn't linked, it doesn't exist"
+      - "Guess passwords on the Account page"
+    answer: 1
+    explanation: |
       The menu is not the map. **Content discovery** (gobuster or ffuf with a wordlist, Module 20) turns up `/admin` and an old `/backup.zip`, neither linked anywhere. A page that is merely *unlinked* but not *protected* is a classic finding. The point for the client: hiding a link is not access control. Every sensitive page needs a server-side authorisation check, and stray files like backups should never sit on a public web server.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 2 — your name comes back as a heading"
     body: |
       A feedback form echoes your submitted name back on the confirmation page. You enter a name containing angle-bracket markup, and the page renders it as *formatting* rather than showing it as text.
 
+      **What does this behaviour suggest?**
+    options:
+      - "SQL injection"
+      - "IDOR"
+      - "Nothing: every form does that"
+      - "Cross-site scripting (XSS): your input reaches the page without being escaped"
+    answer: 3
+    explanation: |
       That tells you the app places your input into the page without escaping it — the condition for **cross-site scripting (XSS)**, where an attacker's input could be treated as code in another user's browser (Module 21). You have recognised it from behaviour alone, no harm done. The fix is **output encoding**: the server should render user input as inert text, plus a Content-Security-Policy as defence in depth.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 3 — a number that is not yours"
     body: |
       Logged in as an ordinary user, you notice your profile loads from `/account?id=3391`. You change the number to a different value and the app shows you *another* account's details.
 
+      **What is this, and what's the fix?**
+    options:
+      - "IDOR (broken access control); check on the server that the user may see that record"
+      - "XSS; escape the output"
+      - "Make the IDs long and random so nobody can guess them"
+      - "Hide the id from the address bar"
+    answer: 0
+    explanation: |
       No clever input was needed — just editing an identifier. This is **IDOR / broken access control** (Module 22), the issue that sits at the very top of the OWASP list. The app used your input to pick a record but never checked that you are allowed to see it. The fix is a **server-side authorisation check on every request**: does the logged-in user own or have rights to this object? Not hiding the link, not making the ID harder to guess.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 4 — the server fetches on your behalf"
     body: |
       A feature lets you import a profile picture "from a URL," and the server goes and fetches whatever address you give it. You point it at an internal-only address and the server returns a response that an outside user should never be able to reach.
 
+      **What is this attack called?**
+    options:
+      - "CSRF"
+      - "XXE"
+      - "SSRF: the server fetches an address you chose, from inside the network"
+      - "An open redirect"
+    answer: 2
+    explanation: |
       That is **SSRF** (Server-Side Request Forgery, Module 22): the trusted server, sitting inside the network, has been made to fetch an attacker-chosen destination. The fix is to **allow-list** exactly which destinations the server may fetch and block internal and cloud-metadata addresses — never let user input choose arbitrary internal targets.
 
   - kind: recap

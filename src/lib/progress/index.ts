@@ -5,15 +5,8 @@ import { empty, load, save, update, write, type Progress } from "./store";
 export { useProgress, type Progress } from "./store";
 export { useSyncStatus } from "./sync";
 
-export const XP = { lessonStep: 2, lesson: 20, quiz: 30, hintCost: 15 } as const;
+const XP = { lessonStep: 2, lesson: 20, quiz: 30 } as const;
 
-// What a solved case is worth, by difficulty (before hints). Hints can't take it below `min`.
-export const CASE_XP = {
-  easy: { full: 60, min: 25 },
-  medium: { full: 100, min: 40 },
-  hard: { full: 160, min: 60 },
-} as const;
-export type Difficulty = keyof typeof CASE_XP;
 
 export const RANKS = [
   { title: "Rookie", min: 0 },
@@ -132,37 +125,6 @@ export function recordQuiz(key: string, score: number, total: number, pass: numb
     const passed = score >= pass;
     earned = passed && !q.passed ? XP.quiz : 0;
     p.quizzes[key] = { best: Math.max(q.best, score), total, passed: q.passed || passed, attempts: q.attempts + 1 };
-    return earned ? addXp(p, earned) : touchStreak(p);
-  });
-  return earned;
-}
-
-export function takeHint(caseId: string) {
-  update((p) => {
-    const c = p.cases[caseId] ?? { solved: false, hints: 0, attempts: 0 };
-    p.cases[caseId] = { ...c, hints: Math.min(3, c.hints + 1) };
-    return p;
-  });
-}
-
-export function caseReward(difficulty: Difficulty, hints: number) {
-  const r = CASE_XP[difficulty];
-  return Math.max(r.min, r.full - hints * XP.hintCost);
-}
-
-/** Records a case attempt. Returns XP earned (first solve only). */
-export function recordCase(caseId: string, difficulty: Difficulty, solved: boolean): number {
-  let earned = 0;
-  update((p) => {
-    const c = p.cases[caseId] ?? { solved: false, hints: 0, attempts: 0 };
-    earned = solved && !c.solved ? caseReward(difficulty, c.hints) : 0;
-    p.cases[caseId] = {
-      ...c,
-      solved: c.solved || solved,
-      attempts: c.attempts + 1,
-      xp: c.xp ?? (earned || undefined),
-      solvedAt: c.solvedAt ?? (earned ? new Date().toISOString() : undefined),
-    };
     return earned ? addXp(p, earned) : touchStreak(p);
   });
   return earned;

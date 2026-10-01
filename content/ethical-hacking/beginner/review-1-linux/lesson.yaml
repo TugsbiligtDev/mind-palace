@@ -2,32 +2,56 @@ steps:
   - kind: explain
     title: How a review works here
     body: |
-      No new material. This is a chance to use Modules 3 to 5 together the way you will on a live machine: you are handed some output, you decide what it means, and you choose the next command. Read each scene, think about your answer, then take the knowledge check.
+      No new material. This is a chance to use Modules 3 to 5 together the way you will on a live machine: you are handed some output, you decide what it means, and you choose the next command. Each scene ends with a question: pick your answer, and the explanation opens once you get it right.
 
       Keep one habit in mind throughout: **know where you are and what a command will do before you run it.**
 
-  - kind: explain
+  - kind: choice
     title: "Scene 1 — just landed"
     body: |
       You have just gained a shell on a Linux machine you are authorised to test. The prompt looks unfamiliar and you have no idea who you are or where you are.
 
+      **What do you run first?**
+    options:
+      - "`sudo su` to get root straight away"
+      - "`whoami`, `pwd` and `ls -la`: find out who you are, where you are and what's here"
+      - "`rm -rf /tmp/*` to make space for your tools"
+      - "Download your whole toolkit before looking around"
+    answer: 1
+    explanation: |
       The professional reflex is three quick, harmless commands: `whoami` (or `id`) to learn *who* you are, `pwd` to learn *where* you are, and `ls -la` to see *what is here*, hidden files included. You never start by changing anything. You start by looking.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 2 — a tempting command"
     body: |
       While tidying your notes you are about to run `rm -rf *` to clear a folder — but you are not certain which folder you are in.
 
+      **What do you do before pressing Enter?**
+    options:
+      - "Run `pwd` and confirm you're in the folder you mean"
+      - "Just run it: `rm` asks before deleting anything"
+      - "Add `sudo` so it can't fail halfway"
+      - "Nothing: `-rf` only removes empty folders"
+    answer: 0
+    explanation: |
       Stop. `rm -rf *` deletes everything in the *current* directory, permanently, no questions asked. If `pwd` turns out to say `/` or your home folder, you have just destroyed far more than your notes. The fix is boring and lifesaving: run `pwd` first, confirm the path, and only then delete. Boring habits are what keep labs and clients intact.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 3 — hunting for secrets"
     body: |
       You have read access to a web application's folder and you suspect a password or key was left in a config file somewhere beneath it.
 
+      **Which command fits this job?**
+    options:
+      - "`find . -name password`"
+      - "`ls -la`"
+      - "`grep -r \"password\" .`"
+      - "`cat password`"
+    answer: 2
+    explanation: |
       This is `grep`'s moment. `grep -r "password" .` searches the current folder and everything below it for that text. Swap in `api_key`, `secret`, or `BEGIN PRIVATE KEY` and you have a standard post-access check. `find` would help you locate files *by name*, but here you are searching for text *inside* files, which is grep's job.
 
-  - kind: explain
+  - kind: choice
     title: "Scene 4 — a suspicious file"
     body: |
       `ls -l` on a script shows:
@@ -36,6 +60,14 @@ steps:
       -rwxrwxrwx  1 root  root  412  backup.sh
       ```
 
+      **What does this line tell you?**
+    options:
+      - "Nothing unusual: system scripts are always owned by root"
+      - "Only root can run it, so it's safe"
+      - "It's probably malware, because it's executable"
+      - "Anyone can edit a script that root runs, so it's a likely way to become root"
+    answer: 3
+    explanation: |
       Two things should jump out. It is owned by **root**, and its permissions are **777** — writable by *everyone*. That combination means any user on the system can edit `backup.sh`, and whatever it does will run with root's power when root next runs it. You have just found a likely privilege-escalation path, exactly the kind of loose thread Module 4 warned about.
 
   - kind: recap

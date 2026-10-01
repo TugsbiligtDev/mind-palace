@@ -18,9 +18,9 @@ import {
   type Track,
 } from "./schema";
 
-export const CONTENT_DIR = path.join(process.cwd(), "content");
+const CONTENT_DIR = path.join(process.cwd(), "content");
 
-export function readYaml<S extends z.ZodType>(file: string, schema: S): z.infer<S> {
+function readYaml<S extends z.ZodType>(file: string, schema: S): z.infer<S> {
   const parsed = schema.safeParse(YAML.parse(fs.readFileSync(file, "utf8")));
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n");
@@ -33,7 +33,7 @@ export function readYaml<S extends z.ZodType>(file: string, schema: S): z.infer<
 // `setup` is the SQL that builds it.
 export type Engine = { key: string; setup: string };
 
-export type TopicBundle = {
+type TopicBundle = {
   id: string;
   key: string; // "track/level/topic", used for progress
   topic: Topic;
@@ -42,9 +42,9 @@ export type TopicBundle = {
   engine: Engine;
 };
 
-export type LevelBundle = { level: Level; topics: TopicBundle[] };
+type LevelBundle = { level: Level; topics: TopicBundle[] };
 
-export type TrackBundle = {
+type TrackBundle = {
   track: Track;
   /** Engine for a named dataset; no name means the course's default. */
   engine: (dataset?: string) => Engine;
@@ -52,12 +52,12 @@ export type TrackBundle = {
   levels: LevelBundle[];
 };
 
-export const DOWNLOADS_DIR = path.join(process.cwd(), "public", "downloads");
+const DOWNLOADS_DIR = path.join(process.cwd(), "public", "downloads");
 
 // The dataset files are written for real psql (`psql -f file.sql`). The browser engine is
 // a single database, so drop the lines only psql understands: creating and switching
 // databases, backslash commands (\c, \echo, \set, \if … \endif blocks) and `\gset`.
-export function browserSql(text: string): string {
+function browserSql(text: string): string {
   const out: string[] = [];
   let depth = 0;
   for (const line of text.split("\n")) {
@@ -99,7 +99,18 @@ export function listTrackIds(): string[] {
     .map((d) => d.name);
 }
 
+// A production build renders hundreds of pages from the same files, so read each course once.
+// In development, read every time so content edits show up on reload.
+const trackCache = new Map<string, TrackBundle>();
+
 export function loadTrack(id: string): TrackBundle {
+  if (process.env.NODE_ENV !== "production") return readTrack(id);
+  let bundle = trackCache.get(id);
+  if (!bundle) trackCache.set(id, (bundle = readTrack(id)));
+  return bundle;
+}
+
+function readTrack(id: string): TrackBundle {
   const dir = path.join(CONTENT_DIR, id);
   const track = readYaml(path.join(dir, "track.yaml"), trackSchema);
   const engine = datasetEngines(track);
@@ -129,7 +140,7 @@ export function loadAllTracks(): TrackBundle[] {
   return listTrackIds().map(loadTrack);
 }
 
-export function findTopic(trackId: string, levelId: string, topicId: string) {
+function findTopic(trackId: string, levelId: string, topicId: string) {
   const bundle = loadTrack(trackId);
   const levelIndex = bundle.levels.findIndex((l) => l.level.id === levelId);
   const level = bundle.levels[levelIndex];
@@ -145,7 +156,6 @@ export type LevelSummary = {
   color: string;
   levelId: string;
   levelTitle: string;
-  season: number;
   seasonTitle: string;
   status: Level["status"];
   topics: { id: string; key: string; title: string; summary: string; module: number; kind: Topic["kind"]; minutes: number; steps: number }[];
@@ -158,7 +168,6 @@ export function summarize(bundle: TrackBundle): LevelSummary[] {
     color: bundle.track.color,
     levelId: level.id,
     levelTitle: level.title,
-    season: level.season,
     seasonTitle: level.season_title,
     status: level.status,
     topics: topics.map((t) => ({
@@ -174,11 +183,11 @@ export function summarize(bundle: TrackBundle): LevelSummary[] {
   }));
 }
 
-export function topicHref(trackId: string, levelId: string, topicId: string) {
+function topicHref(trackId: string, levelId: string, topicId: string) {
   return `/courses/${trackId}/${levelId}/${topicId}`;
 }
 
-// Everything a lesson / quiz / case page needs, resolved from its URL params.
+// Everything a lesson or quiz page needs, resolved from its URL params.
 export function topicContext(trackId: string, levelId: string, topicId: string) {
   const found = findTopic(trackId, levelId, topicId);
   if (!found) return undefined;
@@ -195,7 +204,6 @@ export function topicContext(trackId: string, levelId: string, topicId: string) 
     quizHref: `${base}/quiz`,
     nextHref: next ? topicHref(trackId, levelId, next.id) : `/courses/${trackId}/${levelId}`,
     nextLabel: next ? `Next: ${topicLabel(next.topic)}, ${next.topic.title} →` : "Level complete, back to the level →",
-    lessonEngine: topic.engine,
   };
 }
 
@@ -207,18 +215,4 @@ export function allTopicParams() {
 
 export function allLevelParams() {
   return loadAllTracks().flatMap((b) => b.levels.map((l) => ({ track: b.track.id, level: l.level.id })));
-}
-
-// Courses shown as "Coming soon" until their folder exists in /content.
-const UPCOMING = [
-  { id: "python", title: "Python", tagline: "From your first variable to real programs.", color: "var(--color-python)" },
-  { id: "dsa", title: "Data Structures & Algorithms", tagline: "Think like a problem solver, in JavaScript.", color: "var(--color-dsa)" },
-  { id: "ethical-hacking", title: "Ethical Hacking", tagline: "How attacks work, so you can defend against them.", color: "var(--color-hacking)" },
-];
-
-export type UpcomingTrack = (typeof UPCOMING)[number];
-
-export function upcomingTracks(): UpcomingTrack[] {
-  const live = new Set(listTrackIds());
-  return UPCOMING.filter((t) => !live.has(t.id));
 }

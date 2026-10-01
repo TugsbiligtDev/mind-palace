@@ -18,12 +18,11 @@ export type RunChecks = (page: string, tests: string[], width: number) => Promis
 
 export type WebVerdict = { correct: boolean; message: string; passed: number; total: number };
 
-export const DEFAULT_WIDTH = 800;
 export const FRAME_HEIGHT = 600;
 
 // Relative paths in exercises (images/cover-dune.svg) resolve here, on the site itself, so the
 // preview can show the course's sample images. The content check serves the same folder.
-export const ASSET_BASE = "/course-assets/html-css/";
+const ASSET_BASE = "/course-assets/html-css/";
 const BASE_TAG = `<base href="${ASSET_BASE}" data-preview>`;
 
 // A link tag that loads style.css from any folder (style.css, ./style.css, css/style.css…),

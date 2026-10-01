@@ -215,6 +215,8 @@ steps:
           <tr><td>Persuasion</td></tr>
         </tbody>
       </table>
+    css: |
+      /* your rules */
     tests:
       - "rule(['.search:focus-within', 'form.search:focus-within'], 'outline')"
       - "cssAll('tbody tr:not([hidden])', 'background-color')"

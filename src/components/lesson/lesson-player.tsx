@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Markdown } from "@/components/markdown";
 import { JsRunner } from "@/components/js/js-runner";
 import { PyRunner } from "@/components/py/py-runner";
@@ -327,9 +327,11 @@ function WebPanel({
   const starter = webStarter(step);
   const initial = { html: p?.code[slot] ?? starter.html, css: p?.code[`${slot}:css`] ?? starter.css };
 
+  const running = useRef(false);
   const onCheck = useCallback(
     async (files: WebFiles) => {
-      if (!check) return;
+      if (!check || running.current) return;
+      running.current = true;
       setChecking(true);
       try {
         const v = await gradeWebPage(files, check);
@@ -343,6 +345,7 @@ function WebPanel({
       } catch (e) {
         setFeedback({ ok: false, text: `The checker couldn't run: ${(e as Error).message}` });
       } finally {
+        running.current = false;
         setChecking(false);
       }
     },

@@ -308,6 +308,8 @@ async function webRunner(): Promise<RunChecks> {
 }
 
 async function checkWebTrack(bundle: ReturnType<typeof loadTrack>) {
+  // Only start headless Chrome when a lesson in this course is actually being checked.
+  if (!bundle.levels.some((l) => l.topics.some((t) => !only || t.key.includes(only)))) return;
   const run = await webRunner();
   for (const { level, topics } of bundle.levels) {
     for (const t of topics) {
@@ -321,6 +323,10 @@ async function checkWebTrack(bundle: ReturnType<typeof loadTrack>) {
         if (step.kind !== "web") continue;
         if (!!step.solution !== step.tests.length > 0) {
           fail(where, "a graded step needs both `tests` and `solution` (or neither)");
+          continue;
+        }
+        if (step.css === undefined && [step.solution, ...step.reject].some((f) => f?.css !== undefined)) {
+          fail(where, "an answer uses style.css, but the step has no `css:` starter, so the learner gets no style.css tab");
           continue;
         }
         const check = webStepCheck(step);

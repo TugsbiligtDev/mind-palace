@@ -77,12 +77,19 @@ export function WebRunner({
       setNote(`This link goes to "${href}". Links to other pages don't open inside the preview.`);
     });
     doc.addEventListener("submit", (e) => {
+      // A form inside a <dialog> with method="dialog" just closes the dialog: let it.
+      const form = e.target as HTMLFormElement;
+      const method = (e as SubmitEvent).submitter?.getAttribute("formmethod") ?? form.getAttribute("method");
+      if (method?.toLowerCase() === "dialog") return;
       e.preventDefault();
       setNote("The form would be sent now. The preview doesn't send forms anywhere.");
     });
   }
 
-  const check = useCallback(() => onCheck?.(filesRef.current), [onCheck]);
+  // ⌘ + Enter does nothing while a check is already running, like the greyed-out button.
+  const check = useCallback(() => {
+    if (!checking) onCheck?.(filesRef.current);
+  }, [onCheck, checking]);
 
   return (
     <div className="min-w-0 space-y-3">
@@ -149,7 +156,7 @@ export function WebRunner({
           <iframe
             ref={frame}
             title="Preview of your page"
-            sandbox="allow-same-origin"
+            sandbox="allow-same-origin allow-forms"
             srcDoc={page}
             onLoad={wireFrame}
             className="mx-auto block h-full border-0 bg-white"

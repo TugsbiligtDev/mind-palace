@@ -4,31 +4,31 @@ questions:
     prompt: "On a short page, the footer floats up to the middle of the screen. Which CSS keeps it at the bottom?"
     options:
       - "`body { min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto; }`"
-      - "`footer { position: absolute; }`"
-      - "`footer { margin-top: 500px; }`"
-      - "`body { height: 100%; }`"
+      - "`footer { position: absolute; bottom: 0; }` so it always sits on the screen's edge"
+      - "`body { height: 100%; display: grid; grid-template-rows: 1fr auto 1fr; }`"
+      - "`footer { position: sticky; bottom: 0; }` so it never moves above the bottom"
     answer: 0
     explanation: "The middle row grows to fill the screen, pushing the footer down."
   - type: mcq
     prompt: "What's the shortest way to centre a child both horizontally and vertically in its parent?"
-    options: ["`display: grid; place-items: center;` on the parent", "`text-align: center;`", "`margin: auto;` on the parent", "`vertical-align: middle;`"]
+    options: ["`display: grid; place-items: center;` on the parent", "`text-align: center; vertical-align: middle;` on the parent", "`margin: auto;` on the parent, which centres its content", "`align-items: center;` on the parent, with no display"]
     answer: 0
     explanation: "place-items centres along both axes in one declaration."
   - type: mcq
     prompt: "Why avoid `width: 100vw` for full-bleed sections?"
     options:
-      - "100vw includes the scrollbar on desktops, causing a sideways scroll"
-      - "vw doesn't work in grids"
-      - "It's only supported in Safari"
-      - "It makes text too large"
+      - 100vw includes the scrollbar on desktops, so the page scrolls sideways
+      - vw units don't work inside grid layouts, so the section collapses
+      - 100vw ignores the phone's notch, so content hides behind it
+      - It makes the text inside scale with the window, until it's too large
     answer: 0
     explanation: "The three-column grid pattern spans the real available width instead."
   - type: mcq
     prompt: "What makes the self-wrapping sidebar pattern wrap?"
     options:
-      - "The content's `min-inline-size` (e.g. 60%): when it can't fit beside the sidebar, the flex items wrap"
-      - "A media query at 768px"
-      - "`order: -1` on the sidebar"
-      - "`position: sticky`"
+      - "The content's `min-inline-size`: when it can't fit, the items wrap"
+      - A media query at 768px that switches the flex direction
+      - "`order: -1` on the sidebar, which moves it to its own line"
+      - "`flex-wrap: wrap` on its own, which wraps once the screen becomes narrow"
     answer: 0
     explanation: "It responds to its own available space, not the screen width."

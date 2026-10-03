@@ -274,5 +274,7 @@ function wrongRowsMessage(mine: Extract<Block, { kind: "rows" }> | undefined, re
     return `Not quite: the answer needs ${ref.columns.length} column${ref.columns.length === 1 ? "" : "s"}, and you returned ${mine.columns.length}.`;
   if (ref && mine.rows.length !== ref.rows.length)
     return `Not quite: the answer has ${ref.rows.length} row${ref.rows.length === 1 ? "" : "s"}, and you returned ${mine.rows.length}.`;
+  // Same rows in a different order: only an ordered check can fail this way.
+  if (sameRows(mine, ref, false)) return "Close: the rows are right, but in the wrong order. Check the order the task asks for.";
   return "Close: the shape is right, but some values don't match.";
 }

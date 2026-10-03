@@ -238,7 +238,7 @@ steps:
   - kind: code
     title: Fix the slow Fibonacci
     body: |
-      This recursive `fib` recomputes the same values again and again, so `fib(80)` would take longer than the age of the universe. Fix it with **one line**: `@cache` above the function.
+      This recursive `fib` recomputes the same values again and again, so `fib(80)` would make about 10^16 calls and run for decades. Fix it with **one line**: `@cache` above the function.
     code: |
       from functools import cache
 

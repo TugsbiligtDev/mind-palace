@@ -10,10 +10,10 @@ questions:
   - type: mcq
     prompt: You typed a command and got "No such file or directory", but you are sure the file exists. What is the most likely cause?
     options:
-      - The file is corrupted
+      - The file is corrupted and can no longer be opened
       - You are standing in a different folder
-      - Python is too old
-      - The terminal is broken
+      - Your Python version is too old to read the file
+      - The file name needs quotes around it in the terminal
     answer: 1
     explanation: Relative paths depend on the current folder. Run `pwd` and `ls` first.
   - type: predict

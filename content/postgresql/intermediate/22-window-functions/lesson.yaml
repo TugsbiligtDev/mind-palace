@@ -141,7 +141,7 @@ steps:
   - kind: try
     title: Time between orders
     body: |
-      Diego Patel (customer 40) has 20 orders. Run it: the gap between the second and third order is over 9 months. Then change `lag` to `lead` and see the column shift.
+      Diego Patel (customer 40) has 23 orders. Run it: the gap between the second and third order is over 9 months. Then change `lag` to `lead` and see the column shift.
     sql: |
       SELECT order_id, ordered_at,
              ordered_at - lag(ordered_at) OVER (ORDER BY ordered_at) AS since_previous

@@ -83,7 +83,7 @@ steps:
         ALTER COLUMN price TYPE numeric(8,2) USING price::numeric(8,2);
       ```
 
-      If **any** row can't be converted, the whole change fails and nothing is changed. On big tables, most type changes rewrite the whole table, which can take a while (Module 41 covers doing this safely in production).
+      If **any** row can't be converted, the whole change fails and nothing is changed. On big tables, most type changes rewrite the whole table, which can take a while (on a busy production database, plan it for a quiet time and test it on a copy first).
 
   - kind: try
     title: Prices stored as text

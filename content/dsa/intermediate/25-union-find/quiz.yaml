@@ -18,10 +18,10 @@ questions:
   - type: mcq
     prompt: What does path compression do?
     options:
-      - Sorts the parent array
-      - Points every item on the path from x to the root directly at the root, making later finds faster
-      - Removes items from the set
-      - Merges the smallest group first
+      - Sorts the parent array so the roots come first, speeding up later finds
+      - Points every item on the path from x straight at the root, speeding up later finds
+      - Merges the smaller group into the larger one, so the trees stay shallow
+      - Removes every item on the path from the set, so the next find has less to walk through
     answer: 1
     explanation: After one `find`, the whole path is flattened, so repeated finds cost almost nothing.
   - type: mcq

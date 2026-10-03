@@ -33,7 +33,7 @@ questions:
     answer: 0
     explanation: "The default list is created once and shared by every call, so the second call sees the first call's item."
   - type: predict
-    prompt: What does this print?
+    prompt: "What does this print? (`dir()` lists the names that exist where it is called.)"
     code: |
       def show():
           message = "hi"

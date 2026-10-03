@@ -17,7 +17,7 @@ steps:
       ```
 
       - The same pieces as Module 2: user, password, host, port, database.
-      - `?sslmode=require` asks for an **encrypted** connection. Always use it for databases over the internet (Module 45).
+      - `?sslmode=require` asks for an **encrypted** connection. Always use it for databases over the internet.
       - Special characters in the password (`@`, `:`, `/`, `#`) must be **URL-encoded** (`@` → `%40`), or the string is misread.
 
   - kind: explain
@@ -141,7 +141,7 @@ steps:
       The fix is a **connection pool**: a small set of connections kept open and **reused** by every request.
 
       - In the app: `pg.Pool` (node-postgres), `psycopg_pool.ConnectionPool` (Python).
-      - In front of the database: **PgBouncer**, a separate pooling server (Module 47).
+      - In front of the database: **PgBouncer**, a separate pooling server.
 
       Also: always **close** connections (or return them to the pool), and never hold one open while waiting for a person.
 

@@ -8,19 +8,19 @@ questions:
   - type: mcq
     prompt: Where should an API key live?
     options:
-      - In an environment variable (loaded from a git-ignored .env file in development)
-      - Hard-coded in the source file
-      - In the README
-      - In a public GitHub repository
+      - In an environment variable, loaded from a git-ignored .env file
+      - Hard-coded in the source, in a constant at the top of the file
+      - In the README, so other developers on the team can find it
+      - In the code, but only in a private GitHub repository
     answer: 0
     explanation: Anything committed to Git should be assumed public forever.
   - type: mcq
     prompt: Which failures should a client retry with backoff?
     options:
       - 5xx server errors, network drops and 429 rate limits
-      - Every 4xx error
-      - Only 404 errors
-      - None, never retry
+      - Every 4xx error, since the request may work next time
+      - Only 404 errors, in case the page appears later on
+      - "None: a failed request should never be sent again"
     answer: 0
     explanation: Those are often temporary. Retrying a 400 or 404 request never helps because the request itself is wrong.
   - type: predict
@@ -34,9 +34,9 @@ questions:
   - type: mcq
     prompt: Why should every HTTP call have a timeout?
     options:
-      - Without one, a server that never answers can freeze your program forever
-      - It makes responses faster
-      - It is required by JSON
-      - It hides errors
+      - Without one, a server that never answers can freeze your program
+      - It makes the server answer faster, since it knows you are waiting
+      - It is required by the JSON format for every request and response
+      - It retries the request automatically when the server is too slow
     answer: 0
     explanation: A timeout turns an endless wait into an error you can handle.

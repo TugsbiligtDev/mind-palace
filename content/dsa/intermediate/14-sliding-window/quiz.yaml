@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: A sliding window over an array of n items is O(n) even though it has a loop inside a loop. Why?
     options:
-      - The inner loop is always short
-      - Each element enters the window once and leaves once, so the total moves are at most 2n
-      - JavaScript optimizes it
-      - It is actually O(n²)
+      - The inner loop is always short, so it barely counts
+      - "Each element enters once and leaves once: at most 2n moves"
+      - JavaScript optimizes nested loops into a single loop
+      - It is actually O(n²), but it runs fast enough on small inputs
     answer: 1
     explanation: Both `left` and `right` only move forward, so together they make at most 2n moves.
   - type: predict
@@ -28,10 +28,10 @@ questions:
   - type: mcq
     prompt: For "find the SHORTEST window with sum at least target", where do you record the best length?
     options:
-      - After the shrink loop
+      - After the shrink loop, once the window is invalid again
       - Inside the shrink loop, while the window is still valid
-      - Before the loop starts
-      - Only at the very end
+      - Before the shrink loop, right after adding the new item
+      - Only at the very end, after the whole array is scanned
     answer: 1
     explanation: Once the shrink loop finishes, the window is no longer valid, so it would give a length that does not satisfy the rule.
   - type: mcq

@@ -54,9 +54,9 @@ questions:
   - type: mcq
     prompt: After `books LEFT JOIN reviews`, why count `r.review_id` instead of `*` per book?
     options:
-      - "`count(*)` is slower"
-      - An unreviewed book still has one row (with NULLs), so `count(*)` says 1 instead of 0
-      - "`count(*)` doesn't work with GROUP BY"
-      - There's no difference
+      - "`count(*)` is slower, because it has to read every column of each row"
+      - An unreviewed book still has one row with NULLs, so `count(*)` gives 1
+      - "`count(*)` doesn't work together with GROUP BY on joined tables"
+      - "`count(r.review_id)` also skips duplicate reviews from the same reader"
     answer: 1
     explanation: The LEFT JOIN keeps one NULL-filled row for each unmatched book. `count(r.review_id)` skips the NULL and gives the true 0.

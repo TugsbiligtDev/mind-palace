@@ -12,10 +12,10 @@ questions:
   - type: mcq
     prompt: Why does almost all hands-on security practice happen inside virtual machines?
     options:
-      - VMs run faster than real hardware
-      - VMs isolate risky work, can be rolled back with snapshots, and can be put on a private network
-      - VMs are the only place Linux will run
-      - VMs make attacks legal
+      - VMs run faster than the real hardware, so scans and attacks finish sooner
+      - VMs isolate risky work, roll back with snapshots, and can sit on a private network
+      - VMs hide your real IP address from the target, so your tests stay fully anonymous online
+      - Security tools refuse to install on a normal operating system outside a VM
     answer: 1
     explanation: Isolation, snapshots and a private VM-only network keep your real machine and other people safe. A VM does not make an unauthorised attack legal.
   - type: mcq

@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: Under MVCC, a long report is reading orders while another session updates one. What happens?
     options:
-      - The report waits until the update finishes
-      - The update waits until the report finishes
-      - Neither waits. The report sees the row version from its snapshot.
-      - The report sees half of the update
+      - The report waits until the update has finished
+      - The update waits until the report has finished
+      - "Neither waits: the report sees its snapshot's row"
+      - The report sees half of the row from the update
     answer: 2
     explanation: With MVCC, readers and writers don't block each other. The report keeps reading the version it's allowed to see.
 

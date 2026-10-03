@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: In a traceback, which part should you read first?
     options:
-      - The very first line
+      - The first line, which names the file
       - The last line, which names the error
-      - The middle line
-      - Nothing, it is just noise
+      - The middle lines, which show your code
+      - The line with the arrow under the code
     answer: 1
     explanation: The last line says what went wrong. Then look above it for the line number.
   - type: predict
@@ -31,17 +31,19 @@ questions:
     prompt: |
       A program has three lines: `print("start")`, then `print(1 / 0)`, then `print("end")`. What happens when you run it?
     options:
-      - "It prints `start`, then stops with a ZeroDivisionError"
-      - "It prints `start` and `end`, and ignores the error"
-      - "It prints nothing, because it is a SyntaxError"
-      - "It prints `start`, `0`, `end`"
+      - It prints `start`, then stops with a ZeroDivisionError
+      - It prints `start` and `end`, and skips the broken line
+      - It prints nothing, because Python checks the maths first
+      - It prints `start`, `0`, `end`, since 1 / 0 counts as 0
     answer: 0
     explanation: "Dividing by zero is a runtime error. The first line already ran, and the error stops the program before `end`. A SyntaxError would have stopped everything before it began."
   - type: fill
-    prompt: Python decides which lines belong together by their ____.
+    prompt: "Python decides which lines belong inside a function by how far they are pushed to the right. What is that called? Type the missing word."
     code: |
+      # The four spaces before print() are called ____.
       def hello():
-      ____print("hi")
-    answer: "    "
+          print("hi")
+    answer: "indentation"
+    accept: ["indent", "indents", "indenting", "spaces", "whitespace"]
     runnable: false
     explanation: "Indentation (four spaces) is how Python knows a line is inside the function."

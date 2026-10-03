@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: What makes it legal to attack the machines on a platform like TryHackMe or Hack The Box?
     options:
-      - Nothing — it is a grey area
-      - You signed up and agreed to the platform's terms, which authorises you for its machines only
-      - Security practice is always legal
-      - The machines are on the public internet
+      - Practice targets are legal to attack anywhere, as long as no real data is taken
+      - You agreed to the platform's terms, which authorise its machines only
+      - The machines are on the public internet, so anyone may test them
+      - The platform hides your real IP address, so nothing can be traced
     answer: 1
     explanation: Your agreement with the platform is your authorisation, and it covers that platform's targets and nothing else. The rule from Module 12 never changes.
   - type: mcq
     prompt: In a CTF, what is a "flag"?
     options:
-      - A warning that you broke a rule
-      - A unique string or file that proves you reached a given level of access
-      - A type of firewall
-      - The name of the target machine
+      - A warning that you broke one of the platform's rules
+      - A unique string that proves you reached a level of access
+      - A marker for which machines are in scope for the event
+      - A hint that unlocks after you have been stuck a while
     answer: 1
     explanation: A flag (often like `THM{...}` or a file such as `user.txt`) is the proof of success — find it and you have demonstrated that level of access.
   - type: mcq
     prompt: A learner is stuck on a machine. What is usually the most productive first move?
     options:
-      - Try random exploits until one works
-      - Go back and enumerate more thoroughly — most people who are stuck simply did not look hard enough
-      - Give up and pick another box
-      - Reinstall their tools
+      - Try every exploit for the OS version until one works
+      - Go back and enumerate more thoroughly — you likely missed something
+      - Read the full writeup straight away, so you don't waste any more time being stuck
+      - Reset the machine, since it has probably broken
     answer: 1
     explanation: Thorough enumeration first is the backbone of a repeatable method. Frantic tool-hopping is the beginner trap; a calm, orderly process gets you further.
   - type: mcq
     prompt: What is the right way to use another person's writeup?
     options:
-      - Copy the steps exactly to get the flag fast
-      - Try hard yourself first, then read it to understand *why* each step was chosen, and write your own notes afterwards
-      - Never read them
-      - Only read writeups for machines you have not attempted
+      - Follow it step by step from the start, so you learn the right way
+      - Try hard first, then read it to learn why each step was chosen
+      - Never read one, since that counts as cheating on the platform
+      - Read only the final answer, so the rest stays a surprise
     answer: 1
     explanation: An answer you copy does not stick; a hint you earned does. The thinking behind each step is the real lesson, and re-explaining it in your own words reveals your gaps.
   - type: mcq
     prompt: Why keep your own writeups as you solve machines?
     options:
-      - Platforms require it
-      - They double as revision and as a portfolio that shows a future employer how you think
-      - To publish solutions to active machines
-      - They replace taking notes during the work
+      - To publish solutions for active machines and build a following
+      - They double as revision and a portfolio showing how you think
+      - The platforms require a writeup before they award the points
+      - They replace the notes you would otherwise take while working
     answer: 1
-    explanation: Clear writeups demonstrate your reasoning far better than a list of tools, and they build directly toward the career material in Module 37.
+    explanation: Clear writeups demonstrate your reasoning far better than a list of tools, and they become the portfolio you show employers.

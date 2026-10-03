@@ -18,9 +18,9 @@ questions:
     prompt: Your script opens `data.txt` and works from one folder but gives FileNotFoundError from another. Why?
     options:
       - Relative paths depend on the folder you ran the script from
-      - The file was deleted
-      - Python forgot the file
-      - JSON is broken
+      - Python caches files, so it can't see one that was moved
+      - The file is locked by the first folder that opened it
+      - open() only works for files in the same folder as Python
     answer: 0
     explanation: "`open(\"data.txt\")` looks in the current working directory, which is wherever you started the program."
   - type: predict

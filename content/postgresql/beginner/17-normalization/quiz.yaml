@@ -23,20 +23,20 @@ questions:
   - type: mcq
     prompt: "`enrollments (student_id, course_id, grade, course_name)`, primary key `(student_id, course_id)`. What's wrong?"
     options:
-      - grade should move to students
-      - course_name depends on course_id alone, part of the key, so it breaks 2NF
-      - Nothing, it's in 3NF
-      - The key should be grade
+      - grade depends on student_id alone, so it should move to students
+      - course_name depends on only part of the key, so it breaks 2NF
+      - "Nothing: every column depends on the key, so it is already in 3NF"
+      - The table needs a separate enrollment_id, or it can't be normalized
     answer: 1
     explanation: course_name depends on only part of the composite key. Move it to a courses table.
 
   - type: mcq
     prompt: "`employees (employee_id, department_id, department_name)`. Why isn't it in 3NF?"
     options:
-      - It has no primary key
+      - It has no primary key, so no column can be relied on
       - department_name depends on department_id, which isn't the key
-      - department_id should be text
-      - It has too many columns
+      - department_id should be text, so the name can be stored in it
+      - Two columns mention departments, which repeats the same idea
     answer: 1
     explanation: That's a chain, employee_id → department_id → department_name. Move department_name to a departments table.
 

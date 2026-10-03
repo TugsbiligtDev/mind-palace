@@ -3,19 +3,19 @@ questions:
   - type: mcq
     prompt: Why do the tests use `httpx.MockTransport` instead of calling the real Open Library API?
     options:
-      - Tests must be fast, repeatable and independent of the network and someone else's server
-      - The real API is illegal to call
-      - MockTransport is faster for users
-      - Pydantic requires it
+      - Tests must be fast, repeatable and independent of the network
+      - The real API blocks requests that come from test frameworks
+      - MockTransport makes the app faster for real users as well
+      - Pydantic can only validate data that comes from a mock
     answer: 0
     explanation: A fake server gives known data every time, so a failing test always means a bug in your code.
   - type: mcq
     prompt: What is the benefit of an upsert (`INSERT ... ON CONFLICT DO UPDATE`) in the tracker?
     options:
-      - Saving a book again updates its details without creating a duplicate or losing its reading status
-      - It makes the database smaller
-      - It encrypts the data
-      - It is required by SQLite
+      - Saving a book again updates it without a duplicate or losing its status
+      - It makes the database file smaller by merging rows that look similar
+      - It stops two people from saving the same book at exactly the same moment
+      - SQLite requires it whenever a table has a primary key column defined
     answer: 0
     explanation: The conflict rule updates only the fields you list, so your own data (the status) survives.
   - type: predict

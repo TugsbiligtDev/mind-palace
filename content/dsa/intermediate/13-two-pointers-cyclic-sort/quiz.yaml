@@ -33,9 +33,9 @@ questions:
   - type: mcq
     prompt: Why must 3Sum skip equal neighbours after sorting?
     options:
-      - To make the sort faster
-      - Otherwise the same triple can be reported more than once
-      - Because negative numbers are special
-      - It does not need to
+      - To make the sort faster on arrays with repeats
+      - Otherwise the same triple can be reported twice
+      - Because negative numbers must be handled first
+      - It doesn't need to; duplicates can't form a triple
     answer: 1
     explanation: Duplicates in the input would lead to identical triples appearing several times in the result.

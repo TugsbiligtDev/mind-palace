@@ -18,10 +18,10 @@ questions:
   - type: mcq
     prompt: "A page made only of divs looks identical to the semantic version. What does it lose?"
     options:
-      - "Landmarks that screen readers, keyboard users and search engines use to find their way"
-      - "Nothing; only the look matters"
-      - "The ability to use CSS"
-      - "Links stop working inside divs"
+      - Landmarks that screen readers and search engines use to find their way
+      - Nothing at all, because the page looks exactly the same to everyone
+      - The ability to style it, since CSS can only select semantic elements
+      - Speed, because browsers draw divs more slowly than semantic tags
     answer: 0
     explanation: "Semantic elements carry meaning that tools rely on, even when they look the same on screen."
   - type: mcq

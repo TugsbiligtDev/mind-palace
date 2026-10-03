@@ -4,18 +4,18 @@ questions:
     prompt: "What turns on transitions between two pages of your site?"
     options:
       - "`@view-transition { navigation: auto; }` in both pages' CSS"
-      - "`transition: page 1s`"
-      - "A JavaScript library on every page"
-      - "`<meta name=\"transition\">`"
+      - "`transition: page 1s ease` on the `<html>` element of both pages"
+      - "`@view-transition { navigation: auto; }` on the first page only"
+      - "A `view-transition-name: page` on the `<body>` of both pages"
     answer: 0
     explanation: "Cross-document view transitions are enabled in CSS; unsupported browsers navigate normally."
   - type: mcq
     prompt: "Two visible elements on the page share `view-transition-name: cover`. What happens?"
     options:
-      - "The transition is skipped: names must be unique at transition time"
-      - "Both morph into the same element"
-      - "The first one wins"
-      - "Nothing special"
+      - "The transition is skipped: names must be unique at that moment"
+      - Both elements morph together into the one on the new page
+      - The first element in the HTML wins and the second just fades
+      - The browser renames the second one automatically, then morphs both of them
     answer: 0
     explanation: "Duplicate names abort the view transition."
   - type: mcq
@@ -26,9 +26,9 @@ questions:
   - type: mcq
     prompt: "A carousel should always stop with a whole cover in view. Which pair?"
     options:
-      - "`scroll-snap-type: x mandatory` on the container, `scroll-snap-align: start` on the covers"
-      - "`overflow: hidden` and `position: sticky`"
-      - "`scroll-behavior: smooth` alone"
-      - "`animation-timeline: scroll()`"
+      - "`scroll-snap-type: x mandatory` on the container, `scroll-snap-align: start` on covers"
+      - "`overflow-x: auto` on the container and `position: sticky; left: 0` on every cover"
+      - "`scroll-behavior: smooth` on the container, so scrolling eases to each cover"
+      - "`scroll-snap-align: start` on the container, `scroll-snap-type: x` on the covers"
     answer: 0
     explanation: "Snap type on the scroller, snap alignment on the children."

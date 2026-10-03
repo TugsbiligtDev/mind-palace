@@ -13,27 +13,27 @@ questions:
   - type: mcq
     prompt: "What does `content-visibility: auto` do?"
     options:
-      - "Lets the browser skip rendering an off-screen section until it's near the viewport"
-      - "Hides the content from screen readers"
-      - "Loads the content lazily from the server"
-      - "Makes the content invisible"
+      - Lets the browser skip rendering off-screen sections until needed
+      - Loads the section's content lazily from the server when scrolled to
+      - Hides the section from screen readers until the user scrolls to it
+      - Keeps the section in memory so scrolling back to it is instant
     answer: 0
     explanation: "Pair it with contain-intrinsic-size so the skipped section keeps a sensible height."
   - type: mcq
     prompt: "Why is `* { will-change: transform; }` a bad idea?"
     options:
-      - "It creates a compositor layer for every element, using lots of memory and often slowing things down"
-      - "will-change only works on images"
-      - "It disables transitions"
-      - "It's invalid CSS"
+      - It makes a compositor layer for every element, wasting memory
+      - It turns off all CSS transitions on the page while it is set
+      - It only affects images, so text and boxes gain no speed at all
+      - Browsers ignore it on `*`, so it does nothing, good or bad
     answer: 0
     explanation: "Use will-change only on the few elements that actually animate."
   - type: mcq
     prompt: "The hero image is the LCP element. Which helps it most?"
     options:
-      - "`fetchpriority=\"high\"`, a modern format, correct dimensions, and no lazy loading"
-      - "`loading=\"lazy\"`"
-      - "Making it a CSS background image loaded by a late stylesheet"
-      - "Adding a box-shadow"
+      - '`fetchpriority="high"`, a modern format, real dimensions, no lazy loading'
+      - '`loading="lazy"` and `decoding="async"`, so it never blocks the page'
+      - A CSS background image, set in a stylesheet that is loaded at the end of the page
+      - A low-quality placeholder first, swapped by JavaScript after load
     answer: 0
     explanation: "Discover and fetch it early, small and with reserved space."

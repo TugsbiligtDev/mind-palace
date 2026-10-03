@@ -5,18 +5,18 @@ questions:
     options:
       - "`WHERE first_name = 'John'`"
       - "`WHERE last_name = 'Smith' AND first_name = 'John'`"
-      - "`WHERE lower(last_name) = 'smith'`"
-      - "`WHERE first_name LIKE '%oh%'`"
+      - "`WHERE lower(last_name) = 'smith' AND first_name = 'John'`"
+      - "`WHERE first_name = 'John' OR last_name = 'Smith'`"
     answer: 1
     explanation: The index is sorted by last_name first. It helps queries that pin down last_name. First name alone, an expression, or a contains-search can't use it well.
 
   - type: mcq
     prompt: What's the main downside of adding many indexes to a table?
     options:
-      - SELECTs get slower
-      - Every INSERT, UPDATE and DELETE must also maintain each index, and they take space
-      - Indexes delete old data
-      - Tables can only have one index
+      - SELECTs get slower, because each one has to check every index
+      - Every write must also update each index, and they take space
+      - Indexes remove old rows automatically to keep themselves small
+      - A table can only use one of its indexes in each query anyway
     answer: 1
     explanation: Indexes speed up reads but cost on every write, plus disk and memory. Only build the ones queries actually use.
 

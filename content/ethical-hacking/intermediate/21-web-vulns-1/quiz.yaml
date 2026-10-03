@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: What single underlying mistake causes SQL injection, XSS and command injection alike?
     options:
-      - Weak passwords
-      - Untrusted user input is mixed with code, so the system can no longer tell data from instructions
-      - Missing HTTPS
-      - Slow servers
+      - The site uses weak passwords that are easy to guess
+      - Untrusted input is mixed with code, so data becomes instructions
+      - Traffic is sent without HTTPS, so it can be changed in transit
+      - The server runs old software with known vulnerabilities
     answer: 1
     explanation: All three are the same flaw in different places — input crosses from data into code (a query, a page, or a shell command), letting the attacker change what runs.
   - type: mcq
     prompt: What is the real, durable fix for SQL injection?
     options:
-      - Blacklisting dangerous characters
-      - Parameterized queries (prepared statements), which send query structure and user values separately so input is always treated as data
-      - Hiding the database port
-      - Using a longer table name
+      - Block quotes and other dangerous characters in every form field
+      - Parameterized queries, which send structure and values separately
+      - A web application firewall that blocks known injection patterns
+      - Escaping input in the browser with JavaScript before it is sent
     answer: 1
     explanation: Parameterized queries keep data and code separate, closing the whole class. Character blacklists are fragile and keep failing; parameterization is the correct control.
   - type: mcq
     prompt: Why is stored XSS generally more dangerous than reflected XSS?
     options:
-      - It is faster
-      - The malicious input is saved and served to everyone who views the page later — no special link needed, and it can even hit admins
-      - It only affects the attacker
-      - It cannot steal cookies
+      - It runs on the server instead of in the victim's browser
+      - The input is saved and served to everyone who views the page
+      - It needs no browser, so it also hits the site's API clients
+      - It doesn't need JavaScript, so it works even when scripts are off
     answer: 1
     explanation: Reflected XSS needs a victim to click the attacker's link and runs once. Stored XSS persists in the app and executes for every viewer, a much wider blast radius.
   - type: mcq
     prompt: What makes command injection often the most severe of the three?
     options:
-      - It changes the page colour
-      - It can cause the server itself to run the attacker's operating-system command — often a direct path to code execution and a foothold
-      - It only affects the browser
-      - It logs the user out
+      - It works in every browser, so every visitor is affected
+      - It can make the server run the attacker's OS commands
+      - It reads the whole database, including password hashes
+      - It is invisible in logs, so it is never detected
     answer: 1
     explanation: When input reaches an OS command unsafely, the attacker can run commands on the server. That is frequently a direct route to executing code on the machine.
   - type: mcq
     prompt: What is the common theme across the correct fixes for all three injection flaws?
     options:
-      - Add more firewalls
-      - Separate the user's data from the code — parameterized queries, output encoding, and argument-list APIs — rather than blacklisting characters
-      - Use longer passwords
-      - Turn off JavaScript everywhere
+      - Block dangerous characters like quotes, semicolons and angle brackets in every input
+      - "Keep user data separate from code: parameters, encoding, argument lists"
+      - Validate all input in the browser before it reaches the server
+      - Put a web application firewall in front of every application
     answer: 1
     explanation: Each fix keeps input as data and never as code. Blacklisting bad characters is the fragile approach; cleanly separating data from code is the durable one.

@@ -3,20 +3,20 @@ questions:
   - type: mcq
     prompt: What's the key difference between `EXPLAIN` and `EXPLAIN ANALYZE`?
     options:
-      - There is none
-      - EXPLAIN ANALYZE actually runs the query and shows real times and row counts
-      - EXPLAIN ANALYZE only works on SELECT
-      - EXPLAIN runs the query twice
+      - There is none; ANALYZE is just a longer name for the same command
+      - EXPLAIN ANALYZE runs the query and shows real times and row counts
+      - EXPLAIN ANALYZE only works on SELECT; EXPLAIN works on any statement
+      - EXPLAIN runs the query twice; EXPLAIN ANALYZE runs it only once
     answer: 1
     explanation: EXPLAIN only plans. EXPLAIN ANALYZE executes the statement, so wrap UPDATE and DELETE in a transaction you roll back.
 
   - type: mcq
     prompt: A plan step shows `rows=750` estimated but `rows=7` actual. What's the first thing to try?
     options:
-      - Add more indexes
+      - Add an index on every column in the WHERE clause
       - Run ANALYZE on the table to refresh its statistics
-      - Rewrite the query with UNION
-      - Nothing, estimates never matter
+      - Rewrite the query as a UNION of smaller queries
+      - Nothing; estimates don't affect the plan chosen
     answer: 1
     explanation: The planner chooses scans and joins from its row estimates. Stale or missing statistics are the most common cause of bad estimates.
 
@@ -26,7 +26,7 @@ questions:
       - "`WHERE created_at::date = '2026-03-01'`"
       - "`WHERE EXTRACT(MONTH FROM created_at) = 3`"
       - "`WHERE created_at >= '2026-03-01' AND created_at < '2026-03-02'`"
-      - "`WHERE date_trunc('day', created_at) = '2026-03-01'`"
+      - "`WHERE date_trunc('day', created_at) = '2026-03-01 00:00:00+00'`"
     answer: 2
     explanation: Only the range leaves the indexed column untouched. Wrapping it in a function or cast hides it from a plain index.
 
@@ -36,16 +36,16 @@ questions:
       - A deadlock
       - The N+1 query problem
       - Fan-out
-      - Keyset pagination
+      - Keyset pagination gone wrong
     answer: 1
     explanation: One query plus N more. Fetch the customers in a single JOIN or `IN (…)` query instead.
 
   - type: mcq
     prompt: Why is `LIMIT 20 OFFSET 500000` slow, and what's the usual fix?
     options:
-      - LIMIT is slow. Remove it.
-      - PostgreSQL must produce and discard 500,000 rows. Use keyset pagination (WHERE id > last_seen).
-      - OFFSET needs a GIN index
-      - It isn't slow
+      - LIMIT is slow on big tables; remove it and filter in the app
+      - PostgreSQL makes and discards 500,000 rows; use keyset pagination
+      - OFFSET needs a GIN index to skip rows quickly, which most tables don't have
+      - It isn't slow, since PostgreSQL jumps straight to row 500,000
     answer: 1
     explanation: OFFSET still generates the skipped rows. Keyset pagination jumps straight to where the last page ended, using an index.

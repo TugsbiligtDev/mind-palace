@@ -53,8 +53,8 @@ questions:
     prompt: You need to add 1 copy to every line of order 8. What's the better approach?
     options:
       - A PL/pgSQL loop that updates one line at a time
-      - "A single `UPDATE order_items SET quantity = quantity + 1 WHERE order_id = 8;`"
-      - A procedure that commits after each row
-      - A materialized view
+      - A single `UPDATE … SET quantity = quantity + 1 WHERE order_id = 8`
+      - A procedure that updates each line, committing after every single one
+      - A trigger that adds 1 copy whenever a line is read
     answer: 1
     explanation: Think in sets. One statement is simpler and much faster than a row-by-row loop.

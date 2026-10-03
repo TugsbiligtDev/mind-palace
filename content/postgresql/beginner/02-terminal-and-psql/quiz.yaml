@@ -27,20 +27,20 @@ questions:
 
       What happened?
     options:
-      - The query failed
-      - psql is waiting for the rest of the statement, because there's no semicolon
-      - You were disconnected
-      - You switched to another database
+      - The query failed, and psql is showing the error on the next line
+      - "psql is waiting for the rest of the statement: there's no semicolon"
+      - You were disconnected, so psql opened a new, empty connection
+      - You switched to another database, whose name is shown with a dash
     answer: 1
     explanation: "`-#` means psql is still collecting your statement. Type `;` and press Enter to run it."
 
   - type: mcq
     prompt: "Your prompt says `postgres=#` and `SELECT * FROM sales;` gives *relation \"sales\" does not exist*. What's the likely fix?"
     options:
-      - Reinstall PostgreSQL
-      - "Run `\\c practice`, because you're connected to the wrong database"
-      - Add double quotes around sales
-      - Restart the Mac
+      - Reinstall PostgreSQL, since the sales table was lost
+      - "Run `\\c practice`: you're connected to the wrong database"
+      - Put double quotes around "sales" so that PostgreSQL can find the name
+      - Run `\dt` first so psql loads the list of tables
     answer: 1
     explanation: The prompt shows you're in the `postgres` database. The sales table lives in `practice`, so connect there with `\c practice`.
 
@@ -52,9 +52,9 @@ questions:
 
       What happens?
     options:
-      - psql lists the tables, then shows the books data
-      - An error, because meta-commands need a semicolon
-      - psql reads `SELECT * FROM books;` as arguments to `\dt`, and the SQL never runs
-      - The SQL runs first, then the tables are listed
+      - psql lists the tables, then runs the SELECT and shows the books
+      - An error, because meta-commands need a semicolon at the end
+      - psql reads the SELECT as arguments to `\dt`; the SQL never runs
+      - The SELECT runs first, then psql lists the tables below it
     answer: 2
     explanation: A meta-command ends at the **end of the line**. Everything after `\dt` on that line is read as its arguments. Put `\dt` and your SQL on separate lines.

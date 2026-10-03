@@ -20,7 +20,7 @@ steps:
 
       - **Readers never wait for writers**, and **writers never wait for readers**. A report can read orders while someone updates them. It simply sees the older version.
       - **Writers of the same row do wait for each other** (below).
-      - Old versions pile up and are cleaned later by **VACUUM** (Module 43).
+      - Old versions pile up and are cleaned later by **VACUUM** (which *autovacuum* runs for you in the background).
 
       You can peek at versions: every row has a hidden column **`xmin`**, the ID of the transaction that created that version.
 

@@ -10,10 +10,10 @@ questions:
   - type: mcq
     prompt: Why store money as whole cents instead of floats?
     options:
-      - Integers are exact, while floats can have tiny errors like 0.1 + 0.2
-      - Integers are shorter to type
-      - Python cannot store decimals
-      - Floats are illegal for money
+      - Integers are exact, while floats can be slightly off, like 0.1 + 0.2
+      - Integers use less memory, which matters once there are many records
+      - Python cannot store numbers with decimals in a JSON file
+      - Floats can't be negative, so refunds would be impossible
     answer: 0
     explanation: Whole-number arithmetic never drifts, so totals always add up.
   - type: predict

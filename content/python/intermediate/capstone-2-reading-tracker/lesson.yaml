@@ -577,7 +577,7 @@ steps:
     body: |
       Now build the real thing on your Mac: a `uv` project with `httpx`, `pydantic` and dev tools, storing in a `reading.db` file, with a command-line front end. The commands below write compact versions of your code and a small test, run the tests and the tools, and then search the real Open Library.
 
-      **Checkpoint:** paste the output. It should contain `passed`, `All checks passed` and a book `title`.
+      **Checkpoint:** paste the output. It should contain `passed`, `All checks passed` and at least one saved book row mentioning `Dune`.
     commands: |
       mkdir -p ~/Desktop/reading-tracker && cd ~/Desktop/reading-tracker
       git init
@@ -691,7 +691,7 @@ steps:
     expect_output:
       - "passed"
       - "All checks passed"
-      - "title"
+      - "Dune"
 
   - kind: why
     body: |
@@ -704,4 +704,4 @@ steps:
       - **Upsert** (`INSERT ... ON CONFLICT DO UPDATE`) keeps data unique without losing your own fields (the reading status).
       - Parameterized queries, transactions (`with conn:`), and `raise_for_status()` with a timeout keep it safe.
       - Good tests fail when the code is wrong: prove them with buggy variants.
-      - Next: the optional branches (data analysis or a REST API), or the Advanced level.
+      - Next: build a project of your own with these tools (something you or a friend would really use), put it on GitHub, and read other people's Python code there.

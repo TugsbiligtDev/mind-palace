@@ -40,7 +40,7 @@ steps:
   - kind: info
     title: "🔹 This is the bridge to enterprise attacks"
     body: |
-      Pivoting plus the credential-reuse idea from Module 19 is the engine of **lateral movement** across large networks — the heart of the Active Directory attacks in the Advanced level. For now, just hold the shape: compromise a host, use it to reach more hosts, repeat. Segmentation and monitoring are what break the chain.
+      Pivoting plus the credential-reuse idea from Module 19 is the engine of **lateral movement** across large networks — the heart of Active Directory attacks in company networks. For now, just hold the shape: compromise a host, use it to reach more hosts, repeat. Segmentation and monitoring are what break the chain.
 
   - kind: why
     body: |
@@ -52,4 +52,4 @@ steps:
       - Internal networks are often **softer** than the perimeter — the assumption pivoting exploits.
       - **Port forwarding** exposes one internal service through the host; a **SOCKS proxy** routes broad traffic as if you were inside; **tunneling** hides it in allowed channels.
       - Defence is **network segmentation** — allow only necessary connections between zones — plus least privilege and internal monitoring.
-      - 🔹 Pivoting + credential reuse = **lateral movement**, the bridge to enterprise/Active Directory attacks (Advanced).
+      - 🔹 Pivoting + credential reuse = **lateral movement**, the bridge to enterprise/Active Directory attacks.

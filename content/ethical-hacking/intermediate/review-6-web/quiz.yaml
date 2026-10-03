@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: The menu links to only three pages, but your scope is the whole app. What do you do, and what does finding an unlinked `/admin` page teach the client?
     options:
-      - Trust the menu; there is nothing else
-      - Run content discovery (gobuster/ffuf); an unlinked but unprotected page shows that hiding a link is not access control
-      - Report the menu as the full attack surface
-      - Ask the client for a sitemap and stop there
+      - Trust the menu; unlinked pages are outside the attack surface
+      - Run content discovery; an unlinked open page shows hiding isn't access control
+      - Ask the client for a sitemap and test only the pages it lists
+      - Crawl the menu links more deeply; anything that isn't linked from somewhere can't be reached
     answer: 1
     explanation: Content discovery reveals pages no menu links to. A page that is hidden but not protected is a finding — every sensitive page needs a server-side authorisation check.
   - type: mcq
     prompt: A form echoes your input back and renders your angle-bracket markup as formatting rather than text. Which flaw does this behaviour indicate, and what is the fix?
     options:
-      - SQL injection; use parameterized queries
-      - Cross-site scripting (XSS); the server must output-encode user input so it renders as inert text
-      - IDOR; add an authorization check
-      - SSRF; allow-list destinations
+      - SQL injection; use parameterized queries for that field
+      - Cross-site scripting; output-encode input so it renders as text
+      - IDOR; add an authorization check before showing the user's input back to them
+      - CSRF; add an anti-forgery token to the form
     answer: 1
     explanation: Input being treated as code rather than text is the signature of XSS. The fix is output encoding (rendering input as inert text), with CSP as defence in depth.
   - type: mcq
     prompt: Changing `/account?id=3391` to another value shows you someone else's account. Name the flaw and the correct fix.
     options:
-      - XSS; encode the output
-      - IDOR / broken access control; a server-side authorization check on every request that the user is allowed to access that object
-      - CSRF; add a token
-      - A caching bug; clear the cache
+      - XSS; encode the account details before display
+      - IDOR; check server-side the user may access that object
+      - CSRF; add an anti-forgery token to the account page
+      - Predictable IDs; switch to random IDs that can't be guessed
     answer: 1
     explanation: Editing an identifier to reach another user's data is IDOR, top of the OWASP list. The fix is server-side authorisation on every request — not hiding the link or obscuring the ID.
   - type: mcq
     prompt: An "import from URL" feature makes the server fetch any address you supply, including internal-only ones. What is this, and how is it fixed?
     options:
-      - XSS; encode the output
-      - SSRF; allow-list permitted destinations and block internal and cloud-metadata addresses
-      - IDOR; check ownership
-      - Insecure upload; store files outside the web root
+      - XSS; encode the fetched content before showing it
+      - SSRF; allow-list destinations, block internal addresses
+      - IDOR; check the user owns the URL they submit
+      - Open redirect; validate URLs before redirecting users
     answer: 1
     explanation: Making the trusted server fetch an attacker-chosen destination is SSRF. Fix by allow-listing exactly which destinations are permitted and blocking internal/metadata addresses.
   - type: mcq
     prompt: What is the common skill these scenarios rehearse?
     options:
-      - Memorising payloads
-      - Recognising a vulnerability from the application's behaviour, then naming the specific server-side fix
-      - Running one automated scanner and trusting it
-      - Reporting every page as critical
+      - Memorising payloads for each type of vulnerability
+      - Spotting a flaw from the app's behaviour, then naming the fix
+      - Running an automated scanner and confirming what it reports
+      - Rating every finding with CVSS before writing it up
     answer: 1
     explanation: The web-testing loop is map, probe, recognise from behaviour, and give the concrete fix — the judgement that automated scanners cannot replace.

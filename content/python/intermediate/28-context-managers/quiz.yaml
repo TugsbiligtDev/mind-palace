@@ -35,18 +35,18 @@ questions:
     prompt: In a `@contextmanager` function, where should the clean-up code go?
     options:
       - In a `finally` block after the `yield`
-      - Before the `yield`
-      - In `__exit__`
-      - Anywhere; it always runs
+      - Before the `yield`, so it runs first
+      - In an `except` block after the `yield`
+      - Anywhere; Python always runs it at the end
     answer: 0
     explanation: Without `try/finally` around `yield`, an exception in the `with` block would skip the clean-up.
   - type: mcq
     prompt: What does `__exit__` returning `False` (or `None`) do?
     options:
       - Any exception from the block continues to propagate
-      - It swallows the exception
-      - It restarts the block
-      - It closes the program
+      - The exception is swallowed and the program continues
+      - The with block is run again from the beginning
+      - The exception is logged, then the program exits
     answer: 0
     explanation: Only a true return value suppresses the exception.
   - type: fill

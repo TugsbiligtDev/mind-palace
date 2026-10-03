@@ -137,7 +137,7 @@ steps:
       - **Column privileges**: `GRANT SELECT (first_name, last_name, city) ON customers TO support;`. Selecting any other column (or `*`) is denied.
       - **A view** (Module 34) showing only the allowed columns or rows, with `GRANT SELECT` on the view instead of the table.
 
-      For hiding **rows** per user (each customer sees only their own), PostgreSQL has **Row-Level Security**, covered in Module 45.
+      For hiding **rows** per user (each customer sees only their own), PostgreSQL has **Row-Level Security** (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY` plus `CREATE POLICY`). Look it up when you need it.
 
   - kind: try
     title: Names yes, emails no
@@ -247,5 +247,5 @@ steps:
       - `SET ROLE name` lets you test access as another role.
       - **Least privilege**: separate admin, app and read-only roles. Grant to groups, not individuals.
       - `ON ALL TABLES IN SCHEMA` covers existing tables. `ALTER DEFAULT PRIVILEGES` covers future ones.
-      - Hide columns with column grants or views, and rows with Row-Level Security (Module 45).
+      - Hide columns with column grants or views, and rows with Row-Level Security.
       - Since PG15, only the owner can CREATE in `public`. On older versions, `REVOKE CREATE ON SCHEMA public FROM PUBLIC`.

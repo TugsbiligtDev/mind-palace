@@ -63,7 +63,7 @@ steps:
   - kind: try
     title: "4. 2025, month by month"
     body: |
-      For each month of **2025**, show the month (labeled **month**, a timestamp at the start of the month), the net money received that month (payments plus refunds, labeled **net**), and the **running total** for the year so far (labeled **running**). Use `paid_at` in UTC, the session's zone.
+      For each month of **2025**, show the month (labeled **month**, a timestamp at the start of the month), the net money received that month (payments plus refunds, labeled **net**), and the **running total** for the year so far (labeled **running**), with the months in order from January. Use `paid_at` in UTC, the session's zone.
     sql: |
       -- Write your query here
     expect: |

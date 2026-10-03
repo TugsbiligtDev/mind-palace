@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: What is the only acceptable target for this capstone?
     options:
-      - Any website you find interesting
-      - A deliberately-vulnerable training machine you own, on your isolated lab network
-      - A friend's computer, with a verbal OK
-      - A company you want to work for
+      - Any public website, as long as you only scan and don't exploit it
+      - A deliberately vulnerable machine you own, on your isolated lab
+      - A friend's computer, as long as they say yes out loud
+      - Your employer's test server, since you already have access
     answer: 1
     explanation: The full attack cycle is legal only against a machine you own on an isolated network (or a sanctioned range). Unauthorised testing is a crime, learning or not.
   - type: mcq
     prompt: Why write rules of engagement and open your notes before touching the target?
     options:
-      - It wastes time
-      - It mirrors a real engagement — defining scope and recording every action from the start is how the report gets built and how you prove what you touched
-      - Notes are only for the exploit step
-      - Scope is only needed for paid work
+      - The lab software won't let you start until you have filled in the rules of engagement
+      - "It mirrors a real job: scope and notes from the start build the report"
+      - Notes are only needed if you plan to publish a writeup afterwards
+      - It is a legal requirement for testing your own machines at home
     answer: 1
     explanation: Scope-first and notes-from-the-start are core professional habits (Modules 12 and 27); the report is built from those notes, not from memory.
   - type: mcq
     prompt: During enumeration you are tempted to jump straight to exploiting. Why slow down?
     options:
-      - Exploiting is illegal in a lab
-      - Most of the real work and most findings live in thorough enumeration; people who get stuck usually did not enumerate enough
-      - Enumeration damages the target
-      - There is no reason to
+      - Exploits can damage the lab target if they are run too early
+      - Most findings come from thorough enumeration; skipping it gets you stuck
+      - Enumeration is the only phase the capstone grades
+      - Exploiting first is fine, but you still need some enumeration to fill in the report
     answer: 1
     explanation: Thorough enumeration is the backbone of the methodology. Rushing past it is the classic beginner mistake.
   - type: mcq
     prompt: You escalate to administrator using a misconfiguration. What is the most valuable thing to put in the report about it?
     options:
-      - Only that you got root
-      - The exact broken trust you used and its concrete fix (the root cause and the permission to correct), prioritised appropriately
-      - A screenshot with no explanation
-      - Nothing; escalation is self-explanatory
+      - The exact commands you ran, so the client can repeat the attack
+      - The broken trust you used and its concrete fix, prioritised
+      - A screenshot of the root shell as proof that you got in
+      - The CVE number of the exploit, so the client can patch it
     answer: 1
     explanation: The fix for the root cause is the line a defender acts on. Naming the broken trust and the correction is where the report delivers its value.
   - type: mcq
     prompt: What single capability does passing this capstone demonstrate?
     options:
-      - Collecting as many flags as possible
-      - Taking one target from its address to full control and turning that into a clear, prioritised, actionable report
-      - Using the most tools
-      - Attacking the fastest
+      - Using as many different tools as possible on one target
+      - Taking one target to full control, then a clear, prioritised report
+      - Collecting every flag on the target as fast as possible
+      - Finding a brand-new vulnerability that no automated scanner could ever have detected
     answer: 1
     explanation: The Intermediate goal is a complete assessment of a single target plus a professional write-up — technical path and actionable report together.

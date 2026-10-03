@@ -17,10 +17,10 @@ questions:
   - type: mcq
     prompt: "Why put `@layer reset, base, components, utilities;` at the very top?"
     options:
-      - "It fixes the layer order explicitly, regardless of which file or rule mentions a layer first"
-      - "Browsers require it on line 1"
-      - "It loads the layers faster"
-      - "It's only a comment"
+      - It fixes the layer order, whichever file mentions a layer first
+      - Browsers ignore any @layer rule that isn't on the very first line
+      - It makes the browser download the layers' files in parallel
+      - It's a comment for developers; browsers don't read it at all
     answer: 0
     explanation: "Layer order is set by first mention; declaring it up front makes it deliberate."
   - type: mcq

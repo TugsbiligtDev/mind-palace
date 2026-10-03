@@ -11,7 +11,7 @@ steps:
 
       **How do you find pages the menu doesn't show?**
     options:
-      - "Ask the developers for a list"
+      - "Ask the developers for a full list of pages and test only those pages"
       - "Content discovery with a wordlist tool such as gobuster or ffuf"
       - "You don't: if a page isn't linked, it doesn't exist"
       - "Guess passwords on the Account page"
@@ -26,9 +26,9 @@ steps:
 
       **What does this behaviour suggest?**
     options:
-      - "SQL injection"
+      - "SQL injection: your input is changing the query that builds the page"
       - "IDOR"
-      - "Nothing: every form does that"
+      - "Nothing: every form shows your input back to you, so this is normal behaviour"
       - "Cross-site scripting (XSS): your input reaches the page without being escaped"
     answer: 3
     explanation: |
@@ -43,8 +43,8 @@ steps:
     options:
       - "IDOR (broken access control); check on the server that the user may see that record"
       - "XSS; escape the output"
-      - "Make the IDs long and random so nobody can guess them"
-      - "Hide the id from the address bar"
+      - "Make the IDs long and random, so that nobody can guess another user's record"
+      - "Hide the id from the address bar by sending it in a POST body or a cookie instead"
     answer: 0
     explanation: |
       No clever input was needed — just editing an identifier. This is **IDOR / broken access control** (Module 22), the issue that sits at the very top of the OWASP list. The app used your input to pick a record but never checked that you are allowed to see it. The fix is a **server-side authorisation check on every request**: does the logged-in user own or have rights to this object? Not hiding the link, not making the ID harder to guess.
@@ -59,7 +59,7 @@ steps:
       - "CSRF"
       - "XXE"
       - "SSRF: the server fetches an address you chose, from inside the network"
-      - "An open redirect"
+      - "An open redirect: the server sends the browser to the address you chose"
     answer: 2
     explanation: |
       That is **SSRF** (Server-Side Request Forgery, Module 22): the trusted server, sitting inside the network, has been made to fetch an attacker-chosen destination. The fix is to **allow-list** exactly which destinations the server may fetch and block internal and cloud-metadata addresses — never let user input choose arbitrary internal targets.

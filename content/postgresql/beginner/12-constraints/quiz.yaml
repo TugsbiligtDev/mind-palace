@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: "A column is declared `isbn text UNIQUE`. Can two rows both have a NULL isbn?"
     options:
-      - No, UNIQUE forbids any repeats
+      - No, UNIQUE forbids any repeated value, NULL included
       - Yes, because two NULLs aren't considered equal
-      - Only if the table has no primary key
-      - Only one NULL, then an error
+      - Only if the column has no NOT NULL rule as well
+      - Only one NULL is allowed; the second one is an error
     answer: 1
     explanation: "NULL = NULL is unknown, not true, so NULLs don't clash under a normal UNIQUE rule. Use `UNIQUE NULLS NOT DISTINCT` to allow only one."
 
@@ -49,9 +49,9 @@ questions:
   - type: mcq
     prompt: Why enforce rules with constraints in the database, rather than only in the app?
     options:
-      - Constraints make queries faster
-      - Data arrives from many apps, scripts and people, and the database is the one place all of it passes through
-      - Apps can't check rules
-      - It's required by SQL
+      - Constraints make every query faster, because the planner can skip checks
+      - Data comes from many apps, scripts and people; the database sees all of it
+      - Apps can't check rules themselves, since they only send SQL to the database
+      - The SQL standard requires every rule to be written as a constraint
     answer: 1
     explanation: An app only protects the data it writes. A constraint protects the table from every source, forever.

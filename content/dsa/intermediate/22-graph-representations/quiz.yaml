@@ -32,9 +32,9 @@ questions:
   - type: mcq
     prompt: Why is a grid described as an "implicit" graph?
     options:
-      - It has no vertices
-      - The vertices and neighbours are defined by the cell positions, so you compute neighbours on the fly
-      - It cannot be traversed
-      - It is always directed
+      - It has no vertices, only the edges between the cells
+      - Neighbours come from the cell positions, so you compute them on the fly
+      - It can't be traversed with BFS or DFS, only with nested loops
+      - It is always directed, because you move left to right and top to bottom
     answer: 1
     explanation: You never build an adjacency list. The row/column rule tells you who the neighbours are.

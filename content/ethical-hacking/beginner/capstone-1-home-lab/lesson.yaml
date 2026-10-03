@@ -44,6 +44,8 @@ steps:
 
       These exist precisely so learners have something legal and safe to attack. Using one is the difference between practising your craft and committing a crime.
 
+      **Apple Silicon note:** most training images (Metasploitable 2 included) are built for Intel PCs. UTM can still run them through emulation, but slowly. If yours crawls, run **Juice Shop** instead (it has an ARM build), or use the browser-based machines on TryHackMe or Hack The Box (see the last tip in this lesson).
+
   - kind: explain
     title: "Step 4 — isolate the network (the critical step)"
     body: |

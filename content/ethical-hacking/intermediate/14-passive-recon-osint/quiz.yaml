@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: What makes passive reconnaissance "passive"?
     options:
-      - It is done slowly
-      - It gathers public information without ever touching the target's own systems, so it leaves no trace in their logs
-      - It only uses one tool
-      - It is always illegal
+      - It sends only a few slow probes, so the target's alarms never trigger
+      - It uses only public sources and never touches the target's own systems
+      - It is done without the client knowing, so their staff can't react
+      - It watches the target's network traffic instead of sending any of its own
     answer: 1
     explanation: Passive recon reads already-published information (DNS, search results, WHOIS, Shodan), so the target never sees you. Active recon interacts with the target and is visible.
   - type: mcq
     prompt: Why are `dev.` and `staging.` subdomains especially interesting during recon?
     options:
-      - They are always offline
-      - They are often built quickly, secured loosely and then forgotten, making them softer targets than production
-      - They cannot be found publicly
-      - They never run real services
+      - They hold the company's real customer data and payments
+      - They are often built fast, loosely secured, then forgotten
+      - They are hidden from search engines, so nobody tests them
+      - They always run on the same server as the main website
     answer: 1
     explanation: Test and staging systems are a recurring theme in real breaches precisely because they get less security attention. Mapping them is part of knowing the full attack surface.
   - type: mcq
     prompt: What does Shodan let a tester do?
     options:
-      - Crack passwords automatically
-      - Search a continuously-updated index of internet-facing devices, ports, banners and versions — a target's exposure, without scanning it yourself
-      - Edit a target's DNS records
-      - Send phishing emails
+      - Find hidden subdomains by guessing DNS names against the target
+      - Search an index of internet-facing devices, ports and versions
+      - Look up who owns a domain and when it was registered
+      - Find employees' leaked passwords from past data breaches
     answer: 1
     explanation: Shodan scans the whole internet and lets you search the results like a search engine for machines. It often reveals exposures an organisation did not know about.
   - type: mcq
     prompt: A company's job posting lists "AWS, Django, Jenkins, PostgreSQL." Why is that useful to an attacker?
     options:
-      - It is not useful at all
-      - It reveals the technology stack to prepare against, before sending a single packet at the target
-      - It contains the admin password
-      - It proves the company is secure
+      - It names the staff who manage those systems, ready for phishing
+      - It reveals the technology stack to prepare against, with no packets sent
+      - It proves those systems are unpatched, since they are listed publicly
+      - It is not useful; job postings never describe real internal systems
     answer: 1
     explanation: Job ads leak the tech stack, telling an attacker exactly what software and known weaknesses to research in advance. It is classic OSINT.
   - type: mcq
     prompt: What is the best defensive use of the OSINT techniques in this module?
     options:
-      - Never let employees have social media
-      - Run OSINT on your own organisation regularly to find and reduce what leaks before an attacker does
-      - Delete the company website
-      - Block Google entirely
+      - Ban staff from social media so there is nothing left to find
+      - Run OSINT on your own organisation and reduce what leaks out
+      - Block search engines from indexing every company web page
+      - Sue any website that publishes information about the company
     answer: 1
     explanation: The strongest defensive move is to see yourself as an attacker would — OSINT your own org, watch certificate-transparency logs, control indexing — and close the gaps first.

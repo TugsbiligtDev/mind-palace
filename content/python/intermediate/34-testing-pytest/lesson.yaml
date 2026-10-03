@@ -367,7 +367,7 @@ steps:
 
       pytest also has the built-in **`monkeypatch`** fixture, which temporarily replaces an attribute or environment variable for one test: `monkeypatch.setattr(module, "name", fake)`, `monkeypatch.setenv("KEY", "value")`, restored automatically afterwards.
 
-      A warning: mocks test *how* you call something, not that the real thing works. Do not mock what you own without a reason; prefer simple fakes (Advanced, Testing).
+      A warning: mocks test *how* you call something, not that the real thing works. Do not mock what you own without a reason; prefer simple fakes.
 
   - kind: code
     title: Test with a mock

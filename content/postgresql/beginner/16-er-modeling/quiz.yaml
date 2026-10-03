@@ -6,17 +6,17 @@ questions:
       - An entity
       - An attribute
       - A relationship
-      - A primary key
+      - A foreign key column
     answer: 2
     explanation: Verbs connecting two things are usually relationships. Members and books are the entities.
 
   - type: mcq
     prompt: "\"Each order is placed by exactly one customer.\" What does that mean for `orders.customer_id`?"
     options:
-      - It should allow NULL
+      - It should allow NULL, for orders placed by guests
       - It should be NOT NULL and reference customers
-      - It should be UNIQUE
-      - It belongs in the customers table
+      - It should be UNIQUE, since each order has one
+      - It belongs in customers, as a list of orders
     answer: 1
     explanation: "\"Exactly one\" is a required link, so the FK is NOT NULL. It isn't UNIQUE, because one customer can place many orders."
 
@@ -33,10 +33,10 @@ questions:
   - type: mcq
     prompt: Customers join book clubs, and each membership records the number of copies pre-ordered. Where does `copies` go?
     options:
-      - customers
-      - clubs
+      - In customers, as one column per club they join
+      - In clubs, as a total for the whole club
       - A junction table such as memberships, with customer_id and club_id
-      - A separate copies table with only a copies column
+      - A separate copies table, with only a copies column and its own id, linked from customers
     answer: 2
     explanation: Copies describe one customer + club pair, so they belong on the junction table that represents the membership.
 
@@ -45,7 +45,7 @@ questions:
     options:
       - "`airport_id` and `airport_id2`"
       - "`departure_airport_id` and `arrival_airport_id`"
-      - "`a1` and `a2`"
-      - "`from` and `to`"
+      - "`airport_a_id` and `airport_b_id`"
+      - "`from_airport_code` and `to_airport_name_text`"
     answer: 1
     explanation: When two FKs point at the same table, name each by its role. (`from` and `to` are SQL keywords, which makes them awkward names too.)

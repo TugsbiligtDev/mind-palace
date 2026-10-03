@@ -147,7 +147,7 @@ steps:
   - kind: try
     title: Roll back a DROP
     body: |
-      The reviews table is dropped inside a transaction, then the transaction is rolled back. Run it: the table and its 7 rows are still there.
+      The reviews table is dropped inside a transaction, then the transaction is rolled back. Run it: the table and all 7,360 reviews are still there.
     sql: |
       BEGIN;
       DROP TABLE reviews;
@@ -158,7 +158,7 @@ steps:
   - kind: explain
     title: Keep transactions short
     body: |
-      While a transaction is open, it **holds locks** on the rows it changed (other sessions wanting them must wait, Module 31) and stops PostgreSQL from cleaning up old row versions (Module 43).
+      While a transaction is open, it **holds locks** on the rows it changed (other sessions wanting them must wait, Module 31) and stops PostgreSQL from cleaning up old row versions (VACUUM can't remove anything an open transaction might still need).
 
       So:
 

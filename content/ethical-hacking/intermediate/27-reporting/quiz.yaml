@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: Why is the report described as the real deliverable of a penetration test?
     options:
-      - Because clients enjoy reading
-      - Because the client can only act on your written findings and advice, not on the access you gained — the report is what drives the fixes
-      - Because the report is longer than the test
-      - Because access is illegal to describe
+      - It is the legal proof that the test happened within scope
+      - The client can only act on your written findings, not your access
+      - It is the document the client's auditors and insurers are legally required to read
+      - It lists every command you ran, so the test can be repeated
     answer: 1
     explanation: Access helps no one on its own. The report is what managers, developers and auditors read and act on — so writing it well is a core skill, not an afterthought.
   - type: mcq
     prompt: When should you take notes during an engagement?
     options:
-      - At the very end, from memory
-      - While you work — recording what you did, against which target, when, and the key output
-      - Only if the client asks
-      - Never, to avoid leaving a trail
+      - At the end of each day, from memory, while the details are still fresh in your mind
+      - "While you work: what you did, to which target, when, and the output"
+      - Only when you find something, to keep the notes short
+      - At the end of the engagement, from your terminal history
     answer: 1
     explanation: Notes taken as you work make the report accurate, let you prove what you touched, and save you from re-running noisy scans just to recover a detail you forgot.
   - type: mcq
     prompt: Which parts make up a single, well-written finding?
     options:
-      - Just the title and a screenshot
-      - Title, severity rating, description, evidence, business impact, and concrete remediation
-      - Only the tool output
-      - A severity score with no explanation
+      - Title, the tool's raw output, and the CVSS score
+      - Title, severity, description, evidence, impact and remediation
+      - Title, a screenshot, and the exact command you used to exploit it
+      - Severity, CVE number, and a link to the vendor advisory
     answer: 1
     explanation: A finding is a self-contained story. Impact and remediation — what it means for this business and exactly how to fix it — are where the professional adds the most value.
   - type: mcq
     prompt: A flaw scores only "medium" by the CVSS formula, but it exposes the client's most sensitive customer data. How should you rate it?
     options:
-      - Strictly medium — the number is final
-      - Keep the score but add business context and flag it as a top priority, because real risk combines the formula with what it would cost this client
-      - Lower it to avoid alarming the client
-      - Remove it from the report
+      - Strictly medium — the formula is objective, so it is final
+      - Keep the score, add business context, and flag it as top priority
+      - Raise the CVSS score to critical so the client takes it seriously
+      - Lower it to low, since the formula already rated it medium
     answer: 1
     explanation: CVSS gives a defensible baseline, but severity is likelihood × impact for this business. An honest report pairs the number with context and prioritises what actually matters.
   - type: mcq
     prompt: Which remediation advice is most useful to a development team?
     options:
-      - "Fix the access control."
-      - "On every request, verify server-side that the logged-in user is authorised for the requested object; don't rely on IDs being unguessable."
-      - "The site is insecure."
-      - "Rewrite the application."
+      - Fix the access control on the invoice page as soon as possible.
+      - On every request, check server-side that the user may access that object.
+      - Use long random IDs for invoices so that attackers can never guess another user's ID.
+      - Hide the invoice links from users who should not open them.
     answer: 1
     explanation: Specific, root-cause advice the team can implement — and the defensive principle behind it — is what turns a finding into a lasting improvement.

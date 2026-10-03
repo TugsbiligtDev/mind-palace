@@ -154,7 +154,7 @@ steps:
   - kind: code
     title: "5. Fewest days"
     body: |
-      A bakery must make `bouquets` bouquets. Flower `i` blooms on day `bloom[i]`. A bouquet needs `flowers` **adjacent** flowers that have all bloomed. Write `minDays(bloom, bouquets, flowers)`: the earliest day by which the bakery can make all the bouquets, or `-1` if it is impossible.
+      A flower shop must make `bouquets` bouquets. Flower `i` blooms on day `bloom[i]`. A bouquet needs `flowers` **adjacent** flowers that have all bloomed. Write `minDays(bloom, bouquets, flowers)`: the earliest day by which the shop can make all the bouquets, or `-1` if it is impossible.
     code: |
       function minDays(bloom, bouquets, flowers) {
         // your code

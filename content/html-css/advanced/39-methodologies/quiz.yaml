@@ -3,37 +3,37 @@ questions:
   - type: mcq
     prompt: "In BEM, what is `.menu__item--active`?"
     options:
-      - "The active modifier of the item element of the menu block"
-      - "A menu inside an item inside an active block"
-      - "An invalid class name"
-      - "A utility class"
+      - The active modifier of the item element of the menu block
+      - A menu block nested inside an active item element
+      - "An item block that has two separate modifiers: menu and active"
+      - A utility class that styles any active menu item
     answer: 0
     explanation: "Block `menu`, element `item` (two underscores), modifier `active` (two dashes)."
   - type: mcq
     prompt: "Why does BEM keep every selector to a single class?"
     options:
-      - "Equal, low specificity everywhere, so rules never need to fight each other"
-      - "Browsers can't read descendant selectors"
-      - "It makes the HTML shorter"
-      - "It's required by Sass"
+      - Equal, low specificity everywhere, so rules never need to fight
+      - Shorter selectors, so the CSS file downloads noticeably faster
+      - Browsers match single classes, but not descendant selectors
+      - It is required for the CSS to work with JavaScript frameworks
     answer: 0
     explanation: "Flat specificity means order alone decides, which is predictable."
   - type: mcq
     prompt: "What does `.flow > * + *` select?"
     options:
-      - "Every direct child of .flow except the first"
-      - "Every child of .flow"
-      - "Only the first child of .flow"
-      - "Every element after .flow"
+      - Every direct child of .flow except the first
+      - Every direct child of .flow, including the first
+      - Only the first direct child of .flow
+      - Every element that comes right after .flow
     answer: 0
     explanation: "`* + *` is any element that directly follows a sibling, so all but the first."
   - type: mcq
     prompt: "In the general-to-specific file order, why do utilities come last?"
     options:
-      - "So a utility (like .visually-hidden) wins over component styles without extra specificity"
-      - "Utilities are the least important"
-      - "Browsers load the last file first"
-      - "They're only used on mobile"
+      - So a utility like .visually-hidden wins without extra specificity
+      - So utilities load first and the page appears sooner on slow networks
+      - Because browsers read stylesheets from the bottom up, last file first
+      - So that components can override utilities when they need to
     answer: 0
     explanation: "Later wins when specificity ties; utilities should override."
   - type: mcq
@@ -41,7 +41,7 @@ questions:
     options:
       - "`ul, ol { list-style: none; }` for every list on the site"
       - "`*, *::before, *::after { box-sizing: border-box; }`"
-      - "`img { display: block; max-width: 100%; }`"
-      - "`button { font: inherit; }`"
+      - "`img { display: block; max-width: 100%; height: auto; }`"
+      - "`button, input { font: inherit; color: inherit; }`"
     answer: 0
     explanation: "Removing list semantics and styling everywhere creates work and can affect accessibility; style specific lists instead."

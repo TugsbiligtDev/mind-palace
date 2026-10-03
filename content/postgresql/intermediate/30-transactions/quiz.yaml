@@ -20,10 +20,10 @@ questions:
   - type: mcq
     prompt: Inside a transaction, a statement fails. You then run `SELECT 1;` and get *current transaction is aborted*. What do you do?
     options:
-      - Run the SELECT again
-      - "`COMMIT` to save what worked"
+      - Run the SELECT again; the error clears itself after one try
+      - "`COMMIT`, so the statements that did work are saved"
       - "`ROLLBACK`, fix the problem, and run the transaction again"
-      - Restart PostgreSQL
+      - Restart PostgreSQL to clear the aborted transaction
     answer: 2
     explanation: A failed transaction can only be rolled back (even COMMIT just rolls back). Then retry the whole unit of work.
 
@@ -54,9 +54,9 @@ questions:
   - type: mcq
     prompt: Why shouldn't you open a transaction and then wait for a user to confirm?
     options:
-      - Transactions time out after one second
-      - An open transaction holds locks and blocks cleanup, slowing everyone else down
-      - BEGIN deletes data if you wait
-      - It's not allowed
+      - Transactions time out after one second, losing the user's work
+      - An open transaction holds locks and blocks cleanup for everyone
+      - BEGIN deletes the data it touches if the transaction waits too long
+      - PostgreSQL refuses to start a transaction from inside an app
     answer: 1
     explanation: Long-open transactions block other sessions and stop vacuum from cleaning up. Keep them short.

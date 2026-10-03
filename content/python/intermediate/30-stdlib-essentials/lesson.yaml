@@ -418,7 +418,7 @@ steps:
       - Pass the command as a **list** of words (`["ls", "-l"]`), not one string. It is safer and avoids the shell.
       - `capture_output=True, text=True` gives you the output as text.
       - `check=True` raises `CalledProcessError` if the program fails, so failures do not pass silently.
-      - **Never** build a command from untrusted input (never use `shell=True` with user text): that is command injection (Advanced, Security).
+      - **Never** build a command from untrusted input (never use `shell=True` with user text): that is **command injection**, a serious security hole.
 
       A browser tab cannot start programs, so this one you try on your Mac.
 

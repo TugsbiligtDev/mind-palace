@@ -33,9 +33,9 @@ steps:
       **What kind of machine is this most likely to be?**
     options:
       - "A Windows machine (remote desktop on 3389) that also runs SSH and a website"
-      - "A network printer"
-      - "A Linux mail server"
-      - "You can't tell anything about a machine from its ports"
+      - "A network printer, since printers often run a small website for settings"
+      - "A Linux mail server, since SSH and a website usually run together on Linux"
+      - "You can't tell anything about a machine from its ports without logging in"
     answer: 0
     explanation: |
       Read the story in the ports. **22** says there is SSH (remote shell). **80** says a website (unencrypted). **3389** is RDP — Windows remote desktop. SSH *and* RDP together suggest a Windows machine that also runs an SSH service. Each open port is a door to investigate further, and the mix already tells you what kind of building you are standing in front of.
@@ -62,9 +62,9 @@ steps:
 
       **What's the finding, and when is capturing like this acceptable?**
     options:
-      - "Wireshark itself is the vulnerability"
-      - "Nothing: traffic on port 80 is always encrypted"
-      - "Unencrypted traffic is fair game to capture on any network"
+      - "Wireshark itself is the vulnerability, because it can read any traffic on any network, encrypted or not"
+      - "Nothing: traffic on port 80 is always encrypted by the browser before it is sent out"
+      - "Unencrypted traffic is fair game to capture on any network, since the app chose not to protect it at all"
       - "The app sends logins over plain HTTP; capturing is only acceptable on a network you're authorised to monitor"
     answer: 3
     explanation: |

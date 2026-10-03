@@ -3,15 +3,15 @@ questions:
   - type: mcq
     prompt: "`color: var(--colour-brand)` shows black, but `--color-brand` is defined. Why?"
     options:
-      - "The names don't match; an undefined variable with no fallback makes the declaration fall back to the inherited/initial value"
-      - "Variables can't be used for color"
-      - "var() needs a fallback always"
-      - "The variable must be defined on the h1"
+      - The names don't match, and with no fallback the value falls back to inherited
+      - Variables can't be used for color; they only work for sizes and spacing
+      - var() always needs a fallback value, or the whole rule is thrown away
+      - The variable must be defined on the same element that uses it, not on an ancestor
     answer: 0
     explanation: "Custom property names must match exactly. A fallback like var(--x, brown) would have hidden the typo."
   - type: mcq
     prompt: "Which change makes `light-dark()` follow dark mode?"
-    options: ["`color-scheme: light dark` on :root", "A JavaScript theme switcher", "`@media print`", "`prefers-contrast: more`"]
+    options: ["`color-scheme: light dark` on :root", A `prefers-color-scheme` media query around it, "`light-dark: auto` on the body element", "`color-scheme: dark` on every element"]
     answer: 0
     explanation: "light-dark() reads the element's color scheme, which color-scheme enables."
   - type: mcq

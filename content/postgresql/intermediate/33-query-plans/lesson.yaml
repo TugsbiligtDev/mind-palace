@@ -62,18 +62,18 @@ steps:
   - kind: explain
     title: Estimated vs. actual rows
     body: |
-      The join plan above guessed **39,419** orders, exactly right. That's because the planner estimates from **statistics** that `ANALYZE` collects (autovacuum usually runs it for you, Module 43), and the bookstore's tables were analyzed after they were loaded.
+      The join plan above guessed **39,419** orders, exactly right. That's because the planner estimates from **statistics** that `ANALYZE` collects (autovacuum usually runs it for you), and the bookstore's tables were analyzed after they were loaded.
 
       A brand-new table has **no** statistics yet, so the planner has to guess.
 
-      When estimates and actual rows are **far apart** (10× or more), the planner may choose the wrong join or scan. The first fix is always the same: **`ANALYZE table_name;`** to refresh the statistics. Module 42 covers harder cases.
+      When estimates and actual rows are **far apart** (10× or more), the planner may choose the wrong join or scan. The first fix is always the same: **`ANALYZE table_name;`** to refresh the statistics. If estimates stay wrong because two columns depend on each other, *extended statistics* (`CREATE STATISTICS`) can teach the planner about it.
 
   - kind: try
     title: Fix a bad estimate
     body: |
-      A fresh copy of the orders table, never analyzed. How many pending orders are there? Run it: the planner guesses **161**. The real answer is 514.
+      A fresh copy of the orders table, never analyzed. How many pending orders are there? Run it: the planner guesses about **160**. The real answer is 514.
 
-      Then add `ANALYZE orders_copy;` before the EXPLAIN and run again: now it expects 536, close to reality.
+      Then add `ANALYZE orders_copy;` before the EXPLAIN and run again: now it expects roughly 500 (the exact guess shifts a little each run, because ANALYZE reads a random sample), close to reality.
     sql: |
       CREATE TABLE orders_copy AS SELECT * FROM orders;
 
@@ -129,7 +129,7 @@ steps:
   - kind: explain
     title: "Slow patterns 2 and 3: wildcards and N+1"
     body: |
-      **Leading-wildcard LIKE.** `WHERE title LIKE '%river%'` can't use a B-tree (Module 26). The fix is a trigram index (Module 46).
+      **Leading-wildcard LIKE.** `WHERE title LIKE '%river%'` can't use a B-tree (Module 26). The fix is a trigram index (the `pg_trgm` extension).
 
       **N+1 queries.** An app loads 50 orders with one query, then runs **one more query per order** to get its customer: 1 + 50 = 51 round trips to the database. Each is fast, but together they're slow, and the plan of any single query looks fine. The fix: get everything in **one** query with a JOIN, or with `WHERE customer_id IN (…)`. You'll see where this comes from (ORMs) in Module 38.
 

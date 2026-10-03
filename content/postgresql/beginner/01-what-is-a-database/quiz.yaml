@@ -3,30 +3,30 @@ questions:
   - type: mcq
     prompt: Which of these is **information** rather than raw data?
     options:
-      - "`2024-02-03`"
-      - "`The Hobbit`"
+      - "`2024-02-03`, the date of a sale in the sales table"
+      - "`The Hobbit`, the title stored on one of the books"
       - Twenty-one of Inkwell's thirty sales were paid by card
-      - "`card`"
+      - "`card`, the payment method recorded on a single sale"
     answer: 2
     explanation: The first, second and fourth are single stored facts. "Twenty-one of thirty sales were paid by card" answers a question, so it's information.
 
   - type: mcq
     prompt: A customer's address is copied into every one of their order rows in a spreadsheet. They move house. What's the risk?
     options:
-      - None, spreadsheets update copies automatically
-      - Some copies get updated and others don't, so the data disagrees with itself
-      - The spreadsheet will refuse the new address
-      - The file becomes read-only
+      - The spreadsheet updates every copy at once, so there is no risk
+      - Some copies get updated and others don't, so the data disagrees
+      - The spreadsheet refuses the new address until every copy matches
+      - The file locks itself as read-only once two copies are different
     answer: 1
     explanation: Duplicate data drifts apart. A database stores the address once and links orders to it, so there's only one place to change.
 
   - type: mcq
     prompt: What is a **DBMS**?
     options:
-      - A single table of data
-      - The software that stores, protects and answers questions about databases, like PostgreSQL
-      - A spreadsheet file format
-      - The SQL language itself
+      - A single table of data, such as the sales table
+      - The software that stores, protects and answers questions about databases
+      - A file format for saving spreadsheets, like .csv or .xlsx
+      - The SQL language itself, which you use to ask the database questions about your data
     answer: 1
     explanation: The DBMS (Database Management System) is the software. PostgreSQL, MySQL and SQLite are all DBMSs.
 
@@ -44,8 +44,8 @@ questions:
     prompt: In a well-designed relational database, how does a sale record which book was sold?
     options:
       - It copies the book's title, author and genre onto the sale
-      - It stores the book's ID, which points at the book's row in `books`
-      - Sales and books are kept in the same row of one big table
-      - It doesn't; you have to remember it
+      - It stores the book's ID, which points at its row in `books`
+      - Sales and books are kept together in one big shared table
+      - It stores the book's title, which is unique for every book
     answer: 1
     explanation: That's the "relational" idea. Tables link by IDs instead of copying the same facts over and over. The `practice` tables still copy them, which Module 17 fixes.

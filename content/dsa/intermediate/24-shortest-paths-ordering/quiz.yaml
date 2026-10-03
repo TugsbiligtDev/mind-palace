@@ -29,18 +29,18 @@ questions:
   - type: mcq
     prompt: Why can Dijkstra's algorithm not be used with negative edge weights?
     options:
-      - It runs out of memory
-      - Once a vertex is popped with its smallest distance, a later negative edge could still shorten it, which breaks the assumption
-      - Heaps cannot store negative numbers
-      - It can, with no problem
+      - It runs out of memory once a distance becomes negative
+      - A popped vertex is final, but a later negative edge could still shorten it
+      - Heaps can't store negative numbers, so those edges are dropped
+      - It can, as long as there are no cycles anywhere in the graph, which is common
     answer: 1
     explanation: Dijkstra assumes the first time a vertex is settled is final. Negative edges can make a longer-looking route cheaper.
   - type: mcq
     prompt: In Dijkstra with a heap, why do you skip an entry when `d > dist[v]`?
     options:
-      - It is an error
+      - It is an error, so the algorithm should stop there
       - It is a stale entry from before a better route was found
-      - It means a cycle
-      - The vertex is unreachable
+      - It means the graph has a cycle that must be broken first
+      - It means the vertex can't be reached from the start
     answer: 1
     explanation: A vertex can be pushed several times as shorter routes appear. Only the newest, smallest entry matters.

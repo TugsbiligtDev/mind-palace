@@ -143,7 +143,7 @@ steps:
       - `LIKE 'The Si%'` (fixed start) **can** use an index, with the right setup.
       - `LIKE '%River'`, `ILIKE '%river%'` and most regexes **can't**. PostgreSQL has to read and test **every row**.
 
-      On 10 rows you won't notice. On 10 million, it's seconds per search. The fix is a *trigram* index from the `pg_trgm` extension, covered in Module 46.
+      On 10 rows you won't notice. On 10 million, it's seconds per search. The fix is a *trigram* index from the `pg_trgm` extension, which ships with PostgreSQL: `CREATE EXTENSION pg_trgm;` then `CREATE INDEX ON books USING gin (title gin_trgm_ops);`.
 
   - kind: info
     title: "🔹 SIMILAR TO"
@@ -182,5 +182,5 @@ steps:
       - Pieces: `.` `\d` `\s` `[a-z]` `*` `+` `?` `{n}` `|` `\.`.
       - `regexp_replace(t, p, new, 'g')`, `regexp_substr`, `regexp_matches(…, 'g')`, `regexp_split_to_table`.
       - Clean with `trim`, `regexp_replace('\s+', ' ')`, `initcap` / `lower`, ideally on the way in.
-      - Leading-wildcard LIKE and regex can't use normal indexes. `pg_trgm` fixes that (Module 46).
+      - Leading-wildcard LIKE and regex can't use normal indexes. A trigram index (the `pg_trgm` extension) fixes that.
       - 🔹 SIMILAR TO exists. Use `~`.

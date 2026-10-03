@@ -3,19 +3,19 @@ questions:
   - type: mcq
     prompt: "What can a container query do that a media query can't?"
     options:
-      - "Change a component based on the width of the element it sits in, not the screen"
-      - "Detect dark mode"
-      - "Change the HTML"
-      - "Work without CSS"
+      - Change a component based on the width of the space it sits in
+      - Change a component based on the width of the browser window
+      - Change a component based on how many items it contains
+      - "Change a component based on the device: phone, tablet or desktop"
     answer: 0
     explanation: "The same card can adapt differently in a sidebar and in a main column on the same screen."
   - type: mcq
     prompt: "An element has `container-type: inline-size`. Can a rule in `@container (width > 500px)` style that element itself?"
     options:
-      - "No, only its descendants"
-      - "Yes, any property"
-      - "Only its height"
-      - "Only if it's named"
+      - No, only its descendants
+      - Yes, it can change any of its own properties
+      - Only its height
+      - Only if it's named
     answer: 0
     explanation: "A container can't query itself; wrap the component or style its inner parts."
   - type: mcq
@@ -26,9 +26,9 @@ questions:
   - type: mcq
     prompt: "How do you target a specific ancestor container rather than the nearest one?"
     options:
-      - "Give it a `container-name` and write `@container thatname (…)`"
-      - "Use a higher z-index"
-      - "Use `@media` instead"
-      - "Add an id to the query"
+      - Give it a `container-name` and write `@container thatname (…)`
+      - Give the parent a higher z-index so its query is matched first
+      - Use `@media` instead, which always measures the nearest parent
+      - "Add an id to the container and write `@container #id (…)`"
     answer: 0
     explanation: "Named containers can be targeted directly."

@@ -47,7 +47,7 @@ steps:
       - **Every DELETE** leaves index entries to clean up.
       - Indexes take **disk space and memory**, sometimes more than the table itself.
 
-      So: **index what your queries actually filter, join or sort on**, not every column "just in case". A table with 15 indexes can be painfully slow to write to. Module 50 shows how to find indexes nobody uses.
+      So: **index what your queries actually filter, join or sort on**, not every column "just in case". A table with 15 indexes can be painfully slow to write to. The built-in view `pg_stat_user_indexes` shows how often each index is used (`idx_scan`), so you can find the ones nobody uses.
 
   - kind: explain
     title: Multi-column indexes, and why order matters
@@ -168,14 +168,14 @@ steps:
       - It **can't run inside a transaction block** (no BEGIN around it).
       - If it fails partway, it leaves an **INVALID** index behind. Drop it and try again.
 
-      **On production tables, always use CONCURRENTLY** (Module 41).
+      **On production tables, always use CONCURRENTLY.**
 
   - kind: info
     title: "🔹 GiST, BRIN and hash"
     body: |
       Other index types for special jobs:
 
-      - **GiST**: for geometric data, ranges and "overlaps" questions. It powers exclusion constraints (Module 40) and PostGIS maps.
+      - **GiST**: for geometric data, ranges and "overlaps" questions. It powers exclusion constraints and PostGIS maps.
       - **BRIN**: tiny indexes for **huge** tables where values follow the physical order, like an append-only log sorted by time. It stores just "this block of pages holds dates from X to Y".
       - **Hash**: equality (`=`) only. Rarely better than a B-tree.
 

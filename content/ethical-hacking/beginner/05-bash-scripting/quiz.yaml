@@ -12,19 +12,19 @@ questions:
   - type: mcq
     prompt: "In the command `ps aux | grep ssh`, what does the pipe `|` do?"
     options:
-      - It runs the two commands at the same time
+      - It runs both commands at the same time, side by side
       - It sends the output of `ps aux` into `grep` as its input
-      - It saves the output to a file called ssh
-      - It deletes the ssh process
+      - It saves the output of `ps aux` to a file named ssh
+      - It runs `grep` only if `ps aux` finished without errors
     answer: 1
     explanation: A pipe feeds the first command's output into the next command. Here, the full process list is filtered down to lines mentioning ssh.
   - type: mcq
     prompt: "What is the difference between `>` and `>>` when writing to a file?"
     options:
-      - There is none
+      - "`>` appends to the end of the file; `>>` overwrites it"
       - "`>` overwrites the file; `>>` appends to the end of it"
-      - "`>` appends; `>>` overwrites"
-      - "`>` writes text; `>>` writes numbers"
+      - "`>` writes to the screen; `>>` writes to a file instead"
+      - "`>` creates a new file; `>>` fails if the file is missing"
     answer: 1
     explanation: "`>` replaces the file's contents (easy to lose data), while `>>` adds to the end. Reach for `>>` when you want to keep what is already there."
   - type: mcq

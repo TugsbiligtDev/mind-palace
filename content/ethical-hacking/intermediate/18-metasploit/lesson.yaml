@@ -56,7 +56,7 @@ steps:
       - `getuid` — which user am I running as? (the start of thinking about privilege escalation, Module 24)
       - file access, and `help` to list what is available.
 
-      Meterpreter runs in memory and avoids writing much to disk, which is part of why it is effective — and part of why defenders invest in memory-aware detection (EDR, an Advanced topic). For now, the point is that a successful exploit lands you in a *session* from which the next phase, post-exploitation, begins.
+      Meterpreter runs in memory and avoids writing much to disk, which is part of why it is effective — and part of why defenders invest in memory-aware detection (EDR, endpoint detection and response). For now, the point is that a successful exploit lands you in a *session* from which the next phase, post-exploitation, begins.
 
   - kind: explain
     title: Why exploits fail — the common mistakes

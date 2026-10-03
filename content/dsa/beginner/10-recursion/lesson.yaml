@@ -124,7 +124,7 @@ steps:
        fib(1) fib(0)
       ```
 
-      Every level roughly **doubles** the number of calls, so the tree has about 2ⁿ nodes. That is O(2ⁿ): `fib(40)` makes over 300 million calls. (Module 28 shows how to fix that.)
+      Every level roughly **doubles** the number of calls, so the tree has about 2ⁿ nodes. That is O(2ⁿ): `fib(40)` makes over 300 million calls. The fix is called **memoization**: store each `fib(k)` in a `Map` the first time you compute it, and look it up after that. Then each value is computed once, and the whole thing is O(n).
 
   - kind: code
     title: Count the calls

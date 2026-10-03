@@ -31,15 +31,15 @@ questions:
   - type: mcq
     prompt: Why is checking only a node's direct children not enough to validate a BST?
     options:
-      - It is enough
+      - "It is enough: if every parent and child pair is in order, so is the tree"
       - A deeper node can break the rule with respect to a distant ancestor
-      - Leaves cannot be checked
-      - Children are always valid
+      - Leaves can't be checked this way, because they have no children at all
+      - Only the root needs checking, since every subtree is built from it
     answer: 1
     explanation: The rule applies to every node in a subtree. A value deep on the right side of the root must still be bigger than the root.
   - type: mcq
     prompt: When deleting a node with two children, which value replaces it?
-    options: ["The root", "Its inorder successor (smallest value in its right subtree)", "Its left child", "Zero"]
+    options: ["Its parent, which moves down to take its place", "Its inorder successor: the smallest value on its right", "Its left child, which moves up to take its place in the tree", "The root, which is then rebalanced afterwards"]
     answer: 1
     explanation: The successor is the next value in sorted order, so putting it in that spot keeps the BST rule intact.
   - type: mcq

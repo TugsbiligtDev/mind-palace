@@ -3,28 +3,28 @@ questions:
   - type: mcq
     prompt: Why does the LinkedList keep a `tail` pointer?
     options:
-      - So it can be walked backwards
+      - So the list can be walked backwards from the end
       - So `append` is O(1) instead of walking the whole list
-      - So `remove` is O(1)
-      - It has no purpose
+      - So `remove` can delete any node in the list in O(1) time
+      - So `size` can be read without counting the nodes
     answer: 1
     explanation: Without a tail you walk from the head to find the end, which costs O(n) for every append.
   - type: mcq
     prompt: Your Queue's `dequeue` uses `items.shift()`. What is wrong with that?
     options:
-      - It returns the wrong item
-      - Each dequeue is O(n), because the remaining items slide forward
-      - It cannot work on numbers
-      - Nothing, it is optimal
+      - It removes the last item instead of the first one
+      - Each dequeue is O(n), as the remaining items slide forward
+      - It throws a TypeError as soon as the queue holds numbers
+      - Nothing; shift() is the fastest way to dequeue
     answer: 1
     explanation: A `head` index makes dequeue O(1), because nothing moves.
   - type: mcq
     prompt: Which pair correctly describes merge sort?
     options:
-      - O(n²) time, in place
+      - O(n²) time in the worst case, sorted in place
       - O(n log n) time, O(n) extra space, stable
-      - O(n) time, stable
-      - O(n log n) time, O(1) space, unstable
+      - O(n log n) time, O(1) extra space, unstable
+      - O(n) time on any input, and stable as well
     answer: 1
     explanation: There are log n levels of merging, each doing n work, and the merged arrays use O(n) extra space. Taking equal items from the left keeps it stable.
   - type: predict
@@ -48,9 +48,9 @@ questions:
   - type: mcq
     prompt: Quickselect finds the k-th smallest item in average O(n) because it...
     options:
-      - Sorts the whole array
+      - Sorts the whole array first, then picks item k
       - Recurses into only one side of each partition
-      - Uses a hash map
-      - Looks at only the first k items
+      - Uses a hash map to count how often each item appears
+      - Looks at only the first k items of the array
     answer: 1
     explanation: After partitioning, it knows which side holds position k and throws the other side away. The work shrinks like n + n/2 + n/4 + …

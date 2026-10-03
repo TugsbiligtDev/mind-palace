@@ -24,23 +24,23 @@ questions:
   - type: mcq
     prompt: How does a trie handle the wildcard `.` in a search pattern?
     options:
-      - It ignores it
-      - It tries every child at that position and succeeds if any branch matches
-      - It fails immediately
-      - It replaces it with "a"
+      - It skips that position and checks the rest of the word
+      - It tries every child there and succeeds if any branch matches
+      - It fails straight away, since `.` is not a letter in the trie
+      - It treats `.` as the end of the word and checks the node
     answer: 1
     explanation: A wildcard can match any letter, so the search has to explore all children with recursion.
   - type: mcq
     prompt: A `Set` of words cannot easily answer which question that a trie can?
-    options: ["Is this exact word stored?", "Which stored words start with this prefix?", "How many words are stored?", "Is the set empty?"]
+    options: [Is this exact word stored in the collection?, Which stored words start with this prefix?, How many different words are stored in it?, Does the collection contain any words at all?]
     answer: 1
     explanation: A Set only answers exact membership. Finding prefixes would mean checking every word.
   - type: mcq
     prompt: Why must `search("app")` return false if only "apple" was inserted?
     options:
-      - The word is too short
-      - "\"app\" is only a prefix. No word ends at that node"
-      - Tries do not store short words
-      - It should return true
+      - The word is too short for a trie to store on its own
+      - '"app" is only a prefix: no word ends at that node'
+      - Tries only store words longer than three letters
+      - It should return true, since every letter of "app" is there
     answer: 1
     explanation: The path exists, but only the end-of-word flag tells you that a full word finishes there.

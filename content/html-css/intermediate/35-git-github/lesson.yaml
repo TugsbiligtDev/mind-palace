@@ -53,7 +53,7 @@ steps:
   - kind: mac
     title: Your first commits
     body: |
-      Put your capstone site from Module 22 under version control:
+      Put your Capstone 1 site (`~/websites/my-site`) under version control:
 
       1. `cd` into its folder.
       2. `git init` creates a new, empty repository (a hidden `.git` folder).
@@ -108,7 +108,7 @@ steps:
     title: Push to GitHub
     body: |
       1. Create a free account at **github.com**.
-      2. Install the GitHub command-line tool and log in (it handles passwords and keys for you): `brew install gh` (or download it from cli.github.com), then `gh auth login` and follow the prompts (choose GitHub.com, HTTPS, log in with a browser).
+      2. Install the GitHub command-line tool and log in (it handles passwords and keys for you): download the macOS installer from **cli.github.com** (or, if you use Homebrew, `brew install gh`), then `gh auth login` and follow the prompts (choose GitHub.com, HTTPS, log in with a browser).
       3. From your site's folder, create a GitHub repository and push your commits in one step.
       4. Open the repo in the browser to see your files online.
 

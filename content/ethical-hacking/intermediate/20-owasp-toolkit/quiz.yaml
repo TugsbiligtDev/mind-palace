@@ -3,19 +3,19 @@ questions:
   - type: mcq
     prompt: What is the OWASP Top 10?
     options:
-      - A web-scanning tool
-      - An industry-standard list of the ten most critical categories of web application risk, used as a shared checklist
-      - The ten best hackers
-      - A password wordlist
+      - A free scanner from OWASP that tests a site for the ten most common web flaws
+      - A standard list of the ten most critical web application risk categories
+      - A ranking of the ten most dangerous CVEs published each year
+      - A certification for web testers, with ten exam modules
     answer: 1
     explanation: The OWASP Top 10 is a regularly-updated catalogue of the most critical web risks. Testers use it as coverage; defenders use it as a priority list.
   - type: mcq
     prompt: Why is an intercepting proxy like Burp Suite so central to web testing?
     options:
-      - It makes pages load faster
-      - It lets you see and edit each request *after* the browser sends it, so you test what the server actually accepts rather than what the browser enforces
-      - It encrypts your traffic
-      - It blocks ads
+      - It finds and exploits vulnerabilities automatically while you browse
+      - You can see and edit each request after the browser checks it
+      - It hides your IP address, so the target can't block your testing
+      - It decrypts the site's database traffic, so you can read the data
     answer: 1
     explanation: Browser-side checks (hidden fields, JS validation) are not real security. Editing the request in Burp tests the server, which is the only thing that can truly enforce the rules.
   - type: mcq
@@ -30,18 +30,18 @@ questions:
   - type: mcq
     prompt: What do content-discovery tools like gobuster and ffuf do?
     options:
-      - Crack password hashes
-      - Request many likely paths from a wordlist to find unlinked pages and files such as /admin, /backup and /.git
-      - Capture network packets
-      - Scan for open ports
+      - Crawl every link on the site to build a map of its pages
+      - Request likely paths from a wordlist to find unlinked pages
+      - Brute-force the login form with a list of common passwords
+      - Scan the server for open ports and the web services behind them
     answer: 1
     explanation: They brute-force likely URLs to reveal content that exists but is not linked — often high-value finds like admin panels or an exposed .git source folder.
   - type: mcq
     prompt: Why can automated web scanners miss access-control and logic flaws?
     options:
-      - Scanners are always offline
-      - A scanner does not understand the application's intent — e.g. that user A should not see user B's invoice; a human who grasps the logic is needed
-      - Those flaws do not exist
-      - Scanners only test passwords
+      - Scanners skip any page that needs a login to reach
+      - A scanner doesn't know the app's intent, like who may see which invoice
+      - Those flaws only show up in the source code, never in the server's responses
+      - Scanners are tuned to avoid false positives, so they ignore them
     answer: 1
     explanation: Access-control and business-logic bugs depend on what the app is *supposed* to allow. Tools lack that context, so human judgement remains essential.

@@ -13,10 +13,10 @@ questions:
   - type: mcq
     prompt: Students take many courses, and each course has many students. How do you model it?
     options:
-      - A `course_id` column in students
-      - A `student_id` column in courses
-      - A junction table with a `student_id` FK, a `course_id` FK, and a composite primary key
-      - A text column listing course names
+      - A `course_id` column in students, one per student
+      - A `student_id` column in courses, one per course
+      - A junction table with `student_id` and `course_id` FKs and a composite key
+      - A text column in students listing every course name, separated by commas
     answer: 2
     explanation: Many-to-many needs a junction table. Each row links one student to one course, and the composite PK stops duplicate links.
 

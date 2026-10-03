@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: When you open a website, what does your browser actually receive from the server?
     options:
-      - "Files, such as HTML, CSS and images, which the browser turns into a page"
-      - "A finished picture of the page, ready to display"
-      - "A copy of the server's whole hard drive"
-      - "Only the text; the browser invents the colors and layout"
+      - Files, such as HTML, CSS and images, which the browser turns into a page
+      - A finished picture of the page, drawn by the server and ready to display
+      - Only the text; the browser chooses the colors and layout by itself
+      - A program that runs on your computer and draws the page from scratch
     answer: 0
     explanation: "The server sends files. Your browser reads the HTML, requests the CSS and images it mentions, and draws the page itself."
   - type: mcq
@@ -22,18 +22,18 @@ questions:
   - type: mcq
     prompt: "You click a link and see **404 Not Found**. What happened?"
     options:
-      - "The server has no file at the path you asked for"
-      - "The server crashed"
-      - "Your internet connection dropped"
-      - "The page loaded but has no CSS"
+      - The server has no file at the path you asked for
+      - The server crashed while it was building the page
+      - Your internet connection dropped during the request
+      - You aren't allowed to see that page without a login
     answer: 0
     explanation: "404 means the request reached the server, but nothing lives at that path. A typo in a link is the usual cause. A crashed server sends a 500-range code."
   - type: mcq
     prompt: What does the padlock of **HTTPS** protect?
     options:
-      - "It encrypts the traffic between your browser and the server, and confirms the server's identity"
-      - "It guarantees the website is honest and safe to buy from"
-      - "It makes the page load faster"
-      - "It hides the site's HTML from your browser"
+      - It encrypts traffic to the server and confirms the server's identity
+      - It guarantees the website is honest and safe to buy things from
+      - It hides which websites you visit from your internet provider and from your employer
+      - It scans the page for viruses before your browser shows it
     answer: 0
     explanation: "HTTPS protects the connection: nobody in between can read or change it, and the certificate proves which domain you're talking to. It says nothing about whether the site's owner is trustworthy."

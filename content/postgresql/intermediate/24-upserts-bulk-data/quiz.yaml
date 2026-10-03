@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: "What must be true of the column in `ON CONFLICT (email)`?"
     options:
-      - It must be text
+      - It must be a text column
       - It must have a UNIQUE constraint or be the primary key
-      - It must be NOT NULL
-      - It must be the first column
+      - It must be NOT NULL, with no default value set on the column
+      - It must be the first column in the table
     answer: 1
     explanation: A conflict means "this value already exists". PostgreSQL can only detect that through a unique index, from a UNIQUE or PRIMARY KEY constraint.
 
@@ -38,19 +38,19 @@ questions:
   - type: mcq
     prompt: Your database is in the cloud and the CSV is on your laptop. Which do you use?
     options:
-      - "`COPY … FROM 'file.csv'`"
+      - "`COPY … FROM 'file.csv'` on the server"
       - "`\\copy … FROM 'file.csv'` in psql"
-      - "`INSERT … FROM 'file.csv'`"
-      - "`MERGE … USING 'file.csv'`"
+      - "`INSERT … FROM 'file.csv'` in psql"
+      - "`COPY … FROM '/Users/me/file.csv'` with a full path"
     answer: 1
     explanation: "`COPY … FROM 'file'` reads from the server's own disk. `\\copy` reads the file on your computer and streams it to the server."
 
   - type: mcq
     prompt: A CSV import keeps failing on a few bad rows. What's the robust approach?
     options:
-      - Delete the bad rows from the file by hand every time
-      - Load everything into an all-text staging table, then clean and convert with INSERT … SELECT
-      - Change every column in the real table to text
-      - Use UNION ALL
+      - Delete the bad rows from the file by hand before every import
+      - Load into an all-text staging table, then clean with INSERT … SELECT
+      - Change every column in the real table to text, so nothing fails
+      - Import row by row with separate INSERTs, skipping each row that raises an error
     answer: 1
     explanation: Text columns accept anything, so the load can't fail. Then you find and fix bad values with queries, and convert into properly typed columns.

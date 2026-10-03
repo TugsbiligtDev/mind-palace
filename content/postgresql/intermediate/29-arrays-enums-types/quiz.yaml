@@ -15,10 +15,10 @@ questions:
   - type: mcq
     prompt: Each employee speaks several languages, and each language needs a proficiency level and a certification date. What's the best design?
     options:
-      - A text[] column of language codes on employees
-      - A junction table employee_languages (employee_id, language_id, level, certified_on)
-      - A jsonb column
-      - One column per language
+      - A text[] column of language codes on employees, plus a level[] column
+      - A junction table employee_languages with level and certified_on columns
+      - A jsonb column on employees holding every language and its details
+      - One column per language on employees, with its level as the value
     answer: 1
     explanation: Once each link has its own facts, and languages deserve foreign keys, a junction table is the right tool.
 

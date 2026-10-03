@@ -37,9 +37,9 @@ questions:
   - type: mcq
     prompt: "Why use a spacing scale (--space-1, --space-2…) instead of any value you like?"
     options:
-      - "Fewer, consistent sizes make every page look coherent and easy to change"
-      - "Browsers render scale values faster"
-      - "Custom values are invalid"
-      - "It's required for dark mode"
+      - Fewer, consistent sizes keep pages coherent and easy to change
+      - Browsers render values from a scale faster than other values
+      - Custom properties only accept values that follow a scale
+      - A scale is required for spacing to adapt to dark mode
     answer: 0
     explanation: "A scale limits choices to a harmonious set, so spacing stays consistent across pages and people."

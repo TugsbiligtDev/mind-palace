@@ -8,15 +8,15 @@ questions:
   - type: mcq
     prompt: "What does `@scope (.card) to (.card__body) { p { … } }` style?"
     options:
-      - "Paragraphs inside .card but not those inside .card__body"
-      - "Only paragraphs inside .card__body"
-      - "Every paragraph between two cards"
-      - "Paragraphs after .card"
+      - Paragraphs inside .card but not those inside .card__body
+      - Only the paragraphs that are inside .card__body
+      - Every paragraph on the page, except those inside .card
+      - Paragraphs inside .card__body, and in .card after it
     answer: 0
     explanation: "The `to` limit cuts a hole: a donut scope."
   - type: mcq
     prompt: "Two scoped rules have equal specificity and both match. Which wins?"
-    options: ["The one whose scope root is closest to the element", "The first one written", "The longer selector", "Neither applies"]
+    options: [The one whose scope root is closest to the element, The one that was written first in the stylesheet, "The one with the longer, more specific selector", "Both apply, and their declarations are merged"]
     answer: 0
     explanation: "Scoping proximity is a cascade step after specificity and before order."
   - type: mcq

@@ -35,6 +35,10 @@ function checkQuizShape(t: CheckTopic): boolean[] {
     checks++;
     const ok = q.type === "fill" || (q.answer >= 0 && q.answer < q.options.length);
     if (!ok) fail(`${t.key} quiz Q${i + 1}`, "answer index is out of range");
+    // The quiz trims what the learner types and won't let them check an empty box,
+    // so an answer that is only spaces can never be given.
+    if (q.type === "fill" && [q.answer, ...q.accept].some((a) => !a.trim()))
+      fail(`${t.key} quiz Q${i + 1}`, "a fill answer is only spaces, which the quiz can't accept");
     return ok;
   });
 }

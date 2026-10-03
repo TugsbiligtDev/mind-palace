@@ -135,7 +135,7 @@ steps:
     body: |
       Write `spending_by_category(ledger)`: a dictionary from category to the total spent there (a positive number of cents). Only negative transactions count. Categories with no spending must not appear. The dictionary must be ordered from the **biggest** spend to the smallest (ties: alphabetical by category).
 
-      The `sorted(..., key=..., )` function can order the items; then rebuild a dict.
+      `sorted(totals.items(), key=...)` orders the `(category, cents)` pairs, and `dict(...)` rebuilds a dictionary in that order. The `key` is a function that says what to sort by. A **lambda** is a one-line function without a name: `lambda item: (-item[1], item[0])` takes a pair and returns "minus the cents, then the category", so bigger spends come first and ties go alphabetically. (Intermediate Module 26 covers lambdas properly.)
     code: |
       def spending_by_category(ledger):
           # your code

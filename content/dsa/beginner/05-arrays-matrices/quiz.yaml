@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: Why is reading `arr[500]` an O(1) operation?
     options:
-      - The array is sorted
-      - Items sit side by side in memory, so the computer jumps straight to the position
-      - JavaScript caches every index
-      - It is not O(1); it is O(n)
+      - The array is sorted, so the computer can find index 500 quickly
+      - Items sit side by side in memory, so the computer jumps to the spot
+      - JavaScript caches every index the first time the array is created
+      - "It isn't O(1): the computer counts from 0 up to 500 to get there"
     answer: 1
     explanation: A contiguous block lets the computer calculate where position 500 lives with one step of arithmetic.
   - type: predict

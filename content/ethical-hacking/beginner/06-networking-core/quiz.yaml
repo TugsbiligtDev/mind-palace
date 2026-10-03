@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: "A client scopes your engagement as `192.168.1.0/24`. Roughly how many host addresses does that cover, and what is fixed?"
     options:
-      - "One machine; all four numbers are fixed"
-      - "About 254 machines; the first three numbers (192.168.1) are fixed and the last varies"
-      - "About 65,000 machines; only 192.168 is fixed"
-      - "The entire internet"
+      - One machine; all four numbers (192.168.1.0) are fixed
+      - About 254 machines; 192.168.1 is fixed and the last part varies
+      - About 65,000 machines; only 192.168 is fixed and the rest varies
+      - 24 machines; the /24 is the number of hosts in scope
     answer: 1
     explanation: "`/24` fixes the first 24 bits — the first three numbers — leaving the last number (1–254) free, so about 254 hosts. Staying inside this range is your legal boundary."
   - type: mcq
@@ -21,19 +21,19 @@ questions:
   - type: mcq
     prompt: What is the key difference between a switch and a router?
     options:
-      - A switch is faster; a router is slower
-      - A switch connects machines within one local network (by MAC); a router connects different networks (by IP)
-      - A switch is software; a router is hardware
-      - There is no difference
+      - A switch connects you to the internet; a router links devices in one room
+      - A switch links machines in one local network; a router links different networks
+      - A switch is the wireless part of a network; a router is the wired part
+      - A switch hands out IP addresses to devices; a router only passes their data along unchanged
     answer: 1
     explanation: Switches forward frames inside a single network using MAC addresses; routers forward packets between networks using IP addresses, choosing the next hop.
   - type: mcq
     prompt: Why can your laptop, phone and TV all share one public IP address?
     options:
-      - They take turns being online
-      - The router uses NAT to translate their private addresses to its single public address and back
-      - They secretly use IPv6
-      - Public IPs are unlimited
+      - Each device takes turns using the public address, one at a time
+      - The router uses NAT to map their private addresses to its one public one
+      - Your provider gives the router one public address per device it sees
+      - The devices use MAC addresses on the internet, so IPs don't need to differ
     answer: 1
     explanation: NAT (Network Address Translation) lets many private addresses share one public address. From outside, you often see only the router, not the machines behind it.
   - type: fill

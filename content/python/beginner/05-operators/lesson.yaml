@@ -32,7 +32,7 @@ steps:
   - kind: code
     title: Split the bill
     body: |
-      Four friends split a bill of `total` cents. Finish `split_bill(total, people)`. It returns two numbers in a pair: what **each person pays** (whole cents) and the **leftover** cents nobody can split.
+      A group of friends split a bill of `total` cents. Finish `split_bill(total, people)`. It returns two numbers in a pair: what **each person pays** (whole cents) and the **leftover** cents nobody can split.
 
       `split_bill(1000, 3)` gives `(333, 1)`. You will need `//` and `%`.
     code: |

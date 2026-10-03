@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: Why does each project get its own virtual environment?
     options:
-      - So projects can use different versions of the same package without clashing
-      - It makes Python run faster
-      - Python refuses to run without one
-      - To save disk space
+      - So projects can use different versions of the same package
+      - So Python runs faster, since it searches fewer folders
+      - Because Python refuses to install packages without one
+      - To save disk space by sharing packages between projects
     answer: 0
     explanation: Separate environments keep one project's packages from breaking another's.
   - type: mcq
@@ -32,8 +32,8 @@ questions:
     prompt: What is the difference between pyproject.toml and uv.lock?
     options:
       - pyproject.toml lists what you asked for; uv.lock records exactly what was installed
-      - They are identical
-      - uv.lock is for Windows only
-      - pyproject.toml holds passwords
+      - pyproject.toml is for your own computer; uv.lock is what other people use to run it
+      - uv.lock lists what you asked for; pyproject.toml records exactly what was installed
+      - They hold the same list; uv.lock is just a faster copy that uv reads at start-up
     answer: 0
     explanation: The lock file pins exact versions so everyone gets the same setup.

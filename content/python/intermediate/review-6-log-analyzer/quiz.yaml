@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: Why does the analyzer read the log with a generator instead of `f.read().splitlines()`?
     options:
-      - It processes one line at a time, so a huge file never has to fit in memory
-      - Generators are always faster
-      - "`read()` is deprecated"
-      - It sorts the lines
+      - It handles one line at a time, so a huge file never has to fit in memory
+      - Generators are always faster than lists, whatever the size of the log file is
+      - "`read()` is deprecated in Python 3.14, so new code must use generators"
+      - A generator reads the lines in sorted order, which the analyzer needs
     answer: 0
     explanation: Lazy generators keep memory use tiny regardless of file size.
   - type: predict
@@ -21,9 +21,9 @@ questions:
   - type: mcq
     prompt: Why should `main(argv)` return its results instead of only printing them?
     options:
-      - A returned value is easy to test; printing can be done in the `__main__` block
-      - Printing is not allowed in functions
-      - It runs faster
-      - argparse requires it
+      - A returned value is easy to test; printing happens in the `__main__` block
+      - Functions aren't allowed to print; only the `__main__` block can do that
+      - Returning is faster than printing, which matters for very large log files
+      - argparse requires main() to return a value, or it reports an error
     answer: 0
     explanation: Separating logic from output makes functions testable and reusable.

@@ -23,10 +23,10 @@ questions:
   - type: mcq
     prompt: Why is `queue.pop(0)` on a list a poor way to take from the front of a queue?
     options:
-      - Every remaining item has to shift, so it is O(n). Use deque.popleft().
-      - It raises an error
-      - It returns the last item
-      - It changes the list type
+      - Every remaining item must shift, so it is O(n); use deque.popleft()
+      - It raises an IndexError, because lists can only pop from the end
+      - It returns the last item, not the first, unless the list is sorted
+      - It is O(1) but turns the list into a tuple, so it can't grow again
     answer: 0
     explanation: "A `deque` removes from the front in O(1)."
   - type: mcq

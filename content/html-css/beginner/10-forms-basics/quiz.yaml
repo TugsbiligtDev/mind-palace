@@ -17,19 +17,19 @@ questions:
   - type: mcq
     prompt: Three radio buttons for "Small", "Medium" and "Large" all let you pick more than one at once. What's wrong?
     options:
-      - "They don't share the same `name`"
-      - "They need `type=\"checkbox\"`"
-      - "They're missing a `<legend>`"
-      - "They need different ids"
+      - They don't share the same `name`
+      - They need `type="checkbox"` instead
+      - They're missing a `<legend>` element
+      - Each one needs its own matching `for`
     answer: 0
     explanation: "Radio buttons only form one pick-one group when they share a `name`."
   - type: mcq
     prompt: Why isn't a placeholder a good replacement for a label?
     options:
-      - "It vanishes when you start typing, is often faint, and isn't reliably read out as the field's name"
-      - "Placeholders don't work in modern browsers"
-      - "Placeholders are sent to the server instead of the value"
-      - "It's fine; placeholders and labels are the same"
+      - It vanishes as you type, is often faint, and isn't reliably read out
+      - Placeholders are sent to the server instead of what the user typed
+      - Modern browsers hide placeholders on phones to save space
+      - "It is fine: screen readers treat a placeholder exactly like a label"
     answer: 0
     explanation: "Use a real label for the name. A placeholder can show an example format at most."
   - type: mcq

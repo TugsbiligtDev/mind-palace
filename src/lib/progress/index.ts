@@ -1,12 +1,9 @@
 "use client";
 // The rules of the game (XP, streaks, ranks) and every action that changes progress.
-import { empty, load, save, update, write, type Progress } from "./store";
+import { empty, load, save, update, write, XP, type Progress } from "./store";
 
 export { useProgress, type Progress } from "./store";
 export { useSyncStatus } from "./sync";
-
-const XP = { lessonStep: 2, lesson: 20, quiz: 30 } as const;
-
 
 export const RANKS = [
   { title: "Rookie", min: 0 },
@@ -131,5 +128,5 @@ export function recordQuiz(key: string, score: number, total: number, pass: numb
 }
 
 export function resetProgress() {
-  save(empty());
+  save({ ...empty(), resetAt: new Date().toISOString() });
 }

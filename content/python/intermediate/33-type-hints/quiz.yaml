@@ -19,9 +19,9 @@ questions:
     prompt: What is the main benefit of running mypy on your code?
     options:
       - It finds type mistakes before the program runs
-      - It makes the program faster
-      - It converts types automatically at runtime
-      - It replaces testing
+      - It makes the program run faster at runtime
+      - It converts values to the right types as the program runs
+      - It replaces the need to write tests for the code
     answer: 0
     explanation: "A type checker analyses your hints statically. Tests are still needed for behaviour."
   - type: predict

@@ -28,10 +28,10 @@ questions:
   - type: mcq
     prompt: Two Sum asks for two positions whose values add to a target. Which idea makes it O(n)?
     options:
-      - Sort the array first
-      - For each number, look up its complement in a Map of numbers seen so far
-      - Try every pair
-      - Use recursion
+      - Sort the array first, then scan it once from both ends
+      - Look up each number's complement in a Map of numbers seen
+      - Try every pair, but stop as soon as one of them matches
+      - Use recursion to split the array in half and search both sides
     answer: 1
     explanation: The map answers "have I already seen `target - x`?" in O(1), so one pass is enough.
   - type: fill

@@ -229,7 +229,7 @@ steps:
             - id: ruff-format
       ```
 
-      Then install it once per clone: `uv run pre-commit install`. From then on, `git commit` runs Ruff on the changed files. (Use the current release number from the project's page for `rev`.) Teams pair it with the same checks running in automated pipelines (Advanced, CI).
+      Then install it once per clone: `uv run pre-commit install`. From then on, `git commit` runs Ruff on the changed files. (Use the current release number from the project's page for `rev`.) Teams also run the same checks automatically on every push (for example with GitHub Actions), so nothing slips through.
 
   - kind: mac
     title: Install a pre-commit hook

@@ -3,19 +3,19 @@ questions:
   - type: mcq
     prompt: "What's the difference between Prettier and Stylelint?"
     options:
-      - "Prettier rewrites code into a consistent format; Stylelint reports likely mistakes and bad practices in CSS"
-      - "They do the same job"
-      - "Prettier checks accessibility; Stylelint checks HTML"
-      - "Stylelint formats; Prettier finds bugs"
+      - Prettier rewrites code into a consistent format; Stylelint reports CSS mistakes
+      - They do the same job, so a project only ever needs one of the two tools
+      - Prettier checks accessibility problems; Stylelint checks the structure of the HTML
+      - Stylelint rewrites the formatting; Prettier finds bugs in the CSS rules
     answer: 0
     explanation: "One is a formatter, the other a linter. Use both."
   - type: mcq
     prompt: "Why put `node_modules/` in `.gitignore`?"
     options:
-      - "It's large and can be re-installed from package.json at any time"
-      - "It contains secrets"
-      - "GitHub refuses folders"
-      - "Prettier requires it"
+      - It's large and can be re-installed from package.json any time
+      - It contains your passwords and API keys in plain text
+      - GitHub refuses to store folders with more than 1,000 files
+      - Prettier won't run while that folder is tracked by Git
     answer: 0
     explanation: "package.json (and its lock file) record what to install; the folder itself doesn't belong in Git."
   - type: mcq
@@ -26,9 +26,9 @@ questions:
   - type: mcq
     prompt: "Why commit Prettier's formatting changes separately?"
     options:
-      - "So real changes aren't buried in hundreds of spacing changes in the history"
-      - "Git can't commit them with other changes"
-      - "Prettier requires it"
-      - "It makes the site faster"
+      - So real changes aren't buried among hundreds of spacing changes
+      - Git can't commit formatting changes together with other changes
+      - Prettier refuses to run if there are uncommitted changes
+      - Formatting commits make the published site load faster
     answer: 0
     explanation: "A clean history makes it easy to see what actually changed in each commit."

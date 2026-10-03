@@ -44,9 +44,9 @@ questions:
   - type: mcq
     prompt: What's the key difference between `timestamptz` and `timestamp`?
     options:
-      - timestamptz can't store times, only dates
-      - timestamptz stores an exact moment and displays it in your time zone. timestamp is a wall-clock time with no zone
-      - timestamp is newer and replaces timestamptz
-      - There is no difference
+      - timestamptz stores only dates; timestamp stores a date and a time
+      - timestamptz is an exact moment shown in your zone; timestamp has no zone
+      - timestamp is the newer type and replaces timestamptz in PostgreSQL 18
+      - timestamptz stores the zone's name; timestamp converts everything to UTC
     answer: 1
     explanation: A `timestamptz` pins down a real moment in time. A plain `timestamp` like "14:00" doesn't say *where* it was 14:00, which is why timestamptz is the safer default.

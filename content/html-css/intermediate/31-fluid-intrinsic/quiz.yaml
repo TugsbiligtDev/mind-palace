@@ -8,10 +8,10 @@ questions:
   - type: mcq
     prompt: "What does `width: min(100%, 700px)` do?"
     options:
-      - "Full width on small screens, but never wider than 700px"
-      - "Always 700px"
-      - "At least 700px"
-      - "Half of 700px"
+      - Full width on small screens, but never wider than 700px
+      - Always 700px wide, unless the screen is narrower than that
+      - At least 700px wide, growing to full width on big screens
+      - "Whichever is wider: the full width of the parent or 700px"
     answer: 0
     explanation: "min() picks the smaller of the two at every screen size."
   - type: mcq

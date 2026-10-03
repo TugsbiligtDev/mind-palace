@@ -2,34 +2,34 @@ pass: 3
 questions:
   - type: mcq
     prompt: "How do you make a group of `<details>` elements behave so only one can be open at a time?"
-    options: ["Give them all the same `name`", "Wrap them in a `<form>`", "Add `exclusive` to each", "Use `popover`"]
+    options: [Give them all the same `name`, Give them all the same `id`, Wrap them in a `<fieldset>`, Add `open` to only the first one]
     answer: 0
     explanation: "details elements sharing a name form an exclusive accordion."
   - type: mcq
     prompt: "What does opening a `<dialog>` as a modal give you that a styled `<div>` doesn't?"
     options:
-      - "The page behind becomes inert, focus moves into the dialog, and Escape closes it"
-      - "A colored border"
-      - "Automatic translation"
-      - "Nothing; they're the same"
+      - The page behind goes inert, focus moves in, and Escape closes it
+      - A dark backdrop, but focus and the keyboard work as on a div
+      - It stays fixed in place while the page behind it scrolls
+      - Nothing; a styled div with `role="dialog"` behaves the same in every way
     answer: 0
     explanation: "Modal dialogs handle focus, keyboard and the backdrop correctly with no extra code."
   - type: mcq
     prompt: "Which markup makes a button open a dialog as a modal without JavaScript?"
     options:
-      - "`<button commandfor=\"d\" command=\"show-modal\">`"
-      - "`<button popovertarget=\"d\">`"
-      - "`<button href=\"#d\">`"
-      - "`<button open=\"d\">`"
+      - '`<button commandfor="d" command="show-modal">`'
+      - '`<button popovertarget="d" command="open-modal">`'
+      - '`<button commandfor="d" command="open">`'
+      - '`<button href="#d" target="modal">`'
     answer: 0
     explanation: "Invoker commands: commandfor names the dialog, command says what to do."
   - type: mcq
     prompt: "What is \"light dismiss\" on a popover?"
     options:
-      - "Clicking outside it or pressing Escape closes it"
-      - "It fades out slowly"
-      - "It uses a light color scheme"
-      - "It closes after 5 seconds"
+      - Clicking outside it or pressing Escape closes it
+      - It fades out slowly instead of closing at once
+      - It switches to a lighter color while it is open
+      - It closes by itself after a few seconds
     answer: 0
     explanation: "Auto popovers close when you click elsewhere or press Escape."
   - type: mcq

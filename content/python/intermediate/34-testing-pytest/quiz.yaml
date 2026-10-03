@@ -4,48 +4,44 @@ questions:
     prompt: How does pytest find your tests?
     options:
       - Files named test_*.py, and functions named test_*
-      - You must list them in a config file
-      - Only functions decorated with @test
-      - It runs every function in the project
+      - Only the tests you list in pyproject.toml
+      - Only functions decorated with `@pytest.mark.test`
+      - Every function in every file in the project
     answer: 0
     explanation: pytest's discovery is based on those naming conventions, so plain functions and `assert` are enough.
-  - type: predict
-    prompt: What does this print?
+  - type: mcq
+    prompt: How many separate test results does pytest report for this test?
     code: |
-      import pytest
-
       @pytest.mark.parametrize("n, expected", [(1, 1), (2, 4), (3, 9)])
-      def check(n, expected):
-          return n * n == expected
-
-      print(len(check.pytestmark[0].args[1]))
-    options: ["3", "2", "1", "9"]
+      def test_square(n, expected):
+          assert n * n == expected
+    options: ["3, one per case", "1, for the whole function", "9, one per number", "0, until you call it yourself"]
     answer: 0
-    explanation: "The decorator records the list of three (input, expected) cases, so the test runs three times."
+    explanation: "`parametrize` runs the same test once for each case in the list and reports each one separately, so a failing case is easy to spot."
   - type: mcq
     prompt: Why use a fixture that returns a new object rather than one shared object for all tests?
     options:
-      - So tests stay independent and cannot affect each other
-      - It is faster
-      - Fixtures cannot be shared
-      - pytest requires it
+      - So tests stay independent and can't affect each other
+      - So the tests run faster, since objects are cached
+      - Because pytest can't share one object between tests
+      - So each test can change the object for the next one
     answer: 0
     explanation: A test must give the same result regardless of order, so each starts from a fresh state.
   - type: mcq
     prompt: A function calls a weather website. What is the best way to unit-test it?
     options:
       - Replace the website call with a mock that returns known data
-      - Call the real website every time
-      - Skip testing it
-      - Test only when the network is up
+      - Call the real website every time, so the test is realistic
+      - Skip the test whenever the network or the website is down
+      - Test it by hand once, since network code can't be unit-tested
     answer: 0
     explanation: Mocks make tests fast, repeatable and independent of the network.
   - type: mcq
     prompt: You have 100% coverage. What does that guarantee?
     options:
-      - Every line ran during the tests, but not that the tests check the right things
-      - The program has no bugs
-      - The tests are perfect
-      - The code is fast
+      - Every line ran during the tests, not that the tests check the right things
+      - The program has no bugs left, because every single line has been tested
+      - Every possible input has been tried, so the results can be trusted
+      - The tests are complete, so you can stop writing new tests for this code
     answer: 0
     explanation: Coverage shows which lines executed. It cannot tell whether the assertions are meaningful.

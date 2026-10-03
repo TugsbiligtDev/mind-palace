@@ -23,6 +23,8 @@ export default async function QuizPage({ params }: PageProps<"/courses/[track]/[
       label={topicLabel(ctx.topic.topic)}
       questions={ctx.topic.quiz.questions}
       pass={ctx.topic.quiz.pass}
+      // Python and JavaScript care about case (True isn't true); SQL keywords and plain words don't.
+      caseSensitive={ctx.bundle.track.engine === "python" || ctx.bundle.track.engine === "javascript"}
       href={ctx.quizHref}
       lessonHref={ctx.href}
       nextHref={ctx.nextHref}

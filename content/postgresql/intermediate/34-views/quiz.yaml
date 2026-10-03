@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: A new order is inserted. When does it show up in a plain view built on orders?
     options:
-      - After REFRESH
-      - Immediately, because a view reruns its query every time it's read
-      - Never
-      - After restarting PostgreSQL
+      - After you run REFRESH VIEW on it
+      - "Immediately: a view reruns its query each time"
+      - "Never: a view is a copy made when it was created"
+      - After the next ANALYZE updates its statistics
     answer: 1
     explanation: A view stores no data. It's a saved query, so it's always current.
 
@@ -49,9 +49,9 @@ questions:
   - type: mcq
     prompt: Which is **not** a typical reason to create a plain view?
     options:
-      - Sharing one definition of a tricky join
-      - Showing some users only certain columns
+      - Sharing one definition of a tricky join with the team
+      - Showing some users only certain columns of a table
       - Making a slow query faster by storing its result
-      - Hiding table changes behind a stable name
+      - Keeping a stable name while the tables behind it change
     answer: 2
     explanation: A plain view doesn't store results, so it's exactly as fast as its query. Storing results is what materialized views do.

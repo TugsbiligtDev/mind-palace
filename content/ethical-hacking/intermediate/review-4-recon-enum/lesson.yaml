@@ -11,10 +11,10 @@ steps:
 
       **What kind of work was that hour, and what did it give you?**
     options:
-      - "Active scanning, so the client should have been warned first"
-      - "Exploitation of the staging server"
+      - "Active scanning, so the client should have been warned before you started on it"
+      - "Exploitation of the staging server, since you found its name before the client told you about it"
       - "Passive recon: invisible to the target, and `staging-api` is a lead to prioritise once you scan"
-      - "Wasted time: real testers start with Nmap"
+      - "Wasted time: real testers start with an Nmap scan, then research what they find"
     answer: 2
     explanation: |
       This is **passive** recon: you touched registries and search engines, not the target, so you are invisible and well within the law. And it already paid off — a `staging` API is exactly the kind of soft, forgotten surface to prioritise once you move to active scanning. An hour of quiet research just shaped the whole active phase.
@@ -32,9 +32,9 @@ steps:
 
       **What's the most useful next step?**
     options:
-      - "Exploit all three ports at once"
+      - "Exploit all three ports at once, before anyone notices the scan and blocks you"
       - "Look up those exact versions for known vulnerabilities, and check FTP and SMB for anonymous access"
-      - "Nothing: three open ports is normal"
+      - "Nothing: three open ports is normal for a server, so move straight on to the next host on the list"
       - "Run the scan again without `-sV`"
     answer: 1
     explanation: |
@@ -47,7 +47,7 @@ steps:
 
       **What's the likely explanation, and what do you do?**
     options:
-      - "Eight machines are switched off; report them as missing"
+      - "Eight machines are switched off; report them as missing from the inventory today"
       - "Your copy of Nmap is broken; reinstall it"
       - "Widen the scan to the whole internet to find them"
       - "They ignore ping; scan the suspected addresses directly with `-Pn`"
@@ -63,7 +63,7 @@ steps:
       **What have you got?**
     options:
       - "A finding: an open share leaked credentials. Record exactly how you got them"
-      - "Nothing yet: it isn't a finding until you run an exploit"
+      - "Nothing yet: it isn't a finding until you have used the credentials in an exploit"
       - "Something out of scope: config files don't count"
       - "A false positive"
     answer: 0

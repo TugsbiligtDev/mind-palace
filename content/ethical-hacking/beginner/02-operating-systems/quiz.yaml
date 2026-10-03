@@ -21,19 +21,19 @@ questions:
   - type: mcq
     prompt: "A file shows permissions `-rw-rw-rw-`. Why might a security tester flag this?"
     options:
-      - It cannot be executed, so it is useless
-      - Everyone can write to it, so anyone could tamper with its contents
-      - Only root can read it
-      - It is a Windows file on a Linux system
+      - It has no execute bit, so a tester cannot run it at all
+      - Everyone can write to it, so anyone could change its contents
+      - Only the owner can read it, so the tester cannot inspect it
+      - The dashes mean the file is damaged and should be deleted
     answer: 1
     explanation: The final `rw-` is the "everyone else" block. Write for everyone means any user can change the file — a classic misconfiguration.
   - type: mcq
     prompt: Why is Linux the standard operating system for an attacker's working machine?
     options:
-      - It is the only OS with a terminal
-      - The tools are Linux-first, it is scriptable and free, and most targets run Linux too
-      - It cannot be hacked
-      - It hides your identity automatically
+      - Linux is the only system where hacking tools are legal to run
+      - Its tools are Linux-first, it is free and scriptable, and many targets run it
+      - Linux cannot be hacked, so the attacker's own machine stays safe while it attacks others
+      - Linux hides your identity on the network automatically
     answer: 1
     explanation: Kali and Parrot ship the tools pre-installed, everything is scriptable, VMs are free and disposable, and most servers you test run Linux. Linux offers no automatic anonymity.
   - type: fill

@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: "Which is a new WCAG 2.2 AA criterion?"
     options:
-      - "Focus Not Obscured: a focused element mustn't be hidden behind sticky content"
-      - "Every page must have a dark mode"
-      - "Text must be at least 18px"
-      - "Images must be under 100 KB"
+      - "Focus Not Obscured: focused elements mustn't hide behind sticky content"
+      - "Dark Mode: every page must offer a dark theme with enough contrast"
+      - "Text Size: body text must be at least 18px on every screen width"
+      - "Animation: any movement on the page must stop by itself within five seconds of loading"
     answer: 0
     explanation: "WCAG 2.2 added focus not obscured, minimum target size, dragging alternatives and more."
   - type: mcq
@@ -17,10 +17,10 @@ questions:
   - type: mcq
     prompt: "In the APG tabs pattern, how do keyboard users move between tabs?"
     options:
-      - "With the arrow keys; only the selected tab is in the Tab order"
-      - "With Tab, one tab at a time"
-      - "Only with the mouse"
-      - "With Escape"
+      - With the arrow keys; only the selected tab is in the Tab order
+      - With Tab, one tab at a time, in the order they appear
+      - Only with the mouse
+      - With Escape
     answer: 0
     explanation: "Tab enters and leaves the tab list; arrows move within it."
   - type: mcq
@@ -31,9 +31,9 @@ questions:
   - type: mcq
     prompt: "Why never use `tabindex=\"5\"`?"
     options:
-      - "Positive values pull elements ahead of the natural order, scrambling navigation for everyone"
-      - "It's invalid HTML"
-      - "It hides the element"
-      - "It only works on links"
+      - Positive values jump ahead of the natural order, scrambling navigation
+      - It's invalid HTML, so the validator rejects the whole page and browsers ignore it
+      - It removes the element from the Tab order completely
+      - Only links accept tabindex, so on other elements it's ignored
     answer: 0
     explanation: "Use 0 (natural order) or -1 (script focus only), never positive values."

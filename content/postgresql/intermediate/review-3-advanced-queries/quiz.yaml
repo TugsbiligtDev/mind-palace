@@ -4,19 +4,19 @@ questions:
     prompt: "\"For each customer, their single most recent order.\" Which tool is built for exactly this in PostgreSQL?"
     options:
       - "`DISTINCT ON (customer_id)` with `ORDER BY customer_id, ordered_at DESC`"
-      - "`GROUP BY customer_id` with `max(order_id)`"
-      - "`UNION`"
-      - "`HAVING count(*) = 1`"
+      - "`GROUP BY customer_id` with `max(ordered_at)`, then select the other columns"
+      - "`SELECT DISTINCT customer_id, ordered_at` with `ORDER BY ordered_at DESC`"
+      - "`GROUP BY customer_id` with `HAVING ordered_at = max(ordered_at)` instead"
     answer: 0
     explanation: DISTINCT ON keeps the first row per customer in the ORDER BY order. `max(order_id)` only works if ids always grow with time, which you'd have to prove.
 
   - type: mcq
     prompt: Why can't you write `WHERE row_number() OVER (…) <= 3`?
     options:
-      - row_number() only works with GROUP BY
-      - Window functions are calculated after WHERE, so filter them in an outer query or CTE
-      - WHERE doesn't allow numbers
-      - It works fine
+      - row_number() only works together with GROUP BY
+      - Window functions run after WHERE; filter in an outer query or CTE
+      - WHERE doesn't allow comparisons with numbers
+      - It works fine, as long as the OVER clause includes an ORDER BY for the ranking
     answer: 1
     explanation: Evaluation order is FROM → WHERE → GROUP BY → window functions → SELECT → ORDER BY. The number doesn't exist yet when WHERE runs.
 
@@ -35,8 +35,8 @@ questions:
     options:
       - 2024 customers EXCEPT 2025 customers
       - 2024 customers WHERE NOT EXISTS a 2025 order
-      - 2024 customers WHERE customer_id NOT IN (2025 customers), when that list can contain NULL
-      - 2024 customers LEFT JOIN 2025 orders, keeping rows where the 2025 side is NULL
+      - 2024 customers WHERE customer_id NOT IN (2025 customers), when that list may hold NULL
+      - 2024 customers LEFT JOIN 2025 orders, keeping only the rows where the 2025 side is NULL
     answer: 2
     explanation: NOT IN returns no rows at all if the list contains a NULL (Module 18). Here `customer_id` is NOT NULL so it would work, but the other three are safe by design.
 

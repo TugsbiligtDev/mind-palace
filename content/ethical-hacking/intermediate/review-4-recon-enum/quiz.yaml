@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: You spend an hour on WHOIS, certificate-transparency logs and search results before sending any packets. What phase is this, and are you visible to the target?
     options:
-      - Active recon; yes, visible
-      - Passive recon; no, invisible — you touched registries and search engines, not the target
-      - Exploitation; no
-      - Reporting; yes
+      - Active recon; yes, the target can see your queries
+      - Passive recon; no, you never touched the target itself
+      - Passive recon; yes, every WHOIS lookup sends an alert to the owner
+      - Scanning; no, because you used no scanning tools
     answer: 1
     explanation: Reading already-published data is passive reconnaissance. The target sees nothing, and it is lawful — a smart way to shape the active phase that follows.
   - type: mcq
     prompt: "An `-sV` scan shows `21/tcp open ftp vsftpd 2.3.4`. What is the most valuable part for planning your next steps?"
     options:
-      - That it is on port 21
-      - The exact version `vsftpd 2.3.4`, which you can look up for known vulnerabilities
-      - That it uses TCP
-      - The word "open"
+      - That port 21 is open, since FTP is often allowed
+      - The exact version, to look up known vulnerabilities
+      - That it uses TCP, so the connection is reliable
+      - That the service is FTP, so it may allow uploads
     answer: 1
     explanation: The precise version is what you research for known flaws (Module 17). A bare "port open" is thin; the version turns it into a lead.
   - type: mcq
     prompt: A ping sweep finds 2 live hosts but the inventory lists 10. What is the right move?
     options:
-      - Report that 8 machines are missing
-      - Scan the suspected addresses directly with `-Pn`, since hosts often ignore ping while still running services
-      - Give up on those hosts
-      - Rescan faster with -T5
+      - Report that the 8 missing machines are switched off
+      - Scan those addresses with `-Pn`, as hosts often ignore ping
+      - Rescan with `-T5` so the sweep finishes before they time out
+      - Ask the client to update the inventory, then move on
     answer: 1
     explanation: "\"No ping reply\" is not \"not there.\" Many hosts drop ICMP but still serve ports. `-Pn` tells Nmap to scan them anyway."
   - type: mcq
     prompt: You find a world-readable SMB share containing an old config file with a database username and password. Why is this significant even though you have run no exploit?
     options:
-      - It is not significant
-      - Enumeration alone may have handed you valid credentials — a combination finding that likely unlocks the next step
-      - It only matters on Windows
-      - Config files are never sensitive
+      - It isn't — old config files rarely hold working passwords
+      - Enumeration alone may have handed you valid credentials
+      - It only matters if the share is reachable from the internet
+      - It shows SMB is enabled, which is itself a critical flaw
     answer: 1
     explanation: A readable share leading to leaked credentials is exactly the kind of combination patient enumeration surfaces — often more valuable than any single exploit.
   - type: mcq
     prompt: Which statement best captures the recon-and-enumeration mindset?
     options:
-      - Scan quickly and jump straight to exploits
-      - Gather intelligence patiently and record every detail; the way in is usually a detail or a combination, not a dramatic exploit
-      - Only passive recon is worth doing
-      - Enumeration is optional if the scan looks boring
+      - Scan fast and broadly, then jump to the most promising exploit
+      - Gather patiently and record details; the way in is often a combination
+      - Passive recon finds everything; active scanning adds little
+      - Skip deeper enumeration whenever the scan shows no famous vulnerable versions
     answer: 1
     explanation: Enumeration is where tests are won. Thorough, well-documented information gathering reveals the thread — often a mundane one — that unravels the target.

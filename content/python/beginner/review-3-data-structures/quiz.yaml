@@ -21,9 +21,9 @@ questions:
   - type: mcq
     prompt: Why is a dictionary index by phone number faster than searching the list?
     options:
-      - A dictionary jumps straight to the key instead of checking every contact
-      - Dictionaries use less memory always
-      - Lists cannot hold phone numbers
-      - Because dictionaries are sorted
+      - A dictionary jumps straight to the key instead of checking every one
+      - A dictionary keeps its keys sorted, so it can search them in half
+      - Lists store phone numbers as text, which is slow to compare
+      - A dictionary uses less memory, so the computer reads it faster
     answer: 0
     explanation: A dictionary looks up a key almost instantly. A list search may need to look at every item.

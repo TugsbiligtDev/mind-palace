@@ -11,10 +11,10 @@ steps:
 
       **What do you tell your friend?**
     options:
-      - "Sure: they asked, so a quick look is fine"
-      - "Only test it at night so nobody notices"
+      - "Sure: they asked you directly, so a quick look is fine as long as you share whatever you find with them first"
+      - "Only test it at night, when nobody will notice and no customers can be affected"
       - "Not without written permission from someone with authority over the site; help them arrange it, or point them to a professional"
-      - "Yes, as long as you don't change anything"
+      - "Yes, as long as you only look and don't change anything on the site or its servers"
     answer: 2
     explanation: |
       Your friend's enthusiasm is not authorisation. Unless someone with actual authority over that system signs off on scope and dates in writing, testing it is unauthorised access — a crime — no matter how helpful your intent. The correct answer is to help them get *proper* written permission, or to point them at a professional. A friendly ask changes nothing about the law.
@@ -26,7 +26,7 @@ steps:
 
       **What's the precise name for this finding?**
     options:
-      - "Broken authentication, putting integrity at risk"
+      - "Broken authentication (the login itself failed), putting integrity at risk"
       - "Broken access control (authorization), putting confidentiality at risk"
       - "Denial of service, putting availability at risk"
       - "An encryption failure"
@@ -57,8 +57,8 @@ steps:
       **Which do you tell the client to fix first?**
     options:
       - "The plain-HTTP login on the public site: both are flaws, but its risk is far higher"
-      - "The missing header, because you found it first"
-      - "Neither: internal pages and HTTP issues don't count"
+      - "The missing header, because you found it first and it's on a staff-only page"
+      - "Neither: internal pages and HTTP issues don't count as real findings in a report"
       - "Both equally: ranking isn't your job"
     answer: 0
     explanation: |

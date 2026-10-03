@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: Inside a transaction, one statement fails with an error. You then run a correct UPDATE. What happens?
     options:
-      - The UPDATE runs normally
-      - "It fails with \"current transaction is aborted\" until you ROLLBACK (or roll back to a savepoint)"
-      - The failed statement is retried
-      - The transaction commits automatically
+      - The UPDATE runs normally, and both are saved at COMMIT
+      - It fails as "aborted" until you ROLLBACK (or to a savepoint)
+      - The failed statement is retried, then the UPDATE runs
+      - The transaction commits up to the error, then runs the UPDATE
     answer: 1
     explanation: After an error, PostgreSQL refuses everything in that transaction until you end it with ROLLBACK or roll back to a savepoint made before the error (Module 30).
 
@@ -33,19 +33,19 @@ questions:
   - type: mcq
     prompt: "In an EXPLAIN ANALYZE, a step shows `rows=12` estimated and `rows=48210` actual. What does that suggest?"
     options:
-      - The query is fast
-      - The planner's statistics are off, so it may have chosen a bad plan. Run ANALYZE and compare again
-      - The index is corrupt
-      - Nothing, estimates are never close
+      - The query is fast, since fewer rows were expected
+      - Statistics are off, so the plan may be bad; run ANALYZE
+      - The index is corrupt and needs to be rebuilt
+      - Nothing; estimates are never close to the real counts
     answer: 1
     explanation: Big gaps between estimated and actual rows are the classic sign of stale or missing statistics (Module 33).
 
   - type: mcq
     prompt: Why does `OFFSET 8000 LIMIT 20` get slower the deeper you page?
     options:
-      - OFFSET locks the table
-      - PostgreSQL still has to produce and throw away the first 8,000 rows
-      - LIMIT is ignored with OFFSET
-      - It doesn't get slower
+      - OFFSET locks the table, so each page waits longer
+      - PostgreSQL still makes and discards the first 8,000 rows
+      - LIMIT is ignored when OFFSET is used, so all rows return
+      - The rows are re-sorted from scratch for every page
     answer: 1
     explanation: OFFSET skips rows by reading them. Keyset pagination (`WHERE order_id > last_seen`) jumps straight there with an index.

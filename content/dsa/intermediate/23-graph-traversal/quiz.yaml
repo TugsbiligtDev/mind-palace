@@ -29,10 +29,10 @@ questions:
   - type: mcq
     prompt: Why must a graph traversal keep a visited set?
     options:
-      - To make it faster only
-      - Cycles would make it loop forever, and vertices would be processed many times
-      - Graphs cannot have cycles
-      - To sort the vertices
+      - To make it faster; the result is the same without it
+      - Cycles would make it loop forever, processing vertices again and again
+      - Graphs can't have cycles, so it's only for neat output
+      - To keep the vertices sorted in the exact order they were first found
     answer: 1
     explanation: Without it, a cycle sends you round and round the same vertices.
   - type: mcq

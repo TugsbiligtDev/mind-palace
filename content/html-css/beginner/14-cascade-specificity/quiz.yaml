@@ -29,9 +29,9 @@ questions:
   - type: mcq
     prompt: "In DevTools, a `color` declaration is crossed out. What does that mean?"
     options:
-      - "Another rule with higher priority set color on this element"
-      - "The color name is misspelled"
-      - "The rule's selector doesn't match the element"
-      - "The stylesheet failed to load"
+      - Another rule with higher priority set color on this element
+      - The color value is misspelled, so the browser ignored it
+      - The rule's selector no longer matches this element
+      - The stylesheet with this rule failed to load
     answer: 0
     explanation: "Crossed out means it lost the cascade. A typo shows a warning triangle; a non-matching rule isn't listed at all."

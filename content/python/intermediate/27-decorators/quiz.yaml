@@ -42,9 +42,9 @@ questions:
     prompt: Why use `*args, **kwargs` in a wrapper?
     options:
       - So the wrapper can accept and pass on any arguments the original takes
-      - To make it faster
-      - To make the function private
-      - Python requires it
+      - So the wrapper runs faster, since Python skips checking the arguments
+      - So the original function's arguments become private to the wrapper
+      - Python requires them, or a decorator can't be applied to a function
     answer: 0
     explanation: The wrapper does not know in advance what arguments the wrapped function takes.
   - type: fill

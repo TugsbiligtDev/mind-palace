@@ -40,10 +40,10 @@ questions:
   - type: mcq
     prompt: When is `match` clearly better than a chain of `if/elif`?
     options:
-      - When you decide by the shape of data and want to unpack it at the same time
-      - When comparing one number with another
-      - Always, in every situation
-      - When you need speed
+      - When you decide by the shape of data and unpack it at the same time
+      - When you compare one number with another, like `x > 10`
+      - "Always: match is faster than if/elif in every situation"
+      - When there are more than two branches to choose between, whatever they check
     answer: 0
     explanation: "Sequence, mapping and class patterns replace lots of `isinstance`, `len` and key checks."
   - type: fill

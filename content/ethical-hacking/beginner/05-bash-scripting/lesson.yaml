@@ -115,7 +115,7 @@ steps:
   - kind: info
     title: "🔹 Bash is not the only scripting language"
     body: |
-      Bash is perfect for gluing commands together. For anything with real logic — parsing data, talking to web APIs, building a custom tool — most testers reach for **Python** instead (an Advanced module covers it). A good rule: if a bash script grows past a screen of `if`s, it probably wants to be Python.
+      Bash is perfect for gluing commands together. For anything with real logic — parsing data, talking to web APIs, building a custom tool — most testers reach for **Python** instead (this site's Python course teaches it). A good rule: if a bash script grows past a screen of `if`s, it probably wants to be Python.
 
   - kind: why
     body: |

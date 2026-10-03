@@ -12,10 +12,10 @@ questions:
   - type: mcq
     prompt: You have to solve a problem and you cannot see the clever solution. What is the best first move?
     options:
-      - Wait until the clever idea comes
+      - Wait until the clever idea comes, so you don't waste effort
       - Write the simple brute-force solution and make it correct
-      - Copy a solution you do not understand
-      - Start with the fastest data structure you know
+      - Search for the answer online and adapt the first one you find
+      - Start with the fastest data structure you know, then fit it in
     answer: 1
     explanation: A correct brute-force solution gives you a baseline to test against, and it often shows where the wasted work is.
   - type: predict

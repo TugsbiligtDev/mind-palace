@@ -2,7 +2,7 @@ pass: 3
 questions:
   - type: mcq
     prompt: "Where should the `transition` property go so the effect plays both on hover and when the mouse leaves?"
-    options: ["On the normal state (e.g. `.button`)", "On `.button:hover` only", "On the body", "On both, with different durations"]
+    options: [On the normal state (e.g. `.button`), On `.button:hover` only, On the body, "On `.button:hover` and `.button:focus-visible`, but not the button itself"]
     answer: 0
     explanation: "On the normal state it applies in both directions. On :hover only, the change back is instant."
   - type: mcq
@@ -13,19 +13,19 @@ questions:
   - type: mcq
     prompt: "What does `transition: all 2s` risk?"
     options:
-      - "Animating properties you didn't intend, slowly, including expensive ones"
-      - "Nothing; it's best practice"
-      - "It disables hover"
-      - "It only works in Chrome"
+      - Animating properties you didn't mean to, slowly, even costly ones
+      - "Nothing: animating everything is the recommended default"
+      - Hover stops working until the two seconds have passed
+      - Only colors animate, so any layout changes still jump instantly
     answer: 0
     explanation: "List the properties you mean, with a short duration."
   - type: mcq
     prompt: "A visitor has Reduce motion turned on. What should your CSS do?"
     options:
-      - "Remove movement such as sliding, zooming and parallax, using `@media (prefers-reduced-motion: reduce)`"
-      - "Hide all images"
-      - "Nothing; it only affects the operating system"
-      - "Make animations faster"
+      - "Remove sliding, zooming and parallax in `@media (prefers-reduced-motion: reduce)`"
+      - "Nothing: the operating system already slows down every animation on the page for you"
+      - Make every animation faster, so the movement is over before it can bother anyone
+      - Hide all images and videos, since they are the main source of motion on a page
     answer: 0
     explanation: "The media query exposes the setting so you can respect it."
   - type: mcq

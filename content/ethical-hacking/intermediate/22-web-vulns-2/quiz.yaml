@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: "You change `/invoice?id=42` to `/invoice?id=43` and see another user's invoice. What is this flaw, and what is the fix?"
     options:
-      - "XSS; encode the output"
-      - "IDOR / broken access control; the server must check on every request that the logged-in user is authorised for that object"
-      - "SQL injection; use parameterized queries"
-      - "CSRF; add a token"
+      - XSS; encode the invoice before showing it on the page
+      - IDOR; check the user owns that object on every request
+      - SQL injection; use parameterized queries for the ID
+      - Predictable IDs; switch to random IDs that can't be guessed
     answer: 1
     explanation: The app used your input to pick a record without checking your right to it — classic IDOR. The fix is a server-side authorization check on every request, not hiding the link.
   - type: mcq
     prompt: Why is a stolen or predictable session token as serious as a stolen password?
     options:
-      - It is not serious
-      - The session token is the logged-in identity; whoever holds it is treated as that user, password or not
-      - Tokens cannot be stolen
-      - It only affects logging out
+      - A token contains the password in encoded form, so it can be decoded
+      - The token is the logged-in identity; whoever holds it is that user
+      - Tokens never expire, so a stolen one works for ever
+      - A token lets the attacker change the password without the old one
     answer: 1
     explanation: The session token represents the authenticated user. If it is guessable, stealable or reusable, the password becomes irrelevant — hence strong, rotated, expiring, HTTPS-only tokens.
   - type: mcq
     prompt: What does SSRF (Server-Side Request Forgery) let an attacker do?
     options:
-      - Crack passwords offline
-      - Make the trusted server fetch URLs the attacker chooses, reaching internal services or cloud metadata the attacker could not reach directly
-      - Inject JavaScript into a browser
-      - Upload a virus by email
+      - Run script in another user's browser through a stored comment
+      - Make the server fetch URLs they choose, reaching internal services
+      - Send forged requests from a victim's browser using their cookie
+      - Read files on the server by adding ../ to a file path
     answer: 1
     explanation: SSRF abuses a server that fetches a user-supplied URL. Because the server is trusted and sits inside the network, it can be pointed at internal-only targets — fix by allow-listing destinations.
   - type: mcq
     prompt: How does CSRF differ from XSS?
     options:
-      - They are identical
-      - CSRF abuses the browser automatically attaching the victim's session cookie to trigger unwanted actions, without running script on the target site; XSS runs attacker script in the victim's browser
-      - CSRF runs on the server; XSS on the database
-      - CSRF needs no victim
+      - CSRF runs attacker script in the browser; XSS forges requests from another site
+      - CSRF rides the victim's cookie to trigger actions; XSS runs attacker script
+      - CSRF needs the victim's password; XSS only needs their session cookie
+      - CSRF attacks the server's database; XSS attacks the server's file system
     answer: 1
     explanation: CSRF exploits the site's trust in the browser's auto-sent cookie (fix with anti-CSRF tokens and SameSite). XSS exploits the browser executing injected script.
   - type: mcq
     prompt: What single mindset underlies the defences for this whole family of flaws?
     options:
-      - Trust the client to behave
-      - The server must verify on its own, on every request, and trust nothing from the client or the input
-      - Hide links so users cannot find them
-      - Rely on the browser's checks
+      - Rely on the browser's built-in protections to block the attacks
+      - The server must check every request itself and trust nothing from the client
+      - Hide sensitive links and IDs so users can't find them
+      - Validate everything with JavaScript in the browser before any form is submitted to the server
     answer: 1
     explanation: IDOR, upload, SSRF, CSRF and session flaws all stem from misplaced trust. The fix is consistent server-side verification on every request — never trusting the client.

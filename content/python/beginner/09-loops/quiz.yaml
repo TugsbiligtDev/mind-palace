@@ -34,9 +34,9 @@ questions:
     prompt: Why is it risky to remove items from a list while looping over it?
     options:
       - The loop can skip items, because the list shifts under it
-      - Python forbids it with a SyntaxError
-      - It makes the list immutable
-      - The loop runs twice
+      - Python stops the loop with a SyntaxError straight away
+      - The removed items come back when the loop finishes
+      - The loop runs one extra time for each removed item
     answer: 0
     explanation: Removing an item shifts everything after it, so the loop steps over the next item. Build a new list instead.
   - type: fill

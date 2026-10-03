@@ -313,7 +313,7 @@ steps:
   - kind: info
     title: A trie plus backtracking (later)
     body: |
-      Tries combine beautifully with **backtracking**: to find which dictionary words hide inside a letter grid (the "Word Search II" problem), you walk the grid and the trie together, and stop a path as soon as no word can continue it. You will meet this after Module 27, where backtracking is introduced.
+      Tries combine beautifully with **backtracking**: to find which dictionary words hide inside a letter grid (the "Word Search II" problem), you walk the grid and the trie together, and stop a path as soon as no word can continue it. Once you have learned backtracking (Module 27), try it yourself: search for the "Word Search II" problem on LeetCode. It is a great test of both ideas together.
 
   - kind: why
     body: |

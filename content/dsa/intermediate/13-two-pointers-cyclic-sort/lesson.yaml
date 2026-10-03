@@ -114,7 +114,7 @@ steps:
       - A **read** pointer scans every element.
       - A **write** pointer marks where the next "kept" value goes.
 
-      You used this in "move zeroes". It edits an array **in place** in one pass. Removing duplicates from a *sorted* array is the classic example: copy an element forward only if it differs from the last kept one.
+      Classic uses: "move every 0 to the end, keeping the other values in order", and the example below. It edits an array **in place** in one pass. Removing duplicates from a *sorted* array is the classic example: copy an element forward only if it differs from the last kept one.
 
   - kind: code
     title: Remove duplicates in place

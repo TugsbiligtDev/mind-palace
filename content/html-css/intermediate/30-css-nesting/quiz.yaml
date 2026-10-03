@@ -17,10 +17,10 @@ questions:
   - type: mcq
     prompt: "Why keep nesting shallow?"
     options:
-      - "Deep nesting creates long, very specific selectors that are hard to override and tied to the HTML structure"
-      - "Browsers only support two levels"
-      - "Nesting is slower than flat CSS"
-      - "Media queries can't be nested deeply"
+      - Deep nesting makes long, specific selectors tied to the HTML
+      - Browsers only support two levels of nesting in plain CSS
+      - Nested CSS is slower to apply than the same rules written flat
+      - Media queries stop working once they are nested two levels deep
     answer: 0
     explanation: "Each level adds to the selector and its specificity."
   - type: mcq

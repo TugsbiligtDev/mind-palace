@@ -26,29 +26,29 @@ questions:
   - type: mcq
     prompt: Where should an app's database password live?
     options:
-      - In the source code, so it's easy to find
-      - In an environment variable (e.g. DATABASE_URL), with local .env files kept out of Git
-      - In a comment in the SQL
-      - In the README
+      - In the source code, in a constant at the top of the file
+      - In an environment variable, with local .env files kept out of Git
+      - In a comment next to the SQL, so other developers can find it
+      - In the README, in a section that only the people on your team know to read
     answer: 1
     explanation: Environment variables keep secrets out of the code and out of version control.
 
   - type: mcq
     prompt: A busy app gets *too many clients already*. What's the usual fix?
     options:
-      - Open a new connection for every query
-      - Use a connection pool (in the app, or PgBouncer) so a few connections are reused
-      - Restart PostgreSQL every hour
-      - Use more indexes
+      - Open a new connection for every query, then close it
+      - Use a connection pool so a few connections are reused
+      - Restart PostgreSQL every hour to clear old connections
+      - Raise max_connections to 10,000 and keep every connection
     answer: 1
     explanation: Each connection costs server memory and there's a limit. A pool shares a small number of connections across all requests.
 
   - type: mcq
     prompt: "An ORM loop prints `order.customer.first_name` for 500 orders and the page is slow. What's the likely cause and fix?"
     options:
-      - Missing primary key. Add one.
-      - N+1 queries. Load customers up front (select_related, joinedload, include).
-      - Too many columns. Use SELECT *.
-      - The ORM is broken. Rewrite in raw SQL.
+      - A missing primary key; add one to orders
+      - N+1 queries; load the customers up front with a join
+      - Too many columns; select only first_name
+      - A missing index on customers; add one on the first_name column
     answer: 1
     explanation: Each access to order.customer runs another query. Eager loading fetches them all in one go.

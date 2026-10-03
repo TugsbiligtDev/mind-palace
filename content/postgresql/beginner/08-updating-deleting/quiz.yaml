@@ -36,19 +36,19 @@ questions:
   - type: mcq
     prompt: What's the difference between `DELETE FROM sales;` and `TRUNCATE sales;`?
     options:
-      - DELETE removes the table, and TRUNCATE removes the rows
-      - Both empty the table. DELETE works row by row (and can take a WHERE), while TRUNCATE empties the whole table in one quick operation
-      - TRUNCATE can be undone and DELETE can't
-      - There's no difference
+      - DELETE removes the whole table; TRUNCATE removes only its rows
+      - Both empty the table; DELETE goes row by row and can take a WHERE
+      - TRUNCATE can be undone with ROLLBACK, but DELETE can never be undone
+      - TRUNCATE can take a WHERE clause; DELETE always removes every row
     answer: 1
     explanation: Both leave the table empty but still existing. DELETE is flexible (WHERE, RETURNING). TRUNCATE is a quick "throw it all away".
 
   - type: mcq
     prompt: Before running an UPDATE on a real database, what's the safest habit?
     options:
-      - Run it twice to be sure
-      - Run the same WHERE as a SELECT first, to see exactly which rows will change
-      - Leave out WHERE so nothing is missed
-      - Use TRUNCATE instead
+      - Run it twice, so any rows missed the first time are caught
+      - Run the same WHERE as a SELECT first, to see which rows change
+      - Leave out the WHERE, so no rows are accidentally missed
+      - Run it at night, when fewer people are using the database and less can go wrong
     answer: 1
     explanation: A SELECT with the same WHERE shows you the exact rows the UPDATE will touch, before anything changes.

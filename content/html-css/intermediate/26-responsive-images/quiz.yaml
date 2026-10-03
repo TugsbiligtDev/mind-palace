@@ -12,28 +12,28 @@ questions:
   - type: mcq
     prompt: "What does the `sizes` attribute describe?"
     options:
-      - "How wide the image will be displayed, in different conditions"
-      - "The file sizes of each image"
-      - "The image's natural height"
-      - "Which formats the browser supports"
+      - How wide the image will be displayed, in different conditions
+      - The file size of each image listed in the srcset, in kilobytes
+      - The image's natural width and height, before any CSS
+      - Which screen sizes are allowed to download the image
     answer: 0
     explanation: "The browser needs the display width before the CSS loads, so sizes tells it."
   - type: mcq
     prompt: "Which image should NOT get `loading=\"lazy\"`?"
     options:
-      - "The large hero image at the top of the page"
-      - "Book covers far down a long list"
-      - "Images in the footer"
-      - "Photos in an article's last section"
+      - The large hero image at the top of the page
+      - Book covers far down a long list of results
+      - Small author photos inside the page footer
+      - Photos in the last section of a long article
     answer: 0
     explanation: "Lazy-loading the first thing people see delays it. The hero should get fetchpriority=\"high\" instead."
   - type: mcq
     prompt: "In a `<picture>`, which element is required, and why?"
     options:
-      - "The `<img>`: it's what displays, carries the alt text and is the fallback"
-      - "At least two `<source>` elements"
-      - "A `<figcaption>`"
-      - "Nothing; picture can be empty"
+      - "The `<img>`: it displays, carries the alt text and is the fallback"
+      - At least two `<source>` elements, one for each image format offered
+      - A `<source>` with `type="image/avif"`, the modern format
+      - A `<figcaption>`, which gives the picture its accessible name
     answer: 0
     explanation: "Sources only choose a file for the img to show."
   - type: mcq

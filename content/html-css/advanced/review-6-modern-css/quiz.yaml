@@ -3,28 +3,28 @@ questions:
   - type: mcq
     prompt: "`.card { container-type: inline-size; }` with `@container (…) { .card { … } }` has no effect. Why?"
     options:
-      - "A container can't query itself; make the card's parent the container"
-      - "Container queries need a name"
-      - "inline-size is invalid"
-      - "The query needs @media"
+      - A container can't query itself; make the card's parent the container
+      - Container queries need a `container-name`; unnamed ones never match
+      - "`inline-size` is invalid here; it must be `container-type: size`"
+      - The query must be wrapped in `@media` to work in all browsers
     answer: 0
     explanation: "Queries style descendants of the container."
   - type: mcq
     prompt: "`anchor-name: help` doesn't work. What's wrong?"
-    options: ["Anchor names must start with two dashes, like `--help`", "Names must be uppercase", "It needs quotes", "Only ids can be anchors"]
+    options: ["Anchor names must start with two dashes, like `--help`", 'Anchor names must be in quotes, like `"help"`', Only elements with an id can be used as anchors, "The anchor element must have `position: relative` set on it"]
     answer: 0
     explanation: "Anchor names are dashed idents, like custom properties."
   - type: mcq
     prompt: "Why might `color-mix(in oklch, var(--brand) 15%)` render nothing?"
-    options: ["color-mix needs two colors to mix", "oklch isn't supported", "15% is too small", "var() can't be used inside it"]
+    options: [color-mix needs two colors to mix, oklch isn't supported, 15% is too small, var() can't be used inside color-mix()]
     answer: 0
     explanation: "The invalid value makes the declaration fail, so the background stays transparent."
   - type: mcq
     prompt: "Several cards share one view-transition-name. What's the fix?"
     options:
-      - "Give each a unique name (or use `match-element`)"
-      - "Add z-index"
-      - "Wrap them in a container"
-      - "Use @supports"
+      - Give each a unique name (or use `match-element`)
+      - Add z-index
+      - Wrap both of them in a container with its own name
+      - Use @supports
     answer: 0
     explanation: "Names must be unique on the page during the transition."

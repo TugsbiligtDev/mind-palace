@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: Why does `shortestRoute` keep a `previous` map?
     options:
-      - To detect negative weights
+      - To detect negative road weights before they break the search
       - To rebuild the actual path by walking back from the destination
-      - To sort the cities
-      - To avoid the heap
+      - To sort the cities by distance once the search has finished
+      - To avoid using a heap, since the map remembers the order
     answer: 1
     explanation: Dijkstra's distances alone do not say which roads were used. Remembering where each city was reached from lets you retrace the route.
   - type: predict
@@ -20,10 +20,10 @@ questions:
   - type: mcq
     prompt: "Why does the road map store each road in BOTH cities' lists?"
     options:
-      - It is a bug
-      - Roads work in both directions, so each city needs to know its neighbours
-      - Dijkstra needs duplicates
-      - To make the map bigger
+      - It is a bug that makes every road count twice
+      - Roads go both ways, so each city needs its neighbours
+      - Dijkstra needs each road twice to find shortest paths
+      - It makes lookups faster, at the cost of more memory
     answer: 1
     explanation: An undirected road is two directed edges, one out of each city.
   - type: mcq

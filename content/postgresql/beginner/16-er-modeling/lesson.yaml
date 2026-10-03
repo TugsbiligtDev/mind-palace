@@ -173,7 +173,7 @@ steps:
 
       - **dbdiagram.io** (free, in the browser): you *type* the tables, and it draws the diagram. Fast to change.
       - **DBeaver** (free app): connect to a database and open any schema's **ER Diagram** tab to see the existing tables drawn for you.
-      - **pgAdmin 4**, which you have: right-click a database → **ERD For Database**.
+      - **pgAdmin 4** (free, see *Take it to your Mac*): right-click a database → **ERD For Database**.
 
       Typing a model in dbdiagram.io looks like this:
 
@@ -191,7 +191,7 @@ steps:
   - kind: mac
     title: See Inkwell's diagram
     body: |
-      Open **pgAdmin 4**, expand *Servers → Local PostgreSQL → Databases*, right-click **bookstore**, and choose **ERD For Database**. Compare the lines to the list of foreign keys from earlier. Or open **dbdiagram.io** and type the book-club model above.
+      If you installed **pgAdmin 4**, open it, expand *Servers →* your local server *→ Databases*, right-click **bookstore**, and choose **ERD For Database**. Compare the lines to the list of foreign keys from earlier. Or open **dbdiagram.io** and type the book-club model above.
 
       In Terminal, real psql's `\d` lists a table's foreign keys at the bottom of its output:
     commands: |

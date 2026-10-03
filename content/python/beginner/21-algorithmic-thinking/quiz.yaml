@@ -29,6 +29,6 @@ questions:
     explanation: "4 + 3 + 2 + 1 + 0 = 10. The base case `n == 0` stops the calls."
   - type: mcq
     prompt: What happens if a recursive function never reaches its base case?
-    options: ["Python raises RecursionError after about 1,000 calls", "It returns None", "It runs forever using no memory", "It skips the recursive call"]
+    options: ["Python raises RecursionError after about 1,000 calls", It returns None once the computer runs out of memory, "It runs forever, because each call uses no extra memory", Python notices the loop and skips the recursive call]
     answer: 0
     explanation: Each call adds to the call stack, and Python stops it at its recursion limit.

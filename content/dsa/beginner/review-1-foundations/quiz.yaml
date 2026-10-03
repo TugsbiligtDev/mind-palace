@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: A function must return the largest number, and the input may be empty. What is the safest first step?
     options:
-      - Start with `best = 0`
-      - Check for the empty array and decide what to return before looping
-      - Sort the array and take the last item
-      - Use `Math.max` on the array without checking
+      - Start with `best = 0`, so an empty array returns 0
+      - Check for an empty array and decide what to return first
+      - Sort the array, then return the last item in it
+      - Use `Math.max(...nums)`, which already handles empty arrays
     answer: 1
     explanation: The empty case has no "largest", so decide the answer (such as `null`) first. Starting at 0 also fails for all-negative arrays.
   - type: predict
@@ -28,10 +28,10 @@ questions:
   - type: mcq
     prompt: You sort with `nums.sort()` and get `[1, 10, 9]` from `[10, 9, 1]`. What went wrong?
     options:
-      - Nothing, that is ascending order
-      - The default sort compares items as text
-      - The array was mutated
-      - Sort only works on strings
+      - "Nothing: that is correct ascending order for numbers"
+      - The default sort compares the items as text
+      - The array was changed in place, which breaks the order
+      - sort() only works on arrays of strings, not numbers
     answer: 1
     explanation: As text, "10" comes before "9". Pass `(a, b) => a - b` to sort numbers.
   - type: mcq

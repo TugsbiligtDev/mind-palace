@@ -3,20 +3,20 @@ questions:
   - type: mcq
     prompt: "`FROM books b LEFT JOIN reviews r ON … WHERE r.rating >= 4` drops books with no good reviews. Why?"
     options:
-      - LEFT JOIN doesn't keep unmatched rows
-      - Unmatched rows have NULL rating, and `NULL >= 4` isn't true, so WHERE removes them
-      - rating is text
-      - WHERE runs before the join
+      - LEFT JOIN doesn't keep unmatched rows when there is a WHERE clause
+      - Unmatched rows have a NULL rating, and `NULL >= 4` isn't true
+      - rating is stored as text, so the comparison with 4 always fails
+      - WHERE runs before the join, so the reviews aren't there yet
     answer: 1
     explanation: The LEFT JOIN kept them, but the WHERE then discarded them. Move `r.rating >= 4` into the ON clause.
 
   - type: mcq
     prompt: You join customers (5,020 rows) to orders and get 39,419 rows. What does that tell you?
     options:
-      - The query is broken
-      - Many customers have several orders, so rows were multiplied. Aggregating customer-level values now would be wrong.
-      - About 34,000 customers were added
-      - Nothing
+      - The query is broken, since a join can't return more rows than its tables
+      - Many customers have several orders, so rows multiplied; don't sum per customer
+      - About 34,000 new customers were added by the join, from the orders table
+      - "Nothing: a join always returns the number of rows in its larger table, then some extra"
     answer: 1
     explanation: More rows after a join means fan-out. Know what one row represents before you sum or count.
 
@@ -35,19 +35,19 @@ questions:
   - type: mcq
     prompt: Which comment is most useful?
     options:
-      - "`-- select the amount`"
-      - "`-- join payments`"
+      - "`-- select the amount column from payments, then sum it`"
+      - "`-- join payments to orders on order_id, then group by`"
       - "`-- refunds are stored as negative amounts, so sum() already nets them out`"
-      - "`-- query`"
+      - "`-- this query calculates the total of every row in the payments table`"
     answer: 2
     explanation: Good comments explain the why or a business rule the code can't say by itself.
 
   - type: mcq
     prompt: Your per-city payment totals are finished. What's a quick way to check them?
     options:
-      - Run the query twice
-      - Check that they add up to `SELECT sum(amount) FROM payments`
-      - Add ORDER BY
-      - Use UNION instead of JOIN
+      - Run the query twice and check both runs give the same totals
+      - Check they add up to `SELECT sum(amount) FROM payments`
+      - Add ORDER BY city, so any duplicate cities are easy to spot
+      - Count the cities, and check there is one row for each city
     answer: 1
     explanation: Comparing against a simpler query is a fast sanity check. If the parts don't add up to the whole, rows were lost or duplicated.

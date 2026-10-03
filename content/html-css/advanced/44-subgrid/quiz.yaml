@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: "Three cards should have their prices aligned even when titles wrap differently. What does each card need?"
     options:
-      - "To span the parent's rows and use `grid-template-rows: subgrid`"
-      - "A fixed height"
-      - "`position: absolute` on the price"
-      - "`align-items: center`"
+      - "Make each card span the parent's rows with `grid-template-rows: subgrid`"
+      - Give every card the same fixed height in pixels, so all the prices line up
+      - "Put the price in `position: absolute; bottom: 0` inside each card"
+      - "Set `align-items: end` on the grid, so the cards' content sinks"
     answer: 0
     explanation: "Subgrid makes the cards share row tracks, so matching parts line up."
   - type: mcq
@@ -21,18 +21,18 @@ questions:
   - type: mcq
     prompt: "What's the risk of `grid-auto-flow: dense`?"
     options:
-      - "Items can appear in a different visual order from the HTML, confusing keyboard and screen reader users"
-      - "It only works with 2 columns"
-      - "It disables gap"
-      - "It makes rows 0px tall"
+      - Items can show in a different order from the HTML, confusing keyboard users
+      - Named areas only work when the grid has exactly two or three columns defined
+      - Grid areas turn off `gap`, so items touch with no space between them
+      - Rows without a named area collapse to 0px, hiding their content
     answer: 0
     explanation: "Use it where order doesn't matter, like decorative galleries."
   - type: mcq
     prompt: "Why overlap with `grid-area: 1 / 1` instead of `position: absolute`?"
     options:
-      - "The container grows to fit the tallest layer, so long text never overflows"
-      - "Absolute positioning doesn't work on images"
-      - "Grid is faster"
-      - "z-index doesn't work with position"
+      - The container grows to fit the tallest layer, so long text never overflows
+      - Absolute positioning doesn't work on images, so the photo would vanish from view
+      - Grid layers render faster than positioned ones on every browser
+      - "z-index doesn't work with position: absolute, so text hides behind"
     answer: 0
     explanation: "Both layers stay in the layout, so sizes are respected."

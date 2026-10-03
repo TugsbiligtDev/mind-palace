@@ -28,10 +28,10 @@ questions:
   - type: mcq
     prompt: "Why does `SELECT … WHERE row_number() OVER (ORDER BY salary) <= 3` fail?"
     options:
-      - row_number needs PARTITION BY
-      - Window functions are computed after WHERE, so WHERE can't use them. Rank in a CTE, then filter.
-      - WHERE can't use numbers
-      - You must use rank() instead
+      - row_number needs PARTITION BY when it is used in a WHERE clause
+      - Window functions run after WHERE; rank in a CTE, then filter
+      - WHERE can't compare a function's result with a number like 3
+      - You must use rank() instead, because row_number() can't be filtered
     answer: 1
     explanation: WHERE runs before window functions exist. Compute the ranking in a CTE or subquery, then filter on it outside.
 

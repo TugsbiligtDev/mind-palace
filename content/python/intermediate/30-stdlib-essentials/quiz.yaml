@@ -31,18 +31,18 @@ questions:
   - type: mcq
     prompt: Which rule avoids most date/time bugs?
     options:
-      - Store and calculate in UTC with aware datetimes; convert to local time only for display
-      - Use naive datetimes everywhere
-      - Compare naive and aware datetimes freely
-      - Use `datetime.now()` and hope
+      - Store and calculate in UTC with aware datetimes; convert only for display
+      - Store everything in your own local time, so the dates look right to you
+      - Use naive datetimes everywhere, so no time zone can be mixed up
+      - Store dates as text like "03/10/2026", which every system understands
     answer: 0
     explanation: Naive datetimes do not know their zone, and mixing them with aware ones raises errors or silently gives wrong answers.
   - type: mcq
     prompt: Why is `logging` better than `print` for a real program?
     options:
       - You can set levels, choose where output goes and format it, without editing every line
-      - It is shorter to type
-      - It runs faster
-      - print is deprecated
+      - It is shorter to type, and its messages are always written in red in the terminal
+      - It runs much faster than print, which matters once a program writes many thousands of lines
+      - print is deprecated in Python 3.14 and will be removed in a later version
     answer: 0
     explanation: Levels, handlers and formatters give you control that `print` cannot.

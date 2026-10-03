@@ -13,19 +13,19 @@ questions:
   - type: mcq
     prompt: "How should you choose breakpoints?"
     options:
-      - "Widen the window and add one where the content starts to look wrong"
-      - "Use the exact widths of the newest iPhone and iPad"
-      - "Add one every 100px"
-      - "Always use 768px and 1024px"
+      - Widen the window and add one where the content starts to look wrong
+      - Use the exact screen widths of the newest iPhone and iPad models
+      - Add one every 100px, so every possible screen width is covered
+      - Always use 768px and 1024px, the standard tablet and laptop sizes
     answer: 0
     explanation: "Content-based breakpoints work on every device, including ones that don't exist yet."
   - type: mcq
     prompt: "A photo makes the page scroll sideways on phones. Which rule fixes it?"
     options:
       - "`img { max-width: 100%; height: auto; }`"
-      - "`img { width: 800px; }`"
-      - "`body { overflow: hidden; }`"
-      - "`img { position: absolute; }`"
+      - "`img { width: 100vw; height: 100vh; }`"
+      - "`img { min-width: 100%; }`"
+      - "`img { width: 800px; height: auto; }`"
     answer: 0
     explanation: "max-width lets the image shrink to its container; height: auto keeps the proportions. Hiding the overflow just hides part of the photo."
   - type: mcq

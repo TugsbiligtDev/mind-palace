@@ -31,9 +31,9 @@ questions:
   - type: mcq
     prompt: Where does the text inside `<title>` appear?
     options:
-      - "In the browser tab, bookmarks and search results, but not on the page itself"
-      - "As the biggest heading at the top of the page"
-      - "Nowhere; it's only for the developer"
-      - "In the page footer"
+      - In the browser tab, bookmarks and search results, not on the page
+      - As the biggest heading at the top of the page, above everything
+      - "Nowhere: it's a note for developers that the browser ignores"
+      - At the bottom of the page, in small print, like a footer
     answer: 0
     explanation: "The `<head>` describes the page and isn't drawn on it. The title shows in the tab and in search results. The visible heading is `<h1>`."

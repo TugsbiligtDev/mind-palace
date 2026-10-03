@@ -12,7 +12,7 @@ questions:
   - type: mcq
     prompt: Which command searches for the text "password" *inside* files?
     options:
-      - find . -name password
+      - find . -name "*password*" -type f
       - grep "password" config.php
       - ls -la password
       - cat password
@@ -21,19 +21,19 @@ questions:
   - type: mcq
     prompt: Why is `rm -rf` treated with so much caution?
     options:
-      - It is slow on large folders
-      - It deletes a folder and everything in it immediately and permanently, with no Trash and no confirmation
-      - It only works as root
-      - It sends files to the Recycle Bin
+      - It moves the folder to the Trash, which fills the disk over time
+      - It deletes a folder and all its contents at once, with no Trash and no undo
+      - It only works as root, so a typo can lock you out of the system
+      - It asks for confirmation on every single file, which is easy to click through without reading
     answer: 1
     explanation: "`rm` has no undo and `-rf` forces a recursive delete with no prompt. Always check your path and your location (`pwd`) first."
   - type: mcq
     prompt: You see `ls -la` recommended instead of plain `ls`. What does the `-a` add?
     options:
-      - It sorts alphabetically
-      - It shows hidden files and folders that start with a dot
-      - It deletes empty files
-      - It runs the command as admin
+      - It adds the size, owner and last-modified date of each file to the list
+      - It shows hidden files and folders whose names start with a dot
+      - It lists the contents of every folder inside, too
+      - It sorts the list alphabetically instead of by date
     answer: 1
     explanation: "`-a` shows *all* entries, including hidden dot-files like `.ssh` and `.bash_history` — often the first things an investigator checks."
   - type: fill

@@ -69,8 +69,8 @@ steps:
       | Unit | About |
       |---|---|
       | 1 KB (kilobyte) | a short text message |
-      | 1 MB (megabyte) | one photo |
-      | 1 GB (gigabyte) | 1,000 MB, about 1,000 photos |
+      | 1 MB (megabyte) | a small photo (a phone photo is about 3 to 5 MB) |
+      | 1 GB (gigabyte) | 1,000 MB, a couple of hundred phone photos |
       | 1 TB (terabyte) | 1,000 GB |
 
       This is real arithmetic, and Python is happy to do it: `*` multiplies and `//` divides and throws away any leftover, so `7 // 2` is `3`. It is how you ask "how many *whole* things fit?".
@@ -115,37 +115,15 @@ steps:
   - kind: code
     title: Split a path
     body: |
-      Finish `describe_path(path)`. It should return a pair `(folder, file_name)`. For `"/Users/ada/notes/todo.txt"` that is `("/Users/ada/notes", "todo.txt")`.
+      Python's `pathlib` understands paths. Run this: `.parent` is the folder and `.name` is the file name.
 
-      Python's `pathlib.Path` understands paths. If `p = Path(path)`, then `p.parent` is the folder and `p.name` is the file name. Convert the folder to text with `str(...)`.
+      Then change the path to one of your own, such as `"/Users/you/photos/cat.jpg"`, and run it again. Don't worry about the first line yet: `import` (Module 15) just brings in the `Path` tool.
     code: |
       from pathlib import Path
 
-
-      def describe_path(path):
-          p = Path(path)
-          return ("", "")
-    tests:
-      - "describe_path('/Users/ada/notes/todo.txt')"
-      - "describe_path('/photos/cat.jpg')"
-      - "describe_path('/a/b/c/d/e.py')"
-      - "describe_path('/readme.md')"
-    solution: |
-      from pathlib import Path
-
-
-      def describe_path(path):
-          p = Path(path)
-          return (str(p.parent), p.name)
-    hint: "`p.parent` is a `Path` object, so wrap it in `str(...)` to get plain text back."
-    reject:
-      - |
-        from pathlib import Path
-
-
-        def describe_path(path):
-            p = Path(path)
-            return (p.name, str(p.parent))
+      print(Path("/Users/ada/notes/todo.txt").parent)
+      print(Path("/Users/ada/notes/todo.txt").name)
+      print(Path("/Users/ada/notes/todo.txt").suffix)
 
   - kind: explain
     title: What is a programming language?
@@ -158,6 +136,8 @@ steps:
       - **Interpreted** languages (like Python): a tool called an **interpreter** reads your program and carries it out **line by line**, as it goes.
 
       Python is interpreted. That is why you can type one line, press Run, and see the result at once. It is friendly for learning, and it is why this whole course can run in your browser.
+
+      One detail you'll meet in Module 3: before running anything, Python first reads the **whole file** to check its grammar. A typo such as a missing bracket stops the program before even line 1 runs. Mistakes that only show up while running (like dividing by zero) stop it at that line.
 
   - kind: info
     title: "🔹 Python 2 is dead"
@@ -175,33 +155,17 @@ steps:
       - **14** is the *minor* version. A new one arrives every year, with new features. Code written for 3.14 may not run on 3.9.
       - **2** is the *patch* version: small bug fixes, safe to update.
 
-      So "Python 3.14" means the fourteenth yearly release of Python 3.
+      So "Python 3.14" means release 14 of Python 3. (Python 3.0 came out in 2008; since 2019 a new minor version has arrived every October, and 3.14 arrived in 2025.)
 
   - kind: code
     title: Read a version number
     body: |
-      Finish `parse_version(text)`. It receives text like `"3.14.2"` and returns three whole numbers as a tuple: `(3, 14, 2)`.
+      `split(".")` cuts text at every dot into a list of pieces. Run it, and notice the pieces are still text (they have quotes around them).
 
-      Two tools help: `text.split(".")` cuts the text at every dot into a list of pieces, and `int("14")` turns text into a number.
+      `int(...)` turns text into a whole number, so the last line can do maths with the minor version. Change the version to `"3.9.18"` and run it again.
     code: |
-      def parse_version(text):
-          major, minor, patch = text.split(".")
-          return (0, 0, 0)
-    tests:
-      - "parse_version('3.14.2')"
-      - "parse_version('3.9.18')"
-      - "parse_version('2.7.0')"
-      - "parse_version('3.14.0')[1] + 1"
-    solution: |
-      def parse_version(text):
-          major, minor, patch = text.split(".")
-          return (int(major), int(minor), int(patch))
-    hint: "`split` gave you three pieces of text. Wrap each in `int(...)` when you build the tuple."
-    reject:
-      - |
-        def parse_version(text):
-            major, minor, patch = text.split(".")
-            return (major, minor, patch)
+      print("3.14.2".split("."))
+      print(int("14") + 1)
 
   - kind: why
     body: |

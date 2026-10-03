@@ -722,7 +722,7 @@ steps:
       null ← [1] ⇄ [2] ⇄ [3] → null
       ```
 
-      The cost: one more pointer per node, and twice as many pointers to update on every insert or delete. In Module 35 a doubly linked list powers the LRU cache.
+      The cost: one more pointer per node, and twice as many pointers to update on every insert or delete. It is the structure behind an *LRU cache* (keep the most recently used items, drop the oldest), a classic interview design question.
 
   - kind: why
     body: |

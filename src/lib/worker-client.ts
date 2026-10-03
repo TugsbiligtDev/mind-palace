@@ -18,6 +18,17 @@ export function workerClient(create: () => Worker, restartedMessage: string, onR
         if (e.data.ok) p.resolve(e.data.result);
         else p.reject(new Error(e.data.error));
       };
+      // The worker itself failed (its script didn't load, or it crashed): fail every waiting
+      // call now instead of leaving the learner staring at a spinner until the time limit.
+      worker.onerror = (e) => {
+        e.preventDefault();
+        worker?.terminate();
+        worker = null;
+        onRestart?.();
+        const err = new Error("The code runner couldn't start. Check your connection and reload the page.");
+        pending.forEach((p) => p.reject(err));
+        pending.clear();
+      };
     }
     return worker;
   }

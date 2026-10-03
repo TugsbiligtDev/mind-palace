@@ -42,10 +42,10 @@ questions:
   - type: mcq
     prompt: "Why does `SELECT title, price FROM books UNION SELECT name FROM genres;` fail?"
     options:
-      - UNION needs ORDER BY
+      - UNION needs an ORDER BY at the end to line up rows
       - The two queries have different numbers of columns
-      - Table names must match
-      - genres has no name column
+      - The two table names must match for UNION to work
+      - UNION ALL is required when the columns have different names
     answer: 1
     explanation: Both sides of a set operation must have the same number of columns, with compatible types in each position.
 

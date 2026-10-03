@@ -17,10 +17,10 @@ questions:
   - type: mcq
     prompt: Why can a 26-slot array count letters in O(1) extra space?
     options:
-      - JavaScript arrays are free
-      - The alphabet has a fixed size, so the array is the same size whatever the input length
-      - Strings are already arrays
-      - It cannot; it is O(n)
+      - JavaScript arrays use no memory until they are filled in
+      - The alphabet has a fixed size, so the array never grows with the input
+      - Strings are already arrays, so no extra space is used
+      - It can't; counting letters always needs O(n) extra space, one slot per character
     answer: 1
     explanation: 26 does not grow with the input, so the extra memory is constant.
   - type: predict

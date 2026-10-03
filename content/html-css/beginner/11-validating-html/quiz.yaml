@@ -3,37 +3,37 @@ questions:
   - type: mcq
     prompt: What does a browser usually do with broken HTML?
     options:
-      - "Repairs it silently, as best it can, and shows the page with no error"
-      - "Shows an error message instead of the page"
-      - "Shows the raw code"
-      - "Refuses to load the page's CSS"
+      - Repairs it silently, as best it can, and shows the page
+      - Shows an error message at the top instead of the page
+      - Shows the raw HTML code as plain text on the screen
+      - Loads the page, but ignores all of the page's CSS
     answer: 0
     explanation: "Browsers are forgiving: they guess and keep going. That's why you need the validator and DevTools to find mistakes."
   - type: mcq
     prompt: The validator reports 14 errors. Where should you start?
     options:
-      - "With the first one: fixing an early mistake often makes later errors disappear"
-      - "With the last one"
-      - "With the warnings"
-      - "Ignore them if the page looks right"
+      - "The first: an early mistake often causes many of the later errors"
+      - The last, because it is closest to the end of the page
+      - The warnings first, since they are much quicker to fix than the errors
+      - None, if the page already looks right in your browser
     answer: 0
     explanation: "One missing closing tag can confuse everything after it, so the first error is often the cause of many others."
   - type: mcq
     prompt: "You wrote `<p>Shelves: <ul><li>Fiction</li></ul></p>`. What does the Elements panel show?"
     options:
-      - "The paragraph closed before the list, and an extra empty `<p></p>` after it"
-      - "Exactly what you wrote"
-      - "The list inside the paragraph"
-      - "Nothing; the list is deleted"
+      - The paragraph closed before the list, then an empty `<p></p>` after
+      - Exactly what you wrote, with the list sitting inside the paragraph
+      - The list moved above the paragraph, which keeps its text
+      - The list was removed, and only the paragraph's text remains
     answer: 0
     explanation: "A `<p>` can't contain a `<ul>`, so the browser closes it early. The leftover `</p>` becomes an empty paragraph."
   - type: mcq
     prompt: "What's the difference between View Source and the Elements panel?"
     options:
-      - "View Source shows the file as written; Elements shows the DOM the browser built from it"
-      - "They're two names for the same view"
-      - "View Source shows the CSS; Elements shows the HTML"
-      - "Elements shows the page as it was last week"
+      - View Source shows the file as written; Elements shows the DOM built from it
+      - They're two names for the same view, laid out in a different style
+      - View Source shows the page's CSS; Elements shows only the HTML
+      - View Source shows the live page after scripts run; Elements shows the original file
     answer: 0
     explanation: "Comparing them reveals the browser's silent repairs."
   - type: mcq

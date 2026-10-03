@@ -4,35 +4,35 @@ questions:
     prompt: "In Figma, a frame uses vertical auto layout with gap 16 and padding 24. Which CSS matches?"
     options:
       - "`display: flex; flex-direction: column; gap: 16px; padding: 24px;`"
-      - "`display: grid; grid-template-rows: 16px 24px;`"
-      - "`position: absolute; top: 16px; left: 24px;`"
-      - "`margin: 16px 24px;`"
+      - "`display: grid; grid-template-rows: 16px 24px; padding: 16px;`"
+      - "`position: absolute; top: 16px; left: 24px; margin: 24px 16px;`"
+      - "`display: flex; gap: 24px; padding: 16px; flex-wrap: wrap;`"
     answer: 0
     explanation: "Auto layout is Figma's Flexbox."
   - type: mcq
     prompt: "The design shows a card exactly 320px wide. How should you usually build it?"
     options:
       - "`width: 100%; max-width: 320px;` so it shrinks on small screens"
-      - "`width: 320px;` exactly"
-      - "`min-width: 320px;`"
-      - "Scale the whole page with `zoom`"
+      - "`width: 320px;` exactly, as the design file specifies"
+      - "`min-width: 320px;` so it never gets smaller than the design"
+      - "`width: 320px;` plus `zoom: 0.8` on phones to make it fit"
     answer: 0
     explanation: "Designs show one size; the intent is usually \"up to\" that size."
   - type: mcq
     prompt: "The spec says spacing 23px, but every other gap is 24px and the scale has 24. What do you do?"
     options:
-      - "Use the 24px token and check with the designer"
-      - "Use 23px exactly"
-      - "Use 23.5px as a compromise"
-      - "Ignore spacing"
+      - Use the 24px token and check with the designer
+      - Use 23px exactly, since the design file says so
+      - Add a new 23px token so the design matches
+      - Use 23.5px as a compromise between the two
     answer: 0
     explanation: "Off-scale values are usually slips; consistency wins, and a quick question confirms it."
   - type: mcq
     prompt: "Which review comment is most helpful?"
     options:
-      - "\"This uses `!important` to beat `.card a`; moving it to the components layer avoids that. Want me to pair on it?\""
-      - "\"This CSS is bad.\""
-      - "\"Why would you do this?\""
-      - "\"LGTM\" without reading it"
+      - '"This uses `!important` to beat `.card a`; moving it to the components layer avoids that. Want to pair on it?"'
+      - "\"Please don't use `!important` here — it's bad practice and makes the CSS harder to maintain. Can you change it?\""
+      - '"Approved. `!important` is fine here since it only affects one link, and we can always clean it up later."'
+      - "\"This works, but I'd rewrite the whole stylesheet with BEM so this kind of override never happens again.\""
     answer: 0
     explanation: "Specific, explains why, suggests a fix, and is kind."

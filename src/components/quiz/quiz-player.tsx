@@ -6,12 +6,17 @@ import type { Question } from "@/lib/content/schema";
 import { OptionText } from "./option-text";
 import { recordQuiz, setLast } from "@/lib/progress";
 
-function normalizeFill(s: string) {
-  return s.trim().replace(/;+$/, "").replace(/\s+/g, " ").toLowerCase();
+function normalizeFill(s: string, caseSensitive: boolean) {
+  const t = s.trim().replace(/;+$/, "").replace(/\s+/g, " ");
+  return caseSensitive ? t : t.toLowerCase();
 }
 
-function isCorrect(q: Question, choice: number | null, text: string) {
-  if (q.type === "fill") return [q.answer, ...q.accept].some((a) => normalizeFill(a) === normalizeFill(text));
+function isCorrect(q: Question, choice: number | null, text: string, caseSensitive: boolean) {
+  if (q.type === "fill") {
+    // Capitals matter in code (`None` vs `none`), but not in plain-word answers that aren't run.
+    const exact = caseSensitive && q.runnable;
+    return [q.answer, ...q.accept].some((a) => normalizeFill(a, exact) === normalizeFill(text, exact));
+  }
   return choice === q.answer;
 }
 
@@ -43,6 +48,7 @@ export function QuizPlayer({
   label,
   questions,
   pass,
+  caseSensitive,
   href,
   lessonHref,
   nextHref,
@@ -53,6 +59,7 @@ export function QuizPlayer({
   label: string;
   questions: Question[];
   pass: number;
+  caseSensitive: boolean;
   href: string;
   lessonHref: string;
   nextHref: string;
@@ -83,12 +90,12 @@ export function QuizPlayer({
   useEffect(() => setLast(href, `${label}: ${title} · quiz`), [href, label, title]);
 
   const q = questions[order[pos]];
-  const correct = checked && isCorrect(q, choice, text);
+  const correct = checked && isCorrect(q, choice, text, caseSensitive);
   const canCheck = q.type === "fill" ? text.trim().length > 0 : choice !== null;
 
   function check() {
     setChecked(true);
-    if (isCorrect(q, choice, text)) setScore((s) => s + 1);
+    if (isCorrect(q, choice, text, caseSensitive)) setScore((s) => s + 1);
   }
 
   function next() {
@@ -172,6 +179,9 @@ export function QuizPlayer({
             onKeyDown={(e) => e.key === "Enter" && canCheck && !checked && check()}
             disabled={checked}
             placeholder="Type the missing part"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             className="mt-5 w-full rounded-lg border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-brand"
             autoFocus
           />

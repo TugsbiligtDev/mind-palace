@@ -8,10 +8,10 @@ questions:
   - type: mcq
     prompt: Why give an `<img>` its `width` and `height` attributes?
     options:
-      - "The browser can reserve the right space before the image loads, so the page doesn't jump"
-      - "Images won't display without them"
-      - "They make the file download faster"
-      - "They lock the image to that size forever, even on phones"
+      - The browser reserves the right space early, so the page doesn't jump
+      - Images don't display at all unless both attributes are set
+      - They make the image file smaller, so it downloads faster
+      - They fix the image at exactly that size, even on the smallest phone screens
     answer: 0
     explanation: "They prevent layout shift. CSS can still resize the image, and the browser keeps the proportions."
   - type: mcq
@@ -29,9 +29,9 @@ questions:
   - type: mcq
     prompt: What does the `controls` attribute do on `<video>`?
     options:
-      - "Shows the browser's play, pause and volume buttons"
-      - "Starts the video automatically"
-      - "Lets the site owner control who can watch"
-      - "Adds captions"
+      - Shows the browser's play, pause and volume buttons
+      - Starts the video automatically when the page loads
+      - Lets the site owner control who can watch the video
+      - Turns on captions, if the video has a captions file
     answer: 0
     explanation: "Without `controls` the visitor has no built-in way to play or pause the video."

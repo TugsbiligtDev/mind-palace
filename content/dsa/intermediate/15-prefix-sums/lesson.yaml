@@ -219,7 +219,7 @@ steps:
   - kind: code
     title: Car pooling
     body: |
-      A car has `capacity` seats. Each trip is `[passengers, from, to]`: the passengers get in at `from` and out at `to`. Write `carPooling(trips, capacity)`: `true` if the car never holds more than `capacity` people at once.
+      A car has `capacity` seats. Each trip is `[passengers, from, to]`: the passengers get in at `from` and out at `to`. Stops are numbered from `0` to `1000`. Write `carPooling(trips, capacity)`: `true` if the car never holds more than `capacity` people at once.
 
       Add `+passengers` at `from` and `-passengers` at `to` in a difference array, then keep a running total.
     code: |

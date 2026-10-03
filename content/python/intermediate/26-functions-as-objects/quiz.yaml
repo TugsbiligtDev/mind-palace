@@ -36,18 +36,18 @@ questions:
   - type: mcq
     prompt: What does `@cache` do to a function?
     options:
-      - It remembers results so the same arguments are not computed again
-      - It runs the function in the background
-      - It makes the function private
-      - It checks the types
+      - It remembers results so the same arguments aren't computed again
+      - It runs the function in the background, so the rest of the program doesn't wait
+      - It saves the function's code so it loads faster next time
+      - It stores the arguments so the next call can skip them
     answer: 0
     explanation: Caching (memoization) stores previous results for a fast lookup. It is only safe for pure functions.
   - type: mcq
     prompt: What is the difference between `f` and `f()`?
     options:
       - "`f` is the function object; `f()` calls it and gives its result"
-      - They are identical
-      - "`f()` is a syntax error"
-      - "`f` is faster"
+      - "`f` calls the function; `f()` is the function object itself"
+      - They are identical; the brackets are optional in Python
+      - "`f` gives the function's last result; `f()` runs it again to get a new result"
     answer: 0
     explanation: Without brackets you refer to the function itself, which you can pass around. With brackets you run it.

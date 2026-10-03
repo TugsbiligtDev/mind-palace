@@ -9,18 +9,18 @@ questions:
     prompt: "What does `grid-column: 1 / -1` do?"
     options:
       - "Stretches the item from the first line to the last: the full width"
-      - "Removes the item from the grid"
-      - "Puts the item in the last column only"
-      - "Reverses the column order"
+      - Puts the item in the last column only, at the end of the row
+      - Removes the item from the grid, so it sits by itself below all the others
+      - Makes the item one column wide and reverses its position
     answer: 0
     explanation: "Negative line numbers count from the end; -1 is the last line."
   - type: mcq
     prompt: "Which line makes as many columns as fit, each at least 200px?"
     options:
       - "`grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));`"
-      - "`grid-template-columns: repeat(200px, 1fr);`"
-      - "`grid-template-columns: auto 200px;`"
-      - "`grid-auto-columns: 200px;`"
+      - "`grid-template-columns: repeat(auto-fit, 200px, 1fr);`"
+      - "`grid-template-columns: repeat(4, minmax(200px, 1fr)) auto;`"
+      - "`grid-template-columns: minmax(200px, 1fr) auto-fit;`"
     answer: 0
     explanation: "auto-fit decides the count; minmax sets each column's minimum and lets them share the rest."
   - type: mcq
@@ -40,9 +40,9 @@ questions:
         "main   sidebar"
         "header footer";
     options:
-      - "The header area isn't a rectangle (it appears in two separate places)"
-      - "Area names can't repeat"
-      - "There must be exactly two rows"
-      - "Nothing is wrong"
+      - The header area isn't a rectangle; it appears in two places
+      - Area names can't repeat, so header can only appear once
+      - There must be exactly two rows to match the two columns
+      - The footer area needs to span both columns, just like the header does
     answer: 0
     explanation: "Each named area must form one rectangle. The browser ignores the whole declaration if it doesn't."

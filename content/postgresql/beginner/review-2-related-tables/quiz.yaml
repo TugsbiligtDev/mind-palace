@@ -29,10 +29,10 @@ questions:
   - type: mcq
     prompt: A report of "orders per customer" says Emma has 6 orders, but she really has 4. What's the most likely cause?
     options:
-      - The join to `order_items` repeated each order once per line, and the query used `count(*)`
-      - Emma has duplicate customer rows
-      - A LEFT JOIN should have been an INNER JOIN
-      - ORDER BY changed the count
+      - The join to `order_items` repeated each order per line, and `count(*)` counted them
+      - Emma has two customer rows with the same name, so each of her orders is counted twice
+      - A LEFT JOIN should have been an INNER JOIN, so the extra rows are the NULL ones
+      - ORDER BY changed the count, because sorting runs before the grouping happens
     answer: 0
     explanation: Joining order lines multiplies rows. `count(DISTINCT o.order_id)` counts each order once.
 
@@ -40,11 +40,11 @@ questions:
     prompt: "You run `ALTER TABLE books ADD CONSTRAINT price_max CHECK (price <= 500);` but one book already costs 650. What happens?"
     options:
       - The constraint is added, and the 650 book is deleted
-      - The constraint is added and only applies to new rows
+      - The constraint is added and only applies to new or changed rows
       - The ALTER TABLE fails, because an existing row breaks the rule
-      - The 650 price is changed to 500
+      - The 650 price is lowered to 500 to match the new rule
     answer: 2
-    explanation: PostgreSQL checks existing rows when you add a CHECK constraint. Fix the data first (or learn NOT VALID later, in Advanced).
+    explanation: PostgreSQL checks existing rows when you add a CHECK constraint. Fix the data first (or add it with `NOT VALID`, which skips the check for existing rows, then fix them and run `VALIDATE CONSTRAINT`).
 
   - type: fill
     prompt: Complete the self join so each employee appears next to their manager.

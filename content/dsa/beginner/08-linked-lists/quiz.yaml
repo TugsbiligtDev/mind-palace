@@ -23,10 +23,10 @@ questions:
   - type: mcq
     prompt: Why do list solutions often start with a dummy node?
     options:
-      - It makes the list faster
-      - The head may change, and a dummy in front removes that special case
-      - Lists cannot be empty without it
-      - It stores the length
+      - It makes the list faster, because the head is cached
+      - The head may change, and a dummy removes that special case
+      - A list can't be empty unless it has a dummy node first
+      - It stores the length, so you don't need to count the nodes
     answer: 1
     explanation: With a dummy in front, every real node (including the head) has a node before it, so one piece of code handles all of them.
   - type: mcq

@@ -32,10 +32,10 @@ questions:
   - type: mcq
     prompt: When is a generator a better choice than a list?
     options:
-      - When you only pass through the items once and they may be huge or endless
-      - When you need to index items by position
-      - When you need the length
-      - When you need to loop twice
+      - When you pass through the items once and they may be huge or endless
+      - When you need to get items by their position, like `items[5]`
+      - When you need to know how many items there are with len()
+      - When you need to loop over the same items two or more times, in order
     answer: 0
     explanation: Generators produce values lazily, saving memory. Lists are better when you reuse or index the items.
   - type: fill

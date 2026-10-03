@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: In VS Code, what should you open to work on a website?
     options:
-      - "The project folder, with File → Open Folder"
-      - "Only the index.html file"
-      - "Your whole home folder"
-      - "The website in the browser"
+      - The project folder, with File → Open Folder
+      - Only index.html, with File → Open File
+      - Your whole home folder, so every file is close
+      - The site in the browser, then edit it there
     answer: 0
     explanation: "Opening the folder shows every file in the Explorer and lets VS Code search the whole project."
   - type: mcq
@@ -21,23 +21,23 @@ questions:
   - type: mcq
     prompt: You changed a color in DevTools and the page looks perfect. You refresh. What happens?
     options:
-      - "The change is gone: DevTools edits only affect the page in front of you until it reloads"
-      - "The change is saved into your style.css"
-      - "The change is saved on the website's server"
-      - "The browser asks whether to keep it"
+      - "The change is gone: DevTools edits last only until the page reloads"
+      - The change is saved into your style.css file automatically
+      - The change stays, because the browser caches the edited version of the page for you
+      - The browser asks whether you want to keep the edit or not
     answer: 0
     explanation: "DevTools changes are temporary experiments. Copy the working value into your own CSS file."
   - type: mcq
     prompt: Which DevTools panel shows the HTML of the page as a tree, with the CSS rules for the selected element?
-    options: ["Elements (Inspector in Firefox)", "Console", "Network", "Application"]
+    options: [Elements (Inspector in Firefox), Console, Network, Sources (where the files are listed)]
     answer: 0
     explanation: "Elements is the HTML tree with Styles beside it. Console shows messages and errors, and Network lists each file the page loaded."
   - type: mcq
     prompt: Why use Live Server instead of double-clicking index.html?
     options:
-      - "It serves the folder like a real web server and reloads the page every time you save"
-      - "It publishes your site to the internet"
-      - "It checks your HTML for mistakes"
-      - "It's the only way to see CSS"
+      - It serves the folder like a real server and reloads on every save
+      - It publishes your site to the internet so that other people can see it too
+      - It checks your HTML for mistakes and highlights them in red
+      - It's the only way to make the browser load your CSS file
     answer: 0
     explanation: "Live Server is a local server at 127.0.0.1: root paths work and the page reloads on save. Only you can see it."

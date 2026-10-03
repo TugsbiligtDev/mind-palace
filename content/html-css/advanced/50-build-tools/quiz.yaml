@@ -12,20 +12,20 @@ questions:
     explanation: "They add only what the browsers you target still need."
   - type: mcq
     prompt: "In Tailwind v4, where do you define your brand color so classes like `bg-brand` exist?"
-    options: ["In CSS, inside `@theme { --color-brand: …; }`", "In an HTML meta tag", "In `.gitignore`", "In a Sass variable"]
+    options: ["In CSS, inside `@theme { --color-brand: …; }`", "In `tailwind.config.js`, under `theme.colors`", In an HTML `<meta name="theme-color">` tag, "In a Sass variable: `$color-brand: …;`"]
     answer: 0
     explanation: "Version 4 moved configuration into CSS with @theme."
   - type: mcq
     prompt: "Which native CSS feature replaces Sass's `$brand: #7c2d12;` most directly?"
-    options: ["A custom property: `--brand: #7c2d12;`", "`@layer`", "`@scope`", "`attr()`"]
+    options: ["A custom property: `--brand: #7c2d12;`", "`@layer brand { color: #7c2d12; }`", "A nested rule: `& { --brand: #7c2d12; }`", "`@scope (:root) { brand: #7c2d12; }`"]
     answer: 0
     explanation: "Custom properties are native variables, and unlike Sass variables they can change at runtime."
   - type: mcq
     prompt: "What's a fair criticism of utility-first CSS?"
     options:
-      - "HTML gets long class lists and becomes harder to read"
-      - "It can't do responsive design"
-      - "It produces huge CSS files"
-      - "It doesn't support hover states"
+      - HTML gets long class lists that are harder to read
+      - It can't do responsive design without media queries
+      - It ships a huge CSS file with every possible class
+      - Hover and focus states need extra JavaScript
     answer: 0
     explanation: "Tailwind's output is small and handles states and breakpoints; the cost is in the markup."

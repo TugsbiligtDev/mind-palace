@@ -4,9 +4,9 @@ questions:
     prompt: What is a `--dry-run` option for in a file-organising script?
     options:
       - It shows what would happen without changing anything
-      - It runs the script faster
-      - It deletes temporary files
-      - It hides errors
+      - It runs the script faster by skipping slow checks
+      - It deletes temporary files left over from earlier runs
+      - It runs the script but hides all errors from the user
     answer: 0
     explanation: A dry run lets you check the plan before any file is moved or deleted.
   - type: predict
@@ -22,18 +22,18 @@ questions:
     prompt: Before scraping a website, which should you check?
     options:
       - Whether there is an API, the terms of service, and robots.txt
-      - Nothing, all pages are free to scrape
-      - Only the page colours
-      - Whether the site uses Python
+      - "Nothing: anything shown on a public page is free to scrape"
+      - Only robots.txt, since it is the law on what may be scraped
+      - Whether the site is built with Python, so your parser fits
     answer: 0
     explanation: Respecting a site's rules and load keeps your scraper legal, polite and unbanned.
   - type: mcq
     prompt: In a cron job, why use full paths for the script and program?
     options:
-      - A scheduled job does not run from your current folder or use your usual PATH
-      - It is faster
-      - cron cannot read relative paths in any language
-      - It hides output
+      - A scheduled job doesn't start in your folder or use your usual PATH
+      - Full paths run faster, since cron doesn't have to search for files
+      - cron cannot read relative paths in any programming language at all
+      - Full paths stop the output from being emailed to you after each run
     answer: 0
     explanation: The scheduler starts the job in a bare environment, so nothing can be assumed.
   - type: fill

@@ -13,10 +13,10 @@ questions:
   - type: mcq
     prompt: Why use pg_dump's custom format (`-Fc`)?
     options:
-      - It's the only format pg_dump supports
-      - It's compressed, and pg_restore can restore it in parallel or pick single tables
-      - It includes roles and passwords
-      - It's readable in a text editor
+      - It is the only format that pg_restore can read
+      - It's compressed, and pg_restore can restore in parallel or pick tables
+      - It includes roles and passwords, which plain format leaves out
+      - It is plain SQL, so you can read and edit it in any text editor before restoring
     answer: 1
     explanation: The custom format is compact and flexible. Roles aren't included in any pg_dump output (use pg_dumpall --globals-only).
 
@@ -44,19 +44,19 @@ questions:
   - type: mcq
     prompt: What is the only reliable way to know a backup works?
     options:
-      - Check the file exists
-      - Check the file size
+      - Check that the backup file exists
+      - Check that the file size looks right
       - Restore it somewhere and check the data
-      - Run pg_dump twice
+      - Run pg_dump twice and compare the files
     answer: 2
     explanation: Only a real restore proves the backup is complete and usable.
 
   - type: mcq
     prompt: "In `docker run … -v pg18data:/var/lib/postgresql … postgres:18`, what does `-v pg18data:…` do?"
     options:
-      - Sets the PostgreSQL version
-      - Stores the data in a named volume, so it survives the container being removed
-      - Opens port 5432
-      - Sets the password
+      - Sets which PostgreSQL version the container runs
+      - Stores the data in a named volume that survives the container
+      - Opens port 5432 so apps running on your Mac can connect to the database
+      - Sets the password for the postgres superuser
     answer: 1
     explanation: Without a volume, the data lives inside the container and is lost when the container is removed.

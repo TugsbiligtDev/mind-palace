@@ -278,23 +278,25 @@ steps:
 
       1. Back up `bookstore` in PostgreSQL's custom format.
       2. **Simulate a disaster**: delete all 2026 payments.
-      3. Restore the backup into a **new** database and check that the 2026 payments are there, and match the count you wrote down before.
+      3. Restore the backup into a **new** database and check that the 2026 payments are there, and match the first count.
+
+      The dates end in `+00` (UTC) so everyone gets the same count, wherever their Mac's clock is set. The last line rebuilds your damaged `bookstore` from the course files (run it in the folder where you saved them).
 
       You've passed this step when the two counts match. If they don't, find out why before moving on.
 
       **Checkpoint:** paste the output of the last `SELECT count(*)` on `bookstore_restored` into the box below.
     commands: |
       cd ~/Documents/sql
-      psql -d bookstore -c "SELECT count(*) FROM payments WHERE paid_at >= '2026-01-01';"
+      psql -d bookstore -c "SELECT count(*) FROM payments WHERE paid_at >= '2026-01-01 00:00+00';"
       pg_dump -Fc -d bookstore -f bookstore_capstone.dump
-      psql -d bookstore -c "DELETE FROM payments WHERE paid_at >= '2026-01-01';"
+      psql -d bookstore -c "DELETE FROM payments WHERE paid_at >= '2026-01-01 00:00+00';"
       createdb bookstore_restored
       pg_restore -d bookstore_restored bookstore_capstone.dump
-      psql -d bookstore_restored -c "SELECT count(*) FROM payments WHERE paid_at >= '2026-01-01';"
+      psql -d bookstore_restored -c "SELECT count(*) FROM payments WHERE paid_at >= '2026-01-01 00:00+00';"
       dropdb bookstore_restored
-      psql -f 02_bookstore.sql && psql -f 03_bookstore_growth.sql
+      psql -d postgres -f 02_bookstore.sql && psql -d postgres -f 03_bookstore_growth.sql
     expect_output:
-      - "13069"
+      - "13053"
 
   - kind: mac
     title: "5b. A safe query from Python"

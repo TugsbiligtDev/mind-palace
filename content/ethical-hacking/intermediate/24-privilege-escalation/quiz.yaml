@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: What is the most common source of privilege escalation?
     options:
-      - A dramatic zero-day exploit
-      - Misconfiguration — something set up carelessly that grants more power than intended
-      - Guessing the root password
-      - Physical access to the server
+      - Kernel exploits for brand-new, unpatched vulnerabilities
+      - Misconfiguration that grants more power than intended
+      - Cracking the root password from the shadow file
+      - Buffer overflows in programs that run as root
     answer: 1
     explanation: Escalation usually rests on misconfiguration, which is good news for defenders — it is fixable with hygiene rather than expensive tooling.
   - type: mcq
     prompt: On Linux, a root cron job runs a script that a low-privilege user is allowed to edit. Why is that dangerous, and what is the fix?
     options:
-      - It is not dangerous
-      - The low user's code will run as root; fix by ensuring root-owned jobs only run files that only root can modify
-      - Cron jobs cannot run as root
-      - Fix by deleting cron entirely
+      - The script may crash; fix by running the cron job less often
+      - The low user's code runs as root; let only root modify those files
+      - The job leaks root's password; fix by moving it to a user's crontab
+      - Logs fill up; fix by sending cron's output to /dev/null
     answer: 1
     explanation: A high-privilege job trusting a user-writable file hands that user root. The fix is correct ownership so nothing powerful runs something a weaker user can alter.
   - type: mcq
     prompt: What do tools like LinPEAS and WinPEAS do — and how should a defender use them?
     options:
-      - They break into the system automatically
-      - They sweep a system and highlight likely escalation paths for a human to judge; defenders can run them first and fix what they flag
-      - They patch the system
-      - They are only usable by attackers
+      - They automatically exploit every path they find, then report the ones that worked
+      - They highlight likely escalation paths; defenders can run them first
+      - They patch the misconfigurations they find, one by one
+      - They scan the network for other machines to pivot to
     answer: 1
     explanation: They list findings, they do not exploit. The same checklist serves an auditor and an intruder, so defenders should get there first.
   - type: mcq
     prompt: What single idea underlies nearly every privilege-escalation technique?
     options:
-      - Strong passwords are useless
-      - A high-privilege process trusting something a low-privilege user controls — a file, command, service or path
-      - Firewalls cause escalation
-      - Encryption always fails
+      - Root's password is usually weak enough to guess
+      - A high-privilege process trusts something a low user controls
+      - Every kernel has an unpatched flaw somewhere, so escalation is always possible
+      - Administrators reuse the same password on every machine
     answer: 1
     explanation: Escalation is finding that broken trust; defence is removing it. That is least privilege (Module 11) made concrete.
   - type: mcq
     prompt: Which Windows category is an example of a privilege-escalation path?
     options:
-      - A correctly quoted, least-privilege service
-      - A service that runs with high privilege but whose program a low-privilege user can replace
-      - A fully patched operating system
-      - A strong Administrator password
+      - A service running as a low-privilege account with a quoted path
+      - A high-privilege service whose program a low user can replace
+      - A service that only listens on localhost, not the network
+      - A disabled service that is set to start manually
     answer: 1
     explanation: A high-privilege service whose program a low user can control is the Windows mirror of the same broken-trust pattern; the fix is least privilege and locking down who can modify it.

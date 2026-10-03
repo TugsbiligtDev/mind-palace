@@ -44,10 +44,10 @@ questions:
   - type: mcq
     prompt: When is `@classmethod` most useful?
     options:
-      - As an alternative way to construct objects, like `Book.from_string(...)`
-      - To make a method private
-      - To speed up loops
-      - To stop a class being subclassed
+      - As another way to build objects, like `Book.from_string(...)`
+      - To make a method private, so only the class itself can call it
+      - To make a method faster, since it doesn't receive `self`
+      - To stop subclasses from overriding a method they inherit
     answer: 0
     explanation: A class method receives the class, so it can call `cls(...)` to build an object from different input.
   - type: fill

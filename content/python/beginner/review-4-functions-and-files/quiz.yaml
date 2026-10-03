@@ -20,9 +20,9 @@ questions:
     prompt: Which is the best way to make a program keep its contacts between runs?
     options:
       - Save them to a JSON file and load it at start-up
-      - Keep them in a global variable
-      - Print them and copy by hand
-      - Use a bigger list
+      - Keep them in a global variable at the top of the file
+      - Store them in a constant, so Python keeps the value
+      - Save them in a list that is defined inside main()
     answer: 0
     explanation: Variables vanish when the program ends. A file on storage survives.
   - type: predict

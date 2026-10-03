@@ -111,7 +111,7 @@ steps:
 
   - kind: why
     body: |
-      Privilege escalation — the heart of Intermediate and Advanced — is almost entirely built from this module: who you are (`id`), what you may run as root (`sudo -l`), which files are misconfigured (`ls -l`, `chmod 777`, SUID), and what is running and as whom (`ps aux`). Master these on safe practice files now and the later attacks read like plain sentences.
+      Privilege escalation — the heart of the Intermediate level — is almost entirely built from this module: who you are (`id`), what you may run as root (`sudo -l`), which files are misconfigured (`ls -l`, `chmod 777`, SUID), and what is running and as whom (`ps aux`). Master these on safe practice files now and the later attacks read like plain sentences.
 
   - kind: recap
     body: |

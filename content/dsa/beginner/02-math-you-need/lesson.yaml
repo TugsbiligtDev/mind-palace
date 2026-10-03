@@ -245,7 +245,7 @@ steps:
       BigInt(Number.MAX_SAFE_INTEGER) + 2n   // exact
       ```
 
-      You cannot mix BigInt and normal numbers in one expression (`1n + 1` is an error), and BigInt is slower. Use it only for overflow problems, which appear again in Module 31.
+      You cannot mix BigInt and normal numbers in one expression (`1n + 1` is an error), and BigInt is slower. Use it only when a problem's numbers really go past 2⁵³.
 
   - kind: why
     body: |

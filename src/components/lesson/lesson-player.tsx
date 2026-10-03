@@ -13,6 +13,14 @@ import { MacCheck, MacCommands } from "./mac-step";
 import { SqlPanel } from "./sql-panel";
 import { WebPanel } from "./web-panel";
 
+// Steps the learner must do (not just read) before the lesson counts as finished: exercises,
+// except an ungraded HTML & CSS "edit and look" step, and in-lesson questions. "On your Mac"
+// steps stay optional, since not everyone is on a Mac.
+function mustDo(step: Step) {
+  if (step.kind === "web") return !!webStepCheck(step);
+  return step.kind === "try" || step.kind === "code" || step.kind === "choice";
+}
+
 const KIND_LABEL: Record<Step["kind"], string> = {
   explain: "Learn",
   try: "Try it",
@@ -67,6 +75,8 @@ export function LessonPlayer({
   const graded = step.kind !== "web" || !!webStepCheck(step);
   const needsAction = ((isExercise && graded) || step.kind === "mac" || step.kind === "choice") && !done;
   const last = index === steps.length - 1;
+  // Steps skipped with the step bar. The lesson only counts as finished once they're done.
+  const skipped = steps.flatMap((st, i) => (i !== index && mustDo(st) && !saved?.stepsDone.includes(i) ? [i] : []));
 
   function next() {
     if ((!isExercise || !graded) && step.kind !== "mac" && step.kind !== "choice") completeStep(topicKey, index!);
@@ -75,7 +85,7 @@ export function LessonPlayer({
 
   function advance() {
     if (last) {
-      completeLesson(topicKey);
+      if (skipped.length === 0) completeLesson(topicKey);
       router.push(quizHref);
     } else setIndex(index! + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -176,10 +186,24 @@ export function LessonPlayer({
             disabled={needsAction}
             className="rounded-lg bg-brand px-5 py-2 text-sm font-medium text-brand-contrast shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            {last ? "Finish · take the quiz →" : "Continue →"}
+            {last ? (skipped.length > 0 ? "Take the quiz →" : "Finish · take the quiz →") : "Continue →"}
           </button>
         </div>
       </div>
+      {last && skipped.length > 0 && (
+        <p className={`mt-4 text-sm text-muted ${isExercise ? "text-right" : "mx-auto max-w-2xl text-right"}`}>
+          The lesson counts as finished once you&apos;ve done every exercise. Still to do:{" "}
+          {skipped.map((i, n) => (
+            <span key={i}>
+              {n > 0 && ", "}
+              <button onClick={() => setIndex(i)} className="text-brand underline underline-offset-4">
+                step {i + 1}
+              </button>
+            </span>
+          ))}
+          .
+        </p>
+      )}
       <p className="mt-10 text-center text-sm text-muted">
         Already confident? <Link href={quizHref} className="text-brand underline underline-offset-4">Jump to the quiz</Link>
       </p>

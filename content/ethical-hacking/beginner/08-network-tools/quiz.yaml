@@ -3,19 +3,19 @@ questions:
   - type: mcq
     prompt: You ping a server you know is running, but get no reply. What is the best conclusion?
     options:
-      - The server is definitely powered off
-      - The server may simply be configured to ignore ping while still running services
-      - Your network card is broken
-      - Ping only works on Windows
+      - The server must be powered off or unplugged from the network
+      - It may be set to ignore ping while still running services
+      - Your firewall is blocking all outgoing traffic from your machine
+      - Ping only works inside a local network, not across the internet
     answer: 1
     explanation: Many hosts drop ICMP echo requests but keep serving on their ports. "No reply" is not proof a host is down — a key caution when mapping a network.
   - type: mcq
     prompt: What does `traceroute example.com` show you?
     options:
-      - The contents of the web page
-      - Each router (hop) your packets pass through on the way to the destination, with timings
-      - A list of open ports on the server
-      - The server's password
+      - Which ports are open on the server, and the service behind each
+      - Each router (hop) your packets pass through on the way, with timings
+      - The server's IP address and the name of the company that owns and runs it
+      - Whether the server is up, by sending a single ping and timing it
     answer: 1
     explanation: Traceroute reveals the path hop by hop — useful for understanding network structure and spotting where a firewall might sit.
   - type: mcq
@@ -30,18 +30,18 @@ questions:
   - type: mcq
     prompt: Why is capturing traffic with Wireshark on a public coffee-shop network an ethical and legal problem?
     options:
-      - It uses too much bandwidth
-      - You would be recording other people's data without their consent or any authorisation
-      - Wireshark is illegal software
-      - It slows down your laptop
+      - Wireshark is illegal to install on a laptop without a licence
+      - You would record other people's data without their consent or authorisation
+      - The capture would slow the network down for everyone in the café
+      - Public Wi-Fi is encrypted, so you would be breaking that encryption to see anything at all
     answer: 1
     explanation: Capturing records everyone's traffic in range, including cleartext credentials. You capture only on networks you own or are explicitly authorised to monitor — your lab is the safe choice.
   - type: mcq
     prompt: A capture shows a login over plain FTP with the username and password fully readable. What does this demonstrate?
     options:
-      - FTP is encrypted and safe
-      - Cleartext protocols expose credentials to anyone who can see the traffic, which is why encryption exists
-      - Wireshark invented the password
-      - The server is unhackable
+      - Wireshark can decrypt any protocol if it captures enough packets
+      - Cleartext protocols expose logins to anyone who can see the traffic
+      - The user typed the password wrong, so the server sent it back
+      - FTP only shows passwords to people on the same machine as the server
     answer: 1
     explanation: Plain FTP, HTTP and Telnet send data unencrypted. Anyone in the path can read it — the single most persuasive argument for HTTPS, SSH and VPNs.

@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: A scan reports port 22 open. Which service would you expect behind it, and what does that suggest?
     options:
-      - HTTPS — an encrypted website
+      - HTTPS — an encrypted website you can browse to
       - SSH — secure remote login, a shell into the machine
-      - SMB — Windows file sharing
-      - DNS — name resolution
+      - SMB — Windows file sharing, often with open shares
+      - RDP — a graphical remote desktop for Windows
     answer: 1
     explanation: Port 22 is SSH by convention — remote shell access. Recognising the well-known ports lets you read a scan at a glance.
   - type: mcq
@@ -21,7 +21,7 @@ questions:
   - type: mcq
     prompt: When would a service use UDP rather than TCP?
     options:
-      - When it needs every byte delivered in order, like a file transfer
+      - When it needs every byte delivered and in the right order, like a file download or an email
       - When speed matters more than guaranteed delivery, like DNS lookups or video calls
       - When it wants to be more secure
       - UDP is never used
@@ -30,10 +30,10 @@ questions:
   - type: mcq
     prompt: What job does DNS do?
     options:
-      - It encrypts web traffic
-      - It translates human-friendly names like example.com into IP addresses
-      - It assigns IP addresses to new devices
-      - It blocks malicious ports
+      - It encrypts web traffic between your browser and the site
+      - It turns names like example.com into IP addresses
+      - It hands out IP addresses to devices that join a network
+      - It decides which route packets take across the internet
     answer: 1
     explanation: DNS is the internet's phone book, mapping names to addresses (usually over UDP 53). DHCP is the one that assigns addresses to new devices.
   - type: fill

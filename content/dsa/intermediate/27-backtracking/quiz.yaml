@@ -20,7 +20,7 @@ questions:
     explanation: The search records the empty set, then 0, then 0 with 1, then backtracks and records 1.
   - type: mcq
     prompt: What are the three beats of the backtracking template?
-    options: ["Sort, search, return", "Choose, explore, un-choose", "Split, solve, merge", "Push, pop, peek"]
+    options: ["Sort, search, return", "Choose, explore, un-choose", "Split, solve, merge together", "Push, pop, peek at the top"]
     answer: 1
     explanation: You add a choice to the path, recurse, then remove it so the path is ready for the next option.
   - type: mcq
@@ -31,18 +31,18 @@ questions:
   - type: mcq
     prompt: What does "pruning" mean in backtracking?
     options:
-      - Sorting the input
-      - Stopping a branch early, when it can no longer lead to a valid answer
-      - Removing duplicates from the output
-      - Caching results
+      - Sorting the input so the best answers come first
+      - Stopping a branch early when it can't lead to an answer
+      - Removing duplicate answers from the output at the end
+      - Caching each branch's result so it's never computed twice
     answer: 1
     explanation: Cutting off hopeless branches early is what makes backtracking practical instead of pure brute force.
   - type: mcq
     prompt: Why is `result.push(path)` (without a copy) a bug?
     options:
-      - It is slower
-      - Every saved answer points at the same array, which is emptied as the search backtracks
-      - Arrays cannot be pushed
-      - It reverses the path
+      - It is slower than copying the array before pushing it
+      - Every saved answer is the same array, emptied as the search backtracks
+      - "`push` adds the array's items one by one, flattening the result"
+      - It saves the path in reverse order, since the last choice made is added first
     answer: 1
     explanation: The saved reference sees later changes. A copy, `[...path]`, freezes the answer at that moment.

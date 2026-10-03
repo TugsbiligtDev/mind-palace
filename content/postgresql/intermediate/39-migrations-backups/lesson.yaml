@@ -24,7 +24,7 @@ steps:
       - **One change per migration**, with a descriptive name.
       - **Run each one in a transaction** where possible (PostgreSQL can roll back DDL, Module 30), so a failure leaves nothing half-done. (Exception: `CREATE INDEX CONCURRENTLY` can't run inside a transaction.)
       - Some tools support **down** migrations (undo steps). Many teams only move **forward**: to undo, write another migration.
-      - On big production tables, some changes lock the table. Module 41 covers doing them safely.
+      - On big production tables, some changes lock the table. Test those on a copy first and run them at a quiet time.
 
   - kind: try
     title: A migration by hand
@@ -99,7 +99,7 @@ steps:
 
       What `pg_dump` **doesn't** include: **roles and passwords**, which belong to the whole cluster. Back those up with `pg_dumpall --globals-only`.
 
-      pg_dump is great for small and medium databases and for moving data. Big production systems add **physical** backups and point-in-time recovery (Module 48).
+      pg_dump is great for small and medium databases and for moving data. Big production systems add **physical** backups and point-in-time recovery (`pg_basebackup` plus WAL archiving, or your cloud provider's backups).
 
   - kind: explain
     title: A backup you haven't restored is a hope

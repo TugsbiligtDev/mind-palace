@@ -7,7 +7,7 @@ questions:
     explanation: It is a contiguous piece with a rule, where the rule can be checked by a count of distinct values as the edges move.
   - type: mcq
     prompt: "\"The array is sorted. Find two numbers whose difference is exactly k.\" Which pattern?"
-    options: ["Two pointers moving the same way", "Monotonic stack", "Backtracking", "Difference array"]
+    options: [Two pointers moving the same way, Two pointers moving toward each other, Sliding window that grows and shrinks, Monotonic stack of the numbers seen so far]
     answer: 0
     explanation: On sorted data two pointers can move forward together, growing or shrinking the difference.
   - type: mcq

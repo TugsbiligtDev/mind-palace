@@ -6,6 +6,9 @@ import type { PyCheck, PyRunOutput, PyVerdict } from "./core";
 const TIMEOUT_MS = 8000;
 const LOAD_TIMEOUT_MS = 90000;
 const stopped = `Stopped: your code ran longer than ${TIMEOUT_MS / 1000} seconds. Is there a loop that never ends?`;
+// Grading runs the model answer and then yours, on every test, so it gets twice as long.
+const GRADE_TIMEOUT_MS = TIMEOUT_MS * 2;
+const gradeStopped = `Stopped: checking your code took longer than ${GRADE_TIMEOUT_MS / 1000} seconds. Is there a loop that never ends?`;
 
 let warmed: Promise<unknown> | null = null;
 
@@ -43,7 +46,7 @@ export async function runPython(code: string, stdin: string[] = []): Promise<PyR
 export async function gradePython(code: string, check: PyCheck): Promise<PyVerdict> {
   try {
     await loadPackages([code, check.solution, ...check.tests]);
-    return await call<PyVerdict>({ type: "grade", code, check }, TIMEOUT_MS * 2, stopped);
+    return await call<PyVerdict>({ type: "grade", code, check }, GRADE_TIMEOUT_MS, gradeStopped);
   } catch (e) {
     const message = (e as Error).message;
     return { correct: false, output: failed(message), message, passed: 0, total: check.tests.length };

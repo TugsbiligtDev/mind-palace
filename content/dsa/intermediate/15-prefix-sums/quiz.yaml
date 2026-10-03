@@ -12,16 +12,16 @@ questions:
     explanation: "`prefix[4] - prefix[1]` is the sum of the items at positions 1 to 3: 1 + 4 + 1 = 6."
   - type: mcq
     prompt: You must answer 100 000 range-sum questions on an array of 100 000 numbers. Which approach is fast enough?
-    options: ["Add the numbers for each question", "Build prefix sums once, then answer each question in O(1)", "Sort the array first", "Recursion"]
+    options: [Loop over the range and add the numbers for each question, "Build prefix sums once, then answer each question in O(1)", "Sort the array first, then binary search each range's ends", Split the range in half recursively and add the two halves]
     answer: 1
     explanation: The naive way is 10¹⁰ steps. Prefix sums cost O(n) once plus O(1) per question.
   - type: mcq
     prompt: "When counting subarrays with sum k using a prefix-sum Map, why do you start the map with `{0: 1}`?"
     options:
-      - To avoid an error
-      - It represents the empty prefix, so subarrays starting at position 0 are counted
-      - Because k is always 0
-      - It is not needed
+      - To avoid an error the first time the Map is read
+      - It stands for the empty prefix, so subarrays from index 0 count
+      - Because k is always 0 when a subarray starts at the beginning of the array
+      - It isn't needed; it only makes the code easier to read
     answer: 1
     explanation: A subarray starting at index 0 has nothing before it, which is a prefix total of 0. That prefix has to be in the map.
   - type: predict

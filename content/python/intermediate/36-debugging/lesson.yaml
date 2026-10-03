@@ -43,7 +43,7 @@ steps:
   - kind: mac
     title: Drive pdb from Terminal
     body: |
-      Make a tiny buggy script and step through it with pdb. The `printf` feeds pdb the commands `n` (next) twice, `p` to print a variable, then `q` to quit, so you can see how it works. Then run `uv run python -m pdb bug.py` yourself and type commands.
+      Make a tiny script and step through it with pdb. The `printf` feeds pdb these commands: `b total` (set a breakpoint in the function), `c` (continue until it stops there), `n` three times (run the next line), `p result` and `p price` (print two variables), then `q` to quit. You should see `2` printed twice: one trip round the loop has happened. Then run `uv run python -m pdb bug.py` yourself and type commands.
 
       **Checkpoint:** paste the output. It should contain `(Pdb)`.
     commands: |
@@ -58,7 +58,7 @@ steps:
 
       print(total([2, 3, 5]))
       PY
-      printf 'n\nn\nn\np result\nq\n' | uv run python -m pdb bug.py
+      printf 'b total\nc\nn\nn\nn\np result\np price\nq\n' | uv run python -m pdb bug.py
     expect_output:
       - "(Pdb)"
 

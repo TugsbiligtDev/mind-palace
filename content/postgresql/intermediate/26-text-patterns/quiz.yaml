@@ -45,9 +45,9 @@ questions:
   - type: mcq
     prompt: "Why is `WHERE title ILIKE '%river%'` slow on a huge table?"
     options:
-      - ILIKE is deprecated
-      - A leading wildcard means a normal index can't help, so every row must be checked
-      - Text columns can't be indexed
-      - It isn't slow
+      - ILIKE is deprecated and runs in a slow compatibility mode
+      - A leading wildcard means a normal index can't help
+      - Text columns can't be indexed, so every row is read
+      - It isn't slow, since ILIKE uses the table's index
     answer: 1
-    explanation: A B-tree index is sorted from the start of the text, like a phone book. "Contains" searches need a trigram index (pg_trgm, Module 46).
+    explanation: A B-tree index is sorted from the start of the text, like a phone book. "Contains" searches need a trigram index (the pg_trgm extension).

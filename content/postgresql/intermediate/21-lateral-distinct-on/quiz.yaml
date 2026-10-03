@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: "In `SELECT DISTINCT ON (order_id) … ORDER BY order_id, paid_at DESC`, what decides which row is kept for each order?"
     options:
-      - The first row inserted
-      - The ORDER BY after order_id, here the newest paid_at
-      - A random row
-      - The largest amount
+      - The row that was inserted first for each order
+      - "The ORDER BY after order_id: here, the newest paid_at"
+      - Whichever row PostgreSQL reads first from the disk
+      - The row with the largest amount, since DISTINCT ON keeps the max
     answer: 1
     explanation: DISTINCT ON keeps the first row of each group in ORDER BY order. The columns after the DISTINCT ON columns decide which row that is.
 
@@ -21,17 +21,21 @@ questions:
       - "Sales Associate | Tom Becker"
       - "Sales Associate | Sara Lindqvist"
       - "Sales Associate | Kenji Mori"
-      - "Sales Associate | Tom Becker\nSales Associate | Sara Lindqvist\nSales Associate | Kenji Mori"
+      - "Sales Associate | Tom Becker
+
+        Sales Associate | Sara Lindqvist
+
+        Sales Associate | Kenji Mori"
     answer: 0
     explanation: "It keeps the earliest-hired sales associate. Tom Becker was hired in 2022, before Sara (2023) and Kenji (2024)."
 
   - type: mcq
     prompt: What does LATERAL allow a subquery in FROM to do?
     options:
-      - Return more than one column
-      - Use columns from tables that appear to its left, so it runs per row
-      - Skip the alias
-      - Update rows
+      - Return more than one column from the subquery
+      - Use columns from tables to its left, so it runs per row
+      - Skip the alias that a subquery in FROM normally needs
+      - Update the rows it reads, as well as returning them
     answer: 1
     explanation: A LATERAL subquery can refer to earlier FROM items, like a correlated subquery that returns a whole table.
 

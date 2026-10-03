@@ -3,37 +3,37 @@ questions:
   - type: mcq
     prompt: An Nmap scan reports a port as "filtered" (no reply at all). What does that most likely mean?
     options:
-      - The port is definitely open
-      - A firewall is silently dropping the probe, so you cannot tell if a service is there — itself information about the target's defences
-      - The service crashed
-      - Nmap failed
+      - The port is open, but the service refused your connection because it needs a login
+      - A firewall is dropping the probe, so you can't tell what's behind it
+      - The port is closed, and the host answered with a reset
+      - The host is offline, so Nmap could not reach any port on it
     answer: 1
     explanation: "Open = SYN-ACK, closed = RST, and no reply = filtered, usually a firewall dropping packets. The silence tells you a defence is in the way."
   - type: mcq
     prompt: Why is the `-sV` (version detection) flag so valuable?
     options:
-      - It scans faster
-      - It identifies the exact software and version on each open port, which is what you look up for known vulnerabilities
-      - It hides your scan from firewalls
-      - It closes open ports
+      - It slows the scan down so firewalls don't notice it
+      - It names the exact software and version on each open port
+      - It scans all 65,535 ports instead of only the 1,000 most common ones
+      - It confirms which open ports are actually vulnerable
     answer: 1
     explanation: A bare open port is thin. Knowing it is "vsftpd 2.3.4" or "Apache 2.4.49" lets you search for known flaws in that precise version — the bridge to Module 17.
   - type: mcq
     prompt: Why might you run `nmap -p-` instead of a default scan?
     options:
-      - It is always faster
-      - The default scans only ~1,000 common ports; `-p-` covers all 65,535, catching services deliberately moved to odd ports
-      - It avoids detection
-      - It only scans UDP
+      - "`-p-` scans UDP ports too, which the default scan skips"
+      - The default checks ~1,000 common ports; `-p-` checks all 65,535
+      - "`-p-` skips the ping step, so hosts that ignore ping still show"
+      - "`-p-` is quieter than the default, so it avoids detection"
     answer: 1
     explanation: A default scan can miss a service hidden on port 8443 or 2222. `-p-` is slower but thorough — a conscious trade of speed for completeness.
   - type: mcq
     prompt: Why should you be cautious with aggressive timing (`-T5`) and intrusive NSE scripts on a real engagement?
     options:
-      - They cost money
-      - They can overwhelm or crash fragile services and are very visible in logs, so they may breach the rules of engagement
-      - They only work on Windows
-      - They delete your scan results
+      - They return false results, so every finding must be rescanned
+      - They can crash fragile services and are loud, risking the rules
+      - They need a paid licence that most clients' contracts don't cover
+      - They only work against Linux targets, not the Windows hosts
     answer: 1
     explanation: Scanning is interacting with live systems. Too fast or too intrusive can disrupt fragile services and alert defenders, which is why RoE often restricts it and you record what you ran.
   - type: fill

@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: You have a 6-step data pipeline that gives a wrong final answer. What is the fastest first move?
     options:
-      - Check the output after step 3 to see whether the mistake is before or after it
-      - Rewrite the whole program
-      - Add random print statements everywhere
-      - Ask someone else to fix it
+      - Check the output after step 3 to see if the mistake is before or after it
+      - Rewrite the whole pipeline from scratch, more carefully this time
+      - Add print statements after every single line in all six steps
+      - Check step 6 first, since that's where the wrong answer actually appears
     answer: 0
     explanation: Checking the middle halves the search area each time, the same trick as binary search.
   - type: predict
@@ -24,18 +24,18 @@ questions:
   - type: mcq
     prompt: Which is the best way to use an AI assistant when you are stuck on an exercise?
     options:
-      - Ask for a hint or an explanation, then write the solution yourself and test it
-      - Paste the exercise and copy the answer without reading it
-      - Never use it at all
-      - Paste your passwords so it can log in
+      - Ask for a hint or an explanation, then write it yourself and test it
+      - Paste the exercise, then copy the answer as long as it passes the tests
+      - Never use one, since AI answers are always wrong for beginners
+      - Ask it to write the whole solution, then read it line by line
     answer: 0
     explanation: Learning happens when you do the thinking. Use the assistant to explain, hint and review, and always verify.
   - type: mcq
     prompt: You get an error. What should you copy into a search engine?
     options:
-      - The last line of the traceback, without your own file and variable names
-      - The whole traceback and your private code
-      - Only the file name
-      - Nothing, errors cannot be searched
+      - The last line of the traceback, without your own names
+      - The whole traceback, including all your private code
+      - Only your file name and the line number of the error
+      - The first line of the traceback, which names the file
     answer: 0
     explanation: The last line names the error. Removing your own names makes the search match other people's questions.

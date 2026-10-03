@@ -185,7 +185,7 @@ steps:
 
       Calculate it in the query instead: `copies * unit_price AS line_total`. Same goes for ages (store the birth date, not the age) and counts (count the rows, don't store "number_of_orders").
 
-      There are good reasons to store a calculated value sometimes, for speed on huge tables. That's **deliberate denormalization**, covered in Module 40, and it's a choice you make on purpose, never by accident. (Module 29's *generated columns* also let PostgreSQL keep one in sync for you.)
+      There are good reasons to store a calculated value sometimes, for speed on huge tables. That's **deliberate denormalization**: a choice you make on purpose, for a measured reason, never by accident. (Module 29's *generated columns* also let PostgreSQL keep one in sync for you.)
 
   - kind: try
     title: A total that went stale

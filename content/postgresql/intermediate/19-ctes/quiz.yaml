@@ -20,10 +20,10 @@ questions:
   - type: mcq
     prompt: What are the two parts of a recursive CTE, joined by UNION ALL?
     options:
-      - A SELECT and a GROUP BY
-      - An anchor (starting rows) and a recursive part that builds on the previous round
-      - A WHERE and a HAVING
-      - Two separate tables
+      - A SELECT that finds the rows, and a GROUP BY that combines them
+      - An anchor (the starting rows) and a part that builds on the last round
+      - A WHERE that picks the starting rows, and a HAVING that tells the recursion to stop
+      - Two separate tables, one for parents and one for their children
     answer: 1
     explanation: The anchor runs once, then the recursive part keeps running on the newest rows until it adds nothing new.
 
@@ -39,10 +39,10 @@ questions:
   - type: mcq
     prompt: Why would you choose a CTE over a nested subquery in FROM?
     options:
-      - CTEs are always faster
+      - CTEs are always faster, since PostgreSQL stores their results
       - It reads top to bottom as named steps, and can be used more than once
-      - Subqueries can't use GROUP BY
-      - CTEs are saved permanently in the database
+      - Subqueries in FROM can't use GROUP BY, but CTEs can
+      - CTEs are saved in the database, so other queries can reuse them later by name
     answer: 1
     explanation: CTEs are about readability and reuse. They last only for the one statement, and they aren't automatically faster.
 

@@ -44,10 +44,10 @@ questions:
   - type: mcq
     prompt: "Why does `SELECT price * 100 AS cents FROM books WHERE cents > 2000;` fail?"
     options:
-      - You can't multiply in SELECT
+      - You can't multiply a column in SELECT; it must be done in WHERE
       - WHERE runs before SELECT, so the alias `cents` doesn't exist yet
-      - Aliases must be in double quotes
-      - 2000 is too big
+      - Aliases must be written in double quotes to be used anywhere else
+      - "`price * 100` is text, so it can't be compared with a number"
     answer: 1
     explanation: "PostgreSQL evaluates FROM → WHERE → SELECT → ORDER BY. Repeat the calculation in WHERE (`price * 100 > 2000`), or use the alias only in ORDER BY."
 

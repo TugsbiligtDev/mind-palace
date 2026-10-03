@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: When setting up your lab, why must both VMs be on a Host-Only / Internal network rather than Bridged?
     options:
-      - Host-Only is faster
-      - Host-Only keeps traffic inside your computer so the deliberately-vulnerable target can't be reached from, or leak to, the internet or other devices
-      - Bridged does not work on Macs
-      - It makes Kali run better
+      - Bridged mode doesn't let two VMs on the same computer talk to each other
+      - Host-Only keeps the vulnerable target off the internet and your home network
+      - Host-Only gives each VM more memory and CPU than Bridged mode does
+      - Bridged mode gives the target its own public IP address, which your provider charges for
     answer: 1
     explanation: Isolation is what keeps the lab legal and safe. Bridged would put a vulnerable machine on your real network and the internet; Host-Only/Internal confines everything to your computer.
   - type: mcq
     prompt: What should you use as the target machine in your lab?
     options:
-      - Your own everyday laptop
-      - A deliberately-vulnerable training image (e.g. Metasploitable, a VulnHub box, Juice Shop)
-      - A random server you found online
-      - Your router
+      - Your own everyday laptop, since you own it and can authorise it
+      - A deliberately vulnerable training image, such as Metasploitable
+      - An old company server you have access to through work
+      - Your home router, since you own it and it runs real services
     answer: 1
     explanation: Targets must be machines built for practice. Training images exist precisely so you can attack something legally and safely. Never point the lab at a real device or a system you do not own.
   - type: mcq
     prompt: You take a snapshot of each clean VM before you start. What does that buy you?
     options:
-      - More disk space
-      - The ability to roll back to a known-good state in seconds after you break something
-      - Internet access for the target
-      - A faster CPU
+      - Protection from malware in the lab ever reaching your real computer
+      - A quick rollback to a known-good state when you break something
+      - A backup you can restore if your laptop's disk fails
+      - Faster boots, since the VM resumes from the saved image
     answer: 1
     explanation: Snapshots let you experiment freely and restore the VM instantly — one of the big reasons security work happens inside virtual machines.
   - type: mcq
     prompt: Which single public host may you scan to practise, without arranging your own authorization?
     options:
-      - Any company homepage
-      - scanme.nmap.org, which the Nmap project provides expressly for scan practice
-      - Your internet provider's website
-      - A government portal
+      - Any site using HTTPS, since its traffic is encrypted anyway
+      - scanme.nmap.org, which the Nmap project runs for scan practice
+      - Your internet provider's servers, since you pay for the service
+      - Any public IP address, as long as you only scan and don't attack
     answer: 1
     explanation: "`scanme.nmap.org` is offered by Nmap's authors for exactly this. Everything else needs your own lab or a platform that pre-authorises you (TryHackMe, Hack The Box)."
   - type: mcq
     prompt: Your capstone write-up lists an open port, its service and version, plus one line of "what an attacker might check next." Why stop at reasoning rather than an exploit?
     options:
-      - Exploits are too hard to type
-      - The Beginner goal is to set up a lab and safely map a target; exploitation is a later phase, and the value here is clear recon plus documented reasoning
-      - Reports are not allowed to mention services
-      - It would crash the VM
+      - Exploits against lab targets are illegal, even on your own machines
+      - Beginner's goal is a safe lab and a mapped target; exploitation comes later
+      - Writing exploit details in a report would let anyone who reads it attack
+      - Reasoning is enough because the target's version is always vulnerable
     answer: 1
     explanation: Beginner ends at safe, legal recon and a clear write-up. Noting the next step to investigate (without exploiting) is exactly the professional habit; exploitation comes in the Intermediate level.

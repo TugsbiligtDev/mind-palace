@@ -71,7 +71,7 @@ steps:
       1. **`k` can be bigger than the array.** Rotating a 5-item array by 7 is the same as by 2, so use `k % n` (and handle `n = 0`).
       2. **The new array is the last `k` items followed by the rest**: `arr.slice(n - k)` then `arr.slice(0, n - k)`.
 
-      (There is also an in-place version made of three reversals. You will see it in the Practice list.)
+      (There is also an in-place version with O(1) extra space: reverse the whole array, then reverse the first `k` items, then reverse the rest. Try it on paper with `[1, 2, 3, 4, 5]` and `k = 2`.)
 
   - kind: code
     title: Rotate right

@@ -19,10 +19,10 @@ questions:
   - type: mcq
     prompt: A monotonic stack solution has a `while` loop inside a `for` loop. Why is it still O(n)?
     options:
-      - The while loop rarely runs
-      - Each item is pushed once and popped at most once, so total pops are at most n
-      - JavaScript speeds it up
-      - It is actually O(n²)
+      - The while loop rarely runs, so it doesn't count
+      - Each item is pushed once and popped at most once
+      - JavaScript speeds up a while inside a for loop
+      - It is actually O(n²), but fast on most inputs
     answer: 1
     explanation: The pops across the whole run can never exceed the pushes, which is n. That is an amortized argument.
   - type: mcq
@@ -42,9 +42,10 @@ questions:
   - type: fill
     prompt: The stack should hold ____ rather than values, so you can write each answer into the right place.
     code: |
-      const stack = [];
-      stack.push(0);
-      console.log(typeof stack[0] === "number" ? "____" : "no");
+      // The stack keeps ____, so result[j] can be filled in later.
+      for (let i = 0; i < nums.length; i++) {
+        stack.push(i);
+      }
     answer: indexes
     accept: ["indices", "index", "positions"]
     runnable: false

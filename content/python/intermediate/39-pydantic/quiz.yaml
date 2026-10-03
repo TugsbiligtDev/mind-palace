@@ -29,24 +29,24 @@ questions:
     explanation: "Text that cannot be read as an integer gives the error type `int_parsing`."
   - type: mcq
     prompt: Which is the Pydantic v2 way to read a model from JSON text?
-    options: ["Model.model_validate_json(text)", "Model.parse_raw(text)", "json.loads(text) only", "Model.from_json(text)"]
+    options: [Model.model_validate_json(text), Model.parse_raw(text), Model.validate_json(text), "Model.from_json_text(text, strict=True)"]
     answer: 0
     explanation: "`parse_raw` and `parse_obj` are the older v1 names."
   - type: mcq
     prompt: Why validate data "at the edge" of your program?
     options:
-      - Bad data is caught immediately with a clear message, and the rest of the code can trust it
-      - It makes the program faster
-      - Python needs it
-      - It removes the need for tests
+      - Bad data is caught early with a clear message, and the rest can trust it
+      - It makes the program run faster, since later checks can be skipped
+      - Python needs every value checked before it can be stored in a variable
+      - It removes the need to write tests for the rest of the program's code
     answer: 0
     explanation: Otherwise bad data causes confusing failures far from the real cause.
   - type: mcq
     prompt: How does pydantic-settings get a value for a field called `api_key`?
     options:
       - From the environment variable API_KEY (or a .env file)
-      - From a random number
-      - Only from a Python file
-      - From the internet
+      - From a settings.py file that you write by hand
+      - From the command line, as `--api-key` when you run it
+      - From pyproject.toml, under a [tool.pydantic.settings] section
     answer: 0
     explanation: Field names are matched case-insensitively with environment variables.

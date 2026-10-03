@@ -21,19 +21,19 @@ questions:
   - type: mcq
     prompt: Why is a file with permissions `777` (`rwxrwxrwx`) a red flag during an audit?
     options:
-      - It is too small to be useful
-      - Everyone can read, write and execute it, so any user can tamper with or replace it
-      - It can only be run by root
-      - It is encrypted
+      - Only root can run it, so ordinary users are locked out of a needed tool
+      - Everyone can read, write and run it, so any user can change or replace it
+      - The number means it is encrypted, so the auditor cannot inspect it
+      - It is a hidden system file that should never appear in a listing
     answer: 1
     explanation: 777 grants full access to everyone, including write. Any user could alter or replace the file — a frequent and dangerous misconfiguration.
   - type: mcq
     prompt: What does `sudo` let an ordinary user do?
     options:
-      - Hide their activity from the logs
-      - Run a single command with root's privileges after proving who they are
-      - Delete any file instantly
-      - Become invisible on the network
+      - Switch to the root account permanently, with no password needed
+      - Run one command with root's privileges, after proving who they are
+      - Run commands without anything being recorded in the system logs
+      - Read other users' files without those users being able to tell
     answer: 1
     explanation: "`sudo` borrows root's power for one command and records it in the logs. A misconfigured sudo rule is a common privilege-escalation route — which is why `sudo -l` is so useful."
   - type: fill

@@ -22,16 +22,16 @@ questions:
     explanation: "Only the rows 2 and 3 match `n > 1`: their sum is 5 and there are 2 of them."
   - type: mcq
     prompt: What does `UPDATE books SET price = 0` (with no WHERE) do?
-    options: ["Changes the price of every row", "Changes nothing", "Raises an error", "Changes only the first row"]
+    options: [Changes the price of every row, Changes nothing until you add a WHERE, Raises an error asking for a WHERE, Changes only the first row in the table]
     answer: 0
     explanation: Without a WHERE clause the statement applies to the whole table. Always run the matching SELECT first.
   - type: mcq
     prompt: What is a transaction for?
     options:
       - Making a group of statements happen completely or not at all
-      - Speeding up queries
-      - Encrypting the database
-      - Converting types
+      - Making a group of queries run faster by sending them at once
+      - Encrypting the data while it travels to and from the database
+      - Copying the database so you can undo changes the next day
     answer: 0
     explanation: If any step fails, the transaction rolls back and the data is left as it was.
   - type: mcq

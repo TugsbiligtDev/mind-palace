@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: "What's the difference between a transition and an animation?"
     options:
-      - "A transition animates a change between two states; an animation runs by itself through keyframes, once or repeatedly"
-      - "Transitions are only for color"
-      - "Animations can't be repeated"
-      - "They're identical"
+      - A transition animates between two states; an animation runs keyframes by itself
+      - Transitions only animate colors; animations can animate any CSS property
+      - An animation runs only once; a transition can repeat as many times as you like
+      - They are identical; @keyframes is just a longer way to write a transition
     answer: 0
     explanation: "Transitions react to changes; animations play on their own schedule."
   - type: mcq
@@ -16,20 +16,20 @@ questions:
     explanation: "A spinner should turn at constant speed; easing would make it speed up and slow down every turn."
   - type: mcq
     prompt: "An element with `animation: fade 300ms 1s` is visible during the 1-second delay, then vanishes and fades in. What fixes it?"
-    options: ["Add `backwards` (or `both`) fill-mode", "Add `infinite`", "Use `alternate`", "Remove the duration"]
+    options: [Add `backwards` (or `both`) fill-mode, Add `forwards` fill-mode instead, Add `infinite` so the fade repeats, Remove the 1s delay and set the duration to 1.3s]
     answer: 0
     explanation: "backwards applies the first keyframe (opacity 0) during the delay."
   - type: mcq
     prompt: "What does `animation-direction: alternate` do with 4 iterations?"
-    options: ["Plays forwards, backwards, forwards, backwards", "Plays backwards 4 times", "Picks a random direction", "Plays only the middle keyframe"]
+    options: ["Forwards, backwards, forwards, backwards", "Backwards all 4 times, from the last keyframe", "Forwards twice, then backwards twice", "Forwards 4 times, then it stops halfway"]
     answer: 0
     explanation: "alternate reverses on every other cycle, great for a gentle pulse."
   - type: mcq
     prompt: "Which is the most responsible use of an infinite animation?"
     options:
-      - "A loading spinner that's removed when loading finishes"
-      - "A bouncing logo in the header"
-      - "Constantly flashing sale prices"
-      - "A rotating background on every page"
+      - A loading spinner that's removed when loading finishes
+      - A slowly bouncing logo in the header of every page
+      - Gently pulsing sale prices, to draw attention to them
+      - A slowly rotating background image on the home page
     answer: 0
     explanation: "Endless motion should only signal ongoing activity. Flashing faster than three times a second can trigger seizures."

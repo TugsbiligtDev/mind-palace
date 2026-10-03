@@ -8,10 +8,10 @@ questions:
   - type: mcq
     prompt: Merge sort always splits the array in half and merges. Which statement is true?
     options:
-      - It is O(n²) in the worst case
+      - It is O(n²) in the worst case, when the array is reversed
       - It is O(n log n) always, and needs O(n) extra space
-      - It sorts in place with O(1) extra space
-      - It is not stable
+      - It sorts in place, using only O(1) extra space
+      - It is O(n) when the array is already sorted
     answer: 1
     explanation: "There are about log n levels of splitting, each doing n work to merge. The merged arrays take O(n) extra space, and `<=` keeps it stable."
   - type: mcq

@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: What changes when you run `SET TimeZone = 'Asia/Tokyo';`?
     options:
-      - Every stored timestamptz value is shifted by 9 hours
-      - Only how timestamptz values are displayed (and how zoneless text is interpreted). The stored moments don't change.
-      - All timestamps become plain timestamps
-      - Nothing at all
+      - Every stored timestamptz value is shifted forward by 9 hours on disk
+      - Only how timestamptz values are shown; the stored moments don't change
+      - Every timestamptz column is converted to a plain timestamp in Tokyo time
+      - Only new rows are stored in Tokyo time; the existing ones stay in UTC
     answer: 1
     explanation: A timestamptz is a fixed moment. The session zone only affects display and input interpretation.
 
@@ -41,10 +41,10 @@ questions:
   - type: mcq
     prompt: Why prefer `'Europe/Rome'` over `'+01'`?
     options:
-      - Offsets are slower
-      - The named zone knows about daylight saving, and Rome is +01 in winter but +02 in summer
-      - '+01 is not valid syntax'
-      - There's no difference
+      - Offsets are slower, because PostgreSQL has to parse the number
+      - A named zone knows daylight saving; Rome is +01 in winter, +02 in summer
+      - "`'+01'` is not valid syntax for a time zone in PostgreSQL"
+      - Named zones are stored more compactly on disk than offsets, so tables stay smaller
     answer: 1
     explanation: A fixed offset can't follow daylight-saving changes, so it's wrong for part of the year.
 

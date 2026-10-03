@@ -13,10 +13,10 @@ questions:
   - type: mcq
     prompt: Why is `email` usually a poor choice for a primary key?
     options:
-      - Emails are too short
-      - People change emails, and some don't have one, but a key must never change or be missing
-      - PostgreSQL can't index text
-      - Emails can't be UNIQUE
+      - Emails are too long, so the key's index would be slow
+      - People change emails and some have none, but a key must never change
+      - PostgreSQL can't build an index on a text column
+      - Emails can't be made UNIQUE, since email addresses are case-insensitive in PostgreSQL
     answer: 1
     explanation: Keys should be stable forever. Use a surrogate key for identity, and put a UNIQUE rule on email separately.
 
@@ -53,9 +53,9 @@ questions:
   - type: mcq
     prompt: When is a UUID key a better choice than an identity number?
     options:
-      - Always, because UUIDs are newer
-      - When IDs are created in many places, or shouldn't be guessable in URLs
-      - When the table is small
-      - When you want IDs that are easy to read aloud
+      - Always, because UUIDs are the newer and more modern choice
+      - When IDs are made in many places, or shouldn't be guessable
+      - When the table is small, since UUIDs take less storage
+      - When you want IDs that are short and easy to read aloud
     answer: 1
     explanation: UUIDs can be generated anywhere without clashing, and they can't be guessed. Identity numbers are smaller, faster and friendlier otherwise.

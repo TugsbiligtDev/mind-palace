@@ -13,10 +13,10 @@ steps:
 
       **What do you run first?**
     options:
-      - "`sudo su` to get root straight away"
+      - "`sudo su` to get root straight away, since most tools need it anyway"
       - "`whoami`, `pwd` and `ls -la`: find out who you are, where you are and what's here"
-      - "`rm -rf /tmp/*` to make space for your tools"
-      - "Download your whole toolkit before looking around"
+      - "`rm -rf /tmp/*` to clear space for your tools before you start, so nothing fills up"
+      - "Download your whole toolkit first, so everything is ready before you look around"
     answer: 1
     explanation: |
       The professional reflex is three quick, harmless commands: `whoami` (or `id`) to learn *who* you are, `pwd` to learn *where* you are, and `ls -la` to see *what is here*, hidden files included. You never start by changing anything. You start by looking.
@@ -29,7 +29,7 @@ steps:
       **What do you do before pressing Enter?**
     options:
       - "Run `pwd` and confirm you're in the folder you mean"
-      - "Just run it: `rm` asks before deleting anything"
+      - "Just run it: `rm` always asks before deleting anything that isn't empty"
       - "Add `sudo` so it can't fail halfway"
       - "Nothing: `-rf` only removes empty folders"
     answer: 0
@@ -63,8 +63,8 @@ steps:
       **What does this line tell you?**
     options:
       - "Nothing unusual: system scripts are always owned by root"
-      - "Only root can run it, so it's safe"
-      - "It's probably malware, because it's executable"
+      - "Only root can run it, so ordinary users can't do anything harmful with it"
+      - "It's probably malware, because system scripts are never meant to be executable"
       - "Anyone can edit a script that root runs, so it's a likely way to become root"
     answer: 3
     explanation: |

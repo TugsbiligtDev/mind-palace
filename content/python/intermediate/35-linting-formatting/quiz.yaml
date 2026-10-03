@@ -4,14 +4,14 @@ questions:
     prompt: What is the difference between a linter and a formatter?
     options:
       - A linter reports likely mistakes; a formatter rewrites layout to a standard style
-      - They are the same thing
-      - A formatter finds bugs; a linter fixes spacing
-      - A linter only works on tests
+      - A formatter finds likely bugs; a linter fixes spacing and line breaks for you
+      - They are the same thing; Ruff and Black are just two different brand names
+      - A linter only checks test files; a formatter checks all the other Python files
     answer: 0
     explanation: Ruff does both jobs, with `ruff check` (lint) and `ruff format` (format).
   - type: mcq
     prompt: What does the Ruff rule code F401 mean?
-    options: ["An imported name is never used", "A line is too long", "A name is undefined", "Imports are unsorted"]
+    options: [An imported name is never used, A line is longer than the limit, A name is used but never defined, The imports are not in sorted order]
     answer: 0
     explanation: "`F401` flags an unused import. `F821` would be an undefined name, and `I001` unsorted imports."
   - type: mcq
@@ -22,10 +22,10 @@ questions:
   - type: mcq
     prompt: What is a pre-commit hook for?
     options:
-      - It runs checks automatically on every git commit and can refuse a commit that fails them
-      - It backs up your files
-      - It pushes code to GitHub
-      - It installs packages
+      - It runs checks on every git commit and can refuse a commit that fails
+      - It backs up your files to GitHub before every commit you make
+      - It pushes your code to GitHub automatically after each commit
+      - It installs the packages listed in pyproject.toml before committing
     answer: 0
     explanation: Hooks make quality checks impossible to forget.
   - type: fill

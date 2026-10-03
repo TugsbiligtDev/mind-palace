@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: "A link written as `<a href=\"www.inkwellbooks.com\">` leads to a 404. Why?"
     options:
-      - "Without `https://` the browser treats it as a relative path to a file in the current folder"
-      - "Links can't contain dots"
-      - "The domain should be in a `src` attribute"
-      - "It needs `target=\"_blank\"`"
+      - Without `https://` the browser treats it as a file in the current folder
+      - Links can't contain dots unless the whole web address is put inside quotes
+      - The address should go in a `src` attribute, not in `href`
+      - It needs `target="_blank"` to open sites on another domain
     answer: 0
     explanation: "Links to other sites need the full URL, starting with `https://`."
   - type: mcq

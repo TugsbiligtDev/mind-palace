@@ -8,7 +8,7 @@ steps:
 
       | Command | Means | Example |
       |---|---|---|
-      | `pwd` | **p**rint **w**orking **d**irectory: "where am I?" | `/Users/tugsbiligt` |
+      | `pwd` | **p**rint **w**orking **d**irectory: "where am I?" | `/Users/ada` |
       | `ls` | **l**i**s**t the files here | `Desktop  Documents  Downloads` |
       | `cd folder` | **c**hange **d**irectory: move into a folder | `cd Documents` |
       | `cd ..` | go up one folder | |
@@ -19,9 +19,9 @@ steps:
     body: |
       A **path** is the address of a file or folder.
 
-      - **Absolute path**: starts at the very top, `/`. It works from anywhere: `/Users/tugsbiligt/Documents/sql/setup.sql`
-      - **Relative path**: starts from where you are now. If you're in `/Users/tugsbiligt/Documents`, then `sql/setup.sql` points at the same file.
-      - `~` is short for your home folder, so `~/Documents` = `/Users/tugsbiligt/Documents`.
+      - **Absolute path**: starts at the very top, `/`. It works from anywhere: `/Users/ada/Documents/sql/setup.sql`
+      - **Relative path**: starts from where you are now. If you're in `/Users/ada/Documents`, then `sql/setup.sql` points at the same file.
+      - `~` is short for your home folder, so `~/Documents` = `/Users/ada/Documents` for a Mac user called `ada`.
 
       Tip: dragging a file from Finder into the Terminal window types its full path for you.
 
@@ -44,7 +44,7 @@ steps:
 
       - **Host**: *which computer* the server is on. `localhost` means "this same computer". A server elsewhere has an address like `db.example.com`.
       - **Port**: *which door* on that computer. A computer runs many services, and each listens on a numbered port. PostgreSQL's standard port is **5432**.
-      - **User**: *who you are*. Yours is `tugsbiligt`.
+      - **User**: *who you are*. On a Mac set up with Homebrew, it's the same as your Mac username (run `whoami` to see it).
       - **Database**: *which database* to open, like `practice`.
 
       A **connection** is an open line between one client and the server, logged in as one user, to **one database**. To use a different database you open a new connection.
@@ -58,10 +58,10 @@ steps:
       psql practice
       ```
 
-      That fills in the defaults: host `localhost`, port `5432`, and your Mac username as the user. The long way spells them out:
+      That fills in the defaults: host `localhost`, port `5432`, and your Mac username as the user. The long way spells them out (with `ada` standing in for your username):
 
       ```bash
-      psql -h localhost -p 5432 -U tugsbiligt -d practice
+      psql -h localhost -p 5432 -U ada -d practice
       ```
 
       Once connected, the prompt shows the database you're in:
@@ -75,6 +75,8 @@ steps:
   - kind: mac
     title: Connect for real
     body: |
+      Not set up yet? Follow *Take it to your Mac* (top of the course page) to install PostgreSQL first, or choose **Skip for now**.
+
       The `practice` database doesn't exist on your Mac until you create it. First download `01_practice_basics.sql` (the same file this page uses) from the course's *Take it to your Mac* page into your Downloads folder. The first two commands run it, which builds `practice` with its three tables.
 
       Then connect. The prompt should change to `practice=#`. Type `\q` to quit and get back to zsh.
@@ -95,7 +97,7 @@ steps:
 
       `\l` (lowercase L) **l**ists databases. This page has a psql-style console, so run it here.
 
-      In this sandbox you'll only see the course database and PostgreSQL's built-in ones. Your Mac also shows `DB_week1`, `finance_db` and `school_db`.
+      In this sandbox you'll only see the course database and PostgreSQL's built-in ones. On your Mac you'll see the databases you have created yourself.
     sql: |
       \l
 
@@ -167,7 +169,7 @@ steps:
   - kind: explain
     title: GUI clients, and why psql too
     body: |
-      **GUI clients** (apps with windows and menus) include **pgAdmin**, which you already have, plus **DBeaver**, **TablePlus** and **Postico**. They're great for browsing tables and seeing structure at a glance.
+      **GUI clients** (apps with windows and menus) include **pgAdmin** (free), plus **DBeaver**, **TablePlus** and **Postico**. They're great for browsing tables and seeing structure at a glance.
 
       Learn **psql** too, because:
 

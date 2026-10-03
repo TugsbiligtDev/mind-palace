@@ -3,45 +3,45 @@ questions:
   - type: mcq
     prompt: Why do experienced testers say enumeration is "80% of the work"?
     options:
-      - It takes the most clicks
-      - Exploitation is usually quick once you know where to aim; enumeration is the patient detail-gathering that tells you where to aim
-      - It is the only legal phase
-      - It requires the most expensive tools
+      - It is the only phase that is legal without written permission
+      - Exploiting is quick once you know where to aim; enumeration finds where
+      - It is the phase where most vulnerabilities get exploited
+      - Clients pay mostly for enumeration, so it fills most of the time and most of the report
     answer: 1
     explanation: The way into a target is almost always a detail — a readable share, a hidden page, a valid username — that only thorough enumeration surfaces. Exploitation then follows quickly.
   - type: mcq
     prompt: You find FTP (port 21) open during enumeration. What is a classic thing to check?
     options:
-      - Whether it supports video
-      - Whether anonymous login is allowed and exposes files
-      - Its battery level
-      - Whether it can send email
+      - Whether it runs on a non-standard port
+      - Whether anonymous login exposes files
+      - Whether it is faster than SFTP for big files
+      - Whether it uses TCP or UDP for transfers
     answer: 1
     explanation: Misconfigured anonymous FTP (log in as `anonymous` with any password) that exposes files is a common, still-current finding.
   - type: mcq
     prompt: Directory discovery tools like gobuster and ffuf are used against a web server to do what?
     options:
-      - Encrypt the traffic
-      - Request many likely paths to find hidden content — /admin, /backup, /.git, old pages not linked anywhere
-      - Crash the server
-      - Change the homepage
+      - Crack the login pages they find with a password wordlist
+      - Request many likely paths to find hidden pages like /admin and /.git
+      - Map every link on the site by following them from the homepage
+      - List the server's open ports and the web services and versions running behind each one
     answer: 1
     explanation: They brute-force likely paths to reveal unlinked content such as admin panels, backups and exposed .git folders — doorways into the web-hacking phase.
   - type: mcq
     prompt: Why is an exposed, unauthenticated database (like an open MongoDB) such a serious finding?
     options:
-      - Databases are illegal to run
-      - Anyone who can reach it over the network can read or change the data with no credentials — effectively a breach already
-      - It slows the network
-      - It only affects Windows
+      - The database is probably slow, which could take the site offline
+      - Anyone who can reach it can read or change the data without a login
+      - It shows the database version, which may have known vulnerabilities
+      - Its traffic is unencrypted, so passwords sent to it can be captured
     answer: 1
     explanation: A database reachable on the network with no authentication exposes all its data to anyone who connects. Open MongoDB and Redis instances have caused many real breaches.
   - type: mcq
     prompt: Why keep structured notes (IP, port, service, version, findings) during enumeration?
     options:
-      - It is required by law
-      - The way in is often a combination of details you only connect when both are written down — and the notes become your report
-      - To slow yourself down
-      - Notes are only for beginners
+      - The client checks your notes to make sure you stayed in scope
+      - The way in is often two details combined, and notes become the report
+      - Notes let you repeat the scan exactly if the results look wrong
+      - Detailed notes are a legal requirement in every country for any penetration test
     answer: 1
     explanation: A username from one service plus a weakness in another is a combination you spot only with good notes. Those same notes feed directly into the final report (Module 27).

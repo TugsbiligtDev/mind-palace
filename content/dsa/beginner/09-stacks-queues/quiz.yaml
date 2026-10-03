@@ -15,10 +15,10 @@ questions:
   - type: mcq
     prompt: Why is `queue.shift()` a poor way to dequeue from a large array?
     options:
-      - It returns the wrong item
+      - It returns the last item instead of the first one
       - It is O(n), because every remaining item slides forward
-      - It cannot be used on numbers
-      - It makes the array immutable
+      - It only works on arrays of strings, not numbers
+      - It freezes the array, so nothing more can be added to the queue
     answer: 1
     explanation: Removing the first item forces all the others to shift one place. A `head` index avoids that.
   - type: mcq
@@ -44,7 +44,7 @@ questions:
     answer: 0
     explanation: "`6 2 /` gives 3, then `3 4 +` gives 7."
   - type: fill
-    prompt: Complete the bracket check. A closing bracket must match the item on the ____ of the stack.
+    prompt: "Complete the bracket check: a closing `]` must match the opener on top of the stack. Which character goes in the blank?"
     code: |
       const stack = ["(", "["];
       console.log(stack[stack.length - 1] === "____");

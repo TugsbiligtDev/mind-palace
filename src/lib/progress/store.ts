@@ -16,7 +16,13 @@ export type Progress = {
   cases: Record<string, { solved: boolean; hints: number; attempts: number; xp?: number; solvedAt?: string }>;
   code: Record<string, string>; // "topicKey#step-3"
   last?: { href: string; label: string };
+  // When progress was last erased. Copies from before a reset are dropped when copies merge,
+  // so another device can't bring erased progress back.
+  resetAt?: string;
 };
+
+// XP for each kind of achievement (kept here so merging copies can count it too).
+export const XP = { lessonStep: 2, lesson: 20, quiz: 30 } as const;
 
 export const empty = (): Progress => ({
   v: 3,

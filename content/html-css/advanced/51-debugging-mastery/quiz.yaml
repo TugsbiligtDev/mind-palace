@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: "Why use `outline` rather than `border` for the debugging trick?"
     options:
-      - "Outlines take up no space, so they reveal boxes without changing the layout"
-      - "Borders can't be red"
-      - "Outlines are inherited"
-      - "Borders only work on block elements"
+      - Outlines take no space, so they show boxes without moving anything
+      - Borders can't be red on some elements, but outlines always can
+      - Outlines are inherited, so one rule marks every child at once
+      - Borders only work on block elements, while outlines work on every kind of element
     answer: 0
     explanation: "A border would add width and could change the very bug you're investigating."
   - type: mcq
@@ -31,9 +31,9 @@ questions:
   - type: mcq
     prompt: "A layout breaks only in Safari. What's the best first step?"
     options:
-      - "Inspect it in Safari's own Web Inspector and check the feature's support on MDN"
-      - "Add -webkit- to every property"
-      - "Rewrite the layout with floats"
-      - "Tell users to switch browser"
+      - Inspect it in Safari's Web Inspector and check support on MDN
+      - Add -webkit- to every property, since Safari needs prefixes
+      - Rebuild the layout with floats, which every browser supports
+      - Test it in Chrome's iPhone mode, which renders like Safari
     answer: 0
     explanation: "Confirm what Safari actually computes, then check support before working around it."

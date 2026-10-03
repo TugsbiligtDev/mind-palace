@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: With coins of 1, 3 and 4, why does "always take the biggest coin" fail for a target of 6?
     options:
-      - It never fails
+      - "It never fails: the biggest coin first always gives the fewest coins"
       - It gives 4 + 1 + 1 (three coins), but 3 + 3 (two coins) is better
-      - Coins cannot be reused
-      - 6 is not reachable
+      - Coins can't be reused, so 3 + 3 isn't allowed and 6 can't be made
+      - It gives 4 + 3, which is too much, so it has to start over again
     answer: 1
     explanation: The locally best choice (the biggest coin) leads to a worse total. Greedy needs a problem where that cannot happen.
   - type: predict
@@ -45,9 +45,9 @@ questions:
   - type: mcq
     prompt: Why does merging intervals start with a sort?
     options:
-      - To make the code shorter only
-      - So overlapping intervals end up next to each other and one sweep is enough
-      - Because intervals must be ascending
-      - It is not needed
+      - To make the code shorter; the result is the same
+      - So overlapping intervals sit together and one sweep is enough
+      - Because the merged intervals must be returned in order
+      - To remove duplicate intervals before the merging itself starts
     answer: 1
     explanation: After sorting by start, an interval can only overlap the most recently merged one.

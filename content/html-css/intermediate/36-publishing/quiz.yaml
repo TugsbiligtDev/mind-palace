@@ -2,29 +2,29 @@ pass: 3
 questions:
   - type: mcq
     prompt: "Once GitHub Pages is set up from your main branch, how do you update the live site?"
-    options: ["Commit and `git push`; it redeploys automatically", "Email the files to GitHub", "Delete and recreate the repository", "Upload each file in the browser"]
+    options: [Commit and `git push`; it redeploys automatically, Re-run the Pages setup in the repository's Settings, Delete the repository and create it again, Upload each changed file through the browser]
     answer: 0
     explanation: "Continuous deployment: every push to main republishes the site."
   - type: mcq
     prompt: "Images work locally but are missing on the live site. What's the most likely cause?"
     options:
-      - "A capital-letter mismatch between the file name and the path in the HTML"
-      - "GitHub Pages doesn't support images"
-      - "The images are too big"
-      - "HTTPS blocks images"
+      - A capital-letter mismatch between file names and paths
+      - GitHub Pages only serves images from its own image host
+      - The images are too large for GitHub Pages to publish
+      - HTTPS blocks images that were added after the site went live
     answer: 0
     explanation: "macOS ignores case in file names; web servers usually don't (Module 2)."
   - type: mcq
     prompt: "What connects a custom domain like inkwellbooks.com to your host?"
-    options: ["DNS records at the domain registrar", "A meta tag in the head", "A .gitignore entry", "The og:url tag"]
+    options: [DNS records at the domain registrar, A `<meta>` tag in every page's head, A CNAME line in your .gitignore file, The og:url tag on your home page]
     answer: 0
     explanation: "DNS records (usually A and CNAME) point the domain at the host's servers."
   - type: mcq
     prompt: "Why check the live site on a real phone if device mode looks fine?"
     options:
-      - "Real touch targets, keyboards, text-size settings and browser toolbars behave differently from the simulation"
-      - "Device mode is always wrong"
-      - "Phones use a different HTML"
-      - "It isn't necessary"
+      - Real touch, keyboards, text-size settings and toolbars behave differently
+      - Device mode uses a different HTML file from the one that real phones are sent
+      - Phones ignore the viewport meta tag that device mode relies on
+      - "It isn't needed: device mode is an exact copy of a real phone"
     answer: 0
     explanation: "Simulation is a good first pass, not proof."

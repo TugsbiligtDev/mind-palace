@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: A test suite passes on your code and also passes when you deliberately break the code. What does that tell you?
     options:
-      - The suite is not testing that behaviour and gives false confidence
-      - The code must be perfect
-      - The tests are too strict
-      - Nothing
+      - The suite isn't testing that behaviour, so it gives false confidence
+      - The code must be perfect, since even broken versions pass the tests
+      - The tests are too strict and should be loosened before going on
+      - "Nothing: tests are only meant to catch syntax errors, not logic"
     answer: 0
     explanation: Tests are only valuable if they can fail. Mutation checks find the gaps.
   - type: predict
@@ -25,8 +25,8 @@ questions:
     prompt: Why keep tool settings for mypy, Ruff and pytest in `pyproject.toml`?
     options:
       - So every developer, machine and automated check uses the same rules
-      - Python requires it
-      - It makes the tools faster
-      - It hides warnings
+      - Because Python refuses to run the tools without a pyproject.toml
+      - So the tools run faster, since they read only one settings file
+      - So the tools' warnings are hidden from people who aren't developers
     answer: 0
     explanation: Shared configuration in the repository removes "works on my machine" differences.

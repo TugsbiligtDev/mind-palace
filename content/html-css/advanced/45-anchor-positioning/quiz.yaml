@@ -4,40 +4,40 @@ questions:
     prompt: "Which pair tethers `.tip` to `.btn`?"
     options:
       - "`.btn { anchor-name: --b; }` and `.tip { position: absolute; position-anchor: --b; }`"
-      - "`.btn { position: relative; }` and `.tip { position: anchor; }`"
-      - "`.tip { anchor: .btn; }`"
-      - "`.btn { position-anchor: --b; }` and `.tip { anchor-name: --b; }`"
+      - "`.btn { position: relative; }` and `.tip { position: anchor; anchor-target: .btn; }`"
+      - "`.btn { anchor-name: b; }` and `.tip { position: absolute; position-anchor: b; }`"
+      - "`.btn { position-anchor: --b; }` and `.tip { position: absolute; anchor-name: --b; }`"
     answer: 0
     explanation: "The anchor gets the name; the positioned element refers to it."
   - type: mcq
     prompt: "What does `position-area: top` do?"
     options:
-      - "Places the element centred above its anchor"
-      - "Moves the element to the top of the page"
-      - "Pins the anchor to the top"
+      - Places the element centred above its anchor
+      - Moves the element to the very top of the page
+      - Pins the anchor to the top
       - "Sets top: 0"
     answer: 0
     explanation: "position-area picks a cell of the 3 × 3 grid around the anchor."
   - type: mcq
     prompt: "A tooltip is cut off at the bottom of the screen. What lets it flip above automatically?"
-    options: ["`position-try-fallbacks: flip-block`", "`overflow: visible`", "`z-index: 9999`", "`bottom: 0`"]
+    options: ["`position-try-fallbacks: flip-block`", "`overflow: visible` on the tooltip's parent", "`z-index: 9999`", "`bottom: 0`"]
     answer: 0
     explanation: "Fallbacks are tried in order when the first position overflows."
   - type: mcq
     prompt: "Why reset `inset` and `margin` on an anchored popover?"
     options:
-      - "Popovers default to `inset: 0; margin: auto`, which centres them on screen"
-      - "Popovers can't have margins"
-      - "Anchors require it"
-      - "To make the popover invisible"
+      - "Popovers default to `inset: 0; margin: auto`, which centres them"
+      - Popovers can't have margins, so the browser ignores the rule
+      - Anchor positioning only works when every margin is reset first
+      - It hides the popover until the anchor button is clicked
     answer: 0
     explanation: "Undo the default centring, then position-area can place it next to the button."
   - type: mcq
     prompt: "How should you ship anchor positioning to browsers that might not support it?"
     options:
-      - "A sensible base position, with the anchor rules inside `@supports (anchor-name: --x)`"
-      - "Block those browsers"
-      - "Use !important"
-      - "No fallback is ever needed"
+      - A sensible base position, with anchor rules inside `@supports`
+      - "Nothing: browsers without it simply ignore the tooltip"
+      - Duplicate every anchor rule with `!important` to force it
+      - A JavaScript library that replaces the CSS in every browser
     answer: 0
     explanation: "Progressive enhancement: everyone gets something usable."

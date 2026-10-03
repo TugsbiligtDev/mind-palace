@@ -2,7 +2,7 @@ steps:
   - kind: explain
     title: The first case files
     body: |
-      This review covers Modules 1 to 3. Each editor starts nearly empty, and the question never tells you which tool to use. Think about what you learned: binary, paths, `Path`, `startswith`, `split`, `int`, `print`, and reading error messages.
+      This review covers Modules 1 to 3. Each editor starts nearly empty, and the question never tells you which tool to use. Think about what you learned: binary, paths, `Path`, `split`, `int`, `print`, and reading error messages. When a case needs something new, its description shows it.
 
       For each case:
 
@@ -75,6 +75,8 @@ steps:
       Before running a command from the internet, Inspector Bold checks it. Write `is_safe(command)`: return `True` unless the command **starts with** `rm`, in which case return `False`.
 
       `is_safe("ls")` is `True`; `is_safe("rm -rf /")` is `False`.
+
+      Text has a method `startswith`: `"rm -rf /".startswith("rm")` is `True`.
     code: |
       def is_safe(command):
           # your code

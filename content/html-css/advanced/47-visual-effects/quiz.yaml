@@ -3,41 +3,41 @@ questions:
   - type: mcq
     prompt: "What's the difference between `filter: blur(8px)` and `backdrop-filter: blur(8px)`?"
     options:
-      - "filter blurs the element itself; backdrop-filter blurs what's behind it"
-      - "They're the same"
-      - "backdrop-filter only works on images"
-      - "filter only works on text"
+      - filter blurs the element itself; backdrop-filter blurs what's behind it
+      - backdrop-filter blurs the element itself; filter blurs what's behind it
+      - They're the same; backdrop-filter is just the older, prefixed name
+      - filter works on images only; backdrop-filter works on any element
     answer: 0
     explanation: "Frosted glass is backdrop-filter on an element with a semi-transparent background."
   - type: mcq
     prompt: "Why is `filter: drop-shadow()` sometimes better than `box-shadow`?"
     options:
-      - "It follows the actual shape (e.g. a transparent PNG or SVG icon) instead of the rectangular box"
-      - "It's the only shadow that works in Safari"
-      - "It's faster in every case"
-      - "box-shadow can't be colored"
+      - It follows the real shape, like a transparent PNG, not the box
+      - It's the only kind of shadow that Safari supports on images
+      - It's always faster, because the GPU draws filters for free
+      - box-shadow can only be grey, while drop-shadow takes colors
     answer: 0
     explanation: "box-shadow always traces the box; drop-shadow traces the visible pixels."
   - type: mcq
     prompt: "What does `oklch(from var(--brand) calc(l + 0.2) c h)` produce?"
     options:
-      - "The brand color, lighter, with the same chroma and hue"
-      - "A random color"
-      - "The brand color at 20% opacity"
-      - "An invalid value"
+      - The brand color, lighter, with the same chroma and hue
+      - The brand color at 20% opacity, over the background
+      - A lighter color with 20% more chroma, so more vivid
+      - An invalid value, since calc() can't be used in colors
     answer: 0
     explanation: "Relative color syntax unpacks the channels so you can adjust one."
   - type: mcq
     prompt: "Which property fades the bottom of a paragraph softly into the background?"
-    options: ["`mask-image: linear-gradient(to bottom, black 60%, transparent)`", "`opacity: 0.5`", "`clip-path: inset(0 0 40% 0)`", "`filter: blur(4px)`"]
+    options: ["`mask-image: linear-gradient(to bottom, black 60%, transparent)`", "`background: linear-gradient(to bottom, transparent 60%, white)`", "`clip-path: inset(0 0 40% 0)` with a `transition` on the edge", "`opacity: linear-gradient(to bottom, 1 60%, 0)` on the text"]
     answer: 0
     explanation: "A gradient mask hides gradually; clip-path cuts sharply."
   - type: mcq
     prompt: "Why mix colors `in oklch` rather than `in srgb`?"
     options:
-      - "Mixes look more natural and keep their vividness instead of going muddy grey in the middle"
-      - "srgb isn't supported"
-      - "oklch is faster"
-      - "There's no difference"
+      - Mixes stay vivid instead of going muddy grey in the middle
+      - srgb isn't supported inside color-mix in modern browsers
+      - oklch mixes are calculated faster, so pages render sooner
+      - oklch mixes are always lighter, which suits text on dark
     answer: 0
     explanation: "OKLCH is designed so that changes look perceptually even."

@@ -153,7 +153,7 @@ steps:
           && daterange('2026-03-09', '2026-03-12');                         -- overlap? true
       ```
 
-      By default the start is **included** and the end **excluded**, written `[2026-03-01,2026-03-10)`, the same half-open idea as Module 27. Ranges shine for bookings and "no two promotions may overlap" rules, which you'll build in Module 40.
+      By default the start is **included** and the end **excluded**, written `[2026-03-01,2026-03-10)`, the same half-open idea as Module 27. Ranges shine for bookings and "no two promotions may overlap" rules (an *exclusion constraint* on a range column can enforce that).
 
   - kind: info
     title: "🔹 Domains, inet and citext"

@@ -17,10 +17,10 @@ questions:
   - type: mcq
     prompt: A binary search using `while (lo < hi)` returns -1 for the array `[5]` and target 5. What is the bug?
     options:
-      - The array is too small for binary search
-      - When lo equals hi, one candidate remains, but the loop stops before checking it
-      - Math.floor is wrong
-      - The target must be larger than 5
+      - The array is too small; binary search needs at least two items to compare
+      - When lo equals hi one candidate is left, but the loop never checks it
+      - Math.floor rounds the middle down, so it skips the only item
+      - The target has to be larger than the first item to be found
     answer: 1
     explanation: With one item `lo === hi`, so `lo < hi` is false and the loop never runs. For an exact match use `lo <= hi`.
   - type: predict

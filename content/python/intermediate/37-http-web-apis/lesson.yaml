@@ -348,7 +348,7 @@ steps:
   - kind: mac
     title: Keep a key out of Git
     body: |
-      Practise the safe pattern with a **fake** key: a `.env` file that is git-ignored, an example file that is committed, and a script that reads the value from the environment.
+      Practise the safe pattern with a **fake** key: a `.env` file that is git-ignored, an example file that is committed, and a script that reads the value from the environment. `uv run --env-file .env` loads the file's values into the environment for that one run.
 
       **Checkpoint:** paste the output. `git status --short` should list `.env.example` and `.gitignore` but **not** `.env`, and the script should print `key loaded`.
     commands: |
@@ -363,7 +363,7 @@ steps:
       key = os.environ.get("API_KEY")
       print("key loaded" if key else "missing key")
       PY
-      export $(cat .env | xargs) && uv run check_key.py
+      uv run --env-file .env check_key.py
       git status --short
     expect_output:
       - "key loaded"

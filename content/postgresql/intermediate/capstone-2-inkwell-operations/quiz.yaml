@@ -3,49 +3,49 @@ questions:
   - type: mcq
     prompt: Why fill the new `loyalty_tier` column **before** making it NOT NULL?
     options:
-      - NOT NULL is slower on filled columns
-      - Adding a NOT NULL column with no default to a table with rows fails, because the new column would be empty in every row
-      - The order doesn't matter
-      - NOT NULL can only be set in CREATE TABLE
+      - NOT NULL checks run slower once a column already has values in it
+      - A NOT NULL column with no default fails on existing rows, which would be empty
+      - The order doesn't matter, since PostgreSQL fills new NOT NULL columns with zeros automatically
+      - NOT NULL can only be set in CREATE TABLE, so it must come at the very end
     answer: 1
     explanation: Existing rows would get NULL in the new column, which NOT NULL forbids. Add it nullable, fill it, then SET NOT NULL (or give a DEFAULT).
 
   - type: mcq
     prompt: "`GRANT SELECT ON ALL TABLES IN SCHEMA public TO reporting;` is run today. Next month a new table is created. Can `reporting` read it?"
     options:
-      - Yes, ALL TABLES includes future ones
-      - No. ALL TABLES means the tables that exist now. Use ALTER DEFAULT PRIVILEGES for future tables
-      - Only if it's in the public schema
-      - Only after a restart
+      - Yes, because ALL TABLES includes tables created in the future
+      - "No: ALL TABLES means those that exist now; use ALTER DEFAULT PRIVILEGES"
+      - Only if the new table is created by the same role that ran the GRANT
+      - Only after the database is restarted, which reloads every grant
     answer: 1
     explanation: The grant covers existing tables only. Default privileges (Module 37) apply to tables created later.
 
   - type: mcq
     prompt: A report's revenue is exactly 3 times too high for a few books. What's the first thing to suspect?
     options:
-      - Rounding
-      - A join to a "many" table (like reviews) that repeats each sale once per matching row
-      - Time zones
-      - A missing index
+      - Rounding errors, because the amounts are stored as floating-point numbers
+      - A join to a "many" table that repeats each sale per match
+      - Time zones, which count some sales on two days
+      - A missing index, which makes sum() read rows twice
     answer: 1
     explanation: Whole-number multiples of the right answer are the fingerprint of fan-out. Each sale line was repeated once per review.
 
   - type: mcq
     prompt: Why must the Python script use `%s` with a separate tuple instead of putting the email into the SQL string?
     options:
-      - It's faster to type
-      - The driver sends the value separately from the SQL, so input like `' OR '1'='1` can never change the query
-      - psycopg requires it for text columns only
-      - It makes the query run in a transaction
+      - It's faster, because the query plan is cached for each email
+      - The value is sent separately, so input like `' OR '1'='1` can't change the query
+      - psycopg requires it for text columns, but not for numbers
+      - It makes each query run inside its own transaction, which psycopg commits automatically for you
     answer: 1
     explanation: "That's a parameterized query. Building SQL with string formatting lets user input become SQL: an injection (Module 38)."
 
   - type: mcq
     prompt: When does a backup "count"?
     options:
-      - When pg_dump finishes without errors
-      - When the file is copied to another disk
-      - When you've restored it somewhere and checked the data is there
-      - When it's older than a day
+      - When pg_dump finishes without any errors
+      - When the file is copied to a second disk
+      - When you've restored it and checked the data
+      - When it has been kept for at least a week
     answer: 2
     explanation: Untested backups fail at the worst moment. Restore to a new database and compare counts, as in step 5a.

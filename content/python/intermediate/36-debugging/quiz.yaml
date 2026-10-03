@@ -8,19 +8,19 @@ questions:
   - type: mcq
     prompt: A bug appears only on the 5,000th item of a loop. What is the best debugger feature?
     options:
-      - A conditional breakpoint that stops only when the condition is true
-      - Step through every one of the 5,000 items
-      - Print all 5,000 values
-      - Delete the loop
+      - A conditional breakpoint that stops only when a condition is true
+      - Step through the loop one item at a time until the 5,000th one
+      - Print every value in the loop, then search the output for it
+      - A breakpoint on the first line, then restart the program each time
     answer: 0
     explanation: A condition such as `index == 4999` (or `price < 0`) makes the debugger pause only when it matters.
   - type: mcq
     prompt: Why make a minimal reproducible example?
     options:
-      - The cause often becomes obvious while shrinking, and it becomes your failing test and the thing others can help with
-      - It makes the program faster
-      - It is required by Python
-      - It hides the bug
+      - Shrinking often reveals the cause, and it becomes your failing test
+      - It makes the real program faster, since unused code is removed
+      - Python's error messages are only accurate in very short programs
+      - It hides the bug from users until you have time to fix it properly
     answer: 0
     explanation: Removing everything unrelated isolates the problem.
   - type: predict
@@ -39,8 +39,8 @@ questions:
     prompt: Which is a good first step when you meet a bug you cannot yet explain?
     options:
       - Reproduce it reliably, then read the error and form a hypothesis
-      - Change several things at once
-      - Rewrite the whole module
-      - Ignore it and hope
+      - Change several things at once, then see which change fixes it
+      - Rewrite the whole module, since the bug might be anywhere in it
+      - Add try/except around the code so the error can't crash the program
     answer: 0
     explanation: You cannot know you fixed something you cannot reproduce, and single changes teach you the cause.

@@ -3,20 +3,20 @@ questions:
   - type: mcq
     prompt: What's the difference between a "user" and a "group" in PostgreSQL?
     options:
-      - They're completely different objects
-      - Both are roles. A user is a role with the LOGIN attribute.
-      - Groups can log in, users can't
-      - Users own tables, groups don't
+      - They're completely different kinds of object, made with different commands
+      - Both are roles; a user is a role with the LOGIN attribute
+      - Groups can log in to the database, but users can't
+      - Users can own tables, but groups can never own anything
     answer: 1
     explanation: PostgreSQL only has roles. LOGIN lets a role connect, and any role can be granted to another, like a group.
 
   - type: mcq
     prompt: "You ran `GRANT SELECT ON ALL TABLES IN SCHEMA public TO analyst;` last month. Why can't the analyst read a table created yesterday?"
     options:
-      - The grant expired
-      - That GRANT only covered tables that existed at the time. Use ALTER DEFAULT PRIVILEGES for future tables.
-      - Analysts can't read new tables
-      - The table has no primary key
+      - The grant expired after 30 days and must be renewed
+      - That GRANT only covered tables that existed then; use ALTER DEFAULT PRIVILEGES
+      - New tables are hidden from every role except their owner for a week
+      - The new table has no primary key, so the GRANT on the schema can't apply to it yet
     answer: 1
     explanation: GRANT ON ALL TABLES is a one-time grant on existing tables. Default privileges cover tables created later.
 
@@ -34,19 +34,19 @@ questions:
   - type: mcq
     prompt: Which setup follows least privilege for a web app?
     options:
-      - The app connects as a superuser
-      - The app owns all tables and runs migrations at startup
-      - The app has SELECT, INSERT, UPDATE and DELETE on its tables, with no DDL, while migrations run as a separate owner role
-      - The app uses the readonly role for everything
+      - The app connects as a superuser, so it never hits a permission error
+      - The app owns all its tables and runs the migrations itself at startup
+      - The app has SELECT, INSERT, UPDATE, DELETE only; migrations use an owner role
+      - The app uses a read-only role, and all of its writes go through a superuser account
     answer: 2
     explanation: The app gets exactly the rights it needs day to day. Structure changes run under a separate, more powerful role.
 
   - type: mcq
     prompt: Support staff must see customers' names but never their emails. Which options work?
     options:
-      - Column-level GRANT SELECT (first_name, last_name, …), or a view without the email column
-      - GRANT SELECT on the whole table
-      - A CHECK constraint
-      - An index on email
+      - A column-level GRANT on the name columns, or a view without email
+      - GRANT SELECT on the whole table, and ask staff not to read emails
+      - A CHECK constraint on email that hides it from the support role
+      - An index on email, so only the app can look emails up quickly
     answer: 0
     explanation: Column privileges or a view limit what's visible. A table-wide SELECT would expose emails.

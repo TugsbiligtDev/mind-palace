@@ -37,8 +37,8 @@ questions:
     prompt: Why does `word[0] = "b"` fail on a string?
     options:
       - Strings are immutable, so you must build a new string
-      - Index 0 does not exist
-      - The letter b is reserved
-      - Strings can only be changed in a function
+      - Index 0 is reserved for the string's length in Python
+      - Strings can only be changed with a method like `.replace()`
+      - You must use `word[0] == "b"` to change a single letter
     answer: 0
     explanation: You can never change a string in place. Build a new one instead, such as `"b" + word[1:]`.

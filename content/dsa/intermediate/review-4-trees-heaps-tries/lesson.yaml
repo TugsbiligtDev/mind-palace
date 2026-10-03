@@ -365,7 +365,7 @@ steps:
         }
 
   - kind: code
-    title: "3. Smallest to the right, in a tree"
+    title: "3. The closest value in a search tree"
     body: |
       Given a **BST** as a level-order array, write `closestValue(root, target)`: the value in the tree that is closest to `target`. Use the BST rule to skip half the tree each step.
     code: |

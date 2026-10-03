@@ -4,9 +4,9 @@ questions:
     prompt: In the library system, why is `borrowed` created inside `Member.__init__` rather than in the class body?
     options:
       - So every member gets their own list instead of sharing one
-      - Because class bodies cannot hold lists
-      - To make it private
-      - It makes the code shorter
+      - Because class bodies can only hold methods, not lists
+      - To make the list private, so other classes can't see it
+      - So the list is created once and shared by every member
     answer: 0
     explanation: A list in the class body is shared by every Member, the shared-mutable trap.
   - type: predict

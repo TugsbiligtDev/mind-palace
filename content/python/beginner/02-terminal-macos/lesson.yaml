@@ -52,30 +52,17 @@ steps:
     expect_output:
       - "/Desktop"
 
-  - kind: code
+  - kind: choice
     title: Absolute or relative?
     body: |
-      Finish `is_absolute(path)`. It returns `True` if the path is **absolute** (starts with `/`) or starts from home (`~`), and `False` for a relative path such as `notes/todo.txt`.
-
-      Text has a method `startswith`. `"/tmp".startswith("/")` is `True`. And `or` means "either one".
-    code: |
-      def is_absolute(path):
-          return False
-    tests:
-      - "is_absolute('/Users/ada/Desktop')"
-      - "is_absolute('notes/todo.txt')"
-      - "is_absolute('~/Documents')"
-      - "is_absolute('../photos')"
-      - "is_absolute('.')"
-      - "is_absolute('/')"
-    solution: |
-      def is_absolute(path):
-          return path.startswith("/") or path.startswith("~")
-    hint: "Two checks joined with `or`: `path.startswith(\"/\") or path.startswith(\"~\")`."
-    reject:
-      - |
-        def is_absolute(path):
-            return path.startswith("/")
+      You are standing in `/Users/ada`. Which of these paths means the **same place wherever you are standing**?
+    options:
+      - "`notes/todo.txt`"
+      - "`../photos`"
+      - "`/Users/ada/Desktop`"
+      - "`.`"
+    answer: 2
+    explanation: "`/Users/ada/Desktop` starts with `/`, the top of the disk, so it is **absolute**: it means the same folder from anywhere. The others are **relative**: `notes/todo.txt` and `.` depend on the current folder, and `../photos` starts by going one level up from it. (`~/Desktop` also works from anywhere, because `~` is always your home folder.)"
 
   - kind: explain
     title: Making, copying, moving and deleting
@@ -110,68 +97,20 @@ steps:
       - "python-practice"
 
   - kind: code
-    title: Join a folder and a name
+    title: Paths in Python
     body: |
-      When you run `mkdir python-practice` inside `/Users/ada/Desktop`, the new folder's full path is the two joined together. Finish `join_path(folder, name)`.
+      Python can work with paths too, using `Path` from `pathlib`. Run this and compare each line with the terminal commands you just used:
 
-      `Path` from `pathlib` uses `/` to join pieces: `Path("/a") / "b"` is `Path("/a/b")`. Wrap the answer in `str(...)` to get plain text.
+      - `/` **joins** pieces, like going *into* a folder with `cd` (here it is not division).
+      - `.parent` is the folder one level **up**, like `cd ..`. The parent of the top `/` is `/` itself.
+
+      Change `"python-practice"` to another folder name and run it again. You'll write code like this yourself from Module 17.
     code: |
       from pathlib import Path
 
-
-      def join_path(folder, name):
-          return ""
-    tests:
-      - "join_path('/Users/ada/Desktop', 'python-practice')"
-      - "join_path('/tmp', 'notes.txt')"
-      - "join_path('/', 'Users')"
-      - "join_path('/a/b', 'c')"
-    solution: |
-      from pathlib import Path
-
-
-      def join_path(folder, name):
-          return str(Path(folder) / name)
-    hint: "`str(Path(folder) / name)`. The `/` here is not division, it joins path pieces."
-    reject:
-      - |
-        from pathlib import Path
-
-
-        def join_path(folder, name):
-            return folder + name
-
-  - kind: code
-    title: One level up
-    body: |
-      `cd ..` goes up one folder. Finish `go_up(path)`: return the folder that contains `path`. `go_up("/Users/ada/Desktop")` is `"/Users/ada"`.
-
-      A `Path` has a `.parent`. The parent of the top `/` is `/` itself, and `Path` handles that for you.
-    code: |
-      from pathlib import Path
-
-
-      def go_up(path):
-          return path
-    tests:
-      - "go_up('/Users/ada/Desktop')"
-      - "go_up('/Users/ada')"
-      - "go_up('/Users')"
-      - "go_up('/')"
-    solution: |
-      from pathlib import Path
-
-
-      def go_up(path):
-          return str(Path(path).parent)
-    hint: "`str(Path(path).parent)`."
-    reject:
-      - |
-        from pathlib import Path
-
-
-        def go_up(path):
-            return str(Path(path).name)
+      print(Path("/Users/ada/Desktop") / "python-practice")
+      print(Path("/Users/ada/Desktop").parent)
+      print(Path("/").parent)
 
   - kind: mac
     title: Copy, rename, delete
@@ -207,40 +146,17 @@ steps:
       3. Delete single files, not folders, until you are confident.
       4. Never paste a command from the internet that you do not understand.
 
-  - kind: code
+  - kind: choice
     title: A safety check
     body: |
-      Finish `rm_warning(command)`. It looks at a typed command and returns:
-
-      - `"DANGER"` if it starts with `rm` and contains `-r` or `-f`,
-      - `"careful"` if it starts with `rm` without those,
-      - `"fine"` for anything else.
-
-      `rm notes.txt` is `"careful"`, `rm -rf photos` is `"DANGER"`, and `ls` is `"fine"`.
-    code: |
-      def rm_warning(command):
-          return "fine"
-    tests:
-      - "rm_warning('rm notes.txt')"
-      - "rm_warning('rm -rf photos')"
-      - "rm_warning('ls')"
-      - "rm_warning('rm -r old')"
-      - "rm_warning('rm -f x.txt')"
-      - "rm_warning('mkdir rmdir-test')"
-    solution: |
-      def rm_warning(command):
-          if command.startswith("rm"):
-              if "-r" in command or "-f" in command:
-                  return "DANGER"
-              return "careful"
-          return "fine"
-    hint: "Check `command.startswith(\"rm\")` first. Inside that, check for `-r` or `-f`. Note `mkdir rmdir-test` does not *start* with `rm`."
-    reject:
-      - |
-        def rm_warning(command):
-            if "rm" in command:
-                return "DANGER"
-            return "fine"
+      You are about to clean up. Which command could delete a whole folder and everything in it, without asking?
+    options:
+      - "`rm notes.txt`"
+      - "`rm -rf photos`"
+      - "`mkdir rmdir-test`"
+      - "`ls -la`"
+    answer: 1
+    explanation: "`-r` removes a folder *and everything inside it*, and `-f` silences every warning. `rm notes.txt` deletes one file (still permanent, so check first), `mkdir` only creates a folder (the `rmdir` is just part of its name), and `ls -la` only lists files."
 
   - kind: info
     title: "🔹 The mistake behind most errors: the wrong folder"

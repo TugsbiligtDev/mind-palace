@@ -13,10 +13,10 @@ questions:
   - type: mcq
     prompt: "Why does `--button-bg: var(--color-action)` on `:root` ignore a dark theme set on a section?"
     options:
-      - "It was resolved on :root using the light value; the section inherits that result"
-      - "Custom properties don't inherit"
-      - "data attributes can't hold themes"
-      - "var() only works once"
+      - It was resolved on :root with the light value; the section inherits it
+      - Custom properties don't inherit, so the section gets no value at all
+      - data attributes can't switch themes; only classes and media queries can
+      - var() is read once when the page loads, so later changes are ignored
     answer: 0
     explanation: "Declare component tokens on the component so var() is resolved where the theme applies."
   - type: mcq
@@ -27,9 +27,9 @@ questions:
   - type: mcq
     prompt: "What belongs on a component showcase page?"
     options:
-      - "Every component in all its variants and states, live, with usage and accessibility notes"
-      - "Only screenshots"
-      - "The site's privacy policy"
-      - "The Git log"
+      - Every component in all variants and states, live, with usage notes
+      - Screenshots of each page, exported from the design file
+      - The full CSS of the site, with a comment above each rule
+      - A list of every token's name and value, sorted alphabetically by name and type
     answer: 0
     explanation: "A living page that renders the real CSS keeps documentation honest."

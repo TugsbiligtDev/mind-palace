@@ -70,7 +70,7 @@ steps:
   - kind: code
     title: Count the vowels
     body: |
-      Finish `count_vowels(text)`: how many of the letters `a`, `e`, `i`, `o`, `u` does the text contain (in lower case)? Loop over the text one letter at a time and keep a counter.
+      Finish `count_vowels(text)`: how many vowels (`a`, `e`, `i`, `o`, `u`, capital or small) does the text contain? Loop over the text one letter at a time and keep a counter.
 
       You can test a letter with `letter in "aeiou"`.
     code: |

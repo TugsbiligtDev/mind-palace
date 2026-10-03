@@ -24,10 +24,10 @@ questions:
   - type: mcq
     prompt: Why is `Map` usually better than `{}` for counting words?
     options:
-      - It is always faster
-      - It has no built-in keys that can clash with your words, and any value can be a key
-      - It sorts the keys
-      - Objects cannot store numbers
+      - It is always faster than an object, whatever the size
+      - No built-in keys can clash with your words, and any value can be a key
+      - It keeps the keys sorted alphabetically, so the words always come out in order
+      - Objects can't store numbers as values, only strings
     answer: 1
     explanation: A plain object already has keys such as `constructor`, so the word "constructor" gets a surprising starting value.
   - type: fill

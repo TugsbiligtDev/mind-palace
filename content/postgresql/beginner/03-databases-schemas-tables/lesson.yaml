@@ -5,7 +5,7 @@ steps:
       PostgreSQL organizes everything in nested containers, from biggest to smallest:
 
       1. **Cluster**: everything one PostgreSQL server manages. Your Mac runs one cluster.
-      2. **Database**: a separate collection of data, like `practice` or `finance_db`. A connection opens exactly **one** database.
+      2. **Database**: a separate collection of data, like `practice` or `bookstore`. A connection opens exactly **one** database.
       3. **Schema**: a folder *inside* a database that groups tables.
       4. **Table**: a grid of rows and columns about one kind of thing.
 
@@ -22,7 +22,7 @@ steps:
       SELECT * FROM public.books;
       ```
 
-      Schemas are useful for grouping: a company might keep `sales.orders` and `hr.employees` in one database, or keep evidence apart from normal data, the way this course's cases do with an `evidence` schema.
+      Schemas are useful for grouping: a company might keep `sales.orders` and `hr.employees` in one database, or keep an `audit` schema of change logs apart from the everyday tables.
 
   - kind: try
     title: Full names and schemas

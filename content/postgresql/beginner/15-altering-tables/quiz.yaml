@@ -37,19 +37,19 @@ questions:
   - type: mcq
     prompt: What does `DROP TABLE customers CASCADE;` do to the rows in `orders`?
     options:
-      - Deletes them all
-      - Nothing to the rows, but the foreign key rule linking them to customers is dropped
-      - Sets every customer_id to NULL
-      - It's refused
+      - Deletes every order that belonged to a customer
+      - Nothing to the rows; the foreign key linking them is dropped
+      - Sets every order's customer_id to NULL
+      - It's refused, because rows in orders still point at those customers
     answer: 1
     explanation: "`DROP … CASCADE` removes dependent **objects**, like the foreign key constraint. The order rows stay, now unprotected. (`ON DELETE CASCADE` is the one that deletes rows.)"
 
   - type: mcq
     prompt: You want to add a CHECK rule, but some existing rows break it. What's the right approach?
     options:
-      - Drop the table and start over
+      - Drop the table and create it again with the rule
       - Fix or remove the bad rows first, then add the rule
-      - Add the rule with CASCADE
-      - Rules can't be added to tables with data
+      - Add the rule with CASCADE, which deletes the bad rows
+      - Add the rule; it only checks rows added from now on
     answer: 1
     explanation: Clean the data first, then enforce the rule. PostgreSQL checks every existing row when you add it.

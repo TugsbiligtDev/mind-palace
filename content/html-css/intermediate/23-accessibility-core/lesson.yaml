@@ -355,7 +355,7 @@ steps:
   - kind: mac
     title: Listen with VoiceOver
     body: |
-      Your Mac has a screen reader built in. Try it on your Module 22 capstone site (or any site):
+      Your Mac has a screen reader built in. Try it on your Capstone 1 site (or any site):
 
       1. Press **⌘ + F5** to turn VoiceOver on (press it again to turn it off). On a MacBook with a Touch ID button, triple-press Touch ID instead.
       2. Press **Tab** to move between links and controls and listen to what's announced.

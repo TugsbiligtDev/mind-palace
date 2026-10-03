@@ -54,7 +54,7 @@ steps:
   - kind: info
     title: "🔹 Keep a portfolio as you go"
     body: |
-      Your own writeups are not just revision — they become a **portfolio**. A tidy collection of machines you have solved, explained clearly, shows a future employer how you think far better than a list of tool names. Start it now; the Advanced level and Module 37 return to building a career on exactly this.
+      Your own writeups are not just revision — they become a **portfolio**. A tidy collection of machines you have solved, explained clearly, shows a future employer how you think far better than a list of tool names. Start it now: it is the most convincing thing you can show when applying for a first security job.
 
   - kind: why
     body: |

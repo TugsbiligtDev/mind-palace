@@ -65,7 +65,7 @@ steps:
 
   - kind: why
     body: |
-      This capstone is the Intermediate goal in a single exercise: you can take one target from "here is its address" to full control, and — more importantly — turn that into a clear, prioritised report a team could act on. That combination, technical path plus actionable write-up, is exactly what a real assessment delivers and what distinguishes a professional from someone who merely collects flags. The Advanced level scales this up from one machine to a whole enterprise network.
+      This capstone is the Intermediate goal in a single exercise: you can take one target from "here is its address" to full control, and — more importantly — turn that into a clear, prioritised report a team could act on. That combination, technical path plus actionable write-up, is exactly what a real assessment delivers and what distinguishes a professional from someone who merely collects flags. Real engagements scale this up from one machine to a whole company network, which is where to grow next.
 
   - kind: recap
     body: |

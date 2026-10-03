@@ -361,9 +361,9 @@ steps:
   - kind: code
     title: A real queue
     body: |
-      Write `hot_potato(names, n)`, a party game. The names stand in a circle; the potato passes `n` places, and whoever holds it is out. Repeat until one person is left, and return that name. Use a `deque` and `rotate` (or `popleft`/`append`). `hot_potato(["a", "b", "c", "d"], 2)` is `"c"`.
+      Write `hot_potato(names, n)`, a party game. The names stand in a circle; the potato passes `n` places, and whoever holds it is out. Repeat until one person is left, and return that name. Use a `deque` with `popleft` and `append`. `hot_potato(["a", "b", "c", "d"], 2)` is `"c"`.
 
-      Rotate the deque `-n` steps... then pop from the front. (Take care of which end counts as "front".)
+      Each round, pass the potato `n` times (move the person at the front of the deque to the back, `n` times), then the person now at the front is out (`popleft`).
     code: |
       from collections import deque
 

@@ -61,7 +61,7 @@ steps:
       00:1b:44:11:3a:b7
       ```
 
-      The difference matters. An **IP address** can change (it is assigned, and it routes across the whole internet). A **MAC address** is fixed to the hardware and only matters on the *local* network segment — it is how a switch knows which physical port to send a frame to. Attacks like ARP spoofing (an Advanced topic) abuse the link between the two.
+      The difference matters. An **IP address** can change (it is assigned, and it routes across the whole internet). A **MAC address** is fixed to the hardware and only matters on the *local* network segment — it is how a switch knows which physical port to send a frame to. Attacks like **ARP spoofing** abuse the link between the two: an attacker on the same local network falsely announces "that IP belongs to my MAC", so traffic meant for someone else flows through them.
 
   - kind: explain
     title: Routers, switches, and the journey of a packet
@@ -82,7 +82,7 @@ steps:
       - `172.16.0.0/12` (172.16–31.x.x)
       - `192.168.0.0/16` (192.168.x.x)
 
-      These are not routable on the public internet. Your router performs **NAT** (Network Address Translation): it swaps your private source address for its one **public** address on the way out, and remembers how to send replies back. That is why your phone and laptop can share a single public IP — and why, from the outside, you often see only the router, not the machines behind it. Getting *behind* NAT to reach those internal machines is a whole skill (pivoting, in Advanced).
+      These are not routable on the public internet. Your router performs **NAT** (Network Address Translation): it swaps your private source address for its one **public** address on the way out, and remembers how to send replies back. That is why your phone and laptop can share a single public IP — and why, from the outside, you often see only the router, not the machines behind it. Getting *behind* NAT to reach those internal machines is a whole skill (pivoting, Module 25).
 
   - kind: info
     title: "🔹 IPv6 — the newer, longer address"
@@ -91,7 +91,7 @@ steps:
 
   - kind: why
     body: |
-      Scanning (Module 15) means asking a *range* of IP addresses what they are running — so you must read CIDR to know exactly which machines are in scope. Traffic analysis (Module 8) means reading packets and their addresses. Pivoting (Advanced) means reaching private addresses behind NAT. All of it assumes the picture in this module: layered models, IP and MAC addresses, subnets, and packets hopping through switches and routers.
+      Scanning (Module 15) means asking a *range* of IP addresses what they are running — so you must read CIDR to know exactly which machines are in scope. Traffic analysis (Module 8) means reading packets and their addresses. Pivoting (Module 25) means reaching private addresses behind NAT. All of it assumes the picture in this module: layered models, IP and MAC addresses, subnets, and packets hopping through switches and routers.
 
   - kind: recap
     body: |

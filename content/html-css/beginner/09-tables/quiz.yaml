@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: Where does `<caption>` go?
     options:
-      - "Immediately after the opening `<table>` tag"
-      - "After the closing `</table>` tag"
-      - "Inside the first `<th>`"
-      - "In the `<head>` of the page"
+      - Immediately after the opening `<table>` tag
+      - Immediately after the closing `</table>` tag
+      - Inside the first `<th>` of the header row
+      - Just before the opening `<table>` tag
     answer: 0
     explanation: "The caption must be the first thing inside the table. CSS can still move it visually."
   - type: mcq
@@ -22,18 +22,18 @@ questions:
   - type: mcq
     prompt: Which content belongs in a `<table>`?
     options:
-      - "A comparison of three membership plans by price, discount and delivery"
-      - "The page layout: logo on the left, menu on the right"
-      - "A photo gallery in three columns"
-      - "A form's labels and inputs, to line them up"
+      - Three membership plans compared by price, discount and delivery
+      - "The page layout: logo on the left and the menu on the right"
+      - A photo gallery of book covers arranged in three columns
+      - A form's labels and their inputs, lined up neatly in two columns
     answer: 0
     explanation: "Tables are for data with row and column relationships. Layouts, galleries and forms use CSS."
   - type: mcq
     prompt: "What does `scope=\"col\"` on a header cell do?"
     options:
-      - "Tells assistive technology this header labels every cell in its column"
-      - "Makes the column wider"
-      - "Lets the column be sorted"
-      - "Merges the column's cells"
+      - Tells assistive technology it labels every cell in its column
+      - Makes the whole column wider, to fit its longest header text
+      - Lets visitors sort the table by clicking on that column header
+      - Makes the header stay visible when the table scrolls down
     answer: 0
     explanation: "Screen readers use it to announce the right header with each cell."

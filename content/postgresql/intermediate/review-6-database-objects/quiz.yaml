@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: A materialized view was created yesterday. A payment was added today. What does selecting from it show?
     options:
-      - Today's payment included
+      - Today's payment, since views always read the latest data
       - Yesterday's result, until you run REFRESH MATERIALIZED VIEW
-      - An error
-      - An empty result
+      - An error, because the underlying table has changed
+      - Today's payment, but only after the next ANALYZE runs
     answer: 1
     explanation: A materialized view stores the result from its last refresh. A plain view re-runs its query every time.
 
@@ -43,9 +43,9 @@ questions:
   - type: mcq
     prompt: What can a procedure do that a function can't?
     options:
-      - Return a value
-      - Take parameters
+      - Return a value or a whole table to the caller
+      - Take parameters, including default values
       - COMMIT inside its body, e.g. between batches
-      - Use PL/pgSQL
+      - Be written in PL/pgSQL as well as in SQL
     answer: 2
     explanation: Procedures (run with CALL) can control transactions, which suits long batch jobs. Functions run inside the caller's transaction.

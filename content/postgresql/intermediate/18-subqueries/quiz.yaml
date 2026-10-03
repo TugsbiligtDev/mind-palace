@@ -17,10 +17,10 @@ questions:
   - type: mcq
     prompt: "`WHERE x NOT IN (SELECT y FROM t)` returns zero rows, even though you're sure some should match. What's the most likely cause?"
     options:
-      - The subquery is too slow
+      - The subquery is too slow, so PostgreSQL stops early
       - Column y contains at least one NULL
-      - NOT IN only works with numbers
-      - x and y have different names
+      - NOT IN only works with numbers, not with text
+      - x and y have different names, so nothing matches
     answer: 1
     explanation: A NULL in the list makes `x <> NULL` unknown, so NOT IN is never true. Rewrite it with NOT EXISTS.
 
@@ -36,10 +36,10 @@ questions:
   - type: mcq
     prompt: What makes a subquery **correlated**?
     options:
-      - It's in the FROM clause
-      - It uses a column from the outer query, so its result depends on each outer row
-      - It returns more than one row
-      - It uses GROUP BY
+      - It sits in the FROM clause and is given an alias
+      - It uses a column from the outer query, so it depends on each outer row
+      - It returns more than one row, so it needs IN instead of =
+      - It uses GROUP BY, so its result is grouped by the columns of the outer query
     answer: 1
     explanation: A correlated subquery refers to the outer query's row, like `o.customer_id = c.customer_id`, so it's evaluated per row.
 

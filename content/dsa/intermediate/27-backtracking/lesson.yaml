@@ -418,7 +418,7 @@ steps:
     body: |
       Backtracking is how computers solve puzzles: Sudoku, crosswords, scheduling, generating every valid configuration. It is brute force made intelligent, because pruning cuts off huge parts of the search tree the moment they cannot succeed.
 
-      It is also the on-ramp to dynamic programming: when the same sub-problems appear again and again inside a backtracking search, you can remember the answers instead of recomputing them. That is Module 28.
+      It is also the on-ramp to dynamic programming: when the same sub-problems appear again and again inside a backtracking search, you can remember the answers instead of recomputing them. That idea is called **dynamic programming**, and it is the best next topic to study after this course.
 
   - kind: recap
     body: |

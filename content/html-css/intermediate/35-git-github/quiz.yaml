@@ -3,24 +3,24 @@ questions:
   - type: mcq
     prompt: "What does `git add index.html` do?"
     options:
-      - "Puts the changes to index.html into the staging area for the next commit"
-      - "Uploads index.html to GitHub"
-      - "Creates a new file called index.html"
-      - "Saves a commit"
+      - Puts the changes to index.html in the staging area for the next commit
+      - Uploads index.html to GitHub, so your collaborators can see the change
+      - Saves a commit containing only index.html, with an automatic message
+      - Starts tracking index.html, so Git saves every future edit by itself
     answer: 0
     explanation: "add stages; commit snapshots; push uploads."
   - type: mcq
     prompt: "Which commit message is best?"
-    options: ["`Fix header wrapping on small screens`", "`stuff`", "`changes`", "`asdfgh`"]
+    options: ["`Fix header wrapping on small screens`", "`Updated some files in the project`", "`Changes to index.html and style.css`", "`Work in progress, will finish later`"]
     answer: 0
     explanation: "Say what changed (and why, if useful), in the imperative."
   - type: mcq
     prompt: "You accidentally committed and pushed a file containing a password. What should you assume?"
     options:
-      - "The password is compromised: change it, and add the file to .gitignore"
-      - "Deleting the file in the next commit makes it safe"
-      - "Private repos can't leak"
-      - "GitHub hides passwords automatically"
+      - "It's compromised: change it, and add the file to .gitignore"
+      - Deleting the file in the next commit makes the password safe
+      - It's safe as long as the repository is set to private
+      - GitHub hides passwords in pushed files automatically
     answer: 0
     explanation: "Git keeps every past version. Treat a pushed secret as public and replace it."
   - type: mcq

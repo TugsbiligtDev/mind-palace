@@ -26,19 +26,19 @@ questions:
     prompt: A result looks right but has **30 rows** when you expected one row per genre. What's the most likely cause?
     options:
       - You forgot GROUP BY, so every book is its own row
-      - LIMIT is missing
-      - The table has duplicate genres
-      - ORDER BY is wrong
+      - LIMIT is missing, so the result isn't cut down to one row
+      - The table has duplicate genres, which need DISTINCT
+      - ORDER BY is sorting by title instead of by genre
     answer: 0
     explanation: One row per book (30) instead of one per genre means nothing collapsed the rows. Grouping by genre does that.
 
   - type: mcq
     prompt: Before running `UPDATE books SET stock = 0 WHERE genre = 'Horror';`, what's the safest first step?
     options:
-      - Run it and check afterwards
-      - "Run `SELECT * FROM books WHERE genre = 'Horror';` to see exactly which rows will change"
-      - Run TRUNCATE first
-      - Remove the WHERE to be sure it works
+      - Run the UPDATE, then check the rows afterwards with a SELECT
+      - Run the same WHERE as a SELECT first, to see which rows will change
+      - Run TRUNCATE first, so the update starts from a clean table
+      - Remove the WHERE just once, to check that the UPDATE syntax itself works
     answer: 1
     explanation: The same WHERE in a SELECT shows exactly the rows the UPDATE will touch, before anything changes.
 

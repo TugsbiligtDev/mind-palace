@@ -12,7 +12,7 @@ questions:
     explanation: A connected graph with no cycle is a tree, and it always has exactly V − 1 edges.
   - type: mcq
     prompt: You need the cheapest way to connect a set of towns so every town can reach every other. Which idea fits?
-    options: ["Topological sort", "Minimum spanning tree", "Two-colouring", "Binary search"]
+    options: [Topological sort, Minimum spanning tree, Shortest paths from one town, Two-colouring]
     answer: 1
     explanation: The MST connects everything with the lowest total edge cost.
   - type: predict

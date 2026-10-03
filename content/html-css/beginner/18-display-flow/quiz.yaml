@@ -3,10 +3,10 @@ questions:
   - type: mcq
     prompt: "You set `width: 200px` on a `<span>` and nothing changes. Why?"
     options:
-      - "A span is inline, and inline boxes ignore width; use inline-block or block"
-      - "Spans can't be styled"
-      - "Widths need percentages"
-      - "The span needs an id"
+      - A span is inline, and inline boxes ignore width
+      - Spans can't be styled; only divs accept CSS
+      - Widths only work when given as percentages
+      - "The span needs `position: relative` before width works"
     answer: 0
     explanation: "Inline elements are sized by their content. `display: inline-block` makes width apply."
   - type: mcq

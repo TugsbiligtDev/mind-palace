@@ -3,28 +3,28 @@ questions:
   - type: mcq
     prompt: "Why prefer `:user-invalid` over `:invalid` for error styling?"
     options:
-      - "`:invalid` matches empty required fields as soon as the page loads; `:user-invalid` waits until the visitor has interacted"
-      - "`:invalid` doesn't work in Safari"
-      - "`:user-invalid` also checks on the server"
-      - "They're identical"
+      - "`:invalid` matches empty required fields on load; `:user-invalid` waits"
+      - "`:invalid` doesn't work in Safari, while `:user-invalid` works everywhere"
+      - "`:user-invalid` also re-checks the value on the server when submitted"
+      - They are identical; `:user-invalid` is just the newer, longer name
     answer: 0
     explanation: "Nobody wants a form that starts out covered in red."
   - type: mcq
     prompt: "Is the browser's built-in validation enough to protect your server from bad data?"
     options:
-      - "No: anyone can bypass it, so the server must validate again"
-      - "Yes, browsers enforce it strictly"
-      - "Only if you also use pattern"
-      - "Only on HTTPS sites"
+      - "No: anyone can bypass it, so the server must check again"
+      - "Yes: browsers block the form until every rule is met"
+      - Yes, as long as every field also has a `pattern` rule
+      - Only if the site uses HTTPS, which protects the data
     answer: 0
     explanation: "Client-side validation is a convenience. Security checks belong on the server."
   - type: mcq
     prompt: "How do you make a screen reader read an error message when the field is focused?"
     options:
-      - "Give the message an id and reference it from the field's `aria-describedby`"
-      - "Put the message in the placeholder"
-      - "Make the message red"
-      - "Use `aria-hidden` on the message"
+      - Give the message an id and point the field's `aria-describedby` at it
+      - Put the message in the field's placeholder, which is read on focus
+      - Put the message right after the field in the HTML, so it is read next
+      - Add `role="alert"` to the field, so its message is read on focus
     answer: 0
     explanation: "aria-describedby links extra descriptions (hints and errors) to the field."
   - type: mcq
@@ -35,9 +35,9 @@ questions:
   - type: mcq
     prompt: "What's the difference between `<datalist>` and `<select>`?"
     options:
-      - "A datalist only suggests values; the visitor can still type anything"
-      - "A datalist allows only one of its options"
-      - "A select allows free typing"
-      - "There's no difference"
+      - A datalist only suggests values; the visitor can type anything
+      - A datalist forces one of its options, just like a select does
+      - A select lets the visitor type a new value or pick an option
+      - A datalist allows several choices; a select allows only one
     answer: 0
     explanation: "select restricts the choice; datalist offers suggestions on a normal text input."

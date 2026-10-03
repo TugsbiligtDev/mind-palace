@@ -13,19 +13,19 @@ questions:
   - type: mcq
     prompt: "An image works on your Mac but is missing once the site goes live. The file is `images/Logo.PNG` and the HTML says `images/logo.png`. Why?"
     options:
-      - "Your Mac ignores capital letters in file names, but most web servers don't"
-      - "Servers can't show PNG files"
-      - "The image is too big for the server"
-      - "The path needs a `/` at the start"
+      - Your Mac ignores capital letters in file names, but most servers don't
+      - Web servers can't show PNG files, so it must be converted to JPG first
+      - The image is too large, so the server refuses to send it to visitors
+      - The path needs a `/` at the start, or servers can't find the folder
     answer: 0
     explanation: "macOS treats `Logo.PNG` and `logo.png` as the same name; a typical server sees two different files and returns 404. All-lowercase names avoid this."
   - type: mcq
     prompt: Why are relative paths the default for linking your own files?
     options:
-      - "The whole folder can move, to a server or another computer, and the links still work"
-      - "They load faster than absolute paths"
-      - "Browsers can't follow absolute paths"
-      - "They hide your files from search engines"
+      - The whole folder can move to a server and the links still work
+      - They load faster, since the browser skips looking up the domain
+      - Browsers block absolute paths to your own site for security
+      - They hide your file names from visitors and search engines
     answer: 0
     explanation: "A relative path only depends on where the files are relative to each other, so it survives moving the project."
   - type: fill

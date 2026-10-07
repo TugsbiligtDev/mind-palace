@@ -1,0 +1,207 @@
+steps:
+  - kind: explain
+    title: One tree, one root
+    body: |
+      On Linux and macOS, every file and folder on the computer hangs off **one** tree. Its top is called the **root**, written as a single slash: `/`.
+
+      ```
+      /
+      ├── bin/          programs (ls, cat, …)
+      ├── etc/          settings for the whole system
+      ├── home/
+      │   └── learner/  ← your home folder, written ~
+      │       └── inkwell/
+      ├── tmp/          temporary files, emptied on restart
+      └── var/
+          └── log/      logs from running programs
+      ```
+
+      Your **home folder** is where your own files live. It has a shortcut: `~` (tilde). For you, `~` means `/home/learner`. On a Mac, `~` means `/Users/yourname`.
+
+      There are no drive letters like Windows' `C:`. Even extra disks and USB sticks appear somewhere inside this one tree.
+
+  - kind: explain
+    title: Absolute and relative paths
+    body: |
+      A **path** is the directions to a file. There are two kinds:
+
+      - An **absolute path** starts at the root, with `/`. It works from anywhere: `/home/learner/inkwell/notes/todo.txt`. (`~/inkwell/notes/todo.txt` is absolute too: `~` stands for `/home/learner`.)
+      - A **relative path** starts from **where you are now** (the folder `pwd` prints). If you're in `/home/learner/inkwell`, then `notes/todo.txt` means `/home/learner/inkwell/notes/todo.txt`.
+
+      Two special names help with relative paths:
+
+      | Name | Means |
+      |---|---|
+      | `.` | this folder |
+      | `..` | the folder **above** this one (the parent) |
+
+      From `~/inkwell/notes`, `../orders` means "up to `inkwell`, then into `orders`".
+
+  - kind: explain
+    title: Moving with cd
+    body: |
+      `cd` (**c**hange **d**irectory) moves you to another folder. Your prompt updates to show where you are.
+
+      | Command | Goes to |
+      |---|---|
+      | `cd notes` | the `notes` folder inside the current one |
+      | `cd ..` | up one level |
+      | `cd ../..` | up two levels |
+      | `cd /etc` | the absolute path `/etc` |
+      | `cd` or `cd ~` | home |
+      | `cd -` | back to where you were before |
+
+      If you're ever lost: `pwd` says where you are, and `cd` alone takes you home.
+
+  - kind: shell
+    title: Go to the orders folder
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      You're in your home folder. Move into Inkwell's **orders** folder (it's at `~/inkwell/orders`), then run `pwd` to prove you're there.
+    output: true
+    solution: |
+      cd ~/inkwell/orders
+      pwd
+    hint: "`cd ~/inkwell/orders` (or `cd inkwell`, then `cd orders`), then `pwd`."
+
+  - kind: shell
+    title: Sideways, with ..
+    fixture: backoffice
+    setup: cd ~/inkwell/notes
+    body: |
+      This time you start in `~/inkwell/notes`. Go to the website's **images** folder (`~/inkwell/site/images`) using a **relative** path that starts with `..`, then run `pwd`.
+
+      Picture the tree: up out of `notes` into `inkwell`, then down into `site`, then `images`.
+    output: true
+    solution: |
+      cd ../site/images
+      pwd
+    uses:
+      - match: "cd\\s+\\.\\."
+        why: "this task practises relative paths: start your `cd` with `..` (up to `inkwell`) instead of `~` or `/`."
+    hint: "One command does it: `cd ../site/images`. The `..` takes you up to `inkwell`."
+
+  - kind: explain
+    title: Looking with ls
+    body: |
+      `ls` lists a folder (the current one, or the one you name). Three options do most of the work:
+
+      | Option | Shows |
+      |---|---|
+      | `-l` | a **long** list: one file per line with its details |
+      | `-a` | **all** files, including hidden ones |
+      | `-h` | sizes a **human** can read (`4.0K`, `1.2M`), together with `-l` |
+
+      They combine: `ls -lah`. A line of `ls -l` reads like this:
+
+      ```
+      -rw-r--r-- 1 learner learner  233 Oct  6 09:00 2026-09.csv
+      │          │ │       │        │   │            └── name
+      │          │ │       │        │   └── last changed
+      │          │ │       │        └── size in bytes
+      │          │ │       └── group
+      │          │ └── owner
+      │          └── number of links (ignore it for now)
+      └── type and permissions: d = folder, - = file (Module 10)
+      ```
+
+  - kind: explain
+    title: Hidden files
+    body: |
+      Any file or folder whose name starts with a **dot** is **hidden**: `ls` skips it unless you add `-a`. These "dotfiles" are usually settings, like `.bashrc` (your shell's settings, Module 11) or `.gitignore` (Module 16).
+
+      `ls -a` also shows two entries in every folder: `.` (this folder) and `..` (its parent). They're the same `.` and `..` you use in paths.
+
+      Hidden doesn't mean secret or protected. Anyone who can list the folder can see them with `-a`. It just keeps clutter out of the way.
+
+  - kind: shell
+    title: Something hidden in the website folder
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      printf 'PAYMENT_KEY=pk-inkwell-7f3a-NOT-A-REAL-KEY\nSHOP_EMAIL=orders@inkwell.example\n' > site/.env
+    body: |
+      Moth, the agency's informant, leans over: *"Nobody ever looks at the dot-files. Look in the website folder."*
+
+      List **everything** in the `site` folder, hidden files included.
+    output: true
+    solution: ls -a site
+    reject:
+      - ls site
+    hint: "The option that shows **a**ll files is `-a`: `ls -a site`."
+
+  - kind: choice
+    title: What was hiding?
+    body: Which hidden file is in the website folder?
+    options:
+      - "`.env`"
+      - "`.secret`"
+      - "`.bashrc`"
+      - "`.gitignore`"
+    answer: 0
+    explanation: "`.env` is a common name for a file of settings, often with passwords and keys in it. Inkwell's has the shop's payment key in it, and that will matter later in the season. (`cat site/.env` shows it.)"
+
+  - kind: explain
+    title: Let Tab type for you
+    body: |
+      Typing long paths is slow and invites typos. Type the first few letters and press **Tab**: the shell finishes the name for you.
+
+      - One match: it completes the whole name (and adds `/` after a folder).
+      - Several matches: it completes as far as they agree; press **Tab** again to list the choices.
+      - Nothing happens: nothing starts with what you typed. That's a clue too: check your spelling or your folder.
+
+      Use Tab all the time. It's faster, and a name Tab completed is guaranteed to exist.
+
+  - kind: shell
+    title: Tab practice
+    fixture: backoffice
+    setup: |
+      cd ~
+      mkdir -p ~/inkwell/old/very-long-folder-name-from-2019/really-old-backups
+    body: |
+      Try these without typing the full names:
+
+      1. Type `cd ink` and press **Tab**. Then type `ol` and Tab, then `ve` and Tab, and press Return.
+      2. Type `ls ` (with the space) and press Tab twice to see the choices.
+      3. Type `cd ~/in`, Tab, `no`, Tab, Return, then `pwd`.
+
+      Nothing is graded here.
+
+  - kind: info
+    title: "🔹 Linux and Mac lay their trees out differently"
+    body: |
+      The idea is identical, but some top-level folders differ:
+
+      | | Linux | macOS |
+      |---|---|---|
+      | Home folders | `/home/name` | `/Users/name` |
+      | Apps | installed as packages under `/usr` | `/Applications` |
+      | Settings | `/etc` | `/etc` exists, but most app settings live in `~/Library` |
+
+      Module 22 walks the Linux layout properly (`/etc`, `/var`, `/usr`, `/opt`, `/tmp`).
+
+  - kind: mac
+    title: Walk your Mac's tree
+    body: |
+      In your Mac's Terminal: go to the root and look, come home, and list your home folder with hidden files. You'll see dotfiles like `.zshrc` (maybe) and `.Trash`.
+
+      Then try Tab: type `cd ~/Doc` and press Tab.
+    commands: |
+      cd /
+      ls
+      cd ~
+      pwd
+      ls -lah
+  - kind: why
+    body: |
+      Every command that works on files needs a path, so paths are the grammar of the terminal. Most "No such file or directory" errors come from mixing up absolute and relative paths, or forgetting where you are. Knowing `pwd`, `cd`, `..` and Tab by heart makes all of that go away.
+
+  - kind: recap
+    body: |
+      - One tree from the **root** `/`. Your **home** is `~` (`/home/learner` here, `/Users/you` on a Mac).
+      - **Absolute** paths start with `/` (or `~`) and work anywhere; **relative** paths start from where you are.
+      - `.` is this folder, `..` the parent.
+      - `cd folder`, `cd ..`, `cd` (home), `cd -` (back). `pwd` if lost.
+      - `ls -l` long, `-a` all (hidden **dotfiles** too), `-h` readable sizes.
+      - **Tab** completes names; press it twice to see the choices.

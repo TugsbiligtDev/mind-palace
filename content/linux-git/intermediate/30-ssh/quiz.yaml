@@ -1,0 +1,45 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "Which file do you put on a **server** so that you can log in to it with your key?"
+    options:
+      - "Your public key, added to `~/.ssh/authorized_keys` on the server"
+      - "Your private key, copied into `~/.ssh/id_ed25519` on the server"
+      - "Your `known_hosts` file, copied into the server's `/etc/ssh` folder"
+      - "Your `~/.ssh/config`, copied into the server's home folder"
+    answer: 0
+    explanation: "The public half goes on every server; the private half never leaves your computer. `ssh-copy-id` appends it to `authorized_keys`."
+  - type: mcq
+    prompt: "ssh shows *REMOTE HOST IDENTIFICATION HAS CHANGED!* for a server you use every day. What's the right first step?"
+    options:
+      - "Find out why (was it reinstalled?) before removing the old key with `ssh-keygen -R`"
+      - "Delete `~/.ssh/known_hosts` entirely so the warning can never come back"
+      - "Answer `yes` to the question, which replaces the old key automatically"
+      - "Generate a new key pair, since your own key must have stopped working"
+    answer: 0
+    explanation: "A changed host key is what a rebuilt server looks like, but also what an impostor looks like. Confirm first; then `ssh-keygen -R host` removes just that entry. (ssh doesn't even offer a yes/no here.)"
+  - type: mcq
+    prompt: "What's the difference between `rsync -av site/ shop:www/` and `rsync -av site shop:www/`?"
+    options:
+      - "With the slash, the contents go into `www/`; without it, you get `www/site/`"
+      - "With the slash, rsync also deletes files on the server that aren't in `site`"
+      - "Without the slash, rsync copies only the files that changed since last time"
+      - "There's no difference: rsync ignores a trailing slash on the source"
+    answer: 0
+    explanation: "A trailing slash on the source means *what's inside*. Without it, rsync copies the folder itself."
+  - type: mcq
+    prompt: "After `chmod 644 ~/.ssh/id_ed25519`, the server asks for your password again. Why?"
+    options:
+      - "ssh ignores a private key that others can read, so key login stops working"
+      - "chmod changed the key's contents, so it no longer matches the public key"
+      - "The server noticed the change and removed your key from authorized_keys"
+      - "644 means the key has expired and must be renewed with ssh-keygen"
+    answer: 0
+    explanation: "ssh prints *UNPROTECTED PRIVATE KEY FILE!* and skips the key. `chmod 600 ~/.ssh/id_ed25519` fixes it."
+  - type: fill
+    prompt: "Complete the `~/.ssh/config` entry so `ssh shop` connects to `shop.inkwell.example`:\n\n```\nHost shop\n    ____ shop.inkwell.example\n```"
+    code: "Host shop\n    ____ shop.inkwell.example"
+    answer: "HostName"
+    accept: ["hostname", "Hostname"]
+    runnable: false
+    explanation: "`Host` is the short name you type; `HostName` is the real address ssh connects to."

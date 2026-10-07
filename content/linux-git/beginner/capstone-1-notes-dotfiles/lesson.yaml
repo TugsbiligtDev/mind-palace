@@ -1,0 +1,231 @@
+steps:
+  - kind: explain
+    title: The brief
+    body: |
+      Inspector Bold closes the Inkwell file. *"Good work. Now something for you. Every detective keeps a notebook. Yours lives in a terminal."*
+
+      You'll build one project, `~/notes-dotfiles`, that holds two things:
+
+      - **notes**: what you've learned, in Markdown, sorted into folders;
+      - **dotfiles**: your shell settings (aliases and friends), so any new computer can have *your* terminal in a minute.
+
+      Each step below builds the next part in the practice terminal and is checked. The last step does the whole thing for real on your Mac. Every step starts from where the previous one left off.
+
+  - kind: shell
+    title: "1. Lay out the project"
+    setup: cd ~
+    body: |
+      Create this structure in your home folder:
+
+      ```
+      notes-dotfiles/
+      ├── README.md
+      ├── dotfiles/
+      │   └── zshrc
+      └── notes/
+          ├── git/
+          ├── linux/
+          └── books/
+      ```
+
+      `README.md` contains exactly:
+
+      ```
+      # Notes and dotfiles
+
+      My terminal notes and shell settings.
+      ```
+
+      and `dotfiles/zshrc` contains exactly:
+
+      ```
+      # My shell settings, loaded from ~/.zshrc
+      alias ll='ls -lah'
+      alias gs='git status'
+      ```
+
+      (`mkdir -p` makes several nested folders at once; nano or `printf` for the files.)
+    tests:
+      - find notes-dotfiles | sort
+      - cat notes-dotfiles/README.md
+      - cat notes-dotfiles/dotfiles/zshrc
+    solution: |
+      mkdir -p notes-dotfiles/dotfiles notes-dotfiles/notes/git notes-dotfiles/notes/linux notes-dotfiles/notes/books
+      printf '# Notes and dotfiles\n\nMy terminal notes and shell settings.\n' > notes-dotfiles/README.md
+      printf "# My shell settings, loaded from ~/.zshrc\nalias ll='ls -lah'\nalias gs='git status'\n" > notes-dotfiles/dotfiles/zshrc
+    hint: "`mkdir -p notes-dotfiles/dotfiles notes-dotfiles/notes/git notes-dotfiles/notes/linux notes-dotfiles/notes/books`, then `nano notes-dotfiles/README.md` and `nano notes-dotfiles/dotfiles/zshrc`. Empty folders don't show in `git status` later; that's fine for now."
+
+  - kind: shell
+    title: "2. Track it with Git"
+    fixture: git-identity
+    setup: |
+      mkdir -p ~/notes-dotfiles/dotfiles ~/notes-dotfiles/notes/git ~/notes-dotfiles/notes/linux ~/notes-dotfiles/notes/books
+      printf '# Notes and dotfiles\n\nMy terminal notes and shell settings.\n' > ~/notes-dotfiles/README.md
+      printf "# My shell settings, loaded from ~/.zshrc\nalias ll='ls -lah'\nalias gs='git status'\n" > ~/notes-dotfiles/dotfiles/zshrc
+      printf 'junk' > ~/notes-dotfiles/.DS_Store
+      printf 'junk' > ~/notes-dotfiles/notes/.DS_Store
+      cd ~/notes-dotfiles
+    body: |
+      You're in `~/notes-dotfiles`. A Mac has already sprinkled `.DS_Store` files in it.
+
+      1. Make it a Git repository.
+      2. Add a `.gitignore` so `.DS_Store` files are never tracked.
+      3. Make the first commit with everything else, message `Start my notes and dotfiles`.
+
+      `git status` should end clean, with the `.DS_Store` files still on disk but ignored.
+    tests:
+      - git ls-files
+      - git log --format=%s
+      - git status --short
+    solution: |
+      git init
+      echo ".DS_Store" > .gitignore
+      git add .
+      git commit -m "Start my notes and dotfiles"
+    hint: "`git init`; `echo \".DS_Store\" > .gitignore`; check `git status` (only README.md, .gitignore and dotfiles/ should be untracked); `git add .`; `git commit -m \"…\"`."
+
+  - kind: shell
+    title: "3. A conflict, on purpose"
+    fixture: git-identity
+    setup: |
+      mkdir -p ~/notes-dotfiles/dotfiles ~/notes-dotfiles/notes && cd ~/notes-dotfiles
+      printf '# Notes and dotfiles\n\nMy terminal notes and shell settings.\n' > README.md
+      printf "# My shell settings, loaded from ~/.zshrc\nalias ll='ls -lah'\nalias gs='git status'\n" > dotfiles/zshrc
+      echo ".DS_Store" > .gitignore
+      git init -q && git add . && git commit -qm "Start my notes and dotfiles"
+    body: |
+      Practise the thing that scares people, while nothing's at stake:
+
+      1. Make a branch `short-status` and on it change the `gs` line in `dotfiles/zshrc` to `alias gs='git status -sb'`. Commit.
+      2. Back on `main`, change the same line to `alias gs='git status --short'`. Commit.
+      3. Merge `short-status` into `main`. It conflicts. Resolve it so the file reads exactly:
+         ```
+         # My shell settings, loaded from ~/.zshrc
+         alias ll='ls -lah'
+         alias gs='git status -sb'
+         ```
+      4. Finish the merge, and delete the branch.
+    tests:
+      - cat dotfiles/zshrc
+      - git status --short
+      - git branch
+      - git log -1 --format=%p | wc -w
+      - git log --format=%s | sort
+    solution: |
+      git switch -c short-status
+      sed -i "s/alias gs='git status'/alias gs='git status -sb'/" dotfiles/zshrc
+      git commit -am "Show the branch in short status"
+      git switch main
+      sed -i "s/alias gs='git status'/alias gs='git status --short'/" dotfiles/zshrc
+      git commit -am "Use the short status format"
+      git merge short-status  # allow-error: the conflict is the point
+      printf "# My shell settings, loaded from ~/.zshrc\nalias ll='ls -lah'\nalias gs='git status -sb'\n" > dotfiles/zshrc
+      git add --resolved
+      git commit --no-edit
+      git branch -d short-status
+    uses:
+      - match: "git\\s+merge\\s+short-status"
+        why: "the point is to merge the branch and resolve the conflict: `git merge short-status`."
+    hint: "Commit messages are up to you. After `git merge short-status`, edit the file to keep the `-sb` line and remove the markers, then `git add --resolved`, `git commit`, `git branch -d short-status`."
+
+  - kind: shell
+    title: "4. Onto GitHub, over SSH"
+    fixture: [git-identity, github-account]
+    setup: |
+      mkdir -p ~/notes-dotfiles/dotfiles ~/notes-dotfiles/notes && cd ~/notes-dotfiles
+      printf '# Notes and dotfiles\n\nMy terminal notes and shell settings.\n' > README.md
+      printf "# My shell settings, loaded from ~/.zshrc\nalias ll='ls -lah'\nalias gs='git status -sb'\n" > dotfiles/zshrc
+      echo ".DS_Store" > .gitignore
+      git init -q && git add . && git commit -qm "Start my notes and dotfiles"
+    body: |
+      Your SSH key is on GitHub and `gh` is logged in (`gh auth status`, `ssh -T git@github.com`).
+
+      Create a **private** repository `notes-dotfiles` on GitHub, connect it as `origin` with the **SSH** address, and push `main` with its upstream set. (`gh repo create` can do all three with `--source`, `--remote` and `--push`, or do them one by one.)
+    tests:
+      - gh repo list
+      - git remote get-url origin
+      - git status -sb | head -n 1
+      - git -C /srv/git/github.com/learner/notes-dotfiles.git log --format=%s main
+    solution: |
+      gh repo create notes-dotfiles --private --source=. --remote=origin --push
+    hint: "`gh repo create notes-dotfiles --private --source=. --remote=origin --push`. Because gh is set to SSH, the remote gets the `git@github.com:` address."
+
+  - kind: shell
+    title: "5. Merge your own pull request"
+    fixture: [git-identity, github-account]
+    setup: |
+      git config --global pull.rebase false
+      mkdir -p ~/notes-dotfiles/dotfiles ~/notes-dotfiles/notes/git && cd ~/notes-dotfiles
+      printf '# Notes and dotfiles\n\nMy terminal notes and shell settings.\n' > README.md
+      printf "# My shell settings, loaded from ~/.zshrc\nalias ll='ls -lah'\nalias gs='git status -sb'\n" > dotfiles/zshrc
+      echo ".DS_Store" > .gitignore
+      git init -q && git add . && git commit -qm "Start my notes and dotfiles"
+      gh repo create notes-dotfiles --private --source=. --remote=origin --push > /dev/null 2>&1
+    body: |
+      Add your first real note through a pull request:
+
+      1. On a branch `git-notes`, create `notes/git/basics.md` containing exactly:
+         ```
+         # Git basics
+
+         - git status, git add, git commit
+         ```
+      2. Commit it (message `Add Git basics notes`) and push the branch.
+      3. Open a pull request (`--fill` is fine), then merge it with a merge commit and delete the branch.
+
+      You should end on an up-to-date `main` that has the note.
+    tests:
+      - cat notes/git/basics.md
+      - git branch -a
+      - git status -sb | head -n 1
+      - gh pr list --state all
+      - git -C /srv/git/github.com/learner/notes-dotfiles.git log --format=%s main -n 2
+    solution: |
+      git switch -c git-notes
+      printf '# Git basics\n\n- git status, git add, git commit\n' > notes/git/basics.md
+      git add notes/git/basics.md
+      git commit -m "Add Git basics notes"
+      git push -u origin git-notes
+      gh pr create --fill
+      gh pr merge --merge --delete-branch
+    hint: "`git switch -c git-notes`, make the file, `git add`, `git commit -m \"Add Git basics notes\"`, `git push -u origin git-notes`, `gh pr create --fill`, `gh pr merge --merge --delete-branch`."
+
+  - kind: mac
+    title: "6. For real, on your Mac"
+    body: |
+      Now build it for real, with your own name, aliases and GitHub account (Modules 14 and 18 set those up).
+
+      1. Make the folders and files as in step 1, and put **your** favourite aliases in `dotfiles/zshrc`.
+      2. **Back up** your existing settings file, then make it load your dotfiles: add one line to `~/.zshrc` (don't replace it):
+         ```
+         source ~/notes-dotfiles/dotfiles/zshrc
+         ```
+         Open a new Terminal window and check that `gs` works.
+      3. `git init`, a `.gitignore` with `.DS_Store`, first commit.
+      4. Make the deliberate conflict from step 3 and resolve it (use VS Code if you like: `code .` shows *Accept Current / Accept Incoming* buttons over each conflict).
+      5. `gh repo create notes-dotfiles --private --source=. --remote=origin --push`.
+      6. Add a note through a pull request and merge it on github.com.
+
+      From now on, add a note to this repository after each module.
+    commands: |
+      mkdir -p ~/notes-dotfiles/dotfiles ~/notes-dotfiles/notes/{git,linux,books}
+      cd ~/notes-dotfiles
+      nano README.md
+      nano dotfiles/zshrc
+      cp ~/.zshrc ~/.zshrc.backup
+      echo 'source ~/notes-dotfiles/dotfiles/zshrc' >> ~/.zshrc
+      echo ".DS_Store" > .gitignore
+      git init && git add . && git commit -m "Start my notes and dotfiles"
+      gh repo create notes-dotfiles --private --source=. --remote=origin --push
+  - kind: recap
+    body: |
+      What you can do now, after the Beginner level:
+
+      - Find your way around any Mac or Linux machine from the terminal, and manage files and folders confidently (and carefully).
+      - Read, search and combine text and logs with pipes, `grep` and `find`.
+      - Understand and fix permissions, use `sudo` deliberately, and set up your shell with variables, `PATH` and aliases.
+      - Install software with Homebrew (and recognise `apt`).
+      - Keep any project under Git: commit, ignore, undo, branch, merge and resolve conflicts.
+      - Put work on GitHub over SSH and get changes in through pull requests.
+
+      Inspector Bold: *"Season 2 takes you onto real servers. Bring your notebook."*

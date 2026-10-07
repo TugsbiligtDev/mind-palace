@@ -1,0 +1,97 @@
+steps:
+  - kind: explain
+    title: Something still happens at night
+    body: |
+      Inspector Bold puts Priya's log copy in front of you. *"Season one ended with the refunds. Somebody kept the keys. Read the logs, find what's still going on, and give me something I can show the owners."*
+
+      This review covers Modules 22 to 29. The logs are in `~/logs`. As before: each brief says **what**, not how. Look first, build pipelines step by step, check your result. **Check my work** says what's still different.
+
+  - kind: shell
+    title: "1. The export"
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      > *Someone downloaded a file from the admin pages at night. Print the address that made the `/admin/export` request and the number of bytes it received, separated by a space, and nothing else.*
+    output: true
+    solution: "grep /admin/export access.log | awk '{print $1, $10}'"
+    hint: "Find the line with grep, then print fields 1 and 10 with awk."
+
+  - kind: shell
+    title: "2. Who's been at the admin pages?"
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      > *List every address that ever requested a path starting with `/admin`, once each, sorted.*
+    output: true
+    solution: "awk '$7 ~ /^\\/admin/ {print $1}' access.log | sort -u"
+    reject:
+      - "cut -d' ' -f1 access.log | sort -u"
+    hint: "`grep '\"[A-Z]* /admin' access.log` (or `awk '$7 ~ /^\\/admin/'`) keeps the admin requests; `cut -d' ' -f1 | sort -u` lists their addresses once each."
+
+  - kind: shell
+    title: "3. A program nobody started"
+    setup: |
+      practice-spawn --pid 2790 --user root --cpu 1.3 --mem 0.8 --start 02:12 --ignore-term -- /opt/.cache/exfil-sync --every 3600 --to old-backup.inkwell.example > /dev/null
+    body: |
+      > *Priya says a program has been running since 2 a.m. that she's never heard of. Find it, and stop it for good. It isn't yours, so expect some resistance.*
+    tests:
+      - pgrep -a exfil; echo $?
+    solution: |
+      ps aux --sort=-start
+      sudo kill 2790
+      sudo kill -9 2790
+    uses:
+      - match: "sudo\\s+kill\\s+(-9|-KILL|-SIGKILL|-s\\s+KILL)\\s"
+        why: "it belongs to root and ignores the polite signal: `sudo kill -9`."
+    hint: "`ps aux` shows `/opt/.cache/exfil-sync` (PID 2790), owned by root and started at 02:12. `kill 2790` says *Operation not permitted*: it's root's, so `sudo kill 2790`. It ignores that too, so `sudo kill -9 2790`."
+
+  - kind: shell
+    title: "4. A watch script"
+    fixture: shop-logs
+    body: |
+      > *Priya wants a tool she can run on any log: **`~/bin/admin-watch.sh LOGFILE`** prints each address that requested an `/admin` path, with how many times, most first, as `ADDRESS COUNT`. Make it robust: strict mode, quoted variables, ShellCheck-clean, and if it's run without a file it prints `usage: admin-watch.sh LOGFILE` to standard error and exits with code 2.*
+    tests:
+      - ~/bin/admin-watch.sh ~/logs/access.log
+      - "grep -v 192.0.2.10 ~/logs/access.log > /tmp/no10.log; ~/bin/admin-watch.sh /tmp/no10.log"
+      - ~/bin/admin-watch.sh > /dev/null 2> /tmp/err; echo "exit $?"; cat /tmp/err
+      - shellcheck ~/bin/admin-watch.sh > /dev/null 2>&1; echo "shellcheck exit $?"
+      - grep -c 'set -euo pipefail' ~/bin/admin-watch.sh
+    solution: |
+      sudo apt install -y shellcheck
+      mkdir -p ~/bin
+      printf '#!/usr/bin/env bash\nset -euo pipefail\nif [[ $# -ne 1 ]]; then\n  echo "usage: admin-watch.sh LOGFILE" >&2\n  exit 2\nfi\nawk %s "$1" | sort | uniq -c | sort -rn | awk %s\n' "'\$7 ~ /^\\\\/admin/ {print \$1}'" "'{print \$2, \$1}'" > ~/bin/admin-watch.sh
+      chmod +x ~/bin/admin-watch.sh
+    hint: "Check `$#` first (usage to `>&2`, `exit 2`). Then: `awk '$7 ~ /^\\/admin/ {print $1}' \"$1\" | sort | uniq -c | sort -rn | awk '{print $2, $1}'` (the last awk swaps the count and the address). Install shellcheck and run it on the file before you're done."
+
+  - kind: shell
+    title: "5. Pack the evidence"
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      > *Put `access.log` and `orders.json` (just those two files, no folders in front of their names) into **`~/evidence-2026-10-06.tar.gz`** for the owners' lawyer.*
+    tests:
+      - tar -tzf ~/evidence-2026-10-06.tar.gz | sort
+    solution: tar -czf ~/evidence-2026-10-06.tar.gz access.log orders.json
+    hint: "From `~/logs`: `tar -czf ~/evidence-2026-10-06.tar.gz access.log orders.json`. Check with `tar -tzf`."
+
+  - kind: choice
+    title: "6. What does it add up to?"
+    body: |
+      > *Put it together: the 2 a.m. admin login, the refunds, the customer export, and a root program sending something to `old-backup.inkwell.example` every hour. What's the most likely explanation?*
+    options:
+      - "Someone still has admin access from before: the same address that faked the refunds is now copying customer data out"
+      - "A search engine crawled the admin pages and accidentally triggered the export button"
+      - "The scanner at 192.0.2.44 guessed the admin password with its python-requests attempts"
+      - "Nothing is wrong: exports and refunds at night are the shop's normal scheduled jobs"
+    answer: 0
+    explanation: "192.0.2.10 logged in to the admin pages (200), made the refunds from Season 1 and then exported the customers table. The scanner at 192.0.2.44 only ever got 403s and 404s. A hidden root program means someone also got onto the server itself. Next: the server."
+
+  - kind: recap
+    body: |
+      What the logs say:
+
+      - **192.0.2.10** logged in to `/admin` at 02:13 on 6 October, made the two refunds, and at 02:15 **exported the customers table** (48,211 bytes).
+      - **192.0.2.44** is a noisy scanner: `/wp-login.php`, `/.env`, `/phpmyadmin`, all refused.
+      - A root program on this office server, `/opt/.cache/exfil-sync`, started at 02:12, was set to send something to `old-backup.inkwell.example` every hour. Stopped, with `kill -9`.
+
+      Inspector Bold: *"A hidden folder, a root process, an old backup server's name. Someone who can do that here can probably do it on the shop's own server too. Pack your SSH keys; we're going in."*

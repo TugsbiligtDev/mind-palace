@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "In a zdiff3 conflict, what's between `|||||||` and `=======`?"
+    options:
+      - "The base: the lines as they were before either side changed them"
+      - "Your version of the lines, on the branch you're currently on"
+      - "The incoming version, from the branch you're merging in"
+      - "Git's own suggested resolution, combining both sides"
+    answer: 0
+    explanation: "zdiff3 adds the common ancestor's version, so you can see what each side actually changed."
+  - type: mcq
+    prompt: "During `git merge feature`, which command keeps **feature**'s version of `app.js` for the whole file?"
+    options:
+      - "`git checkout --theirs app.js`"
+      - "`git checkout --ours app.js`"
+      - "`git merge --abort app.js`"
+      - "`git add --theirs app.js`"
+    answer: 0
+    explanation: "In a merge, *ours* is the branch you're on and *theirs* the one being merged in. Then `git add app.js`."
+  - type: mcq
+    prompt: "You've resolved the conflict of a cherry-pick and run `git add`. What finishes it?"
+    options:
+      - "`git cherry-pick --continue`"
+      - "`git rebase --continue`"
+      - "`git merge --continue`"
+      - "`git cherry-pick --skip`"
+    answer: 0
+    explanation: "Each operation is finished with its own `--continue`. `--skip` would drop the commit instead."
+  - type: mcq
+    prompt: "Which habit does most to keep conflicts rare and small?"
+    options:
+      - "Short-lived branches that are synced with main every day or two"
+      - "Long branches that are only merged once all the work is finished"
+      - "Reformatting every file you touch so the style is consistent"
+      - "Turning off zdiff3 so that conflict markers stay shorter"
+    answer: 0
+    explanation: "The longer two lines of work grow apart, the more they collide. Integrating often keeps each conflict small."
+  - type: mcq
+    prompt: "A merge has gone badly wrong and you'd like to start over. What restores everything to before the merge?"
+    options:
+      - "`git merge --abort`"
+      - "`git merge --continue`"
+      - "`git checkout --ours .`"
+      - "`git add --resolved`"
+    answer: 0
+    explanation: "`--abort` puts the files and the index back as they were before `git merge`. (It needs the merge to be still in progress.)"

@@ -1,0 +1,52 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "A process won't stop after `kill 812`. What's the right next step?"
+    options:
+      - "Wait a few seconds, check again, and only then use `kill -9 812`"
+      - "Run `kill 812` repeatedly until the process finally gives up"
+      - "Restart the whole server, since a process that ignores kill is broken"
+      - "Delete the program's file, which stops every process running it"
+    answer: 0
+    explanation: "Plain `kill` (TERM) lets the program clean up, which can take a moment. `kill -9` is for when it really won't go: it can't be ignored, but nothing gets cleaned up."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      false && echo yes || echo no
+    options:
+      - "no"
+      - "yes"
+      - "yes\nno"
+      - "(nothing)"
+    answer: 0
+    explanation: "`false` fails, so `&& echo yes` is skipped, and `|| echo no` runs because the chain so far failed."
+  - type: mcq
+    prompt: "You start `./import.sh` and realise it will take an hour. How do you get your prompt back without stopping it?"
+    options:
+      - "Press Ctrl+Z, then type `bg`"
+      - "Press Ctrl+C, then type `bg`"
+      - "Type `&` and press Return while it runs"
+      - "Press Ctrl+D to send it to the background"
+    answer: 0
+    explanation: "Ctrl+Z pauses it as a job; `bg` lets it continue in the background. Ctrl+C would stop it."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      ls /no-such-folder 2> /dev/null
+      echo $?
+    options:
+      - "2"
+      - "0"
+      - "1"
+      - "127"
+    answer: 0
+    explanation: "The error message went to /dev/null, but `ls` still failed: GNU ls exits with 2 when it can't access a path you named."
+  - type: mcq
+    prompt: "In `kill %2`, what is `%2`?"
+    options:
+      - "Job number 2 of this terminal (from `jobs`)"
+      - "The process whose PID is 2"
+      - "The second signal in the list, INT"
+      - "Every process that uses 2% of the CPU"
+    answer: 0
+    explanation: "`%` refers to a job of the current shell. Without it, `kill 2` would mean PID 2."

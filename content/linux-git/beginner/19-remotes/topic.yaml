@@ -1,0 +1,4 @@
+title: Remotes
+module: 19
+summary: "Remotes and origin (git remote -v); copying a repository with git clone; sending commits with git push -u; getting them with git fetch and git pull; main versus origin/main; and what to do when a push is rejected."
+minutes: 45

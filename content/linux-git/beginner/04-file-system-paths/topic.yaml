@@ -1,0 +1,4 @@
+title: The File System & Paths
+module: 4
+summary: "The folder tree from the root / down to your home ~; absolute and relative paths; . and ..; moving with cd and looking with ls -l, -a and -h; hidden dotfiles; letting Tab do the typing."
+minutes: 35

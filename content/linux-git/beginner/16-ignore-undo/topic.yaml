@@ -1,0 +1,4 @@
+title: Ignoring & Simple Undo
+module: 16
+summary: ".gitignore patterns and the files that never belong in Git (.DS_Store, logs, passwords and keys); undoing with git restore and git restore --staged; fixing the last commit with --amend; and removing or renaming tracked files with git rm and git mv."
+minutes: 40

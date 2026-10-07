@@ -1,0 +1,263 @@
+steps:
+  - kind: explain
+    title: Two ways to bring work together
+    body: |
+      Your branch started from `main` a while ago; since then `main` moved on. To combine them you can **merge** or **rebase**:
+
+      ```
+      merge:                                   rebase:
+            A---B  feature                                 A'--B'  feature
+           /     \                                        /
+      ---o---X---Y---M  main                   ---o---X---Y  main
+      ```
+
+      - **Merge** keeps both lines as they happened and adds a merge commit `M`. Honest, safe, a bit tangled.
+      - **Rebase** replays your commits **on top of** the new `main`, as new commits `A'` and `B'` (same changes, new hashes). The result is a straight line, as if you'd started today.
+
+      Rebase rewrites your branch's commits, so the rule from Module 34 applies: rebase **your own unshared work** freely; rebasing commits others already have needs care (and a force-push, below).
+
+  - kind: shell
+    title: Bring a branch up to date
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c books-index v1.0
+      printf '<!DOCTYPE html>\n<title>All books</title>\n<h1>All books</h1>\n' > books/index.html
+      git add books && git commit -qm "Add a page listing all books"
+      printf '<a href="dune.html">Dune</a>\n' >> books/index.html
+      git commit -qam "Link to Dune from the book list"
+      git switch -q main
+    body: |
+      Priya's branch **`books-index`** started at `v1.0`, before three newer commits on `main`. Rebase it onto `main`, so its two commits come after `Add the Kindred book page` in a straight line.
+    tests:
+      - git log --format=%s -4 books-index
+      - git merge-base --is-ancestor main books-index && echo "on top of main"
+      - git log --merges --oneline books-index | wc -l
+    solution: |
+      git switch books-index
+      git rebase main
+    hint: "`git switch books-index`, then `git rebase main`. Check with `git log --oneline --graph --all`."
+
+  - kind: explain
+    title: Conflicts during a rebase
+    body: |
+      Rebase replays commits one at a time, so a conflict stops it **at that commit**:
+
+      ```
+      CONFLICT (content): Merge conflict in index.html
+      error: could not apply 4c1e2b0... Change the slogan
+      hint: Resolve all conflicts manually, mark them as resolved with
+      hint: "git add/rm <conflicted_files>", then run "git rebase --continue".
+      ```
+
+      Fix the file (as in Module 17), `git add` it, and **`git rebase --continue`** (not `git commit`). Git may open the editor for the commit message: save it as it is. Other ways out: `git rebase --skip` (drop this commit) and `git rebase --abort` (go back to how things were before the rebase).
+
+      Careful with the conflict labels during a rebase: `HEAD`/"ours" is the branch you're rebasing **onto** (`main` plus the commits already replayed), and "theirs" is **your** commit being replayed. It's the opposite of what you'd guess.
+
+  - kind: shell
+    title: A conflicting slogan
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      sed -i 's/posted worldwide/sent anywhere in the world/' index.html && git commit -qam "Say we send anywhere"
+      git switch -q -c slogan HEAD~1
+      sed -i 's/Second-hand books/Used books/' index.html && git commit -qam "Say used, not second-hand"
+    body: |
+      You're on branch **`slogan`**, which changes the same line of `index.html` as the newest commit on `main`. Rebase it onto `main`. When it stops, combine both changes, so the line reads exactly:
+
+      ```
+      <p>Used books, sent anywhere in the world.</p>
+      ```
+
+      then finish the rebase.
+    tests:
+      - grep '<p>' index.html
+      - git log --format=%s -3
+      - git status --short
+      - git branch --show-current
+    solution: |
+      git rebase main  # allow-error: stops on the conflict
+      sed -i '/^<<<<<<<\|^=======\|^>>>>>>>/d; /sent anywhere/d; s#<p>Used books, posted worldwide.</p>#<p>Used books, sent anywhere in the world.</p>#' index.html
+      git add index.html
+      git rebase --continue
+    hint: "`git rebase main` stops. Edit `index.html`: delete the three marker lines and both old versions, keep one line `<p>Used books, sent anywhere in the world.</p>`. Then `git add index.html` and `git rebase --continue` (save the message as it is if the editor opens)."
+
+  - kind: explain
+    title: git pull --rebase
+    body: |
+      When you and a colleague both commit on `main`, a plain `git pull` adds a merge commit every time (*Merge branch 'main' of github.com:…*), and the history fills up with them. `git pull --rebase` fetches, then **rebases your unpushed commits on top of** what came in: a straight line, no merge commit.
+
+      ```
+      git pull --rebase
+      git config --global pull.rebase true    # make it the default
+      ```
+
+      It's safe, because the commits being rewritten are your own, not yet pushed.
+
+  - kind: shell
+    title: Pull without a merge commit
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      git clone -q git@github.com:inkwell/site.git /tmp/kenji 2> /dev/null
+      cd /tmp/kenji
+      printf '<p>Gift cards available.</p>\n' >> about.html
+      GIT_AUTHOR_NAME="Kenji Mori" GIT_AUTHOR_EMAIL=kenji@inkwell.example git commit -qam "Mention gift cards"
+      git push -q 2> /dev/null
+      cd ~/site && rm -rf /tmp/kenji
+      sed -i 's/Three people/Four people/' about.html
+      git commit -qam "We're four now"
+    body: |
+      In `~/site` you have one unpushed commit (`We're four now`). Meanwhile Kenji pushed `Mention gift cards`. Bring in his commit **without a merge commit**, so yours comes after his in a straight line, then push.
+    tests:
+      - git log --format=%s -3
+      - git log --merges --oneline | wc -l
+      - git status -sb | head -1
+    solution: |
+      git pull --rebase
+      git push
+    hint: "`git pull --rebase`, then `git push`. (`git pull` alone would make a merge commit.)"
+
+  - kind: explain
+    title: Interactive rebase
+    body: |
+      `git rebase -i` lets you **edit the list** of commits before they're replayed. `git rebase -i main` (or `HEAD~3`) opens your editor with:
+
+      ```
+      pick 1a2b3c4 Add the Kindred page
+      pick 5d6e7f8 Fix typo
+      pick 9a8b7c6 Fix another typo
+      ```
+
+      Change the first word of a line to say what to do, save and quit, and Git does it from top to bottom:
+
+      | Word | Does |
+      |---|---|
+      | `pick` (`p`) | keep the commit as it is |
+      | `reword` (`r`) | keep it, but edit its message |
+      | `squash` (`s`) | melt it into the commit above, combining both messages |
+      | `fixup` (`f`) | melt it into the commit above, **dropping** its message |
+      | `drop` (`d`), or delete the line | remove the commit |
+      | (move a line) | reorder commits |
+
+      It's the way to turn "WIP", "fix", "fix again" into one clean commit before you open a pull request. If it goes wrong: `git rebase --abort` during, `git reflog` after.
+
+  - kind: shell
+    title: One clean commit
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c beloved
+      printf '<!DOCTYPE html>\n<title>Belovd</title>\n<h1>Beloved</h1>\n' > books/beloved.html
+      git add books && git commit -qm "beloved page wip"
+      sed -i 's/Belovd/Beloved/' books/beloved.html && git commit -qam "Fix typo"
+      printf '<p class="price">11.00</p>\n' >> books/beloved.html && git commit -qam "Add price"
+    body: |
+      Branch **`beloved`** has three messy commits on top of `main`. With an interactive rebase onto `main`, turn them into **one** commit with the message **`Add the Beloved book page`** (the file stays exactly as it is now).
+    tests:
+      - git log --format=%s main..beloved
+      - git show beloved:books/beloved.html
+    solution: "git rebase -i main  # edit: 1s/^pick/reword/;2,3s/^pick/fixup/ # edit: 1c Add the Beloved book page"
+    hint: "`git rebase -i main`. In the editor: `reword` on the first line, `fixup` on the other two; save and quit. The editor opens again for the first commit's message: change it to `Add the Beloved book page`, save and quit. (`squash` instead of `fixup` would also work, then edit the combined message.)"
+
+  - kind: explain
+    title: --fixup and --autosquash
+    body: |
+      Found a mistake in an **older** commit of your branch? Fix it, then commit the fix as a **fixup** of that commit:
+
+      ```
+      git commit --fixup=4c1e2b0         # message: "fixup! Add the Dune page"
+      git rebase -i --autosquash main     # the todo list already has it moved and marked fixup
+      ```
+
+      `--autosquash` finds every `fixup!` (and `squash!`) commit and puts it right under its target, marked `fixup`: you just save and quit. (Plain `git rebase --autosquash main` does it without opening the editor.)
+
+  - kind: shell
+    title: Fix an older commit
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c circe
+      printf '<!DOCTYPE html>\n<title>Circe</title>\n<h1>Circe</h1>\n<p class="price">21.00</p>\n' > books/circe.html
+      git add books && git commit -qm "Add the Circe book page"
+      sed -i 's#</h1>#</h1>\n<a href="books/circe.html">Circe</a>#' index.html && git commit -qam "Link to Circe from the home page"
+    body: |
+      On branch **`circe`**, the first commit (`Add the Circe book page`) has the wrong price: `21.00` should be **`12.00`**. Fix the file, commit the fix with **`--fixup`** pointing at that commit, then fold it in with **autosquash**. The branch should end with the same two commit messages as now.
+    tests:
+      - git log --format=%s main..circe
+      - git show circe~1:books/circe.html | grep price
+      - git status --short
+    solution: |
+      sed -i 's/21.00/12.00/' books/circe.html
+      git commit -a --fixup=HEAD~1
+      git rebase --autosquash main
+    uses:
+      - match: "--fixup"
+        why: "commit the fix with `git commit --fixup=<commit>`."
+      - match: "--autosquash"
+        why: "fold it in with `git rebase -i --autosquash main` (or `git rebase --autosquash main`)."
+    hint: "Edit the price, then `git commit -a --fixup=HEAD~1` (or the commit's hash). Then `git rebase -i --autosquash main` and just save the list, or `git rebase --autosquash main`."
+
+  - kind: explain
+    title: Pushing a rewritten branch
+    body: |
+      If the branch was **already pushed**, the rewritten commits don't follow the old ones, and a normal push is refused (*non-fast-forward*). You have to tell Git to replace the remote branch:
+
+      ```
+      git push --force-with-lease
+      ```
+
+      **Never plain `--force`.** `--force` overwrites whatever is on GitHub, including commits a colleague pushed since your last fetch, which would silently vanish. `--force-with-lease` only overwrites if the remote branch is still **where you last saw it** (your `origin/branch`); if someone pushed in between, it refuses, and you fetch and look first.
+
+      And only force-push **your own** branches, never `main`. (Many teams make that impossible with branch protection: Module 40.)
+
+  - kind: shell
+    title: Push the tidied branch
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      git switch -q -c gift-cards
+      printf '<p>Gift cards.</p>\n' >> about.html && git commit -qam "gift cards"
+      printf '<p>From 10 euros.</p>\n' >> about.html && git commit -qam "price"
+      git push -q -u origin gift-cards 2> /dev/null
+    body: |
+      You pushed branch **`gift-cards`** with two messy commits. Squash them into one commit called **`Mention gift cards`** (an interactive rebase onto `main`), then update GitHub's copy of the branch **safely**.
+    tests:
+      - git log --format=%s main..gift-cards
+      - git fetch -q && git log --format=%s main..origin/gift-cards
+    solution: |
+      git rebase -i main  # edit: 1s/^pick/reword/;2s/^pick/fixup/ # edit: 1c Mention gift cards
+      git push  # allow-error: rejected, the history was rewritten
+      git push --force-with-lease
+    uses:
+      - match: "--force-with-lease"
+        why: "update the branch with `git push --force-with-lease`, not a plain push or `--force`."
+    hint: "`git rebase -i main`: `reword` the first, `fixup` the second, and set the message to `Mention gift cards`. A plain `git push` is rejected (non-fast-forward); `git push --force-with-lease` replaces the branch."
+
+  - kind: info
+    title: "🔹 git history"
+    body: |
+      Recent Git versions add an experimental **`git history`** command for the most common rewrites (such as changing an old commit's message) without setting up an interactive rebase. It's still marked experimental and its options may change, so this course sticks with `rebase -i`, which every Git has. Keep an eye on the release notes.
+
+  - kind: mac
+    title: Rebase on your Mac
+    body: |
+      VS Code and most Git apps show interactive rebase lists nicely, but the terminal works everywhere. Try it on a scratch branch.
+    commands: |
+      cd ~/notes-dotfiles
+      git switch -c tidy
+      echo a >> README.md && git commit -am "wip 1"
+      echo b >> README.md && git commit -am "wip 2"
+      git rebase -i main
+      git log --oneline --graph
+  - kind: why
+    body: |
+      A clean, linear history makes reviews quicker, `git log` readable and `git bisect` (Module 48) possible. Rebase and interactive rebase are how professionals turn a messy working day into a few clear commits before anyone sees them, and `--force-with-lease` is how they update a branch without trampling a colleague's work.
+
+  - kind: recap
+    body: |
+      - **Merge** keeps both histories and adds a merge commit; **rebase** replays your commits on top (new hashes, straight line).
+      - `git rebase main`; on conflict: fix, `git add`, `git rebase --continue` (or `--skip`, `--abort`). During a rebase, "ours" is the base, "theirs" your commit.
+      - `git pull --rebase` (or `pull.rebase true`) avoids merge commits from pulling.
+      - `git rebase -i main`: `pick`, `reword`, `squash`, `fixup`, `drop`, reorder.
+      - `git commit --fixup=<commit>` + `git rebase -i --autosquash main`.
+      - After rewriting a pushed branch: `git push --force-with-lease`, never `--force`, never on `main`.

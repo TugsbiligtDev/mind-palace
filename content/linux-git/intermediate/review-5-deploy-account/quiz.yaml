@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "auth.log says `Accepted publickey for deploy from 192.0.2.10`. What does that rule out?"
+    options:
+      - "That the intruder guessed a password: they had a private key that deploy's authorized_keys accepts"
+      - "That the login came from outside: 192.0.2.10 must be an Inkwell office computer"
+      - "That the intruder used sudo: key logins can't run commands as root"
+      - "That the login was recent: auth.log only keeps logins older than a month"
+    answer: 0
+    explanation: "*publickey* means key authentication succeeded. Whoever it was holds a matching private key, which is why removing the public key closes this door."
+  - type: mcq
+    prompt: "Which command removes just the line containing `marcus@marcus-laptop` from a file, in place?"
+    options:
+      - "`sudo sed -i '/marcus@marcus-laptop/d' FILE`"
+      - "`sudo grep -v marcus@marcus-laptop FILE > FILE`"
+      - "`sudo rm FILE marcus@marcus-laptop`"
+      - "`sudo sed 's/marcus@marcus-laptop//' FILE`"
+    answer: 0
+    explanation: "`/pattern/d` deletes matching lines and `-i` writes the result back. `grep -v … FILE > FILE` empties the file first (the shell opens it for writing before grep reads it). The last one only removes the comment, leaving the key."
+  - type: mcq
+    prompt: "As root, how do you see the crontab of the user `deploy`?"
+    options:
+      - "`sudo crontab -u deploy -l`"
+      - "`sudo crontab -l deploy`"
+      - "`cat ~/crontab` as deploy"
+      - "`sudo systemctl status deploy`"
+    answer: 0
+    explanation: "`-u USER` works on someone else's crontab (only root may), and `-l` lists it. `-r` would remove it."
+  - type: mcq
+    prompt: "Why lock `deploy` (`usermod -L`) and remove it from `sudo`, instead of deleting it?"
+    options:
+      - "Something legitimate (the deploy bot) still uses it; locking and removing sudo closes the risks without breaking that"
+      - "Deleting a user is impossible while their files exist in `/home`"
+      - "`userdel` would also delete the auth.log records of the user's logins"
+      - "A locked account automatically deletes itself after thirty days"
+    answer: 0
+    explanation: "The bot logs in with its own key, which still works. Without sudo, that key can't touch the system; the locked password stops password logins."
+  - type: mcq
+    prompt: "From the practice computer, `ssh old-backup.inkwell.example` times out. What does that most likely mean?"
+    options:
+      - "Nothing answers at that address at all: the machine is off, gone, or a firewall drops everything"
+      - "SSH is running there but refuses your key, so you need a password"
+      - "The name doesn't exist in DNS, so ssh can't find an address for it"
+      - "The server answered, but too slowly, because its disk is full"
+    answer: 0
+    explanation: "A timeout is the absence of any answer. *Permission denied* would be a refused key; *Could not resolve hostname* a DNS problem."

@@ -1,0 +1,5 @@
+title: "The night of the refunds"
+module: 12
+kind: review
+summary: "Six briefs and no step-by-step: count failed requests, save evidence from the logs, track down a stray copy of the payment key, get a broken tool running from your PATH, and read the root-only refund log. Uses Modules 8 to 12 (and everything before)."
+minutes: 45

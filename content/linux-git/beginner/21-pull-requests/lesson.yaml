@@ -1,0 +1,152 @@
+steps:
+  - kind: explain
+    title: What a pull request is
+    body: |
+      A **pull request** (PR) is a request on GitHub: *"please merge my branch into main"*. It's a page that shows the branch's commits and its full diff, where people can comment, where automatic checks run (Module 41), and with a **Merge** button at the bottom.
+
+      Even working alone, PRs are worth it: you review your own diff once more on a clean page before it reaches `main`, the PR records **why** a change was made, and it's the habit every team expects.
+
+  - kind: explain
+    title: GitHub Flow
+    body: |
+      The simplest team workflow, used across GitHub, has six steps:
+
+      1. **Branch** from an up-to-date `main`: `git switch -c about-update`
+      2. **Commit** your work on it, in small steps.
+      3. **Push** the branch: `git push -u origin about-update`
+      4. **Open a pull request**: `gh pr create` (or the green button GitHub shows after a push).
+      5. **Review and merge** it: read the diff, then merge, on the website or with `gh pr merge`.
+      6. **Clean up**: delete the branch, switch to `main`, `git pull`.
+
+      `main` only ever receives finished, reviewed work, so it's always ready to publish.
+
+  - kind: explain
+    title: Opening a pull request with gh
+    body: |
+      From your branch, once it's pushed:
+
+      ```
+      gh pr create --title "Update the about text" --body "Closes #1"
+      ```
+
+      - The **title** says what the change does, like a commit message.
+      - The **body** says why, and anything a reviewer should know, in Markdown. `Closes #1` links the issue and closes it when the PR is merged.
+      - `--fill` uses your commit message as title and body; `--draft` opens it as a draft (not ready to merge yet).
+
+      gh prints the PR's address: `https://github.com/inkwell/site/pull/2`. On a Mac, `gh pr view --web` opens it.
+
+  - kind: shell
+    title: Branch, push, open a PR
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    body: |
+      Issue #1 asks for the about page to say *twenty thousand* books. Do it GitHub Flow style, in `~/site`:
+
+      1. Create and switch to a branch `about-update`.
+      2. In `about.html`, change `a lot of books` to `twenty thousand books` (nano, or `sed -i 's/a lot of books/twenty thousand books/' about.html`).
+      3. Commit with the message `Update the number of books`.
+      4. Push the branch, setting its upstream.
+      5. Open a pull request titled `Update the about text` whose body is `Closes #1`.
+
+      Don't merge it yet. `gh pr list` should show it.
+    tests:
+      - gh pr list
+      - git status -sb | head -n 1
+      - git -C /srv/git/github.com/inkwell/site.git log --format=%s about-update -n 1
+    solution: |
+      git switch -c about-update
+      sed -i 's/a lot of books/twenty thousand books/' about.html
+      git commit -am "Update the number of books"
+      git push -u origin about-update
+      gh pr create --title "Update the about text" --body "Closes #1"
+    hint: "`git switch -c about-update`, edit, `git commit -am \"…\"`, `git push -u origin about-update`, then `gh pr create --title \"Update the about text\" --body \"Closes #1\"`."
+
+  - kind: explain
+    title: Review, then merge
+    body: |
+      Before merging, read the PR as a reviewer would:
+
+      ```
+      gh pr view 2      # title, description, how many commits
+      gh pr diff 2      # every change, as a diff
+      ```
+
+      Then merge:
+
+      ```
+      gh pr merge 2 --merge --delete-branch
+      ```
+
+      `--merge` makes a merge commit (`Merge pull request #2 from …`); `--delete-branch` deletes the branch on GitHub and on your computer, switches you to `main`, and pulls the merge. Then `git log --oneline --graph` shows the branch joining `main`.
+
+  - kind: shell
+    title: Merge and clean up
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      git switch -q -c about-update
+      sed -i 's/a lot of books/twenty thousand books/' about.html
+      git commit -qam "Update the number of books"
+      git push -q -u origin about-update 2> /dev/null
+      gh pr create --title "Update the about text" --body "Closes #1" > /dev/null 2>&1
+    body: |
+      Your pull request (#2) is open. Look at it with `gh pr view 2` and `gh pr diff 2`.
+
+      Then merge it with a merge commit, deleting the branch, so you end up on an up-to-date `main`. Check `gh issue list --state all`: issue #1 closed itself.
+    tests:
+      - gh pr list --state all
+      - gh issue list --state all
+      - git branch -a
+      - git status -sb | head -n 1
+      - git log --format=%s -n 2
+    solution: |
+      gh pr merge 2 --merge --delete-branch
+    hint: "`gh pr merge 2 --merge --delete-branch`."
+
+  - kind: info
+    title: "🔹 The three merge buttons"
+    body: |
+      GitHub's Merge button has three options (repository settings decide which are allowed):
+
+      - **Create a merge commit**: keeps every commit of the branch, plus a merge commit. What you just did.
+      - **Squash and merge**: combines the branch's commits into **one** new commit on `main`. Tidy history; the branch's individual commits aren't on `main`.
+      - **Rebase and merge**: replays the branch's commits onto `main` one by one, without a merge commit.
+
+      Module 38 compares them properly. `gh pr merge --squash` and `--rebase` choose them from the terminal.
+
+  - kind: choice
+    title: Why bother, alone?
+    body: Kenji works alone on a small side project. What does he gain from going through pull requests instead of committing straight to `main`?
+    options:
+      - "One more look at the whole diff before main, and a record of why"
+      - "Nothing: pull requests only make sense with two or more people"
+      - "Faster pushes, because GitHub compresses pull requests in transit"
+      - "Protection from losing his commits if his laptop breaks down"
+    answer: 0
+    explanation: "A PR is a review step and a record, even if the reviewer is you. (Pushing anything at all protects against a broken laptop, PR or not.)"
+
+  - kind: mac
+    title: A real pull request
+    body: |
+      In the repository you made in Module 20, on your Mac:
+
+      1. Branch, change something, commit, push with `-u`.
+      2. `gh pr create --fill`, then open it in the browser with `gh pr view --web`: look at the **Files changed** tab.
+      3. Press **Merge pull request** on the website (or `gh pr merge --merge --delete-branch`).
+      4. Back in Terminal: `git switch main`, `git pull`, `git branch -d` your branch if it's still there.
+    commands: |
+      git switch -c first-pr
+      echo "Learning pull requests." >> README.md
+      git commit -am "Mention pull requests in the README"
+      git push -u origin first-pr
+      gh pr create --fill
+      gh pr view --web
+  - kind: why
+    body: |
+      This loop (branch, push, pull request, review, merge, clean up) is how changes reach `main` in nearly every software team, and it scales from one person to thousands. Getting comfortable with it alone means your first team project will feel familiar.
+
+  - kind: recap
+    body: |
+      - A **pull request** asks to merge a branch, and shows its commits, diff and discussion.
+      - **GitHub Flow**: branch → commit → push `-u` → `gh pr create` → review (`gh pr view`, `gh pr diff`) → merge → delete branch, pull `main`.
+      - `Closes #1` in the description closes the issue on merge.
+      - `gh pr merge N --merge --delete-branch` merges and cleans up in one go.
+      - 🔹 Merge options: merge commit, squash, rebase (Module 38).

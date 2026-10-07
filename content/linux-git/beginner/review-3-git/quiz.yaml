@@ -1,0 +1,52 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "Which command shows only the commits that changed `checkout.js`?"
+    options:
+      - "`git log -- checkout.js`"
+      - "`git show checkout.js`"
+      - "`git diff checkout.js`"
+      - "`git status checkout.js`"
+    answer: 0
+    explanation: "Giving `git log` a path keeps only the commits that touched it. `git diff` shows uncommitted changes, and `git show` shows one commit."
+  - type: mcq
+    prompt: What happens at the last command?
+    code: |
+      git switch -c topic
+      echo v2 > f.txt && git commit -qam "v2"
+      git switch main
+      git merge topic
+    options:
+      - "A fast-forward: `main` moves to `topic`'s commit, no new commit"
+      - "A merge commit with two parents, because two branches are involved"
+      - "A conflict, because `f.txt` was changed on the other branch"
+      - "Nothing: Git says it's already up to date and stops"
+    answer: 0
+    explanation: "Nothing happened on `main` after `topic` started, so Git just moves the `main` pointer forward."
+  - type: mcq
+    prompt: "After editing a conflicted file, you run `git add --resolved` and get `fatal: the following paths still have conflict markers`. What does that tell you?"
+    options:
+      - "A `<<<<<<<`, `=======` or `>>>>>>>` line is still in it"
+      - "You need to run `git merge --abort` before staging anything"
+      - "The other branch was deleted while the merge was still going"
+      - "The file must be staged with `git add -f` during a merge"
+    answer: 0
+    explanation: "`--resolved` refuses to stage files that still contain markers. Open the file, remove them, and try again."
+  - type: mcq
+    prompt: "Which line in `.gitignore` keeps every `.env` file out of the repository?"
+    options:
+      - "`.env`"
+      - "`*.env/`"
+      - "`!.env`"
+      - "`/.env/`"
+    answer: 0
+    explanation: "A plain name matches that file in any folder. A trailing `/` would only match folders, and `!` means \"don't ignore\"."
+  - type: mcq
+    prompt: "Why is `git rm --cached .env` used instead of `git rm .env`?"
+    options:
+      - "It stops tracking the file but leaves it on disk, where it's needed"
+      - "It also deletes the file from every one of the old commits"
+      - "It works without making a commit, so the history stays the same"
+      - "It's the only form of `git rm` that's allowed for hidden files"
+    answer: 0
+    explanation: "`--cached` only removes it from Git's staging area (and so from future commits). Plain `git rm` also deletes the file itself."

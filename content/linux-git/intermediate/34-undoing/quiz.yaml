@@ -1,0 +1,44 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "After `git reset --soft HEAD~1`, where are the changes from the undone commit?"
+    options:
+      - "Staged, ready to be committed again"
+      - "Unstaged, in the working files only"
+      - "Gone completely; only the reflog has them"
+      - "In a new branch called `HEAD~1`"
+    answer: 0
+    explanation: "`--soft` only moves the branch. The staging area still holds the commit's content, so `git commit` would recreate it."
+  - type: mcq
+    prompt: "Which command can lose work that **no** reflog can bring back?"
+    options:
+      - "`git reset --hard` with uncommitted changes in your files"
+      - "`git branch -D` on a branch you never merged"
+      - "`git reset --hard HEAD~3` on committed work"
+      - "`git revert` of the latest commit"
+    answer: 0
+    explanation: "The reflog records commits. Changes that were never committed (or staged) aren't stored anywhere once `reset --hard` overwrites the files."
+  - type: mcq
+    prompt: "What does `git revert abc1234` do?"
+    options:
+      - "Makes a new commit that undoes the changes `abc1234` made"
+      - "Deletes commit `abc1234` from the history"
+      - "Moves the branch back to the commit before `abc1234`"
+      - "Restores the files to how they were in `abc1234`"
+    answer: 0
+    explanation: "History is kept; a new commit applies the opposite change. That's why it's safe on shared branches."
+  - type: mcq
+    prompt: "`git clean -fdx` would delete which of these, which `git clean -fd` leaves alone?"
+    options:
+      - "Ignored files, such as `.env`"
+      - "Tracked files with unstaged changes"
+      - "Untracked folders like `build/`"
+      - "Files staged for the next commit"
+    answer: 0
+    explanation: "`-x` includes ignored files. Neither command touches tracked files."
+  - type: fill
+    prompt: "Complete the command that puts the current branch back where HEAD was one move ago: `git reset --hard ____`"
+    code: "git reset --hard ____"
+    answer: "HEAD@{1}"
+    runnable: false
+    explanation: "`HEAD@{1}` is the reflog's previous position of HEAD (`HEAD@{0}` is now)."

@@ -1,0 +1,230 @@
+steps:
+  - kind: explain
+    title: Users and groups
+    body: |
+      Linux was built for many people sharing one computer, so everything belongs to someone.
+
+      - Every person (and many programs) has a **user** account. You're `learner`. The all-powerful administrator account is called **root**.
+      - Users belong to **groups**, so a set of people can share access. You're in `learner` (your own group) and `sudo` (allowed to act as root).
+
+      ```
+      learner@inkwell:~$ id
+      uid=1000(learner) gid=1000(learner) groups=1000(learner),4(adm),27(sudo)
+      ```
+
+      Every file has an **owner** (a user) and a **group**, and three sets of permissions: one for the owner, one for the group, one for everybody else.
+
+  - kind: explain
+    title: Reading rwx
+    body: |
+      The first column of `ls -l` is the file's type and permissions:
+
+      ```
+      -rwxr-x---  1 learner learner  210 Oct  6 09:00 backup.sh
+      │└┬┘└┬┘└┬┘
+      │ │  │  └── others:  ---  nothing
+      │ │  └───── group:   r-x  read and run
+      │ └──────── owner:   rwx  read, write and run
+      └────────── type: - file, d directory, l link
+      ```
+
+      | Letter | On a file | On a folder |
+      |---|---|---|
+      | **r** read | see what's inside | list its names |
+      | **w** write | change it | add, rename or delete things in it |
+      | **x** execute | run it as a program | go into it (`cd`) |
+
+      Linux checks **one** set: the owner's if it's yours, otherwise the group's if you're in the group, otherwise "others".
+
+  - kind: choice
+    title: Who can do what?
+    body: |
+      ```
+      -rw-r----- 1 priya staff 1204 Oct  2 11:20 salaries.csv
+      ```
+
+      You're logged in as `liam`, who is in the `staff` group. What can you do with `salaries.csv`?
+    options:
+      - "Read it, but not change it"
+      - "Read and change it as well"
+      - "Nothing at all with this file"
+      - "Run it as a program, only"
+    answer: 0
+    explanation: "You aren't the owner (priya), but you're in the group (staff), so the middle set applies: `r--`, read only."
+
+  - kind: explain
+    title: chmod with letters
+    body: |
+      `chmod` (**ch**ange **mod**e) changes permissions. The letter form says **who**, **add or remove**, and **what**:
+
+      - who: `u` (user = owner), `g` (group), `o` (others), `a` (all)
+      - `+` add, `-` remove, `=` set exactly
+      - what: `r`, `w`, `x`
+
+      ```
+      chmod u+x backup.sh      # the owner may run it
+      chmod go-w report.txt    # group and others may no longer change it
+      chmod a+r README.txt     # everyone may read it
+      ```
+
+      Only a file's owner (or root) can change its permissions.
+
+  - kind: shell
+    title: A script that won't run
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      mkdir -p scripts
+      printf '#!/usr/bin/env bash\n# Copy the website to a dated backup folder.\ncp -r ~/inkwell/site ~/inkwell/site-backup\necho "backup done"\n' > scripts/backup.sh
+    body: |
+      Priya wrote a backup script, `scripts/backup.sh`. Try running it:
+
+      ```
+      ./scripts/backup.sh
+      ```
+
+      (`./` means "the program in this path", not a command somewhere else.) Read the error, look at its permissions with `ls -l scripts`, make it executable **for its owner**, and run it again.
+    tests:
+      - stat -c %a scripts/backup.sh
+      - ls
+    solution: |
+      chmod u+x scripts/backup.sh
+      ./scripts/backup.sh
+    reject:
+      - chmod u+x scripts/backup.sh
+      - chmod 777 scripts/backup.sh
+    hint: "`Permission denied` and no `x` in `-rw-r--r--`: the owner needs execute. `chmod u+x scripts/backup.sh`, then run it again."
+
+  - kind: explain
+    title: chmod with numbers
+    body: |
+      You'll often see permissions written as three digits, one each for owner, group and others. Each digit adds up **r = 4, w = 2, x = 1**:
+
+      | Digit | Means |
+      |---|---|
+      | 7 | 4+2+1 = rwx |
+      | 6 | 4+2 = rw- |
+      | 5 | 4+1 = r-x |
+      | 4 | r-- |
+      | 0 | --- |
+
+      Three combinations cover most cases:
+
+      | Mode | Letters | Typical for |
+      |---|---|---|
+      | `644` | `rw-r--r--` | ordinary files: you change, everyone reads |
+      | `755` | `rwxr-xr-x` | programs and folders: you change, everyone runs or enters |
+      | `600` | `rw-------` | private files: only you, read and write |
+
+      `chmod 600 notes.txt` sets all three at once. `stat -c %a file` prints a file's mode as digits.
+
+  - kind: shell
+    title: Lock the payment key
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      printf 'PAYMENT_KEY=pk-inkwell-7f3a-NOT-A-REAL-KEY\nSHOP_EMAIL=orders@inkwell.example\n' > site/.env
+    body: |
+      `site/.env` holds the shop's payment key, and right now anyone on the server can read it. Check with `ls -la site`.
+
+      Change it so that **only its owner can read and write it**, and nobody else can do anything. Use the number form.
+    tests:
+      - stat -c %a site/.env
+    solution: chmod 600 site/.env
+    reject:
+      - chmod 644 site/.env
+      - chmod 700 site/.env
+    hint: "Owner read + write = 4 + 2 = 6. Group and others get nothing: 0 and 0."
+
+  - kind: explain
+    title: sudo
+    body: |
+      Some files belong to **root**: system settings in `/etc`, logs in `/var/log`. As an ordinary user you can't change them, and sometimes can't read them. That's deliberate: it stops mistakes and intruders.
+
+      When you really need root's power for **one** command, put `sudo` in front:
+
+      ```
+      sudo cat /var/log/inkwell/refunds.log
+      ```
+
+      `sudo` ("superuser do") asks for **your own** password (not root's), checks you're allowed (you're in the `sudo` group), and runs that one command as root. On a Mac it's the same: admin users can `sudo`.
+
+      Treat it like the master key it is: the command gets full power over the whole machine, with no "are you sure?".
+
+  - kind: shell
+    title: Who approved the refunds?
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      The shop keeps its own record of refunds in `/var/log/inkwell/refunds.log`.
+
+      1. Try to read it with `cat`. Read the error, and check its permissions with `ls -l /var/log/inkwell`.
+      2. You have Inspector Bold's go-ahead to read it as root. Do that.
+    output: true
+    solution: |
+      sudo cat /var/log/inkwell/refunds.log
+    reject:
+      - cat /var/log/inkwell/refunds.log
+    hint: "`-rw-r----- root root`: only root and the root group may read it. Put `sudo` in front of the same `cat` command (`sudo !!` does exactly that)."
+
+  - kind: choice
+    title: What the record says
+    body: Look at the refund log you just read. Who approved refunds 1044 and 1046?
+    options:
+      - "`kmori` (Kenji's login), at 2 a.m., giving no reason"
+      - "`priya`, with the reason \"damaged in post\" for both"
+      - "Nobody: the log shows the refunds were never approved"
+      - "`root`, the administrator account, as a scheduled job"
+    answer: 0
+    explanation: "Both were approved by `kmori` at 02:13 and 02:14 with an empty reason. Priya's refund was a different one, in September. Did Kenji really work at 2 a.m., or did someone use his login? Keep that question."
+
+  - kind: explain
+    title: Debugging "Permission denied"
+    body: |
+      When you hit `Permission denied`, work it out instead of reaching for sudo:
+
+      1. **Who am I?** `whoami`, `id`.
+      2. **Who owns it, and what's allowed?** `ls -l file` (and `ls -ld folder` for the folder it's in: deleting or creating a file needs **w** on the folder).
+      3. **Which set applies to me?** Owner, group, or others.
+      4. **Fix the right thing:** a script missing `x` needs `chmod u+x`; a file you should own may need `chown` (below); a genuine system file needs `sudo`, for that one command.
+
+  - kind: explain
+    title: "⚠️ Two bad habits"
+    body: |
+      - **`chmod 777`**: "make the error go away" by giving everyone read, write and execute. It works, and it means any user or any program that gets into the machine can change or replace the file. Give the smallest permission that does the job (often `755`, `644` or `600`).
+      - **sudo by reflex**: putting `sudo` in front of every failing command. It hides the real problem, and running things as root you don't understand is how systems get wrecked. Files created with `sudo` belong to root, which causes new "Permission denied" errors later.
+
+      Also note: `sudo echo hi > /etc/hosts` fails. The `>` is done by **your** shell, before sudo starts. Write `echo hi | sudo tee -a /etc/hosts` instead.
+
+  - kind: info
+    title: "🔹 chown: changing the owner"
+    body: |
+      `chown user:group file` gives a file to another user and group, for example after a mistaken `sudo` left a file owned by root in your home folder:
+
+      ```
+      sudo chown learner:learner ~/inkwell/report.txt
+      ```
+
+      Only root can give files away, so `chown` almost always needs `sudo`. Add `-R` for a folder and everything inside.
+
+  - kind: mac
+    title: Permissions on your Mac
+    body: |
+      Same ideas on your Mac. Your user is an admin, so `sudo` works with your login password. While you type a password in Terminal **nothing appears**, not even dots. Type it and press Return.
+    commands: |
+      id
+      ls -l /etc/hosts
+      cat /etc/sudoers
+      sudo cat /etc/sudoers
+  - kind: why
+    body: |
+      Permissions are why a shared server can be shared, and why one careless user can't take it down. Reading `rwx` turns "Permission denied" from a wall into a precise message, and using sudo only when you mean it keeps you from becoming the careless user.
+
+  - kind: recap
+    body: |
+      - Every file has an **owner**, a **group**, and **rwx** for owner / group / others.
+      - On a folder: **r** list, **w** add or delete inside, **x** enter.
+      - `chmod u+x f`, `chmod go-w f`; numbers add r=4 w=2 x=1: `644` files, `755` programs and folders, `600` private.
+      - `sudo command` runs one command as root, with your password. Use it deliberately.
+      - Debug "Permission denied" with `whoami`, `ls -l`, `ls -ld`. Avoid `chmod 777` and sudo by reflex.
+      - 🔹 `sudo chown user:group file` changes the owner.

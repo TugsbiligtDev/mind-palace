@@ -1,0 +1,4 @@
+title: Archives, Disk, Downloads, Links
+module: 25
+summary: "Packing and unpacking with tar and gzip, zip and unzip; how full the disk is (df -h) and what fills it (du -sh); downloading and inspecting with curl; symbolic links with ln -s."
+minutes: 40

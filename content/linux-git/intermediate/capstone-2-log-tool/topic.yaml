@@ -1,0 +1,5 @@
+title: "Capstone: a log tool, shipped properly"
+module: 41
+kind: capstone
+summary: "Build a bash tool that summarises a web server log, and ship it the way teams do: Git and GitHub, ShellCheck in Actions on every pull request, a ruleset protecting main, a feature merged with a clean history, a cron schedule, and a tagged release. Then do it all for real on your Ubuntu VM."
+minutes: 90

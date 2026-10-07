@@ -1,0 +1,5 @@
+title: "Notes and dotfiles"
+module: 21
+kind: capstone
+summary: "Build your own \"notes + dotfiles\" project entirely from the terminal: organise the folders, keep your shell aliases in it, track it with Git, make and resolve a merge conflict on purpose, push it to GitHub over SSH, and merge your own pull request. Then do it for real on your Mac."
+minutes: 90

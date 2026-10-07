@@ -1,0 +1,4 @@
+title: Branching & Merging Basics
+module: 17
+summary: "A branch is a movable pointer and HEAD says where you are; git switch, switch -c and branch; merging (fast-forward or a merge commit); your first merge conflict, resolved and staged with git add or the new git add --resolved; git merge --abort; deleting merged branches; and the older git checkout."
+minutes: 50

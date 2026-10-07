@@ -1,0 +1,36 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What does `--global` mean in `git config --global user.email ...`?"
+    options:
+      - "It applies to all your repositories on this computer"
+      - "The setting is uploaded to GitHub for every computer you use"
+      - "Every user account on this computer gets the same email"
+      - "The email address becomes public on the internet"
+    answer: 0
+    explanation: "Global settings are saved in your `~/.gitconfig`. Without `--global`, a setting only applies to the current repository."
+  - type: mcq
+    prompt: "`git commit` stops with \"Please tell me who you are\". What's missing?"
+    options:
+      - "Your user.name and user.email settings"
+      - "A GitHub account"
+      - "An internet connection"
+      - "A file called .gitconfig in the project folder"
+    answer: 0
+    explanation: "Git needs an author for every commit. Set `user.name` and `user.email` once with `--global`."
+  - type: mcq
+    prompt: "Why set `core.editor` to `nano`?"
+    options:
+      - "So when Git needs a message, it opens an editor you can use"
+      - "So Git can edit and fix your files automatically before commits"
+      - "Because Git can't open any editor at all until it's configured"
+      - "So every commit message is spell-checked before it's saved"
+    answer: 0
+    explanation: "Some Git commands open an editor. Without the setting it's usually vim; nano is friendlier for beginners."
+  - type: fill
+    prompt: "Complete the command that makes new repositories start on a branch called main."
+    code: "git config --global ____ main"
+    answer: "init.defaultBranch"
+    accept: ["init.defaultbranch"]
+    runnable: false
+    explanation: "`git config --global init.defaultBranch main`. Without it, Git starts with `master` and prints a hint."

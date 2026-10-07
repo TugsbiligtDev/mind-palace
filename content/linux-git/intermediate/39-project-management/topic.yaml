@@ -1,0 +1,4 @@
+title: Project Management & the GitHub CLI
+module: 39
+summary: "Organising work on GitHub: issues with labels and milestones; issue and pull request templates; Projects boards; CODEOWNERS and CONTRIBUTING.md; releases with notes; and doing all of it from the terminal with gh."
+minutes: 45

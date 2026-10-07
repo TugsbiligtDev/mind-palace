@@ -1,0 +1,221 @@
+steps:
+  - kind: explain
+    title: Branches or forks?
+    body: |
+      In Module 21 you made pull requests to your own repository. On a team there are two set-ups:
+
+      - **Branches in one repository**: everyone on the team can push branches to `inkwell/site`; PRs go from a branch into `main`. Normal inside a company.
+      - **Forks**: you can't push to the project, so you make your **own copy** on GitHub (`learner/site`), push branches there, and open PRs from your fork into the original (the **upstream**). Normal for open source, and for outside contributors.
+
+      With a fork, your clone has two remotes: **`origin`** (your fork, where you push) and **`upstream`** (the original, where you fetch from). `gh repo fork` sets that up for you.
+
+  - kind: shell
+    title: Fork and clone
+    fixture: [git-identity, website-repo, github-account, github-site]
+    body: |
+      Inkwell has opened its website to outside helpers. Make **your own fork** of `inkwell/site` on GitHub and clone it into `~/site`, with the original added as **`upstream`**, all with one `gh` command.
+    tests:
+      - gh repo view learner/site | head -1
+      - git -C ~/site remote -v
+    solution: gh repo fork inkwell/site --clone
+    hint: "`gh repo fork inkwell/site --clone` (it clones into a folder called `site`). Check with `git -C ~/site remote -v`: origin is yours, upstream is Inkwell's."
+
+  - kind: explain
+    title: Keeping a fork in sync
+    body: |
+      Your fork doesn't follow the original by itself. When `inkwell/site` moves on, bring your copy up to date:
+
+      ```
+      git switch main
+      git fetch upstream
+      git merge upstream/main        # or: git rebase upstream/main
+      git push origin main           # update your fork on GitHub too
+      ```
+
+      `gh repo sync learner/site` updates the fork on GitHub directly (then `git pull` locally). Start every new piece of work from an up-to-date `main`, on a **new branch**.
+
+  - kind: shell
+    title: Catch up with the original
+    fixture: [git-identity, website-repo, github-account, github-site]
+    setup: |
+      gh repo fork inkwell/site --clone > /dev/null 2>&1
+      git clone -q git@github.com:inkwell/site.git /tmp/k 2> /dev/null
+      cd /tmp/k && printf '<p>Open on Sundays in December.</p>\n' >> about.html
+      GIT_AUTHOR_NAME="Kenji Mori" GIT_AUTHOR_EMAIL=kenji@inkwell.example git commit -qam "Open on Sundays in December"
+      git push -q 2> /dev/null
+      cd ~/site && rm -rf /tmp/k
+    body: |
+      Kenji pushed a new commit to **`inkwell/site`**. Bring it into your local `main` **from `upstream`**, then update **your fork** on GitHub too.
+    tests:
+      - git log -1 --format=%s main
+      - git fetch -q origin && git log -1 --format=%s origin/main
+    solution: |
+      git fetch upstream
+      git merge upstream/main
+      git push origin main
+    hint: "`git fetch upstream`, `git merge upstream/main` (a fast-forward), then `git push origin main`."
+
+  - kind: explain
+    title: A pull request people want to review
+    body: |
+      A PR is a request for someone's time. Make it easy to say yes:
+
+      - **Small and focused**: one change, one PR. A 50-line PR gets a careful review; a 2,000-line one gets a shrug.
+      - **A clear title** saying what it does: *Say four people on the about page*.
+      - **A description**: *why* the change is needed, *what* it changes, *how* to check it, and anything you're unsure about.
+      - **Link the issue**: `Closes #12` (or `Fixes #12`, `Resolves #12`) in the description closes issue 12 automatically when the PR is merged.
+      - **Draft** if it isn't ready: `gh pr create --draft` opens it for early feedback without asking for a review; `gh pr ready` when it is.
+
+      ```
+      gh pr create --title "Say four people on the about page" --body "Closes #1. Kenji joined in October." --reviewer kenji
+      ```
+
+  - kind: shell
+    title: Your first PR to someone else's project
+    fixture: [git-identity, website-repo, github-account, github-site]
+    setup: |
+      GH_PRACTICE_USER=kenji gh issue create -R inkwell/site -t "The about page still says three people" -b "We're four now." > /dev/null 2>&1
+      gh repo fork inkwell/site --clone > /dev/null 2>&1
+      cd ~/site
+    body: |
+      Issue **#1** on `inkwell/site` says the about page is out of date. In your fork's clone:
+
+      1. Make a branch **`fix-about`**, change `Three people` to `Four people` in `about.html`, commit.
+      2. Push the branch to **your fork**.
+      3. Open a pull request into `inkwell/site` titled **`Say four people on the about page`**, whose description closes issue #1, and ask **`kenji`** to review it.
+    tests:
+      - gh pr list -R inkwell/site
+      - gh pr view 2 -R inkwell/site | grep -c "Closes #1"
+      - gh pr view 2 -R inkwell/site | grep Reviewers
+    solution: |
+      git switch -c fix-about
+      sed -i 's/Three people/Four people/' about.html
+      git commit -am "Say four people"
+      git push -u origin fix-about
+      gh pr create --title "Say four people on the about page" --body "Closes #1" --reviewer kenji
+    hint: "`git switch -c fix-about`, edit, `git commit -am …`, `git push -u origin fix-about`, then `gh pr create --title \"Say four people on the about page\" --body \"Closes #1\" --reviewer kenji`. gh opens it against the upstream automatically."
+
+  - kind: explain
+    title: Reviewing
+    body: |
+      Reviewing is half of teamwork. With gh:
+
+      ```
+      gh pr list                          # what's open
+      gh pr checkout 3                    # get the PR's branch locally, to try it
+      gh pr diff 3                        # read the change
+      gh pr review 3 --comment -b "…"     # a general comment
+      gh pr review 3 --request-changes -b "Please also update the Dune page"
+      gh pr review 3 --approve -b "Looks good"
+      ```
+
+      On github.com you can also comment on single lines, and make a **suggested change** (a tiny edit the author can accept with one click).
+
+      **Etiquette:** review the code, not the person; ask questions ("what happens if the price is empty?") rather than giving orders; say what's good too; separate must-fix from nice-to-have ("nit:"); answer within a day. As an author: thank, discuss, change, and reply to each comment. Don't take it personally: reviews are how teams catch mistakes before customers do. (You can't approve your own PR; that's the point.)
+
+  - kind: shell
+    title: Review Kenji's PR
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      git switch -q -c dune-price
+      sed -i 's/8.99/7.99/' books/dune.html
+      GIT_AUTHOR_NAME="Kenji Mori" GIT_AUTHOR_EMAIL=kenji@inkwell.example git commit -qam "Lower Dune to 7.99"
+      git push -q -u origin dune-price 2> /dev/null
+      GH_PRACTICE_USER=kenji gh pr create --title "Lower the price of Dune" --body "For the autumn sale." --reviewer learner > /dev/null 2>&1
+      git switch -q main
+    body: |
+      Kenji asked you to review his PR (**#2**, `Lower the price of Dune`). Check it out locally and read the diff. The sale price is fine, but the home page still advertises Dune at the old price, so **request changes** with the comment **`Please also update the price on the home page`**.
+    tests:
+      - gh pr view 2 | grep Reviewers
+      - gh pr view 2 --comments | grep -c "Please also update the price on the home page"
+    solution: |
+      gh pr checkout 2
+      gh pr diff 2
+      gh pr review 2 --request-changes -b "Please also update the price on the home page"
+    uses:
+      - match: "gh\\s+pr\\s+(checkout|diff)"
+        why: "look at the change first: `gh pr checkout 2` or `gh pr diff 2`."
+    hint: "`gh pr checkout 2`, `gh pr diff 2`, then `gh pr review 2 --request-changes -b \"Please also update the price on the home page\"`."
+
+  - kind: explain
+    title: Merge, squash or rebase?
+    body: |
+      GitHub's merge button has three options (and `gh pr merge` the same three flags):
+
+      | Option | Result on `main` | Good for |
+      |---|---|---|
+      | **Create a merge commit** (`--merge`) | all the branch's commits, plus a merge commit | keeping the full story of a big branch |
+      | **Squash and merge** (`--squash`) | **one** new commit with all the changes (`Title (#12)`) | most PRs: main gets one tidy commit per change |
+      | **Rebase and merge** (`--rebase`) | the branch's commits replayed onto main, no merge commit | branches whose commits are already clean |
+
+      Teams usually pick one and stick to it (repository settings can allow only that one). After merging, delete the branch (`--delete-branch`).
+
+  - kind: shell
+    title: Approve and merge
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      git switch -q -c dune-price
+      sed -i 's/8.99/7.99/' books/dune.html
+      GIT_AUTHOR_NAME="Kenji Mori" GIT_AUTHOR_EMAIL=kenji@inkwell.example git commit -qam "Lower Dune to 7.99"
+      git push -q -u origin dune-price 2> /dev/null
+      GH_PRACTICE_USER=kenji gh pr create --title "Lower the price of Dune" --body "For the autumn sale." --reviewer learner > /dev/null 2>&1
+      git switch -q main
+    body: |
+      PR **#2** is ready. **Approve** it, then merge it with **squash**, deleting the branch, and make sure your local `main` has the result.
+    tests:
+      - gh pr view 2 | head -2 | tail -1 | cut -d' ' -f1
+      - gh pr view 2 | grep Reviewers
+      - git log -1 --format=%s main
+      - git ls-remote --heads origin | cut -f2
+    solution: |
+      gh pr review 2 --approve
+      gh pr merge 2 --squash --delete-branch
+      git switch main
+      git pull
+    hint: "`gh pr review 2 --approve`, then `gh pr merge 2 --squash --delete-branch` (which also updates your local main)."
+
+  - kind: explain
+    title: When main moves under your PR
+    body: |
+      While your PR waits, `main` gets other changes. If they conflict, GitHub says *This branch has conflicts that must be resolved*; even without conflicts, the team may want the branch up to date before merging. Two ways:
+
+      ```
+      git switch fix-about
+      git fetch upstream                  # or origin, without a fork
+      git merge upstream/main             # adds a merge commit to your branch
+      git push
+      ```
+
+      or rebase it (`git rebase upstream/main`, then `git push --force-with-lease`, Module 35). New commits pushed to the PR's branch appear in the PR automatically; reviewers see what changed since their last look.
+
+  - kind: info
+    title: "🔹 Stacked pull requests"
+    body: |
+      A big change can be split into a **stack**: PR 1 adds the data, PR 2 (based on PR 1's branch) adds the page, PR 3 the styling. Each is small and reviewed on its own, and they're merged in order. GitHub is rolling out built-in support for stacks (in public preview); tools like `gh-stack` and Graphite automate the rebasing. Until it's routine, keep PRs small instead.
+
+  - kind: mac
+    title: Fork and review on github.com
+    body: |
+      With your real account: find a small public repository you like (or a friend's), **Fork** it on github.com, clone your fork, make a tiny improvement on a branch, push, and open a PR. On someone's PR, try the **Files changed** tab: comment on a line, and use the ± button to make a **suggested change**.
+    commands: |
+      gh repo fork OWNER/REPO --clone
+      cd REPO
+      git switch -c small-fix
+      git commit -am "Fix a typo in the README"
+      git push -u origin small-fix
+      gh pr create --fill
+      gh pr view --web
+  - kind: why
+    body: |
+      Almost all professional and open-source work reaches `main` through reviewed pull requests. Forks let anyone contribute safely; good descriptions and small PRs get reviews fast; kind, specific reviews catch mistakes and teach both sides. It's the everyday loop of working with other people on code.
+
+  - kind: recap
+    body: |
+      - **Branches** in one repo for a team; **forks** for outsiders: `gh repo fork owner/repo --clone` (origin = yours, upstream = theirs).
+      - Sync: `git fetch upstream`, `git merge upstream/main`, `git push origin main` (or `gh repo sync`).
+      - Good PRs: small, clear title, why/what/how, `Closes #N`, `--reviewer`, `--draft` then `gh pr ready`.
+      - Review: `gh pr checkout`, `gh pr diff`, `gh pr review --comment | --request-changes | --approve -b "…"`; be kind and specific.
+      - Merge: `--merge`, `--squash` or `--rebase`, plus `--delete-branch`.
+      - Main moved? Merge (or rebase) it into the PR branch and push. 🔹 Stacked PRs.

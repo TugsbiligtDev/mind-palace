@@ -1,0 +1,184 @@
+steps:
+  - kind: explain
+    title: Variables
+    body: |
+      The shell can remember values under a name: a **variable**.
+
+      ```
+      CASE=refunds            # set it: no spaces around =
+      echo $CASE              # use it: $ in front of the name
+      echo "Case: $CASE"      # inside double quotes it still works
+      echo 'Case: $CASE'      # inside single quotes it doesn't: prints $CASE literally
+      ```
+
+      `${CASE}` is the same as `$CASE`, and useful when letters follow: `${CASE}_2026`. A variable you never set is simply empty.
+
+      The shell already has some, in capitals by convention:
+
+      | Variable | Holds |
+      |---|---|
+      | `$HOME` | your home folder (what `~` means) |
+      | `$USER` | your username |
+      | `$PWD` | the current folder |
+      | `$SHELL` | your login shell |
+      | `$PATH` | where to look for programs (below) |
+
+  - kind: shell
+    title: Set and use a variable
+    body: |
+      1. Try `echo $HOME`, `echo $USER` and `echo $SHELL`.
+      2. Set a variable called `CASE` to the value `refunds`.
+      3. Use it to print exactly: `Case: refunds`
+    output: true
+    solution: |
+      CASE=refunds
+      echo "Case: $CASE"
+    uses:
+      - match: "\\$\\{?CASE"
+        why: "print it **using** the variable (`$CASE`), not by typing the word again."
+    hint: "`CASE=refunds` (no spaces), then `echo \"Case: $CASE\"`. Double quotes, so the `$` still works."
+
+  - kind: explain
+    title: export
+    body: |
+      A plain variable belongs to your shell only. The programs you start don't see it. `export` makes it part of the **environment** that every program started from this shell inherits:
+
+      ```
+      export EDITOR=nano
+      ```
+
+      Now any program that wants to open an editor (Git, for example) knows you prefer nano. `env` (or `printenv`) lists the whole environment.
+
+  - kind: explain
+    title: How the shell finds a command
+    body: |
+      When you type `git`, how does the shell know which file to run? It looks through the folders listed in **`$PATH`**, in order, separated by colons:
+
+      ```
+      learner@inkwell:~$ echo $PATH
+      /usr/local/bin:/usr/bin:/bin
+      ```
+
+      It tries `/usr/local/bin/git`, then `/usr/bin/git` (found, runs it). If no folder in the list has it: `command not found`.
+
+      So "command not found" has three usual causes: a **typo**, the program **isn't installed**, or it's installed in a folder that **isn't on your PATH**. That last one is common after installing tools, and it's fixed by adding the folder:
+
+      ```
+      export PATH="$HOME/bin:$PATH"
+      ```
+
+      This puts `~/bin` at the front and keeps everything that was already there. ⚠️ Never write `PATH=~/bin` on its own: you'd throw away `/usr/bin` and lose almost every command until you open a new terminal.
+
+  - kind: shell
+    title: The command that wasn't found
+    fixture: backoffice
+    setup: |
+      cd ~
+      mkdir -p ~/bin
+      printf '#!/usr/bin/env bash\n# Quick health check of the shop.\necho "orders this month: $(tail -n +2 ~/inkwell/orders/2026-09.csv | wc -l)"\necho "errors in the log: $(grep -c ERROR ~/inkwell/logs/shop.log)"\n' > ~/bin/shopcheck
+      chmod +x ~/bin/shopcheck
+    body: |
+      Priya installed a little tool called `shopcheck` in `~/bin`. Type `shopcheck`: it says *command not found*, though `ls -l ~/bin` shows it's there and executable.
+
+      Add `~/bin` to the **front** of your PATH (keeping the rest), then run `shopcheck`.
+    output: true
+    solution: |
+      export PATH="$HOME/bin:$PATH"
+      shopcheck
+    uses:
+      - match: "PATH="
+        why: "fix it by adding `~/bin` to `PATH`, not by typing the full path to the program."
+      - match: "^\\s*shopcheck\\s*$"
+        why: "after fixing PATH, run the tool by its name alone: `shopcheck`."
+    hint: "`export PATH=\"$HOME/bin:$PATH\"`: the new folder, a colon, then the old PATH. Then `shopcheck`."
+
+  - kind: explain
+    title: Making it last
+    body: |
+      Everything you set at the prompt (variables, PATH changes, aliases) vanishes when the terminal closes. To keep settings, put them in your shell's **startup file**, which runs every time a new terminal opens:
+
+      | Shell | Startup file |
+      |---|---|
+      | zsh (your Mac) | `~/.zshrc` |
+      | bash (Linux) | `~/.bashrc` |
+
+      They're plain text files of shell commands:
+
+      ```
+      # ~/.bashrc
+      export EDITOR=nano
+      export PATH="$HOME/bin:$PATH"
+      alias ll='ls -lah'
+      ```
+
+      Edit the file, then either open a new terminal or run **`source ~/.bashrc`** to apply it to the terminal you're in now. (`source` runs a file's commands in the current shell.)
+
+  - kind: shell
+    title: A permanent alias
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Make the shop-log shortcut permanent:
+
+      1. Add this line to the end of `~/.bashrc` (with nano, or with `echo` and `>>`):
+         ```
+         alias shoplog='tail -n 3 ~/inkwell/logs/shop.log'
+         ```
+      2. Load the file into this terminal with `source`.
+      3. Run `shoplog`.
+    tests:
+      - grep -c "alias shoplog=" ~/.bashrc
+    output: true
+    solution: |
+      echo "alias shoplog='tail -n 3 ~/inkwell/logs/shop.log'" >> ~/.bashrc
+      source ~/.bashrc
+      shoplog
+    reject:
+      - |
+        alias shoplog='tail -n 3 ~/inkwell/logs/shop.log'
+        shoplog
+    hint: "`nano ~/.bashrc`, add the line at the bottom, save and exit. Then `source ~/.bashrc` and `shoplog`. (If you use `echo`, wrap the line in double quotes, since it contains single quotes.)"
+
+  - kind: choice
+    title: Fixed, then broken again
+    body: |
+      Yesterday Kenji fixed a "command not found" by running `export PATH="$HOME/.local/bin:$PATH"`. Today, in a new terminal, the error is back. Why?
+    options:
+      - "The export only lasted for that terminal; it belongs in the startup file"
+      - "PATH is reset every 24 hours by the system, for security reasons"
+      - "He needed `sudo` in front of `export` for the change to be saved"
+      - "The program uninstalled itself overnight, so it can't be found"
+    answer: 0
+    explanation: "Anything set at the prompt lives only in that shell. Add the same line to `~/.bashrc` (Linux) or `~/.zshrc` (Mac) and it's set in every new terminal."
+
+  - kind: mac
+    title: Your Mac's ~/.zshrc
+    body: |
+      Your Mac uses zsh, so its startup file is `~/.zshrc`. It may not exist yet; nano creates it.
+
+      1. `nano ~/.zshrc`
+      2. Add two lines at the bottom:
+         ```
+         alias ll='ls -lah'
+         export EDITOR=nano
+         ```
+      3. Save (Ctrl+O, Return), exit (Ctrl+X), then `source ~/.zshrc`.
+      4. Open a **new** Terminal window and type `ll`. It works there too.
+
+      (You'll keep this file in Git in the capstone.)
+    commands: |
+      echo $PATH
+      nano ~/.zshrc
+      source ~/.zshrc
+      ll
+  - kind: why
+    body: |
+      Once you install real tools, "command not found" is nearly always a PATH problem, and knowing how the shell searches for programs makes the fix obvious. Your startup file is also where your terminal becomes *yours*: your aliases, your editor, your folders, every time.
+
+  - kind: recap
+    body: |
+      - `NAME=value` (no spaces) sets a variable; `$NAME` uses it. Double quotes expand `$`, single quotes don't.
+      - `export` passes a variable to programs you start. `$HOME`, `$USER`, `$PWD`, `$SHELL`, `$PATH` are set for you.
+      - The shell looks for commands in the `$PATH` folders, in order. Add one with `export PATH="$HOME/bin:$PATH"`.
+      - Startup files: `~/.zshrc` (Mac), `~/.bashrc` (Linux). `source` applies changes now.
+      - "command not found" = typo, not installed, or not on PATH.

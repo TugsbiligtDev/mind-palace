@@ -1,0 +1,55 @@
+pass: 4
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      n=7
+      if [[ $n -gt 10 ]]; then echo big; elif [[ $n -gt 5 ]]; then echo medium; else echo small; fi
+    options:
+      - "medium"
+      - "big"
+      - "small"
+      - "big\nmedium"
+    answer: 0
+    explanation: "7 isn't greater than 10, so the `elif` is tried: 7 > 5, so `medium`, and the rest is skipped."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      for b in Dune "The Hobbit"; do echo "[$b]"; done
+    options:
+      - "[Dune]\n[The Hobbit]"
+      - "[Dune]\n[The]\n[Hobbit]"
+      - "[Dune The Hobbit]"
+      - "[Dune]"
+    answer: 0
+    explanation: "The quotes keep `The Hobbit` as one item, so the loop runs twice."
+  - type: mcq
+    prompt: "Why does `[[ \"$price\" > 9 ]]` give the wrong answer for a price of `10`?"
+    options:
+      - "Inside `[[ ]]`, `>` compares text alphabetically; numbers need `-gt` (or `(( ))`)"
+      - "`[[ ]]` can't compare a variable with a number written directly in the test"
+      - "The quotes around `$price` turn the number into text that is always empty"
+      - "`>` inside `[[ ]]` writes the result into a file called `9`"
+    answer: 0
+    explanation: "As text, `\"10\"` sorts before `\"9\"` (it starts with 1). Use `[[ $price -gt 9 ]]` or `(( price > 9 ))` for numbers."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      code=503
+      case "$code" in 2??) echo ok ;; 5*) echo error ;; *) echo other ;; esac
+    options:
+      - "error"
+      - "ok"
+      - "other"
+      - "error\nother"
+    answer: 0
+    explanation: "`5*` matches anything starting with 5. The first match wins and `;;` ends the case, so `*` isn't reached."
+  - type: mcq
+    prompt: "In a script, what's the difference between `return 1` and `exit 1`?"
+    options:
+      - "`return` ends the current function; `exit` ends the whole script"
+      - "`return` ends the whole script; `exit` ends only the current loop"
+      - "There's no difference: both stop the script with exit code 1"
+      - "`return` sets the exit code but keeps running the same function"
+    answer: 0
+    explanation: "`return N` leaves the function (its caller sees code N). `exit N` stops the script there."

@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "In a fork's clone, what are `origin` and `upstream`?"
+    options:
+      - "`origin` is your fork (you push there); `upstream` is the original project (you fetch from it)"
+      - "`origin` is the original project; `upstream` is your fork on GitHub"
+      - "Both point to your fork; `upstream` is just a second name for it"
+      - "`upstream` is the branch you started from; `origin` the one you're on"
+    answer: 0
+    explanation: "You can't push to the original, so you push to your fork (origin) and open PRs from there into upstream."
+  - type: mcq
+    prompt: "Which line in a PR description closes issue 14 when the PR is merged?"
+    options:
+      - "`Closes #14`"
+      - "`See issue 14`"
+      - "`@14 done`"
+      - "`issue: 14`"
+    answer: 0
+    explanation: "Keywords like Closes, Fixes and Resolves followed by `#14` link the issue and close it on merge."
+  - type: mcq
+    prompt: "Your PR isn't finished, but you'd like early feedback. What's the usual way?"
+    options:
+      - "Open it as a draft (`gh pr create --draft`), and mark it ready later"
+      - "Open it normally with 'DO NOT MERGE' in the title and hope nobody does"
+      - "Push the branch without a PR and email the diff to the reviewers"
+      - "Merge it, and fix the rest in a second PR afterwards"
+    answer: 0
+    explanation: "A draft PR is visible and can be discussed, but can't be merged and doesn't request reviews until `gh pr ready`."
+  - type: mcq
+    prompt: "What does **Squash and merge** put on `main`?"
+    options:
+      - "One new commit with all of the PR's changes"
+      - "All of the PR's commits, plus a merge commit"
+      - "All of the PR's commits replayed, without a merge commit"
+      - "Only the PR's last commit; the others are discarded"
+    answer: 0
+    explanation: "Squash combines the whole PR into a single commit, usually titled with the PR's title and number."
+  - type: mcq
+    prompt: "Which review comment follows good review etiquette?"
+    options:
+      - "\"What happens here if the price is empty? Maybe check for that before saving.\""
+      - "\"This is wrong. Rewrite it.\""
+      - "\"I would never have done it like this.\""
+      - "\"LGTM\" on a 2,000-line PR you didn't read"
+    answer: 0
+    explanation: "Specific, about the code, phrased as a question with a suggestion. The others are unhelpful or not real reviews."

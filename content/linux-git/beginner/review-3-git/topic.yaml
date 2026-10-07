@@ -1,0 +1,5 @@
+title: "The payment key"
+module: 17
+kind: review
+summary: "Five briefs in the website's Git history: find the commit that brought in the payment key, read who made it, take the key out of tracking on a branch, merge a fix that conflicts, and decide what to do about a leaked secret. Uses Modules 13 to 17."
+minutes: 45

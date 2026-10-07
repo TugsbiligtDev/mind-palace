@@ -1,0 +1,4 @@
+title: Text Processing Toolkit
+module: 23
+summary: "Regular expressions with grep -E; slicing and counting with cut, sort, uniq -c and tr; changing text with sed; columns and sums with awk; xargs; JSON with jq; and building a pipeline one step at a time."
+minutes: 55

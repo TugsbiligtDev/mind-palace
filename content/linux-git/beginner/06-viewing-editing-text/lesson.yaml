@@ -1,0 +1,156 @@
+steps:
+  - kind: explain
+    title: Plain text runs the world
+    body: |
+      Almost everything you'll touch from the terminal is **plain text**: just characters, nothing else. Notes, logs, CSV files, web pages, settings files, program code, Git's own files.
+
+      **Rich text** (a Word document, a Pages file, TextEdit's default) stores fonts, colors and layout too, in a format only its app understands. `cat report.docx` prints gibberish.
+
+      Plain text can be read by any program, compared line by line, searched, and tracked by Git. That's why terminal people love it.
+
+      ⚠️ On a Mac, **TextEdit** saves rich text by default. For code and settings files use **Format → Make Plain Text**, or better, a code editor like VS Code.
+
+  - kind: explain
+    title: Reading files
+    body: |
+      | Command | Shows |
+      |---|---|
+      | `cat file` | the whole file at once (fine for short files) |
+      | `less file` | a long file one screen at a time, same keys as `man` (Space, b, /word, **q**) |
+      | `head file` | the first 10 lines |
+      | `tail file` | the last 10 lines |
+      | `head -n 3 file` | the first 3 lines (`tail -n 3` for the last 3) |
+
+      `cat` can also join files: `cat a.txt b.txt` prints one after the other. That's where its name comes from: con**cat**enate.
+
+  - kind: shell
+    title: Peek at the shop's log
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      `logs/shop.log` is what the web shop writes while it runs, oldest line first.
+
+      Print just the **last 2 lines** of the log, to see the most recent events.
+    output: true
+    solution: tail -n 2 logs/shop.log
+    reject:
+      - tail logs/shop.log
+      - head -n 2 logs/shop.log
+    hint: "`tail` shows the end of a file; `-n 2` limits it to two lines."
+
+  - kind: explain
+    title: Watching a log live
+    body: |
+      `tail -f logs/shop.log` prints the last lines and then **keeps waiting**: every new line the shop writes appears as it happens. It's how you watch a server while you test something. It never finishes on its own: press **Ctrl+C** to stop watching.
+
+      The practice terminal can't wait for new lines, so here `tail -f` shows the last lines and stops, with a note. On your Mac or a real server it keeps going.
+
+  - kind: explain
+    title: Counting with wc
+    body: |
+      `wc` (**w**ord **c**ount) counts a file's lines, words and bytes:
+
+      ```
+      learner@inkwell:~$ wc notes/todo.txt
+        3  22 110 notes/todo.txt
+      ```
+
+      Usually you want just one number: `wc -l` counts **l**ines, `wc -w` words, `wc -c` bytes. Counting lines is surprisingly useful: how many orders, how many errors, how many users.
+
+  - kind: shell
+    title: How many lines?
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Count the **lines** in `orders/2026-09.csv`.
+    output: true
+    solution: wc -l orders/2026-09.csv
+    hint: "`wc` with the option for **l**ines, then the file's path."
+
+  - kind: choice
+    title: Lines are not orders
+    body: |
+      You counted 6 lines in September's order file. Look at it with `cat orders/2026-09.csv`. How many **orders** does it hold?
+    options:
+      - "5, because the first line is the column headings"
+      - "6, because each line is one order"
+      - "7, because wc doesn't count the last line"
+      - "4, because the first and last lines are headings"
+    answer: 0
+    explanation: "A CSV file's first line names the columns (`order_id,date,customer,…`). Always look at a file before trusting a count of it."
+
+  - kind: explain
+    title: Editing with nano
+    body: |
+      To change a file from the terminal you need a **terminal text editor**. **nano** is the friendly one, and it's installed almost everywhere:
+
+      ```
+      nano notes/todo.txt
+      ```
+
+      The file opens inside the terminal. Type to edit, move with the arrow keys. The bottom two lines list the shortcuts, where `^` means the **Control** key:
+
+      | Keys | Does |
+      |---|---|
+      | **Ctrl+O**, then Return | write **O**ut (save) the file |
+      | **Ctrl+X** | exit (if you haven't saved, it asks: **Y** to save, then Return) |
+      | **Ctrl+K** / **Ctrl+U** | cut the current line / paste it |
+      | **Ctrl+W** | search ("where is") |
+
+      `nano newfile.txt` creates the file when you save.
+
+  - kind: shell
+    title: Add to the to-do list
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Open the to-do list in nano and add this as a new **last line**:
+
+      ```
+      - back up the website every Friday
+      ```
+
+      Save with **Ctrl+O** and Return, leave with **Ctrl+X**, then check with `cat notes/todo.txt`.
+    tests:
+      - cat notes/todo.txt
+    solution: |
+      echo '- back up the website every Friday' >> notes/todo.txt
+    hint: "`nano notes/todo.txt`, press **↓** until you're below the last line, type the new line exactly (dash, space, words), then **Ctrl+O**, Return, **Ctrl+X**. (The \"show the commands\" answer uses `>>`, which adds a line without an editor: Module 8.)"
+
+  - kind: info
+    title: "🔹 If you land in vim"
+    body: |
+      Some programs open **vim** instead of nano, especially Git on a fresh computer. vim works in *modes*, so typing doesn't do what you expect and it seems impossible to leave.
+
+      To get out: press **Esc**, then type `:q!` and press **Return**. That quits **without saving**. (`:wq` saves and quits.)
+
+      That's all you need for now. Module 26 teaches vim properly, and Module 14 sets Git to use nano. The practice terminal has a small vim too: try `vim practice.txt`, then get out with **Esc**, `:q!`, **Return**.
+
+  - kind: mac
+    title: Open a folder in VS Code
+    body: |
+      For bigger edits, a real code editor is more comfortable. **Visual Studio Code** (free, from [code.visualstudio.com](https://code.visualstudio.com)) can be opened from the terminal:
+
+      1. Install VS Code and open it once.
+      2. Press **⇧⌘P**, type *shell command*, and choose **Shell Command: Install 'code' command in PATH**.
+      3. In Terminal, go to a folder and run `code .`: the whole folder opens in VS Code.
+
+      Also try nano and `tail -f` on your Mac: nano comes with macOS. `tail -f` will keep waiting until you press Ctrl+C.
+    commands: |
+      cd ~/terminal-practice
+      nano hello.txt
+      code .
+      tail -f /var/log/system.log
+  - kind: why
+    body: |
+      On a server there's no Finder and no double-click: reading a log or fixing a settings file happens in the terminal. Knowing `head`, `tail`, `less` and nano means you can investigate and repair a machine with nothing but a text window. And recognizing vim saves you from the classic "how do I exit?" panic.
+
+  - kind: recap
+    body: |
+      - Terminal tools work on **plain text**. TextEdit's rich text isn't plain text.
+      - `cat` the whole file, `less` page by page (**q** quits), `head`/`tail -n N` the start or end.
+      - `tail -f` follows a log live until **Ctrl+C**.
+      - `wc -l` counts lines (check whether a heading line is included).
+      - **nano**: Ctrl+O save, Ctrl+X exit, Ctrl+K cut, Ctrl+U paste.
+      - Stuck in **vim**: Esc, `:q!`, Return.
+      - Mac: `code .` opens the folder in VS Code.

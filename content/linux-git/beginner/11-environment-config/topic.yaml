@@ -1,0 +1,4 @@
+title: Environment & Shell Configuration
+module: 11
+summary: "Shell variables, $HOME and $PATH, export; how the shell finds the program to run; your shell's settings file (~/.zshrc on a Mac, ~/.bashrc on Linux) and source; permanent aliases; and fixing \"command not found\" when it's really a PATH problem."
+minutes: 35

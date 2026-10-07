@@ -1,0 +1,49 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "You want the five addresses with the most requests in `access.log`. Which pipeline is right?"
+    options:
+      - "`cut -d' ' -f1 access.log | sort | uniq -c | sort -rn | head -5`"
+      - "`cut -d' ' -f1 access.log | uniq -c | sort -rn | head -5`"
+      - "`sort access.log | head -5 | uniq -c`"
+      - "`cut -d' ' -f1 access.log | sort -rn | head -5`"
+    answer: 0
+    explanation: "Pick the field, sort so equal addresses sit together, count with `uniq -c`, sort by the count, keep five."
+  - type: mcq
+    prompt: "`kill 2790` answers `Operation not permitted`. What does that tell you?"
+    options:
+      - "The process belongs to another user (here root), so you need sudo"
+      - "The process ignores TERM, so only `kill -9` can stop it"
+      - "There is no process with that PID any more"
+      - "PIDs below 3000 belong to the kernel and can't be stopped"
+    answer: 0
+    explanation: "Ordinary users may only signal their own processes. A process that ignores TERM gives no error at all: it just keeps running."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf '192.0.2.10 /admin\n192.0.2.44 /admin\n192.0.2.10 /admin\n' | sort | uniq -c | sort -rn | awk '{print $2, $1}'
+    options:
+      - "192.0.2.10 2\n192.0.2.44 1"
+      - "2 192.0.2.10\n1 192.0.2.44"
+      - "192.0.2.10 /admin\n192.0.2.44 /admin"
+      - "192.0.2.44 1\n192.0.2.10 2"
+    answer: 0
+    explanation: "`uniq -c` puts the count first (`2 192.0.2.10 /admin`); the last awk prints field 2 (the address) and then field 1 (the count)."
+  - type: mcq
+    prompt: "Why does the watch script start with `set -euo pipefail` and check `$#`?"
+    options:
+      - "So it stops with a clear message instead of carrying on with a missing or wrong file"
+      - "Because ShellCheck refuses to read scripts that don't start that way"
+      - "So it runs faster, since bash skips the error checking in strict mode"
+      - "Because scripts in `~/bin` must exit with code 2 when they finish"
+    answer: 0
+    explanation: "Strict mode stops at the first failure; the argument check gives the user a usage line and exit code 2 instead of a confusing error."
+  - type: mcq
+    prompt: "Which `tar` command packs two files so they unpack with **no folder in front** of their names?"
+    options:
+      - "`cd ~/logs && tar -czf ~/evidence.tar.gz access.log orders.json`"
+      - "`tar -czf ~/evidence.tar.gz ~/logs/access.log ~/logs/orders.json`"
+      - "`tar -xzf ~/evidence.tar.gz access.log orders.json`"
+      - "`tar -tzf ~/logs access.log orders.json`"
+    answer: 0
+    explanation: "tar keeps paths as given. From inside the folder, the names are just `access.log` and `orders.json`. Full paths would unpack as `home/learner/logs/...`."

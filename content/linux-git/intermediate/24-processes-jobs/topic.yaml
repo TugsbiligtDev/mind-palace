@@ -1,0 +1,4 @@
+title: Processes & Jobs
+module: 24
+summary: "What a process and its PID are; ps, top and htop; stopping programs with kill and the signals behind it (TERM, KILL, INT); background jobs with &, jobs, fg, bg and Ctrl+Z; exit codes and $?; chaining commands with &&, || and ;."
+minutes: 45

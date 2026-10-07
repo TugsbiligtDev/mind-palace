@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "A ruleset on `main` has the `pull_request` rule. What happens when you `git push` a commit straight to main?"
+    options:
+      - "GitHub refuses it: *Changes must be made through a pull request*"
+      - "GitHub accepts it but opens a pull request automatically"
+      - "The push works, but the commit is hidden until someone approves it"
+      - "Git refuses it locally, before contacting GitHub"
+    answer: 0
+    explanation: "The rule is checked on GitHub's side when the branch would be updated. Push a branch and open a PR instead."
+  - type: mcq
+    prompt: "Push protection refused your push because a commit contains an API key. The commit was never pushed. What's the clean fix?"
+    options:
+      - "Remove the key from the file and rewrite the commit (amend or rebase), then push"
+      - "Add a second commit that deletes the key, then push both commits"
+      - "Push with `--force`, which skips GitHub's secret scanning"
+      - "Rename the file, because push protection only looks at the file name"
+    answer: 0
+    explanation: "Push protection checks every commit you push. A later commit deleting the key still pushes the one containing it; rewriting the unpushed commit means the key is in none."
+  - type: mcq
+    prompt: "Which rule stops anyone from overwriting `main`'s history with `git push --force`?"
+    options:
+      - "`non_fast_forward`"
+      - "`deletion`"
+      - "`required_status_checks`"
+      - "`pull_request`"
+    answer: 0
+    explanation: "A force-push is a non-fast-forward update. The `deletion` rule protects against deleting the branch."
+  - type: mcq
+    prompt: "What does `* text=auto eol=lf` in `.gitattributes` do?"
+    options:
+      - "Stores text files with LF endings and checks them out with LF on every computer"
+      - "Converts every file, including images, into plain text"
+      - "Makes Git ignore all changes to line endings in diffs only"
+      - "Requires that every file end with an empty line"
+    answer: 0
+    explanation: "Git detects text files (`text=auto`) and keeps them with Unix line endings everywhere, so Windows and Mac users stop fighting over CRLF."
+  - type: mcq
+    prompt: "Why turn on Dependabot alerts?"
+    options:
+      - "To be told when a library or action you depend on has a known security problem"
+      - "To block pushes from people who aren't in the repository's team"
+      - "To scan commits for passwords and API keys before they're pushed"
+      - "To require two approvals on every pull request"
+    answer: 0
+    explanation: "Dependabot watches your dependency files against a vulnerability database. Secret scanning and rulesets handle the other jobs."

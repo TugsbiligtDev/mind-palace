@@ -1,0 +1,44 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: What is the operating system's job?
+    options:
+      - "Running programs, storing files and tracking which user is logged in"
+      - "Checking every new program for viruses before letting it be installed"
+      - "Connecting the computer to the internet and loading the web pages you ask for"
+      - "Saving a backup copy of all your files to the cloud every night"
+    answer: 0
+    explanation: "The OS is the manager between programs and hardware: it runs programs, stores files in folders, tracks users and talks to devices. The other jobs are done by particular programs."
+  - type: mcq
+    prompt: "In the terminal world, what is a **directory**?"
+    options:
+      - Another word for a folder
+      - A list of every command you can type
+      - A file that holds the computer's settings
+      - The folder where programs are installed
+    answer: 0
+    explanation: "Directory and folder mean the same thing. Commands such as `mkdir` (make directory) use the word."
+  - type: mcq
+    prompt: "What's the difference between a program like Safari and a command like `ls`?"
+    options:
+      - "`ls` has no window: you type its name, it does one job, prints text"
+      - "`ls` isn't really a program, it's a word built into the keyboard's chip"
+      - "Safari runs on macOS, while `ls` only runs on Linux servers in data centres"
+      - "`ls` is downloaded from the internet every time you type it"
+    answer: 0
+    explanation: "Both are programs (`ls` is a file, `/usr/bin/ls`). Commands simply run in the terminal instead of opening a window."
+  - type: mcq
+    prompt: Why do terminal skills learned on a Mac work on a Linux server?
+    options:
+      - "Both descend from Unix, so they share its commands and layout"
+      - "Apple and the Linux developers agreed in 2010 to copy each other's commands"
+      - "The Mac runs a complete copy of Linux, hidden inside macOS"
+      - "Servers quietly translate Mac commands into Linux commands for you"
+    answer: 0
+    explanation: "macOS is built on BSD, a Unix family member, and Linux was written to work like Unix. Same family, same commands."
+  - type: fill
+    prompt: "Type the extension (with its dot) of the file `todo.txt`."
+    code: "todo____"
+    answer: ".txt"
+    runnable: false
+    explanation: "The extension is the part after the last dot: `.txt`, plain text."

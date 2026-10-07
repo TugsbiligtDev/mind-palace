@@ -1,0 +1,4 @@
+title: Team Pull Request Workflow
+module: 38
+summary: "Working with others on GitHub: forks or branches; the upstream remote and keeping a fork in sync; good pull request descriptions; draft PRs; closing issues automatically; requesting, giving and answering reviews; merge, squash or rebase; and updating a PR branch."
+minutes: 55

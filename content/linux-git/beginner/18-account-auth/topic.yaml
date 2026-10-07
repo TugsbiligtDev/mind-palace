@@ -1,0 +1,4 @@
+title: Account & Authentication
+module: 18
+summary: "A GitHub account with two-factor authentication and passkeys; SSH keys (ssh-keygen with ed25519, ssh-agent and the Mac's Keychain, adding the key to GitHub); HTTPS versus SSH addresses; logging in the GitHub CLI with gh auth login; and fixing \"Permission denied (publickey)\"."
+minutes: 45

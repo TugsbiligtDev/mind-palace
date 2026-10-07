@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: Which job is **not** something a package manager does for you?
+    options:
+      - "Writing the program's settings to suit your taste"
+      - "Downloading the right version for your computer's chip"
+      - "Installing the other software the program depends on"
+      - "Updating it later, or removing it cleanly when asked"
+    answer: 0
+    explanation: "Package managers install, update and remove software and its dependencies. Configuring it (your aliases, your preferences) is still up to you."
+  - type: mcq
+    prompt: "Right after installing Homebrew on an M2 Mac, `brew` says `command not found`. What's the likely cause?"
+    options:
+      - "`/opt/homebrew/bin` isn't on your PATH yet: run the Next steps"
+      - "Homebrew only works on Intel Macs, not on M1 or M2 chips"
+      - "Homebrew has to be run as `sudo brew` the first few times"
+      - "The install failed halfway and must be repeated from scratch"
+    answer: 0
+    explanation: "Homebrew lives in `/opt/homebrew` on Apple Silicon. The `brew shellenv` line from the installer's Next steps adds it to your PATH."
+  - type: mcq
+    prompt: "What's the difference between `brew install tree` and `brew install --cask firefox`?"
+    options:
+      - "`tree` is a command-line formula; Firefox is an app, so a cask"
+      - "Casks are paid apps from the App Store, and formulae are free ones"
+      - "`--cask` installs the app for every user account on the Mac at once"
+      - "There's no real difference; `--cask` is just an older spelling"
+    answer: 0
+    explanation: "Formulae are terminal tools; casks are graphical Mac apps that go into /Applications."
+  - type: mcq
+    prompt: "On an Ubuntu server, which command installs `tree`?"
+    options:
+      - "`sudo apt install tree`"
+      - "`brew install tree`"
+      - "`apt install tree --cask`"
+      - "`sudo tree install`"
+    answer: 0
+    explanation: "Ubuntu uses apt, and installing for the whole system needs sudo. (Run `sudo apt update` first on a fresh machine.)"

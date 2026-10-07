@@ -1,0 +1,4 @@
+title: Undoing with Confidence
+module: 34
+summary: "Three ways back: restore (files), reset --soft, --mixed and --hard (moving the branch), and revert (a new commit that undoes an old one); the reflog as your safety net for lost commits and deleted branches; git clean; and the rule about rewriting shared history."
+minutes: 50

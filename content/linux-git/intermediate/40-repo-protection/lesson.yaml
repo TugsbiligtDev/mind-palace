@@ -1,0 +1,213 @@
+steps:
+  - kind: explain
+    title: Let GitHub say no
+    body: |
+      Every door in Season 2 was left open by a habit: pushing straight to `main`, force-pushing, keeping keys in the code. Good intentions don't stop a tired colleague at 11 p.m.; **rules on the server** do.
+
+      GitHub's tool for this is **rulesets** (repository Settings → Rules → Rulesets). A ruleset targets branches (for example the default branch) and lists rules:
+
+      | Rule | Means |
+      |---|---|
+      | `pull_request` | changes reach the branch only through a PR, with N approving reviews (optionally from code owners) |
+      | `required_status_checks` | named checks (CI jobs, Module 41) must pass before merging |
+      | `non_fast_forward` | no force-pushes |
+      | `deletion` | the branch can't be deleted |
+      | `required_signatures`, `required_linear_history` | signed commits / no merge commits (Advanced) |
+
+      Rulesets can be switched to *evaluate* (report only) before you enforce them, and admins can be allowed to bypass. You can set them up on the website, or with the API.
+
+  - kind: shell
+    title: Protect main
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      Create a ruleset for `inkwell/site` with the API. Save this as **`~/protect-main.json`**:
+
+      ```json
+      {
+        "name": "Protect main",
+        "target": "branch",
+        "enforcement": "active",
+        "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+        "rules": [
+          { "type": "deletion" },
+          { "type": "non_fast_forward" },
+          { "type": "pull_request", "parameters": { "required_approving_review_count": 1 } }
+        ]
+      }
+      ```
+
+      then send it:
+
+      ```
+      gh api repos/{owner}/{repo}/rulesets --input ~/protect-main.json
+      ```
+
+      Check the result with `gh ruleset check main`.
+    tests:
+      - gh ruleset check main
+    solution: |
+      printf '{"name":"Protect main","target":"branch","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"],"exclude":[]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request","parameters":{"required_approving_review_count":1}}]}\n' > ~/protect-main.json
+      gh api repos/{owner}/{repo}/rulesets --input ~/protect-main.json
+      gh ruleset check main
+    hint: "`nano ~/protect-main.json`, paste the JSON, save. Then `gh api repos/{owner}/{repo}/rulesets --input ~/protect-main.json` (from inside `~/site`, so gh knows the repository). `gh ruleset check main` should list 3 rules."
+
+  - kind: shell
+    title: The rules at work
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      printf '{"name":"Protect main","target":"branch","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"],"exclude":[]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request","parameters":{"required_approving_review_count":1}}]}\n' > /tmp/r.json
+      gh api repos/inkwell/site/rulesets --input /tmp/r.json > /dev/null
+      rm /tmp/r.json
+      sed -i 's/Three people/Four people/' about.html && git commit -qam "Say four people"
+    body: |
+      You've already committed `Say four people` on your local `main`. Try `git push`: GitHub refuses (read why). Then do it the proper way: move that commit onto a new branch **`four-people`**, put your local `main` back where `origin/main` is, push the branch and open a pull request.
+    tests:
+      - git log -1 --format=%s origin/main
+      - git log -1 --format=%s main
+      - git ls-remote --heads origin | cut -f2
+      - gh pr list | tail -1 | cut -f1-2 | awk '{print $1, $2, $3}'
+    solution: |
+      git push  # allow-error: refused by the ruleset
+      git switch -c four-people
+      git branch -f main origin/main
+      git push -u origin four-people
+      gh pr create --fill
+    hint: "The push says *Changes must be made through a pull request.* `git switch -c four-people` (the new branch keeps the commit), `git branch -f main origin/main` (moves main back without switching), `git push -u origin four-people`, `gh pr create --fill`."
+
+  - kind: explain
+    title: Secrets don't belong in Git
+    body: |
+      Passwords, API keys and tokens committed to a repository are found within minutes on public GitHub (bots scan every push), and live forever in the history. Two GitHub features help:
+
+      - **Secret scanning** looks for known key formats (GitHub tokens, AWS, Stripe, Slack and hundreds more) in the repository and alerts you.
+      - **Push protection** goes further: a push that **contains** such a secret is **refused** before it lands. It's on by default for public repositories.
+
+      ```
+      remote: - GITHUB PUSH PROTECTION
+      remote:     - Push cannot contain secrets
+      remote:       —— Stripe API Key ——
+      remote:        locations:
+      remote:          - commit: 8728dbe67
+      remote:            path: checkout.js:2
+       ! [remote rejected] fix-checkout -> fix-checkout (push declined due to repository rule violations)
+      ```
+
+      The fix, before anything is shared: take the key out of the file (put it in an ignored `.env` or the server's settings), and **rewrite your unpushed commit** so the key isn't in it at all (`git commit --amend`, or an interactive rebase if it's further back). Then push again.
+
+  - kind: shell
+    title: A key in the commit
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      git switch -q -c stripe-checkout
+      printf '// Checkout\nconst stripeKey = "sk_live_51HinkwellPracticeOnly000000000";\n' > checkout.js
+      git commit -qam "Use Stripe for checkout"
+    body: |
+      On branch **`stripe-checkout`** you committed `checkout.js` with a live payment key in it. Try to push the branch: push protection refuses. Fix it properly:
+
+      1. Make `checkout.js` read the key from the environment instead, exactly: `const stripeKey = process.env.STRIPE_KEY;` (the first line stays).
+      2. Rewrite **your commit** so the key is in no commit at all (it was never pushed).
+      3. Push the branch.
+    tests:
+      - git ls-remote --heads origin | cut -f2
+      - git log --format=%s main..stripe-checkout
+      - git log -p main..stripe-checkout | grep -c sk_live
+      - git show origin/stripe-checkout:checkout.js
+    solution: |
+      git push -u origin stripe-checkout  # allow-error: push protection
+      printf '// Checkout\nconst stripeKey = process.env.STRIPE_KEY;\n' > checkout.js
+      git commit -a --amend --no-edit
+      git push -u origin stripe-checkout
+    hint: "Edit line 2 of `checkout.js`, then `git commit -a --amend --no-edit` replaces your commit with one that never contained the key. `git push -u origin stripe-checkout` goes through."
+
+  - kind: explain
+    title: When a secret did get out
+    body: |
+      If a secret was pushed (or sat in a public repository at all), assume it's **compromised**: someone may already have copied it. In this order:
+
+      1. **Revoke** it (or rotate it) at the service that issued it, *first*: a new key makes the leaked one worthless, wherever it's been copied.
+      2. Check the service's logs for misuse.
+      3. Put the new secret somewhere safe (environment variables, the server's settings, GitHub Actions secrets in Module 41), and make sure `.gitignore` keeps it out.
+      4. Only then, if you like, **clean the history** (`git filter-repo`, Module 49) and force-push. That's tidying up: it can't recall copies already made.
+
+  - kind: explain
+    title: Line endings and .gitattributes
+    body: |
+      Windows ends lines with two characters (CRLF), macOS and Linux with one (LF). When people on both work on a repository, every line can appear "changed" for no reason, and shell scripts with CRLF fail on Linux (`$'\r': command not found`).
+
+      A **`.gitattributes`** file in the repository fixes it for everyone:
+
+      ```
+      * text=auto eol=lf
+      *.png binary
+      *.jpg binary
+      ```
+
+      `text=auto` lets Git detect text files and normalise them; `eol=lf` checks them out with LF everywhere; `binary` means "never touch, never diff" for images.
+
+  - kind: shell
+    title: Normalise line endings
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      Add a **`.gitattributes`** with exactly these three lines, commit it on a branch **`line-endings`** (message `Normalise line endings`) and push the branch.
+
+      ```
+      * text=auto eol=lf
+      *.png binary
+      *.jpg binary
+      ```
+    tests:
+      - git show origin/line-endings:.gitattributes
+      - git log -1 --format=%s origin/line-endings
+    solution: |
+      git switch -c line-endings
+      printf '* text=auto eol=lf\n*.png binary\n*.jpg binary\n' > .gitattributes
+      git add .gitattributes
+      git commit -m "Normalise line endings"
+      git push -u origin line-endings
+    hint: "`git switch -c line-endings`, create the file, `git add .gitattributes`, commit, `git push -u origin line-endings`."
+
+  - kind: choice
+    title: The right order
+    body: "A developer pushed an AWS key to a public repository an hour ago. What comes first?"
+    options:
+      - "Deactivate the key in AWS and create a new one"
+      - "Rewrite the history to remove the key, then force-push"
+      - "Make the repository private so nobody else can see it"
+      - "Add the key's file to `.gitignore` and commit that"
+    answer: 0
+    explanation: "Bots copy leaked keys within minutes. Only revoking makes the copies useless; cleaning history and going private come after (and don't recall copies)."
+
+  - kind: info
+    title: "Dependabot alerts"
+    body: |
+      Most projects use other people's code (npm packages, Python libraries, GitHub Actions). **Dependabot alerts** (Settings → Code security) compare your dependency files with a database of known vulnerabilities and tell you when a version you use has a security problem, usually with a ready-made PR to upgrade. Turn them on for every repository; Module 54 adds automatic version updates.
+
+  - kind: info
+    title: "🔹 Classic branch protection rules"
+    body: |
+      Before rulesets, GitHub had **branch protection rules** (Settings → Branches), with similar options: require PRs and reviews, require status checks, block force-pushes. Many repositories still use them and they still work. Rulesets are the newer, more flexible way (several can apply at once, they can target tags, and anyone with read access can see them), so prefer rulesets for new set-ups.
+
+  - kind: mac
+    title: Protect a real repository
+    body: |
+      On github.com, open one of your repositories → **Settings** → **Rules** → **Rulesets** → **New branch ruleset**: target the default branch, tick *Restrict deletions*, *Block force pushes* and *Require a pull request before merging*, and set it to **Active**. Then try pushing straight to main from your Mac. Also check **Settings → Code security**: secret scanning, push protection and Dependabot alerts.
+    commands: |
+      gh ruleset list
+      gh ruleset check main
+      git push
+  - kind: why
+    body: |
+      Rules that live on the server protect the project from everyone's worst moment, including your own: nobody can force-push away a colleague's work, merge without a review, or push a payment key. Combined with knowing what to do when a secret does leak (revoke first), it's how small teams stay safe without slowing down.
+
+  - kind: recap
+    body: |
+      - **Rulesets** on the default branch: `pull_request` (reviews), `required_status_checks`, `non_fast_forward`, `deletion`. Create on the website or with `gh api repos/{owner}/{repo}/rulesets --input file.json`; inspect with `gh ruleset list`, `view`, `check`.
+      - A refused push to main means: branch, PR, review.
+      - **Secret scanning** finds keys; **push protection** refuses pushes containing them. Fix unpushed commits with `--amend` or rebase.
+      - Leaked secret: **revoke first**, check logs, store the new one safely, then clean history.
+      - `.gitattributes`: `* text=auto eol=lf`, `*.png binary`.
+      - Turn on Dependabot alerts. 🔹 Classic branch protection still exists; prefer rulesets.

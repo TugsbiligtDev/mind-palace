@@ -1,0 +1,203 @@
+steps:
+  - kind: explain
+    title: You're the admin now
+    body: |
+      Priya hands over the shop server. *"Kenji needs an account, I need to be able to use sudo, the shop crashed this morning, and backups have to run every night. Welcome to the job."*
+
+      Everything in this lesson happens **on the shop server**. Your key and a `shop` alias are already set up, so `ssh shop` gets you there (and `exit` back). Changing the system needs `sudo`, as on the practice computer.
+
+  - kind: explain
+    title: Users and groups
+    body: |
+      Every account is a line in **`/etc/passwd`** (name, user ID, group ID, home folder, shell); groups are in **`/etc/group`**; password hashes in **`/etc/shadow`** (root only).
+
+      | Command | Does |
+      |---|---|
+      | `sudo adduser kenji` | create a user, its home folder and group; asks for a password (Ubuntu's friendly tool) |
+      | `sudo useradd -m -s /bin/bash kenji` | the low-level tool: `-m` makes the home folder (it doesn't by default!) |
+      | `sudo usermod -aG www-data kenji` | **a**dd kenji to the **G**roup `www-data` |
+      | `sudo passwd kenji` | set or change kenji's password |
+      | `id kenji`, `groups kenji` | show someone's groups |
+      | `sudo userdel -r kenji` | delete the user and (`-r`) their home folder |
+      | `sudo usermod -L kenji` | lock the account's password |
+
+      ⚠️ `usermod -G group user` **without `-a` replaces** all of the user's other groups with that one. Always `-aG`.
+
+      Group membership is read when someone **logs in**: after you add a user to a group, they need to log out and in again (the practice server applies it at once).
+
+  - kind: shell
+    title: An account for Kenji
+    fixture: [shop-server, shop-access]
+    body: |
+      On the shop server, create a user **`kenji`** with a home folder (use `adduser`; give him any password), and add him to the **`www-data`** group so he can edit the website's files.
+    tests:
+      - ssh shop 'id kenji'
+      - ssh shop 'ls -ld /home/kenji' | awk '{print $1, $3, $9}'
+    solution: |
+      ssh shop
+      sudo adduser --disabled-password --gecos "" kenji
+      sudo usermod -aG www-data kenji
+      exit
+    hint: "`ssh shop`, then `sudo adduser kenji` (it asks for a password twice and some optional details: Return skips them), then `sudo usermod -aG www-data kenji`. Check with `id kenji`."
+
+  - kind: shell
+    title: Sudo for Priya
+    fixture: [shop-server, shop-access]
+    body: |
+      Priya (`priya`) already has an account and belongs to `www-data`. Let her use `sudo`: on Ubuntu that means membership of the **`sudo`** group. Keep her in `www-data`!
+    tests:
+      - ssh shop 'groups priya'
+    solution: ssh shop sudo usermod -aG sudo priya
+    reject:
+      - ssh shop sudo usermod -G sudo priya
+    hint: "`sudo usermod -aG sudo priya` on the server (in an `ssh shop` session, or as `ssh shop sudo usermod -aG sudo priya`). Without `-a`, `-G sudo` would take her out of `www-data`."
+
+  - kind: explain
+    title: Services and systemctl
+    body: |
+      Programs that run all the time in the background (the web server, SSH, the shop app, cron) are **services**. On Ubuntu, **systemd** starts and watches them, and `systemctl` is how you talk to it:
+
+      | Command | Does |
+      |---|---|
+      | `systemctl status nginx` | is it running? since when? its last log lines |
+      | `sudo systemctl start nginx` / `stop` / `restart` | start / stop / stop and start |
+      | `sudo systemctl reload nginx` | re-read settings without stopping (if the program supports it) |
+      | `sudo systemctl enable nginx` / `disable` | start / don't start it **at boot** |
+      | `sudo systemctl enable --now nginx` | enable and start in one go |
+      | `systemctl is-active nginx`, `is-enabled` | one-word answers, handy in scripts |
+      | `systemctl list-units --type=service --state=failed` | everything that has failed |
+
+      In `status`, **Active:** says `active (running)`, `inactive (dead)` or `failed`, and **Loaded:** says whether it's `enabled` at boot. Each service is described by a **unit file** (`/etc/systemd/system/inkwell-shop.service`): what to run, as which user. Module 45 writes one.
+
+  - kind: explain
+    title: "Logs: journalctl and /var/log"
+    body: |
+      systemd collects every service's output in the **journal**:
+
+      | Command | Shows |
+      |---|---|
+      | `journalctl -u inkwell-shop` | everything one service (**u**nit) wrote |
+      | `journalctl -u nginx -n 20` | the last 20 lines |
+      | `journalctl -p err` | only errors (and worse) |
+      | `journalctl --since "1 hour ago"` / `--since today` | a time window |
+      | `journalctl -f` | follow new lines, like `tail -f` |
+
+      Many programs also write text files in **`/var/log`**: `syslog` (general), `auth.log` (logins and sudo), `nginx/access.log` and `error.log`. Reading them needs `sudo` or the `adm` group.
+
+      When a service fails: **`systemctl status`** for the summary, **`journalctl -u`** for the details, then fix, then **restart**.
+
+  - kind: shell
+    title: The shop is down
+    fixture: [shop-server, shop-access]
+    setup: |
+      chmod 600 /srv/hosts/shop/etc/inkwell/shop.conf
+      practice-host shop 'systemctl restart inkwell-shop' || true
+    body: |
+      Customers get errors. On the shop server, find out why the **`inkwell-shop`** service isn't running, fix the cause, and get it running again. (The service runs as the user `inkwell`.)
+
+      You're done when `curl -s localhost:3000/health` on the server answers `{"status":"ok"}`.
+    tests:
+      - ssh shop systemctl is-active inkwell-shop
+      - ssh shop curl -s localhost:3000/health
+    solution: |
+      ssh shop
+      systemctl status inkwell-shop  # allow-error: it has failed
+      sudo journalctl -u inkwell-shop -n 10
+      ls -l /etc/inkwell/shop.conf
+      sudo chown root:inkwell /etc/inkwell/shop.conf
+      sudo chmod 640 /etc/inkwell/shop.conf
+      sudo systemctl restart inkwell-shop
+      curl -s localhost:3000/health
+      exit
+    hint: "`systemctl status inkwell-shop` says *failed*; `sudo journalctl -u inkwell-shop` shows *EACCES: permission denied, open '/etc/inkwell/shop.conf'*. `ls -l` shows it's `-rw-------` root's. Let the `inkwell` group read it: `sudo chown root:inkwell /etc/inkwell/shop.conf` and `sudo chmod 640 …` (644 also works, but then everyone can read the settings). Then `sudo systemctl restart inkwell-shop`."
+
+  - kind: shell
+    title: Start at boot, too
+    fixture: [shop-server, shop-access]
+    setup: |
+      practice-host shop 'systemctl disable --now inkwell-shop' > /dev/null
+    body: |
+      Someone stopped the shop **and** disabled it, so it wouldn't come back after a reboot either. On the server, enable it at boot and start it now, ideally in one command.
+    tests:
+      - ssh shop systemctl is-enabled inkwell-shop
+      - ssh shop systemctl is-active inkwell-shop
+    solution: ssh shop sudo systemctl enable --now inkwell-shop
+    hint: "`sudo systemctl enable --now inkwell-shop` (or `enable`, then `start`)."
+
+  - kind: shell
+    title: Who tried to get in?
+    fixture: [shop-server, shop-access]
+    body: |
+      On the shop server, print every line of **`/var/log/auth.log`** that records a **failed** password attempt for the user **root**.
+    output: true
+    solution: ssh shop grep "'Failed password for root'" /var/log/auth.log
+    hint: "`grep 'Failed password for root' /var/log/auth.log` on the server (you're in the `adm` group there, so no sudo needed). In an `ssh shop` session, run it there; or put it after `ssh shop` in quotes."
+
+  - kind: explain
+    title: cron, the scheduler
+    body: |
+      **cron** runs commands at set times. Each user has a **crontab** (cron table): `crontab -e` edits yours, `crontab -l` lists it. Each line is five time fields and a command:
+
+      ```
+      # ┌ minute (0-59)
+      # │ ┌ hour (0-23)
+      # │ │ ┌ day of month (1-31)
+      # │ │ │ ┌ month (1-12)
+      # │ │ │ │ ┌ day of week (0-7, 0 and 7 are Sunday)
+        30 2 * * *   /home/learner/bin/backup.sh >> /home/learner/backup.log 2>&1
+      ```
+
+      | Fields | Means |
+      |---|---|
+      | `30 2 * * *` | every day at 02:30 |
+      | `0 * * * *` | every hour, on the hour |
+      | `*/15 * * * *` | every 15 minutes |
+      | `0 9 * * 1-5` | 09:00 on weekdays |
+      | `@reboot` | once, at startup |
+
+      Things that trip people up: cron runs with a **tiny PATH** and no `~/.bashrc`, so use full paths; and its output goes nowhere useful unless you **redirect** it (`>> file 2>&1`). [crontab.guru](https://crontab.guru) translates the five fields into words. crontab refuses a line it can't understand (*bad minute*), and tells you which line.
+
+  - kind: shell
+    title: Nightly backups
+    fixture: [shop-server, shop-access]
+    setup: |
+      mkdir -p /srv/hosts/shop/home/learner/bin
+      printf '#!/usr/bin/env bash\nset -euo pipefail\ntar -czf ~/backups/site-$(date +%%F).tar.gz -C /var/www inkwell\n' > /srv/hosts/shop/home/learner/bin/backup.sh
+      practice-host shop 'chown -R learner:learner /home/learner/bin && chmod 755 /home/learner/bin/backup.sh'
+    body: |
+      On the shop server, schedule **`/home/learner/bin/backup.sh`** to run **every day at 02:30**, in **your** crontab, with its output and errors appended to `/home/learner/backup.log`.
+    tests:
+      - ssh shop crontab -l | grep -v '^#' | grep backup.sh | awk '{print $1, $2, $3, $4, $5, $6}'
+      - ssh shop crontab -l | grep -c 'backup.log 2>&1'
+    solution: ssh shop "(crontab -l 2>/dev/null; echo '30 2 * * * /home/learner/bin/backup.sh >> /home/learner/backup.log 2>&1') | crontab -"
+    hint: "`ssh shop`, then `crontab -e` (nano opens), add the line `30 2 * * * /home/learner/bin/backup.sh >> /home/learner/backup.log 2>&1` at the end, save. `crontab -l` shows it."
+
+  - kind: info
+    title: "🔹 systemd timers"
+    body: |
+      systemd can also run jobs on a schedule, with **timers**: a `.timer` unit says when (`OnCalendar=*-*-* 02:30:00`) and a matching `.service` says what. They're more work to set up than a crontab line, but they log to the journal, can catch up on runs missed while the server was off (`Persistent=true`), and show up in `systemctl list-timers`. Many of Ubuntu's own housekeeping jobs are timers now. Module 45 builds one.
+
+  - kind: mac
+    title: Administer your lab VM
+    body: |
+      Your Multipass VM is a real Ubuntu server: try the same commands there. (macOS has its own service manager, `launchd`, instead of systemd.)
+    commands: |
+      multipass shell lab
+      sudo adduser kenji
+      sudo usermod -aG sudo kenji
+      systemctl status ssh
+      journalctl -n 20
+      crontab -e
+      exit
+  - kind: why
+    body: |
+      Running a server is mostly these jobs: give the right people the right access, keep services running and find out quickly why one stopped, and make routine work happen on its own. `systemctl status` plus `journalctl -u` answers most "it's down!" moments in a minute; cron answers "who's going to remember to do this every night?"
+
+  - kind: recap
+    body: |
+      - Users: `sudo adduser name` (or `useradd -m`), `usermod -aG group name` (always `-a`!), `passwd`, `id`, `groups`, `userdel -r`. Sudo on Ubuntu = the `sudo` group.
+      - Services: `systemctl status`, `sudo systemctl start|stop|restart|reload`, `enable|disable [--now]`, `is-active`, `is-enabled`.
+      - Logs: `journalctl -u unit [-n N] [-p err] [--since …] [-f]`; text logs in `/var/log` (`auth.log`, `syslog`).
+      - A failed service: status → journal → fix → restart.
+      - cron: `crontab -e` / `-l`; `min hour day month weekday command`; full paths; `>> log 2>&1`.
+      - 🔹 systemd timers do the same with journal logging.

@@ -1,0 +1,4 @@
+title: Creating, Copying, Moving, Deleting
+module: 5
+summary: "Make folders and files (mkdir -p, touch), copy (cp, cp -r), move and rename (mv), and delete (rm, rm -r, rm -i) knowing there's no Trash. Wildcards (*, ?, [ ]), quoting names, and opening files from the Mac's terminal."
+minutes: 40

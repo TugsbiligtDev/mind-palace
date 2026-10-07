@@ -1,0 +1,50 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "`./backup.sh` answers `Permission denied`, although you wrote the file yourself. What's missing?"
+    options:
+      - "It isn't executable yet: `chmod +x backup.sh`"
+      - "It needs `sudo`, because scripts always run as root"
+      - "The shebang line must be `#!sudo bash` for scripts you wrote"
+      - "Scripts can only be run from the `~/bin` folder"
+    answer: 0
+    explanation: "A new file isn't executable. `chmod +x` adds the execute permission (or run it as `bash backup.sh`)."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      book="The Hobbit"
+      echo '$book' "$book"
+    options:
+      - "$book The Hobbit"
+      - "The Hobbit The Hobbit"
+      - "$book $book"
+      - "The Hobbit $book"
+    answer: 0
+    explanation: "Single quotes keep `$book` as plain text; double quotes expand it."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf '#!/usr/bin/env bash\necho "$# arguments, first: $1"\n' > /tmp/args.sh
+      bash /tmp/args.sh "two words" three
+    options:
+      - "2 arguments, first: two words"
+      - "3 arguments, first: two"
+      - "2 arguments, first: two"
+      - "3 arguments, first: two words"
+    answer: 0
+    explanation: "The quotes make `two words` one argument, so `$#` is 2 and `$1` is the whole phrase."
+  - type: mcq
+    prompt: "Why write `#!/usr/bin/env bash` rather than `#!/bin/bash`?"
+    options:
+      - "It uses the first bash on the PATH, such as a newer Homebrew bash on a Mac"
+      - "`/bin/bash` doesn't exist on Linux, only on macOS"
+      - "`env` makes the script run faster by skipping the PATH search"
+      - "It lets the script run without the execute permission"
+    answer: 0
+    explanation: "`/bin/bash` on a Mac is the old 3.2. `env bash` finds whichever bash comes first on your PATH."
+  - type: fill
+    prompt: "Complete the line so `count` holds the number of lines in `orders.csv`: `count=____wc -l < orders.csv)`"
+    code: "count=____wc -l < orders.csv)"
+    answer: "$("
+    runnable: false
+    explanation: "`$( … )` is command substitution: it runs the command and puts its output in place."

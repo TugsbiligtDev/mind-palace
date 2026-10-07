@@ -1,0 +1,4 @@
+title: Viewing & Editing Text
+module: 6
+summary: "Plain text versus rich text; reading files with cat, less, head, tail and tail -f; counting with wc; editing in nano; opening a folder in VS Code with code .; and how to escape from vim."
+minutes: 35

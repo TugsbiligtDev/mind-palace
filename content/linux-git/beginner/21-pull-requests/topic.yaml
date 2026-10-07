@@ -1,0 +1,4 @@
+title: The Pull Request Workflow (Solo)
+module: 21
+summary: "GitHub Flow from start to finish: a feature branch, push, open a pull request, read its diff, merge it, delete the branch and pull main. Even when you work alone, it's how changes reach main on most teams."
+minutes: 40

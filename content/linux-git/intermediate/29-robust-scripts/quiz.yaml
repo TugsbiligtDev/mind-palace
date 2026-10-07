@@ -1,0 +1,53 @@
+pass: 4
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf '#!/usr/bin/env bash\nset -e\necho one\nfalse\necho two\n' > /tmp/e.sh
+      bash /tmp/e.sh
+    options:
+      - "one"
+      - "one\ntwo"
+      - "two"
+      - "(nothing)"
+    answer: 0
+    explanation: "With `set -e`, the script stops as soon as `false` fails, so `echo two` never runs."
+  - type: mcq
+    prompt: "`f=\"monthly report.pdf\"`. What does `rm $f` try to delete?"
+    options:
+      - "Two files: `monthly` and `report.pdf`"
+      - "The file `monthly report.pdf`, as intended"
+      - "Every file in the folder, because of the space"
+      - "Nothing: rm refuses names that come from variables"
+    answer: 0
+    explanation: "Unquoted, the value is split at the space into two arguments. `rm \"$f\"` passes it as one."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf '#!/usr/bin/env bash\nset -o pipefail\nfalse | sort\necho "status $?"\n' > /tmp/p.sh
+      bash /tmp/p.sh
+    options:
+      - "status 1"
+      - "status 0"
+      - "status 2"
+      - "(nothing)"
+    answer: 0
+    explanation: "Without pipefail, a pipeline's status is the last command's (`sort` succeeds: 0). With it, the failing `false` makes the whole pipeline fail."
+  - type: mcq
+    prompt: "ShellCheck reports `SC2164: Use 'cd ... || exit' or 'cd ... || return' in case cd fails.` What's the risk it's warning about?"
+    options:
+      - "If cd fails, the next commands run in the wrong folder"
+      - "cd is slow, so the script should exit before calling it"
+      - "cd only works in interactive terminals, never in scripts"
+      - "The folder name might contain spaces and be split in two"
+    answer: 0
+    explanation: "Without a check (or `set -e`), a failed `cd` leaves you where you were, and the following `rm` or `mv` acts there."
+  - type: mcq
+    prompt: "Which line writes a file containing the literal text `price=$9.99`, without bash expanding `$9`?"
+    options:
+      - "A here-document with a quoted marker: `cat > f <<'EOF'`"
+      - "A here-document with a plain marker: `cat > f <<EOF`"
+      - "`echo \"price=$9.99\" > f`"
+      - "`set -u` before writing the file"
+    answer: 0
+    explanation: "Quoting the marker turns off expansion inside the here-document. In the other forms, `$9` (the 9th argument, empty) is filled in."

@@ -1,0 +1,205 @@
+steps:
+  - kind: explain
+    title: Why learn vim at all?
+    body: |
+      You already have nano, and on your Mac you have VS Code. But on servers you'll keep meeting **vim** (or its ancestor **vi**):
+
+      - It's installed on practically every Linux machine, even tiny ones where nano isn't.
+      - Git, `crontab -e`, `sudo visudo` and others open it when no other editor is set.
+      - Over SSH there's no mouse and no window: a terminal editor is all you get.
+
+      You don't need to *love* vim. You need to get in, make a change, save, and get out without panic. That's this lesson. The practice terminal has a small vim built in, with the commands taught here.
+
+  - kind: explain
+    title: Modes, the whole secret
+    body: |
+      vim is confusing for one reason: **keys do different things depending on the mode**.
+
+      | Mode | You get there with | Keys do |
+      |---|---|---|
+      | **Normal** | **Esc** (and it's where vim starts) | commands: move, delete, copy, paste. Letters are *not* typed into the file |
+      | **Insert** | **i** (insert before the cursor), **a** (after), **o** (new line below) | type text, like any editor. The bottom line says `-- INSERT --` |
+      | **Command line** | **:** in Normal mode | type a command at the bottom, then Return: `:w` save, `:q` quit |
+
+      The survival kit:
+
+      | To | Press |
+      |---|---|
+      | start typing | `i` |
+      | stop typing | `Esc` |
+      | save and quit | `Esc` then `:wq` Return (or `ZZ`) |
+      | quit **without** saving | `Esc` then `:q!` Return |
+      | save, stay | `:w` |
+
+      Lost? Press **Esc** twice: you're back in Normal mode, and nothing is harmed. If vim says `E37: No write since last change`, you tried `:q` with unsaved changes: use `:wq` to keep them or `:q!` to throw them away.
+
+  - kind: shell
+    title: In, add a line, out
+    setup: |
+      printf 'Things I know about vim:\n- Esc gets me back to Normal mode\n' > ~/vim-notes.txt
+    body: |
+      Open `vim-notes.txt` in vim. Add a **new last line**, exactly:
+
+      ```
+      - :wq saves and quits
+      ```
+
+      then save and quit. (On a phone, the **Esc** and **:** buttons under the editor help.)
+    tests:
+      - cat ~/vim-notes.txt
+    solution: "vim vim-notes.txt  # edit: $a - :wq saves and quits"
+    uses:
+      - match: "^\\s*(vim|vi)\\s"
+        why: "do it in vim: `vim vim-notes.txt`."
+    hint: "`vim vim-notes.txt`. Press `G` to go to the last line, `o` to open a new line below it, type the text, press **Esc**, then `:wq` and Return."
+
+  - kind: explain
+    title: Moving around in Normal mode
+    body: |
+      Arrow keys work, but vim's own keys are under your fingers:
+
+      | Keys | Move |
+      |---|---|
+      | `h` `j` `k` `l` | left, down, up, right |
+      | `w` / `b` / `e` | next word / back a word / end of word |
+      | `0` / `^` / `$` | start of line / first character / end of line |
+      | `gg` / `G` | first line / last line |
+      | `:12` Return, or `12G` | line 12 |
+
+      A number before a move repeats it: `5j` goes down five lines, `3w` three words. `:set number` shows line numbers.
+
+  - kind: explain
+    title: Changing text without Insert mode
+    body: |
+      Most edits are quicker from Normal mode:
+
+      | Keys | Does |
+      |---|---|
+      | `x` | delete the character under the cursor |
+      | `dd` / `3dd` | delete (cut) the line / three lines |
+      | `dw` / `D` | delete to the next word / to the end of the line |
+      | `cw` | change the word: deletes it and switches to Insert mode |
+      | `r` + a key | replace one character |
+      | `yy` / `3yy` | copy ("yank") the line / three lines |
+      | `p` / `P` | paste after / before (a cut or yanked *line* goes below / above) |
+      | `o` / `O` / `A` / `I` | open a line below / above, add at the end / start of the line (Insert mode) |
+      | `u` | undo (again and again) |
+      | **Ctrl+R** | redo |
+      | `J` | join the next line onto this one |
+
+      `dd` then `p` moves a line; `yy` then `p` duplicates it.
+
+  - kind: shell
+    title: Fix the shop's settings
+    setup: |
+      printf '# Inkwell shop settings\nport=3000\nDEBUG=true\ndb=/var/lib/inkwel/shop.db\n' > ~/shop.conf
+    body: |
+      `shop.conf` has two problems. In vim:
+
+      1. **Delete** the whole `DEBUG=true` line.
+      2. Fix the typo in the database path: `inkwel` should be `inkwell`.
+
+      Save and quit. The file should end up as:
+
+      ```
+      # Inkwell shop settings
+      port=3000
+      db=/var/lib/inkwell/shop.db
+      ```
+    tests:
+      - cat ~/shop.conf
+    solution: "vim shop.conf  # edit: /^DEBUG/d;s#/inkwel/#/inkwell/#"
+    uses:
+      - match: "^\\s*(vim|vi)\\s"
+        why: "do it in vim: `vim shop.conf`."
+    hint: "`vim shop.conf`; `3G` (or `j` twice) to reach the DEBUG line, `dd` deletes it. For the typo, search for it: `/inkwel` and Return puts the cursor on its `i`, `e` jumps to its last letter, then `a` to add after it, type `l`, **Esc**. Then `:wq`."
+
+  - kind: explain
+    title: Search and replace
+    body: |
+      | Keys | Does |
+      |---|---|
+      | `/word` Return | search forward for `word`; `n` next match, `N` previous |
+      | `?word` Return | search backward |
+      | `:%s/old/new/g` | replace every `old` with `new` in the whole file (`%` = all lines, `g` = every match on a line) |
+      | `:s/old/new/` | only on the current line, first match |
+
+      After `:%s`, vim says how many it changed, and `u` undoes all of them at once.
+
+  - kind: shell
+    title: A price rise
+    setup: |
+      printf 'Dune 8.99\nThe Hobbit 8.50\nKindred 8.99\nCirce 12.00\nBeloved 8.99\n' > ~/prices.txt
+    body: |
+      Every book that costs `8.99` now costs `9.49`. Change them **all at once** with vim's replace command, then save and quit.
+    tests:
+      - cat ~/prices.txt
+    solution: "vim prices.txt  # edit: s/8\\.99/9.49/g"
+    uses:
+      - match: "^\\s*(vim|vi)\\s"
+        why: "do it in vim: `vim prices.txt`."
+    hint: "`vim prices.txt`, then type `:%s/8.99/9.49/g` and Return, then `:wq`."
+
+  - kind: explain
+    title: When Git opens vim
+    body: |
+      Run `git commit` without `-m` (or `git merge`, `git rebase -i`, later) and Git opens an editor for the message. On a fresh computer that's **vim**. You see:
+
+      ```
+      
+      # Please enter the commit message for your changes. Lines starting
+      # with '#' will be ignored, and an empty message aborts the commit.
+      ```
+
+      Press `i`, type your message on the first line, **Esc**, `:wq`. The `#` lines are ignored. To **cancel** the commit, quit without saving (`:q!`): an empty message aborts it.
+
+  - kind: shell
+    title: A commit message in vim
+    fixture: git-identity
+    setup: |
+      git config --global core.editor vim
+      mkdir -p ~/hours && cd ~/hours && git init -q
+      printf 'Open daily 9-17\n' > hours.txt
+      git add hours.txt
+    body: |
+      This repository has a staged file, and Git is set to use vim (`core.editor vim`). Run **`git commit` without `-m`** and write the message `Add opening hours` in vim.
+    tests:
+      - git log -1 --format=%s
+    solution: "git commit  # edit: 1i Add opening hours"
+    uses:
+      - match: "^\\s*git\\s+commit\\s*($|#)"
+        why: "let Git open the editor: plain `git commit`, no `-m`."
+    hint: "`git commit`; vim opens on an empty first line. `i`, type `Add opening hours`, **Esc**, `:wq`."
+
+  - kind: info
+    title: Prefer another editor? Say so
+    body: |
+      Programs pick the editor from settings, so you decide:
+
+      ```
+      git config --global core.editor nano     # Git
+      export EDITOR=nano                        # crontab -e and most others (put it in ~/.bashrc)
+      ```
+
+      `vimtutor` (installed with vim) is a 30-minute lesson inside vim itself, if you want to go further. Many people end up liking it.
+
+  - kind: mac
+    title: vim on your Mac
+    body: |
+      macOS comes with vim. Try the survival kit on a scratch file, then run the tutor.
+    commands: |
+      cd ~/terminal-practice
+      vim scratch.txt
+      vimtutor
+  - kind: why
+    body: |
+      Sooner or later you'll be on a server with no nano, or inside a Git command that dropped you into vim. Knowing that it's all about modes (Esc, i, :wq, :q!) turns a classic moment of panic into a five-second edit. And a few Normal-mode commands (dd, yy, p, u, :%s) are genuinely fast once your fingers know them.
+
+  - kind: recap
+    body: |
+      - **Modes**: Normal (Esc) for commands, Insert (`i`, `a`, `o`) for typing, Command line (`:`).
+      - Save and quit `:wq` (or `ZZ`); quit without saving `:q!`; save `:w`.
+      - Move: `h j k l`, `w b`, `0 $`, `gg G`, `:N`; counts like `5j`.
+      - Edit: `x`, `dd`, `yy`, `p`, `cw`, `D`, `u` undo, Ctrl+R redo.
+      - Search `/word`, `n`/`N`; replace `:%s/old/new/g`.
+      - Git's message editor: `i`, type, Esc, `:wq`; `:q!` cancels. `git config --global core.editor nano` if you prefer nano.

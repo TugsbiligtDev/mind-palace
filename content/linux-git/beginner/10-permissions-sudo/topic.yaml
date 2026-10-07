@@ -1,0 +1,4 @@
+title: Permissions & sudo
+module: 10
+summary: "Users and groups; reading rwx in ls -l; chmod with letters (u+x) and numbers (644, 755); what sudo is and when it's right to use it; working out a \"Permission denied\"; why chmod 777 and sudo-by-reflex are mistakes; and who owns a file (chown)."
+minutes: 40

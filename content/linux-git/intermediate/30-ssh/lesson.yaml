@@ -1,0 +1,241 @@
+steps:
+  - kind: explain
+    title: A terminal on another computer
+    body: |
+      The shop's new server is `shop.inkwell.example`. It has no screen and no keyboard: it sits in a data centre. You work on it through **SSH** (Secure Shell): a program on your computer (the **client**, `ssh`) connects over the network to a program on the server (the **server**, `sshd`, on port 22), and gives you a shell there. Everything is encrypted.
+
+      ```
+      ssh learner@shop.inkwell.example      # user@host
+      ssh shop.inkwell.example              # same user name as here
+      ssh shop.inkwell.example uptime       # run one command there, print its output here
+      ```
+
+      Once you're in, the prompt shows the other computer's name (`learner@shop:~$`) and every command runs **there**. `exit` (or Ctrl+D) closes the connection and brings you back.
+
+      The practice terminal can reach two servers: **`shop.inkwell.example`** (the web shop) and `backup.inkwell.example`. Your password on them is **`bookworm`**.
+
+  - kind: explain
+    title: The first connection
+    body: |
+      The first time you connect to a server, ssh doesn't know it yet:
+
+      ```
+      The authenticity of host 'shop.inkwell.example (203.0.113.20)' can't be established.
+      ED25519 key fingerprint is SHA256:Xu7Xb…
+      Are you sure you want to continue connecting (yes/no/[fingerprint])?
+      ```
+
+      Every server has a **host key** that proves its identity. If you answer `yes`, ssh saves it in **`~/.ssh/known_hosts`**, and from then on it checks that the server is the same one each time. (Careful admins compare the fingerprint with one they got another way, for example from the hosting company's dashboard.)
+
+      Then the server asks who you are. With a **password**: `learner@shop.inkwell.example's password:` (nothing appears as you type).
+
+  - kind: shell
+    title: Log in to the shop server
+    fixture: shop-server
+    body: |
+      Log in to `shop.inkwell.example` (answer `yes` to the host key question; the password is `bookworm`). On the server, run `hostname` and `cat NOTES.txt`, then `exit` back to the practice computer.
+    tests:
+      - grep -c '^shop.inkwell.example ' ~/.ssh/known_hosts
+    solution: |
+      ssh shop.inkwell.example
+      hostname
+      cat NOTES.txt
+      exit
+    uses:
+      - match: "^\\s*ssh\\s+(learner@)?shop\\.inkwell\\.example\\s*$"
+        why: "log in with `ssh shop.inkwell.example` (no command after it), so you get a shell there."
+    hint: "`ssh shop.inkwell.example`, type `yes`, then the password `bookworm` and Return. The prompt becomes `learner@shop:~$`. `exit` brings you back."
+
+  - kind: explain
+    title: Keys instead of passwords
+    body: |
+      Passwords can be guessed, phished and reused. SSH's better way is a **key pair**, the same idea as for GitHub in Module 18:
+
+      - the **private key** (`~/.ssh/id_ed25519`) stays on your computer, readable only by you;
+      - the **public key** (`~/.ssh/id_ed25519.pub`) goes on every server you want to log in to, in `~/.ssh/authorized_keys` there.
+
+      When you connect, the server checks that you hold the private key that matches, without the key ever leaving your computer. `ssh-copy-id` does the copying for you (it logs in once with your password to do it):
+
+      ```
+      ssh-keygen -t ed25519 -C "you@laptop"     # make the pair (once per computer)
+      ssh-copy-id learner@shop.inkwell.example  # install the public key there
+      ssh learner@shop.inkwell.example          # no password any more
+      ```
+
+      SSH is strict about permissions: your private key must be `600` (only you), and on the server `~/.ssh` must be `700` and `authorized_keys` `600`. If they're more open, ssh refuses the key without saying much, and you're back to typing a password.
+
+  - kind: shell
+    title: Log in with a key
+    fixture: shop-server
+    setup: |
+      echo "shop.inkwell.example $(cut -d' ' -f1,2 /srv/hosts/shop/etc/ssh/ssh_host_ed25519_key.pub)" > ~/.ssh/known_hosts
+    body: |
+      Make yourself an **ed25519** key pair (press Return to accept the file name; a passphrase is optional here), install the public key on `shop.inkwell.example` with `ssh-copy-id` (password `bookworm`), and check that `ssh shop.inkwell.example hostname` now works **without** a password.
+    tests:
+      - ssh shop.inkwell.example hostname
+      - stat -c %a ~/.ssh/id_ed25519
+    solution: |
+      ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
+      ssh-copy-id shop.inkwell.example
+      ssh shop.inkwell.example hostname
+    hint: "`ssh-keygen -t ed25519`, Return for the default file, Return twice for no passphrase. Then `ssh-copy-id shop.inkwell.example` and the password once. After that, `ssh shop.inkwell.example hostname` prints `shop` straight away."
+
+  - kind: explain
+    title: Short names with ~/.ssh/config
+    body: |
+      Typing `learner@shop.inkwell.example` gets old. **`~/.ssh/config`** gives servers short names and remembers their settings:
+
+      ```
+      Host shop
+          HostName shop.inkwell.example
+          User learner
+
+      Host backup
+          HostName backup.inkwell.example
+          User learner
+          Port 22
+          IdentityFile ~/.ssh/id_ed25519
+      ```
+
+      Now `ssh shop`, `scp file shop:` and `rsync … shop:` all use those settings. The file must be writable only by you (`chmod 600 ~/.ssh/config`), or ssh refuses to use it.
+
+  - kind: shell
+    title: An alias for the backup server
+    fixture: shop-server
+    setup: |
+      mkdir -p ~/.ssh && chmod 700 ~/.ssh
+      ssh-keygen -t ed25519 -N "" -C learner@inkwell -f ~/.ssh/id_ed25519 > /dev/null
+      practice-host backup
+      mkdir -p /srv/hosts/backup/home/learner/.ssh
+      cp ~/.ssh/id_ed25519.pub /srv/hosts/backup/home/learner/.ssh/authorized_keys
+      practice-host backup 'chown -R learner:learner /home/learner/.ssh && chmod 700 /home/learner/.ssh && chmod 600 /home/learner/.ssh/authorized_keys'
+      echo "backup.inkwell.example $(cut -d' ' -f1,2 /srv/hosts/backup/etc/ssh/ssh_host_ed25519_key.pub)" > ~/.ssh/known_hosts
+    body: |
+      Your key is already on `backup.inkwell.example`. Create **`~/.ssh/config`** with a `Host backup` entry (HostName `backup.inkwell.example`, User `learner`), so that **`ssh backup hostname`** works. Remember the file's permissions.
+    tests:
+      - ssh backup hostname
+      - stat -c %a ~/.ssh/config
+    solution: |
+      printf 'Host backup\n    HostName backup.inkwell.example\n    User learner\n' > ~/.ssh/config
+      chmod 600 ~/.ssh/config
+      ssh backup hostname
+    hint: "`nano ~/.ssh/config`: three lines, `Host backup`, `    HostName backup.inkwell.example`, `    User learner`. Then `chmod 600 ~/.ssh/config` and `ssh backup hostname`."
+
+  - kind: explain
+    title: When the host key changes
+    body: |
+      One day ssh refuses, loudly:
+
+      ```
+      @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+      @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+      …
+      Offending ED25519 key in /home/learner/.ssh/known_hosts:1
+        remove with:
+        ssh-keygen -f '/home/learner/.ssh/known_hosts' -R 'shop.inkwell.example'
+      Host key verification failed.
+      ```
+
+      The server's key isn't the one ssh remembers. Usually that's harmless: the server was **rebuilt or reinstalled** and got a new key. But it's exactly what an attacker pretending to be the server would look like, so **find out why before you continue**. Once you know it's expected, forget the old key with `ssh-keygen -R host` and connect again (and accept the new one).
+
+  - kind: shell
+    title: The server was rebuilt
+    fixture: [shop-server, shop-access]
+    setup: |
+      echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIrebuiltShopServer2026OctoberKeyAAAAAAA root@shop" > /srv/hosts/shop/etc/ssh/ssh_host_ed25519_key.pub
+    body: |
+      Priya: *"I reinstalled the shop server last night, sorry, forgot to tell you."* Now `ssh shop hostname` refuses with the warning. Since you know why it changed, remove the old key for `shop.inkwell.example`, then connect again and accept the new one.
+    tests:
+      - ssh shop hostname
+      - grep -c 'rebuiltShopServer' ~/.ssh/known_hosts
+    solution: |
+      ssh shop hostname  # allow-error: the warning
+      ssh-keygen -R shop.inkwell.example
+      ssh shop hostname
+    hint: "The warning itself says how: `ssh-keygen -R shop.inkwell.example`. Then `ssh shop hostname` asks about the new key: `yes`."
+
+  - kind: explain
+    title: Copying files, scp and rsync
+    body: |
+      **scp** copies like `cp`, with `host:` in front of the remote side:
+
+      ```
+      scp report.txt shop:backups/            # to the server (relative to your home there)
+      scp shop:/var/log/nginx/access.log .    # from the server, into the current folder
+      scp -r site shop:                       # -r for a whole folder
+      ```
+
+      **rsync** is better for folders you copy again and again (deploys, backups): it only sends what **changed**, and shows what it's doing:
+
+      ```
+      rsync -av site/ shop:site/              # -a keep permissions and times, -v list the files
+      rsync -av --delete site/ shop:site/     # also delete files that no longer exist here
+      rsync -avn --delete site/ shop:site/    # -n: dry run, show what would happen
+      ```
+
+      Watch the **trailing slash** on the source: `site/` copies what's *inside* `site`; `site` copies the folder itself (you'd get `site/site`). With `--delete`, a dry run first is wise.
+
+  - kind: shell
+    title: Send the report
+    fixture: [shop-server, shop-access]
+    setup: |
+      printf 'Night of 6 October: export by 192.0.2.10, exfil-sync stopped.\n' > ~/incident-report.txt
+    body: |
+      Copy `~/incident-report.txt` into the `backups` folder of your home on the shop server, with `scp` and the `shop` alias.
+    tests:
+      - ssh shop cat backups/incident-report.txt
+    solution: scp ~/incident-report.txt shop:backups/
+    hint: "`scp ~/incident-report.txt shop:backups/`. Check with `ssh shop ls backups`."
+
+  - kind: shell
+    title: Deploy the website
+    fixture: [backoffice, shop-server, shop-access]
+    setup: |
+      mkdir -p /srv/hosts/shop/home/learner/site
+      printf 'old\n' > /srv/hosts/shop/home/learner/site/index.html
+      printf 'nobody links here\n' > /srv/hosts/shop/home/learner/site/old-offer.html
+      practice-host shop 'chown -R learner:learner /home/learner/site'
+      cd ~/inkwell
+    body: |
+      The server's `~/site` folder is out of date and has a page that no longer exists here (`old-offer.html`). Make it an **exact copy** of `~/inkwell/site`: same files, nothing extra. Use `rsync` (try a dry run first).
+    tests:
+      - ssh shop 'cd site && find . | sort && cat index.html'
+    solution: |
+      rsync -avn --delete ~/inkwell/site/ shop:site/
+      rsync -av --delete ~/inkwell/site/ shop:site/
+    uses:
+      - match: "rsync"
+        why: "use `rsync`, it's made for this."
+    hint: "`rsync -av --delete ~/inkwell/site/ shop:site/` (with the slash after `site/` on both sides). Run it with `-n` first to see that it would delete `old-offer.html`."
+
+  - kind: info
+    title: "🔹 Port forwarding and agent forwarding"
+    body: |
+      **Port forwarding** carries other connections through your SSH connection. `ssh -L 8080:localhost:3000 shop` makes `http://localhost:8080` on *your* computer reach port 3000 *on the server*: handy for an admin page that's only open to the server itself.
+
+      **Agent forwarding** (`ssh -A`) lets the server use the keys loaded in your local `ssh-agent`, so you can hop on to a third machine (or push to GitHub) from the server without copying your private key there. The risk: while you're connected, anyone with root on that server can use your agent too. Only forward to servers you trust, and prefer `ssh -J` (jump hosts) for hopping.
+
+  - kind: mac
+    title: SSH into your lab VM
+    body: |
+      Your Multipass VM from Module 22 is a real server you can SSH into. Give it your Mac's public key, then connect with plain ssh (find its address with `multipass info lab`). Add a `Host lab` entry to your Mac's `~/.ssh/config` so it's just `ssh lab`.
+    commands: |
+      ls ~/.ssh/id_ed25519.pub || ssh-keygen -t ed25519
+      multipass exec lab -- bash -c "echo '$(cat ~/.ssh/id_ed25519.pub)' >> ~/.ssh/authorized_keys"
+      multipass info lab | grep IPv4
+      ssh ubuntu@192.168.64.2
+  - kind: why
+    body: |
+      Nearly all server work happens over SSH: logging in, running commands, copying files, deploying. Keys make it both safer and faster than passwords; `~/.ssh/config` makes it pleasant; and knowing what the host-key warning means lets you tell a rebuilt server from an attack. rsync is how most small sites are still deployed.
+
+  - kind: recap
+    body: |
+      - `ssh user@host` for a shell there, `ssh host command` for one command; `exit` to leave.
+      - First connection: check and accept the **host key**, saved in `~/.ssh/known_hosts`.
+      - Keys: `ssh-keygen -t ed25519`, `ssh-copy-id user@host`; private key `600`, server's `~/.ssh` `700` and `authorized_keys` `600`.
+      - `~/.ssh/config`: `Host alias`, `HostName`, `User`, `Port`, `IdentityFile`; `chmod 600`.
+      - Host key changed: find out why, then `ssh-keygen -R host` and reconnect.
+      - `scp file host:path`, `scp -r`; `rsync -av [--delete] [-n] src/ host:dest/` (mind the trailing slash).
+      - 🔹 `-L` port forwarding; 🔹 `-A` agent forwarding, only to trusted servers.

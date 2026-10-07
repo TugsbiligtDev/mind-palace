@@ -1,0 +1,26 @@
+id: advanced
+title: Advanced
+season: 3
+season_title: The Pipeline
+season_pitch: |
+  Mastery: production-grade bash, deep text processing, troubleshooting and hardening servers,
+  Git's internals and its sharpest recovery tools, branching strategies for teams, and secure,
+  automated pipelines on GitHub.
+status: coming_soon
+topics: []
+planned:
+  - "Advanced Bash Scripting"
+  - "Advanced Text & Data Processing"
+  - "System Troubleshooting & Performance"
+  - "Services & Server Hardening"
+  - "Terminal Productivity"
+  - "Git Internals (Practical)"
+  - "Debugging with Git"
+  - "Advanced Rewriting & Recovery"
+  - "Multiple Workspaces & Large Repositories"
+  - "Hooks, Standards & Signing"
+  - "Branching Strategies & Releases"
+  - "Advanced GitHub Actions"
+  - "Security & Supply Chain"
+  - "Automating GitHub"
+  - "Open Source & AI-Assisted Workflows"

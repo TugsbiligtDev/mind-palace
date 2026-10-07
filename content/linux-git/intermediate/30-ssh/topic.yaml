@@ -1,0 +1,4 @@
+title: SSH
+module: 30
+summary: "Logging in to another computer: ssh user@host, host keys and known_hosts, passwords vs keys, ssh-copy-id, ~/.ssh/config aliases, the host-key warning, copying files with scp and rsync; and a first look at port and agent forwarding."
+minutes: 50

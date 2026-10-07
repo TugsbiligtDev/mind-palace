@@ -1,0 +1,4 @@
+title: Installing Software
+module: 12
+summary: "What a package manager does; installing Homebrew on your Mac; brew install, upgrade, list and uninstall; formulae and casks; why Homebrew lives in /opt/homebrew on Apple Silicon; brew doctor; and apt, Linux's equivalent."
+minutes: 30

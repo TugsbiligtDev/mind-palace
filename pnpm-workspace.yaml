@@ -5,5 +5,7 @@ packages:
 onlyBuiltDependencies:
   - esbuild
 allowBuilds:
+  '@mongodb-js/zstd': false
   esbuild: true
+  node-liblzma: false
   unrs-resolver: false

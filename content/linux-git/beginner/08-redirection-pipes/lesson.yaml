@@ -1,0 +1,195 @@
+steps:
+  - kind: explain
+    title: Three streams
+    body: |
+      Every command is connected to three **streams** of text:
+
+      | Stream | Number | Normally |
+      |---|---|---|
+      | **standard input** (stdin) | 0 | what you type (most commands read files instead) |
+      | **standard output** (stdout) | 1 | the results, printed on your screen |
+      | **standard error** (stderr) | 2 | error messages, *also* printed on your screen |
+
+      On screen, output and errors look the same. But they're separate streams, and the shell lets you send each one somewhere else: into a file, or into another command. That's what this lesson is about.
+
+  - kind: explain
+    title: Saving output with > and >>
+    body: |
+      - `command > file` sends the output into **file** instead of the screen. If the file exists, it's **replaced**.
+      - `command >> file` **adds** the output to the end of the file (creating it if needed).
+
+      ```
+      ls orders > orders-list.txt        # a fresh file with the listing
+      echo "- call the printer" >> notes/todo.txt   # one more line at the end
+      ```
+
+      Nothing appears on screen: it all went into the file. `cat` it to check.
+
+  - kind: shell
+    title: Save a listing, add a line
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      1. Save the list of files in `orders` into a new file called `orders-list.txt` (in `~/inkwell`).
+      2. Add one more line to the end of `orders-list.txt`, exactly: `checked by learner`
+    tests:
+      - cat orders-list.txt
+    solution: |
+      ls orders > orders-list.txt
+      echo "checked by learner" >> orders-list.txt
+    reject:
+      - |
+        ls orders > orders-list.txt
+        echo "checked by learner" > orders-list.txt
+    hint: "`ls orders > orders-list.txt` makes the file. For the second part, `echo` the line with `>>`, so it's added instead of replacing the listing."
+
+  - kind: explain
+    title: "⚠️ > wipes first"
+    body: |
+      The shell empties the target file **before** the command even starts. Two classic accidents:
+
+      - Typing `>` when you meant `>>`: the old content is gone, no undo.
+      - Sorting a file into itself: `sort names.txt > names.txt`. The shell empties `names.txt`, *then* `sort` reads the now-empty file. You end up with nothing.
+
+      Write to a new file instead (`sort names.txt > sorted.txt`), check it, then rename it with `mv` if you want.
+
+  - kind: explain
+    title: Errors have their own stream
+    body: |
+      `>` only catches standard output. Errors still reach the screen:
+
+      ```
+      learner@inkwell:~/inkwell$ ls orders missing > list.txt
+      ls: cannot access 'missing': No such file or directory
+      ```
+
+      To redirect errors, put the stream's number in front: **`2>`**.
+
+      | Redirect | Sends |
+      |---|---|
+      | `2> errors.txt` | only errors into a file |
+      | `2> /dev/null` | errors into nowhere (`/dev/null` throws away whatever is written to it) |
+      | `> all.txt 2>&1` | output into a file, and errors to the same place (`2>&1` = "errors go where output goes") |
+
+  - kind: shell
+    title: Keep only the error
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Run this listing of two folders, one of which doesn't exist:
+
+      ```
+      ls orders missing
+      ```
+
+      Then run it again so that the **error message** goes into a file called `errors.txt` while the normal listing still appears on screen.
+    tests:
+      - cat errors.txt
+    solution: |
+      ls orders missing 2> errors.txt  # allow-error: ls still reports the missing folder
+    reject:
+      - ls orders missing > errors.txt
+    hint: "Errors are stream number 2: put `2> errors.txt` at the end of the command."
+
+  - kind: explain
+    title: Pipes
+    body: |
+      The **pipe** `|` connects one command's output straight into the next command's input:
+
+      ```
+      ls /etc | wc -l
+      ```
+
+      `ls` lists `/etc`, and instead of printing, hands the list to `wc -l`, which counts the lines: **how many** things are in `/etc`.
+
+      This is the big idea of the Unix command line: lots of small tools, each doing one job, snapped together. A few that are made for pipes:
+
+      | Tool | Does |
+      |---|---|
+      | `sort` | sorts lines (`-r` reverse, `-n` by number) |
+      | `uniq` | removes lines that repeat the line before (so `sort` first) |
+      | `head` / `tail` | keeps the first or last lines |
+      | `wc -l` | counts lines |
+
+      `<` is the opposite of `>`: `wc -l < file.txt` feeds the file into the command's input.
+
+  - kind: shell
+    title: Count with a pipe
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      How many requests are in the web server's log, `logs/access.log`? Each line is one request.
+
+      Answer with a pipe: `cat` the log into `wc -l`.
+    output: true
+    solution: cat logs/access.log | wc -l
+    uses:
+      - match: "\\|"
+        why: "this task practises pipes: send `cat`'s output into `wc -l` with `|`."
+    hint: "`cat logs/access.log | wc -l`"
+
+  - kind: shell
+    title: Which books sold?
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      `notes/books-sold.txt` has one line for every book sold this week, so popular books appear several times.
+
+      Print the list of **different** books that sold, each once, in alphabetical order. (Look at the file first.)
+    output: true
+    solution: sort notes/books-sold.txt | uniq
+    reject:
+      - uniq notes/books-sold.txt
+      - sort notes/books-sold.txt
+    hint: "`uniq` only removes repeats that are next to each other, so `sort` the file first and pipe the result into `uniq`."
+
+  - kind: info
+    title: "🔹 tee: save it and see it"
+    body: |
+      `tee` copies its input both to the screen **and** to a file, like a T-junction in a pipe:
+
+      ```
+      sort notes/books-sold.txt | uniq | tee books.txt
+      ```
+
+      You see the result and keep a copy. `tee -a` appends instead of replacing. It's also how you write to a file that needs `sudo` (Module 10).
+
+  - kind: choice
+    title: Where did the list go?
+    body: |
+      Priya runs:
+
+      ```
+      sort customers.txt > customers.txt
+      ```
+
+      and finds `customers.txt` empty. Why?
+    options:
+      - "The shell emptied the file for `>` before sort read it"
+      - "`sort` always deletes its input file after reading it"
+      - "`>` can't write into a file that already exists"
+      - "The sorted output went to the screen instead of the file"
+    answer: 0
+    explanation: "Redirection happens first: `> customers.txt` empties the file, then `sort` reads an empty file and writes nothing. Sort into a new file, check it, then rename."
+
+  - kind: mac
+    title: Pipes on your Mac
+    body: |
+      Everything here works the same in zsh. Try counting the apps in your Applications folder, and saving a list of your Desktop.
+
+      🔹 zsh refuses to overwrite an existing file with `>` if you turn on its `noclobber` option (`setopt noclobber`), a nice safety net. Then `>|` forces it.
+    commands: |
+      ls /Applications | wc -l
+      ls ~/Desktop > ~/desktop-list.txt
+      cat ~/desktop-list.txt
+  - kind: why
+    body: |
+      Redirection and pipes turn the terminal from "run one command" into "build an answer". Counting errors in a log, listing the top customers, saving a report: each is a few small tools joined with `|`. The rest of this course (and Part 6 especially) builds on this one idea.
+
+  - kind: recap
+    body: |
+      - Three streams: **stdin** (0), **stdout** (1), **stderr** (2).
+      - `>` replaces a file with the output, `>>` appends. `>` empties the file **first**: never redirect a file into itself.
+      - `2>` redirects errors; `2> /dev/null` discards them; `> file 2>&1` sends both to one file.
+      - `|` pipes one command's output into the next: `sort file | uniq`, `ls | wc -l`. `<` feeds a file in.
+      - 🔹 `tee` writes to a file and the screen at once.

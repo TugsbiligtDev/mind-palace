@@ -1,0 +1,4 @@
+title: Rebase & History Shaping
+module: 35
+summary: "Merge or rebase; git rebase main; resolving a conflict mid-rebase; git pull --rebase; interactive rebase to reword, squash, fixup, drop and reorder; --fixup with --autosquash; and pushing rewritten branches safely with --force-with-lease."
+minutes: 55

@@ -1,0 +1,4 @@
+title: Robust Scripts
+module: 29
+summary: "Scripts that fail safely: set -euo pipefail; quoting every variable; ShellCheck; tracing with set -x; here-documents; the classic traps (word splitting, parsing ls, unquoted globs); and knowing when a job has outgrown bash."
+minutes: 45

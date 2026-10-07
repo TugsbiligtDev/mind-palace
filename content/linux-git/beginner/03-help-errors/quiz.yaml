@@ -1,0 +1,48 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: You opened `man grep` and want to get back to the prompt. Which key?
+    options:
+      - "q"
+      - "Escape"
+      - "Ctrl+X"
+      - "Return"
+    answer: 0
+    explanation: "Manual pages open in a pager (`less`), and **q** quits it. Escape does nothing there, and Return just moves down a line."
+  - type: mcq
+    prompt: "In a manual's SYNOPSIS, what do the brackets in `ls [OPTION]... [FILE]...` mean?"
+    options:
+      - The parts in brackets are optional
+      - The parts in brackets must be typed in capitals
+      - You have to type the brackets as well
+      - Only one of the bracketed parts may be used
+    answer: 0
+    explanation: "Brackets mark optional parts and `...` means you may give several. So `ls` alone, `ls -l`, and `ls -l notes orders` are all fine."
+  - type: mcq
+    prompt: "`cat notes/plan.txt` prints `No such file or directory`. What's the best first check?"
+    options:
+      - "Run `pwd` and `ls notes` to check where you are and the real name"
+      - "Run the same command again with `sudo` in front, since it may be protected"
+      - "Reinstall `cat`, because the program itself must be damaged"
+      - "Restart the terminal app, which usually clears that kind of error"
+    answer: 0
+    explanation: "That error means nothing exists at that path from where you are. Check your location and the real spelling (capitals included). `sudo` fixes permission problems, not missing files."
+  - type: mcq
+    prompt: "Which is the best web search for this error?"
+    code: "cp: cannot stat '/home/priya/report final.txt': No such file or directory"
+    options:
+      - "`cp \"cannot stat\" \"No such file or directory\" linux`"
+      - "`/home/priya/report final.txt cannot stat cp error`"
+      - "`cp not working help please terminal file problem`"
+      - "`priya report final error No such file or directory`"
+    answer: 0
+    explanation: "Keep the exact wording of the error, drop your own names and paths, and add the system. Your file name won't appear in anyone else's answer."
+  - type: mcq
+    prompt: "An AI assistant suggests a command to clean up your Downloads folder. What's the right way to use that suggestion?"
+    options:
+      - "Ask it to explain each part, check risky options in `man`, then decide"
+      - "Run it straight away, since the assistant wrote it for your exact situation"
+      - "Run it with `sudo`, so it can't fail halfway through and leave a mess"
+      - "Paste your Mac password into the chat so it can test the command for you"
+    answer: 0
+    explanation: "AI is great at explaining, but it can be wrong. Understand every part, verify what matters, and never share secrets."

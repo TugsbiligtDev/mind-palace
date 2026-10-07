@@ -72,6 +72,18 @@
   --color-success: var(--success);
   --color-clue: var(--clue);
 
+  /* The practice terminal is dark in both themes, like most real terminals. */
+  --color-term-bg: #14161c;
+  --color-term-text: #e5e7eb;
+  --color-term-black: #8b93a1;
+  --color-term-red: #f87171;
+  --color-term-green: #4ade80;
+  --color-term-yellow: #facc15;
+  --color-term-blue: #7aa8ff;
+  --color-term-magenta: #e879f9;
+  --color-term-cyan: #22d3ee;
+  --color-term-white: #f9fafb;
+
   --font-sans: var(--font-inter);
   --font-serif: var(--font-source-serif);
   --font-mono: var(--font-jetbrains-mono);

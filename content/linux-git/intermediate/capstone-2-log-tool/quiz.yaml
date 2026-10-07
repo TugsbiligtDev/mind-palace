@@ -1,0 +1,49 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "Why does `logsum.sh` check `[[ ! -r \"$log\" ]]` itself, when it already has `set -euo pipefail`?"
+    options:
+      - "A failed redirect inside `$( )` in an echo doesn't stop the script, so it would print wrong numbers instead of an error"
+      - "`set -e` is switched off automatically in scripts that take arguments"
+      - "ShellCheck refuses any script that doesn't test its files with `-r`"
+      - "`-r` makes the file readable if it wasn't, so the script can continue"
+    answer: 0
+    explanation: "`echo \"Requests: $(wc -l < \"$log\")\"` succeeds as an echo even if the redirect fails inside. Checking first gives a clear message and exit code."
+  - type: mcq
+    prompt: "What's the point of the `required_status_checks` rule naming `shellcheck`?"
+    options:
+      - "GitHub refuses to merge a PR into main until the `shellcheck` job has passed on it"
+      - "GitHub runs ShellCheck on main every night, whether or not anything changed"
+      - "It installs ShellCheck on the runner so the workflow can use it"
+      - "It makes ShellCheck check the ruleset's JSON file for mistakes"
+    answer: 0
+    explanation: "The workflow reports a check named after the job; the rule makes that check a condition for merging."
+  - type: mcq
+    prompt: "Why merge the feature with **rebase-merge** here?"
+    options:
+      - "main stays a straight line of meaningful commits, with no merge commits"
+      - "It's the only merge method that runs the CI checks"
+      - "It deletes the branch's commits from the history, keeping main short"
+      - "It's required whenever a ruleset protects the branch"
+    answer: 0
+    explanation: "The branch already has one clean commit (after the interactive rebase), so replaying it onto main gives a linear history."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf 'a 1\nb 3\nc 3\n' | sort -k2,2nr -k1,1 | head -1
+    options:
+      - "b 3"
+      - "c 3"
+      - "a 1"
+      - "3 b"
+    answer: 0
+    explanation: "Sort by the second field as a number, biggest first (b and c tie at 3), then by the first field alphabetically: b before c."
+  - type: mcq
+    prompt: "The cron job writes `>> /home/learner/reports/daily.txt 2>&1`. What would happen without `2>&1`?"
+    options:
+      - "Error messages wouldn't reach the file, so failures would go unnoticed"
+      - "The report would overwrite itself every morning instead of growing"
+      - "cron would refuse to install the line"
+      - "The script would run as root instead of as you"
+    answer: 0
+    explanation: "`>>` appends standard output; `2>&1` sends standard error to the same place. Otherwise cron discards (or mails) the errors."

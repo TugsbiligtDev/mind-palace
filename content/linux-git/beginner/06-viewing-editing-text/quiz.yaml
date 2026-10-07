@@ -1,0 +1,50 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: You want to look through a 5,000-line log page by page. Which command?
+    options:
+      - "`less app.log`"
+      - "`cat app.log`"
+      - "`head app.log`"
+      - "`wc app.log`"
+    answer: 0
+    explanation: "`less` shows one screen at a time and lets you search. `cat` would scroll all 5,000 lines past at once, and `head` only shows the first ten."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf 'one\ntwo\nthree\nfour\n' > /tmp/n.txt
+      tail -n 2 /tmp/n.txt
+    options:
+      - "three\nfour"
+      - "one\ntwo"
+      - "four"
+      - "two\nthree"
+    answer: 0
+    explanation: "`tail -n 2` prints the last two lines of the file."
+  - type: mcq
+    prompt: "In nano, what do you press to save the file?"
+    options:
+      - "Ctrl+O, then Return"
+      - "Ctrl+S, then Ctrl+X"
+      - "Esc, then :w"
+      - "Command+S"
+    answer: 0
+    explanation: "nano calls saving \"Write Out\": Ctrl+O, and Return to confirm the file name. Esc then `:w` is vim's way."
+  - type: mcq
+    prompt: "`tail -f server.log` has been printing new lines for ten minutes. How do you stop it?"
+    options:
+      - "Ctrl+C"
+      - "q"
+      - "Ctrl+X"
+      - "It stops by itself when the log is finished"
+    answer: 0
+    explanation: "`tail -f` follows the file forever. Ctrl+C cancels it. (`q` quits `less` and `man`, not `tail`.)"
+  - type: mcq
+    prompt: "Git opened a strange editor and nothing you type works as expected. The bottom line shows `-- INSERT --`. How do you leave without saving?"
+    options:
+      - "Press Esc, type :q! and press Return"
+      - "Press Ctrl+X, then answer N"
+      - "Press q, the same as in a manual page"
+      - "Close the terminal window; nothing else works"
+    answer: 0
+    explanation: "That's vim. Esc leaves insert mode, and `:q!` quits without saving."

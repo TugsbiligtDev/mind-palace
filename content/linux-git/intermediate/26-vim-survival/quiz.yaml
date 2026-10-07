@@ -1,0 +1,44 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "You're in vim, you've typed some text, and nothing you press seems to save. What's the sequence to save and quit?"
+    options:
+      - "Esc, then `:wq`, then Return"
+      - "Ctrl+O, then Return, then Ctrl+X"
+      - "`:wq` straight away while still typing"
+      - "Ctrl+C twice, then the letter `y`"
+    answer: 0
+    explanation: "Typed text means you're in Insert mode. Esc returns to Normal mode; `:wq` (write, quit) works from there. Ctrl+O/Ctrl+X are nano's keys."
+  - type: mcq
+    prompt: "vim answers `:q` with `E37: No write since last change (add ! to override)`. What does that mean?"
+    options:
+      - "There are unsaved changes; `:q!` quits and throws them away"
+      - "The file is read-only, so vim can't save it even with `!`"
+      - "vim has crashed, and you need to close the terminal window"
+      - "The file was saved, but vim needs one more `:q` to quit"
+    answer: 0
+    explanation: "vim protects unsaved work. Use `:wq` to keep the changes, or `:q!` to quit without them."
+  - type: mcq
+    prompt: "In Normal mode, which keys **duplicate** the current line (put a copy just below it)?"
+    options:
+      - "`yy` then `p`"
+      - "`dd` then `p`"
+      - "`yy` then `P`"
+      - "`dd` then `u`"
+    answer: 0
+    explanation: "`yy` copies the line, `p` pastes it below. `dd` then `p` moves the line instead; `yy` then `P` pastes the copy above."
+  - type: fill
+    prompt: "Complete the vim command that replaces every `colour` with `color` in the whole file: `:____/colour/color/g`"
+    code: ":____/colour/color/g"
+    answer: "%s"
+    runnable: false
+    explanation: "`%` means every line and `s` is substitute. Without `%`, `:s` only changes the current line."
+  - type: mcq
+    prompt: "`git commit` opened vim, and you've decided not to commit after all. What do you do?"
+    options:
+      - "Quit without saving (`:q!`): with an empty message, Git aborts the commit"
+      - "Type `abort` as the message and save it with `:wq`"
+      - "Press Ctrl+Z, because that cancels whatever program is running"
+      - "Delete the `.git` folder, the only way to stop a commit in progress"
+    answer: 0
+    explanation: "Git only commits if the message isn't empty. Quitting without writing leaves it empty, and Git prints *Aborting commit due to empty commit message.*"

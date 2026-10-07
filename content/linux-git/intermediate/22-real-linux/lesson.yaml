@@ -1,0 +1,218 @@
+steps:
+  - kind: explain
+    title: Season 2, the server room
+    body: |
+      Inspector Bold, at the agency's door: *"Inkwell is moving its web shop to a proper server. Somebody has to run it, and after the refunds business, they want it to be us. Servers run Linux. Your Mac only looks like one."*
+
+      This level is about **real Linux**: the kind on servers, in the cloud, inside every web shop. You already know the commands. What's new is the machine around them: how Linux is packaged, where it keeps things, and how it installs software.
+
+      The practice terminal on this page is now an **Ubuntu 24.04 server**, the same as the one you'll set up on your Mac in a minute.
+
+  - kind: explain
+    title: One kernel, many distributions
+    body: |
+      "Linux" is, strictly, just the **kernel**: the core that talks to the hardware and runs programs. To get a usable system you need the kernel plus thousands of tools (bash, `ls`, `grep`), a package manager and some defaults. That bundle is a **distribution** ("distro").
+
+      | Family | Distributions | Package manager |
+      |---|---|---|
+      | Debian | **Ubuntu**, Debian, Linux Mint | `apt` (`.deb` packages) |
+      | Red Hat | Fedora, RHEL, Rocky Linux, Amazon Linux | `dnf` (`.rpm` packages) |
+      | Others | Arch, Alpine (tiny, common in containers) | `pacman`, `apk` |
+
+      The commands you've learned work on all of them. The differences are mostly the package manager and where a few settings files live. This course uses **Ubuntu**, the most common choice for servers and for learning.
+
+  - kind: shell
+    title: Which Linux is this?
+    body: |
+      Every distribution describes itself in `/etc/os-release`. Print **only the line that starts with `PRETTY_NAME`**.
+    output: true
+    solution: grep PRETTY_NAME /etc/os-release
+    reject:
+      - cat /etc/os-release
+    hint: "`grep` + the word + the file. (`cat /etc/os-release` shows the whole file first, if you want to look.)"
+
+  - kind: explain
+    title: Ubuntu on your Mac, in a virtual machine
+    body: |
+      A **virtual machine** (VM) is a pretend computer running inside your real one: its own disk, its own operating system. You can break it, delete it and make a new one in a minute, so it's the perfect place to learn server work.
+
+      On an Apple Silicon Mac (M1 to M4), the easiest way is **Multipass**, made by Ubuntu's makers. It downloads Ubuntu for ARM (the chip family your Mac uses) and starts it with one command:
+
+      ```
+      multipass launch 24.04 --name lab      # create and start an Ubuntu VM called "lab"
+      multipass shell lab                    # open a terminal inside it
+      multipass stop lab / start lab         # pause and resume it
+      multipass delete --purge lab           # throw it away
+      ```
+
+      Inside, the prompt changes to `ubuntu@lab:~$`: you're on Linux now. Type `exit` to come back to your Mac.
+
+      (UTM and OrbStack are good alternatives. Any of them gives you a real Ubuntu; this course only needs a terminal in it.)
+
+  - kind: mac
+    title: Make your lab
+    body: |
+      1. Install Multipass with Homebrew (Module 12).
+      2. Create the VM and open a shell in it. The first launch downloads Ubuntu, so give it a few minutes.
+      3. Inside the VM, check what you're running on. `uname -m` says **aarch64**: Linux for ARM, like your Mac's chip.
+      4. `exit` to get back to your Mac's own terminal. The VM keeps running until you stop it.
+    commands: |
+      brew install --cask multipass
+      multipass launch 24.04 --name lab
+      multipass shell lab
+      cat /etc/os-release
+      uname -m
+      exit
+
+  - kind: explain
+    title: Where Linux keeps things
+    body: |
+      Linux arranges its folder tree the same way on every distribution (the *Filesystem Hierarchy Standard*). The places you'll visit:
+
+      | Folder | Holds | Example |
+      |---|---|---|
+      | `/etc` | **settings** for the whole system, as text files | `/etc/hosts`, `/etc/ssh/sshd_config` |
+      | `/var` | data that **varies**: logs, caches, websites, mail | `/var/log/syslog`, `/var/www` |
+      | `/home` | each user's home folder | `/home/learner` |
+      | `/usr` | installed programs and their files | `/usr/bin/git`, `/usr/share/man` |
+      | `/opt` | add-on software installed by hand | `/opt/inkwell` |
+      | `/tmp` | temporary files, emptied at reboot | |
+      | `/root` | the root user's home (not `/home/root`) | |
+
+      A Mac has most of these too, but hides them and adds its own (`/Applications`, `/Users`, `/Library`). On a server, `/etc` and `/var/log` are where nearly every investigation starts.
+
+  - kind: choice
+    title: Where would you look?
+    body: "The web server's settings need changing, and afterwards you want to see what it wrote while starting up. Which two folders?"
+    options:
+      - "`/etc` for the settings, then `/var/log` for what it wrote"
+      - "`/usr` for the settings, then `/tmp` for what it wrote"
+      - "`/home` for the settings, then `/opt` for what it wrote"
+      - "`/var` for the settings, then `/etc/log` for what it wrote"
+    answer: 0
+    explanation: "Settings live in `/etc` (here `/etc/nginx/`), logs in `/var/log` (here `/var/log/nginx/`). Programs themselves are in `/usr`."
+
+  - kind: explain
+    title: apt, Ubuntu's package manager
+    body: |
+      Installing software on Ubuntu works like Homebrew, with two differences: it changes the whole system, so it needs **sudo**, and apt keeps a **local list** of available packages that you refresh before installing.
+
+      | Command | Does |
+      |---|---|
+      | `sudo apt update` | refresh the list of available packages (installs nothing) |
+      | `sudo apt install htop` | install a package (and what it needs) |
+      | `sudo apt upgrade` | install newer versions of everything installed |
+      | `sudo apt remove htop` | uninstall |
+      | `apt search word` / `apt show htop` | look for a package / read about one |
+      | `apt list --installed` | what's installed |
+
+      apt asks *"Do you want to continue? [Y/n]"* before bigger changes; `-y` answers yes in advance. When you type a program that isn't installed, Ubuntu tells you which package has it.
+
+  - kind: shell
+    title: Install htop on a fresh server
+    setup: rm -f /var/lib/apt/lists/*InRelease
+    body: |
+      This server is brand new: apt has never downloaded its package list. Try `htop` (Ubuntu says which package it's in), then try to install that package. When apt can't find it, do what a fresh server needs first, and install it again.
+
+      You're done when `which htop` finds it.
+    tests:
+      - which htop
+      - dpkg -l htop | tail -1 | cut -c1-2
+    solution: |
+      sudo apt update
+      sudo apt install -y htop
+    uses:
+      - match: "apt(-get)?\\s+update"
+        why: "on a fresh server, the package list has to be downloaded first: `sudo apt update`."
+    hint: "`sudo apt install htop` says *Unable to locate package*: the list is empty. Run `sudo apt update`, then the install again. (Without `sudo` you get *Permission denied ... are you root?*)"
+
+  - kind: shell
+    title: Something fun
+    body: |
+      Packages aren't all serious. Search apt for a "talking cow", install the package it finds, and make the cow say exactly `Hello from Ubuntu`.
+    output: true
+    solution: |
+      apt search cow
+      sudo apt install -y cowsay
+      cowsay Hello from Ubuntu
+    hint: "`apt search cow` finds `cowsay`. `sudo apt install cowsay`, then `cowsay Hello from Ubuntu`."
+
+  - kind: shell
+    title: Keep the server up to date
+    body: |
+      Security fixes arrive as package upgrades. See which installed packages have newer versions (`apt list --upgradable`), then upgrade them all.
+    tests:
+      - apt list --upgradable 2>/dev/null | grep -c upgradable
+      - dpkg -l curl | tail -1 | awk '{print $3}'
+    solution: |
+      apt list --upgradable
+      sudo apt upgrade -y
+    hint: "`sudo apt upgrade` (add `-y`, or answer **Y** when it asks). Afterwards `apt list --upgradable` shows nothing below *Listing... Done*."
+
+  - kind: shell
+    title: Tidy up
+    setup: apt-get install -y -q cowsay > /dev/null
+    body: |
+      The cow has served its purpose. Remove the `cowsay` package.
+    tests:
+      - which cowsay; echo $?
+    solution: sudo apt remove -y cowsay
+    hint: "`sudo apt remove cowsay`."
+
+  - kind: explain
+    title: Your Mac is a cousin, not a twin
+    body: |
+      Two differences catch everyone who moves between a Mac and Linux.
+
+      **The shell.** Your Mac's Terminal runs **zsh**; Ubuntu runs **bash**. Day to day they behave the same. The differences show in scripts and odd corners: zsh complains *no matches found* when a `*` matches nothing (bash passes the `*` on unchanged), zsh's arrays start at 1 and bash's at 0, and their settings files differ (`~/.zshrc` vs `~/.bashrc`).
+
+      **The tools.** Linux has the **GNU** versions of `sed`, `date`, `ls` and friends; macOS has older **BSD** versions. Usually the same, but not always:
+
+      | On Linux (GNU) | On a Mac (BSD) |
+      |---|---|
+      | `sed -i 's/a/b/' file` | `sed -i '' 's/a/b/' file` (needs a backup suffix, even empty) |
+      | `date -d "yesterday"` | `date -v-1d` |
+      | `ls --color=auto` | `ls -G` |
+      | `grep -P` (Perl regexes) | not available |
+
+      When a command from a Linux tutorial fails on your Mac (or the other way round), suspect this first. `brew install coreutils gnu-sed` gives your Mac the GNU versions, named with a `g` in front (`gsed`, `gdate`).
+
+  - kind: choice
+    title: The sed surprise
+    body: |
+      On your Mac, `sed -i 's/Dune/Kindred/' notes.txt` stops with `sed: 1: "notes.txt": invalid command code n`. The same line works on the server. What's going on?
+    options:
+      - "The Mac's BSD sed wants a backup suffix after `-i`, so it took `s/Dune/Kindred/` as the suffix"
+      - "zsh changed the quotes, so sed received a different command than the one you typed"
+      - "notes.txt is a rich-text file on the Mac, and sed can only edit plain text files"
+      - "The Mac's sed can't edit files in place at all; only the GNU version can do that"
+    answer: 0
+    explanation: "BSD sed reads the word after `-i` as the backup suffix, then treats the file name as the script. `sed -i '' 's/Dune/Kindred/' notes.txt` works on the Mac; `gsed` (from Homebrew) behaves like Linux."
+
+  - kind: info
+    title: "🔹 dnf, on the Red Hat side"
+    body: |
+      Fedora, RHEL, Rocky and Amazon Linux use **dnf** instead of apt. The ideas are identical, and the commands nearly so: `sudo dnf install htop`, `sudo dnf upgrade`, `sudo dnf remove htop`, `dnf search word`. There's no separate `update` step: dnf refreshes its list by itself.
+
+  - kind: info
+    title: "🔹 /proc, the kernel's window"
+    body: |
+      `/proc` isn't a real folder on disk. The kernel makes it up as you read it, to show what's going on inside: `/proc/cpuinfo` (the processors), `/proc/meminfo` (memory), `/proc/uptime`, and a folder per running program (`/proc/1` is the first one). Tools like `free`, `uptime` and `ps` read their numbers from here. Try `head -3 /proc/meminfo` or `nproc` (how many processors).
+
+  - kind: shell
+    title: Look around (not graded)
+    body: |
+      Free practice: `lsb_release -a`, `uname -a`, `ls /etc | head`, `ls /var/log`, `head -3 /proc/meminfo`, `apt show htop`, `apt list --installed | head`.
+
+  - kind: why
+    body: |
+      Nearly every server, cloud machine and container you'll ever touch runs Linux, most often Ubuntu or a Red Hat cousin. Knowing that a "distribution" is the kernel plus a package manager plus conventions, and where those conventions put settings and logs, means you can sit down at a strange server and find your way around in minutes. And a VM on your Mac is a free, unbreakable place to practise.
+
+  - kind: recap
+    body: |
+      - A **distribution** = the Linux kernel + tools + a package manager. Debian/Ubuntu use `apt`; Fedora/RHEL use `dnf`.
+      - `/etc/os-release` says which one you're on. **Multipass** runs Ubuntu in a VM on your Mac: `multipass launch 24.04 --name lab`, `multipass shell lab`.
+      - Settings in `/etc`, logs and data in `/var`, programs in `/usr`, add-ons in `/opt`, users in `/home`, temporary files in `/tmp`.
+      - `sudo apt update` (refresh the list) before `sudo apt install`; `apt upgrade`, `apt remove`, `apt search`, `apt show`.
+      - zsh (Mac) vs bash (Linux); BSD tools (Mac) vs GNU tools (Linux): `sed -i ''` on a Mac.
+      - 🔹 `dnf` on Red Hat systems; 🔹 `/proc` shows the kernel's view.

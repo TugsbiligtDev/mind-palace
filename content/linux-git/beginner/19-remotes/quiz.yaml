@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "What's the difference between `git fetch` and `git pull`?"
+    options:
+      - "fetch only downloads new commits; pull downloads and merges them"
+      - "fetch works over HTTPS addresses and pull works over SSH addresses"
+      - "fetch gets one commit at a time, while pull gets them all at once"
+      - "There's no difference; pull is just the newer name for fetch"
+    answer: 0
+    explanation: "`git fetch` updates `origin/main` but leaves your branch and files alone. `git pull` is fetch followed by merge."
+  - type: mcq
+    prompt: "`git status` says *Your branch is up to date with 'origin/main'*, yet a colleague pushed an hour ago. How?"
+    options:
+      - "`origin/main` is only as fresh as your last fetch: `git fetch` first"
+      - "Their push must have failed, because status always checks GitHub live"
+      - "Status only compares your branch with GitHub once a day, at midnight"
+      - "Your colleague pushed to a different remote that's also called origin"
+    answer: 0
+    explanation: "Git doesn't contact GitHub for `git status`. It compares with its stored memory of the remote."
+  - type: mcq
+    prompt: "What does `-u` do in `git push -u origin main`?"
+    options:
+      - "Links main to origin/main, so plain push and pull know where to go"
+      - "Uploads only the files that changed since the last time you pushed"
+      - "Pushes even if GitHub has commits that your computer doesn't have"
+      - "Makes the repository public, so other people can clone it"
+    answer: 0
+    explanation: "It sets the upstream branch. You only need it the first time you push a branch."
+  - type: mcq
+    prompt: "Your push is rejected with *(fetch first)*. What's the right fix?"
+    options:
+      - "`git pull`, resolve any conflict, then `git push`"
+      - "`git push --force`, so your version wins on GitHub"
+      - "Delete the repository on GitHub, then push again"
+      - "`git commit --amend`, then `git push` once more"
+    answer: 0
+    explanation: "GitHub has commits you don't. Bring them in and merge, then push. Forcing would delete your colleague's work from GitHub."
+  - type: mcq
+    prompt: "After `git clone git@github.com:inkwell/site.git`, what's the remote called?"
+    options:
+      - "`origin`"
+      - "`github`"
+      - "`inkwell`"
+      - "`main`"
+    answer: 0
+    explanation: "`git clone` names the remote it cloned from `origin`. (`main` is a branch, not a remote.)"

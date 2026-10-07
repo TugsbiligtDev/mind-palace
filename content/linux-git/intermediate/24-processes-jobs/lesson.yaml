@@ -1,0 +1,233 @@
+steps:
+  - kind: explain
+    title: Programs that are running
+    body: |
+      A program on disk is just a file. Once it **runs**, it becomes a **process**: the program plus everything it's doing right now (its memory, its open files, how long it has run). The same program can run as several processes at once.
+
+      Linux gives every process a number, its **PID** (process ID). Every process was started by another one, its **parent** (PPID). PID 1 is `systemd`, started by the kernel at boot; everything else descends from it. Your terminal's shell is a process too: `echo $$` prints its PID.
+
+      `ps` lists processes:
+
+      | Command | Shows |
+      |---|---|
+      | `ps` | the ones started from this terminal |
+      | `ps aux` | every process, with user, CPU %, memory %, start time and full command |
+      | `ps -ef` | the same in another style, with the parent's PID |
+      | `ps aux --sort=-%cpu` | biggest CPU users first |
+      | `pgrep name` / `pgrep -a name` | just the PIDs (or PIDs and commands) whose name matches |
+
+  - kind: shell
+    title: Find a process
+    body: |
+      Print the **PID of the `cron` service** (the program that runs scheduled jobs), and nothing else.
+    output: true
+    solution: pgrep cron
+    reject:
+      - ps aux | grep cron
+    hint: "`pgrep` prints only the PID. (`ps aux | grep cron` shows the whole line, and also finds the grep itself.)"
+
+  - kind: explain
+    title: top and htop
+    body: |
+      `ps` is a snapshot. **top** is a live view, refreshed every few seconds, busiest processes first. The header says how loaded the computer is:
+
+      ```
+      top - 09:00:01 up 3 days,  1:28,  1 user,  load average: 1.02, 0.97, 0.88
+      Tasks:  97 total,   1 running,  96 sleeping,   0 stopped,   0 zombie
+      %Cpu(s): 48.7 us, ...
+          PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+         4242 learner   20   0   22000   9000   5400 R  97.4   3.1  52:17.00 report-builder
+      ```
+
+      **Load average** is how many processes wanted the CPU, averaged over 1, 5 and 15 minutes; compare it with the number of CPUs (`nproc`). `S` is the state: **R** running, **S** sleeping (waiting for something), **T** stopped, **Z** zombie (finished, not yet collected by its parent).
+
+      In top: **q** quits, **P** sorts by CPU, **M** by memory, **k** asks for a PID to kill. **htop** (`sudo apt install htop`) is a friendlier, colourful version with a mouse and arrow keys.
+
+  - kind: shell
+    title: Why is the server slow?
+    setup: |
+      practice-spawn --pid 4242 --user learner --cpu 97.4 --mem 3.1 -- /usr/local/bin/report-builder --all-months > /dev/null
+    body: |
+      The server feels sluggish. Use `top` (press **q** to leave it) or `ps aux --sort=-%cpu` to find the process that's eating the CPU, then stop it with `kill` and its PID.
+
+      It's your own process (you started the monthly report this morning), so you don't need sudo.
+    tests:
+      - pgrep report-builder; echo $?
+    solution: kill 4242
+    hint: "The top line in `top` is `report-builder` with PID 4242: `kill 4242`. Check with `pgrep report-builder` (no output: it's gone)."
+
+  - kind: explain
+    title: Signals
+    body: |
+      `kill` doesn't really kill: it sends the process a **signal**, a short message the process can react to. The ones that matter:
+
+      | Signal | Number | Means | Sent by |
+      |---|---|---|---|
+      | `TERM` | 15 | "please finish up and exit" (the default) | `kill PID` |
+      | `INT` | 2 | "interrupt" | **Ctrl+C** |
+      | `KILL` | 9 | "stop now": the kernel ends it, no questions | `kill -9 PID` |
+      | `HUP` | 1 | "your terminal went away" (many services re-read their settings) | closing the window |
+      | `STOP` / `CONT` | 19 / 18 | pause / resume | **Ctrl+Z** sends `TSTP`, similar |
+
+      A well-behaved program cleans up on `TERM` (saves its work, deletes temporary files) and exits. A stuck or badly written one may ignore it. **`kill -9` is the last resort**: the process gets no chance to clean up, so files it was writing may be left half-done. Always try plain `kill` first and give it a few seconds.
+
+      `kill -l` lists every signal. `pkill name` and `killall name` signal processes by name instead of PID.
+
+  - kind: shell
+    title: A stubborn export
+    setup: |
+      practice-spawn --pid 4317 --user learner --mem 0.4 --ignore-term -- /usr/local/bin/stuck-export --to old-backup.inkwell.example > /dev/null
+    body: |
+      An export job (`stuck-export`) has hung, waiting forever for a backup server that no longer exists. Find its PID and stop it. Ask politely first; if it's **still there** afterwards (check with `pgrep`), stop it for good.
+    tests:
+      - pgrep -a stuck-export; echo $?
+    solution: |
+      kill 4317
+      kill -9 4317
+    uses:
+      - match: "kill\\s+(-9|-KILL|-SIGKILL|-s\\s+KILL)\\s"
+        why: "this one ignores the polite signal; it needs `kill -9`."
+    reject:
+      - kill 4317
+    hint: "`pgrep -a stuck-export` shows PID 4317. `kill 4317` does nothing (it ignores TERM), so `kill -9 4317`."
+
+  - kind: explain
+    title: Foreground and background jobs
+    body: |
+      Normally a command runs in the **foreground**: the prompt comes back when it's done. Put **`&`** at the end and it runs in the **background**, and the prompt comes back straight away. The shell calls these **jobs**:
+
+      ```
+      learner@inkwell:~$ sleep 300 &
+      [1] 4201                    ← job number 1, PID 4201
+      learner@inkwell:~$ jobs
+      [1]+  Running                 sleep 300 &
+      ```
+
+      | Keys / command | Does |
+      |---|---|
+      | **Ctrl+C** | stop (interrupt) the foreground command |
+      | **Ctrl+Z** | **pause** the foreground command; it becomes a stopped job |
+      | `jobs` | list this terminal's jobs (`+` is the current one) |
+      | `bg` / `bg %2` | let a stopped job carry on, in the background |
+      | `fg` / `fg %1` | bring a job back to the foreground |
+      | `kill %1` | send TERM to job 1 (`%` means "job number", not PID) |
+
+      Background jobs belong to this terminal. Close it, and they usually get `HUP` and end too.
+
+  - kind: shell
+    title: Juggle two jobs
+    body: |
+      1. Start `sleep 300` in the background.
+      2. Start `sleep 600` in the background.
+      3. Check them with `jobs`, then stop the **first** one using its **job number**.
+
+      `jobs` should end up showing only `sleep 600`.
+    tests:
+      - jobs
+    solution: |
+      sleep 300 &
+      sleep 600 &
+      jobs
+      kill %1
+    uses:
+      - match: "kill\\s+%"
+        why: "stop it by job number: `kill %1`."
+    hint: "`sleep 300 &`, `sleep 600 &`, `jobs`, then `kill %1`."
+
+  - kind: shell
+    title: Pause and continue
+    body: |
+      Run `sleep 120` in the **foreground** (no `&`). The prompt doesn't come back. Press **Ctrl+Z** to pause it (do it within a few seconds: the practice terminal stops a foreground command after 8), check `jobs`, then let it carry on **in the background** with `bg`.
+    tests:
+      - jobs
+    solution: sleep 120 &
+    hint: "Type `sleep 120`, press Ctrl+Z (you'll see *Stopped*), then type `bg`. `jobs` should say *Running ... sleep 120 &*. (Starting it with `&` straight away gives the same end result, if you'd rather.)"
+
+  - kind: explain
+    title: Exit codes, and chaining
+    body: |
+      When a command finishes it reports an **exit code**: **0 means success**, anything else means some kind of failure. The shell keeps the last one in **`$?`**:
+
+      ```
+      learner@inkwell:~$ grep -q admin logs/access.log; echo $?
+      0                           ← found (grep -q prints nothing, only sets the code)
+      learner@inkwell:~$ ls /nope; echo $?
+      ls: cannot access '/nope': No such file or directory
+      2
+      ```
+
+      Common codes: `1` general error (grep: not found), `2` wrong usage, `126` not executable, `127` command not found, `130` stopped by Ctrl+C.
+
+      Exit codes let you chain commands:
+
+      | Between commands | Runs the second one |
+      |---|---|
+      | `a ; b` | always |
+      | `a && b` | only if `a` succeeded |
+      | `a \|\| b` | only if `a` failed |
+
+      `mkdir backup && cp notes/* backup/` copies only if the folder was made. `cd /data || exit` stops a script when the folder is missing. `test && echo yes || echo no` prints one or the other.
+
+  - kind: shell
+    title: A one-line alarm
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Write **one line** that prints `found` if `access.log` contains `/admin/export`, and `clean` if it doesn't. Use `grep -q` (quiet: it only sets the exit code) with `&&` and `||`.
+    output: true
+    solution: grep -q /admin/export access.log && echo found || echo clean
+    uses:
+      - match: "&&.*\\|\\|"
+        why: "chain it with `&&` and `||`."
+    hint: "`grep -q /admin/export access.log && echo found || echo clean`."
+
+  - kind: choice
+    title: Read the exit code
+    body: |
+      ```
+      learner@inkwell:~$ ./backup.sh
+      bash: ./backup.sh: Permission denied
+      learner@inkwell:~$ echo $?
+      ```
+      What does `echo $?` print?
+    options:
+      - "126: the file is there but can't be run"
+      - "127: the command wasn't found at all"
+      - "0: the shell printed its message without problems"
+      - "1: every failed command reports exit code 1"
+    answer: 0
+    explanation: "126 means the file exists but isn't executable (Module 10: `chmod +x`). 127 would mean there's no such command."
+
+  - kind: info
+    title: "🔹 nohup: keep running after you log out"
+    body: |
+      Background jobs normally end when you close the terminal (or your SSH connection drops). `nohup` makes a command ignore that hang-up signal and saves its output in `nohup.out`:
+
+      ```
+      nohup ./import-catalog.sh &
+      ```
+
+      It's the quick fix. For anything you'll come back to, a terminal multiplexer (tmux, Module 46) or a proper service (Module 31) is better.
+
+  - kind: mac
+    title: Processes on your Mac
+    body: |
+      macOS has the same ideas. Its `top` is the BSD version (sort by CPU with `top -o cpu`, **q** to quit), and **Activity Monitor** is the graphical version of the same list. Try a background job, then stop it.
+    commands: |
+      ps aux | head -5
+      top -o cpu
+      sleep 100 &
+      jobs
+      kill %1
+      echo $?
+  - kind: why
+    body: |
+      "The server is slow", "it hangs", "it won't stop": all process questions. Knowing how to find a process, read top, stop it gently before forcefully, and juggle jobs in a terminal turns these from emergencies into routine. Exit codes are the other half: every script you write in the next lessons decides what to do next from `$?`.
+
+  - kind: recap
+    body: |
+      - A **process** is a running program with a **PID**; `ps aux`, `pgrep -a`, `top`, `htop`.
+      - `kill PID` sends **TERM** (please stop); `kill -9 PID` sends **KILL** (stop now, last resort). Ctrl+C sends **INT**.
+      - `cmd &` runs in the background; `jobs`, `fg`, `bg`, **Ctrl+Z** pauses, `kill %1` uses a job number.
+      - **Exit code** 0 = success; `$?` holds the last one. `a && b`, `a || b`, `a ; b`.
+      - 🔹 `nohup cmd &` survives logging out.

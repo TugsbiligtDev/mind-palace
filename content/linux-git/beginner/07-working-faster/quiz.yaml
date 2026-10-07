@@ -1,0 +1,51 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: You ran a long `find` command an hour ago. What's the quickest way to run it again?
+    options:
+      - "Ctrl+R, type part of it, press Return"
+      - "Type it again carefully from memory"
+      - "Press Ctrl+A to jump back an hour"
+      - "Run `!!` repeatedly until it appears"
+    answer: 0
+    explanation: "Ctrl+R searches your history for any part of a command. `!!` only means the very last command."
+  - type: mcq
+    prompt: "The cursor is at the end of a long command and you want to fix its first word. Which key jumps to the start?"
+    options:
+      - "Ctrl+A"
+      - "Ctrl+E"
+      - "Ctrl+U"
+      - "Ctrl+W"
+    answer: 0
+    explanation: "Ctrl+A goes to the start (A is the start of the alphabet), Ctrl+E to the end. Ctrl+U and Ctrl+W delete text."
+  - type: predict
+    prompt: You type these three lines at the prompt, one at a time. What appears on the screen?
+    code: |
+      echo first
+      echo second
+      !!
+    options:
+      - "first\nsecond\necho second\nsecond"
+      - "first\nsecond\nsecond"
+      - "first\nsecond\n!!"
+      - "first\nsecond\nfirst"
+    answer: 0
+    explanation: "`!!` is replaced by the previous command, `echo second`. Bash first shows the command it's about to run, then runs it."
+  - type: mcq
+    prompt: "Which line correctly makes `gs` run `git status`?"
+    options:
+      - "`alias gs='git status'`"
+      - "`alias gs = 'git status'`"
+      - "`alias 'git status'=gs`"
+      - "`gs='git status'`"
+    answer: 0
+    explanation: "The new name comes first, then `=`, then the quoted command, with no spaces around `=`. The last one makes a variable, not an alias."
+  - type: mcq
+    prompt: "You made an alias yesterday, and today it's gone. Why?"
+    options:
+      - "Aliases typed at the prompt only last until the terminal closes"
+      - "Aliases expire after 24 hours unless you renew them with `alias -r`"
+      - "The computer deletes all aliases every night, for security reasons"
+      - "It was overwritten by an alias someone else made on the same Mac"
+    answer: 0
+    explanation: "Typed aliases live in the running shell only. To keep one, put it in your shell's settings file (Module 11)."

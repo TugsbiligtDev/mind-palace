@@ -1,0 +1,4 @@
+title: Working Faster
+module: 7
+summary: "Never retype a command: history, the Up arrow and Ctrl+R search; jump and delete along the line with Ctrl+A, E, U, W and L; repeat the last command with !!; and give long commands short names with alias."
+minutes: 25

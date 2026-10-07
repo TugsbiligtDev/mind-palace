@@ -1,0 +1,4 @@
+title: GitHub Actions Basics
+module: 41
+summary: "Continuous integration with GitHub Actions: a workflow file's parts (on, jobs, runs-on, steps, uses, run); push, pull_request and workflow_dispatch triggers; published actions; reading logs and fixing a failed run; checks on pull requests; secrets and variables; and publishing a site with GitHub Pages."
+minutes: 55

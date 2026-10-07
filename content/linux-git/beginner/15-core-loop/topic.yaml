@@ -1,0 +1,4 @@
+title: The Core Loop
+module: 15
+summary: "git init; the three places your work lives (working folder, staging area, repository); git status, add and commit -m; writing good commit messages; git log (--oneline, --graph); git diff and git diff --staged; and the classic mistakes."
+minutes: 45

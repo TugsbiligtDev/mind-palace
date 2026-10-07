@@ -1,0 +1,4 @@
+title: Meeting the Terminal
+module: 2
+summary: "Terminal, shell and command line; zsh on your Mac and bash on Linux; reading the prompt; the parts of a command; your first commands (pwd, whoami, date, echo, clear); capital letters, Ctrl+C, and spaces in names."
+minutes: 30

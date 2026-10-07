@@ -1,0 +1,44 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "`curl http://shop.inkwell.example:8080` fails immediately with *Connection refused*. What do you know?"
+    options:
+      - "The server is reachable, but no program is listening on port 8080"
+      - "A firewall is silently dropping the traffic to port 8080"
+      - "DNS doesn't know the address of shop.inkwell.example"
+      - "The server is switched off or unplugged from the network"
+    answer: 0
+    explanation: "A refusal is an answer: the computer said *no one here on that port*. A firewall or a dead machine gives no answer, so you'd see a timeout."
+  - type: mcq
+    prompt: "Which command shows the ports **this** computer is listening on, with the programs behind them?"
+    options:
+      - "`sudo ss -tlnp`"
+      - "`dig +short localhost`"
+      - "`ping -c 1 localhost`"
+      - "`ip route`"
+    answer: 0
+    explanation: "`ss` lists sockets: `-t` TCP, `-l` listening, `-n` numeric, `-p` processes (which needs sudo for other users' programs)."
+  - type: mcq
+    prompt: "You added `203.0.113.30 staging.inkwell.example` to `/etc/hosts`. `ping staging.inkwell.example` works, but `dig staging.inkwell.example` finds nothing. Why?"
+    options:
+      - "`dig` asks DNS directly and doesn't read `/etc/hosts`"
+      - "The change to `/etc/hosts` only takes effect after a reboot"
+      - "`ping` is lying: it can't really reach that address"
+      - "`dig` needs sudo to read files in `/etc`"
+    answer: 0
+    explanation: "ping, curl and ssh use the system's name lookup, which checks /etc/hosts first. dig is a DNS tool: it only asks DNS servers."
+  - type: mcq
+    prompt: "`ss -tln` on the server shows `127.0.0.1:3000`. What does that mean for other computers?"
+    options:
+      - "They can't connect to port 3000: the program only accepts connections from the server itself"
+      - "They can connect, because 127.0.0.1 is the server's public address"
+      - "Port 3000 is closed for everyone, including the server itself"
+      - "They must use the address 127.0.0.1 instead of the server's name"
+    answer: 0
+    explanation: "127.0.0.1 is loopback, *this computer only*. To accept outside connections a program listens on `0.0.0.0` (or `*`)."
+  - type: fill
+    prompt: "Complete the command that prints only the address DNS has for `inkwell.example`: `dig ____ inkwell.example`"
+    code: "dig ____ inkwell.example"
+    answer: "+short"
+    runnable: false
+    explanation: "`+short` skips dig's long report and prints just the answer."

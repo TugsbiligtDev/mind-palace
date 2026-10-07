@@ -1,0 +1,4 @@
+title: Git's Mental Model
+module: 33
+summary: "What Git really stores: commits as snapshots with parents, the commit graph and hashes; branches and tags as pointers; HEAD and the \"detached HEAD\" state; remote-tracking branches; and the move to SHA-256."
+minutes: 40

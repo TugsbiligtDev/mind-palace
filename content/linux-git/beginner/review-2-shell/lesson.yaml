@@ -1,0 +1,97 @@
+steps:
+  - kind: explain
+    title: The trail goes cold, then warm
+    body: |
+      Inspector Bold pins two sheets to the board: the shop's access log and the refund record. *"Someone refunded two orders at two in the morning. I want facts, saved where we can find them again."*
+
+      This review covers Modules 8 to 12. No step-by-step: look first, then build your command, then check. **Check my work** says what's still different; hints and the commands unlock after misses.
+
+  - kind: shell
+    title: "1. Pages that weren't there"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      > *In `logs/access.log`, the number at the end of each line is the status: 200 is fine, 404 means "page not found". How many requests got a **404**? Print just the number.*
+    output: true
+    solution: grep -c " 404" logs/access.log
+    hint: "Search for the status (with the space before it, so a date or address containing 404 can't match) and count the matching lines: `grep -c`, or `grep … | wc -l`."
+
+  - kind: shell
+    title: "2. Save the evidence"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      > *Every request from the address `192.0.2.10` goes into a new folder `evidence`, in a file called `night-requests.txt`. Nothing else in that file.*
+    tests:
+      - cat evidence/night-requests.txt
+    solution: |
+      mkdir evidence
+      grep 192.0.2.10 logs/access.log > evidence/night-requests.txt
+    hint: "Make the folder first. Then `grep` the address in the log and redirect the output with `>` into the new file."
+
+  - kind: shell
+    title: "3. A stray copy of the key"
+    fixture: backoffice
+    setup: |
+      cd ~
+      mkdir -p ~/inkwell/site/images/.cache ~/inkwell/old/2025
+      printf 'pk-inkwell-7f3a-NOT-A-REAL-KEY\n' > ~/inkwell/site/images/.cache/payment.key
+      printf 'pk-inkwell-0000-EXPIRED\n' > ~/inkwell/old/2025/old-payment.key
+    body: |
+      > *Moth heard the payment key was copied "somewhere it shouldn't be". Search your whole home folder for files whose names end in `.key`, and print their full paths (starting with `/home/learner`).*
+    output: true
+    solution: find ~ -name "*.key"
+    hint: "`find` from your home folder, written as `~` (which the shell turns into `/home/learner`), with a quoted `-name` pattern."
+
+  - kind: shell
+    title: "4. Get the tool working"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      mkdir -p tools
+      printf '#!/usr/bin/env bash\n# How many errors the shop logged.\ngrep -c ERROR ~/inkwell/logs/shop.log\n' > tools/count-errors
+    body: |
+      > *Priya's `tools/count-errors` should print how many errors the shop logged. Make it so that typing just `count-errors`, from any folder, runs it. Only its owner needs to be able to run it.*
+    tests:
+      - stat -c %a tools/count-errors
+    output: true
+    solution: |
+      chmod u+x tools/count-errors
+      export PATH="$HOME/inkwell/tools:$PATH"
+      count-errors
+    uses:
+      - match: "^\\s*count-errors\\s*$"
+        why: "run it the way the brief asks: just `count-errors`, by name."
+    hint: "Two problems: `ls -l tools` shows it isn't executable (`chmod u+x`), and its folder isn't on your PATH (`export PATH=\"$HOME/inkwell/tools:$PATH\"`). Then type `count-errors`."
+
+  - kind: shell
+    title: "5. The refund record"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      > *From the root-only refund record, `/var/log/inkwell/refunds.log`, print only the lines of refunds approved by `kmori`.*
+    output: true
+    solution: sudo grep kmori /var/log/inkwell/refunds.log
+    hint: "`grep kmori` on the file, but the file is readable only by root, so the command needs `sudo` in front."
+
+  - kind: choice
+    title: "6. Join the dots"
+    body: |
+      > *Put it together: the access log shows `192.0.2.10` refunding orders 1044 and 1046 at 02:13 and 02:14 on 6 October; the refund record says both were approved by `kmori`, with no reason. What's the most careful conclusion?*
+    options:
+      - "Someone used Kenji's login in the night; we don't know who yet"
+      - "Kenji refunded the orders himself, so the case is closed now"
+      - "The refunds were a server error, since they happened in the night"
+      - "Priya approved them, because she approved the September refund too"
+    answer: 0
+    explanation: "The logs prove *which login* approved the refunds, not *who typed it*. A login can be shared or stolen. Next: the website's code is about to go under Git, and Git records who changed what, and when."
+
+  - kind: recap
+    body: |
+      Case notes:
+
+      - Two refunds (orders 1044 and 1046) were approved by the **kmori** login at **02:13–02:14** on 6 October, from **192.0.2.10**, with no reason.
+      - The note in `old/.trash` (signed **M.**) says they were approved and "not logged".
+      - A copy of the **payment key** was hidden in the website's images cache.
+
+      Inspector Bold: *"The website folder is next. Put it under version control before anyone else touches it."*

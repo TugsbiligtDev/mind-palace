@@ -1,0 +1,50 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "Which command finds the lines mentioning `timeout` in any file under `/var/log`, whether written `Timeout` or `TIMEOUT`?"
+    options:
+      - "`grep -ri timeout /var/log`"
+      - "`grep -r timeout /var/log`"
+      - "`find /var/log -name timeout`"
+      - "`grep -v timeout /var/log`"
+    answer: 0
+    explanation: "`-r` searches the whole folder and `-i` ignores case. `find -name` matches file names, not their contents."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf 'apple\nbanana\ncherry\navocado\n' > /tmp/fruit.txt
+      grep -c a /tmp/fruit.txt
+    options:
+      - "3"
+      - "4"
+      - "apple\nbanana\navocado"
+      - "5"
+    answer: 0
+    explanation: "`-c` counts matching **lines**: apple, banana and avocado contain an `a`; cherry doesn't."
+  - type: mcq
+    prompt: "Why put quotes around the pattern in `find . -name \"*.log\"`?"
+    options:
+      - "So find receives `*.log` itself, instead of the shell expanding it first"
+      - "Because find only accepts patterns that are written inside quotes"
+      - "So find matches the file names without caring about capital letters"
+      - "Because the dot in `.log` means \"any character\" unless it's quoted"
+    answer: 0
+    explanation: "Unquoted, the shell would replace `*.log` with matching names in the current folder before find runs, and find would get the wrong pattern (or an error)."
+  - type: mcq
+    prompt: "Which command lists only the **folders** under `~/inkwell`?"
+    options:
+      - "`find ~/inkwell -type d`"
+      - "`find ~/inkwell -type f`"
+      - "`find ~/inkwell -name d`"
+      - "`grep -r folder ~/inkwell`"
+    answer: 0
+    explanation: "`-type d` keeps directories; `-type f` keeps regular files."
+  - type: mcq
+    prompt: "`type ll` prints `ll is aliased to 'ls -lah'`. What does that tell you?"
+    options:
+      - "`ll` isn't a program file; it's an alias for `ls -lah`"
+      - "`ll` is a program stored in a folder called `ls -lah`"
+      - "`ll` is broken, and type is suggesting a replacement"
+      - "`ll` only works when you're logged in as the root user"
+    answer: 0
+    explanation: "`type` reveals what the shell would really run. Here it's an alias that expands to `ls -lah`."

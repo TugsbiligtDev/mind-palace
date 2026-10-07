@@ -1,0 +1,152 @@
+steps:
+  - kind: explain
+    title: Addresses, ports and names
+    body: |
+      Three ideas explain almost every network problem:
+
+      - An **IP address** identifies a computer on a network: `203.0.113.20` is the shop server, `10.0.2.15` the practice computer. **`127.0.0.1`**, also called **`localhost`**, always means "this computer itself".
+      - A **port** (a number from 1 to 65535) identifies a program on that computer. Well-known ones: **22** SSH, **80** HTTP, **443** HTTPS, **53** DNS. The shop app listens on **3000**. A connection always goes to *address + port*.
+      - **DNS** turns names into addresses: `shop.inkwell.example` → `203.0.113.20`. Before asking DNS, the computer checks its own list in **`/etc/hosts`**.
+
+      So "the website doesn't work" can mean: the name doesn't resolve, the computer can't be reached, nothing is listening on the port, a firewall is in the way, or the program answered with an error. Each tool below checks one of those.
+
+  - kind: explain
+    title: The tools
+    body: |
+      | Command | Answers |
+      |---|---|
+      | `ip -br addr` (or `ip addr`, `hostname -I`) | this computer's own addresses |
+      | `ip route` | where traffic goes (the **default** gateway) |
+      | `dig +short name` (or `dig name`) | what DNS says the name's address is |
+      | `ping -c 3 host` | can I reach it, and how fast? (many servers don't answer ping on purpose) |
+      | `curl -v https://host/` | the whole HTTP conversation: resolving, connecting, request, answer |
+      | `nc -zv host port` | is that port open? |
+      | `ss -tln` / `sudo ss -tlnp` | which ports **this** computer listens on (and, with sudo, which programs) |
+
+      `ss` options: **t**cp, **u**dp, **l**istening, **n**umeric (show `22`, not `ssh`), **p**rocesses.
+
+  - kind: shell
+    title: Look the shop up
+    fixture: shop-server
+    body: |
+      Ask DNS for the address of **`shop.inkwell.example`**, printing only the address.
+    output: true
+    solution: dig +short shop.inkwell.example
+    hint: "`dig +short shop.inkwell.example`."
+
+  - kind: shell
+    title: A name of your own
+    fixture: shop-server
+    body: |
+      Priya wants to test the website on the backup server (`203.0.113.30`) under the name **`staging.inkwell.example`**, which isn't in DNS. Make that name work **on this computer** by adding a line to `/etc/hosts`.
+    tests:
+      - ping -c 1 staging.inkwell.example | head -2
+    solution: echo "203.0.113.30 staging.inkwell.example" | sudo tee -a /etc/hosts
+    hint: "A line `203.0.113.30 staging.inkwell.example` at the end of `/etc/hosts`: `sudo nano /etc/hosts`, or `echo \"203.0.113.30 staging.inkwell.example\" | sudo tee -a /etc/hosts` (plain `sudo echo … >> /etc/hosts` fails: the `>>` isn't run by sudo). Check with `ping -c 1 staging.inkwell.example`."
+
+  - kind: explain
+    title: Refused or timed out?
+    body: |
+      The two most common errors look alike but mean very different things:
+
+      | Error | What happened | Usual cause |
+      |---|---|---|
+      | **Connection refused** (curl exit 7) | the computer answered at once: *nothing is listening on that port* | the program is stopped, crashed, or on another port |
+      | **Timed out** (curl exit 28) | no answer at all, curl gave up waiting | a **firewall** drops the traffic, the address is wrong, or the computer is off |
+      | **Could not resolve host** (exit 6) | DNS has no address for the name | a typo, or a missing DNS / `/etc/hosts` entry |
+
+      A refusal tells you the network and the computer are fine and points at the program. A timeout points at the path to it.
+
+      A program can also listen **only on localhost** (`127.0.0.1:3000` in `ss`): it then works from the server itself but refuses everyone else. `0.0.0.0` or `*` means all addresses.
+
+  - kind: choice
+    title: Read the error
+    body: |
+      ```
+      learner@inkwell:~$ curl shop.inkwell.example:3000/health
+      curl: (28) Failed to connect to shop.inkwell.example port 3000 after 10002 ms: Timeout was reached
+      learner@shop:~$ curl localhost:3000/health
+      {"status":"ok"}
+      ```
+
+      From the practice computer, port 3000 times out; on the server itself, it works. What's going on?
+    options:
+      - "A firewall on the server lets local connections through but drops outside traffic to port 3000"
+      - "The shop app has crashed, so nothing is listening on port 3000 at the moment"
+      - "DNS gives the wrong address for shop.inkwell.example on the practice computer"
+      - "The shop app only answers requests that ask for /health, and both of these did"
+    answer: 0
+    explanation: "It works locally, so the app is running. From outside there's no answer at all (a timeout, not a refusal): something on the way drops the packets. On this server that's ufw, which only allows SSH and the web ports."
+
+  - kind: shell
+    title: What's listening on the shop server?
+    fixture: [shop-server, shop-access]
+    body: |
+      On the shop server, list the **listening TCP** sockets **with the programs** behind them and **numeric** ports (that needs sudo).
+    output: true
+    solution: ssh shop sudo ss -tlnp
+    hint: "`sudo ss -tlnp` on the server: **t**cp, **l**istening, **n**umeric, **p**rocesses. In an `ssh shop` session, or as `ssh shop sudo ss -tlnp`."
+
+  - kind: shell
+    title: The website is down
+    fixture: [shop-server, shop-access]
+    setup: |
+      practice-host shop 'systemctl stop nginx' > /dev/null
+    body: |
+      `curl https://inkwell.example` fails. Read the error to decide where the problem is, fix it on the shop server, and check from the practice computer that the site answers with status **200** again.
+    tests:
+      - curl -s -o /dev/null -w '%{http_code}\n' https://inkwell.example
+      - ssh shop systemctl is-active nginx
+    solution: |
+      curl https://inkwell.example  # allow-error: connection refused
+      ssh shop systemctl status nginx  # allow-error: inactive
+      ssh shop sudo systemctl start nginx
+      curl -s -o /dev/null -w '%{http_code}\n' https://inkwell.example
+    hint: "*Connection refused* (not a timeout): the server is reachable but nothing listens on 443. `ssh shop systemctl status nginx` shows it's *inactive (dead)*: `ssh shop sudo systemctl start nginx`."
+
+  - kind: shell
+    title: Watch a request (not graded)
+    fixture: [shop-server, shop-access]
+    body: |
+      Free practice: `curl -v https://inkwell.example/`, `curl -v http://inkwell.example/` (see the redirect), `ping -c 3 github.com` (GitHub doesn't answer pings), `ping -c 3 example.com`, `nc -zv shop.inkwell.example 22`, `ip route`, `dig inkwell.example`.
+
+  - kind: info
+    title: "🔹 ifconfig and netstat, the old tools"
+    body: |
+      Older guides use `ifconfig` (addresses) and `netstat -tlnp` (listening ports). They come from the **net-tools** package, which modern Ubuntu doesn't install anymore: `ip` and `ss` replaced them. If you need them: `sudo apt install net-tools`. On a Mac, `ifconfig` and `netstat` are still the normal tools (there's no `ip` or `ss`; `lsof -i -P | grep LISTEN` shows listening programs).
+
+  - kind: info
+    title: "🔹 ufw, Ubuntu's firewall"
+    body: |
+      **ufw** (uncomplicated firewall) decides which incoming connections are allowed:
+
+      ```
+      sudo ufw status                 # is it on, and what's allowed?
+      sudo ufw allow OpenSSH          # allow SSH first, or you'll lock yourself out!
+      sudo ufw allow "Nginx Full"     # 80 and 443
+      sudo ufw enable
+      ```
+
+      Everything not allowed then **times out** from outside. Module 45 sets a server's firewall up properly.
+
+  - kind: mac
+    title: Networking tools on your Mac
+    body: |
+      Most of these exist on macOS too (with BSD flavours): `ping` keeps going until Ctrl+C, `dig` and `curl -v` are the same.
+    commands: |
+      ping -c 3 example.com
+      dig +short github.com
+      curl -v https://example.com -o /dev/null
+      ifconfig en0 | grep inet
+      lsof -i -P | grep LISTEN
+  - kind: why
+    body: |
+      "It doesn't work" is useless; "the name resolves, the server answers ping, but port 443 is refused" fixes itself. With `dig`, `ping`, `curl -v`, `ss` and the difference between *refused* and *timed out*, you can walk along the path from your computer to the program and point at the exact step that fails.
+
+  - kind: recap
+    body: |
+      - IP addresses, **ports** (22 SSH, 80/443 web, 53 DNS), **DNS** names, `localhost` = 127.0.0.1; `/etc/hosts` is checked before DNS.
+      - `ip -br addr`, `ip route`, `dig +short name`, `ping -c 3 host`, `curl -v URL`, `nc -zv host port`, `sudo ss -tlnp`.
+      - **Refused**: reachable, nothing listening → check the program. **Timed out**: no answer → firewall, address, or the machine is down. **Could not resolve**: DNS.
+      - A program on `127.0.0.1` only accepts local connections.
+      - 🔹 `ifconfig`/`netstat` are the old tools (`net-tools`); 🔹 `ufw allow …`, `ufw enable`.

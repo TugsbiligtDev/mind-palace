@@ -1,0 +1,53 @@
+pass: 4
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf 'b\na\nb\nc\nb\n' | sort | uniq -c | sort -rn | head -1
+    options:
+      - "      3 b"
+      - "      1 c"
+      - "      2 b"
+      - "b"
+    answer: 0
+    explanation: "`sort` puts the three b's together, `uniq -c` counts them (3), `sort -rn` puts the biggest count first and `head -1` keeps it."
+  - type: mcq
+    prompt: "Why does `cut -d' ' -f1 access.log | uniq -c` give wrong counts?"
+    options:
+      - "`uniq` only collapses neighbouring identical lines, so the lines must be sorted first"
+      - "`cut` can't split on spaces, so every line comes out whole and nothing is counted"
+      - "`uniq -c` counts characters, not lines; `wc -l` is needed for counting lines"
+      - "The `-f1` option keeps the last field, not the first one, so it counts the browsers"
+    answer: 0
+    explanation: "`uniq` compares each line with the one before it. Without `sort`, the same address appears in several separate runs."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf 'Dune 9.99\nCirce 12.00\n' | awk '$2 > 10 {print $1}'
+    options:
+      - "Circe"
+      - "Dune"
+      - "Circe 12.00"
+      - "12.00"
+    answer: 0
+    explanation: "awk compares the second field as a number: only `12.00 > 10`, and it prints the first field of that line."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      echo "order 1044 refunded" | sed -E 's/([0-9]+)/#\1/'
+    options:
+      - "order #1044 refunded"
+      - "order #\\1 refunded"
+      - "order # refunded"
+      - "#order 1044 refunded"
+    answer: 0
+    explanation: "`([0-9]+)` captures 1044 and `\\1` puts it back after the `#`."
+  - type: mcq
+    prompt: "`grep -l secret *.txt` prints three file names. Which command deletes exactly those files?"
+    options:
+      - "`grep -l secret *.txt | xargs rm`"
+      - "`grep -l secret *.txt | rm`"
+      - "`rm < grep -l secret *.txt`"
+      - "`grep -l secret *.txt > rm`"
+    answer: 0
+    explanation: "`rm` doesn't read its input, it only takes arguments. `xargs` turns the lines into arguments: `rm a.txt b.txt c.txt`. (`> rm` would create a file called rm.)"

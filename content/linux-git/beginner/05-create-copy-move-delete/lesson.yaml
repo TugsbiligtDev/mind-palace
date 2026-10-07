@@ -1,0 +1,238 @@
+steps:
+  - kind: explain
+    title: Tidying up Inkwell
+    body: |
+      Inspector Bold has read your notes on the shared folder. *"Good. Now make it usable. Kenji has agreed: an archive folder for old things, backups before you change anything, and the junk goes."*
+
+      This lesson's commands change files, so the habit starts now: **look before you act** (`pwd`, `ls`), and **look again after** to check it did what you meant.
+
+  - kind: explain
+    title: Making folders and files
+    body: |
+      - `mkdir name` **m**a**k**es a **dir**ectory. Several at once: `mkdir drafts photos`.
+      - `mkdir -p a/b/c` makes the whole chain of folders, creating any **p**arents that are missing. Without `-p`, `mkdir a/b/c` fails if `a/b` doesn't exist yet. `-p` also doesn't complain if the folder already exists.
+      - `touch file.txt` creates an empty file (or, if it exists, just updates its "last changed" time).
+
+  - kind: shell
+    title: Build the archive
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      You're in `~/inkwell`. With **one** `mkdir` command, create this chain of folders:
+
+      ```
+      archive/2025/orders
+      ```
+
+      None of them exist yet. Then use `ls` or `tree archive` to check.
+    tests:
+      - find archive
+    solution: mkdir -p archive/2025/orders
+    uses:
+      - match: "mkdir\\s+(.*\\s)?-p"
+        why: "the task asks for one `mkdir` command. The option that makes the missing parent folders is `-p`."
+    reject:
+      - mkdir archive
+    hint: "Plain `mkdir archive/2025/orders` fails because `archive` doesn't exist. Add the option that makes **p**arents."
+
+  - kind: explain
+    title: Copying with cp
+    body: |
+      `cp source destination` makes a copy:
+
+      | Command | Result |
+      |---|---|
+      | `cp todo.txt todo-backup.txt` | a second file with the same content |
+      | `cp todo.txt archive/` | a copy *inside* the `archive` folder, same name |
+      | `cp a.txt b.txt archive/` | both copied into `archive` |
+      | `cp -r site site-backup` | copies a **folder** and everything in it (**r**ecursive) |
+
+      ⚠️ If the destination file already exists, `cp` **replaces it without asking**. `cp -i` asks first.
+
+  - kind: shell
+    title: Back up before you change
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Two backups before anything else:
+
+      1. Copy `notes/todo.txt` to a new file `notes/todo-backup.txt`.
+      2. Copy the whole `site` folder to a new folder called `site-backup`, next to it.
+    tests:
+      - ls notes
+      - cat notes/todo-backup.txt
+      - find site-backup -type f
+    solution: |
+      cp notes/todo.txt notes/todo-backup.txt
+      cp -r site site-backup
+    reject:
+      - cp notes/todo.txt notes/todo-backup.txt
+    hint: "A folder needs `-r`: `cp -r site site-backup`. Without it, `cp` refuses and says it's omitting a directory."
+
+  - kind: explain
+    title: Moving and renaming with mv
+    body: |
+      `mv` **m**o**v**es things. Renaming is just moving to a new name in the same place:
+
+      | Command | Result |
+      |---|---|
+      | `mv draft.txt final.txt` | renames the file |
+      | `mv final.txt archive/` | moves it into `archive`, same name |
+      | `mv old-site archive/site-2025` | moves a folder and renames it (no `-r` needed) |
+
+      ⚠️ Like `cp`, `mv` silently **replaces** an existing file with the same name. `mv -i` asks first.
+
+  - kind: explain
+    title: Quoting and escaping names
+    body: |
+      Module 2 showed that spaces split a command into words. The same goes for names you move, copy or delete. Two ways to keep a name in one piece:
+
+      ```
+      mv "copy of copy of notes.txt" notes-copy.txt     ← quotes
+      mv copy\ of\ copy\ of\ notes.txt notes-copy.txt    ← a backslash before each space
+      ```
+
+      Tab completion writes the backslashes for you. Quotes also protect other characters the shell treats specially, like `*`, `?`, `&`, `(`, `)` and `$`. Single quotes `'…'` protect everything; double quotes `"…"` still let `$` through (Module 11).
+
+  - kind: shell
+    title: Rename and file away
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      mkdir archive
+    body: |
+      In the `old` folder:
+
+      1. Rename `copy of copy of notes.txt` to `notes-copy.txt` (it stays in `old`).
+      2. Move `price-list-OLD.txt` from `old` into `archive`.
+
+      Check with `ls old archive`.
+    tests:
+      - ls old
+      - ls archive
+    solution: |
+      mv "old/copy of copy of notes.txt" old/notes-copy.txt
+      mv old/price-list-OLD.txt archive/
+    hint: "The first name has spaces: put the whole path in quotes, `\"old/copy of copy of notes.txt\"`, or press Tab after `old/co` to let the shell escape it."
+
+  - kind: explain
+    title: Wildcards
+    body: |
+      **Wildcards** (also called *globs*) let one command work on many files. The shell expands them into the matching names **before** the command runs:
+
+      | Pattern | Matches |
+      |---|---|
+      | `*` | any number of any characters: `*.csv` = every name ending in `.csv` |
+      | `?` | exactly one character: `2026-0?.csv` = `2026-08.csv`, `2026-09.csv` |
+      | `[abc]` | one of the characters inside: `report[12].txt` = `report1.txt`, `report2.txt` |
+
+      **Preview before you act**: `ls orders/*.csv` or `echo orders/*.csv` shows exactly which names the pattern will become. Wildcards don't match hidden files unless the pattern starts with a dot.
+
+  - kind: shell
+    title: Every CSV in one go
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      mkdir -p archive/orders
+      printf 'order_id,date,customer,book,price\n' > orders/template.csv
+      printf 'remember: totals go in the monthly report\n' > orders/README.txt
+    body: |
+      The `orders` folder now has CSV files and a README. Move **every `.csv` file** from `orders` into `archive/orders`, with **one** `mv` command. The README stays where it is.
+
+      Preview first with `ls orders/*.csv`.
+    tests:
+      - ls orders
+      - ls archive/orders
+    solution: mv orders/*.csv archive/orders/
+    uses:
+      - match: "\\*"
+        why: "this task practises wildcards: one `mv` with a `*` pattern instead of naming each file."
+    reject:
+      - mv orders/* archive/orders/
+    hint: "`orders/*.csv` matches every name in `orders` that ends in `.csv`. Put it between `mv` and the destination folder."
+
+  - kind: explain
+    title: "⚠️ Deleting: there is no Trash"
+    body: |
+      `rm` **r**e**m**oves files. On the command line there's **no Trash and no undo**: the file is simply gone.
+
+      | Command | Deletes |
+      |---|---|
+      | `rm notes.txt` | one file |
+      | `rm -i *.tmp` | each match, but **asks** first (`y` to delete) |
+      | `rmdir drafts` | a folder, only if it's empty |
+      | `rm -r drafts` | a folder **and everything inside it** |
+
+      You'll often see `rm -rf`: recursive and **f**orce (never ask, ignore missing files). It's the most dangerous common command there is. Before any `rm`, especially with `-r` or a wildcard: `pwd`, then `ls` the exact same pattern, then delete.
+
+  - kind: shell
+    title: Clear out the junk
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      printf 'tmp\n' > notes/~draft.tmp
+      printf 'tmp\n' > notes/meeting.tmp
+    body: |
+      Kenji has approved two clean-ups:
+
+      1. Delete the two `.tmp` files in `notes`. Try `rm -i notes/*.tmp` to be asked about each one (type `y` and Return).
+      2. Delete the `old` folder and everything in it.
+
+      Then `ls` and `ls notes` to make sure nothing else went.
+    tests:
+      - ls
+      - ls notes
+    solution: |
+      rm notes/*.tmp
+      rm -r old
+    reject:
+      - rm notes/*
+      - rm -r old
+    hint: "`rm notes/*.tmp` for the temporary files. A folder with files in it needs `-r`: `rm -r old`."
+
+  - kind: choice
+    title: One space too many
+    body: |
+      Liam wants to delete the `.txt` files in a folder and types:
+
+      ```
+      rm * .txt
+      ```
+
+      What happens?
+    options:
+      - "Every file in the folder is deleted, then rm can't find a file called `.txt`"
+      - "Only the `.txt` files are deleted, because the extra space is simply ignored"
+      - "Nothing is deleted, because `*` on its own isn't allowed as an argument to rm"
+      - "rm asks for confirmation first, because the command contains a wildcard"
+    answer: 0
+    explanation: "The space splits it into two arguments: `*` (every file) and `.txt` (a file literally named `.txt`). The shell expands `*` to everything, and `rm` deletes it all without asking. `ls * .txt` first would have shown the problem."
+
+  - kind: mac
+    title: open, the Mac's double-click
+    body: |
+      On a Mac, `open` does what a double-click does in Finder. It doesn't exist on Linux (the closest is `xdg-open`).
+
+      - `open .` opens the current folder in Finder.
+      - `open notes.txt` opens a file in its usual app.
+      - `open -a TextEdit notes.txt` opens it in a particular app.
+
+      Try them in a practice folder:
+    commands: |
+      mkdir -p ~/terminal-practice
+      cd ~/terminal-practice
+      touch hello.txt
+      open .
+      open -a TextEdit hello.txt
+  - kind: why
+    body: |
+      Organizing files from the terminal is fast because one command can act on hundreds of files. That's also why it's dangerous: one wrong space or wildcard acts on hundreds of files too. The habits from this lesson (back up first, preview patterns with `ls`, quote odd names, double-check before `rm`) are the ones that keep real data safe.
+
+  - kind: recap
+    body: |
+      - `mkdir -p a/b/c` makes a chain of folders; `touch f` makes an empty file.
+      - `cp a b` copies, `cp -r` copies folders; `mv a b` moves **and** renames. Both overwrite silently (`-i` asks).
+      - **Quote** or **escape** names with spaces: `"old notes.txt"` or `old\ notes.txt`.
+      - Wildcards: `*` anything, `?` one character, `[ab]` one of. Preview with `ls pattern`.
+      - `rm` deletes forever, `rm -r` deletes folders, `rm -i` asks. Check `pwd` and `ls` the pattern before deleting.
+      - Mac only: `open` opens files and folders like a double-click.

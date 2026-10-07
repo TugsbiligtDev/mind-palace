@@ -1,0 +1,163 @@
+steps:
+  - kind: explain
+    title: Creating a repository
+    body: |
+      Two ways to make a new, empty repository on GitHub:
+
+      - **Website**: the **+** menu (top right) → *New repository*. Choose a name, a description, **public or private**, and optionally a README, a `.gitignore` template and a license. If you're going to push an existing local repository, **leave all three boxes unticked**, so GitHub's copy starts empty and your first push goes through cleanly.
+      - **GitHub CLI**:
+        ```
+        gh repo create bookshelf --public --description "Books I've read"
+        gh repo create --source=. --private --push     # from the repository you're in
+        ```
+
+      **Public** repositories can be seen (not changed) by anyone, which is great for a portfolio and for open source. **Private** ones only by you and the people you invite. You can switch later in *Settings*.
+
+  - kind: shell
+    title: Make a public repository
+    fixture: [git-identity, github-account]
+    setup: cd ~
+    body: |
+      Create a **public** repository called `bookshelf` on your (practice) GitHub account, with the description `Books I've read`, using the GitHub CLI. Then look at it with `gh repo view bookshelf`, and list your repositories with `gh repo list`.
+    tests:
+      - gh repo list
+    solution: gh repo create bookshelf --public --description "Books I've read"
+    reject:
+      - gh repo create bookshelf --private --description "Books I've read"
+      - gh repo create bookshelf --public
+    hint: "`gh repo create bookshelf` plus `--public` and `--description \"Books I've read\"` (quotes, because of the space and the apostrophe)."
+
+  - kind: explain
+    title: README and Markdown
+    body: |
+      A file called **`README.md`** in the top folder is shown on the repository's front page. It's the first thing visitors read: what the project is, how to use it, who to contact.
+
+      `.md` means **Markdown**: plain text with a few symbols that GitHub turns into formatting:
+
+      | You write | You get |
+      |---|---|
+      | `# Bookshelf` | a big heading (`##` smaller, `###` smaller still) |
+      | `- Dune` | a bullet point |
+      | `1. Dune` | a numbered list |
+      | `**bold**`, `*italic*` | **bold**, *italic* |
+      | `[Inkwell](https://inkwell.example)` | a link |
+      | `` `ls -la` `` | inline code |
+      | three backticks on their own lines | a block of code |
+
+      An empty line starts a new paragraph.
+
+  - kind: shell
+    title: Write the README
+    fixture: [git-identity, github-account]
+    setup: |
+      gh repo create bookshelf --public --description "Books I've read" > /dev/null
+      git clone -q git@github.com:learner/bookshelf.git ~/bookshelf 2> /dev/null
+      cd ~/bookshelf
+    body: |
+      You've cloned your empty `bookshelf` repository. Create `README.md` containing exactly these lines (nano is easiest):
+
+      ```
+      # Bookshelf
+
+      Books I've read this year.
+
+      - Dune
+      - Kindred
+      ```
+
+      Commit it with the message `Add a README`, push it, and check with `gh repo view`.
+    tests:
+      - git -C /srv/git/github.com/learner/bookshelf.git show main:README.md
+      - git -C /srv/git/github.com/learner/bookshelf.git log --format=%s main
+      - git status -sb | head -n 1
+    solution: |
+      printf "# Bookshelf\n\nBooks I've read this year.\n\n- Dune\n- Kindred\n" > README.md
+      git add README.md
+      git commit -m "Add a README"
+      git push
+    hint: "`nano README.md`, type the six lines (with the empty lines), save. Then `git add README.md`, `git commit -m \"Add a README\"`, `git push` (a fresh clone already tracks origin/main)."
+
+  - kind: explain
+    title: Licenses
+    body: |
+      Without a **license**, a public repository is visible but legally *nobody else may use, copy or change it*. If you want others to reuse your work, add a `LICENSE` file. The usual choices:
+
+      | License | In short |
+      |---|---|
+      | **MIT** | do anything, just keep the copyright notice. Simple and very common |
+      | **Apache 2.0** | like MIT, plus an explicit patent grant |
+      | **GPL 3.0** | reuse freely, but anything built from it must be shared under the GPL too |
+
+      On GitHub: *Add file → Create new file*, name it `LICENSE`, and pick a template. [choosealicense.com](https://choosealicense.com) explains the differences. For private repositories or personal notes, you don't need one.
+
+  - kind: explain
+    title: History and blame on the website
+    body: |
+      Everything `git log` shows is browsable on GitHub too:
+
+      - The **commits** link (a clock icon with a number) lists the history; click one to see its diff.
+      - On any file, **History** shows only the commits that changed that file.
+      - **Blame** shows, line by line, which commit last changed each line, who made it and when. It's not about blaming people; it answers "why is this line like this?" (`git blame file` does the same in the terminal, Module 36.)
+
+  - kind: choice
+    title: Which view?
+    body: Priya wants to know who last changed the price line in `books/dune.html`, and in which commit. Which GitHub view answers that fastest?
+    options:
+      - "Blame on `books/dune.html`"
+      - "The repository's Insights graph"
+      - "The list of branches"
+      - "The repository's Settings page"
+    answer: 0
+    explanation: "Blame lists, for every line, the commit that last changed it, with author and date. One click on that commit shows the full change."
+
+  - kind: explain
+    title: Issues
+    body: |
+      **Issues** are a repository's to-do list and discussion board: bugs, ideas, questions. Each gets a number (`#3`), a title, a description in Markdown, comments, and later labels and assignees (Module 39).
+
+      ```
+      gh issue create --title "Price of Kindred is wrong" --body "Shows 10.50, should be 9.50"
+      gh issue list
+      gh issue close 3
+      ```
+
+      In a commit message or pull request, writing `Closes #3` closes the issue automatically when the change is merged into `main` (Module 21).
+
+  - kind: shell
+    title: Log a bug
+    fixture: [git-identity, website-repo, github-account, github-site]
+    setup: |
+      git clone -q git@github.com:inkwell/site.git ~/site 2> /dev/null
+      cd ~/site
+    body: |
+      The about page still says "a lot of books"; Inkwell now has twenty thousand. Open an issue in Inkwell's repository with the title `Update the number of books on the about page` (any description), then list the open issues.
+    tests:
+      - gh issue list
+    solution: gh issue create --title "Update the number of books on the about page" --body "It should say twenty thousand."
+    hint: "`gh issue create --title \"…\" --body \"…\"`, run inside `~/site` so gh knows which repository you mean."
+
+  - kind: mac
+    title: On the real GitHub
+    body: |
+      With your own account:
+
+      1. Create a repository on the website (+ → New repository), **public**, with a README and the **MIT** license ticked.
+      2. Edit the README on the website (pencil icon), try a heading, a list and a link, and commit the change there.
+      3. Open the commit history, then **Blame** on the README.
+      4. Clone it to your Mac with the SSH address and `git log --oneline`.
+    commands: |
+      git clone git@github.com:YOUR-USERNAME/YOUR-REPO.git
+      cd YOUR-REPO
+      git log --oneline
+      gh issue create --title "Try issues" --body "My first issue"
+  - kind: why
+    body: |
+      A repository is also a public face: a clear README, a license that says what others may do, and issues that track the work are what make a project understandable to someone who isn't you, including you in a year.
+
+  - kind: recap
+    body: |
+      - Create repositories on the website (leave README/license/.gitignore unticked if you'll push an existing repo) or with `gh repo create name --public|--private`.
+      - `README.md` is the front page, written in **Markdown** (`#`, `-`, `**bold**`, `[text](url)`, `` `code` ``).
+      - A **license** (MIT, Apache 2.0, GPL) says what others may do; no license means no reuse.
+      - GitHub shows commits, per-file **History** and **Blame**.
+      - **Issues**: `gh issue create`, `gh issue list`, `gh issue close`; `Closes #3` closes one when merged.

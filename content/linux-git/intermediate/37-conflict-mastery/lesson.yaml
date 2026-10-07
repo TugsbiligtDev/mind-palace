@@ -1,0 +1,179 @@
+steps:
+  - kind: explain
+    title: Why conflicts happen
+    body: |
+      Git combines changes with a **three-way merge**: it compares both sides with their **common ancestor** (the *base*). If only one side changed a part of a file, Git takes that change. If **both sides changed the same lines differently**, it can't know what you want, so it stops and asks. That's a conflict.
+
+      Conflicts aren't errors. They're Git refusing to guess. They happen in **merge**, **rebase**, **cherry-pick**, **revert** and **stash pop**, and you resolve them the same way every time:
+
+      1. look at what's conflicted (`git status`);
+      2. edit each file to the result you want, removing the markers;
+      3. `git add` the file to mark it resolved;
+      4. continue the operation: `git commit` (merge), `git rebase --continue`, `git cherry-pick --continue`, `git revert --continue`.
+
+      Or back out completely: `git merge --abort`, `git rebase --abort`, `git cherry-pick --abort`.
+
+  - kind: explain
+    title: See the base, too (zdiff3)
+    body: |
+      By default the markers show only the two sides:
+
+      ```
+      <<<<<<< HEAD
+      <p class="price">8.99</p>
+      =======
+      <p class="price">7.99</p>
+      >>>>>>> autumn-sale
+      ```
+
+      Which side changed it, and from what? Switch on the **zdiff3** style and Git also shows the **base**, between `|||||||` and `=======`:
+
+      ```
+      <<<<<<< HEAD
+      <p class="price">8.99</p>
+      ||||||| 1594832
+      <p class="price">9.99</p>
+      =======
+      <p class="price">7.99</p>
+      >>>>>>> autumn-sale
+      ```
+
+      Now it's clear: both sides lowered a price that was 9.99. Many experienced users turn it on once and never look back:
+
+      ```
+      git config --global merge.conflictStyle zdiff3
+      ```
+
+  - kind: shell
+    title: A sale price, with the base in view
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c autumn-sale HEAD~3
+      sed -i 's/8.99/7.99/' books/dune.html && git commit -qam "Autumn sale: Dune for 7.99"
+      git switch -q main
+      sed -i 's/8.99/8.49/' books/dune.html && git commit -qam "Dune for 8.49"
+    body: |
+      1. Turn on the **zdiff3** conflict style **globally**.
+      2. Merge **`autumn-sale`** into `main`. It conflicts in `books/dune.html`; look at the three versions.
+      3. The sale wins: resolve it so the price line is `<p class="price">7.99</p>`, and finish the merge.
+    tests:
+      - git config --global merge.conflictStyle
+      - grep price books/dune.html
+      - git log -1 --format=%p | wc -w
+      - git status --short
+    solution: |
+      git config --global merge.conflictStyle zdiff3
+      git merge autumn-sale  # allow-error: the conflict
+      git show autumn-sale:books/dune.html > books/dune.html
+      git add books/dune.html
+      git commit --no-edit
+    hint: "`git config --global merge.conflictStyle zdiff3`, then `git merge autumn-sale`. `cat books/dune.html` shows ours (8.49), the base (8.99) and theirs (7.99). Edit it down to the 7.99 line, `git add books/dune.html`, `git commit` (save the message)."
+
+  - kind: explain
+    title: Taking one whole side
+    body: |
+      Sometimes you don't want to combine anything: one version is simply right for the whole file. Then take that side and mark it resolved:
+
+      ```
+      git checkout --theirs prices.txt     # or: git restore --theirs prices.txt
+      git add prices.txt
+      ```
+
+      `--ours` is the version from the branch you're **on**; `--theirs` the one coming **in**. (In a **rebase** it's the other way round: "ours" is the branch you're rebasing onto, "theirs" your own commit being replayed. Read the markers if in doubt.)
+
+  - kind: shell
+    title: The new price list wins
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      printf 'Dune 8.99\nKindred 10.50\nCirce 12.00\n' > prices.txt && git add prices.txt && git commit -qm "Add the price list"
+      git switch -q -c prices-2026
+      printf 'Dune 9.49\nKindred 10.99\nCirce 12.49\nBeloved 11.00\n' > prices.txt && git commit -qam "Prices for 2026"
+      git switch -q main
+      printf 'Dune 8.99\nKindred 10.00\nCirce 12.00\n' > prices.txt && git commit -qam "Kindred discount"
+    body: |
+      Merge **`prices-2026`** into `main`. `prices.txt` conflicts, but the 2026 list replaces the old one completely: take **the incoming branch's version** of the whole file (without editing it by hand), mark it resolved and finish the merge.
+    tests:
+      - cat prices.txt
+      - git status --short
+      - git log -1 --format=%s
+    solution: |
+      git merge prices-2026  # allow-error: the conflict
+      git checkout --theirs prices.txt
+      git add prices.txt
+      git commit --no-edit
+    uses:
+      - match: "--theirs"
+        why: "take the incoming version with `git checkout --theirs prices.txt` (or `git restore --theirs`)."
+    hint: "`git merge prices-2026`, then `git checkout --theirs prices.txt`, `git add prices.txt`, `git commit --no-edit`."
+
+  - kind: shell
+    title: A cherry-pick that collides
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c support HEAD~3
+      echo '<p>Questions? help@inkwell.example</p>' >> about.html && git commit -qam "Add a help address"
+      git switch -q main
+    body: |
+      Copy the commit **`Add a help address`** from branch `support` onto `main`. Both it and `main` added a line at the end of `about.html` (the help address there, the opening hours here), so it conflicts. Keep **both** lines: the opening hours first, then the help address. Finish the cherry-pick.
+    tests:
+      - cat about.html
+      - git log -2 --format=%s
+      - git status --short
+    solution: |
+      git cherry-pick support  # allow-error: the conflict
+      printf '<!DOCTYPE html>\n<title>About Inkwell</title>\n<h1>About us</h1>\n<p>Three people, a lot of books.</p>\n<a href="index.html">Home</a>\n<p>Open Monday to Saturday, 9:00 to 17:00.</p>\n<p>Questions? help@inkwell.example</p>\n' > about.html
+      git add about.html
+      git cherry-pick --continue
+    hint: "`git cherry-pick support` stops. Edit `about.html`: delete the three marker lines, so the opening-hours line comes first and the help line after it. `git add about.html`, then `git cherry-pick --continue` (save the message)."
+
+  - kind: choice
+    title: Ours or theirs?
+    body: |
+      You're on branch `feature`, running `git rebase main`. It stops on a conflict in `config.js`, and you want to keep **your branch's** version of that file. Which command?
+    options:
+      - "`git checkout --theirs config.js`, because during a rebase your commit is \"theirs\""
+      - "`git checkout --ours config.js`, because `feature` is the branch you're on"
+      - "`git merge --abort`, which keeps your version automatically"
+      - "`git checkout main config.js`, which restores your branch's file"
+    answer: 0
+    explanation: "A rebase replays your commits onto main, so HEAD (\"ours\") is main plus what's been replayed, and the commit being applied (yours) is \"theirs\". In a merge it's the other way round."
+
+  - kind: explain
+    title: Fewer conflicts
+    body: |
+      You can't avoid conflicts entirely, but you can make them rare and small:
+
+      - **Small, short-lived branches**: a branch that lives two days collides with far less than one that lives two months.
+      - **Sync often**: `git pull --rebase` on main, or rebase your branch onto main every day or two, so you meet each conflict while it's small.
+      - **Don't mix** reformatting (re-indenting a whole file) with real changes, and agree on a formatter, so lines don't change for no reason.
+      - **Talk**: if two people are about to rework the same file, decide who goes first.
+
+  - kind: info
+    title: "🔹 rerere: reuse recorded resolution"
+    body: |
+      If you resolve the *same* conflict again and again (while repeatedly rebasing a long branch, say), `git config --global rerere.enabled true` tells Git to **re**member how you **re**solved each conflict and **re**use it next time. It's handy, but a remembered resolution is applied quietly, so check the result before you commit.
+
+  - kind: mac
+    title: The VS Code merge editor
+    body: |
+      On your Mac, VS Code shows conflicts with buttons (**Accept Current**, **Accept Incoming**, **Accept Both**) and a three-column **merge editor** (incoming, current and the result). Open a conflicted repository with `code .`, click the file in the Source Control panel, and use **Resolve in Merge Editor**. Then stage and continue as usual in the terminal.
+    commands: |
+      git config --global merge.conflictStyle zdiff3
+      git merge some-branch
+      code .
+      git add .
+      git commit
+  - kind: why
+    body: |
+      Teams that are afraid of conflicts avoid integrating, which makes the conflicts they eventually get far worse. Once you can read the markers (and the base, with zdiff3), take a whole side when that's right, and finish or abort any operation, conflicts become a two-minute chore in any of merge, rebase or cherry-pick.
+
+  - kind: recap
+    body: |
+      - A conflict = both sides changed the same lines differently since the common **base**.
+      - Resolve: edit (remove markers) → `git add` → continue (`git commit`, `rebase --continue`, `cherry-pick --continue`, `revert --continue`); or `--abort`.
+      - `git config --global merge.conflictStyle zdiff3` shows the base between `|||||||` and `=======`.
+      - Whole side: `git checkout --ours/--theirs file` (or `git restore --ours/--theirs`). In a rebase, *ours* is the base branch and *theirs* your commit.
+      - Prevent: small branches, frequent syncing, no drive-by reformatting. 🔹 `rerere` remembers resolutions.

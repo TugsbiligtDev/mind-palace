@@ -1,0 +1,185 @@
+steps:
+  - kind: explain
+    title: Terminal, shell, command line
+    body: |
+      Three words get used as if they meant the same thing. They're three layers:
+
+      - The **terminal** is the window: the app that shows text and sends your typing on. On a Mac it's called *Terminal*.
+      - The **shell** is the program inside it that reads what you type, understands it, and runs the right command. It's the part that actually does things.
+      - The **command line** is the line you type on, at the bottom of the window.
+
+      So you open a terminal, it starts a shell, and you type commands on the command line. People say "open a terminal" or "on the command line" for all of it, and that's fine.
+
+  - kind: explain
+    title: zsh and bash
+    body: |
+      There are several shells. Two matter for you:
+
+      | Shell | Where you meet it | Its prompt ends in |
+      |---|---|---|
+      | **zsh** | your Mac's Terminal (the default since 2019) | `%` |
+      | **bash** | almost every Linux server, including Inkwell's | `$` |
+
+      They're close relatives: everything in this level works in both. The practice terminal in these lessons runs **bash** on Linux, because that's what you'll find on servers. Where zsh does something differently, the lesson says so.
+
+  - kind: explain
+    title: Reading the prompt
+    body: |
+      When the shell is ready for a command, it shows a **prompt**. Inkwell's server says:
+
+      ```
+      learner@inkwell:~$
+      ```
+
+      | Part | Means |
+      |---|---|
+      | `learner` | who you are (your username) |
+      | `inkwell` | which computer you're on (its hostname) |
+      | `~` | which folder you're in. `~` is short for **your home folder** |
+      | `$` | "ready, I'm waiting for a command" (an ordinary user) |
+
+      On your Mac, the same information looks like `ada@MacBook-Air ~ %`. If the prompt ever ends in `#` instead of `$`, you're the all-powerful **root** user. Be careful (Module 10).
+
+      ⚠️ When a lesson shows a command, **don't type the prompt**. Only the part after it.
+
+  - kind: shell
+    title: Where am I?
+    fixture: backoffice
+    body: |
+      Your first command is `pwd`: **p**rint **w**orking **d**irectory. It prints the full name of the folder you're in right now.
+
+      Click inside the terminal, type `pwd` and press **Return**.
+    output: true
+    solution: pwd
+    hint: Type the three letters `pwd` (all lowercase) and press Return.
+
+  - kind: explain
+    title: The parts of a command
+    body: |
+      Most commands have up to three parts, separated by spaces:
+
+      ```
+      ls  -l  orders
+      │   │   └── argument: what to work on (the orders folder)
+      │   └────── option (or "flag"): how to do it (-l = long, detailed list)
+      └────────── command: which program to run
+      ```
+
+      - The **command** comes first. It's the program's name.
+      - **Options** change how it behaves. Short options are a dash and a letter (`-l`), long ones are two dashes and a word (`--all`). Short ones can be combined: `-la` is `-l` plus `-a`.
+      - **Arguments** say what to work on: a file, a folder, some text.
+
+      Some commands need neither (`pwd`), some need an argument (`cd orders`), and most take options.
+
+  - kind: shell
+    title: Three more first commands
+    fixture: backoffice
+    body: |
+      Try these, one at a time:
+
+      - `whoami` prints your username.
+      - `date` prints the date and time on the server (servers usually keep UTC time).
+      - `echo` prints back whatever you give it as arguments: `echo hi there` prints `hi there`.
+
+      Then make the terminal say **exactly** this, with the comma and the capital letters:
+
+      ```
+      Hello, Inkwell
+      ```
+    output: true
+    solution: echo Hello, Inkwell
+    reject:
+      - echo hello, inkwell
+      - echo Hello Inkwell
+    hint: "`echo` prints its arguments. Type `echo` and a space, then the words exactly as shown, then Return."
+
+  - kind: explain
+    title: Capital letters matter
+    body: |
+      The shell is **case-sensitive**: `pwd`, `PWD` and `Pwd` are three different words, and only the first is a command.
+
+      ```
+      learner@inkwell:~$ PWD
+      bash: PWD: command not found
+      ```
+
+      Commands are almost always all lowercase. File names are case-sensitive too: on Linux, `Notes.txt` and `notes.txt` are two different files. (Your Mac's disk usually treats them as the same name, which is one of the few places Mac and Linux disagree.)
+
+  - kind: explain
+    title: Stopping and clearing
+    body: |
+      Two survival keys:
+
+      - **Ctrl+C** (hold *Control*, press *C*) **cancels** whatever is running and gives you a fresh prompt. If a command seems stuck, or you started typing something wrong, Ctrl+C. It's the terminal's "never mind". On a Mac it's *Control*, not *Command*.
+      - `clear` (or **Ctrl+L**) wipes the screen when it gets cluttered. Nothing is undone; your files are untouched.
+
+      `sleep 30` is a command that does nothing for 30 seconds. It's a handy way to practise.
+
+  - kind: shell
+    title: Cancel a command
+    body: |
+      1. Type `sleep 30` and press Return. The prompt disappears: the shell is busy.
+      2. Press **Ctrl+C**. You get the prompt back without waiting.
+      3. Type `clear` to clean up the screen.
+
+      Also try typing `PWD` to see the "command not found" message for yourself. Nothing here is graded.
+
+  - kind: explain
+    title: Spaces split words
+    body: |
+      The shell uses spaces to tell the parts of a command apart. So a name with a space in it gets cut in two:
+
+      ```
+      mkdir staff notes
+      ```
+
+      `mkdir` **m**a**k**es a **dir**ectory (Module 5). This command makes **two** folders, `staff` and `notes`. To keep a name with a space in one piece, **quote** it, or put a backslash before the space:
+
+      ```
+      mkdir "staff notes"
+      mkdir staff\ notes
+      ```
+
+      Both make one folder called `staff notes`. Most people avoid spaces in file names on the command line for exactly this reason: `staff-notes` needs no quotes.
+
+  - kind: shell
+    title: One folder, not two
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      You're in Inkwell's shared folder. Make **one** new folder here called `staff notes` (with the space).
+
+      Use `ls` to check. If you made two folders by accident, that's fine: press **Reset** above the terminal to start over.
+    tests:
+      - ls -1
+    solution: mkdir "staff notes"
+    reject:
+      - mkdir staff notes
+      - mkdir staff-notes
+    hint: "Without quotes, the space splits the name into two folders. Put the name in double quotes: `mkdir \"staff notes\"`."
+
+  - kind: mac
+    title: Meet your Mac's terminal
+    body: |
+      Open **Terminal** (⌘ + Space, type *Terminal*, Return). Your prompt looks something like `ada@MacBook-Air ~ %`: you, your Mac's name, your home folder `~`, and zsh's `%`.
+
+      Type these one at a time. Your Mac's home folder starts with `/Users/` instead of Linux's `/home/`.
+
+      Keep Terminal in your Dock (right-click its icon → **Options → Keep in Dock**). You'll use it a lot.
+    commands: |
+      pwd
+      whoami
+      date
+      echo $SHELL
+  - kind: why
+    body: |
+      Reading the prompt tells you who you are, which computer you're on and where you stand before you run anything. That habit is what stops people deleting files on the wrong server. And knowing how the shell splits a command into parts explains most beginner errors before they happen.
+
+  - kind: recap
+    body: |
+      - The **terminal** is the window, the **shell** runs your commands, the **command line** is where you type.
+      - Mac: **zsh**, prompt ends `%`. Linux servers: **bash**, prompt ends `$` (`#` means root).
+      - The prompt `learner@inkwell:~$` = user @ computer : folder, ready.
+      - A command is **command → options → arguments**, separated by spaces: `ls -l orders`.
+      - First commands: `pwd`, `whoami`, `date`, `echo`, `clear`.
+      - Everything is **case-sensitive**. **Ctrl+C** cancels. **Quote** names that contain spaces.

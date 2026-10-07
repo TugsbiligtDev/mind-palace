@@ -1,0 +1,4 @@
+title: Basic Linux Administration
+module: 31
+summary: "Looking after a server: users and groups (adduser, usermod -aG, passwd, groups); giving someone sudo; services with systemctl (status, start, stop, restart, enable); logs with journalctl and /var/log; and scheduling jobs with cron."
+minutes: 55

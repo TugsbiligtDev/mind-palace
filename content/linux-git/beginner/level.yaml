@@ -1,0 +1,36 @@
+id: beginner
+title: Beginner
+season: 1
+season_title: The Back Office
+season_pitch: |
+  Inkwell Books runs on a small Linux server, and its shared files are a mess. Inspector Bold
+  sends you in with nothing but a terminal. Learn to find your way around, sort and search files,
+  fix permissions and set up the shell. Then put the store's website under Git, follow its history
+  to a payment key that should never have been committed, and finish on GitHub.
+status: open
+topics:
+  - 01-computer-organized
+  - 02-meeting-terminal
+  - 03-help-errors
+  - 04-file-system-paths
+  - 05-create-copy-move-delete
+  - 06-viewing-editing-text
+  - 07-working-faster
+  - review-1-files
+  - 08-redirection-pipes
+  - 09-finding-things
+  - 10-permissions-sudo
+  - 11-environment-config
+  - 12-installing-software
+  - review-2-shell
+  - 13-version-control
+  - 14-git-setup
+  - 15-core-loop
+  - 16-ignore-undo
+  - 17-branching-merging
+  - review-3-git
+  - 18-account-auth
+  - 19-remotes
+  - 20-repo-essentials
+  - 21-pull-requests
+  - capstone-1-notes-dotfiles

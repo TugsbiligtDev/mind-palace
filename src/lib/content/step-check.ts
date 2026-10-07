@@ -1,6 +1,7 @@
 // Kept apart from schema.ts so the browser can use it without loading zod.
 import type { JsCheck } from "../js/core";
 import type { PyCheck } from "../py/core";
+import type { ShellCheck } from "../shell/core";
 import type { SqlCheck } from "../sql/core";
 import type { WebCheck, WebFiles } from "../web/core";
 import type { Step } from "./schema";
@@ -40,4 +41,10 @@ export function webFiles(step: WebStep, files: { html?: string; css?: string }):
 export function webStepCheck(step: WebStep): WebCheck | undefined {
   if (!step.solution || step.tests.length === 0) return undefined;
   return { tests: step.tests, solution: webFiles(step, step.solution), widths: step.widths };
+}
+
+// Linux & Git "shell" steps: graded when there's a solution and something to compare.
+export function shellStepCheck(step: Extract<Step, { kind: "shell" }>): ShellCheck | undefined {
+  if (step.solution === undefined || (step.tests.length === 0 && !step.output)) return undefined;
+  return { setup: step.setup, solution: step.solution, tests: step.tests, output: step.output, uses: step.uses };
 }

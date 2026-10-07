@@ -1,0 +1,4 @@
+title: Repository Protection & Hygiene
+module: 40
+summary: "Making GitHub enforce the rules: rulesets for main (pull requests, reviews, status checks, no force-push); secret scanning and push protection; what to do after a secret is committed; .gitattributes and line endings; Dependabot alerts; and the older branch protection rules."
+minutes: 50

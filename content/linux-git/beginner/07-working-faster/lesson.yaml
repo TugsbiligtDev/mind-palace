@@ -1,0 +1,150 @@
+steps:
+  - kind: explain
+    title: The shell remembers
+    body: |
+      The shell keeps a list of every command you've typed. Three ways to use it:
+
+      - **↑ (Up arrow)** brings back the previous command; keep pressing for older ones, **↓** to come forward again. Edit it if you like, then Return.
+      - `history` prints the whole list, numbered. `!42` runs command number 42 again.
+      - **Ctrl+R** searches it: press Ctrl+R and start typing any part of an old command. The newest match appears; **Ctrl+R** again goes further back. **Return** runs it, **Esc** puts it on the line to edit, **Ctrl+G** gives up.
+
+      Experienced people rarely type a long command twice.
+
+  - kind: shell
+    title: Bring a command back
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      1. Run `wc -l orders/2026-08.csv`.
+      2. Run `ls`.
+      3. Press **↑** twice to bring back the `wc` command. Change `08` to `09` (use ← and →) and press Return.
+      4. Press **Ctrl+R**, type `ls`, and press Return to run it again.
+      5. Run `history` to see everything you've typed.
+
+      Nothing is graded: try each one until it feels natural.
+
+  - kind: explain
+    title: Moving along the line
+    body: |
+      When a long command has a typo near the start, don't hold down the arrow key. The shell has shortcuts (all with **Control**, not Command):
+
+      | Keys | Does |
+      |---|---|
+      | **Ctrl+A** | jump to the start of the line |
+      | **Ctrl+E** | jump to the **e**nd |
+      | **Ctrl+U** | delete everything before the cursor |
+      | **Ctrl+K** | delete everything after the cursor |
+      | **Ctrl+W** | delete the word before the cursor |
+      | **Ctrl+L** | clear the screen (like `clear`) |
+
+      On a Mac, **Option+←/→** also jumps a word at a time in Terminal.
+
+  - kind: shell
+    title: Fix the front of a long command
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type this, but **don't** press Return:
+
+      ```
+      cta logs/shop.log orders/2026-08.csv orders/2026-09.csv
+      ```
+
+      Oops: `cta`. Press **Ctrl+A** to jump to the start, delete the typo, type `cat`, and press Return (the cursor doesn't need to be at the end).
+
+      Then type some words and practise **Ctrl+W**, **Ctrl+U** and **Ctrl+E**.
+
+  - kind: explain
+    title: "!! repeats the last command"
+    body: |
+      `!!` means "the whole previous command". The shell swaps it in and shows you what it ran:
+
+      ```
+      learner@inkwell:~$ cat /etc/shadow
+      cat: /etc/shadow: Permission denied
+      learner@inkwell:~$ sudo !!
+      sudo cat /etc/shadow
+      ```
+
+      It's mostly used like that, to rerun something with `sudo` in front (Module 10). `!$` means just the **last word** of the previous command: `mkdir reports` then `cd !$`.
+
+      ⚠️ The shell runs the expansion straight away, so be sure what the last command was.
+
+  - kind: explain
+    title: Aliases
+    body: |
+      An **alias** is a short name for a longer command:
+
+      ```
+      alias ll='ls -lah'
+      ```
+
+      Now typing `ll` runs `ls -lah`. Rules:
+
+      - No spaces around `=`, and quote the command (single quotes are safest).
+      - `alias` alone lists your aliases; `unalias ll` removes one.
+      - An alias typed like this lasts until you close the terminal. Module 11 makes them permanent.
+
+      Pick names that aren't already commands, or you'll hide the real one.
+
+  - kind: shell
+    title: A shortcut for the shop log
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Inspector Bold checks the shop's log several times a day. Make an alias called `shoplog` that runs:
+
+      ```
+      tail -n 3 ~/inkwell/logs/shop.log
+      ```
+
+      Then use it: type `shoplog`.
+    output: true
+    solution: |
+      alias shoplog='tail -n 3 ~/inkwell/logs/shop.log'
+      shoplog
+    uses:
+      - match: "^\\s*alias\\s+shoplog="
+        why: "the task is to make an alias: `alias shoplog='…'`."
+      - match: "^\\s*shoplog\\s*$"
+        why: "after making the alias, run it by typing just `shoplog`."
+    hint: "`alias shoplog='tail -n 3 ~/inkwell/logs/shop.log'` (no spaces around `=`), then `shoplog` on its own line."
+
+  - kind: choice
+    title: Will it work?
+    body: |
+      Kenji types:
+
+      ```
+      alias ll = 'ls -la'
+      ```
+
+      What happens?
+    options:
+      - "It fails: there must be no spaces around the `=`"
+      - "It works: the spaces are ignored like anywhere else"
+      - "It works, but only after the terminal is restarted"
+      - "It fails: aliases must use double quotes, not single"
+    answer: 0
+    explanation: "With spaces, the shell sees three separate words (`ll`, `=` and `'ls -la'`) and `alias` complains that `=` isn't found. Write it as `alias ll='ls -la'`."
+
+  - kind: mac
+    title: The same keys on your Mac
+    body: |
+      Everything in this lesson works in your Mac's Terminal too (zsh): ↑, Ctrl+R, Ctrl+A/E/U/W/L, `!!` and `alias`. 🔹 If you'd like a moment to check before an expanded `!!` runs, add `setopt HIST_VERIFY` to your `~/.zshrc` (Module 11): zsh then puts the expanded command on the line and waits for Return.
+
+      Try making `ll` on your Mac. It disappears when you close the window; Module 11 fixes that.
+    commands: |
+      alias ll='ls -lah'
+      ll
+      history
+  - kind: why
+    body: |
+      A lot of terminal work is running the same few commands with small changes. History, Ctrl+R and the line-editing keys cut that to a couple of keystrokes, and aliases turn your most common commands into single words. Small savings, thousands of times.
+
+  - kind: recap
+    body: |
+      - **↑/↓** step through history; `history` lists it; **Ctrl+R** searches it.
+      - **Ctrl+A** start, **Ctrl+E** end, **Ctrl+U** delete before, **Ctrl+K** delete after, **Ctrl+W** delete a word, **Ctrl+L** clear.
+      - `!!` = the last command (`sudo !!`), `!$` = its last word.
+      - `alias name='command'` (no spaces around `=`); `alias` lists, `unalias` removes. They last until the terminal closes.

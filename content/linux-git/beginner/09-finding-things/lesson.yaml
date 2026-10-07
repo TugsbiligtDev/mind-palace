@@ -1,0 +1,171 @@
+steps:
+  - kind: explain
+    title: Two kinds of searching
+    body: |
+      Inspector Bold: *"Two questions come up in every case. Which files mention X? And where is the file called Y?"*
+
+      - **`grep`** searches **inside** files for lines containing some text.
+      - **`find`** searches the folder tree for **files** by name, type, size or age.
+
+  - kind: explain
+    title: grep
+    body: |
+      `grep pattern file` prints every line of the file that contains the pattern:
+
+      ```
+      grep ERROR logs/shop.log
+      ```
+
+      The options you'll use every day:
+
+      | Option | Does |
+      |---|---|
+      | `-i` | **i**gnore case: `dune` matches `Dune` and `DUNE` |
+      | `-n` | show line **n**umbers |
+      | `-v` | in**v**ert: print the lines that **don't** match |
+      | `-c` | **c**ount the matching lines instead of printing them |
+      | `-r` | search a whole folder, **r**ecursively; each line is prefixed with its file name |
+      | `-l` | only **l**ist the names of files that match |
+
+      Put the pattern in quotes when it has spaces: `grep "payment failed" logs/shop.log`. grep also reads from a pipe: `ls | grep csv`.
+
+  - kind: shell
+    title: What went wrong in the shop?
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Print every line of `logs/shop.log` that contains `ERROR`.
+    output: true
+    solution: grep ERROR logs/shop.log
+    hint: "`grep` + the word to look for + the file."
+
+  - kind: shell
+    title: Every Dune order
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Search **all** the files in the `orders` folder at once for `Dune`, showing each match's **line number** too.
+    output: true
+    solution: grep -rn Dune orders
+    reject:
+      - grep -r Dune orders
+      - grep Dune orders/2026-09.csv
+    hint: "`-r` searches a whole folder and `-n` adds line numbers. They can be combined: `-rn`."
+
+  - kind: shell
+    title: Everything that isn't routine
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      In the shop log, most lines are routine `INFO` lines. Print **only the lines that don't contain `INFO`**.
+    output: true
+    solution: grep -v INFO logs/shop.log
+    hint: "There's an option that in**v**erts the match."
+
+  - kind: explain
+    title: find
+    body: |
+      `find` walks down a folder tree and prints the paths that match your tests:
+
+      ```
+      find where   what-to-look-for
+      find .       -name "*.txt"
+      ```
+
+      | Test | Matches |
+      |---|---|
+      | `-name "*.csv"` | names matching a pattern (quote it, so the shell doesn't expand the `*` first) |
+      | `-iname "readme*"` | the same, ignoring case |
+      | `-type f` / `-type d` | only files / only directories |
+      | `-mtime -7` | changed in the last 7 days |
+      | `-size +10M` | bigger than 10 MB |
+
+      Tests combine: `find ~/inkwell -type f -name "*.log"`. Searching from `/` looks through the whole computer, which is slow and prints many "Permission denied" errors (`2> /dev/null` hides them).
+
+  - kind: shell
+    title: Where are the text files?
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      From `~/inkwell`, use `find` on the current folder (`.`) to list every file whose name ends in `.txt`, at any depth.
+    output: true
+    solution: find . -name "*.txt"
+    uses:
+      - match: "find\\s+\\.\\s"
+        why: "start the search from the current folder: `find . …`."
+    hint: "`find . -name \"*.txt\"`: the quotes stop the shell from expanding `*.txt` itself."
+
+  - kind: shell
+    title: The refund trail
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Two refunds nobody remembers. Which files in `~/inkwell` mention the word `refund`? Search every file in the current folder and below, and print **only the file names**, once each.
+    output: true
+    solution: grep -rl refund .
+    hint: "`-r` to search everything below `.`, and the option that only **l**ists file names."
+
+  - kind: choice
+    title: Read the evidence
+    body: |
+      `grep refund logs/access.log` shows:
+
+      ```
+      192.0.2.10 - [06/Oct/2026:02:13:44] "POST /admin/refund?order=1044 HTTP/1.1" 200
+      192.0.2.10 - [06/Oct/2026:02:14:09] "POST /admin/refund?order=1046 HTTP/1.1" 200
+      ```
+
+      What stands out?
+    options:
+      - "The same address made both refunds, 25 seconds apart, at 2 a.m."
+      - "Both refunds failed, because the status code 200 means an error"
+      - "The two refunds were made by two different visitors to the site"
+      - "The refunds were made during the shop's busiest hour of the day"
+    answer: 0
+    explanation: "Same IP address (192.0.2.10), 02:13 and 02:14 in the night, and status 200 means both succeeded. The shop's own refund log may say who approved them; it's readable only by root, which is next lesson's problem."
+
+  - kind: explain
+    title: Where does a command live?
+    body: |
+      Commands are files too. Two ways to ask the shell which one it would run:
+
+      ```
+      learner@inkwell:~$ which git
+      /usr/bin/git
+      learner@inkwell:~$ type cd
+      cd is a shell builtin
+      ```
+
+      - `which` searches the folders where programs live and prints the path.
+      - `type` is more honest: it also knows about **aliases** and **built-ins** (commands inside the shell itself, like `cd`).
+
+      Useful when "the wrong version" of something runs, or to check that something is installed.
+
+  - kind: info
+    title: "🔹 Faster file search: mdfind and locate"
+    body: |
+      `find` checks every folder each time, which can be slow on a big disk. Two indexed alternatives:
+
+      - **macOS**: `mdfind "invoice"` searches Spotlight's index (names and contents). `mdfind -name todo.txt` for names only.
+      - **Linux**: `locate todo.txt` searches a database of file names, refreshed daily (or with `sudo updatedb`). It may not be installed.
+
+  - kind: mac
+    title: Search your Mac
+    body: |
+      Try the same tools at home. The Mac's `grep` and `find` are the BSD versions, but these options behave the same.
+    commands: |
+      grep -i "alias" ~/.zshrc
+      find ~/Documents -name "*.pdf" -mtime -30
+      which ls python3
+      type cd
+      mdfind -name "todo"
+  - kind: why
+    body: |
+      Most real terminal work starts with a search: the error in a log, the file someone mentioned, the setting that needs changing. `grep` and `find` answer those in seconds, across thousands of files, and they slot straight into pipes.
+
+  - kind: recap
+    body: |
+      - `grep pattern file` prints matching lines. `-i` ignore case, `-n` numbers, `-v` invert, `-c` count, `-r` whole folder, `-l` file names only.
+      - `find where -name "pattern" -type f` finds files by name and type (also `-mtime`, `-size`). Quote patterns.
+      - `which cmd` shows a program's path; `type cmd` also recognises aliases and built-ins.
+      - 🔹 `mdfind` (Mac) and `locate` (Linux) search an index instead of walking the disk.

@@ -1,0 +1,4 @@
+title: Everyday Power Tools
+module: 36
+summary: "git stash; staging part of a file with git add -p; copying one commit with cherry-pick; tags and semantic versioning; searching history (--author, --since, -S, -- path); git show and git blame; comparing branches with .. and ...; Git aliases; and tidying away merged branches."
+minutes: 55

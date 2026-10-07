@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "Kenji is in the groups `kenji` and `www-data`. What does `sudo usermod -G sudo kenji` do?"
+    options:
+      - "Leaves him only in `kenji` and `sudo`: `www-data` is removed"
+      - "Adds `sudo` and keeps `www-data`, as you'd hope"
+      - "Makes `sudo` his main group instead of `kenji`"
+      - "Nothing, because `-G` must come after the user name"
+    answer: 0
+    explanation: "`-G` alone sets the complete list of extra groups. `-aG` (append) adds to it."
+  - type: mcq
+    prompt: "A service shows `Active: failed`. Where do you look for the reason?"
+    options:
+      - "`journalctl -u` with the service's name"
+      - "`/etc/systemd/system/failed.log`"
+      - "`crontab -l` for the root user"
+      - "`systemctl enable` with the service's name"
+    answer: 0
+    explanation: "The journal holds everything the service printed, including the error that stopped it. `systemctl status` shows only the last few lines."
+  - type: mcq
+    prompt: "After a reboot, nginx isn't running, although `sudo systemctl start nginx` works fine. What's missing?"
+    options:
+      - "It isn't enabled: `sudo systemctl enable nginx`"
+      - "It needs `reload` instead of `start` after every reboot"
+      - "nginx can only be started from a cron job with `@reboot`"
+      - "The unit file must be copied to `/etc/init.d` first"
+    answer: 0
+    explanation: "`start` runs it now; `enable` makes systemd start it at boot. `enable --now` does both."
+  - type: mcq
+    prompt: "Which crontab line runs `/opt/report.sh` at 06:00 every Monday?"
+    options:
+      - "`0 6 * * 1 /opt/report.sh`"
+      - "`6 0 * * 1 /opt/report.sh`"
+      - "`0 6 1 * * /opt/report.sh`"
+      - "`* 6 * * 1 /opt/report.sh`"
+    answer: 0
+    explanation: "Minute 0, hour 6, any day of the month, any month, day of week 1 (Monday). `0 6 1 * *` would be the 1st of every month; `* 6` would run every minute from 06:00 to 06:59."
+  - type: mcq
+    prompt: "A script works when you run it, but does nothing from cron. What's the most likely cause?"
+    options:
+      - "cron's short PATH and missing settings: use full paths and redirect output to a log to see the error"
+      - "cron can only run scripts that are stored inside the `/etc/cron.d` folder"
+      - "cron needs the script to be owned by root, whoever's crontab it's in"
+      - "Scripts run from cron must not start with a shebang line"
+    answer: 0
+    explanation: "cron runs with a minimal environment (PATH is just `/usr/bin:/bin`) and throws away output. `>> /home/you/job.log 2>&1` shows what went wrong."

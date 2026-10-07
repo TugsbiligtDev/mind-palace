@@ -1,0 +1,209 @@
+steps:
+  - kind: explain
+    title: The brief
+    body: |
+      Inspector Bold: *"Priya wants a morning report from the shop's logs, and she wants it done properly this time: reviewed, tested, released. Build it, and ship it the way you'd want every change shipped."*
+
+      You'll build **`logsum.sh`**, a small tool that summarises an nginx access log, in **`~/log-tool`**, and then:
+
+      1. put it under Git and on GitHub (`learner/log-tool`);
+      2. add ShellCheck in GitHub Actions, through a pull request;
+      3. protect `main` with a ruleset;
+      4. add a feature on a branch with a clean, rebased history;
+      5. schedule it with cron;
+      6. publish a tagged release.
+
+      Each step is checked in the practice terminal and starts where the previous one ends. The last step repeats the whole project on your Ubuntu VM and real GitHub.
+
+  - kind: shell
+    title: "1. The tool"
+    fixture: [git-identity, shop-logs]
+    setup: apt-get install -y -q shellcheck > /dev/null
+    body: |
+      Write an executable **`~/log-tool/logsum.sh`** that takes the path of an access log and prints, for `~/logs/access.log`:
+
+      ```
+      Requests: 28
+      Visitors: 5
+      Errors: 7
+      Top pages:
+        4 /books/dune
+        4 /checkout
+        2 /
+      ```
+
+      - **Requests**: the number of lines; **Visitors**: distinct addresses (field 1); **Errors**: requests with a status (field 9) of **400 or more**.
+      - **Top pages**: the three most requested paths (field 7) with their counts, most first; equal counts in **alphabetical** order of the path (`sort -k1,1nr -k2,2` after `uniq -c`).
+      - Robust: strict mode; with no argument, print `usage: logsum.sh ACCESS_LOG` to standard error and exit **2**; if the file can't be read, print `logsum.sh: cannot read FILE` to standard error and exit **1**.
+      - **ShellCheck-clean**.
+    tests:
+      - ~/log-tool/logsum.sh ~/logs/access.log
+      - head -12 ~/logs/access.log > /tmp/short.log && ~/log-tool/logsum.sh /tmp/short.log
+      - ~/log-tool/logsum.sh > /dev/null 2> /tmp/e; echo "exit $?"; cat /tmp/e
+      - ~/log-tool/logsum.sh /tmp/missing.log > /dev/null 2> /tmp/e; echo "exit $?"; cat /tmp/e
+      - shellcheck ~/log-tool/logsum.sh > /dev/null; echo "shellcheck exit $?"
+    solution: |
+      mkdir -p ~/log-tool
+      printf '%s\n' '#!/usr/bin/env bash' '# logsum.sh: summarise an nginx access log' 'set -euo pipefail' 'if [[ $# -ne 1 ]]; then' '  echo "usage: logsum.sh ACCESS_LOG" >&2' '  exit 2' 'fi' 'log=$1' 'if [[ ! -r "$log" ]]; then' '  echo "logsum.sh: cannot read $log" >&2' '  exit 1' 'fi' 'echo "Requests: $(wc -l < "$log")"' 'echo "Visitors: $(cut -d'"' '"' -f1 "$log" | sort -u | wc -l)"' 'echo "Errors: $(awk '"'"'$9 >= 400'"'"' "$log" | wc -l)"' 'echo "Top pages:"' 'awk '"'"'{print $7}'"'"' "$log" | sort | uniq -c | sort -k1,1nr -k2,2 | head -3 | awk '"'"'{print "  " $1, $2}'"'"'' > ~/log-tool/logsum.sh
+      chmod +x ~/log-tool/logsum.sh
+      shellcheck ~/log-tool/logsum.sh
+    hint: "Start from Module 29's watch script: the argument check, then `[[ ! -r \"$log\" ]]`, then one `echo` per line with `$( )`: `wc -l < \"$log\"`, `cut -d' ' -f1 \"$log\" | sort -u | wc -l`, `awk '$9 >= 400' \"$log\" | wc -l`, and for the top pages `awk '{print $7}' \"$log\" | sort | uniq -c | sort -k1,1nr -k2,2 | head -3 | awk '{print \"  \" $1, $2}'`. Write it in nano or vim; run ShellCheck."
+
+  - kind: shell
+    title: "2. Git and GitHub"
+    fixture: [git-identity, github-account, shop-logs, logtool-v1]
+    setup: cd ~/log-tool
+    body: |
+      In `~/log-tool`:
+
+      1. Make it a Git repository with **`main`** as its branch.
+      2. Add a **`.gitignore`** that ignores `*.log` files (you'll test with logs here; they mustn't end up on GitHub) and a **`README.md`** with a title and one line saying what the tool does.
+      3. Commit everything as **`First version of logsum`**.
+      4. Create the **public** GitHub repository **`learner/log-tool`** from this folder and push, in one `gh` command.
+    tests:
+      - gh repo view learner/log-tool | head -1
+      - git log --format=%s
+      - git ls-files
+      - git ls-remote --heads origin | cut -f2
+    solution: |
+      git init -b main
+      printf '*.log\n' > .gitignore
+      printf '# log-tool\n\nSummarises an nginx access log.\n' > README.md
+      git add .
+      git commit -m "First version of logsum"
+      gh repo create log-tool --public --source . --push
+    hint: "`git init -b main`, create `.gitignore` and `README.md`, `git add .`, `git commit -m \"First version of logsum\"`, then `gh repo create log-tool --public --source . --push` (Module 20)."
+
+  - kind: shell
+    title: "3. CI through a pull request"
+    fixture: [git-identity, github-account, shop-logs, logtool-v1, logtool-repo]
+    setup: cd ~/log-tool
+    body: |
+      On a branch **`add-ci`**, add **`.github/workflows/ci.yml`**: a workflow named **`CI`** that runs on pushes to `main` and on pull requests, with one job **`shellcheck`** that checks out the code and runs `shellcheck *.sh`. Commit it as **`Run ShellCheck on every push and pull request`**, push the branch, open a pull request, check that its checks pass, and **squash-merge** it (deleting the branch).
+    tests:
+      - git fetch -q && git show origin/main:.github/workflows/ci.yml | grep -c 'shellcheck \*.sh'
+      - gh pr view 1 | head -2 | tail -1 | cut -d' ' -f1
+      - gh run list --event pull_request | head -1 | cut -f2
+      - git ls-remote --heads origin | cut -f2
+    solution: |
+      git switch -c add-ci
+      mkdir -p .github/workflows
+      printf 'name: CI\non:\n  push:\n    branches: [main]\n  pull_request:\njobs:\n  shellcheck:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: ShellCheck\n        run: shellcheck *.sh\n' > .github/workflows/ci.yml
+      git add .github
+      git commit -m "Run ShellCheck on every push and pull request"
+      git push -u origin add-ci
+      gh pr create --fill
+      gh pr checks
+      gh pr merge --squash --delete-branch
+    hint: "Module 41's workflow, with the job named `shellcheck` and `run: shellcheck *.sh`. Then `git push -u origin add-ci`, `gh pr create --fill`, `gh pr checks`, `gh pr merge --squash --delete-branch`."
+
+  - kind: shell
+    title: "4. Protect main"
+    fixture: [git-identity, github-account, shop-logs, logtool-v1, logtool-repo]
+    setup: |
+      cd ~/log-tool
+      mkdir -p .github/workflows
+      printf 'name: CI\non:\n  push:\n    branches: [main]\n  pull_request:\njobs:\n  shellcheck:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: ShellCheck\n        run: shellcheck *.sh\n' > .github/workflows/ci.yml
+      git add .github && git commit -qm "Run ShellCheck on every push and pull request" && git push -q 2> /dev/null
+    body: |
+      Protect `main` of `learner/log-tool` with a ruleset (name **`Protect main`**, active, on the default branch) with four rules: no **deletion**, no **force-push**, changes through a **pull request** (0 approvals required: you work alone, and you can't approve your own PRs), and the **`shellcheck`** status check must pass.
+    tests:
+      - gh ruleset check main
+    solution: |
+      printf '{"name":"Protect main","target":"branch","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"],"exclude":[]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"},{"type":"pull_request","parameters":{"required_approving_review_count":0}},{"type":"required_status_checks","parameters":{"required_status_checks":[{"context":"shellcheck"}]}}]}\n' > ~/rules.json
+      gh api repos/{owner}/{repo}/rulesets --input ~/rules.json
+      gh ruleset check main
+    hint: "Write the JSON like Module 40's, with four rules: `deletion`, `non_fast_forward`, `pull_request` with `required_approving_review_count` 0, and `required_status_checks` with `[{\"context\":\"shellcheck\"}]`. Send it with `gh api repos/{owner}/{repo}/rulesets --input ~/rules.json`."
+
+  - kind: shell
+    title: "5. A feature, with a clean history"
+    fixture: [git-identity, github-account, shop-logs, logtool-v1, logtool-repo, logtool-ci]
+    setup: |
+      cd ~/log-tool
+      git pull -q 2> /dev/null
+      git switch -q -c not-found
+      sed -i 's|^echo "Top pages:"|echo "Not found: $(awk '"'"'$9 == 404'"'"' $log \| wc -l)"\necho "Top pages:"|' logsum.sh
+      git commit -qam "wip: not found"
+      sed -i 's|\$9 == 404'"'"' \$log|$9 == 404'"'"' "$log"|' logsum.sh
+      git commit -qam "quote"
+    body: |
+      Priya asked for a line `Not found: N` (requests with status 404) before `Top pages:`. You've done it on branch **`not-found`**, in two messy commits. Before anyone sees it:
+
+      1. Squash them into **one** commit, **`Count not-found requests`**, with an interactive rebase onto `main`.
+      2. Push the branch, open a PR, and when the checks are green merge it with **rebase-merge** (so `main` stays a straight line), deleting the branch.
+    tests:
+      - git fetch -q && git log --format=%s origin/main
+      - git log --merges --oneline origin/main | wc -l
+      - git show origin/main:logsum.sh > /tmp/l.sh && bash /tmp/l.sh ~/logs/access.log | sed -n 4p
+    solution: |
+      git rebase -i main  # edit: 1s/^pick/reword/;2s/^pick/fixup/ # edit: 1c Count not-found requests
+      git push -u origin not-found
+      gh pr create --fill
+      gh pr checks
+      gh pr merge --rebase --delete-branch
+    hint: "`git rebase -i main`: `reword` the first line, `fixup` the second, and set the message to `Count not-found requests`. Then `git push -u origin not-found`, `gh pr create --fill`, `gh pr checks`, `gh pr merge --rebase --delete-branch`."
+
+  - kind: shell
+    title: "6. Every morning"
+    fixture: [git-identity, github-account, shop-logs, logtool-v1]
+    body: |
+      Schedule the tool in **your** crontab: **every day at 06:00**, run `/home/learner/log-tool/logsum.sh /var/log/nginx/access.log`, **appending** its output and errors to `/home/learner/reports/daily.txt`. Make the `reports` folder too.
+    tests:
+      - crontab -l | grep -v '^#' | grep logsum.sh | awk '{print $1, $2, $3, $4, $5}'
+      - crontab -l | grep -c '/home/learner/log-tool/logsum.sh /var/log/nginx/access.log >> /home/learner/reports/daily.txt 2>&1'
+      - test -d ~/reports && echo "reports folder"
+    solution: |
+      mkdir -p ~/reports
+      (crontab -l 2>/dev/null; echo '0 6 * * * /home/learner/log-tool/logsum.sh /var/log/nginx/access.log >> /home/learner/reports/daily.txt 2>&1') | crontab -
+    hint: "`mkdir -p ~/reports`, then `crontab -e` and add `0 6 * * * /home/learner/log-tool/logsum.sh /var/log/nginx/access.log >> /home/learner/reports/daily.txt 2>&1`."
+
+  - kind: shell
+    title: "7. Release it"
+    fixture: [git-identity, github-account, shop-logs, logtool-v1, logtool-repo, logtool-ci]
+    setup: cd ~/log-tool
+    body: |
+      Mark the current `main` as **`v1.0.0`** with an **annotated** tag (message: `First release`), push the tag, and publish a GitHub release for it with notes generated from the merged pull requests.
+    tests:
+      - git cat-file -t v1.0.0
+      - git ls-remote --tags origin | cut -f2
+      - gh release view v1.0.0 | head -1
+    solution: |
+      git pull
+      git tag -a v1.0.0 -m "First release"
+      git push origin v1.0.0
+      gh release create v1.0.0 --generate-notes
+    hint: "`git tag -a v1.0.0 -m \"First release\"`, `git push origin v1.0.0`, then `gh release create v1.0.0 --generate-notes`."
+
+  - kind: mac
+    title: "8. For real: your VM and GitHub"
+    body: |
+      Now do the whole project for real, in your Multipass VM (Module 22) with your real GitHub account:
+
+      1. `multipass shell lab`. Install the tools: `sudo apt install git gh shellcheck nginx`. nginx gives you a real `/var/log/nginx/access.log` (visit the VM's address in your Mac's browser a few times to fill it).
+      2. Set up Git and SSH or `gh auth login` inside the VM (Modules 14 and 18).
+      3. Write `logsum.sh`, run it on the real log, run ShellCheck.
+      4. `git init`, commit, `gh repo create log-tool --public --source . --push`.
+      5. Add the CI workflow on a branch, open a PR, watch the check on github.com, merge.
+      6. On github.com: Settings → Rules → Rulesets: protect `main` (no deletion, no force-push, pull request, required `shellcheck` check). Try a direct push to see it refused.
+      7. Add a feature on a branch, tidy it with `git rebase -i`, PR, merge with **Rebase and merge**.
+      8. `crontab -e` in the VM: run it every morning into `~/reports/daily.txt`.
+      9. `git tag -a v1.0.0 -m "First release"`, push it, `gh release create v1.0.0 --generate-notes`.
+    commands: |
+      multipass shell lab
+      sudo apt update && sudo apt install -y git gh shellcheck nginx
+      gh auth login
+      mkdir ~/log-tool && cd ~/log-tool && nano logsum.sh
+      sudo ./logsum.sh /var/log/nginx/access.log
+      gh repo create log-tool --public --source . --push
+      gh pr create --fill && gh pr checks && gh pr merge --squash --delete-branch
+      gh release create v1.0.0 --generate-notes
+  - kind: recap
+    body: |
+      What you shipped:
+
+      - a **robust bash tool** (strict mode, argument and file checks, clean ShellCheck) that turns a log into a summary with `wc`, `cut`, `sort`, `uniq`, `awk`;
+      - a **GitHub repository** where every change goes through a pull request, **CI** runs ShellCheck on every PR, and a **ruleset** makes both mandatory;
+      - a feature with **clean, rebased history**, merged without merge commits;
+      - a **cron** schedule, and a **tagged release** with generated notes.
+
+      Inspector Bold: *"That's how a small team works like a big one. Season 3 is about the hard cases: servers under load, histories that need surgery, and pipelines that deploy by themselves."*

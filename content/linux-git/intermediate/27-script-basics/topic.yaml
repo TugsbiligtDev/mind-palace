@@ -1,0 +1,4 @@
+title: Script Basics
+module: 27
+summary: "Turning commands into a script: the shebang line, chmod +x and running it; variables; single vs double quotes; command substitution with $( ); arguments ($1, $@, $#); reading input; and the old bash on your Mac."
+minutes: 45

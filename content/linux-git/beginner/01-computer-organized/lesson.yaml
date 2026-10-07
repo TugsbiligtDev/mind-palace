@@ -1,0 +1,131 @@
+steps:
+  - kind: explain
+    title: Your first case
+    body: |
+      Inspector Odval Bold slides a sticky note across the desk. On it: a server address and a username, `learner`.
+
+      > "Inkwell Books keeps all its shared files on one small Linux computer. Orders, notes, logs, the website. Nobody there knows how to use it properly, and things have started going missing. You'll go in with a terminal. No mouse, no windows. Learn the place before you touch anything."
+
+      Before the terminal, this lesson covers what a computer *is* underneath all the windows and icons. It takes ten minutes, and everything after it makes more sense.
+
+  - kind: explain
+    title: The operating system is the manager
+    body: |
+      Your Mac is hardware: a processor, memory, a disk, a screen. The apps you use (Safari, Mail, Spotify) don't talk to that hardware directly. In between sits the **operating system** (OS), the program that starts first and runs everything else.
+
+      The OS:
+
+      - **starts and stops programs**, and shares the processor and memory between them,
+      - **keeps your files** on the disk, organised into folders,
+      - **knows who you are**: which user is logged in, and what they're allowed to touch,
+      - **talks to devices**: keyboard, screen, Wi-Fi, printer.
+
+      Your Mac runs **macOS**. Most PCs run **Windows**. Most of the world's servers, and every Android phone, run **Linux**. Inkwell's server runs **Ubuntu**, a popular kind of Linux.
+
+  - kind: explain
+    title: Files and folders
+    body: |
+      Everything you keep on a computer is a **file**: a photo, a document, a song, a program. Files live in **folders**, and folders can hold other folders. In the terminal world, a folder is usually called a **directory**. Same thing, different word.
+
+      Folders inside folders make a **tree**. Here's a corner of Inkwell's:
+
+      ```
+      inkwell/
+      ├── README.txt
+      ├── orders/
+      │   ├── 2026-08.csv
+      │   └── 2026-09.csv
+      ├── notes/
+      │   └── todo.txt
+      └── site/
+          └── index.html
+      ```
+
+      The part of a name after the last dot is the **extension**: `.txt` for plain text, `.csv` for a spreadsheet-like list, `.html` for a web page, `.png` for an image. It tells you, and the apps, what kind of file it is. On Linux the extension is only a convention: a file called `notes` with no extension can be perfectly normal text.
+
+  - kind: choice
+    title: Read the tree
+    body: In the tree from the last step, which of these is a **folder**?
+    options:
+      - "`orders`"
+      - "`README.txt`"
+      - "`2026-09.csv`"
+      - "`index.html`"
+    answer: 0
+    explanation: "`orders` holds other files (the two CSV files), so it's a folder (a directory). The others are files: their extensions say what's inside."
+
+  - kind: explain
+    title: Programs and commands
+    body: |
+      A **program** is a file the computer can run. Some programs open a window: Safari, Finder, Notes. Others have no window at all. You start them by typing their name, they do one job, print a result as text, and finish. Those are **commands**.
+
+      For example, `ls` is a tiny program whose only job is to **l**i**s**t the files in a folder. It lives in a file called `/usr/bin/ls`, and typing `ls` runs it.
+
+      Hundreds of small commands like this, each doing one thing well, are the heart of working in a terminal. Next lesson you'll meet the terminal properly; for now, try one.
+
+  - kind: shell
+    title: Look around Inkwell's computer
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      This black box is a **practice terminal**: a pretend Linux computer that lives in this page. It's set up as Inkwell's server, and nothing you type here can affect your own computer.
+
+      Click inside it, type each of these and press **Return** after each one:
+
+      1. `ls` lists what's in the current folder.
+      2. `tree` draws the folders as a tree, like the picture earlier.
+      3. `ls orders` lists what's inside the `orders` folder.
+
+      Blue names are folders, white names are files. Nothing is graded here: look around, then press **Continue**.
+
+  - kind: explain
+    title: Unix, Linux and macOS are relatives
+    body: |
+      In 1969, programmers at Bell Labs built an operating system called **Unix**. Its ideas were so good that they're still everywhere:
+
+      - **Linux** (1991) was written from scratch to work like Unix. It's free, and it runs most web servers, cloud computers and phones.
+      - **macOS** is built on a Unix family member called BSD. Apple's Mac is officially certified as Unix.
+      - **Windows** is the odd one out: a different family, with different commands.
+
+      So your Mac and a Linux server are cousins. Folders are arranged the same way, the same commands do the same jobs, and the terminal works the same. **What you learn on your Mac's terminal works on Linux, and the other way round.** The differences are small, and this course points them out as they come up (🔹 marks a "good to know" difference).
+
+  - kind: info
+    title: "🔹 The small differences"
+    body: |
+      Three you'll notice early:
+
+      - Your Mac's Terminal runs a shell called **zsh**; Linux servers usually run **bash**. They understand almost all the same commands (Module 2).
+      - Home folders live in `/Users/yourname` on a Mac, `/home/yourname` on Linux (Module 4).
+      - A few commands take slightly different options, because the Mac's versions come from BSD and Linux's from GNU (Module 22).
+
+  - kind: choice
+    title: Where will this work?
+    body: Priya, from Inkwell, learned `ls` on her MacBook's terminal last week. Today she logs into the store's Ubuntu server. What happens when she types `ls` there?
+    options:
+      - "It lists the files the same way: Linux and macOS share Unix's commands"
+      - "Nothing happens, because `ls` is a Mac command that Linux doesn't have"
+      - "It works, but only after she installs a Linux version of `ls` first"
+      - "It lists her Mac's files, because commands always run on her own laptop"
+    answer: 0
+    explanation: "`ls` comes from Unix, so Linux and macOS both have it and it does the same job. Commands run on the computer you're logged into, so on the server she sees the server's files."
+
+  - kind: mac
+    title: Your Mac's own tree
+    body: |
+      Open **Finder**, then press **⇧⌘H** (Shift + Command + H) to jump to your **home folder**: the house with your name. Your Desktop, Documents and Downloads folders are all inside it.
+
+      Now press **⇧⌘.** (Shift + Command + full stop). Greyed-out files appear whose names start with a dot, like `.zshrc`. These are **hidden files**, usually settings. Press it again to hide them. You'll work with them in Module 4.
+
+      Then open **Terminal** (⌘ + Space, type *Terminal*, Return) and type `ls`. You'll see the same folders Finder showed you, as text.
+    commands: |
+      ls
+  - kind: why
+    body: |
+      Every terminal command you'll ever type works on these ideas: an operating system that runs programs, a tree of folders full of files, and small commands that each do one job. Knowing that Mac and Linux are cousins means the hours you put in here pay off twice: on your own Mac, and on every server you'll ever log into.
+
+  - kind: recap
+    body: |
+      - The **operating system** (macOS, Linux, Windows) runs programs, keeps files and knows who you are.
+      - Files live in **folders** (also called **directories**), arranged as a **tree**. The **extension** (`.txt`, `.csv`) hints at what's inside.
+      - A **command** is a small program with no window: you type its name, it does one job and prints text. `ls` lists a folder.
+      - **macOS and Linux both descend from Unix**, so terminal skills transfer between them. Windows is a different family.

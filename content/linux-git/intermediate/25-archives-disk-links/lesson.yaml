@@ -1,0 +1,206 @@
+steps:
+  - kind: explain
+    title: tar, the server's suitcase
+    body: |
+      To back up a folder, send it somewhere or download a project, you pack it into **one file**. On Linux that's usually a **tar** archive, often compressed with **gzip**: a `.tar.gz` (or `.tgz`) file.
+
+      tar's options are letters, and the three you need spell what you want:
+
+      | Command | Does |
+      |---|---|
+      | `tar -czf notes.tar.gz notes` | **c**reate, g**z**ip it, into the **f**ile `notes.tar.gz`, from the folder `notes` |
+      | `tar -tzf notes.tar.gz` | lis**t** what's inside |
+      | `tar -xzf notes.tar.gz` | e**x**tract here |
+      | `tar -xzf notes.tar.gz -C restore` | extract into the folder `restore` (it must exist) |
+
+      Add **v** (`-czvf`) to see each file as it goes. The `f` must come last, right before the archive's name. tar stores paths as you gave them, so pack from the folder *above* the one you want (`cd ~/inkwell; tar -czf ... notes`), or you'll unpack `home/learner/inkwell/notes/` later.
+
+      `gzip file` / `gunzip file.gz` compress and uncompress a single file (logs are often rotated into `.gz` files).
+
+  - kind: shell
+    title: Back up the notes
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      From `~/inkwell`, pack the `notes` folder into **`~/backups/notes-2026-10-06.tar.gz`** (make `~/backups` first).
+    tests:
+      - tar -tzf ~/backups/notes-2026-10-06.tar.gz | sort
+    solution: |
+      mkdir -p ~/backups
+      tar -czf ~/backups/notes-2026-10-06.tar.gz notes
+    hint: "`mkdir -p ~/backups`, then `tar -czf ~/backups/notes-2026-10-06.tar.gz notes`. Check with `tar -tzf` and the archive's name: every path should start with `notes/`."
+
+  - kind: shell
+    title: Restore a backup
+    fixture: backoffice
+    setup: |
+      mkdir -p ~/downloads
+      cd ~/inkwell && tar -czf ~/downloads/site-backup.tar.gz site
+      cd ~
+    body: |
+      Someone sent you `~/downloads/site-backup.tar.gz`. Look inside it first (without unpacking), then unpack it into a **new folder `~/restore`**, leaving your current files alone.
+    tests:
+      - find ~/restore | sort
+    solution: |
+      tar -tzf downloads/site-backup.tar.gz
+      mkdir ~/restore
+      tar -xzf downloads/site-backup.tar.gz -C ~/restore
+    hint: "`tar -tzf downloads/site-backup.tar.gz` to look; `mkdir ~/restore`; `tar -xzf downloads/site-backup.tar.gz -C ~/restore`."
+
+  - kind: explain
+    title: zip, for the rest of the world
+    body: |
+      Windows and macOS users expect **.zip** files. Ubuntu servers often don't come with the tools, so install them first (`sudo apt install zip unzip`):
+
+      ```
+      zip -r site.zip site        # -r: the folder and everything in it
+      unzip -l site.zip           # list
+      unzip site.zip -d restore   # extract into restore/
+      ```
+
+      Prefer tar between Linux machines (it keeps permissions and owners); use zip for people on other systems.
+
+  - kind: shell
+    title: A zip for the designer
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      The new designer works on Windows. Install the zip tools, pack the `site` folder (with everything inside) into **`site.zip`** in `~/inkwell`, and check its contents with `unzip -l`.
+    tests:
+      - which zip unzip
+      - unzip -l site.zip | grep -c site/
+    solution: |
+      sudo apt install -y zip unzip
+      zip -r site.zip site
+      unzip -l site.zip
+    hint: "`sudo apt install zip unzip`, then `zip -r site.zip site` (without `-r` you'd get only the empty folder)."
+
+  - kind: explain
+    title: How full is the disk?
+    body: |
+      A full disk is one of the most common reasons a server stops working: logs can't be written, databases stop. Two commands:
+
+      | Command | Answers |
+      |---|---|
+      | `df -h` | how full each **disk** (filesystem) is: size, used, free, `Use%` |
+      | `du -sh folder` | how much space one **folder** uses (**s**ummary, **h**uman-readable) |
+      | `du -sh *` | each item in the current folder |
+      | `du -h --max-depth=1 / 2>/dev/null \| sort -h` | the big folders at the top level, smallest to biggest |
+
+      `sort -h` understands human sizes (`4K` < `2M` < `1G`), so `du -sh * | sort -h | tail -3` is the quick "what's eating my disk" question.
+
+  - kind: shell
+    title: What's taking the space?
+    fixture: backoffice
+    setup: |
+      seq 1 50000 > ~/inkwell/old/archive-2025.log
+      cd ~/inkwell
+    body: |
+      Inside `~/inkwell`, measure each item with `du -sh *`, sort by size, and print **only the biggest** one.
+    output: true
+    solution: du -sh * | sort -h | tail -1
+    hint: "`du -sh * | sort -h | tail -1`: sizes, smallest to biggest, keep the last."
+
+  - kind: explain
+    title: curl, the web from the terminal
+    body: |
+      **curl** sends a request to a web address and prints what comes back: perfect for downloading files and for checking whether a site or an API works.
+
+      | Command | Does |
+      |---|---|
+      | `curl https://example.com` | print the page |
+      | `curl -o page.html URL` | save it as `page.html` |
+      | `curl -O URL` | save it under its own name (the last part of the URL) |
+      | `curl -L URL` | follow redirects (when the server says "it moved, go there") |
+      | `curl -I URL` | ask only for the **headers**: status code, type, size |
+      | `curl -s URL` | silent: no progress bar |
+      | `curl -s -o /dev/null -w '%{http_code}\n' URL` | just the status code |
+
+      Status codes: **200** OK, **301/302** moved (follow with `-L`), **403** forbidden, **404** not found, **500** server error.
+
+  - kind: shell
+    title: Download the catalogue
+    fixture: shop-server
+    body: |
+      Download the book catalogue at `http://inkwell.example/downloads/catalog.csv` into your home folder as **`catalog.csv`**, then check it with `cat`.
+
+      If you get an HTML page instead of a list of books, look at what it says, and at the table above.
+    tests:
+      - cat catalog.csv
+    solution: curl -L -o catalog.csv http://inkwell.example/downloads/catalog.csv
+    uses:
+      - match: "curl.*(\\s-[a-zA-Z]*L|--location)"
+        why: "that address redirects (301) to the https one; follow it with `-L`."
+    reject:
+      - curl -O http://inkwell.example/downloads/catalog.csv
+    hint: "`curl -O http://...` saves the *301 Moved Permanently* page: the site moved to https. Add `-L` to follow it: `curl -L -o catalog.csv http://inkwell.example/downloads/catalog.csv` (or `-L -O`)."
+
+  - kind: shell
+    title: Just the headers
+    fixture: shop-server
+    body: |
+      Ask the server for **only the headers** of `https://inkwell.example/downloads/catalog.csv`: what status, what type of file, how big.
+    output: true
+    solution: curl -I https://inkwell.example/downloads/catalog.csv
+    hint: "`curl -I` plus the address. (`HTTP/2 200` is success.)"
+
+  - kind: explain
+    title: Symbolic links
+    body: |
+      A **symbolic link** (symlink) is a small file that points to another path, like a Mac alias or a Windows shortcut. Opening the link opens the target.
+
+      ```
+      ln -s logs/shop.log latest.log      # ln -s TARGET LINKNAME
+      ls -l latest.log
+      lrwxrwxrwx 1 learner learner 13 Oct  6 09:00 latest.log -> logs/shop.log
+      ```
+
+      - The `l` at the start of `ls -l` and the `->` mark a link. `readlink latest.log` prints its target.
+      - A relative target is relative to **where the link is**, not where you are.
+      - Deleting the link (`rm latest.log`) leaves the target alone. Deleting the target leaves a **dangling** link that points nowhere.
+      - Servers use links everywhere: `/etc/nginx/sites-enabled/` holds links to files in `sites-available/`, and `ln -sfn` swaps a `current` link to a new release in one step.
+
+  - kind: shell
+    title: A shortcut to the log
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Make a symbolic link **`~/inkwell/latest.log`** that points to `logs/shop.log` (a relative target), so `tail latest.log` always shows the shop's log.
+    tests:
+      - readlink ~/inkwell/latest.log
+      - head -1 ~/inkwell/latest.log
+    solution: ln -s logs/shop.log latest.log
+    reject:
+      - cp logs/shop.log latest.log
+    hint: "`ln -s logs/shop.log latest.log` (target first, then the link's name). A copy wouldn't follow the real log."
+
+  - kind: info
+    title: "🔹 wget, and hard links"
+    body: |
+      **wget** is curl's cousin for downloading: `wget URL` saves the file with progress output, and it can fetch whole sites (`wget -r`). curl is installed nearly everywhere and does more (APIs, headers), so this course uses curl.
+
+      A **hard link** (`ln target name`, without `-s`) is a second name for the *same* file data, not a pointer. Both names are equal; the data stays until the last name is deleted. Hard links can't point to folders or across disks, which is why symbolic links are the ones you'll actually use.
+
+  - kind: mac
+    title: On your Mac
+    body: |
+      tar, zip, curl, df, du and ln all exist on macOS. Finder's **Compress** makes a zip; double-clicking a `.tar.gz` unpacks it.
+    commands: |
+      cd ~/terminal-practice
+      tar -czf practice.tar.gz .
+      tar -tzf practice.tar.gz | head
+      df -h /
+      du -sh ~/Downloads
+      curl -I https://example.com
+      ln -s ~/Downloads dl && ls -l dl
+  - kind: why
+    body: |
+      Backups, deployments and downloads all come down to these commands. tar and zip move whole folders as one file; df and du answer the "disk full" alarm in seconds; curl tells you whether a site really works, from the server's side; and symlinks let one stable name point to whatever version is current.
+
+  - kind: recap
+    body: |
+      - `tar -czf out.tar.gz folder` (create), `-tzf` (list), `-xzf` (extract), `-C dir` (where to extract). `gzip`/`gunzip` for single files.
+      - `zip -r out.zip folder`, `unzip -l`, `unzip file.zip -d dir` (install `zip unzip` first).
+      - `df -h` how full the disks are; `du -sh *` per item; `sort -h` sorts human sizes.
+      - `curl URL`, `-o file`, `-O`, `-L` follow redirects, `-I` headers, `-s` silent.
+      - `ln -s target link`; `ls -l` shows `->`; `readlink`. 🔹 wget; 🔹 hard links.

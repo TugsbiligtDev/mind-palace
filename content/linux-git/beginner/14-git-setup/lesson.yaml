@@ -1,0 +1,138 @@
+steps:
+  - kind: explain
+    title: Which Git?
+    body: |
+      Your Mac may already have Git: Apple ships a version with its *Command Line Developer Tools*. It works, but it's usually several releases behind.
+
+      The current Git comes from Homebrew (Module 12):
+
+      ```
+      brew install git
+      ```
+
+      Homebrew's `git` lands in `/opt/homebrew/bin`, which is **earlier on your PATH** than Apple's `/usr/bin`, so it wins. `which git` should print `/opt/homebrew/bin/git`, and `git --version` something like `git version 2.56.0`. Linux servers install Git with `sudo apt install git`.
+
+  - kind: explain
+    title: Tell Git who you are
+    body: |
+      Every commit records an author. Git takes it from its settings, so set them once per computer:
+
+      ```
+      git config --global user.name "Ada Lovelace"
+      git config --global user.email "ada@example.com"
+      ```
+
+      - `--global` means "for every repository of mine on this computer". Without it, a setting applies only to the repository you're in (useful for a work email in work projects).
+      - Use the **same email as your GitHub account** later (Module 18), so GitHub links your commits to you. GitHub can give you a private `…@users.noreply.github.com` address if you'd rather not publish yours.
+
+      Without these, `git commit` stops with *"Author identity unknown — Please tell me who you are."*
+
+  - kind: explain
+    title: main, and nano
+    body: |
+      Two more settings save trouble later:
+
+      ```
+      git config --global init.defaultBranch main
+      git config --global core.editor nano
+      ```
+
+      - **init.defaultBranch**: a new repository's first branch (Module 17) is called `master` unless you say otherwise, and Git prints a long hint about it every time. GitHub and most teams use `main`.
+      - **core.editor**: sometimes Git opens an editor so you can write a message. On a fresh computer that's vim (Module 6's escape route). nano is friendlier. (VS Code works too: `"code --wait"`.)
+
+  - kind: shell
+    title: Configure Git
+    body: |
+      This practice computer's Git has never been set up. Configure it with the four settings from this lesson. On the practice computer, use:
+
+      - name: `Learner`
+      - email: `learner@inkwell.example`
+      - first branch: `main`
+      - editor: `nano`
+
+      Then check with `git config --global --list`.
+    tests:
+      - git config --global user.name
+      - git config --global user.email
+      - git config --global init.defaultBranch
+      - git config --global core.editor
+    solution: |
+      git config --global user.name "Learner"
+      git config --global user.email "learner@inkwell.example"
+      git config --global init.defaultBranch main
+      git config --global core.editor nano
+    hint: "Four lines, each `git config --global` + the setting's name + its value. The name has no space, but quotes don't hurt: `git config --global user.name \"Learner\"`."
+
+  - kind: explain
+    title: Where settings live
+    body: |
+      `--global` settings are saved in a plain text file in your home folder, **`~/.gitconfig`**:
+
+      ```
+      [user]
+          name = Learner
+          email = learner@inkwell.example
+      [init]
+          defaultBranch = main
+      [core]
+          editor = nano
+      ```
+
+      Settings for one repository live in that repository's `.git/config`, and win over the global ones. Useful commands:
+
+      | Command | Shows |
+      |---|---|
+      | `git config user.name` | the value Git will actually use here |
+      | `git config --list --show-origin` | every setting, and which file it came from |
+      | `git config --global --edit` | opens `~/.gitconfig` in your editor |
+
+      🔹 Newer Git also accepts `git config get user.name`, `git config set …` and `git config list`. Both forms work.
+
+  - kind: shell
+    title: See the file, and the hint
+    fixture: git-identity
+    setup: |
+      git config --global --unset init.defaultBranch
+      cd ~
+    body: |
+      Your identity is set, but someone removed the default-branch setting. Try:
+
+      1. `cat ~/.gitconfig`
+      2. `git init test-repo` and read the hint Git prints about `master`.
+      3. `git config --global init.defaultBranch main`, then `git init test-repo2`: no hint this time.
+
+      Nothing is graded.
+
+  - kind: info
+    title: "🔹 Git 3.0 and main"
+    body: |
+      Git 3.0, the next major release, will make `main` the default branch name, and the hint goes away for good. Until then, the `init.defaultBranch` setting is how you get there.
+
+  - kind: mac
+    title: Set up Git on your Mac
+    body: |
+      On your own Mac, with **your** name and the email you'll use for GitHub:
+
+      1. Install the current Git: `brew install git`, then check `which git` and `git --version`.
+      2. Run the four settings.
+      3. Look at the result.
+    commands: |
+      brew install git
+      which git
+      git --version
+      git config --global user.name "Your Name"
+      git config --global user.email "you@example.com"
+      git config --global init.defaultBranch main
+      git config --global core.editor nano
+      cat ~/.gitconfig
+  - kind: why
+    body: |
+      Two minutes of setup decide what every commit you ever make says about who made it, and spare you the vim surprise and the `master` hint. Get the email right now and GitHub will credit your work to you later.
+
+  - kind: recap
+    body: |
+      - Prefer the current Git from Homebrew (`brew install git`); `which git` shows which one runs.
+      - `git config --global user.name "…"` and `user.email "…"`: the author of every commit.
+      - `init.defaultBranch main` and `core.editor nano` save trouble later.
+      - Global settings live in `~/.gitconfig`; a repository's own in `.git/config` (which wins).
+      - `git config --list --show-origin` shows every setting and where it came from.

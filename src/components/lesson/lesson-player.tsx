@@ -5,19 +5,26 @@ import { useEffect, useState } from "react";
 import { Markdown } from "@/components/markdown";
 import type { Engine } from "@/lib/content/load";
 import type { Step, Track } from "@/lib/content/schema";
-import { webStepCheck } from "@/lib/content/step-check";
+import { shellStepCheck, webStepCheck } from "@/lib/content/step-check";
 import { completeLesson, completeStep, setLast, setLessonStep, useProgress } from "@/lib/progress";
 import { ChoiceStep } from "./choice-step";
 import { CodePanel } from "./code-panel";
 import { MacCheck, MacCommands } from "./mac-step";
+import { ShellPanel } from "./shell-panel";
 import { SqlPanel } from "./sql-panel";
 import { WebPanel } from "./web-panel";
 
 // Steps the learner must do (not just read) before the lesson counts as finished: exercises,
-// except an ungraded HTML & CSS "edit and look" step, and in-lesson questions. "On your Mac"
-// steps stay optional, since not everyone is on a Mac.
-function mustDo(step: Step) {
+// except an ungraded HTML & CSS "edit and look" step or terminal "try things out" step, and
+// in-lesson questions. "On your Mac" steps stay optional, since not everyone is on a Mac.
+function isGraded(step: Step) {
   if (step.kind === "web") return !!webStepCheck(step);
+  if (step.kind === "shell") return !!shellStepCheck(step);
+  return true;
+}
+
+function mustDo(step: Step) {
+  if (step.kind === "web" || step.kind === "shell") return isGraded(step);
   return step.kind === "try" || step.kind === "code" || step.kind === "choice";
 }
 
@@ -26,6 +33,7 @@ const KIND_LABEL: Record<Step["kind"], string> = {
   try: "Try it",
   code: "Try it",
   web: "Try it",
+  shell: "Try it",
   info: "Good to know",
   mac: "On your Mac",
   choice: "Your call",
@@ -70,9 +78,9 @@ export function LessonPlayer({
 
   const step = steps[index];
   const done = saved?.stepsDone.includes(index) ?? false;
-  const isExercise = step.kind === "try" || step.kind === "code" || step.kind === "web";
-  // An ungraded HTML & CSS step is "edit and look": nothing to pass, so Continue stays open.
-  const graded = step.kind !== "web" || !!webStepCheck(step);
+  const isExercise = step.kind === "try" || step.kind === "code" || step.kind === "web" || step.kind === "shell";
+  // An ungraded HTML & CSS or terminal step is "try things out": nothing to pass, so Continue stays open.
+  const graded = isGraded(step);
   const needsAction = ((isExercise && graded) || step.kind === "mac" || step.kind === "choice") && !done;
   const last = index === steps.length - 1;
   // Steps skipped with the step bar. The lesson only counts as finished once they're done.
@@ -148,6 +156,7 @@ export function LessonPlayer({
         {step.kind === "code" && (language === "python" || language === "javascript") && (
           <CodePanel key={`${topicKey}-${index}`} step={step} language={language} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />
         )}
+        {step.kind === "shell" && <ShellPanel key={`${topicKey}-${index}`} step={step} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />}
         {step.kind === "web" && (
           <WebPanel key={`${topicKey}-${index}`} step={step} slot={`${topicKey}#step-${index}`} done={done} onDone={() => completeStep(topicKey, index)} />
         )}
@@ -178,7 +187,7 @@ export function LessonPlayer({
           {needsAction && step.kind === "choice" && <span className="text-sm text-muted">Pick the right answer to continue</span>}
           {needsAction && isExercise && (
             <span className="text-sm text-muted">
-              {step.kind === "web" ? "Pass the check to continue" : `Run the ${step.kind === "code" ? "code" : "query"} to continue`}
+              {step.kind === "web" ? "Pass the check to continue" : step.kind === "shell" ? "Do the task to continue" : `Run the ${step.kind === "code" ? "code" : "query"} to continue`}
             </span>
           )}
           <button

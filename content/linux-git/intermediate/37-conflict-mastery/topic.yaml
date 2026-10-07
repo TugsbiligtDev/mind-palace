@@ -1,0 +1,4 @@
+title: Conflict Mastery
+module: 37
+summary: "Why conflicts happen and how to read them; the three-way (zdiff3) view; conflicts in merges, rebases and cherry-picks; taking one whole side with --ours and --theirs; --continue and --abort; the VS Code merge editor; and habits that prevent conflicts."
+minutes: 45

@@ -1,0 +1,109 @@
+steps:
+  - kind: explain
+    title: Follow the history
+    body: |
+      Inspector Bold drops a printout of `git log` on the desk. *"A repository remembers everything, including the things people would rather it forgot. Find out how that key got in, and make sure it can't happen again."*
+
+      This review covers Modules 13 to 17, in `~/inkwell/site-repo`. As before: look first, then act, then check. **Check my work** explains what's still different.
+
+  - kind: shell
+    title: "1. When did the key arrive?"
+    fixture: [git-identity, website-repo]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      > *List, one line each (short ID and message), only the commits that changed the file `.env`.*
+    output: true
+    solution: git log --oneline -- .env
+    hint: "`git log --oneline` lists every commit. Add the file's name at the end (after `--`) to keep only the commits that touched it."
+
+  - kind: choice
+    title: "2. Read the commit"
+    body: |
+      > *Look at that commit in full (`git show` with its ID). Who made it, when, and what else did it add?*
+    options:
+      - "Marcus Reed, 14 September at night; it also added `checkout.js`"
+      - "Kenji Mori, on 20 September; it only added the Dune book page"
+      - "Priya Shah, on 3 August; it was the very first commit of the site"
+      - "Nobody: commits that add `.env` files don't record an author"
+    answer: 0
+    explanation: "Marcus Reed, 14 September at 22:10. Besides the payment key, `.env` sets `REFUND_APPROVER=kmori`, and `checkout.js` uses it: refunds would be approved as Kenji, whoever pressed the button."
+
+  - kind: shell
+    title: "3. Take the key out of tracking"
+    fixture: [git-identity, website-repo]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      > *Do the fix on a branch called `remove-key`: Git must stop tracking `.env` (the file stays on the server, the shop needs it), and a `.gitignore` must make sure it's never added again. Commit, merge the branch into `main`, and delete the branch.*
+    tests:
+      - git ls-files
+      - git status --short
+      - git branch
+      - cat .gitignore
+      - ls -a
+    solution: |
+      git switch -c remove-key
+      git rm --cached .env
+      echo ".env" > .gitignore
+      git add .gitignore
+      git commit -m "Stop tracking .env"
+      git switch main
+      git merge remove-key
+      git branch -d remove-key
+    uses:
+      - match: "git\\s+(switch\\s+-c|checkout\\s+-b)\\s+remove-key"
+        why: "the brief asks for the fix on a branch called `remove-key`."
+      - match: "git\\s+merge\\s+remove-key"
+        why: "merge the branch into `main` with `git merge`."
+    hint: "`git switch -c remove-key`; `git rm --cached .env`; a `.gitignore` containing `.env`, staged; commit; `git switch main`; `git merge remove-key`; `git branch -d remove-key`."
+
+  - kind: shell
+    title: "4. A fix that collides"
+    fixture: [git-identity, website-repo]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c approver-fix
+      printf '// Checkout settings come from .env\nconst approver = process.env.REFUND_APPROVER || "manager";\n' > checkout.js
+      GIT_AUTHOR_NAME="Kenji Mori" GIT_AUTHOR_EMAIL=kenji@inkwell.example git commit -qam "Never approve refunds as a named person by default"
+      git switch -q main
+      printf '// Checkout settings come from .env\nconst approver = "kmori";\n' > checkout.js
+      GIT_AUTHOR_NAME="Marcus Reed" GIT_AUTHOR_EMAIL=marcus@inkwell.example git commit -qam "Simplify checkout"
+    body: |
+      > *Kenji wrote a fix on the branch `approver-fix`. Meanwhile someone committed a change to the same line on `main` (`git log --oneline --all --graph` shows who). Merge `approver-fix` into `main`, keeping **Kenji's** version of that line, so `checkout.js` reads exactly:*
+      > ```
+      > // Checkout settings come from .env
+      > const approver = process.env.REFUND_APPROVER || "manager";
+      > ```
+      > *Finish the merge.*
+    tests:
+      - cat checkout.js
+      - git status --short
+      - git log -1 --format=%s
+      - git log -1 --format=%p | wc -w
+    solution: |
+      git merge approver-fix  # allow-error: stops on the conflict
+      printf '// Checkout settings come from .env\nconst approver = process.env.REFUND_APPROVER || "manager";\n' > checkout.js
+      git add checkout.js
+      git commit --no-edit
+    hint: "`git merge approver-fix` stops on a conflict in `checkout.js`. Edit it to keep only Kenji's line (delete the markers and the `\"kmori\"` line), then `git add` it and `git commit`."
+
+  - kind: choice
+    title: "5. The leaked key"
+    body: |
+      > *The payment key has been in the repository's history since 14 September, and Marcus had a copy. Untracking it today doesn't change old commits. What's the first thing Inkwell must do?*
+    options:
+      - "Revoke the key and get a new one; history cleaning can come later"
+      - "Delete the repository and start a new one, which removes the risk"
+      - "Nothing: the key is in .gitignore now, so it's safe from here on"
+      - "Amend the latest commit, so the key disappears from the history"
+    answer: 0
+    explanation: "Anyone with a copy of the history (or the key itself) can still use it, so the only real fix is making the old key worthless: revoke it, issue a new one, keep the new one out of Git. Rewriting history comes later (Module 49) and never helps against copies already made."
+
+  - kind: recap
+    body: |
+      Case closed, for Season 1:
+
+      - The **kmori** login approved the 2 a.m. refunds, but Kenji didn't: Marcus Reed's commit of 14 September set `REFUND_APPROVER=kmori` and the checkout code to use it, and his later commit hardcoded `"kmori"`.
+      - The note in `old/.trash` was signed **M.**; the key hidden in the images cache was a copy of his `.env`.
+      - Fixed: `.env` untracked and ignored, Kenji's safe default merged, key to be revoked.
+
+      Inspector Bold: *"Data doesn't lie, but it can be made to mislead. Git's history made it hard to mislead for long. Now, let's get these repositories off a single server."*

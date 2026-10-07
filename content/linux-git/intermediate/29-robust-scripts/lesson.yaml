@@ -1,0 +1,195 @@
+steps:
+  - kind: explain
+    title: The script that deleted the wrong files
+    body: |
+      Kenji wrote a clean-up script for the shop's cache:
+
+      ```bash
+      #!/usr/bin/env bash
+      dir=$1
+      cd $dir
+      rm -f *.tmp
+      echo "cleaned $dir"
+      ```
+
+      It worked for months. Then someone ran it with a folder that didn't exist. `cd` failed, printed an error... and bash **carried on**, deleting every `.tmp` file in whatever folder the script happened to be in.
+
+      By default a bash script ignores failures and keeps going. Real scripts switch that off, on the line after the shebang:
+
+      ```bash
+      set -euo pipefail
+      ```
+
+      | Option | Means |
+      |---|---|
+      | `-e` | **exit** as soon as a command fails (except in `if` conditions and `&&`/`\|\|` chains) |
+      | `-u` | using an **unset** variable is an error (no more silently empty `$dir`) |
+      | `-o pipefail` | a pipeline fails if **any** command in it fails, not just the last |
+
+  - kind: explain
+    title: Quote every variable
+    body: |
+      Unquoted, a variable's value is **split at spaces and expanded as a glob** before the command sees it:
+
+      ```bash
+      file="old orders.csv"
+      rm $file        # rm old orders.csv  → tries to delete "old" and "orders.csv"!
+      rm "$file"      # rm "old orders.csv" → the right file
+      ```
+
+      And a variable containing `*` would match every file. The rule is simple: **`"$var"`, `"$1"`, `"$@"`, `"$(cmd)"`, always in double quotes**, unless you have a specific reason not to. Inside `[[ ]]` and in plain assignments (`x=$y`) bash doesn't split, but quoting there does no harm.
+
+  - kind: shell
+    title: Make the clean-up safe
+    setup: |
+      printf '#!/usr/bin/env bash\ndir=$1\ncd $dir\nrm -f *.tmp\necho "cleaned $dir"\n' > ~/cleanup.sh
+      chmod +x ~/cleanup.sh
+    body: |
+      Fix Kenji's `~/cleanup.sh` so that:
+
+      1. it **stops at the first failure** (and on unset variables and failed pipes), and
+      2. it works for folders with **spaces** in their names.
+
+      Keep what it does otherwise (go to the folder, delete its `.tmp` files, print `cleaned …`). The checker runs it on a missing folder and on a folder called `/tmp/two words`.
+    tests:
+      - "mkdir -p /tmp/safe && touch /tmp/safe/keep.tmp && cd /tmp/safe && ~/cleanup.sh /does-not-exist > /dev/null 2>&1; echo \"exit $?\"; ls /tmp/safe"
+      - "mkdir -p '/tmp/two words' && touch '/tmp/two words/a.tmp' '/tmp/two words/keep.txt' && ~/cleanup.sh '/tmp/two words'; ls '/tmp/two words'"
+    solution: |
+      printf '#!/usr/bin/env bash\nset -euo pipefail\ndir=$1\ncd "$dir"\nrm -f ./*.tmp\necho "cleaned $dir"\n' > ~/cleanup.sh
+    hint: "Add `set -euo pipefail` after the shebang, and quote the variable: `cd \"$dir\"`. (`rm -f ./*.tmp` is a good habit too: a file named `-rf.tmp` can't be mistaken for an option.)"
+
+  - kind: explain
+    title: ShellCheck, a second pair of eyes
+    body: |
+      **ShellCheck** reads a script and points out the mistakes everyone makes, with a code you can look up (`sudo apt install shellcheck`, or `brew install shellcheck`):
+
+      ```
+      learner@inkwell:~$ shellcheck cleanup.sh
+
+      In cleanup.sh line 3:
+      cd $dir
+      ^-- SC2164 (warning): Use 'cd ... || exit' or 'cd ... || return' in case cd fails.
+         ^-- SC2086 (info): Double quote to prevent globbing and word splitting.
+      ```
+
+      The most common codes: **SC2086** (quote this variable), **SC2164** (cd can fail), **SC2006** (use `$( )` instead of backticks), **SC2045** (don't loop over `ls` output), **SC2034** (variable never used), **SC2162** (`read` without `-r`). No output and exit code 0 means it found nothing.
+
+      Make it a habit: run ShellCheck before you run a new script, and in GitHub Actions on every pull request (Module 41 does exactly that).
+
+  - kind: shell
+    title: Clean up the report script
+    fixture: shop-logs
+    setup: |
+      printf '#!/usr/bin/env bash\nlog=$1\ntotal=`wc -l < $log`\nerrors=$(grep -c %s $log)\necho "Requests: $total"\necho "Server errors: $errors"\n' "'\" 5[0-9][0-9] '" > ~/report.sh
+    body: |
+      `~/report.sh` works (`bash report.sh ~/logs/access.log`), but ShellCheck has complaints. Install ShellCheck, run it on the script, and fix everything it reports, until **`shellcheck report.sh` prints nothing**. The script must still print the same two lines.
+    tests:
+      - shellcheck ~/report.sh > /dev/null 2>&1; echo "shellcheck exit $?"
+      - bash ~/report.sh ~/logs/access.log
+      - "bash ~/report.sh '/tmp/no such file' 2>/dev/null; echo done"
+    solution: |
+      sudo apt install -y shellcheck
+      shellcheck report.sh  # allow-error: it finds the problems first
+      printf '#!/usr/bin/env bash\nlog=$1\ntotal=$(wc -l < "$log")\nerrors=$(grep -c %s "$log")\necho "Requests: $total"\necho "Server errors: $errors"\n' "'\" 5[0-9][0-9] '" > ~/report.sh
+      shellcheck report.sh
+    hint: "ShellCheck asks for `$( )` instead of backticks (SC2006) and quotes around `$log` (SC2086): `total=$(wc -l < \"$log\")` and `grep -c '...' \"$log\"`. Edit with nano or vim, then run `shellcheck report.sh` again."
+
+  - kind: explain
+    title: Watch a script run with set -x
+    body: |
+      When a script misbehaves, **`set -x`** prints every command just before it runs, with the variables already filled in, marked with `+`:
+
+      ```
+      learner@inkwell:~$ bash -x cleanup.sh /tmp/cache
+      + set -euo pipefail
+      + dir=/tmp/cache
+      + cd /tmp/cache
+      + rm -f ./a.tmp ./b.tmp
+      + echo 'cleaned /tmp/cache'
+      cleaned /tmp/cache
+      ```
+
+      Run a whole script with `bash -x script.sh`, or put `set -x` / `set +x` around just the part you're debugging.
+
+  - kind: explain
+    title: Here-documents
+    body: |
+      To write several lines at once (a settings file, a message), use a **here-document**: everything up to the marker word is the input.
+
+      ```bash
+      port=$1
+      cat > ~/shop.conf <<EOF
+      # written by make-conf.sh
+      port=$port
+      db=/var/lib/inkwell/shop.db
+      EOF
+      ```
+
+      Variables and `$( )` are filled in. Quote the marker (`<<'EOF'`) to keep the text exactly as written, `$` and all. The closing `EOF` must be alone on its line.
+
+  - kind: shell
+    title: Generate the shop's settings
+    body: |
+      Write an executable **`~/make-conf.sh`** that takes a port number and writes **`~/shop.conf`** with a here-document, so that `./make-conf.sh 3000` produces exactly:
+
+      ```
+      # written by make-conf.sh
+      port=3000
+      db=/var/lib/inkwell/shop.db
+      ```
+
+      Start it with `set -euo pipefail`. Run without a port, it should stop with an error (that's what `-u` does with `$1`).
+    tests:
+      - ~/make-conf.sh 3000 && cat ~/shop.conf
+      - ~/make-conf.sh 8080 && cat ~/shop.conf
+      - ~/make-conf.sh > /dev/null 2>&1; echo "exit $?"
+    solution: |
+      printf '#!/usr/bin/env bash\nset -euo pipefail\nport=$1\ncat > ~/shop.conf <<EOF\n# written by make-conf.sh\nport=$port\ndb=/var/lib/inkwell/shop.db\nEOF\n' > ~/make-conf.sh
+      chmod +x ~/make-conf.sh
+    hint: "After `set -euo pipefail`: `port=$1`, then `cat > ~/shop.conf <<EOF`, the three lines (with `$port`), and `EOF` alone on the last line."
+
+  - kind: explain
+    title: Traps to avoid
+    body: |
+      | Instead of | Write | Because |
+      |---|---|---|
+      | `for f in $(ls *.log)` | `for f in *.log` | `ls` output splits at spaces in names |
+      | `cat file \| while read line` | `while IFS= read -r line; do …; done < file` | the pipe runs the loop in a subshell: variables set inside are lost |
+      | `cd dir` then work | `cd dir \|\| exit 1` (or `set -e`) | otherwise the work happens in the wrong folder |
+      | `rm -rf $dir/` | `rm -rf "${dir:?}/"` | if `dir` is empty, `${dir:?}` stops the script instead of deleting `/` |
+      | `if [ $x == y ]` | `if [[ "$x" == y ]]` | `[` breaks when `$x` is empty |
+
+      And know when to stop: once a script needs real data structures, maths with decimals, JSON handling beyond `jq`, or grows past a page or two, it has **outgrown bash**. That's the moment for Python. Bash is the best glue between programs; it's a poor language for everything else.
+
+  - kind: choice
+    title: Bash or Python?
+    body: "Which of these jobs has most clearly outgrown a bash script?"
+    options:
+      - "Reading the shop's sales API, matching orders to refunds and computing monthly totals with decimals"
+      - "Compressing yesterday's log files and moving them into a backup folder"
+      - "Restarting a service, then checking with curl that the site answers"
+      - "Running ShellCheck on every script in a folder and listing the ones that fail"
+    answer: 0
+    explanation: "Joining data, decimal arithmetic and structured records are what bash is worst at. The other three are exactly what it's for: running programs and checking their results."
+
+  - kind: mac
+    title: ShellCheck on your Mac
+    body: |
+      Install ShellCheck and run it on a script you wrote in this level. Most editors (VS Code with the ShellCheck extension) show the same warnings as you type.
+    commands: |
+      brew install shellcheck
+      shellcheck ~/bin/*.sh
+      bash -x ~/bin/hello
+  - kind: why
+    body: |
+      A script that runs unattended has to fail **safely**: stop at the first problem instead of carrying on in the wrong place, and handle the file name with a space in it. `set -euo pipefail`, quoted variables and a clean ShellCheck run get you most of the way; `set -x` shows you the rest.
+
+  - kind: recap
+    body: |
+      - Start scripts with `set -euo pipefail`: stop on errors, on unset variables, on failed pipes.
+      - Quote variables: `"$var"`, `"$1"`, `"$@"`, `"$(cmd)"`.
+      - `shellcheck script.sh` before running; fix SC2086, SC2164, SC2006, SC2045 and friends.
+      - `bash -x script.sh` (or `set -x`) traces each command.
+      - Here-documents: `cat > file <<EOF … EOF` (expands), `<<'EOF'` (literal).
+      - Loop over globs, not `ls`; `while read` with `< file`; `cd … || exit`; `${var:?}` guards `rm -rf`.
+      - When it needs data structures and real logic, switch to Python.

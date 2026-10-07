@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "In a workflow, what's the difference between `uses:` and `run:` in a step?"
+    options:
+      - "`uses:` runs a published action; `run:` runs shell commands"
+      - "`uses:` runs on GitHub's computers; `run:` runs on your own computer"
+      - "`uses:` lists the programs to install; `run:` starts the workflow"
+      - "There's no difference; they're two spellings of the same key"
+    answer: 0
+    explanation: "Actions like `actions/checkout@v4` are ready-made steps; `run:` is bash on the runner."
+  - type: mcq
+    prompt: "Which trigger makes a workflow run for every pull request?"
+    options:
+      - "`on: pull_request`"
+      - "`on: push` with `branches: [main]`"
+      - "`on: workflow_dispatch`"
+      - "`runs-on: pull_request`"
+    answer: 0
+    explanation: "`pull_request` runs when a PR is opened or updated, and shows the jobs as checks on it. `workflow_dispatch` is for starting by hand."
+  - type: mcq
+    prompt: "Where should a deploy password used by a workflow be stored?"
+    options:
+      - "As a repository secret, referenced as `${{ secrets.NAME }}`"
+      - "In the workflow file, because only the team can read it"
+      - "In a `.env` file committed next to the workflow"
+      - "In a repository variable, `${{ vars.NAME }}`"
+    answer: 0
+    explanation: "Secrets are encrypted, masked in logs and not given to forks. Variables are for non-secret settings; anything committed is visible to everyone who can read the repository."
+  - type: mcq
+    prompt: "A run is red. Which command shows just the log of the step that failed?"
+    options:
+      - "`gh run view --log-failed`"
+      - "`gh run list --failed`"
+      - "`gh workflow view --errors`"
+      - "`gh pr checks --log`"
+    answer: 0
+    explanation: "`--log-failed` prints only the failing steps' output, where the real error usually is."
+  - type: mcq
+    prompt: "How do you make GitHub refuse to merge a PR until the `shellcheck` job has passed?"
+    options:
+      - "Add `shellcheck` as a required status check in the branch's ruleset"
+      - "Name the workflow file `required.yml`"
+      - "Add `required: true` under the job in the workflow"
+      - "Put `on: merge` in the workflow's triggers"
+    answer: 0
+    explanation: "Requiring checks is a branch rule (Module 40), naming the job. The workflow itself only reports success or failure."

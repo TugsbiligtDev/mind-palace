@@ -1,0 +1,4 @@
+title: Control Flow
+module: 28
+summary: "Making scripts decide and repeat: if, elif and else; tests with [[ ]] for files, text and numbers; for and while loops (including reading a file line by line); case; functions; and return and exit codes."
+minutes: 50

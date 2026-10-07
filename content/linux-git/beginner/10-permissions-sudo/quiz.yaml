@@ -1,0 +1,52 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "What does the mode `rwxr-xr--` allow **others** (not the owner, not the group) to do?"
+    options:
+      - "Read the file only"
+      - "Read and run it"
+      - "Read, change and run it"
+      - "Nothing at all"
+    answer: 0
+    explanation: "Split it in threes: `rwx` owner, `r-x` group, `r--` others. Others may only read."
+  - type: mcq
+    prompt: "Which number gives `rwxr-xr-x`?"
+    options:
+      - "`755`"
+      - "`644`"
+      - "`777`"
+      - "`700`"
+    answer: 0
+    explanation: "rwx = 4+2+1 = 7, r-x = 4+1 = 5, r-x = 5."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      touch /tmp/report.txt
+      chmod 640 /tmp/report.txt
+      chmod g+w /tmp/report.txt
+      stat -c %a /tmp/report.txt
+    options:
+      - "660"
+      - "640"
+      - "662"
+      - "760"
+    answer: 0
+    explanation: "640 is rw- r-- ---. Adding w for the group makes it rw- rw- --- = 660."
+  - type: mcq
+    prompt: "`./deploy.sh` says `Permission denied`. `ls -l` shows `-rw-r--r-- 1 you you deploy.sh`. What's the right fix?"
+    options:
+      - "`chmod u+x deploy.sh`"
+      - "`sudo ./deploy.sh`"
+      - "`chmod 777 deploy.sh`"
+      - "`sudo chown root deploy.sh`"
+    answer: 0
+    explanation: "It's your file, it just isn't executable. Give the owner `x`. sudo and 777 'work' but give far more power than needed."
+  - type: mcq
+    prompt: "Why does `sudo echo 127.0.0.1 shop >> /etc/hosts` still say `Permission denied`?"
+    options:
+      - "Your own shell does the `>>` before sudo starts, and you can't write there"
+      - "`echo` is a shell built-in, and sudo refuses to run built-in commands"
+      - "sudo only gives read access to protected files, never write access"
+      - "The file has to be opened in nano first, so it's unlocked for writing"
+    answer: 0
+    explanation: "Redirection belongs to your shell, which runs as you. `echo … | sudo tee -a /etc/hosts` does the writing as root."

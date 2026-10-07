@@ -1,0 +1,38 @@
+pass: 3
+questions:
+  - type: mcq
+    prompt: "What's the difference between Git and GitHub?"
+    options:
+      - "Git is a program on your computer; GitHub is a website hosting repos"
+      - "GitHub is the newer version of Git, with a monthly subscription"
+      - "Git is for program code, while GitHub is meant for documents and files"
+      - "They're two names for the same program, one for Mac and one for Windows"
+    answer: 0
+    explanation: "Git does the version control, offline. GitHub stores copies online for backup and teamwork."
+  - type: mcq
+    prompt: Which of these does a commit **not** record?
+    options:
+      - "How long the author spent on the change"
+      - "A snapshot of all the project's files"
+      - "A message describing what changed and why"
+      - "The author's name and the date and time"
+    answer: 0
+    explanation: "A commit stores the files, a message, author, date and an ID. Not time spent."
+  - type: mcq
+    prompt: "Where does Git keep a repository's history?"
+    options:
+      - "In a hidden `.git` folder inside the project"
+      - "On GitHub's servers only"
+      - "In a file called `history.txt` in your home folder"
+      - "Inside each file, at the end"
+    answer: 0
+    explanation: "The `.git` folder holds every commit. Delete it and the folder is just a folder again."
+  - type: mcq
+    prompt: "In version-control terms, what's a **remote**?"
+    options:
+      - "A copy of the repository somewhere else, such as GitHub"
+      - "A commit that was made from another person's computer"
+      - "A file that Git has been told to ignore in .gitignore"
+      - "The newest commit in the history, at the top of the log"
+    answer: 0
+    explanation: "Your local repository is on your computer; a remote is another copy you can send commits to and get commits from."

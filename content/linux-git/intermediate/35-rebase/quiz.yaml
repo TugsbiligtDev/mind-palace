@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "What's the main difference between merging `main` into your branch and rebasing your branch onto `main`?"
+    options:
+      - "Rebase replays your commits as new ones on top of main (a straight line); merge keeps them and adds a merge commit"
+      - "Rebase deletes the commits that are on main; merge keeps all of them"
+      - "Merge only works on branches that were pushed; rebase only on local ones"
+      - "There's no difference in the result, only in the speed"
+    answer: 0
+    explanation: "Rebase rewrites your commits (new hashes) after main's tip. Merge leaves every commit alone and records the joining in a merge commit."
+  - type: mcq
+    prompt: "A rebase stopped on a conflict. You've fixed the file. What next?"
+    options:
+      - "`git add` the file, then `git rebase --continue`"
+      - "`git commit -m \"Fix conflict\"`, then `git rebase --skip`"
+      - "`git merge --continue`, then `git push`"
+      - "`git rebase --abort`, which keeps your fix and finishes"
+    answer: 0
+    explanation: "Mark it resolved with `git add`; `--continue` makes the commit and moves on to the next one. `--abort` would throw the rebase (and your fix) away."
+  - type: mcq
+    prompt: "In an interactive rebase list, what's the difference between `squash` and `fixup`?"
+    options:
+      - "Both melt a commit into the one above; squash combines the messages, fixup drops this one's message"
+      - "squash removes the commit entirely; fixup keeps it but edits its message"
+      - "fixup can only be used on the very first line of the list"
+      - "squash works on pushed commits, fixup only on local ones"
+    answer: 0
+    explanation: "Use fixup for small corrections whose message doesn't matter, squash when you want to keep (and edit) both messages."
+  - type: mcq
+    prompt: "Why use `git push --force-with-lease` instead of `git push --force`?"
+    options:
+      - "It refuses if someone pushed to the branch since your last fetch, so you can't erase their commits"
+      - "It's faster, because it only sends the commits that changed"
+      - "It also rewrites your colleagues' local copies to match yours"
+      - "It works on protected branches, where `--force` is not allowed"
+    answer: 0
+    explanation: "The lease is your `origin/branch`: if GitHub's branch moved since then, the push is refused instead of overwriting work you haven't seen."
+  - type: mcq
+    prompt: "You and a colleague both committed on `main`. Which command brings in their commit and puts yours after it, without a merge commit?"
+    options:
+      - "`git pull --rebase`"
+      - "`git pull --no-rebase`"
+      - "`git fetch --all`"
+      - "`git merge origin/main`"
+    answer: 0
+    explanation: "pull --rebase fetches and then rebases your unpushed commits onto the updated branch. The other pull and the merge create a merge commit; fetch alone doesn't integrate anything."

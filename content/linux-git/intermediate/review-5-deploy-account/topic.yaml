@@ -1,0 +1,5 @@
+title: "The deploy account"
+module: 32
+kind: review
+summary: "Six briefs on the shop server: read the login records, find whose keys open an old account, remove the intruder's key, the hidden cron job and the program behind it, lock the account, and judge what got out. Uses Modules 30 to 32."
+minutes: 50

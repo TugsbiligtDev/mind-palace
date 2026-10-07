@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "You ran `git stash` and switched branches. Your new file `notes.txt` is still in the working folder. Why?"
+    options:
+      - "`git stash` only takes tracked changes; untracked files need `git stash -u`"
+      - "Stashes can only hold files that were already committed at least once"
+      - "The stash failed silently because the file was too large"
+      - "New files are always copied, not moved, into a stash"
+    answer: 0
+    explanation: "By default stash saves changes to tracked files. `-u` (`--include-untracked`) puts new files aside too."
+  - type: mcq
+    prompt: "What does `git cherry-pick a1b2c3d` do?"
+    options:
+      - "Applies that one commit's change on top of the current branch, as a new commit"
+      - "Moves the branch pointer to commit a1b2c3d, like reset"
+      - "Merges the whole branch that contains a1b2c3d"
+      - "Deletes commit a1b2c3d from the branch it was made on"
+    answer: 0
+    explanation: "The original commit stays where it was; a copy (same change and message, new hash) is added to your branch."
+  - type: mcq
+    prompt: "A release only fixes two bugs since `v2.3.1`. Following semantic versioning, what's the new version?"
+    options:
+      - "`v2.3.2`"
+      - "`v2.4.0`"
+      - "`v3.0.0`"
+      - "`v2.3.1-fix`"
+    answer: 0
+    explanation: "Bug fixes only: bump PATCH. New features would be 2.4.0; breaking changes 3.0.0."
+  - type: mcq
+    prompt: "You pushed `main`, but the tag `v1.1` you made isn't on GitHub. Why?"
+    options:
+      - "`git push` doesn't send tags; push it with `git push origin v1.1`"
+      - "Tags are only uploaded once a release is created on the website"
+      - "Annotated tags can't be pushed; only lightweight ones can"
+      - "GitHub deletes tags that point at the latest commit"
+    answer: 0
+    explanation: "Tags are pushed explicitly: one at a time, or all with `--tags`."
+  - type: mcq
+    prompt: "Which command lists the commits that are on `feature` but not yet on `main`?"
+    options:
+      - "`git log main..feature`"
+      - "`git log feature..main`"
+      - "`git log main...feature --merges`"
+      - "`git diff main feature`"
+    answer: 0
+    explanation: "`A..B` means reachable from B but not from A: here, what feature has that main doesn't."

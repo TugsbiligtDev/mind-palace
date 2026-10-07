@@ -1,0 +1,253 @@
+steps:
+  - kind: explain
+    title: A robot that checks every push
+    body: |
+      **Continuous integration** (CI) means every change is checked automatically: tests run, scripts are linted, the site is built, on every push and every pull request. Mistakes show up minutes after they're made, on a computer that isn't yours (so "works on my machine" stops being an excuse).
+
+      **GitHub Actions** is GitHub's CI. You describe what to do in a **workflow** file in `.github/workflows/`, push it, and GitHub runs it on a fresh virtual machine (a **runner**) each time something happens. The practice GitHub runs them too: real bash on a fresh Ubuntu, with your repository checked out.
+
+  - kind: explain
+    title: Anatomy of a workflow
+    body: |
+      ```yaml
+      name: CI                      # shown in the Actions tab and in gh run list
+      on:                           # WHEN it runs
+        push:
+          branches: [main]
+        pull_request:
+      jobs:
+        shellcheck:                 # a job (its name is what PR checks show)
+          runs-on: ubuntu-latest    # WHERE: a fresh Ubuntu runner
+          steps:                    # WHAT, in order
+            - uses: actions/checkout@v4      # a published action: get the repository's files
+            - name: Lint the scripts
+              run: shellcheck scripts/*.sh   # a shell command
+      ```
+
+      - **`on`**: the triggers. `push` (optionally only some `branches`), `pull_request` (opened or updated), `workflow_dispatch` (a "run" button, or `gh workflow run`), `schedule` (cron syntax, Module 31).
+      - **`jobs`**: one or more; they run in parallel unless one `needs:` another.
+      - **`steps`**: `uses:` runs a published **action** (someone else's ready-made step, `owner/name@version`); `run:` runs shell commands (bash, with `-e`: the first failing command fails the step).
+
+      YAML is fussy: **indentation with spaces** decides the structure, and a missing space after `:` is an error.
+
+  - kind: shell
+    title: Your first workflow
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      mkdir -p scripts
+      printf '#!/usr/bin/env bash\nset -euo pipefail\nrsync -av --delete ./ "$1"\n' > scripts/deploy.sh
+      git add scripts && git commit -qm "Add the deploy script" && git push -q 2> /dev/null
+    body: |
+      In `~/site`, create **`.github/workflows/ci.yml`** with exactly the workflow above (name `CI`, triggers `push` to `main` and `pull_request`, one job `shellcheck` that checks out the code and runs `shellcheck scripts/*.sh`). Commit it as **`Add CI`**, push, and look at the run with `gh run list` and `gh run view`.
+    tests:
+      - gh run list | head -1 | cut -f1-6
+      - git show origin/main:.github/workflows/ci.yml | grep -c 'shellcheck scripts'
+    solution: |
+      mkdir -p .github/workflows
+      printf 'name: CI\non:\n  push:\n    branches: [main]\n  pull_request:\njobs:\n  shellcheck:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Lint the scripts\n        run: shellcheck scripts/*.sh\n' > .github/workflows/ci.yml
+      git add .github
+      git commit -m "Add CI"
+      git push
+      gh run list
+    hint: "`mkdir -p .github/workflows`, `nano .github/workflows/ci.yml` (copy the YAML, spaces not tabs), `git add .github`, `git commit -m \"Add CI\"`, `git push`. `gh run list` shows ✓ when it passed."
+
+  - kind: explain
+    title: When a run fails
+    body: |
+      A red ✗ on a commit means a step failed. Find out why from the terminal:
+
+      ```
+      gh run list                      # recent runs: status, title, workflow, branch, event, ID
+      gh run view                      # the latest run: jobs and steps, which one failed
+      gh run view 11000000014 --log-failed   # only the log of the failing step
+      gh run view --log                # everything
+      gh run rerun 11000000014         # try again (after fixing a flaky outside cause)
+      ```
+
+      Read the failing step's last lines first: the actual error is usually right above `Process completed with exit code 1`. Fix it locally, commit, push: a new run starts.
+
+  - kind: shell
+    title: Fix the red run
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      mkdir -p scripts .github/workflows
+      printf 'name: CI\non:\n  push:\n    branches: [main]\n  pull_request:\njobs:\n  shellcheck:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Lint the scripts\n        run: shellcheck scripts/*.sh\n' > .github/workflows/ci.yml
+      printf '#!/usr/bin/env bash\nset -euo pipefail\nrsync -av --delete ./ "$1"\n' > scripts/deploy.sh
+      git add . && git commit -qm "Add CI" && git push -q 2> /dev/null
+      printf '#!/usr/bin/env bash\nset -euo pipefail\nbackup=$1\ntar -czf $backup site\n' > scripts/backup.sh
+      git add scripts && git commit -qm "Add the backup script" && git push -q 2> /dev/null
+    body: |
+      Kenji pushed `Add the backup script`, and CI went red. Find out what failed from the run's log, fix the script, commit and push, so the newest run is green.
+    tests:
+      - gh run list | head -2 | cut -f2,3
+      - git show origin/main:scripts/backup.sh | tail -1
+    solution: |
+      gh run view --log-failed
+      sed -i 's/tar -czf $backup site/tar -czf "$backup" site/' scripts/backup.sh
+      git commit -am "Quote the backup file name"
+      git push
+    hint: "`gh run view --log-failed` shows ShellCheck's SC2086 on `$backup`. Quote it (`\"$backup\"`) in `scripts/backup.sh`, then commit and push."
+
+  - kind: explain
+    title: Checks on pull requests
+    body: |
+      With `pull_request:` in `on`, the workflow also runs for every PR, and its jobs appear as **checks** on the PR page: ✓ or ✗ next to each job, before anyone merges.
+
+      ```
+      gh pr checks            # the current branch's PR
+      gh pr checks 3 --watch  # (on a real terminal) wait until they finish
+      ```
+
+      To make green checks **mandatory**, add the job's name as a required status check in the branch's ruleset (Module 40): GitHub then refuses to merge until it passes.
+
+      ```json
+      { "type": "required_status_checks",
+        "parameters": { "required_status_checks": [ { "context": "shellcheck" } ] } }
+      ```
+
+  - kind: shell
+    title: Merge only when green
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      mkdir -p scripts .github/workflows
+      printf 'name: CI\non:\n  push:\n    branches: [main]\n  pull_request:\njobs:\n  shellcheck:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Lint the scripts\n        run: shellcheck scripts/*.sh\n' > .github/workflows/ci.yml
+      printf '#!/usr/bin/env bash\nset -euo pipefail\nrsync -av --delete ./ "$1"\n' > scripts/deploy.sh
+      git add . && git commit -qm "Add CI" && git push -q 2> /dev/null
+      printf '{"name":"CI must pass","target":"branch","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"],"exclude":[]}},"rules":[{"type":"required_status_checks","parameters":{"required_status_checks":[{"context":"shellcheck"}]}}]}\n' > /tmp/r.json
+      gh api repos/inkwell/site/rulesets --input /tmp/r.json > /dev/null && rm /tmp/r.json
+    body: |
+      `main` now requires the `shellcheck` check. On a branch **`dry-run`**, change the deploy script's rsync line to `rsync -av --delete --dry-run ./ $1` (yes, unquoted), push it and open a PR titled **`Deploy dry run`**. Try to merge it (squash): it's refused while the check fails. Fix the script, push again, and merge once `gh pr checks` is green.
+    tests:
+      - gh pr view 2 | head -2 | tail -1 | cut -d' ' -f1
+      - git fetch -q && git show origin/main:scripts/deploy.sh | tail -1
+      - gh run list --event pull_request | cut -f2 | sort | uniq -c
+    solution: |
+      git switch -c dry-run
+      sed -i 's#rsync -av --delete ./ "$1"#rsync -av --delete --dry-run ./ $1#' scripts/deploy.sh
+      git commit -am "Make deploy a dry run"
+      git push -u origin dry-run
+      gh pr create --title "Deploy dry run" --body "Check what deploy would do first."
+      gh pr checks  # allow-error: failing
+      gh pr merge --squash  # allow-error: refused by the ruleset
+      sed -i 's#--dry-run ./ $1#--dry-run ./ "$1"#' scripts/deploy.sh
+      git commit -am "Quote the target"
+      git push
+      gh pr checks
+      gh pr merge --squash
+    hint: "After pushing and `gh pr create`, `gh pr checks` shows ✗ shellcheck, and `gh pr merge --squash` says the base branch policy prohibits the merge. Quote `\"$1\"`, commit, push: the PR's checks run again; `gh pr checks` is ✓; `gh pr merge --squash` works."
+
+  - kind: explain
+    title: Secrets and variables
+    body: |
+      Workflows often need a password or token (to deploy, to call an API). **Never put it in the workflow file**: store it as a **secret** in the repository (Settings → Secrets and variables → Actions, or `gh secret set`), and refer to it:
+
+      ```yaml
+          steps:
+            - name: Deploy
+              env:
+                DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+              run: ./scripts/deploy.sh
+      ```
+
+      GitHub masks secret values in logs (they show as `***`) and doesn't give them to workflows started from forks. For settings that aren't secret (a server name), use **variables**: `gh variable set SERVER --body shop.inkwell.example`, then `${{ vars.SERVER }}`.
+
+      ```
+      gh secret set DEPLOY_TOKEN          # asks for the value (or --body "…")
+      gh secret list
+      ```
+
+  - kind: shell
+    title: Give the deploy job its token
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      mkdir -p .github/workflows
+      printf 'name: Deploy\non:\n  workflow_dispatch:\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Deploy\n        env:\n          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}\n        run: |\n          test -n "$DEPLOY_TOKEN" || { echo "DEPLOY_TOKEN is not set"; exit 1; }\n          echo "Deploying with token $DEPLOY_TOKEN"\n' > .github/workflows/deploy.yml
+      git add .github && git commit -qm "Add a deploy workflow" && git push -q 2> /dev/null
+      gh workflow run deploy.yml > /dev/null
+    body: |
+      The **Deploy** workflow (started by hand, `workflow_dispatch`) just failed: look at its log. Add the repository secret **`DEPLOY_TOKEN`** with the value **`tok-practice-0042`**, then start the workflow again and check that it passes and that the log doesn't show the token.
+    tests:
+      - gh secret list | cut -f1 | head -2
+      - gh run list --workflow deploy.yml | head -1 | cut -f2
+      - gh run view --log | grep -c 'tok-practice-0042'
+      - gh run view --log | grep -c 'Deploying with token \*\*\*'
+    solution: |
+      gh run view --log-failed
+      gh secret set DEPLOY_TOKEN --body tok-practice-0042
+      gh workflow run deploy.yml
+      gh run view --log
+    hint: "`gh run view --log-failed` says *DEPLOY_TOKEN is not set*. `gh secret set DEPLOY_TOKEN --body tok-practice-0042`, then `gh workflow run deploy.yml`, then `gh run list` and `gh run view --log` (the token appears as `***`)."
+
+  - kind: explain
+    title: A website from a workflow, GitHub Pages
+    body: |
+      **GitHub Pages** hosts static websites for free, at `https://OWNER.github.io/REPO/`. The modern way to publish is a workflow that uploads a folder and deploys it:
+
+      ```yaml
+      name: Publish the site
+      on:
+        push:
+          branches: [main]
+      permissions:
+        contents: read
+        pages: write
+        id-token: write
+      jobs:
+        deploy:
+          runs-on: ubuntu-latest
+          environment:
+            name: github-pages
+          steps:
+            - uses: actions/checkout@v4
+            - run: mkdir -p public && cp *.html style.css public/
+            - uses: actions/upload-pages-artifact@v3
+              with:
+                path: public
+            - uses: actions/deploy-pages@v4
+      ```
+
+      (On github.com, first set Settings → Pages → Source to **GitHub Actions**.)
+
+  - kind: shell
+    title: Publish the website
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      Add the Pages workflow above as **`.github/workflows/pages.yml`**, commit (`Publish with GitHub Pages`) and push. When the run is green, check the live site with `curl -s https://inkwell.github.io/site/`.
+    tests:
+      - gh run list --workflow pages.yml | head -1 | cut -f2
+      - curl -s https://inkwell.github.io/site/ | head -2
+    solution: |
+      mkdir -p .github/workflows
+      printf 'name: Publish the site\non:\n  push:\n    branches: [main]\npermissions:\n  contents: read\n  pages: write\n  id-token: write\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    environment:\n      name: github-pages\n    steps:\n      - uses: actions/checkout@v4\n      - run: mkdir -p public && cp *.html style.css public/\n      - uses: actions/upload-pages-artifact@v3\n        with:\n          path: public\n      - uses: actions/deploy-pages@v4\n' > .github/workflows/pages.yml
+      git add .github
+      git commit -m "Publish with GitHub Pages"
+      git push
+      curl -s https://inkwell.github.io/site/
+    hint: "Create the file with nano (keep the indentation exactly), `git add .github`, commit, `git push`, then `gh run list` and `curl -s https://inkwell.github.io/site/`."
+
+  - kind: mac
+    title: Actions on github.com
+    body: |
+      In one of your repositories on GitHub: add a small workflow (ShellCheck on your scripts, or just `echo hello`), push, and watch it in the **Actions** tab. Open a PR and see the check on it. Set up **Pages** for a repository with an `index.html` (Settings → Pages → Source: GitHub Actions) and visit `https://YOU.github.io/REPO/`.
+    commands: |
+      mkdir -p .github/workflows
+      code .github/workflows/ci.yml
+      git add .github && git commit -m "Add CI" && git push
+      gh run watch
+      gh run view --log-failed
+  - kind: why
+    body: |
+      CI turns "please remember to run the checks" into something that simply happens on every change, visible on every pull request. Required checks stop broken code from reaching `main`; secrets keep credentials out of the repository; and the same mechanism deploys your site. It's the foundation of everything in Module 53.
+
+  - kind: recap
+    body: |
+      - Workflows live in `.github/workflows/*.yml`: `name`, `on` (`push`, `pull_request`, `workflow_dispatch`, `schedule`), `jobs` → `runs-on` → `steps` (`uses:` actions, `run:` shell).
+      - `gh run list`, `gh run view [--log | --log-failed]`, `gh run rerun`, `gh workflow run file.yml`.
+      - PR checks: `gh pr checks`; require them with a `required_status_checks` rule (the job's name).
+      - Secrets: `gh secret set NAME`, `${{ secrets.NAME }}` (masked as `***`); variables: `gh variable set`, `${{ vars.NAME }}`.
+      - GitHub Pages: `upload-pages-artifact` + `deploy-pages` → `https://owner.github.io/repo/`.

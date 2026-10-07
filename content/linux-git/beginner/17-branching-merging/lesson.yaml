@@ -1,0 +1,268 @@
+steps:
+  - kind: explain
+    title: Why branches
+    body: |
+      Inkwell wants a "new arrivals" page, but it isn't ready, and meanwhile someone has to fix a price on the live site. If both happen on the same line of history, the half-finished page gets in the way of the urgent fix.
+
+      A **branch** is a separate line of work. You make one, commit to it as much as you like, and the main line (`main`) is untouched until you **merge** the work back in. Teams use a branch for every change.
+
+  - kind: explain
+    title: A branch is just a pointer
+    body: |
+      Each commit points back to the one before it. A **branch** is simply a name that points at one commit, and moves forward each time you commit on it. **`HEAD`** says which branch you're on right now.
+
+      ```
+      A ── B ── C          ← main ← HEAD
+      ```
+
+      `git switch -c sale` makes a new pointer at the same commit and moves HEAD to it:
+
+      ```
+      A ── B ── C          ← main
+                           ← sale ← HEAD
+      ```
+
+      Commit twice on `sale`, and only `sale` moves:
+
+      ```
+      A ── B ── C          ← main
+                 \
+                  D ── E   ← sale ← HEAD
+      ```
+
+      Making a branch is instant and costs nothing: no files are copied.
+
+  - kind: explain
+    title: Branch commands
+    body: |
+      | Command | Does |
+      |---|---|
+      | `git branch` | list branches; `*` marks the one you're on |
+      | `git switch -c name` | **c**reate a branch here and switch to it |
+      | `git switch name` | switch to an existing branch: your files change to match it |
+      | `git switch -` | back to the previous branch |
+      | `git branch name` | create a branch without switching |
+
+      Switching changes the files in your folder to that branch's version. If you have uncommitted changes that would be overwritten, Git refuses and tells you: commit them first.
+
+  - kind: shell
+    title: Start a branch
+    fixture: [git-identity, website-repo]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      You're in the website repository, on `main`. Create a branch called `new-arrivals` and switch to it, in one command. `git branch` should then show the `*` on `new-arrivals`.
+    tests:
+      - git branch
+    solution: git switch -c new-arrivals
+    reject:
+      - git branch new-arrivals
+    hint: "`git switch -c` + the new branch's name."
+
+  - kind: explain
+    title: Merging
+    body: |
+      When the work on a branch is done, switch to the branch you want it **in** (usually `main`) and merge:
+
+      ```
+      git switch main
+      git merge new-arrivals
+      ```
+
+      Two things can happen:
+
+      - **Fast-forward**: `main` hasn't moved since the branch started, so Git just slides the `main` pointer forward to the branch's last commit. No new commit. Git says `Fast-forward`.
+      - **Merge commit**: both branches have new commits. Git combines them and makes a new commit with **two parents**. It opens your editor with a ready-made message (`Merge branch 'new-arrivals'`): just save and exit. `git merge --no-edit` skips the editor.
+
+      Afterwards, delete the merged branch with `git branch -d new-arrivals`. Its commits stay; only the name goes.
+
+  - kind: shell
+    title: A branch, start to finish
+    fixture: [git-identity, website-repo]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      1. Create and switch to a branch `new-arrivals`.
+      2. Make a file `books/kindred.html` with this content (nano, or `echo … > …`):
+         ```
+         <h1>Kindred</h1>
+         ```
+      3. Commit it with the message `Add the Kindred book page`.
+      4. Switch back to `main` and merge `new-arrivals` (it should fast-forward).
+      5. Delete the `new-arrivals` branch.
+    tests:
+      - git log --format=%s
+      - git branch
+      - ls books
+    solution: |
+      git switch -c new-arrivals
+      echo "<h1>Kindred</h1>" > books/kindred.html
+      git add books/kindred.html
+      git commit -m "Add the Kindred book page"
+      git switch main
+      git merge new-arrivals
+      git branch -d new-arrivals
+    uses:
+      - match: "git\\s+(switch\\s+-c|checkout\\s+-b)\\s+new-arrivals"
+        why: "the work should happen on a branch: start with `git switch -c new-arrivals`."
+      - match: "git\\s+merge\\s+new-arrivals"
+        why: "bring the branch into `main` with `git merge new-arrivals`."
+    reject:
+      - |
+        echo "<h1>Kindred</h1>" > books/kindred.html
+        git add books/kindred.html
+        git commit -m "Add the Kindred book page"
+    hint: "`git switch -c new-arrivals`, create and `git add` the file, `git commit -m \"…\"`, `git switch main`, `git merge new-arrivals`, `git branch -d new-arrivals`."
+
+  - kind: shell
+    title: Two lines of work, one merge commit
+    fixture: [git-identity, website-repo]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c about-update
+      sed -i 's/Three people, a lot of books./Three people, twenty thousand books./' about.html
+      git commit -qam "Update the about text"
+      git switch -q main
+      printf 'h1 { color: navy; }\np { line-height: 1.6; }\n' > style.css
+      git commit -qam "Space out paragraphs"
+    body: |
+      Kenji updated the about text on a branch `about-update`, while Priya committed a style change on `main`. Look: `git log --oneline --graph --all`.
+
+      Merge `about-update` into `main`. (Git opens nano with the message `Merge branch 'about-update'`: save with Ctrl+O, Return, and leave with Ctrl+X.) Then look at the graph again, and delete the merged branch.
+    tests:
+      - git log --format=%s
+      - git log -1 --format=%p | wc -w
+      - git branch
+      - cat about.html
+    solution: |
+      git merge --no-edit about-update
+      git branch -d about-update
+    hint: "You're already on `main`, so: `git merge about-update`, save the message in nano, then `git branch -d about-update`."
+
+  - kind: explain
+    title: Conflicts
+    body: |
+      If both branches changed **the same lines** of the same file, Git can't know which version you want. It stops the merge with a **conflict**:
+
+      ```
+      Auto-merging books/dune.html
+      CONFLICT (content): Merge conflict in books/dune.html
+      Automatic merge failed; fix conflicts and then commit the result.
+      ```
+
+      Nothing is lost and nothing is broken. Git has written **both** versions into the file, between markers:
+
+      ```
+      <<<<<<< HEAD
+      <p class="price">7.99</p>
+      =======
+      <p class="price">8.49</p>
+      >>>>>>> price-fix
+      ```
+
+      - Between `<<<<<<< HEAD` and `=======`: your branch's version (the one you're merging **into**).
+      - Between `=======` and `>>>>>>> price-fix`: the other branch's version.
+
+  - kind: explain
+    title: Resolving a conflict
+    body: |
+      1. `git status` lists the files under **Unmerged paths** (*both modified*).
+      2. Open each one and **edit it into the version you want**: keep one side, the other, or a mix. **Delete all three marker lines.**
+      3. Mark it resolved by staging it: `git add books/dune.html`. Newer Git (2.56) also has **`git add --resolved`**, which stages only the conflicted files and refuses while any of them still contain markers, a handy safety net.
+      4. `git commit` finishes the merge (nano opens with the message ready; save and exit).
+
+      Changed your mind? **`git merge --abort`** puts everything back as it was before the merge.
+
+  - kind: shell
+    title: Your first conflict
+    fixture: [git-identity, website-repo]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c price-fix
+      sed -i 's/8.99/8.49/' books/dune.html
+      git commit -qam "Price Dune at 8.49"
+      git switch -q main
+      sed -i 's/8.99/7.99/' books/dune.html
+      git commit -qam "Price Dune at 7.99"
+    body: |
+      Priya priced Dune at 7.99 on `main`; Kenji priced it at 8.49 on `price-fix`. Inspector Bold says 8.49 is right.
+
+      Merge `price-fix` into `main`, resolve the conflict so `books/dune.html` reads exactly:
+
+      ```
+      <!DOCTYPE html>
+      <title>Dune</title>
+      <h1>Dune</h1>
+      <p class="price">8.49</p>
+      ```
+
+      then stage it and finish the merge.
+    tests:
+      - cat books/dune.html
+      - git status --short
+      - git log -1 --format=%s
+      - git log -1 --format=%p | wc -w
+    solution: |
+      git merge price-fix  # allow-error: stops on the conflict
+      printf '<!DOCTYPE html>\n<title>Dune</title>\n<h1>Dune</h1>\n<p class="price">8.49</p>\n' > books/dune.html
+      git add --resolved
+      git commit --no-edit
+    hint: "`git merge price-fix`, then `nano books/dune.html`: delete the `<<<<<<<`, `=======` and `>>>>>>>` lines and the 7.99 line, keep the 8.49 line. Save, `git add --resolved` (or `git add books/dune.html`), then `git commit` and save the message."
+
+  - kind: shell
+    title: Back out of a merge
+    fixture: [git-identity, website-repo]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c price-fix
+      sed -i 's/8.99/8.49/' books/dune.html
+      git commit -qam "Price Dune at 8.49"
+      git switch -q main
+      sed -i 's/8.99/7.99/' books/dune.html
+      git commit -qam "Price Dune at 7.99"
+      git merge price-fix > /dev/null || true
+    body: |
+      A merge has stopped on a conflict (`git status`), and you'd rather ask Kenji before deciding. Cancel the merge so everything is exactly as it was before it started.
+    tests:
+      - git status --short
+      - cat books/dune.html
+      - git log --format=%s
+    solution: git merge --abort
+    hint: "`git merge --abort`."
+
+  - kind: info
+    title: "🔹 git checkout, the older way"
+    body: |
+      Before Git 2.23 (2019), one command did both switching branches and restoring files: `git checkout`. You'll see it in older tutorials and answers:
+
+      | Older | Today |
+      |---|---|
+      | `git checkout main` | `git switch main` |
+      | `git checkout -b feature` | `git switch -c feature` |
+      | `git checkout -- file.txt` | `git restore file.txt` |
+
+      It still works. `switch` and `restore` exist because one command doing two unrelated jobs confused people.
+
+  - kind: mac
+    title: Branch and merge on your Mac
+    body: |
+      In the practice repository from Module 15, make a branch, commit on it, and merge it back.
+    commands: |
+      cd ~/git-practice
+      git switch -c idea
+      echo "An idea." >> README.md
+      git commit -am "Add an idea"
+      git switch main
+      git merge idea
+      git branch -d idea
+      git log --oneline --graph
+  - kind: why
+    body: |
+      Branches let several pieces of work move at once without getting in each other's way, and merging brings them together with the history of both kept. Conflicts look alarming the first time, but they're just Git asking a question only a human can answer.
+
+  - kind: recap
+    body: |
+      - A **branch** is a movable pointer to a commit; **HEAD** is the branch you're on.
+      - `git switch -c name` creates and switches; `git switch name` switches; `git branch` lists.
+      - `git merge other` brings `other` into the current branch: **fast-forward** or a **merge commit**.
+      - Conflicts: edit the file, remove the `<<<<<<<` `=======` `>>>>>>>` markers, `git add` (or `git add --resolved`), `git commit`.
+      - `git merge --abort` cancels a merge. `git branch -d name` deletes a merged branch.
+      - 🔹 `git checkout` is the older form of `switch` and `restore`.

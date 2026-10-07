@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "Why keep dotfiles (shell settings) in a Git repository?"
+    options:
+      - "They're backed up and versioned, and a new computer can just clone them"
+      - "Git compresses the settings, so the terminal starts noticeably faster"
+      - "macOS deletes settings files that aren't kept in a Git repository"
+      - "GitHub checks dotfiles for mistakes automatically and fixes them"
+    answer: 0
+    explanation: "Settings are plain text, so Git suits them perfectly: history, backup, and one `git clone` to set up a new machine."
+  - type: mcq
+    prompt: "Which line, added to `~/.zshrc`, loads aliases kept in `~/notes-dotfiles/dotfiles/zshrc` in every new terminal?"
+    options:
+      - "`source ~/notes-dotfiles/dotfiles/zshrc`"
+      - "`cp ~/notes-dotfiles/dotfiles/zshrc ~`"
+      - "`alias ~/notes-dotfiles/dotfiles/zshrc`"
+      - "`export ~/notes-dotfiles/dotfiles/zshrc`"
+    answer: 0
+    explanation: "`source` runs a file's commands in the current shell, so its aliases become available. Putting the line in `~/.zshrc` does it in every new terminal."
+  - type: mcq
+    prompt: "Which order does GitHub Flow follow?"
+    options:
+      - "branch → commit → push → pull request → merge → pull main"
+      - "commit → merge → branch → push → pull request → pull main"
+      - "pull request → branch → commit → merge → push → pull main"
+      - "push → commit → branch → merge → pull request → pull main"
+    answer: 0
+    explanation: "Work happens on a branch, reaches GitHub with a push, gets reviewed in a pull request, and lands in main by merging; then you update your local main."
+  - type: mcq
+    prompt: "During a merge, `git add --resolved` refuses to stage a file. What's the likely reason?"
+    options:
+      - "Conflict markers are still in it"
+      - "The file isn't tracked by Git yet"
+      - "You have to push the branch first"
+      - "The other branch was already deleted"
+    answer: 0
+    explanation: "`--resolved` only stages conflicted files once no `<<<<<<<`, `=======` or `>>>>>>>` lines remain."
+  - type: mcq
+    prompt: "What's the safest way to make your Mac load your repository's shell settings?"
+    options:
+      - "Back up ~/.zshrc, then add a `source` line for your file"
+      - "Delete ~/.zshrc and copy the repository's file in its place"
+      - "Run the repository's file once with `sudo`, so it's installed"
+      - "Move the whole repository folder inside ~/.zshrc instead"
+    answer: 0
+    explanation: "Adding one `source` line keeps everything that's already in your `~/.zshrc` (some installers put PATH settings there), and the backup lets you undo."

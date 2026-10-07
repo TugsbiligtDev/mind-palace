@@ -1,0 +1,122 @@
+steps:
+  - kind: explain
+    title: final-final-v2-REAL.html
+    body: |
+      Without version control, people keep history by copying files:
+
+      ```
+      index.html
+      index-old.html
+      index-backup-sept.html
+      index-final.html
+      index-final-v2-REAL.html
+      ```
+
+      Which one is live? What changed between them? Who changed it? If two people edit the same file, one of them silently overwrites the other. And when something breaks, there's no clean way back to "how it was on Tuesday".
+
+  - kind: shell
+    title: Inkwell's version of the problem
+    setup: |
+      mkdir -p ~/inkwell/site-drafts && cd ~/inkwell/site-drafts
+      printf '<h1>Inkwell</h1>\n' > index.html
+      printf '<h1>Inkwell</h1>\n' > index-old.html
+      printf '<h1>Inkwell Books</h1>\n' > index-final.html
+      printf '<h1>Inkwell Books</h1>\n<p>Sale!</p>\n' > 'index-final-v2 (Priya).html'
+      printf '<h1>Inkwell Books</h1>\n<p>Sale on now</p>\n' > index-final-v2-REAL.html
+    body: |
+      Look at Inkwell's `site-drafts` folder (`ls`, then `cat` a few files). Try to answer: which version is the newest, who wrote it, and what changed?
+
+      You can't, from the files alone. Nothing is graded here.
+
+  - kind: explain
+    title: What version control does
+    body: |
+      **Version control** records the history of a project for you. Whenever you decide the work is in a good state, you take a **snapshot** of the whole project, with:
+
+      - a short **message** saying what changed and why,
+      - **who** made it and **when**,
+      - a unique **ID**.
+
+      Then you can see every change ever made, compare any two points, go back to any snapshot, try ideas on a separate line of work without risking the main one, and combine work from several people without overwriting each other.
+
+      All with one folder and one set of file names. No more `-final-v2`.
+
+  - kind: explain
+    title: Git and GitHub
+    body: |
+      Two names that are easy to mix up:
+
+      | | **Git** | **GitHub** |
+      |---|---|---|
+      | What | a **program** that does version control | a **website** that stores Git projects online |
+      | Where | runs on your computer, in the terminal | github.com, in the browser |
+      | Needs the internet? | no | yes |
+      | Made by | Linus Torvalds (who also made Linux), 2005 | a company, owned by Microsoft |
+
+      Git works entirely on your own computer. GitHub (and alternatives like GitLab and Bitbucket) is where you put a copy so it's backed up, shareable, and others can work on it. Part 4 is Git; Part 5 is GitHub.
+
+  - kind: explain
+    title: The words
+    body: |
+      | Word | Means |
+      |---|---|
+      | **repository** (repo) | a project folder whose history Git tracks. The history lives in a hidden `.git` folder inside it |
+      | **commit** | one snapshot: the files as they were, plus message, author, date and ID. Also the verb: "commit your changes" |
+      | **history** | the chain of commits, each pointing back to the one before |
+      | **local** | on your computer |
+      | **remote** | a copy of the repository somewhere else, usually GitHub |
+
+      A commit's ID is a long code like `7d2afa203066a5330c3c0f4e55c0ecac63941f54`, usually shortened to the first seven characters: `7d2afa2`.
+
+  - kind: shell
+    title: A repository with history
+    fixture: [git-identity, website-repo]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      Kenji has already put a copy of the website under Git: `~/inkwell/site-repo`. You're in it. Look around:
+
+      1. `ls -a` shows the files, and the hidden `.git` folder where the history lives.
+      2. `git log --oneline` lists the commits, newest first: ID and message.
+      3. `git log` shows the full version: author and date too.
+
+      Press **q** if the full log opens in a pager. The next step asks what you found.
+
+  - kind: choice
+    title: Read the history
+    body: According to `git log`, who made the commit "Add checkout settings", and when?
+    options:
+      - "Marcus Reed, on 14 September at 22:10"
+      - "Kenji Mori, on 20 September at 11:30"
+      - "Priya Shah, on 3 August at 10:12"
+      - "The log doesn't record who made a commit"
+    answer: 0
+    explanation: "Every commit records its author and time. That commit added the `.env` file with the payment key, late in the evening, by Marcus Reed (Head of Sales). Worth remembering."
+
+  - kind: choice
+    title: Git or GitHub?
+    body: Kenji is on a plane with no Wi-Fi. Can he still look through the website's history and make new commits?
+    options:
+      - "Yes: his laptop holds the whole history; GitHub is only for sharing"
+      - "No: commits are stored on GitHub, so every commit needs the internet"
+      - "He can read the history, but making new commits needs GitHub online"
+      - "Only if he downloaded a backup copy of GitHub before the flight"
+    answer: 0
+    explanation: "Git is a program on his computer, and every copy of a repository holds the full history. He'll send the new commits to GitHub when he's back online."
+
+  - kind: mac
+    title: Is Git on your Mac?
+    body: |
+      Check in your Mac's Terminal. If macOS offers to install the **Command Line Developer Tools**, say yes: they include Git. (Module 14 installs a newer Git with Homebrew.)
+    commands: |
+      git --version
+  - kind: why
+    body: |
+      Every software team, and many writers, designers and researchers, keep their work in Git. It's the safety net that lets you change things fearlessly, and the shared record of who did what. As you just saw, it's also very good evidence.
+
+  - kind: recap
+    body: |
+      - Version control records snapshots of a whole project, with message, author, date and ID.
+      - **Git** is the tool on your computer; **GitHub** is a website that hosts Git repositories.
+      - **Repository**: a tracked project (history in `.git`). **Commit**: one snapshot. **History**: the chain of commits.
+      - **Local** is your computer; a **remote** is a copy elsewhere, usually GitHub.
+      - `git log` shows the history: who, when, what, newest first.

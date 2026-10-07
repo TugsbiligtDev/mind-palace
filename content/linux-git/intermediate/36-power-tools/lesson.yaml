@@ -1,0 +1,324 @@
+steps:
+  - kind: explain
+    title: git stash, a pocket for unfinished work
+    body: |
+      You're halfway through something when an urgent fix comes in. Your changes aren't ready to commit, and `git switch` refuses to carry them. **Stash** them:
+
+      | Command | Does |
+      |---|---|
+      | `git stash` (`git stash push -m "note"`) | put tracked changes aside; the working folder is clean again |
+      | `git stash -u` | include **untracked** files too |
+      | `git stash list` | `stash@{0}: WIP on redesign: …`, newest first |
+      | `git stash pop` | bring the newest back and remove it from the list |
+      | `git stash apply` / `git stash drop` | bring back but keep it / throw it away |
+      | `git stash show -p stash@{1}` | what's in an older one |
+
+      A stash is local and easy to forget: treat it as a pocket, not a filing cabinet.
+
+  - kind: shell
+    title: An urgent fix in the middle of work
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c redesign
+      sed -i 's/color: navy/color: teal/' style.css
+      printf '.banner { background: gold; }\n' > banner.css
+    body: |
+      You're on branch **`redesign`** with unfinished changes: `style.css` is modified and `banner.css` is new (untracked). Kenji needs a fix on **`main`** right now: in `about.html`, `Three people` must become `Four people`.
+
+      Put **all** your unfinished work aside, make that fix as a commit on `main` (message `We're four now`), go back to `redesign`, and bring your work back.
+    tests:
+      - git log -1 --format=%s main
+      - git branch --show-current
+      - git status --short
+      - git stash list | wc -l
+      - git show main:about.html | grep people
+    solution: |
+      git stash -u
+      git switch main
+      sed -i 's/Three people/Four people/' about.html
+      git commit -am "We're four now"
+      git switch redesign
+      git stash pop
+    hint: "`git stash -u` (the `-u` takes `banner.css` too), `git switch main`, edit and `git commit -am \"We're four now\"`, `git switch redesign`, `git stash pop`."
+
+  - kind: explain
+    title: Staging part of a file
+    body: |
+      Sometimes one file holds two unrelated changes, and only one belongs in the next commit. `git add -p` (**p**atch) shows each changed piece (**hunk**) and asks:
+
+      ```
+      @@ -2,1 +2,1 @@
+      -<p class="price">10.50</p>
+      +<p class="price">9.50</p>
+      (1/2) Stage this hunk [y,n,q,a,d,e,?]?
+      ```
+
+      **y** stage it, **n** skip it, **q** stop, **a** this and all later ones in the file, **d** none of the rest in the file, **?** help. Afterwards `git diff --staged` shows what will be committed and `git diff` what stays behind.
+
+  - kind: shell
+    title: Commit the price, not the debugging
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      printf '<!DOCTYPE html>\n<title>Kindred</title>\n<h1>Kindred</h1>\n<p class="price">10.50</p>\n<p>By Octavia E. Butler.</p>\n<p>Published 1979.</p>\n<p>Paperback, 287 pages.</p>\n<p>Condition: very good.</p>\n<p>Ships in two days.</p>\n<p>Gift wrapping available.</p>\n<a href="../index.html">Home</a>\n' > books/kindred.html
+      git add books/kindred.html && git commit -qm "Describe Kindred"
+      sed -i 's/10.50/9.50/' books/kindred.html
+      echo '<!-- DEBUG: remove before release -->' >> books/kindred.html
+    body: |
+      `books/kindred.html` has two changes: a new **price** (near the top) and a **debug comment** (at the bottom). Commit **only the price change**, with the message `Lower the price of Kindred`, using `git add -p`. The debug line must stay in the file, uncommitted.
+    tests:
+      - git log -1 --format=%s
+      - git show HEAD:books/kindred.html | grep -c DEBUG
+      - git diff --stat | tail -1
+      - git show HEAD:books/kindred.html | grep price
+    solution: |
+      git add -p books/kindred.html  # answers: y n
+      git commit -m "Lower the price of Kindred"
+    uses:
+      - match: "git\\s+add\\s+(-p|--patch)"
+        why: "stage the piece with `git add -p`."
+    hint: "`git add -p books/kindred.html`: `y` for the price hunk, `n` for the DEBUG one. Then `git commit -m \"Lower the price of Kindred\"`."
+
+  - kind: explain
+    title: cherry-pick, one commit from elsewhere
+    body: |
+      `git cherry-pick <commit>` copies **one** commit's change onto the current branch, as a new commit (same message and author, new hash). Typical uses: a bug fix made on another branch that `main` needs now, or one good commit from an abandoned branch.
+
+      ```
+      git switch main
+      git cherry-pick 4c1e2b0          # several: git cherry-pick a1 b2 c3
+      git cherry-pick -x 4c1e2b0       # -x notes "(cherry picked from commit …)" in the message
+      ```
+
+      It can conflict like a merge: fix, `git add`, `git cherry-pick --continue` (or `--abort`).
+
+  - kind: shell
+    title: Just the fix, please
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      git switch -q -c experiments
+      sed -i 's/10.50/9.50/' books/kindred.html && git commit -qam "Fix the Kindred price"
+      echo 'body { background: hotpink; }' >> style.css && git commit -qam "Try a pink background"
+      git switch -q main
+    body: |
+      Branch **`experiments`** has two commits. `main` needs the first one, **`Fix the Kindred price`**, but not the pink background. Copy just that commit onto `main`.
+    tests:
+      - git log -2 --format=%s main
+      - git show main:books/kindred.html | grep price
+      - git show main:style.css | grep -c hotpink
+    solution: git cherry-pick experiments~1
+    hint: "`git log --oneline experiments` shows its hash (or use `experiments~1`). On `main`: `git cherry-pick <hash>`."
+
+  - kind: explain
+    title: Tags and version numbers
+    body: |
+      A **tag** marks a commit for good, usually a release:
+
+      ```
+      git tag v1.1                                  # lightweight: just a name
+      git tag -a v1.1 -m "Book pages and hours"     # annotated: has its own author, date and message
+      git tag                                       # list (git tag -l "v1.*" to filter)
+      git show v1.1                                 # the tag's message, then the commit
+      git push origin v1.1                          # tags aren't pushed by default!
+      git push --tags                               # all of them
+      git tag -d v1.1                               # delete locally
+      ```
+
+      Use **annotated** tags for releases. Most projects number them with **semantic versioning**, `MAJOR.MINOR.PATCH`:
+
+      - **PATCH** (1.1.**1**): bug fixes only;
+      - **MINOR** (1.**2**.0): new features, nothing breaks;
+      - **MAJOR** (**2**.0.0): something that worked before may now break.
+
+  - kind: shell
+    title: Tag the release
+    fixture: [git-identity, website-repo, website-more, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      In your clone `~/site`, mark the current commit as release **`v1.1`** with an **annotated** tag (message: `Book pages and opening hours`), and push the tag to GitHub.
+    tests:
+      - git cat-file -t v1.1
+      - git tag -n
+      - git ls-remote --tags origin | cut -f2
+    solution: |
+      git tag -a v1.1 -m "Book pages and opening hours"
+      git push origin v1.1
+    hint: "`git tag -a v1.1 -m \"Book pages and opening hours\"`, then `git push origin v1.1` (a plain `git push` doesn't send tags)."
+
+  - kind: explain
+    title: Searching history
+    body: |
+      `git log` can filter, and the filters combine:
+
+      | Option | Keeps commits |
+      |---|---|
+      | `--author=Priya` | by that author (part of the name or email) |
+      | `--since=2026-09-15`, `--until=…`, `--since="2 weeks ago"` | in a time range |
+      | `--grep=price` | whose message contains the word |
+      | `-S "stats.inkwell"` | that **added or removed** that text in a file (the "pickaxe") |
+      | `-- books/` | that changed something in that path (after `--`) |
+
+      Then look closer:
+
+      - `git show <commit>` (message and full change), `git show <commit> --stat` (just the files), `git show v1.0:index.html` (a file as it was).
+      - `git blame file` shows, for every line, the commit and author that last changed it; `-L 10,20` limits it to some lines.
+
+  - kind: shell
+    title: Priya's recent work
+    fixture: [git-identity, website-repo, website-more]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      List, one line each (short hash and message), the commits on the current branch by **Priya** made **since 15 September 2026**.
+    output: true
+    solution: git log --oneline --author=Priya --since=2026-09-15
+    hint: "`git log --oneline --author=Priya --since=2026-09-15`."
+
+  - kind: shell
+    title: Who added that line?
+    fixture: [git-identity, website-repo, website-more]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      Line 4 of `index.html` loads `analytics.js`. Show who last changed **only that line**, with `git blame`.
+    output: true
+    solution: git blame -L 4,4 index.html
+    hint: "`git blame -L 4,4 index.html` (from line 4 to line 4)."
+
+  - kind: explain
+    title: Comparing branches, .. and ...
+    body: |
+      Two dots and three dots ask different questions:
+
+      | Written | In `git log` | In `git diff` |
+      |---|---|---|
+      | `main..feature` | commits on `feature` that aren't on `main` (what a merge would bring) | the difference between the two tips |
+      | `main...feature` | commits on **either** side but not both | what `feature` changed **since it branched off** (what a pull request shows) |
+
+      `git log --oneline main..feature` before merging answers "what am I about to bring in?"; `git diff main...feature` is the review view.
+
+  - kind: shell
+    title: What would merging bring?
+    fixture: [git-identity, website-repo, website-more]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      Before merging **`new-design`** into `main`: list (one line each) the commits on `new-design` that `main` doesn't have yet.
+    output: true
+    solution: git log --oneline main..new-design
+    reject:
+      - git log --oneline new-design
+    hint: "Two dots: `git log --oneline main..new-design`."
+
+  - kind: explain
+    title: Aliases and tidying branches
+    body: |
+      **Aliases** are your own short Git commands:
+
+      ```
+      git config --global alias.st "status --short"
+      git config --global alias.lg "log --oneline --graph --all"
+      git lg
+      ```
+
+      And branches pile up. After merging, list the ones that are fully merged into `main`, then delete them (`-d` refuses anything unmerged, so it's safe):
+
+      ```
+      git branch --merged main         # branches whose commits are all in main
+      git branch -d fix-1 fix-2
+      git branch --no-merged main      # still has work that isn't in main
+      ```
+
+  - kind: shell
+    title: An alias of your own
+    fixture: [git-identity, website-repo, website-more]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      Create a **global** Git alias **`lg`** for `log --oneline --graph --all`, and run `git lg`.
+    tests:
+      - git config --global alias.lg
+      - git lg
+    solution: |
+      git config --global alias.lg "log --oneline --graph --all"
+      git lg
+    hint: "`git config --global alias.lg \"log --oneline --graph --all\"` (the quotes keep it together)."
+
+  - kind: shell
+    title: Clear out merged branches
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      git branch fix-footer HEAD~1
+      git branch fix-links HEAD~2
+      git branch typo-about HEAD
+    body: |
+      Delete every branch that's **fully merged into `main`** (except `main` itself). Keep the branches with unmerged work.
+    tests:
+      - git branch
+    solution: |
+      git branch --merged main
+      git branch -d fix-footer fix-links typo-about
+    hint: "`git branch --merged main` lists `fix-footer`, `fix-links` and `typo-about` (and `main`). Delete those three with `git branch -d`. `new-design` isn't merged, so it stays."
+
+  - kind: explain
+    title: "Newer: git branch --delete-merged"
+    body: |
+      Git 2.56 adds a one-step clean-up for branches that track a GitHub branch: **`git branch --delete-merged`** deletes every local branch whose work is already in its **upstream** (the remote branch it tracks, shown in `git branch -vv`).
+
+      ```
+      git branch --delete-merged --dry-run     # only show what it would delete
+      git branch --delete-merged               # delete them
+      git branch --delete-merged 'fix-*'       # only branches whose names match
+      ```
+
+      It's careful: it never deletes the branch you're on, a branch with commits its upstream doesn't have, or a branch with **no upstream** at all (like the ones in the last step, which is why `--merged` and `-d` were the tools there). On your Mac, `brew upgrade git` gets it.
+
+  - kind: shell
+    title: Tidy up after the pull requests
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      git branch -q fix-footer origin/main~1 && git branch -q -u origin/main fix-footer
+      git branch -q fix-links origin/main~2 && git branch -q -u origin/main fix-links
+      git switch -q -c new-banner origin/main && echo "<p>Autumn sale</p>" >> index.html && git commit -qam "Add a sale banner" && git switch -q main
+      git branch notes HEAD~3
+    body: |
+      Your clone `~/site` has collected branches. `git branch -vv` shows which ones track `origin/main`, and whether they're behind (already merged) or ahead (unpushed work).
+
+      With **`git branch --delete-merged`**, look first with `--dry-run`, then delete every branch that's already merged into its upstream. `new-banner` (unpushed work) and `notes` (no upstream) must stay.
+    tests:
+      - git branch
+    solution: |
+      git branch --delete-merged --dry-run
+      git branch --delete-merged
+    uses:
+      - match: "--delete-merged"
+        why: "practise the new command here: `git branch --delete-merged`."
+    reject:
+      - git branch -D fix-footer fix-links new-banner
+    hint: "`git branch --delete-merged --dry-run` lists `fix-footer` and `fix-links`. Then the same without `--dry-run`. `git branch` should show `main`, `new-banner` and `notes`."
+
+  - kind: mac
+    title: Power tools on your Mac
+    body: |
+      Try them in your notes repository, and add the aliases you like to your global config.
+    commands: |
+      cd ~/notes-dotfiles
+      git config --global alias.lg "log --oneline --graph --all"
+      git config --global alias.st "status --short"
+      git lg
+      git log --since="1 week ago" --oneline
+      git blame README.md
+      git tag -a v0.1 -m "First version" && git push origin v0.1
+  - kind: why
+    body: |
+      These are the tools you reach for every week: stash to switch context, `add -p` to keep commits focused, cherry-pick to move one fix, tags to mark releases, and log, show and blame to answer "when, who and why did this change?" in seconds.
+
+  - kind: recap
+    body: |
+      - `git stash [-u]`, `stash list`, `stash pop`, `stash apply`, `stash drop`.
+      - `git add -p`: y / n / q / a / d per hunk.
+      - `git cherry-pick <commit>` copies one commit (`-x` notes where from).
+      - `git tag -a v1.1 -m "…"`, `git push origin v1.1` / `--tags`; semver MAJOR.MINOR.PATCH.
+      - `git log --author= --since= --grep= -S "text" -- path`; `git show`, `git blame -L a,b`.
+      - `main..feature` = what feature adds; `main...feature` = changes since they split.
+      - Aliases: `git config --global alias.lg "…"`; `git branch --merged main` then `-d`. `git branch --delete-merged [--dry-run]` (Git 2.56) for branches already merged into their upstream.

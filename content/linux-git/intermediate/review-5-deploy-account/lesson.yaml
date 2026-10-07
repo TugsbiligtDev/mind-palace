@@ -1,0 +1,111 @@
+steps:
+  - kind: explain
+    title: How did they get in?
+    body: |
+      Inspector Bold: *"The program at 2 a.m. was copied onto the server by someone with sudo. The shop's server keeps a record of every login. Find the door, and close it."*
+
+      This review covers Modules 30 to 32, on **`shop.inkwell.example`** (`ssh shop`; your key is set up). Work in an `ssh shop` session or run single commands with `ssh shop …`. Some files need `sudo` there.
+
+  - kind: shell
+    title: "1. The night's logins"
+    fixture: [shop-server, shop-access]
+    body: |
+      > *On the shop server, print every line of `/var/log/auth.log` that mentions the account `deploy`.*
+    output: true
+    solution: ssh shop grep deploy /var/log/auth.log
+    hint: "`grep deploy /var/log/auth.log` on the server."
+
+  - kind: choice
+    title: "2. Read the record"
+    body: |
+      From those lines:
+
+      ```
+      …02:11:47… sshd[2733]: Accepted publickey for deploy from 192.0.2.10 port 40122 ssh2: ED25519 SHA256:mr9Q…
+      …02:12:03… sudo:   deploy : TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/crontab -e
+      ```
+
+      > *What happened at 02:11?*
+    options:
+      - "Someone logged in as `deploy` with an SSH key, from 192.0.2.10, then used sudo to edit a crontab as root"
+      - "Someone guessed deploy's password from 192.0.2.10 after many failed attempts"
+      - "The deploy-bot logged in from GitHub Actions to update the website, as it does every night"
+      - "Priya logged in from the office and changed the backup schedule"
+    answer: 0
+    explanation: "*Accepted publickey*: a key, not a password, and no failures before it. The address is the one from the refunds and the export. Then `sudo … crontab -e` as root. Whoever it was has a key that `deploy` accepts."
+
+  - kind: shell
+    title: "3. Whose keys?"
+    fixture: [shop-server, shop-access]
+    body: |
+      > *Print only the **comment** (the last field, usually who the key belongs to) of every key that can log in as `deploy`. The keys are in `deploy`'s `~/.ssh/authorized_keys`, readable only by `deploy` and root.*
+    output: true
+    solution: ssh shop sudo awk "'{print \$3}'" /home/deploy/.ssh/authorized_keys
+    hint: "`sudo awk '{print $3}' /home/deploy/.ssh/authorized_keys` on the server. (Each line is: type, key, comment.)"
+
+  - kind: shell
+    title: "4. Close the door"
+    fixture: [shop-server, shop-access]
+    body: |
+      > *Marcus left Inkwell a month ago, but his laptop's key still opens `deploy`. Remove **only his key** from `deploy`'s `authorized_keys`; the deploy bot's key stays. Keep the file's owner and permissions as they are.*
+    tests:
+      - ssh shop sudo cat /home/deploy/.ssh/authorized_keys
+      - ssh shop sudo ls -l /home/deploy/.ssh/authorized_keys | awk '{print $1, $3, $4}'
+    solution: ssh shop sudo sed -i "/marcus@marcus-laptop/d" /home/deploy/.ssh/authorized_keys
+    hint: "`sudo sed -i '/marcus@marcus-laptop/d' /home/deploy/.ssh/authorized_keys` on the server deletes the matching line in place. (Or `sudo nano` the file and delete that line.)"
+
+  - kind: shell
+    title: "5. The hourly job"
+    fixture: [shop-server, shop-access]
+    body: |
+      > *The sudo line said `crontab -e`. Find the scheduled job that runs the export program, remove that crontab, and delete the program itself.*
+    tests:
+      - ssh shop sudo crontab -u deploy -l
+      - ssh shop ls /opt/.cache
+      - ssh shop sudo crontab -l
+    solution: |
+      ssh shop sudo crontab -u deploy -l
+      ssh shop sudo crontab -u deploy -r
+      ssh shop sudo rm /opt/.cache/exfil-sync
+    hint: "`sudo crontab -u deploy -l` shows deploy's crontab: one line running `/opt/.cache/exfil-sync` every hour. `sudo crontab -u deploy -r` removes it; `sudo rm /opt/.cache/exfil-sync` removes the program."
+
+  - kind: shell
+    title: "6. Lock the account"
+    fixture: [shop-server, shop-access]
+    body: |
+      > *Until Inkwell decides whether `deploy` is still needed: take it out of the `sudo` group and lock its password. Don't delete it (the deploy bot still uses it, without sudo).*
+    tests:
+      - ssh shop groups deploy
+      - ssh shop sudo passwd -S deploy | awk '{print $1, $2}'
+      - ssh shop id deploy > /dev/null && echo "still exists"
+    solution: |
+      ssh shop sudo deluser deploy sudo
+      ssh shop sudo usermod -L deploy
+    hint: "`sudo deluser deploy sudo` (or `sudo gpasswd -d deploy sudo`) removes it from the group; `sudo usermod -L deploy` locks the password. `sudo passwd -S deploy` shows `L` for locked."
+
+  - kind: choice
+    title: "7. Did anything get out?"
+    body: |
+      ```
+      learner@inkwell:~$ nc -zv old-backup.inkwell.example 22
+      nc: connect to old-backup.inkwell.example (203.0.113.99) port 22 (tcp) timed out: Operation now in progress
+      ```
+
+      > *The export program sent its data to `old-backup.inkwell.example`. That server doesn't answer anymore. What can you honestly conclude?*
+    options:
+      - "Nothing for certain: it times out now, but it may have worked earlier. Treat the data as leaked and change every key and password involved"
+      - "No data left: a timeout proves the server never existed, so every copy failed"
+      - "The data is safe because the program ran as root, and root traffic is encrypted"
+      - "Only the last copy failed; the server refused it, so the earlier ones failed too"
+    answer: 0
+    explanation: "A timeout today says nothing about last night. The safe assumption after an intrusion is that what could have been taken was taken: revoke the keys, rotate passwords and API keys, and tell the people affected."
+
+  - kind: recap
+    body: |
+      The shop server, closed:
+
+      - **Marcus's laptop key** was still in `deploy`'s `authorized_keys`. At 02:11 on 6 October someone logged in with it from **192.0.2.10**, used `deploy`'s sudo rights to set up an hourly root job, and dropped the export program into `/opt/.cache`.
+      - Removed: the key, the crontab, the program. Locked: the `deploy` password; removed from `sudo`.
+      - Lesson for the owners: when someone leaves, **remove their keys everywhere**, and don't give automation accounts sudo.
+
+      Inspector Bold: *"One more door. Marcus had commit access to the website too. Let's see what he left in the history."*

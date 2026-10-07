@@ -1,0 +1,52 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "What happens to the commits when you delete a branch with `git branch -D feature`?"
+    options:
+      - "Only the name is removed; the commits stay in the repository, unnamed, for a while"
+      - "Every commit made on that branch is deleted immediately and permanently"
+      - "The commits are moved onto `main` so that nothing is lost"
+      - "Git refuses: a branch can only be deleted once its commits are pushed"
+    answer: 0
+    explanation: "A branch is a pointer. Removing it leaves the commits in place; without any name pointing to them, Git cleans them up eventually (and the reflog can find them until then)."
+  - type: mcq
+    prompt: "Why can't you edit an old commit's message in place?"
+    options:
+      - "The hash is computed from the message, so a changed message makes a different commit"
+      - "Commit messages are encrypted once they're older than one day"
+      - "Only the person who made the commit is allowed to change its message"
+      - "Git stores messages in a separate file that it never allows you to write"
+    answer: 0
+    explanation: "Any change to a commit's content (including its message) changes its hash, so it's a new commit. Commands like `--amend` and `rebase` make new commits and move the pointer."
+  - type: mcq
+    prompt: "You're in *detached HEAD* and have made one commit. What keeps it from getting lost?"
+    options:
+      - "`git switch -c keep-this` before switching anywhere else"
+      - "`git switch main`, which brings the commit along automatically"
+      - "`git push`, which uploads detached commits to GitHub"
+      - "Nothing is needed: detached commits are added to main later"
+    answer: 0
+    explanation: "Creating a branch gives the commit a name. Switching away first leaves it unreferenced (recoverable only through the reflog)."
+  - type: mcq
+    prompt: "`git status` says *Your branch is up to date with 'origin/main'*, but a colleague pushed five minutes ago. How can both be true?"
+    options:
+      - "`origin/main` is only updated when you fetch; status compares with your last fetched copy"
+      - "Git hides other people's commits until they've been reviewed"
+      - "Your colleague must have pushed to a different repository"
+      - "status contacts GitHub, so the colleague's push must have failed"
+    answer: 0
+    explanation: "Remote-tracking branches are a local memory. `git fetch` updates them; status doesn't contact the server."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      cd /tmp && git init -q -b main demo && cd demo
+      git config user.name A && git config user.email a@x
+      echo hi > f && git add f && git commit -qm one
+      cat .git/HEAD
+    options:
+      - "ref: refs/heads/main"
+      - "main"
+      - "refs/heads/main"
+      - "one"
+    answer: 0
+    explanation: "HEAD normally holds a reference to a branch, not a commit hash. In detached HEAD it would hold a hash instead."

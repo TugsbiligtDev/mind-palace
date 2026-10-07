@@ -1,0 +1,51 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "`mkdir projects/2026/inkwell` fails with `No such file or directory`, though you're in the right place. What fixes it?"
+    options:
+      - "`mkdir -p projects/2026/inkwell`"
+      - "`mkdir -r projects/2026/inkwell`"
+      - "`touch projects/2026/inkwell`"
+      - "`sudo mkdir projects/2026/inkwell`"
+    answer: 0
+    explanation: "`projects/2026` doesn't exist yet, so there's nowhere to put `inkwell`. `-p` creates the missing parent folders as well."
+  - type: mcq
+    prompt: "What does `mv report.txt summary.txt` do when both files exist?"
+    options:
+      - "Renames report.txt to summary.txt, silently replacing the old one"
+      - "Stops with an error, because a file called summary.txt already exists"
+      - "Merges the two files into summary.txt, keeping both of their contents"
+      - "Asks whether you want to replace summary.txt first, then renames it"
+    answer: 0
+    explanation: "`mv` (and `cp`) overwrite silently. Use `mv -i` if you want to be asked."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      mkdir -p /tmp/w && cd /tmp/w
+      touch a.txt b.txt c.csv notes.md
+      echo *.txt
+    options:
+      - "a.txt b.txt"
+      - "*.txt"
+      - "a.txt b.txt c.csv notes.md"
+      - "a.txt"
+    answer: 0
+    explanation: "The shell turns `*.txt` into every matching name before `echo` runs, so echo prints the two `.txt` files. That's why `echo` and `ls` are good ways to preview a pattern."
+  - type: mcq
+    prompt: "Which command deletes the folder `drafts` and everything in it?"
+    options:
+      - "`rm -r drafts`"
+      - "`rm drafts`"
+      - "`rmdir drafts`"
+      - "`rm drafts/*`"
+    answer: 0
+    explanation: "`rm` alone refuses folders, `rmdir` only removes empty ones, and `rm drafts/*` empties the folder but leaves it (and any hidden files) behind."
+  - type: mcq
+    prompt: "You want to copy `my notes.txt` into `backup/`. Which command works?"
+    options:
+      - "`cp \"my notes.txt\" backup/`"
+      - "`cp my notes.txt backup/`"
+      - "`cp my-notes.txt backup/`"
+      - "`cp (my notes.txt) backup/`"
+    answer: 0
+    explanation: "Quotes keep the name in one piece. Without them, `cp` looks for two files, `my` and `notes.txt`."

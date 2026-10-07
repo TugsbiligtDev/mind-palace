@@ -1,0 +1,239 @@
+steps:
+  - kind: explain
+    title: Files that don't belong
+    body: |
+      Some files should never go into a repository:
+
+      - **Secrets**: passwords, API keys, `.env` files. Anything in Git's history can be read by anyone who gets a copy, forever.
+      - **Junk your computer makes**: `.DS_Store` (macOS drops one in every folder you open in Finder), editor backup files.
+      - **Things that can be rebuilt**: logs, downloaded dependencies (`node_modules/`), build output.
+
+      A file called **`.gitignore`** in the repository's top folder lists patterns for Git to ignore. Ignored files don't show up as untracked, and `git add .` skips them.
+
+  - kind: explain
+    title: .gitignore patterns
+    body: |
+      One pattern per line:
+
+      ```
+      # comments start with #
+      .env            # a file with this name, in any folder
+      .DS_Store
+      *.log           # every file ending in .log
+      backups/        # a folder (and everything in it)
+      /todo.txt       # only todo.txt in the top folder
+      !keep.log       # an exception: do track this one
+      ```
+
+      Commit the `.gitignore` itself, so everyone working on the project ignores the same things.
+
+      ⚠️ `.gitignore` only affects **untracked** files. If a file was already committed, adding it to `.gitignore` doesn't remove it from the history (`git rm --cached` stops tracking it; the old commits still contain it).
+
+  - kind: shell
+    title: Ignore the secrets and the junk
+    fixture: [backoffice, git-identity]
+    setup: |
+      cd ~/inkwell/site
+      git init -q && git add . && git commit -qm "Add the website"
+      printf 'PAYMENT_KEY=pk-inkwell-7f3a-NOT-A-REAL-KEY\n' > .env
+      printf 'junk' > .DS_Store
+      printf 'junk' > images/.DS_Store
+      printf 'GET / 200\n' > access.log
+      printf 'GET / 200\n' > debug.log
+    body: |
+      `git status` shows five untracked files. None of them belong in the repository: a `.env` with the payment key, two `.DS_Store` files, and two logs.
+
+      Create a `.gitignore` that ignores **`.env`**, **`.DS_Store`** and **every `.log` file**. Check that `git status` now only shows `.gitignore` itself, then commit it (any sensible message).
+    tests:
+      - git status --short
+      - git ls-files
+      - git log --oneline | wc -l
+    solution: |
+      printf '.env\n.DS_Store\n*.log\n' > .gitignore
+      git add .gitignore
+      git commit -m "Ignore secrets, Mac junk and logs"
+    reject:
+      - |
+        printf '.env\n.DS_Store\n' > .gitignore
+        git add .gitignore
+        git commit -m "Ignore secrets"
+    hint: "`nano .gitignore` and write three lines: `.env`, `.DS_Store` and `*.log`. Save, check `git status`, then `git add .gitignore` and commit."
+
+  - kind: explain
+    title: Undoing changes to a file
+    body: |
+      You edited a tracked file and want the last committed version back:
+
+      ```
+      git restore index.html
+      ```
+
+      ⚠️ This **throws away** your uncommitted changes to that file, with no undo. `git diff index.html` first, to be sure.
+
+      `git restore .` does it for every file in the folder. It doesn't touch untracked files.
+
+  - kind: shell
+    title: Undo a bad edit
+    fixture: [backoffice, git-identity]
+    setup: |
+      cd ~/inkwell/site
+      git init -q && git add . && git commit -qm "Add the website"
+      printf 'h1 { color: navy; }\n' > style.css
+      printf 'oops: deleted everything by accident\n' > index.html
+      printf 'h1 { color: navy; font-size: 3rem; }\n' > style.css
+    body: |
+      Two tracked files have changed. `git diff` shows them.
+
+      The bigger heading in `style.css` is on purpose, but `index.html` was wiped by accident. Bring back the committed `index.html` **and keep** the change to `style.css`.
+    tests:
+      - git status --short
+      - cat index.html
+      - cat style.css
+    solution: git restore index.html
+    reject:
+      - git restore .
+    hint: "`git restore` + the one file to bring back. `git restore .` would undo the style change too."
+
+  - kind: explain
+    title: Unstaging
+    body: |
+      Staged something by mistake? Take it out of the staging area, **keeping** your file and its changes:
+
+      ```
+      git restore --staged notes.txt
+      ```
+
+      `git status` even prints this command for you, under *Changes to be committed*. In a repository with no commits yet, the hint is `git rm --cached file` instead.
+
+  - kind: shell
+    title: That wasn't meant to be staged
+    fixture: [backoffice, git-identity]
+    setup: |
+      cd ~/inkwell/site
+      git init -q && git add . && git commit -qm "Add the website"
+      printf '<h1>About us</h1>\n' > about.html
+      printf 'call the printer\nask Marcus about refunds\n' > my-notes.txt
+      git add about.html my-notes.txt
+    body: |
+      Someone ran `git add` on two files. `about.html` is meant for the next commit; `my-notes.txt` is personal and must **not** be committed.
+
+      Unstage `my-notes.txt` without deleting it. Then commit `about.html` with the message `Add the about page`.
+    tests:
+      - git status --short
+      - git log --format=%s
+      - git ls-files
+    solution: |
+      git restore --staged my-notes.txt
+      git commit -m "Add the about page"
+    reject:
+      - git commit -m "Add the about page"
+    hint: "`git restore --staged my-notes.txt`, then check `git status`: only about.html should be under *Changes to be committed*."
+
+  - kind: explain
+    title: Fixing the last commit
+    body: |
+      Typo in the message you just committed, or forgot a file? Change the **last** commit:
+
+      ```
+      git commit --amend -m "Fix the price of Dune"     # new message
+      git add forgotten.txt
+      git commit --amend --no-edit                      # add the file, keep the message
+      ```
+
+      `--amend` replaces the last commit with a new one (with a new ID). ⚠️ Only amend commits you haven't shared yet (pushed, Module 19): rewriting history others already have causes trouble.
+
+  - kind: shell
+    title: A typo in the message
+    fixture: [git-identity, website-repo]
+    setup: |
+      cd ~/inkwell/site-repo
+      sed -i 's/8.99/7.99/' books/dune.html
+      git commit -qam "Lower the prise of Dune agian"
+    body: |
+      Your last commit's message has two typos: `git log --oneline -1`. Fix the message to read exactly:
+
+      ```
+      Lower the price of Dune again
+      ```
+
+      without adding a new commit.
+    tests:
+      - git log --format=%s
+      - git status --short
+    solution: git commit --amend -m "Lower the price of Dune again"
+    reject:
+      - git commit --allow-empty -m "Lower the price of Dune again"
+    hint: "`git commit --amend -m \"…\"` replaces the last commit's message."
+
+  - kind: explain
+    title: Removing and renaming tracked files
+    body: |
+      If you delete or rename a tracked file with plain `rm` or `mv`, Git sees a deleted file (and an untracked new one) that you then have to stage. The Git versions do both steps at once:
+
+      | Command | Does |
+      |---|---|
+      | `git rm old.html` | deletes the file **and** stages the deletion |
+      | `git rm --cached .env` | stops tracking the file but **keeps** it on disk (then add it to `.gitignore`) |
+      | `git mv about.html about-us.html` | renames **and** stages the rename |
+
+      Then commit as usual.
+
+  - kind: shell
+    title: Rename one, remove one
+    fixture: [git-identity, website-repo]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      In the website repository:
+
+      1. Rename `about.html` to `about-us.html` the Git way.
+      2. Stop tracking `.env`, **but keep the file** on disk, and add it to a new `.gitignore`.
+      3. Commit all of that in one commit (any sensible message).
+    tests:
+      - git ls-files
+      - git status --short
+      - ls -a
+    solution: |
+      git mv about.html about-us.html
+      git rm --cached .env
+      echo ".env" > .gitignore
+      git add .gitignore
+      git commit -m "Rename the about page and stop tracking .env"
+    reject:
+      - |
+        git mv about.html about-us.html
+        git rm .env
+        echo ".env" > .gitignore
+        git add .gitignore
+        git commit -m "Rename and remove"
+    hint: "`git mv about.html about-us.html`; `git rm --cached .env` (without `--cached` it deletes the file too); `echo \".env\" > .gitignore` and `git add .gitignore`; then one `git commit -m`."
+
+  - kind: choice
+    title: Is the key safe now?
+    body: You just stopped tracking `.env` and ignored it. Is the payment key gone from the repository?
+    options:
+      - "No: the 14 September commit still contains it, readable by anyone"
+      - "Yes: .gitignore also removes the file from every one of the old commits"
+      - "Yes: `git rm --cached` deletes it from the history, not just from now on"
+      - "Only on GitHub; the local history is cleaned up automatically on push"
+    answer: 0
+    explanation: "Old commits are snapshots and never change. Try `git show 7d2afa2` (\"Add checkout settings\"): the key is still there. With a leaked secret, the first step is always to **revoke it** (get a new key and disable the old one); cleaning history comes later (Module 40)."
+
+  - kind: mac
+    title: A global ignore list for your Mac
+    body: |
+      `.DS_Store` appears in every repository you'll ever make on a Mac. Instead of adding it to each `.gitignore`, give Git a personal ignore list for all your repositories:
+    commands: |
+      echo ".DS_Store" >> ~/.gitignore_global
+      git config --global core.excludesFile ~/.gitignore_global
+      git config --global --list
+  - kind: why
+    body: |
+      Secrets in a repository are one of the most common, and most expensive, mistakes in software: once pushed, they're public, and bots scan GitHub for keys within minutes. `.gitignore` prevents it. And `restore`, `--staged` and `--amend` make everyday slips cheap to fix, as long as you haven't shared the commits yet.
+
+  - kind: recap
+    body: |
+      - `.gitignore` lists patterns (`.env`, `*.log`, `folder/`, `!exception`) for Git to ignore. Commit it.
+      - Ignoring only affects untracked files; committed secrets stay in old commits. **Revoke** leaked keys.
+      - `git restore file` throws away uncommitted changes; `git restore --staged file` unstages.
+      - `git commit --amend` replaces the last commit (message or content). Only before sharing.
+      - `git rm` / `git rm --cached` / `git mv` delete, untrack or rename and stage it in one go.

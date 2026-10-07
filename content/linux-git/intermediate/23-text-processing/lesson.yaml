@@ -1,0 +1,284 @@
+steps:
+  - kind: explain
+    title: The shop's logs
+    body: |
+      Priya has copied two days of the web shop's logs into `~/logs` for you. *"Something keeps poking at the admin pages,"* she says. *"I can't read thirty thousand lines. Can you?"*
+
+      There are only thirty lines here, but the point is the method: the same commands work on thirty million. Each line of `access.log` is one request to the website, in nginx's standard format:
+
+      ```
+      198.51.100.23 - - [05/Oct/2026:08:14:55 +0000] "GET /books/dune HTTP/1.1" 200 2048 "-" "Mozilla/5.0 (iPhone)"
+      └── who asked ─┘     └───────── when ─────────┘ └──── what they asked ────┘ └┬┘ └┬─┘      └── their browser ──┘
+                                                                              status  bytes sent
+      ```
+
+      Separated by spaces, that's: field 1 the address, field 4 the time, field 7 the path, field 9 the status code, field 10 the size. You'll build answers by chaining small tools: **look → pick → sort → count**.
+
+  - kind: explain
+    title: Regular expressions
+    body: |
+      A **regular expression** (regex) is a pattern for text. `grep -E` (extended regexes) understands these:
+
+      | Pattern | Matches |
+      |---|---|
+      | `^` and `$` | the start and the end of a line |
+      | `.` | any one character |
+      | `[abc]`, `[0-9]`, `[^0-9]` | one character from a set; `^` inside means *not* |
+      | `*`, `+`, `?` | the thing before it: 0 or more, 1 or more, 0 or 1 times |
+      | `{3}`, `{2,4}` | exactly 3 times, 2 to 4 times |
+      | `a\|b` (written `a|b`) | either |
+      | `\.` | a real dot (a backslash turns a special character into a plain one) |
+
+      ```
+      grep -E '^192\.0\.2\.' access.log         # lines that start with 192.0.2.
+      grep -E '/books/(dune|circe)' access.log  # either book page
+      grep -oE '[0-9]{3} [0-9]+ "' access.log   # -o prints only the matching part
+      ```
+
+      Always quote a regex (single quotes are safest), or the shell will try to interpret `*`, `|` and `$` itself.
+
+  - kind: shell
+    title: Server errors
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Status codes in the 500s mean the shop itself failed. Print every request in `access.log` whose status was **5** followed by two digits.
+
+      Careful: `500` also appears in other places, like sizes. The status always comes right after the closing quote of the request: `" 500 `.
+    output: true
+    solution: "grep -E '\" 5[0-9]{2} ' access.log"
+    reject:
+      - grep 500 access.log
+    hint: "`grep -E '\" 5[0-9]{2} ' access.log`: a quote, a space, a 5, exactly two digits, a space."
+
+  - kind: shell
+    title: The night of the refunds
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      The suspicious refunds happened on 6 October between 2 and 3 a.m. Print every request from that hour (the time looks like `06/Oct/2026:02:13:44`).
+    output: true
+    solution: grep '06/Oct/2026:02:' access.log
+    hint: "A plain `grep` is enough here: the day, the month, the year and the hour, ending with `:`."
+
+  - kind: explain
+    title: Pick, sort, count
+    body: |
+      | Command | Does |
+      |---|---|
+      | `cut -d' ' -f1` | cut each line at a **d**elimiter (here a space) and keep **f**ield 1; `-f1,7` keeps two |
+      | `sort` | sort lines; `-n` by number, `-r` reverse, `-u` drop duplicates, `-k2` by the 2nd field |
+      | `uniq -c` | collapse **neighbouring** identical lines into one, with a **c**ount in front (so `sort` first!) |
+      | `head -5` | keep the first 5 |
+      | `tr` | **tr**anslate characters: `tr a-z A-Z` upper-cases, `tr -d '"'` deletes quotes, `tr ',' '\n'` puts each item on its own line |
+
+      The classic "top 10" pipeline:
+
+      ```
+      cut -d' ' -f1 access.log | sort | uniq -c | sort -rn | head -10
+      ```
+
+      Build it **one step at a time**: run `cut` alone and look, add `| sort` and look, add `| uniq -c`, and so on. Each step's output is the next one's input, so you always see where it goes wrong.
+
+  - kind: shell
+    title: Who visits most?
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Count the requests from each address, **busiest first** (a count, a space, the address on each line).
+    output: true
+    solution: "cut -d' ' -f1 access.log | sort | uniq -c | sort -rn"
+    uses:
+      - match: "uniq\\s+-c"
+        why: "count with `uniq -c` (after sorting)."
+    reject:
+      - "cut -d' ' -f1 access.log | uniq -c | sort -rn"
+    hint: "`cut -d' ' -f1 access.log`, then `| sort | uniq -c`, then `| sort -rn` for biggest first."
+
+  - kind: explain
+    title: awk, for columns
+    body: |
+      **awk** reads a file line by line, splits each line into fields (`$1`, `$2` … `$NF` is the last one, `$0` the whole line) and runs a small program on it:
+
+      ```
+      awk '{print $1, $9}' access.log              # address and status
+      awk '$9 == 404' access.log                   # only lines where the status is 404
+      awk '$9 >= 400 {print $7}' access.log        # the paths of every error
+      awk '{sum += $10} END {print sum}' access.log  # add up a column; END runs after the last line
+      awk -F'"' '{print $6}' access.log            # -F: split on quotes instead of spaces
+      ```
+
+      The pattern before `{ }` picks lines; the part inside says what to do. Without a pattern, every line; without `{ }`, print the line.
+
+      Put awk programs in **single quotes**, so the shell leaves `$1` alone.
+
+  - kind: shell
+    title: Status codes at a glance
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Print how many times each **status code** appears: use awk to print field 9, then count.
+    output: true
+    solution: "awk '{print $9}' access.log | sort | uniq -c"
+    uses:
+      - match: "awk"
+        why: "pick the field with `awk '{print $9}'`."
+    hint: "`awk '{print $9}' access.log | sort | uniq -c`."
+
+  - kind: shell
+    title: What the scanner wanted
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Bots try to guess secret files. Print only the **paths** (field 7) of the requests that got a **404** (not found), one per line.
+    output: true
+    solution: "awk '$9 == 404 {print $7}' access.log"
+    hint: "`awk '$9 == 404 {print $7}' access.log`: the condition picks the lines, the braces print the field."
+
+  - kind: shell
+    title: How much did the site send?
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Add up the **bytes sent** (field 10) over all requests and print the total.
+    output: true
+    solution: "awk '{sum += $10} END {print sum}' access.log"
+    hint: "`awk '{sum += $10} END {print sum}' access.log`."
+
+  - kind: explain
+    title: sed, for changing text
+    body: |
+      **sed** (stream editor) changes text as it flows through. Its most used command is **s**ubstitute:
+
+      ```
+      sed 's/Dune/DUNE/' file           # the first match on each line
+      sed 's/Dune/DUNE/g' file          # g: every match on each line
+      sed -E 's/([0-9]+)\.99/\1.95/' file   # -E: extended regex; ( ) captures, \1 puts it back
+      sed -n '5,10p' file               # -n with p: print only lines 5 to 10
+      sed '/DEBUG/d' file               # d: delete lines that match
+      sed -i 's/old/new/g' file         # -i: change the file itself (careful!)
+      ```
+
+      Without `-i`, sed prints the result and leaves the file alone, so try it that way first and add `-i` (or `> newfile`) once the output looks right.
+
+  - kind: shell
+    title: A log safe to share
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Priya wants to send the log to the hosting company, but without customers' full addresses. Make **`public.log`**: the same lines as `access.log`, with the **last number of every address** at the start of the line replaced by `x` (`203.0.113.7` becomes `203.0.113.x`).
+    tests:
+      - cat public.log
+      - cat access.log | head -1
+    solution: "sed -E 's/^([0-9]+\\.[0-9]+\\.[0-9]+)\\.[0-9]+/\\1.x/' access.log > public.log"
+    hint: "`sed -E 's/^([0-9]+\\.[0-9]+\\.[0-9]+)\\.[0-9]+/\\1.x/' access.log > public.log`: capture the first three numbers, put them back with `\\1`, then `.x`. Redirect into the new file; don't use `-i` (the original must stay)."
+
+  - kind: explain
+    title: xargs, from lines to arguments
+    body: |
+      Some commands read their input (grep, sort, wc). Others only take **arguments** (rm, mv, mkdir). **xargs** bridges them: it turns lines of input into arguments for a command.
+
+      ```
+      ls *.log | xargs wc -l            # wc -l a.log b.log c.log
+      grep -l TODO *.txt | xargs rm     # delete every .txt file that mentions TODO
+      cat names.txt | xargs -n1 echo hi # -n1: one argument per command (echo runs once per line)
+      find . -name "*.tmp" | xargs -I{} mv {} trash/   # -I{}: put each line where {} is
+      ```
+
+      Check the list first (run the left side alone) before you pipe it into `rm`.
+
+  - kind: shell
+    title: Card numbers in old logs
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      The old app logs in `old/` were written with debugging on, and some of those `DEBUG` lines contain card details. Delete **every file in `old/` that contains `DEBUG`**, and keep the others. Use `grep -l` to find them and `xargs` to delete them.
+    tests:
+      - ls old
+    solution: grep -l DEBUG old/*.log | xargs rm
+    uses:
+      - match: "xargs"
+        why: "hand the file names to `rm` with `xargs`."
+    hint: "`grep -l DEBUG old/*.log` lists the files. When the list looks right, add `| xargs rm`."
+
+  - kind: explain
+    title: jq, for JSON
+    body: |
+      Modern programs often log and talk in **JSON**. `jq` understands it (install it with `sudo apt install jq`):
+
+      ```
+      jq . orders.json                       # pretty-print
+      jq '.[0]' orders.json                  # the first element of an array
+      jq '.[].book' orders.json              # one field from every element
+      jq -r '.[].book' orders.json           # -r: raw text, without the quotes
+      jq '.[] | select(.price > 10)' orders.json   # keep only matching elements
+      jq 'length' orders.json                # how many
+      jq '[.[].price] | add' orders.json     # collect into an array, then add up
+      ```
+
+      `|` inside jq works like the shell's pipe: the result of the left part goes into the right part.
+
+  - kind: shell
+    title: Which books were refunded?
+    fixture: shop-logs
+    setup: |
+      apt-get install -y -q jq > /dev/null
+      cd ~/logs
+    body: |
+      `orders.json` is an array of orders. Print the **book** of every order whose `status` is `refunded`, as plain text (no quotes), one per line.
+    output: true
+    solution: "jq -r '.[] | select(.status == \"refunded\") | .book' orders.json"
+    hint: "`jq -r '.[] | select(.status == \"refunded\") | .book' orders.json`: every element, keep the refunded ones, take the book."
+
+  - kind: shell
+    title: The most-read book pages
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      One last pipeline, built step by step: the **three** most requested book pages (paths that start with `/books/`), with their counts, most first. `grep -o` prints only the part of the line that matches.
+    output: true
+    solution: "grep -o '/books/[a-z-]*' access.log | sort | uniq -c | sort -rn | head -3"
+    hint: "`grep -o '/books/[a-z-]*' access.log` first. Then sort, count, sort by count, keep three."
+
+  - kind: info
+    title: "🔹 Modern alternatives: rg, fd, fzf"
+    body: |
+      Three newer tools are worth knowing about. They're faster and friendlier, but not installed on every server, so the classics come first.
+
+      - **ripgrep** (`rg`): grep for whole projects. `rg TODO` searches every file below the current folder, skipping `.gitignore`d ones. (`sudo apt install ripgrep`)
+      - **fd**: a simpler `find`. `fd '\.log$'` finds log files. On Ubuntu the package is `fd-find` and the command is `fdfind`.
+      - **fzf**: a fuzzy finder. `ls | fzf` lets you type a few letters and pick from the list interactively; `Ctrl+R` with fzf installed searches your history the same way.
+
+      Module 46 sets them up properly on your Mac.
+
+  - kind: shell
+    title: Try the toolkit (not graded)
+    fixture: shop-logs
+    setup: |
+      apt-get install -y -q jq ripgrep fd-find > /dev/null
+      cd ~/logs
+    body: |
+      Free practice: `awk -F'"' '{print $6}' access.log | sort | uniq -c` (which browsers?), `jq '.[] | select(.price > 10) | .customer' orders.json`, `rg admin`, `fdfind log`, `tr a-z A-Z < orders.json | head -3`.
+
+  - kind: mac
+    title: The same toolkit at home
+    body: |
+      Everything here works on your Mac, with BSD versions of the tools (Module 22). Install jq and the modern tools with Homebrew, then try them on any log, for example your Homebrew install log.
+    commands: |
+      brew install jq ripgrep fd fzf
+      grep -E '^[A-Z]' /var/log/install.log | head
+      ls ~/Downloads | sort | uniq -c | sort -rn | head
+      echo '{"name":"Inkwell"}' | jq -r .name
+  - kind: why
+    body: |
+      Logs, exports, configuration, API answers: most of what a server produces is text. With grep, cut, sort, uniq, awk, sed and jq you can answer "who, what, how many" questions on any of it in a few seconds, without writing a program. Building the pipeline step by step is what keeps it reliable.
+
+  - kind: recap
+    body: |
+      - Regexes: `^ $ . [ ] [^ ] * + ? {n} |`, `\.` for a real dot. `grep -E` for extended, `-o` for only the match. Quote them.
+      - `cut -d' ' -f1`, `sort` (`-n -r -u -k`), `uniq -c` (after sort!), `head`, `tr`.
+      - `awk '{print $1}'`, `awk '$9 == 404'`, `awk '{s += $10} END {print s}'`, `-F` for another separator.
+      - `sed 's/a/b/g'`, `-E` with `\1`, `-n 'Np'`, `'/x/d'`; `-i` changes the file.
+      - `xargs` turns lines into arguments (`-n1`, `-I{}`).
+      - `jq '.[] | select(.x == "y") | .field'`, `-r` for plain text.
+      - Build pipelines **one step at a time**. 🔹 `rg`, `fd`, `fzf` are faster modern cousins.

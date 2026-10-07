@@ -1,0 +1,4 @@
+title: Finding Things
+module: 9
+summary: "Search inside files with grep (-i, -r, -n, -v, -c), search for files by name and type with find, and find out where a command lives with which and type."
+minutes: 35

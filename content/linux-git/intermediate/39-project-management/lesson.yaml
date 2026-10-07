@@ -1,0 +1,182 @@
+steps:
+  - kind: explain
+    title: Issues, labels and milestones
+    body: |
+      Inspector Bold: *"Four people, one website, a dozen loose ends. Put the work where everyone can see it."*
+
+      GitHub's **issues** are the to-do list: bugs, ideas, questions. Two ways to organise them:
+
+      - **Labels** sort them by kind: `bug`, `enhancement`, `documentation`, `good first issue` (GitHub's suggestion for newcomers)… Every repository starts with a set; you add your own.
+      - **Milestones** group them by goal or deadline: *October release*. GitHub shows how much of a milestone is done.
+
+      ```
+      gh label list
+      gh label create priority --color d93f0b --description "Do this first"
+      gh issue create --title "Dune page shows the old price" --label bug --milestone "October release"
+      gh issue list --label bug
+      gh issue edit 3 --add-label "good first issue"
+      gh issue close 3 --comment "Fixed in #5"
+      ```
+
+      gh has no milestone command; create one on the website, or with the API: `gh api repos/{owner}/{repo}/milestones -f title="October release"`.
+
+  - kind: shell
+    title: A label of our own
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      Create a label **`priority`** on `inkwell/site` with the colour **`d93f0b`** and the description **`Do this first`**.
+    tests:
+      - gh label list | grep priority
+    solution: gh label create priority --color d93f0b --description "Do this first"
+    hint: "`gh label create priority --color d93f0b --description \"Do this first\"`."
+
+  - kind: shell
+    title: Plan the October release
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      1. Create a milestone **`October release`** (with `gh api`, see above).
+      2. Open an issue **`Dune page shows the old price`**, labelled **`bug`**, in that milestone.
+      3. Issue **#1** (about the about page) is a nice small task for a newcomer: add the **`good first issue`** label to it.
+    tests:
+      - gh issue list --milestone "October release"
+      - gh issue view 1 | grep Labels
+      - gh issue view 2 | grep -E 'Labels|Milestone'
+    solution: |
+      gh api repos/{owner}/{repo}/milestones -f title="October release"
+      gh issue create --title "Dune page shows the old price" --label bug --milestone "October release"
+      gh issue edit 1 --add-label "good first issue"
+    hint: "`gh api repos/{owner}/{repo}/milestones -f title=\"October release\"`; `gh issue create --title … --label bug --milestone \"October release\"`; `gh issue edit 1 --add-label \"good first issue\"`."
+
+  - kind: explain
+    title: Templates, CODEOWNERS and CONTRIBUTING.md
+    body: |
+      A few files in the repository shape how people work with it:
+
+      | File | Does |
+      |---|---|
+      | `.github/ISSUE_TEMPLATE/bug_report.md` | pre-fills new issues ("Steps to reproduce… Expected… Actual…") |
+      | `.github/pull_request_template.md` | pre-fills every PR description ("What does this change? How was it tested?") |
+      | `.github/CODEOWNERS` | who owns which files: GitHub **requests their review** automatically on PRs that touch them |
+      | `CONTRIBUTING.md` | how to contribute: set-up, style, how to open a PR. GitHub links to it from new issues and PRs |
+
+      CODEOWNERS lines are a pattern (like `.gitignore`) and one or more owners; the **last** matching line wins:
+
+      ```
+      *.css      @priya
+      /books/    @kenji
+      ```
+
+  - kind: shell
+    title: Templates and owners
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      Add these two files on `main`, commit them as **`Add a PR template and code owners`** and push:
+
+      **`.github/pull_request_template.md`**:
+      ```
+      ## What does this change?
+
+      ## How did you check it?
+      ```
+
+      **`.github/CODEOWNERS`**: Priya owns all CSS files, Kenji everything in `books/`:
+      ```
+      *.css @priya
+      /books/ @kenji
+      ```
+    tests:
+      - git show origin/main:.github/pull_request_template.md
+      - git show origin/main:.github/CODEOWNERS
+      - git log -1 --format=%s origin/main
+    solution: |
+      mkdir -p .github
+      printf '## What does this change?\n\n## How did you check it?\n' > .github/pull_request_template.md
+      printf '*.css @priya\n/books/ @kenji\n' > .github/CODEOWNERS
+      git add .github
+      git commit -m "Add a PR template and code owners"
+      git push
+    hint: "`mkdir -p .github`, create the two files (nano), `git add .github`, commit, `git push`."
+
+  - kind: shell
+    title: The owners are asked automatically
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: |
+      cd ~/site
+      mkdir -p .github && printf '*.css @priya\n/books/ @kenji\n' > .github/CODEOWNERS
+      git add .github && git commit -qm "Add code owners" && git push -q 2> /dev/null
+    body: |
+      With CODEOWNERS on `main`, make a branch **`sale-colours`**, change `style.css` (any change, e.g. `color: navy` → `color: darkred`) **and** the price in `books/dune.html` (`8.99` → `7.99`), commit, push, and open a PR titled **`Autumn sale`**. Then look at who GitHub asked to review it.
+    tests:
+      - gh pr view 2 | grep Reviewers
+    solution: |
+      git switch -c sale-colours
+      sed -i 's/color: navy/color: darkred/' style.css
+      sed -i 's/8.99/7.99/' books/dune.html
+      git commit -am "Sale colours and price"
+      git push -u origin sale-colours
+      gh pr create --title "Autumn sale" --body "Sale colours and the new Dune price."
+      gh pr view 2
+    hint: "Branch, the two edits, `git commit -am …`, `git push -u origin sale-colours`, `gh pr create --title \"Autumn sale\" --body \"…\"`. `gh pr view 2` lists **kenji** and **priya** as requested reviewers."
+
+  - kind: explain
+    title: Releases
+    body: |
+      A **release** is a tag plus a page on GitHub: a title, **release notes** (what changed), and optional files to download. Users and tools watch them.
+
+      ```
+      gh release create v1.1 --title "October release" --notes "New book pages, opening hours."
+      gh release create v1.1 --generate-notes      # GitHub writes notes from the merged PRs
+      gh release list
+      gh release view v1.1
+      ```
+
+      If the tag doesn't exist yet, GitHub creates it on the default branch (or `--target branch`). `--draft` prepares it without publishing; `--prerelease` marks a test version.
+
+  - kind: shell
+    title: Publish the October release
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      Publish release **`v1.1`** of `inkwell/site` on GitHub, titled **`October release`**, with the notes **`Book pages and opening hours.`**
+    tests:
+      - gh release view v1.1 | head -1
+      - gh release view v1.1 | grep -c "Book pages and opening hours."
+      - git ls-remote --tags origin | cut -f2
+    solution: gh release create v1.1 --title "October release" --notes "Book pages and opening hours."
+    hint: "`gh release create v1.1 --title \"October release\" --notes \"Book pages and opening hours.\"`."
+
+  - kind: explain
+    title: Projects boards
+    body: |
+      For planning across many issues and PRs, GitHub **Projects** are boards and tables (columns like *Todo / In progress / Done*, custom fields like priority or size, filters, charts), linked to the repository's issues. They're used on the website, and `gh project` can script them. The practice terminal doesn't have them; try one on github.com (below).
+
+  - kind: info
+    title: "🔹 Discussions"
+    body: |
+      **Discussions** are a forum attached to a repository: questions, ideas and announcements that aren't work items. They keep "how do I…?" out of the issue list. Turn them on in the repository's settings.
+
+  - kind: mac
+    title: Organise a real repository
+    body: |
+      In your own repository on GitHub (the notes-dotfiles one from the Beginner capstone works): create a label and a milestone, open two issues, add a PR template, and create a **Project** (your profile → Projects → New project) with the issues on a board. Then publish a release.
+    commands: |
+      cd ~/notes-dotfiles
+      gh label create idea --color 0e8a16 --description "Something to try"
+      gh api repos/{owner}/{repo}/milestones -f title="Version 1"
+      gh issue create --title "Add vim notes" --label idea --milestone "Version 1"
+      gh release create v1.0 --generate-notes
+      gh issue list
+  - kind: why
+    body: |
+      A shared, visible list of work (labelled, grouped into milestones, with owners and templates) is what stops a small team from losing track. Doing it from the terminal with gh means it fits into the same flow as your commits and pushes.
+
+  - kind: recap
+    body: |
+      - Issues: `gh issue create --label --milestone --assignee`, `gh issue list --label`, `gh issue edit --add-label`, `gh issue close --comment`.
+      - Labels: `gh label list`, `gh label create name --color --description`. Milestones: `gh api repos/{owner}/{repo}/milestones -f title="…"`.
+      - `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `.github/CODEOWNERS` (owners get review requests), `CONTRIBUTING.md`.
+      - Releases: `gh release create v1.1 --title --notes` (or `--generate-notes`), `gh release list`, `view`.
+      - Projects boards on the website; 🔹 Discussions for questions and ideas.

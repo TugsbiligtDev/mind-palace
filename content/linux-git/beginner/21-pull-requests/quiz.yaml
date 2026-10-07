@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "What is a pull request?"
+    options:
+      - "A request on GitHub to merge a branch, with its commits and diff"
+      - "The GitHub command that downloads new commits to your computer"
+      - "A copy of someone else's repository, made inside your account"
+      - "An issue that asks another person to write some code for you"
+    answer: 0
+    explanation: "Despite the name, it has nothing to do with `git pull`: it's a page asking for a branch to be merged."
+  - type: mcq
+    prompt: "In GitHub Flow, what must happen before `gh pr create` can open a pull request for your branch?"
+    options:
+      - "The branch has to be pushed to GitHub"
+      - "The branch has to be merged into main"
+      - "An issue has to exist for it"
+      - "Someone else has to approve the branch"
+    answer: 0
+    explanation: "The pull request compares branches on GitHub, so your branch must be there: `git push -u origin your-branch`."
+  - type: mcq
+    prompt: "Which command shows every change in pull request #4?"
+    options:
+      - "`gh pr diff 4`"
+      - "`git diff 4`"
+      - "`gh pr list 4`"
+      - "`git log 4`"
+    answer: 0
+    explanation: "`gh pr diff` prints the pull request's diff; `gh pr view` shows its title and description."
+  - type: mcq
+    prompt: "What does `--delete-branch` add to `gh pr merge`?"
+    options:
+      - "It deletes the branch on GitHub and locally, and updates your main"
+      - "It deletes the commits of the branch once they've been merged in"
+      - "It merges the branch without making a merge commit on main"
+      - "It closes the pull request without merging it into main"
+    answer: 0
+    explanation: "The work is in `main` now, so the branch name isn't needed any more. Its commits stay in the history."
+  - type: mcq
+    prompt: "Why does `main` stay ready to publish in GitHub Flow?"
+    options:
+      - "Only finished, reviewed work reaches it, through merged pull requests"
+      - "GitHub refuses any commit to main that contains a programming error"
+      - "main is copied to a separate backup branch every hour automatically"
+      - "Branches can't be merged into main until they're at least a week old"
+    answer: 0
+    explanation: "Work in progress lives on branches; main only receives merged pull requests. (Module 40 adds rules that enforce this.)"

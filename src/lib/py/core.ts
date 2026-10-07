@@ -33,6 +33,34 @@ const MAX_LOG_CHARS = 2000;
 const HARNESS = String.raw`
 import builtins, contextlib, importlib, io, json, linecache, os, shutil, sys, tempfile, time, traceback
 
+# The time limit. It's a BaseException (named like Python's own, which is what learners see), so
+# a learner's "except Exception" can't swallow it. It's raised from sys.monitoring callbacks on
+# every loop jump and function start: unlike sys.settrace, raising there doesn't switch the
+# watcher off, so even a bare "except:" inside an endless loop is stopped on the next pass.
+class TimeoutError(BaseException):
+    pass
+
+_MP_TOOL = 4
+_MP_EVENTS = sys.monitoring.events.JUMP | sys.monitoring.events.PY_START
+
+def _mp_limit_on(deadline):
+    def check(code, *args):
+        # The harness's own loops (this file) aren't limited, only the code it runs.
+        if time.monotonic() > deadline and code.co_filename != _MP_HERE:
+            raise TimeoutError("your code ran for too long (is there a loop that never ends?)")
+    if sys.monitoring.get_tool(_MP_TOOL) is None:
+        sys.monitoring.use_tool_id(_MP_TOOL, "time limit")
+    sys.monitoring.register_callback(_MP_TOOL, sys.monitoring.events.JUMP, check)
+    sys.monitoring.register_callback(_MP_TOOL, sys.monitoring.events.PY_START, check)
+    sys.monitoring.set_events(_MP_TOOL, _MP_EVENTS)
+
+_MP_HERE = _mp_limit_on.__code__.co_filename
+
+def _mp_limit_off():
+    if sys.monitoring.get_tool(_MP_TOOL) is not None:
+        sys.monitoring.set_events(_MP_TOOL, 0)
+        sys.monitoring.free_tool_id(_MP_TOOL)
+
 def _mp_fmt(v, unordered=False, depth=0, canon=False):
     # canon=True gives the form used for comparing results: dictionaries are compared like
     # Python's ==, which ignores the order keys were added in.
@@ -120,19 +148,14 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
     ns = {"__name__": "__main__", "__builtins__": builtins}
     deadline = time.monotonic() + limit if limit else None
 
-    def tracer(frame, event, arg):
-        if time.monotonic() > deadline:
-            raise TimeoutError("your code ran for too long (is there a loop that never ends?)")
-        return tracer
-
     try:
         linecache.cache["main.py"] = (len(code), None, code.splitlines(True), "main.py")
         if deadline:
-            sys.settrace(tracer)
+            _mp_limit_on(deadline)
         try:
             exec(compile(code, "main.py", "exec"), ns)
         except BaseException as e:
-            sys.settrace(None)
+            _mp_limit_off()
             tb = e.__traceback__
             while tb is not None and tb.tb_frame.f_code.co_filename != "main.py":
                 tb = tb.tb_next
@@ -151,8 +174,6 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
             ns["given_input"] = given_input
             ns["pytest_run"] = pytest_run
             for t in tests:
-                if deadline:
-                    sys.settrace(tracer)  # Python turns tracing off after the tracer raises
                 try:
                     try:
                         compiled = compile(t, "<test>", "eval")
@@ -174,7 +195,7 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
                     name = type(e).__name__
                     out["results"].append({"call": t, "value": name, "key": name, "threw": True})
     finally:
-        sys.settrace(None)
+        _mp_limit_off()
         sys.stdout, sys.stderr = old_out, old_err
         builtins.input, sys.argv = old_input, old_argv
         sys.dont_write_bytecode = old_bytecode

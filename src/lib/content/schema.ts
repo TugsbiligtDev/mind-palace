@@ -13,7 +13,8 @@ export const trackSchema = z.object({
   // "on your Mac" steps, quizzes are multiple-choice. No code runs in the browser, so these
   // courses never use `try`/`code` lesson steps or `predict` quiz questions.
   // "web" is HTML & CSS: lessons use `web` steps (an editor plus a live preview of the page).
-  engine: z.enum(["postgres", "python", "javascript", "none", "web"]),
+  // "shell" is the Linux & Git course: lessons use `shell` steps (a practice terminal).
+  engine: z.enum(["postgres", "python", "javascript", "none", "web", "shell"]),
   engine_version: z.string(),
   // Shown at the top of the course page: what a learner needs before starting, and how the
   // course's practice works.
@@ -114,6 +115,28 @@ const step = z.discriminatedUnion("kind", [
     // Known wrong answers (each file left out is the starter's). The content check proves each is rejected.
     reject: z.array(z.object({ html: z.string().optional(), css: z.string().optional() })).default([]),
     broken_starter: z.boolean().default(false),
+  }),
+  // The Linux & Git version of "try": a practice terminal (a simulated Linux computer, see
+  // src/lib/shell). `setup` is a bash script run as root before the learner starts (its last
+  // `cd` is where the terminal opens); `fixture` names one or more shared set-ups in
+  // content/<course>/fixtures/ that run first, in order. A graded step has `solution` (commands, one per line) and `tests` (commands
+  // whose output must match between the learner's computer and one where the solution was typed)
+  // and/or `output: true` (the learner's last command must print what the solution's last one did).
+  // Without them the step is "try things out".
+  z.object({
+    kind: z.literal("shell"),
+    title: z.string(),
+    body: md,
+    fixture: z.union([z.string(), z.array(z.string())]).optional(),
+    setup: z.string().default(""),
+    tests: z.array(z.string()).default([]),
+    output: z.boolean().default(false),
+    solution: z.string().optional(),
+    // A command the learner must use (e.g. a pipe), with the reason shown when they didn't.
+    uses: z.array(z.object({ match: z.string(), why: z.string() })).default([]),
+    hint: md.optional(),
+    // Known wrong answers (command lines). The content check proves each one is rejected.
+    reject: z.array(z.string()).default([]),
   }),
   z.object({ kind: z.literal("info"), title: z.string(), body: md }),
   z.object({

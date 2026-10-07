@@ -1,0 +1,4 @@
+title: First-Time Git Setup
+module: 14
+summary: "Apple's Git versus the current one from Homebrew; telling Git who you are (user.name, user.email); making main the first branch; choosing nano as Git's editor; and where all that is saved: ~/.gitconfig."
+minutes: 20

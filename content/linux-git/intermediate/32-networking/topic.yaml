@@ -1,0 +1,4 @@
+title: Networking from the Command Line
+module: 32
+summary: "IP addresses, ports, DNS and localhost; ping, curl -v, dig, ss and ip; reading \"connection refused\" versus \"timed out\"; /etc/hosts; and a first look at the old tools (ifconfig, netstat) and the ufw firewall."
+minutes: 45

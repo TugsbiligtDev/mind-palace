@@ -1,0 +1,4 @@
+title: Getting Help & Reading Errors
+module: 3
+summary: "Manual pages and how to leave them, --help, tldr; what \"command not found\", \"No such file or directory\" and \"Permission denied\" really mean; searching for an error; asking an AI to explain a command; and the rule never to run a command you don't understand."
+minutes: 30

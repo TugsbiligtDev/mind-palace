@@ -126,7 +126,7 @@ function readTrack(id: string): TrackBundle {
         id: topicId,
         key: `${id}/${levelId}/${topicId}`,
         topic: readYaml(path.join(t, "topic.yaml"), topicSchema),
-        lesson: readYaml(path.join(t, "lesson.yaml"), lessonSchema),
+        lesson: withFixtures(readYaml(path.join(t, "lesson.yaml"), lessonSchema), dir, `${id}/${levelId}/${topicId}`),
         quiz: readYaml(path.join(t, "quiz.yaml"), quizSchema),
       };
     });
@@ -134,6 +134,23 @@ function readTrack(id: string): TrackBundle {
   });
 
   return { track, engine, setup, levels };
+}
+
+// A practice-terminal step may start from shared set-up scripts (content/<course>/fixtures/
+// <name>.sh), such as Inkwell's back-office files. They run before the step's own set-up.
+function withFixtures(lesson: Lesson, trackDir: string, where: string): Lesson {
+  return {
+    steps: lesson.steps.map((step) => {
+      if (step.kind !== "shell" || !step.fixture) return step;
+      const parts = (Array.isArray(step.fixture) ? step.fixture : [step.fixture]).map((name) => {
+        const file = path.join(trackDir, "fixtures", `${name}.sh`);
+        if (!fs.existsSync(file)) throw new Error(`${where}: there's no fixture called "${name}" (${path.relative(process.cwd(), file)})`);
+        return fs.readFileSync(file, "utf8");
+      });
+      if (step.setup.trim()) parts.push(step.setup);
+      return { ...step, fixture: undefined, setup: parts.join("\n") };
+    }),
+  };
 }
 
 export function loadAllTracks(): TrackBundle[] {

@@ -1,0 +1,4 @@
+title: A Real Linux Environment on Your Mac
+module: 22
+summary: "What a Linux distribution is; running Ubuntu in a small virtual machine on your Mac; bash vs zsh and GNU vs BSD differences; where Linux keeps things (/etc, /var, /usr, /opt, /tmp); and installing software with apt."
+minutes: 40

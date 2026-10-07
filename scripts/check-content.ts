@@ -11,7 +11,9 @@ import { loadPyodide } from "pyodide";
 import { gradeJs, logText, runJs, type Exec } from "../src/lib/js/core";
 import { gradePy, logText as pyLogText, runPy, type PyodideLike } from "../src/lib/py/core";
 import { loadAllTracks, loadStory, loadTrack } from "../src/lib/content/load";
-import { codeStepCheck, pyStepCheck, tryStepCheck, webFiles, webStarter, webStepCheck } from "../src/lib/content/step-check";
+import { codeStepCheck, pyStepCheck, shellStepCheck, tryStepCheck, webFiles, webStarter, webStepCheck } from "../src/lib/content/step-check";
+import { commandLines, expectedFor, gradeShell, learnerClock, typeInto } from "../src/lib/shell/core";
+import { stripAnsi } from "../src/lib/shell/util";
 import { buildPage, CHECK_RUNTIME, checkInFrame, FRAME_HEIGHT, gradeWeb, type RunChecks } from "../src/lib/web/core";
 import { chromium, type Browser } from "playwright-core";
 import { freshCopy, grade, lastRows, rawTextParsers, resultText, runInput } from "../src/lib/sql/core";
@@ -76,6 +78,10 @@ async function main() {
     }
     if (bundle.track.engine === "web") {
       await checkWebTrack(bundle);
+      continue;
+    }
+    if (bundle.track.engine === "shell") {
+      await checkShellTrack(bundle);
       continue;
     }
     if (bundle.track.engine !== "postgres") {
@@ -370,6 +376,89 @@ async function checkWebTrack(bundle: ReturnType<typeof loadTrack>) {
         const where = `${t.key} quiz Q${i + 1}`;
         if (q.type === "predict") fail(where, "an HTML & CSS course has no output to predict: use an mcq that shows the code");
         else if (q.type === "fill" && q.runnable) fail(where, "set `runnable: false` on fill questions in an HTML & CSS course");
+      }
+    }
+    console.log(`  checked ${bundle.track.id}/${level.id} (${topics.length} topics)`);
+  }
+}
+
+// Linux & Git: every terminal step runs in the same simulated computer the browser uses
+// (src/lib/shell), in Node. The set-up must work; for a graded step, every solution command must
+// succeed (unless marked "# allow-error"), the solution must pass its own checks, the untouched
+// start must not, and every listed wrong answer must be rejected. Predict-the-output questions
+// run their commands on a fresh machine and compare.
+async function checkShellTrack(bundle: ReturnType<typeof loadTrack>) {
+  for (const { level, topics } of bundle.levels) {
+    for (const t of topics) {
+      if (only && !t.key.includes(only)) continue;
+      for (const [i, step] of t.lesson.steps.entries()) {
+        const where = `${t.key} lesson step ${i + 1}`;
+        if (step.kind === "try" || step.kind === "code" || step.kind === "web") {
+          fail(where, `the Linux & Git course uses "shell" steps, not "${step.kind}" steps`);
+          continue;
+        }
+        if (step.kind !== "shell") continue;
+        if ((step.solution !== undefined) !== (step.tests.length > 0 || step.output)) {
+          fail(where, "a graded step needs a `solution` and something to compare (`tests` or `output: true`), or neither");
+          continue;
+        }
+        checks++;
+        const check = shellStepCheck(step);
+        if (!check) {
+          await safely(where, "the set-up script", () => typeInto(step.setup, []));
+          continue;
+        }
+        const lines = commandLines(check.solution);
+        const run = await safely(where, "the set-up script", () => typeInto(check.setup, lines, learnerClock()));
+        if (!run) continue;
+        run.codes.forEach((code, j) => {
+          if (code !== 0 && !lines[j].includes("# allow-error")) fail(where, `solution command ${j + 1} (\`${lines[j]}\`) fails with exit code ${code}`);
+        });
+        const exp = await expectedFor(check);
+        checks++;
+        const good = await gradeShell(run.m, lines, run.last, check, exp);
+        if (!good.correct) fail(where, `the solution doesn't pass its own checks: ${good.message}`);
+        // The checks run after every command the learner types, so they must not change anything.
+        else if (!(await gradeShell(run.m, lines, run.last, check, exp)).correct) fail(where, "a check changes the learner's computer (the solution passes once, then fails when checked again)");
+        checks++;
+        const start = await typeInto(check.setup, [], learnerClock());
+        if ((await gradeShell(start.m, [], undefined, check, exp)).correct) fail(where, "the step is already done before typing anything");
+        for (const [j, wrong] of step.reject.entries()) {
+          checks++;
+          const wl = commandLines(wrong);
+          const w = await safely(where, `wrong answer ${j + 1}`, () => typeInto(check.setup, wl, learnerClock()));
+          if (w && (await gradeShell(w.m, wl, w.last, check, exp)).correct) fail(where, `wrong answer ${j + 1} is accepted by the grader`);
+        }
+      }
+      const shapeOk = checkQuizShape(t);
+      for (const [i, q] of t.quiz.questions.entries()) {
+        if (!shapeOk[i]) continue;
+        const where = `${t.key} quiz Q${i + 1}`;
+        if (q.type === "predict") {
+          checks++;
+          const r = await safely(where, "the commands", async () => {
+            const { m } = await typeInto("", []);
+            let out = "";
+            for (const l of commandLines(q.code)) {
+              const res = await m.run(l);
+              out += (res.echo ? `${res.echo}\n` : "") + res.stdout + res.stderr;
+            }
+            return out;
+          });
+          if (r === undefined) continue;
+          const actual = stripAnsi(r).trim();
+          const expected = q.options[q.answer].trim();
+          if (actual !== expected) fail(where, `the marked answer is wrong.\n    marked: ${JSON.stringify(expected)}\n    actual: ${JSON.stringify(actual)}`);
+          q.options.forEach((o, j) => {
+            if (j !== q.answer && o.trim() === actual) fail(where, `option ${j + 1} is also correct`);
+          });
+        }
+        if (q.type === "fill" && q.runnable) {
+          checks++;
+          const lines = commandLines(q.code.replace("____", q.answer));
+          const r = await safely(where, "the commands", () => typeInto("", lines));
+          if (r?.codes.some((c) => c !== 0)) fail(where, "the commands with the answer filled in fail");
+        }
       }
     }
     console.log(`  checked ${bundle.track.id}/${level.id} (${topics.length} topics)`);

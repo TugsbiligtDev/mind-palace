@@ -1,0 +1,49 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "Which command unpacks `backup.tar.gz` into the existing folder `restore`?"
+    options:
+      - "`tar -xzf backup.tar.gz -C restore`"
+      - "`tar -czf backup.tar.gz restore`"
+      - "`tar -tzf backup.tar.gz restore`"
+      - "`gunzip backup.tar.gz restore`"
+    answer: 0
+    explanation: "`x` extracts, `z` un-gzips, `f` names the archive, and `-C` says where. `-czf` would overwrite the backup with a new archive of `restore`!"
+  - type: mcq
+    prompt: "The server says *No space left on device*. Which command shows which disk is full?"
+    options:
+      - "`df -h`"
+      - "`du -sh`"
+      - "`free -h`"
+      - "`ls -lh /`"
+    answer: 0
+    explanation: "`df` reports each filesystem's size and use. Then `du -sh` on folders finds what filled it. `free` is about memory, not disk."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf '4K a\n1G b\n20M c\n' | sort -h | tail -1
+    options:
+      - "1G b"
+      - "20M c"
+      - "4K a"
+      - "4K a\n20M c\n1G b"
+    answer: 0
+    explanation: "`sort -h` understands the size suffixes, so 1G is the biggest and comes last."
+  - type: mcq
+    prompt: "`curl -O http://shop.example/report.pdf` saves a tiny file containing *301 Moved Permanently*. What should you add?"
+    options:
+      - "`-L`, so curl follows the redirect to the new address"
+      - "`-I`, so curl only downloads the file's headers"
+      - "`-s`, so curl stops showing the progress meter"
+      - "`-o`, because `-O` can't save PDF files"
+    answer: 0
+    explanation: "301 means the file moved (here, probably to https). curl doesn't follow redirects unless you add `-L`."
+  - type: mcq
+    prompt: "You run `ln -s /var/log/app.log current.log`, then delete `/var/log/app.log`. What happens to `current.log`?"
+    options:
+      - "It still exists but points nowhere (a dangling link)"
+      - "It still works, because the link kept its own copy"
+      - "It disappears together with the file it pointed to"
+      - "It turns into an empty file with the same name"
+    answer: 0
+    explanation: "A symbolic link only stores a path. With the target gone, opening it gives *No such file or directory*."

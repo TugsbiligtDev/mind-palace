@@ -1,0 +1,202 @@
+steps:
+  - kind: explain
+    title: Remotes and origin
+    body: |
+      A **remote** is another copy of the repository that yours can exchange commits with, usually on GitHub. Each remote has a short name; the usual one is **`origin`**.
+
+      ```
+      learner@inkwell:~/site$ git remote -v
+      origin  git@github.com:inkwell/site.git (fetch)
+      origin  git@github.com:inkwell/site.git (push)
+      ```
+
+      Git never syncs by itself. You move commits on purpose:
+
+      | Command | Direction |
+      |---|---|
+      | `git clone` | copy a whole repository from GitHub (once, to start) |
+      | `git push` | send your new commits **to** the remote |
+      | `git fetch` | download new commits **from** the remote, without changing your files |
+      | `git pull` | fetch, **then merge** them into your branch |
+
+  - kind: explain
+    title: git clone
+    body: |
+      ```
+      git clone git@github.com:inkwell/site.git
+      ```
+
+      makes a folder `site` with the files, the **whole history**, and a remote called `origin` already set up. Your local `main` is set to **track** `origin/main`, so `git push` and `git pull` know where to go.
+
+      `git clone <address> other-name` puts it in a folder with another name. Copy the address from the green **Code** button on the repository's GitHub page (choose SSH).
+
+  - kind: shell
+    title: Clone Inkwell's website
+    fixture: [git-identity, website-repo, github-account, github-site]
+    setup: cd ~
+    body: |
+      Inkwell's website is on GitHub at `inkwell/site`. Clone it **over SSH** into your home folder, go into it, and look around: `git log --oneline`, `git remote -v`, `git status`.
+    tests:
+      - ls ~/site
+      - git -C ~/site log --format=%s
+      - git -C ~/site remote -v
+    solution: git clone git@github.com:inkwell/site.git
+    hint: "The SSH address is `git@github.com:inkwell/site.git`: `git clone` + that address."
+
+  - kind: explain
+    title: main and origin/main
+    body: |
+      After a clone, `git branch -a` shows:
+
+      ```
+      * main
+        remotes/origin/main
+      ```
+
+      - **`main`** is your branch. It moves when *you* commit.
+      - **`origin/main`** is a *remote-tracking branch*: your computer's memory of where `main` was on GitHub **the last time you talked to it**. It only moves when you `fetch`, `pull` or `push`.
+
+      `git status` compares the two: *Your branch is ahead of 'origin/main' by 2 commits* means you have commits GitHub doesn't; *behind* means GitHub has commits you haven't merged. It's only as fresh as your last fetch.
+
+  - kind: explain
+    title: Pushing
+    body: |
+      To publish a local repository for the first time:
+
+      ```
+      git remote add origin git@github.com:learner/notes.git
+      git push -u origin main
+      ```
+
+      `-u` (`--set-upstream`) links your `main` to `origin/main`, so from then on plain `git push` and `git pull` know where to go. Without it, a plain `git push` on a new branch says *"The current branch has no upstream branch"*, and shows you the command to fix it.
+
+  - kind: shell
+    title: Publish your notes
+    fixture: [git-identity, github-account]
+    setup: |
+      gh repo create notes --private > /dev/null
+      mkdir -p ~/notes && cd ~/notes
+      git init -q
+      echo "# Case notes" > README.md
+      echo "- refunds 1044 and 1046" > refunds.md
+      git add . && git commit -qm "Start the case notes"
+    body: |
+      `~/notes` is a local repository with one commit. An empty repository `learner/notes` already exists on GitHub (you made it with `gh repo create`).
+
+      Connect your repository to it as `origin` (SSH address `git@github.com:learner/notes.git`) and push `main`, setting the upstream. `git status` should then say you're up to date with `origin/main`.
+    tests:
+      - git status -sb | head -n 1
+      - git -C /srv/git/github.com/learner/notes.git log --format=%s main
+    solution: |
+      git remote add origin git@github.com:learner/notes.git
+      git push -u origin main
+    reject:
+      - git remote add origin git@github.com:learner/notes.git
+    hint: "`git remote add origin` + the address, then `git push -u origin main`."
+
+  - kind: explain
+    title: fetch and pull
+    body: |
+      When someone else pushes, you get their commits with:
+
+      - **`git fetch`**: downloads them and moves `origin/main`, but leaves your `main` and your files alone. Safe any time; then look before you merge: `git status`, `git log main..origin/main` (commits on GitHub you don't have).
+      - **`git pull`**: `fetch` and then merges `origin/main` into your branch. If you have no new commits of your own, that's a fast-forward.
+
+      If both you and someone else committed, the branches have **diverged**, and Git asks how to combine them. Tell it once that you want merges (Module 35 shows the alternative, rebasing):
+
+      ```
+      git config --global pull.rebase false
+      ```
+
+  - kind: shell
+    title: Kenji pushed something
+    fixture: [git-identity, website-repo, github-account, github-site]
+    setup: |
+      git clone -q git@github.com:inkwell/site.git ~/site 2> /dev/null
+      git clone -q git@github.com:inkwell/site.git /tmp/kenji 2> /dev/null
+      cd /tmp/kenji
+      echo '<p class="stock">2 left</p>' >> books/dune.html
+      GIT_AUTHOR_NAME="Kenji Mori" GIT_AUTHOR_EMAIL=kenji@inkwell.example git commit -qam "Show stock on the Dune page"
+      git push -q 2> /dev/null
+      cd ~/site
+    body: |
+      Kenji has just pushed a commit to GitHub from his computer. Your copy (`~/site`) doesn't know yet.
+
+      1. Run `git status`: it still says *up to date*. Why?
+      2. `git fetch`, then `git status` again, and `git log --oneline main..origin/main`.
+      3. Bring Kenji's commit into your `main`.
+    tests:
+      - git log --format=%s -n 2
+      - git status -sb | head -n 1
+      - tail -n 1 books/dune.html
+    solution: |
+      git fetch
+      git pull
+    hint: "`git status` only knows what the last fetch told it. After `git fetch` it says you're behind by 1; `git pull` brings the commit in."
+
+  - kind: explain
+    title: When a push is rejected
+    body: |
+      ```
+      ! [rejected]        main -> main (fetch first)
+      error: failed to push some refs to 'github.com:inkwell/site.git'
+      hint: Updates were rejected because the remote contains work that you do not
+      hint: have locally.
+      ```
+
+      Someone pushed commits you don't have. Git refuses to overwrite them, which is exactly right. The fix:
+
+      1. `git pull` to bring their commits in and merge them with yours (resolve any conflict, Module 17).
+      2. `git push` again.
+
+      ⚠️ Never "fix" it with `git push --force`: that replaces their commits with yours on GitHub, and their work disappears from the shared history.
+
+  - kind: shell
+    title: Rejected, then fixed
+    fixture: [git-identity, website-repo, github-account, github-site]
+    setup: |
+      git config --global pull.rebase false
+      git clone -q git@github.com:inkwell/site.git ~/site 2> /dev/null
+      git clone -q git@github.com:inkwell/site.git /tmp/kenji 2> /dev/null
+      cd /tmp/kenji
+      echo '<p class="stock">2 left</p>' >> books/dune.html
+      GIT_AUTHOR_NAME="Kenji Mori" GIT_AUTHOR_EMAIL=kenji@inkwell.example git commit -qam "Show stock on the Dune page"
+      git push -q 2> /dev/null
+      cd ~/site
+      sed -i 's/Three people, a lot of books./Three people, twenty thousand books./' about.html
+      git commit -qam "Update the about text"
+    body: |
+      You committed an update to the about page and want to publish it. Try `git push`: it's rejected, because Kenji pushed first.
+
+      Bring his work in (a merge commit; nano opens with the message, just save and exit), then push again. Afterwards GitHub must have both commits, and `git status` must say you're up to date.
+    tests:
+      - git status -sb | head -n 1
+      - git -C /srv/git/github.com/inkwell/site.git log --format=%s main -n 3
+    solution: |
+      git push  # allow-error: rejected the first time
+      git pull --no-edit
+      git push
+    hint: "`git pull` (save the merge message in nano), then `git push`."
+
+  - kind: mac
+    title: Your first push from the Mac
+    body: |
+      Publish the practice repository from Module 15 to your own GitHub account. `gh repo create` makes the empty repository for you.
+    commands: |
+      cd ~/git-practice
+      gh repo create git-practice --private --source=. --remote=origin
+      git remote -v
+      git push -u origin main
+      gh repo view --web
+  - kind: why
+    body: |
+      Remotes turn a repository on one computer into a backed-up, shareable project. Understanding that `origin/main` is only a snapshot from your last fetch, and that rejected pushes protect other people's work, prevents the two worst Git accidents: overwriting a colleague's commits and losing your own.
+
+  - kind: recap
+    body: |
+      - A **remote** is another copy; `origin` is the usual name. `git remote -v` lists them.
+      - `git clone address` copies a repository with its history and sets up `origin`.
+      - `git push -u origin main` the first time; then `git push`.
+      - `git fetch` downloads and moves `origin/main`; `git pull` = fetch + merge.
+      - `main` is yours; `origin/main` is GitHub's `main` as of your last fetch.
+      - Rejected push: `git pull`, resolve, `git push`. Never `--force` on shared branches.

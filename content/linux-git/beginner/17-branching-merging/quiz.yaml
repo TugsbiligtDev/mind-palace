@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "What is a branch, inside Git?"
+    options:
+      - "A name that points at a commit and moves as you commit"
+      - "A full copy of the project's files, kept in another folder"
+      - "A list of the files that are allowed to change on it"
+      - "A separate repository on GitHub that belongs to you"
+    answer: 0
+    explanation: "That's why branches are instant and free: Git only writes down which commit the name points to."
+  - type: mcq
+    prompt: "When does `git merge feature` give a **fast-forward**?"
+    options:
+      - "When the current branch has no new commits since `feature` began"
+      - "When both branches changed different files, so nothing overlaps"
+      - "When the merge has no conflicts that need to be resolved by hand"
+      - "When `feature` has only one commit, so it can be copied over"
+    answer: 0
+    explanation: "If nothing happened on the current branch, Git can just move its pointer forward to `feature`'s last commit. Otherwise it makes a merge commit."
+  - type: mcq
+    prompt: "In a conflict, what's between `<<<<<<< HEAD` and `=======`?"
+    options:
+      - "The version from the branch you're on, the one you merge into"
+      - "The version from the branch you're merging in, the other one"
+      - "The version from before either branch changed those lines"
+      - "The lines Git has already merged automatically for you"
+    answer: 0
+    explanation: "HEAD is your current branch. The other branch's version follows the `=======`, up to `>>>>>>> branch-name`."
+  - type: mcq
+    prompt: "You've edited a conflicted file. What tells Git it's resolved?"
+    options:
+      - "Staging it, with `git add` or `git add --resolved`"
+      - "Saving it in your editor with the markers removed"
+      - "Running `git status` so Git notices the file changed"
+      - "Deleting the other branch so only one version is left"
+    answer: 0
+    explanation: "Staging marks the conflict resolved; then `git commit` completes the merge. `git add --resolved` refuses if markers are left."
+  - type: mcq
+    prompt: "`git branch -d feature` says the branch is not fully merged. What does that mean?"
+    options:
+      - "`feature` has commits your current branch lacks; they could be lost"
+      - "`feature` still has uncommitted changes sitting in your working folder"
+      - "`feature` is the branch you're on now, and Git can't delete that one"
+      - "`feature` was never pushed to GitHub, so Git refuses to delete it"
+    answer: 0
+    explanation: "Git protects unmerged work. Merge it first, or use `-D` if you really mean to throw those commits away."

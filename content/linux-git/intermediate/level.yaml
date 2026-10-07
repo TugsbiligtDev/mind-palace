@@ -1,0 +1,35 @@
+id: intermediate
+title: Intermediate
+season: 2
+season_title: The Server Room
+season_pitch: |
+  Real Linux, real servers. Run Ubuntu on your Mac, process logs with a toolkit of text commands,
+  manage processes, write reliable bash scripts and work on remote machines over SSH. Then go
+  further with Git (undo anything, rebase, resolve any conflict) and collaborate the way teams do
+  on GitHub, with reviews, protected branches and automatic checks.
+status: open
+topics:
+  - 22-real-linux
+  - 23-text-processing
+  - 24-processes-jobs
+  - 25-archives-disk-links
+  - 26-vim-survival
+  - 27-script-basics
+  - 28-control-flow
+  - 29-robust-scripts
+  - review-4-night-shift
+  - 30-ssh
+  - 31-linux-admin
+  - 32-networking
+  - review-5-deploy-account
+  - 33-git-mental-model
+  - 34-undoing
+  - 35-rebase
+  - 36-power-tools
+  - 37-conflict-mastery
+  - review-6-rewritten-history
+  - 38-team-prs
+  - 39-project-management
+  - 40-repo-protection
+  - 41-actions-basics
+  - capstone-2-log-tool

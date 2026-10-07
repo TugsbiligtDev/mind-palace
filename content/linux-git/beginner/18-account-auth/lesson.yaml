@@ -1,0 +1,180 @@
+steps:
+  - kind: explain
+    title: Your GitHub account
+    body: |
+      Inspector Bold: *"One server with everything on it is one disk failure from disaster. Get the repositories onto GitHub."*
+
+      Sign up at [github.com](https://github.com) (free). A few choices matter:
+
+      - **Username**: it's in all your repository addresses (`github.com/username/project`), so pick something you'll be happy to put on a CV.
+      - **Email**: use the one you set as `user.email` in Module 14, so GitHub links your commits to you. In *Settings → Emails* you can keep it private and use the `…@users.noreply.github.com` address instead (then set that as `user.email`).
+      - **Two-factor authentication (2FA)**: GitHub requires it for anyone who contributes code. After your password, you confirm with a second factor: an authenticator app (6-digit codes) or a **passkey**.
+      - **Passkeys**: sign in with Touch ID on your Mac or Face ID on your phone instead of a password. Safer, because there's nothing to steal or type into a fake site.
+
+      Save the **recovery codes** GitHub gives you when you turn on 2FA, somewhere safe (a password manager). They're how you get back in if you lose your phone.
+
+  - kind: explain
+    title: Two ways Git talks to GitHub
+    body: |
+      Signing in on the website is one thing; your **terminal's** Git also needs to prove who you are when it sends commits. A repository on GitHub has two addresses:
+
+      | | Address | Proves who you are with |
+      |---|---|---|
+      | **HTTPS** | `https://github.com/ada/notes.git` | a token, stored for you by the GitHub CLI or the Mac's Keychain |
+      | **SSH** | `git@github.com:ada/notes.git` | an **SSH key** on your computer |
+
+      Your GitHub **password never works** for Git in the terminal (that ended in 2021). Both ways are fine; many developers use SSH, and this course does.
+
+  - kind: explain
+    title: SSH keys
+    body: |
+      An SSH key is a pair of files made by `ssh-keygen`:
+
+      - the **private key** (`~/.ssh/id_ed25519`): stays on your computer, readable only by you (`600`). **Never share it, never put it in a repository.**
+      - the **public key** (`~/.ssh/id_ed25519.pub`): safe to share. You give it to GitHub.
+
+      When you connect, your computer proves it holds the private key that matches the public key GitHub has, without ever sending the private key. Make one per computer:
+
+      ```
+      ssh-keygen -t ed25519 -C "your@email.com"
+      ```
+
+      - `-t ed25519`: the modern, recommended key type.
+      - `-C`: a comment (your email) to recognise the key later.
+      - It asks where to save it (press **Return** for the default) and for a **passphrase** (a password protecting the key file). A passphrase is a good idea; nothing appears on screen while you type it.
+
+  - kind: shell
+    title: Make your SSH key
+    body: |
+      Create an ed25519 key with the comment `learner@inkwell.example`. Accept the default file location. For this practice key you can leave the passphrase empty (press Return twice); on your Mac, choose a real one.
+
+      Then look: `ls -l ~/.ssh` and `cat ~/.ssh/id_ed25519.pub`. Notice the permissions of the two files.
+    tests:
+      - ls ~/.ssh
+      - cut -d' ' -f1,3 ~/.ssh/id_ed25519.pub
+      - stat -c %a ~/.ssh/id_ed25519
+    solution: ssh-keygen -t ed25519 -C "learner@inkwell.example" -f ~/.ssh/id_ed25519 -N ""
+    hint: "`ssh-keygen -t ed25519 -C \"learner@inkwell.example\"`, then Return at each question."
+
+  - kind: explain
+    title: ssh-agent and the Keychain
+    body: |
+      If your key has a passphrase, typing it at every push gets old. The **ssh-agent** holds unlocked keys in memory:
+
+      ```
+      eval "$(ssh-agent -s)"           # start the agent (prints "Agent pid …")
+      ssh-add ~/.ssh/id_ed25519        # unlock the key once
+      ```
+
+      On a **Mac**, the agent can also save the passphrase in your **Keychain**, so it survives restarts. Add this to `~/.ssh/config`:
+
+      ```
+      Host github.com
+        AddKeysToAgent yes
+        UseKeychain yes
+        IdentityFile ~/.ssh/id_ed25519
+      ```
+
+      and add the key once with `ssh-add --apple-use-keychain ~/.ssh/id_ed25519`. (`--apple-use-keychain` exists only on a Mac.)
+
+  - kind: explain
+    title: Give GitHub your public key
+    body: |
+      Two ways:
+
+      - **Website**: *Settings → SSH and GPG keys → New SSH key*. Paste the whole contents of `id_ed25519.pub` (on a Mac, `pbcopy < ~/.ssh/id_ed25519.pub` copies it). Give it a title like "MacBook Air".
+      - **GitHub CLI**: `gh ssh-key add ~/.ssh/id_ed25519.pub --title "MacBook Air"`.
+
+      Then test the connection:
+
+      ```
+      ssh -T git@github.com
+      ```
+
+      The first time, ssh shows GitHub's **host key fingerprint** and asks if you trust it. Compare it with the fingerprints GitHub publishes (search "GitHub's SSH key fingerprints"); for its ed25519 key it's `SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU`. Type `yes`. Success looks like:
+
+      ```
+      Hi ada! You've successfully authenticated, but GitHub does not provide shell access.
+      ```
+
+  - kind: explain
+    title: The GitHub CLI
+    body: |
+      **`gh`** is GitHub's own command-line tool: create repositories, open pull requests, manage issues, all from the terminal. Install it on a Mac with `brew install gh`, then log in once:
+
+      ```
+      gh auth login
+      ```
+
+      It asks a few questions (GitHub.com; HTTPS or **SSH**; whether to upload your SSH key; log in with a web browser), shows a one-time code, and opens the browser for you to approve it. `gh auth status` shows that you're logged in.
+
+  - kind: shell
+    title: Log in and connect
+    setup: |
+      mkdir -p ~/.ssh
+      ssh-keygen -t ed25519 -C "learner@inkwell.example" -f ~/.ssh/id_ed25519 -N "" > /dev/null
+    body: |
+      Your key exists now (`ls ~/.ssh`). Connect this computer to the practice GitHub account `learner`:
+
+      1. Log in the GitHub CLI with `gh auth login`. Choose **SSH** when it asks for a protocol, and let it upload your key (or add it afterwards with `gh ssh-key add`).
+      2. Test the connection with `ssh -T git@github.com` (answer `yes` to the fingerprint question).
+    output: true
+    solution: |
+      gh auth login --git-protocol ssh
+      gh ssh-key add ~/.ssh/id_ed25519.pub --title laptop
+      ssh -T git@github.com  # allow-error: ssh -T exits with 1 even when it works
+    hint: "`gh auth login`, answer SSH, then Y to upload the key. If you said no, `gh ssh-key add ~/.ssh/id_ed25519.pub`. Finish with `ssh -T git@github.com` and `yes`."
+
+  - kind: choice
+    title: Permission denied (publickey)
+    body: |
+      Liam runs `git push` and gets:
+
+      ```
+      git@github.com: Permission denied (publickey).
+      fatal: Could not read from remote repository.
+      ```
+
+      `ssh -T git@github.com` says the same. What's the most likely problem?
+    options:
+      - "GitHub doesn't have (or match) his computer's public key"
+      - "His GitHub password has expired and needs to be reset"
+      - "The repository has been deleted or renamed on GitHub"
+      - "His Git `user.email` doesn't match his GitHub account"
+    answer: 0
+    explanation: "\"publickey\" means the key check failed: no key on his computer (`ls ~/.ssh`), or GitHub hasn't got its `.pub` file (add it), or the agent isn't offering it (`ssh-add -l`). Passwords and `user.email` aren't involved in SSH authentication."
+
+  - kind: info
+    title: "🔹 Personal access tokens"
+    body: |
+      A **personal access token** (PAT) is a long password-like string you create in *Settings → Developer settings*. It's what HTTPS uses behind the scenes, and what scripts and other tools use to talk to GitHub. Prefer **fine-grained** tokens limited to the repositories and permissions they need, with an expiry date. Treat a token exactly like a password: never commit it.
+
+  - kind: mac
+    title: Set it up for real
+    body: |
+      On your Mac, step by step:
+
+      1. Create your GitHub account and turn on 2FA (*Settings → Password and authentication*). Add a passkey if you like, and save the recovery codes.
+      2. Make your key (choose a passphrase), start the agent, and save the passphrase in the Keychain.
+      3. Create `~/.ssh/config` with the four lines from the ssh-agent step (`nano ~/.ssh/config`).
+      4. Install `gh`, log in (choose SSH and upload your key), and test.
+    commands: |
+      ssh-keygen -t ed25519 -C "you@example.com"
+      eval "$(ssh-agent -s)"
+      nano ~/.ssh/config
+      ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+      brew install gh
+      gh auth login
+      ssh -T git@github.com
+  - kind: why
+    body: |
+      Authentication is the most common place people get stuck with GitHub, and the error messages are short. Knowing that SSH uses a key pair (private stays, public goes to GitHub) and that the website login is separate from the terminal's means every "Permission denied (publickey)" has the same three checks.
+
+  - kind: recap
+    body: |
+      - GitHub account: a good username, your Git email (or the noreply one), **2FA** and passkeys; keep the recovery codes.
+      - Git authenticates over **HTTPS** (token) or **SSH** (key). Your password never works in the terminal.
+      - `ssh-keygen -t ed25519 -C "email"` makes `~/.ssh/id_ed25519` (private, `600`, never share) and `.pub` (give to GitHub).
+      - `ssh-agent` + `ssh-add` remember the passphrase; on a Mac, `UseKeychain` and `--apple-use-keychain`.
+      - Add the `.pub` on GitHub (Settings or `gh ssh-key add`), test with `ssh -T git@github.com`.
+      - `gh auth login` logs in the GitHub CLI.

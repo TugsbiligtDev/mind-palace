@@ -1,0 +1,4 @@
+title: Terminal Editor Survival (vim)
+module: 26
+summary: "vim's modes and why it feels strange; inserting, saving and quitting; moving around; deleting, copying, pasting and undoing lines; searching and replacing; the commit message Git opens in vim; and nano as the fallback."
+minutes: 35

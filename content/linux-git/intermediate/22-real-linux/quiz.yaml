@@ -1,0 +1,49 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "What's the difference between Linux and a Linux **distribution** such as Ubuntu?"
+    options:
+      - "Linux is the kernel; a distribution bundles it with tools, a package manager and defaults"
+      - "Linux is the free version; a distribution is a paid version with professional support"
+      - "Linux runs on servers; a distribution is the edition made for desktop and laptop computers"
+      - "They're two names for exactly the same thing, used by different groups of people"
+    answer: 0
+    explanation: "The kernel alone can't do much. Ubuntu, Fedora and the rest each package it with thousands of tools and their own conventions."
+  - type: mcq
+    prompt: "On a fresh Ubuntu server, `sudo apt install jq` answers `E: Unable to locate package jq`. What's the usual fix?"
+    options:
+      - "Run `sudo apt update` first, so apt downloads the list of available packages"
+      - "Install it with Homebrew instead, because apt can't install command-line tools"
+      - "Run the same command again without `sudo`, so apt uses your own user account"
+      - "Download the program from its website and copy it into the `/etc` folder"
+    answer: 0
+    explanation: "apt installs from a local copy of the package list. A brand-new server hasn't downloaded it yet; `sudo apt update` does."
+  - type: mcq
+    prompt: "Where would you expect a server's log files?"
+    options:
+      - "`/var/log`"
+      - "`/etc/log`"
+      - "`/usr/log`"
+      - "`/home/log`"
+    answer: 0
+    explanation: "`/var` holds data that changes while the system runs, and `/var/log` is where services write their logs."
+  - type: predict
+    prompt: "What does this print on the practice server?"
+    code: |
+      grep ^ID= /etc/os-release
+    options:
+      - "ID=ubuntu"
+      - "ID=debian"
+      - "ID=24.04"
+      - "ID=noble"
+    answer: 0
+    explanation: "`^ID=` matches only the line that *starts* with `ID=` (not `VERSION_ID=` or `ID_LIKE=`). Its value is `ubuntu`."
+  - type: mcq
+    prompt: "A script that works on the server fails on your Mac at `date -d yesterday`. Why?"
+    options:
+      - "The Mac has the BSD `date`, which uses different options (`date -v-1d`)"
+      - "The Mac's zsh doesn't allow the word `yesterday` to be used as an argument"
+      - "`date` only exists on Linux; macOS has no command for showing dates"
+      - "The Mac's clock is set to a time zone that makes `yesterday` ambiguous"
+    answer: 0
+    explanation: "GNU tools (Linux) and BSD tools (macOS) share names but not every option. Installing GNU coreutils with Homebrew gives you `gdate`."

@@ -1,0 +1,53 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "Which `.gitignore` line ignores every file ending in `.tmp`, in any folder?"
+    options:
+      - "`*.tmp`"
+      - "`.tmp*`"
+      - "`/tmp`"
+      - "`tmp/*`"
+    answer: 0
+    explanation: "`*` matches any name, so `*.tmp` matches every `.tmp` file. `.tmp*` only matches names that *start* with `.tmp`, `/tmp` only something called `tmp` in the top folder, and `tmp/*` the contents of a folder named tmp."
+  - type: mcq
+    prompt: "You committed `config.env` last week. Today you add `config.env` to `.gitignore`. What happens?"
+    options:
+      - "Git keeps tracking it until you run `git rm --cached` on it"
+      - "Git removes the file from all of the past commits as well"
+      - "Git deletes the file from your disk the next time you commit"
+      - "The next commit fails with an error until you remove the line"
+    answer: 0
+    explanation: "`.gitignore` only affects untracked files. A tracked file stays tracked until you untrack it, and old commits still contain it."
+  - type: mcq
+    prompt: "You staged `draft.md` by mistake. Which command unstages it and keeps your changes?"
+    options:
+      - "`git restore --staged draft.md`"
+      - "`git restore draft.md`"
+      - "`git rm --force draft.md`"
+      - "`git commit --amend draft.md`"
+    answer: 0
+    explanation: "`--staged` takes it out of the staging area only. Plain `git restore` would throw your changes away, and `git rm --force` deletes the file."
+  - type: mcq
+    prompt: "When is `git commit --amend` a bad idea?"
+    options:
+      - "When the commit has already been pushed and shared"
+      - "When you only want to change the commit's message"
+      - "When you forgot to add a file to the last commit"
+      - "When the commit is the very first one in the repository"
+    answer: 0
+    explanation: "Amending replaces the commit with a new one. Fine locally; confusing and disruptive once others have the old one."
+  - type: predict
+    prompt: What does the last command print?
+    code: |
+      git config --global user.name "Ada" && git config --global user.email ada@example.com
+      mkdir -p /tmp/g && cd /tmp/g && git init -q -b main
+      echo one > notes.txt && git add notes.txt && git commit -qm "Add notes"
+      git mv notes.txt ideas.txt
+      git status --short
+    options:
+      - "R  notes.txt -> ideas.txt"
+      - "D  notes.txt\n?? ideas.txt"
+      - " D notes.txt\n?? ideas.txt"
+      - "A  ideas.txt"
+    answer: 0
+    explanation: "`git mv` renames and stages it, so Git shows a staged rename (`R`). With plain `mv` you'd see an unstaged deletion and an untracked file."

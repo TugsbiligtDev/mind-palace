@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "You'll push an existing local repository to a brand-new GitHub repository. What should you tick when creating it on the website?"
+    options:
+      - "Nothing: no README, .gitignore or license, so it starts empty"
+      - "Add a README, so the new repository isn't completely empty"
+      - "Add a .gitignore, so your secrets are protected from the start"
+      - "Everything, since any of it can easily be deleted again later"
+    answer: 0
+    explanation: "Anything GitHub creates is a commit your local repository doesn't have, so your first push would be rejected until you pull it in."
+  - type: mcq
+    prompt: "In Markdown, what does `## Installation` produce?"
+    options:
+      - "A second-level heading"
+      - "A numbered list item"
+      - "A comment that isn't shown"
+      - "Bold text"
+    answer: 0
+    explanation: "`#` is the biggest heading, `##` the next size down, and so on."
+  - type: mcq
+    prompt: "Your public repository has no LICENSE file. What may others legally do with the code?"
+    options:
+      - "Look at it, but not reuse, copy or change it"
+      - "Anything they like, because it's public"
+      - "Use it, but only for non-commercial projects"
+      - "Copy it, as long as they mention your name"
+    answer: 0
+    explanation: "Public only means visible. Without a license, normal copyright applies and no reuse is granted."
+  - type: mcq
+    prompt: "What does GitHub's **Blame** view show?"
+    options:
+      - "For each line, the commit, author and date that last changed it"
+      - "A list of everyone who has broken the build in the last month"
+      - "The files in the repository with the most bugs reported against them"
+      - "Which issues and pull requests mention the file you're looking at"
+    answer: 0
+    explanation: "Blame (also `git blame`) answers \"why is this line like this?\" by pointing to the commit that last changed it."
+  - type: mcq
+    prompt: "A pull request's description says `Closes #12`. What happens when it's merged into main?"
+    options:
+      - "Issue #12 is closed automatically"
+      - "Pull request #12 is closed without merging"
+      - "The 12th commit is removed"
+      - "Nothing; it's just a note"
+    answer: 0
+    explanation: "Keywords like Closes, Fixes and Resolves followed by an issue number close that issue when the change lands on the default branch."

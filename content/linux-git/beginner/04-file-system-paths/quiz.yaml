@@ -1,0 +1,50 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: Which of these is an **absolute** path?
+    options:
+      - "`/var/log/syslog`"
+      - "`notes/todo.txt`"
+      - "`../orders`"
+      - "`./site/index.html`"
+    answer: 0
+    explanation: "An absolute path starts at the root `/` (or with `~`, which stands for your home folder's absolute path). The others start from wherever you are."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      mkdir -p /tmp/a/b/c
+      cd /tmp/a/b/c
+      cd ../..
+      pwd
+    options:
+      - "/tmp/a"
+      - "/tmp/a/b"
+      - "/tmp"
+      - "/tmp/a/b/c"
+    answer: 0
+    explanation: "Each `..` goes up one level: from `c` to `b`, then from `b` to `a`."
+  - type: mcq
+    prompt: "You're in `/home/learner/inkwell/site`. Where does `cd ../notes` take you?"
+    options:
+      - "`/home/learner/inkwell/notes`"
+      - "`/home/learner/inkwell/site/notes`"
+      - "`/home/learner/notes`"
+      - "`/notes`"
+    answer: 0
+    explanation: "`..` takes you up from `site` to `inkwell`, and then you go into `notes`."
+  - type: mcq
+    prompt: Why doesn't plain `ls` show a file called `.bashrc`?
+    options:
+      - "Names starting with a dot are hidden; `ls -a` shows them"
+      - "It belongs to the system, so only the root user can list it"
+      - "It's really a folder, and plain `ls` only lists ordinary files"
+      - "It's empty, and `ls` leaves out files that have nothing in them"
+    answer: 0
+    explanation: "A leading dot makes a file hidden from plain `ls`. It isn't protected: `ls -a` shows it to anyone who can list the folder."
+  - type: fill
+    prompt: "Complete the command that shows a long list with human-readable sizes: `ls -l____`"
+    code: "ls -l____"
+    answer: "h"
+    accept: ["ah", "ha"]
+    runnable: false
+    explanation: "`-h` (human-readable) changes `4096` into `4.0K`. It only matters together with `-l`, which shows sizes at all."

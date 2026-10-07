@@ -1,0 +1,203 @@
+steps:
+  - kind: explain
+    title: Nobody memorises this
+    body: |
+      There are thousands of commands and most have dozens of options. Professionals don't remember them all: they know **where to look**, and they read error messages carefully.
+
+      Three places to look, from most complete to quickest:
+
+      | Where | What you get |
+      |---|---|
+      | `man ls` | the full **manual page**, built into every Linux and Mac |
+      | `ls --help` | a short list of options, printed straight away |
+      | `tldr ls` | a handful of everyday examples |
+
+  - kind: explain
+    title: Reading a manual page
+    body: |
+      `man ls` opens the manual for `ls`. It fills the screen, and you move around it with keys, not the mouse:
+
+      | Key | Does |
+      |---|---|
+      | **Space** | next screen |
+      | **b** | back a screen |
+      | **↓ ↑** | one line |
+      | **/word** then Return | search for *word*; **n** jumps to the next match |
+      | **q** | **quit**, back to the prompt |
+
+      The page has fixed sections: **NAME** (one line on what it does), **SYNOPSIS** (how to type it), **DESCRIPTION** and **OPTIONS**. In the synopsis, `[square brackets]` mean "optional" and `...` means "you can give several": `ls [OPTION]... [FILE]...`.
+
+      ⚠️ The most common beginner panic: being stuck inside a manual page. **Press q.**
+
+  - kind: shell
+    title: Find an option in the manual
+    body: |
+      Open the manual for `ls` and find the option that **sorts by file size**.
+
+      1. Type `man ls` and press Return.
+      2. Type `/size` and press Return to search. Press **n** for the next match.
+      3. When you've found it, press **q** to leave.
+
+      The next step asks what you found.
+
+  - kind: choice
+    title: What did the manual say?
+    body: Which option makes `ls` sort by file size, largest first?
+    options:
+      - "`-S`"
+      - "`-s`"
+      - "`-h`"
+      - "`-t`"
+    answer: 0
+    explanation: "`-S` (capital S) sorts by size. Options are case-sensitive too: `-t` sorts by time, and `-h` only changes how sizes are written (with `-l`)."
+
+  - kind: explain
+    title: --help, help and tldr
+    body: |
+      - **`--help`**: most Linux commands print a summary of their options when you add `--help`: `ls --help`. Faster than `man`, and it doesn't take over the screen.
+      - **`help`**: a few commands, like `cd` and `alias`, are built into the shell itself and have no manual page. `help cd` explains those.
+      - **`tldr`**: short for *too long; didn't read*. A community-written page of common examples: `tldr tar`. It isn't installed by default; you'll install it on your Mac in Module 12.
+
+      🔹 On a Mac, many commands come from BSD and **don't understand `--help`**: `ls --help` on a Mac prints an error and a one-line usage. Use `man` there.
+
+  - kind: shell
+    title: One name per line
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      `ls` usually lists names side by side, in columns. Find the option that lists **one name per line**, using `ls --help` (or `man ls`).
+
+      Then use it to list the `orders` folder, one name per line.
+    output: true
+    solution: ls -1 orders
+    uses:
+      - match: "\\s-[a-zA-Z]*1|--format"
+        why: "the task asks for one name per line. Look for it in `ls --help`: it's an option made of a digit."
+    reject:
+      - ls orders
+      - ls -l orders
+    hint: "Run `ls --help` and read down the list: the option is a dash and a number. Then `ls -? orders` with that option."
+
+  - kind: explain
+    title: Errors are clues
+    body: |
+      Error messages look scary but they follow a pattern: **who is complaining, about what, and why**.
+
+      ```
+      cat: inkwell/Notes/todo.txt: No such file or directory
+      │    │                       └── the problem
+      │    └── what it was working on
+      └── which program is talking
+      ```
+
+      Three errors cover most of what goes wrong:
+
+      | Message | Usually means | First thing to check |
+      |---|---|---|
+      | `command not found` | the shell has no program with that name | spelling, capitals, is it installed? |
+      | `No such file or directory` | nothing at that path | spelling, capitals, `pwd`: are you where you think? |
+      | `Permission denied` | it exists, but you're not allowed | who owns it (Module 10) |
+
+  - kind: shell
+    title: Read the error, fix the command
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Priya sent Inspector Bold this command to print Inkwell's to-do list:
+
+      ```
+      cat inkwell/Notes/todo.txt
+      ```
+
+      Run it exactly as written. Read the error, find out what's wrong (`ls` helps), and then print the to-do list.
+    output: true
+    solution: cat inkwell/notes/todo.txt
+    hint: "The error says there's no such file. Run `ls inkwell` and compare the folder names with the command, letter by letter, capitals included."
+
+  - kind: choice
+    title: Which error?
+    body: |
+      Kenji types this and gets an error:
+
+      ```
+      learner@inkwell:~$ sl inkwell
+      ```
+
+      Which error does he get, and why?
+    options:
+      - "`command not found`: there's no program called `sl` (he meant `ls`)"
+      - "`No such file or directory`, because the `inkwell` folder can't be found"
+      - "`Permission denied`, because he isn't allowed to list that folder"
+      - "No error: the shell quietly corrects small typos in command names"
+    answer: 0
+    explanation: "The first word is the program to run. There's no `sl`, so the shell says `bash: sl: command not found` before it even looks at `inkwell`."
+
+  - kind: explain
+    title: Searching for an error
+    body: |
+      When an error isn't obvious, search for it, but search well:
+
+      1. **Copy the exact message**, not your summary of it.
+      2. **Remove your own details**: your username, file names, folder names. `cat: inkwell/Notes/todo.txt: No such file or directory` → `cat "No such file or directory"`.
+      3. **Add context**: the tool and the system, like `ubuntu`, `macos`, `zsh`, `git`.
+      4. Prefer **official documentation**, and answers that are recent and well voted. Check the date: advice from 2012 may no longer apply.
+
+  - kind: explain
+    title: Asking an AI to explain
+    body: |
+      AI assistants (like Claude) are very good at explaining a command **piece by piece**. Paste the command and ask *"Explain each part of this command"*:
+
+      ```
+      find ~/inkwell/logs -name "*.log" -mtime +30 -delete
+      ```
+
+      Use it to understand, not to obey:
+
+      - **Check the important parts** against `man` or `--help`. AI can be confidently wrong, especially about options that differ between Mac and Linux.
+      - **Never paste secrets**: passwords, keys, tokens, customer data.
+      - Ask *"what could go wrong if I run this?"* before running anything that deletes or changes things.
+
+  - kind: explain
+    title: "⚠️ Never run what you don't understand"
+    body: |
+      The terminal does exactly what you say, with no undo. Some commands found online are mistakes, and some are traps:
+
+      - `rm -rf ~/` deletes your entire home folder.
+      - `curl https://example.com/install.sh | bash` downloads a script and runs it, sight unseen.
+      - Anything starting with `sudo` runs with full power over the whole computer (Module 10).
+
+      The rule: **before you press Return on a pasted command, you can say what every part does.** If you can't, look it up (`man`, `tldr`, an AI explanation), or try it first on a throwaway folder. This practice terminal is a safe place for exactly that.
+
+  - kind: choice
+    title: A helpful stranger
+    body: |
+      Inkwell's server is running out of disk space. In a forum, someone replies: *"Easy, just run `sudo rm -rf /var/log/*`, works every time."* What should Kenji do?
+    options:
+      - "Find out what each part does first: it deletes every log, as root, for good"
+      - "Run it, since a highly-voted forum answer is very unlikely to be wrong"
+      - "Run it without `sudo`, which makes any command safe enough to try out"
+      - "Run it twice in a row, to make sure the space is really freed up"
+    answer: 0
+    explanation: "`sudo` gives full power, `rm -rf` deletes without asking, and `/var/log/*` is every log on the server: evidence included. Understand it first, and look for a safer fix (deleting only old logs). Removing `sudo` doesn't make a command safe; it only limits what it can reach."
+
+  - kind: mac
+    title: Help on your Mac
+    body: |
+      In your Mac's Terminal, open the manual for `ls` and leave it with **q**. The Mac's manual is the BSD one, so it's a little different from Linux's.
+
+      Then try `ls --help`. On a Mac it fails with an "unrecognized option" error and a short usage line. That's the BSD version of `ls` talking: on a Mac, reach for `man`. For a command built into the shell, zsh has no `help`; `man zshbuiltins` covers them.
+    commands: |
+      man ls
+      ls --help
+  - kind: why
+    body: |
+      Being self-sufficient in the terminal isn't about memory. It's about reading the error, checking the manual, and searching well. The habit of understanding a command before running it is what separates someone who uses the terminal confidently from someone who's one bad paste away from losing their files.
+
+  - kind: recap
+    body: |
+      - `man command`: the full manual. **Space**/**b** to move, **/word** to search, **q** to quit.
+      - `command --help` for a quick summary (Linux), `help cd` for shell built-ins, `tldr command` for examples.
+      - Errors read as **program: thing: problem**. `command not found` → name; `No such file or directory` → path; `Permission denied` → rights.
+      - Search the exact message without your own details, plus the tool and system.
+      - AI explains commands well; check what matters and never paste secrets.
+      - **Never run a command you can't explain.**

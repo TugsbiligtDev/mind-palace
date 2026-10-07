@@ -1,0 +1,233 @@
+steps:
+  - kind: explain
+    title: if, and what it really tests
+    body: |
+      ```bash
+      if grep -q "/admin/export" ~/logs/access.log; then
+        echo "Someone exported data!"
+      elif [[ -f ~/logs/old.log ]]; then
+        echo "Only old logs to check"
+      else
+        echo "All quiet"
+      fi
+      ```
+
+      `if` runs a **command** and looks at its **exit code**: 0 means true. So any command can be a condition (`grep -q`, `cd somewhere`, `ping -c1 host`). For comparing things, the command is **`[[ … ]]`**, bash's test (spaces inside the brackets are required):
+
+      | Test | True when |
+      |---|---|
+      | `[[ -e path ]]`, `-f`, `-d` | the path exists / is a file / is a folder |
+      | `[[ -r f ]]`, `-w`, `-x` | readable / writable / executable |
+      | `[[ -z "$s" ]]`, `-n "$s"` | the text is empty / not empty |
+      | `[[ "$a" == "$b" ]]`, `!=` | texts equal / differ (`== Dune*` matches a pattern) |
+      | `[[ "$s" =~ ^[0-9]+$ ]]` | the text matches a regex |
+      | `[[ $n -eq 3 ]]`, `-ne -lt -le -gt -ge` | **numbers**: equal, not equal, less than … |
+      | `!`, `&&`, `\|\|` inside | not, and, or |
+
+      For numbers there's also `(( n > 3 ))`. You'll meet the older `[ … ]` (a single bracket) in other scripts: it works similarly but is fussier about quoting.
+
+  - kind: shell
+    title: What is this path?
+    body: |
+      Write an executable **`~/what-is.sh`** that takes a path as its argument and prints exactly one word:
+
+      - `missing` if nothing exists there,
+      - `folder` if it's a directory,
+      - `file` otherwise.
+    tests:
+      - ~/what-is.sh /etc
+      - ~/what-is.sh /etc/hosts
+      - ~/what-is.sh /nowhere
+      - ~/what-is.sh ~/what-is.sh
+    solution: |
+      printf '#!/usr/bin/env bash\nif [[ ! -e "$1" ]]; then\n  echo missing\nelif [[ -d "$1" ]]; then\n  echo folder\nelse\n  echo file\nfi\n' > ~/what-is.sh
+      chmod +x ~/what-is.sh
+    hint: "`if [[ ! -e \"$1\" ]]; then echo missing; elif [[ -d \"$1\" ]]; then echo folder; else echo file; fi` (on separate lines in the file, or with `;` as here)."
+
+  - kind: explain
+    title: for loops
+    body: |
+      `for` runs the same commands once for each item in a list:
+
+      ```bash
+      for book in Dune Circe "The Hobbit"; do
+        echo "Checking $book"
+      done
+
+      for f in ~/logs/old/*.log; do        # every matching file (a glob, never $(ls))
+        echo "$f has $(wc -l < "$f") lines"
+      done
+
+      for i in {1..5}; do echo "$i"; done   # 1 to 5
+      for i in $(seq 1 2 9); do …           # 1 3 5 7 9
+      ```
+
+      The variable (`book`, `f`, `i`) takes each value in turn. Quote it when you use it (`"$f"`), because file names can contain spaces.
+
+  - kind: shell
+    title: Lines per old log
+    fixture: shop-logs
+    body: |
+      Write an executable **`~/log-lines.sh`** that loops over every `.log` file in `~/logs/old` and prints one line per file: its **name without the folder**, a colon, a space and its number of lines:
+
+      ```
+      app-2026-09-01.log: 2
+      app-2026-09-02.log: 1
+      …
+      ```
+    tests:
+      - ~/log-lines.sh
+      - "printf 'a\\nb\\nc\\n' > ~/logs/old/app-2026-09-05.log && ~/log-lines.sh; rm -f ~/logs/old/app-2026-09-05.log"
+    solution: |
+      printf '#!/usr/bin/env bash\nfor f in ~/logs/old/*.log; do\n  echo "$(basename "$f"): $(wc -l < "$f")"\ndone\n' > ~/log-lines.sh
+      chmod +x ~/log-lines.sh
+    hint: "`for f in ~/logs/old/*.log; do echo \"$(basename \"$f\"): $(wc -l < \"$f\")\"; done`. `basename` drops the folder part of a path."
+
+  - kind: explain
+    title: while loops, and reading a file line by line
+    body: |
+      `while` repeats as long as its condition succeeds:
+
+      ```bash
+      n=0
+      while [[ $n -lt 3 ]]; do
+        n=$((n + 1))           # $(( )) does arithmetic
+        echo "try $n"
+      done
+      ```
+
+      Its most useful form reads a file **one line at a time**:
+
+      ```bash
+      while IFS=, read -r id date customer book price; do
+        echo "$customer bought $book"
+      done < ~/inkwell/orders/2026-09.csv
+      ```
+
+      `read` splits each line at the characters in `IFS` (here a comma) into the named variables; the last one gets the rest of the line. The file goes in at the **end**, with `< file` after `done`. `continue` skips to the next line, `break` leaves the loop.
+
+  - kind: shell
+    title: Who bought what
+    fixture: backoffice
+    body: |
+      `~/inkwell/orders/2026-09.csv` has a header line (`order_id,date,customer,book,price`) and then one order per line. Write an executable **`~/who-bought.sh`** that reads it line by line and prints, for every order (**not** the header):
+
+      ```
+      Amara Okafor bought Kindred for 10.50
+      ```
+    tests:
+      - ~/who-bought.sh
+    solution: |
+      printf '#!/usr/bin/env bash\nwhile IFS=, read -r id date customer book price; do\n  [[ $id == order_id ]] && continue\n  echo "$customer bought $book for $price"\ndone < ~/inkwell/orders/2026-09.csv\n' > ~/who-bought.sh
+      chmod +x ~/who-bought.sh
+    hint: "`while IFS=, read -r id date customer book price; do ... done < ~/inkwell/orders/2026-09.csv`. Skip the header with `[[ $id == order_id ]] && continue` (or feed the loop `tail -n +2 file`)."
+
+  - kind: explain
+    title: case, for many choices
+    body: |
+      When one value can be many things, `case` is tidier than a chain of `elif`s:
+
+      ```bash
+      case "$1" in
+        start)        echo "Starting" ;;
+        stop|halt)    echo "Stopping" ;;     # | means "or"
+        5??)          echo "A 5xx code" ;;   # glob patterns: ? one character, * anything
+        *)            echo "Unknown: $1" ;;  # * catches everything else
+      esac
+      ```
+
+      Each choice ends with `;;`. The first pattern that matches wins.
+
+  - kind: shell
+    title: Status codes in words
+    body: |
+      Write an executable **`~/status-name.sh`** that prints a name for the HTTP status code it's given:
+
+      | Code | Prints |
+      |---|---|
+      | `200` | `OK` |
+      | `301` or `302` | `Moved` |
+      | `404` | `Not found` |
+      | any `5` followed by two characters | `Server error` |
+      | anything else | `Other` |
+
+      Use `case`.
+    tests:
+      - for c in 200 301 302 404 500 503 418 abc; do ~/status-name.sh "$c"; done
+    solution: |
+      printf '#!/usr/bin/env bash\ncase "$1" in\n  200) echo OK ;;\n  301|302) echo Moved ;;\n  404) echo "Not found" ;;\n  5??) echo "Server error" ;;\n  *) echo Other ;;\nesac\n' > ~/status-name.sh
+      chmod +x ~/status-name.sh
+    uses:
+      - match: "case"
+        why: "the brief asks for `case`."
+    hint: "`case \"$1\" in 200) echo OK ;; 301|302) echo Moved ;; 404) echo \"Not found\" ;; 5??) echo \"Server error\" ;; *) echo Other ;; esac`, one choice per line."
+
+  - kind: explain
+    title: Functions, return and exit
+    body: |
+      A **function** is a named group of commands inside a script, called like a command:
+
+      ```bash
+      count_status() {
+        local code=$1                       # local: a variable only for this function
+        grep -c "\" $code " ~/logs/access.log
+      }
+
+      for c in 200 404 500; do
+        echo "$c: $(count_status "$c")"
+      done
+      ```
+
+      Inside a function, `$1`, `$2` are the function's own arguments. Define functions **before** you call them.
+
+      - `return 1` ends the function with exit code 1 (so `if my_function; then` works).
+      - `exit 1` ends the **whole script** with exit code 1. By convention: 0 success, 1 failure, 2 wrong usage.
+
+      A good script checks its input and stops early with a clear message on standard error:
+
+      ```bash
+      if [[ $# -ne 1 ]]; then
+        echo "usage: $0 STATUS" >&2
+        exit 2
+      fi
+      ```
+
+  - kind: shell
+    title: A tidy report
+    fixture: shop-logs
+    body: |
+      Write an executable **`~/status-report.sh`** that:
+
+      1. defines a function `count_status` that prints how many requests in `~/logs/access.log` had the status code given to it;
+      2. calls it in a loop over **its own arguments**, printing `CODE: COUNT` for each;
+      3. if it's run **without arguments**, prints `usage: status-report.sh CODE...` to standard error and exits with code **2**.
+    tests:
+      - ~/status-report.sh 200 404 500
+      - ~/status-report.sh 301
+      - ~/status-report.sh > /dev/null 2> /tmp/err; echo "exit $?"; cat /tmp/err
+      - grep -c "count_status" ~/status-report.sh | awk '$1 >= 2 {print "function used"}'
+    solution: |
+      printf '#!/usr/bin/env bash\nif [[ $# -eq 0 ]]; then\n  echo "usage: status-report.sh CODE..." >&2\n  exit 2\nfi\ncount_status() {\n  grep -c "\\" $1 " ~/logs/access.log\n}\nfor code in "$@"; do\n  echo "$code: $(count_status "$code")"\ndone\n' > ~/status-report.sh
+      chmod +x ~/status-report.sh
+    hint: "Check `[[ $# -eq 0 ]]` first (`echo ... >&2; exit 2`), then define `count_status() { grep -c \"\\\" $1 \" ~/logs/access.log; }`, then `for code in \"$@\"; do echo \"$code: $(count_status \"$code\")\"; done`."
+
+  - kind: mac
+    title: On your Mac
+    body: |
+      These scripts run on your Mac too (with `#!/usr/bin/env bash` and Homebrew's bash). A quick check that loops over your Downloads folder:
+    commands: |
+      cd ~/terminal-practice
+      printf '#!/usr/bin/env bash\nfor f in ~/Downloads/*; do\n  if [[ -d "$f" ]]; then echo "folder: $f"; fi\ndone\n' > folders.sh
+      bash folders.sh
+  - kind: why
+    body: |
+      With decisions, loops and functions, a script stops being a recording and starts being a tool: it checks before it acts, handles every file in a folder, every line of a report, every code you give it, and fails clearly when something's wrong. That's what lets you trust it to run without you, which is where Module 29 goes next.
+
+  - kind: recap
+    body: |
+      - `if cmd; then … elif …; else …; fi`: the condition is a command's exit code.
+      - `[[ -e -f -d -r -x path ]]`, `[[ -z/-n "$s" ]]`, `[[ "$a" == "$b" ]]`, `[[ "$s" =~ regex ]]`, `[[ $n -lt 5 ]]`.
+      - `for x in a b c; do …; done`, `for f in *.log`, `{1..5}`; `while cond; do …; done`.
+      - `while IFS=, read -r a b c; do …; done < file` reads line by line; `continue`, `break`; `$(( ))` for arithmetic.
+      - `case "$x" in pat) …;; a|b) …;; *) …;; esac`.
+      - Functions `name() { local v=$1; … }`; `return N`; `exit N` (0 ok, 1 failure, 2 usage); errors to `>&2`.

@@ -1,0 +1,52 @@
+pass: 4
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      mkdir -p /tmp/case/notes
+      cd /tmp/case/notes
+      cd ..
+      pwd
+    options:
+      - "/tmp/case"
+      - "/tmp/case/notes"
+      - "/tmp"
+      - "/case"
+    answer: 0
+    explanation: "`cd ..` goes up one level from `notes` to `case`."
+  - type: mcq
+    prompt: "You're in `~/inkwell`. Which command copies the whole `site` folder to `~/backups/site`? (`~/backups` exists.)"
+    options:
+      - "`cp -r site ~/backups/`"
+      - "`cp site ~/backups/site`"
+      - "`mv site ~/backups/`"
+      - "`cp site/* ~/backups/`"
+    answer: 0
+    explanation: "Folders need `cp -r`. Plain `cp` refuses a folder, `mv` would move the original away, and `site/*` copies the contents loose into `backups` (skipping hidden files)."
+  - type: mcq
+    prompt: "Which pattern matches `2026-08.csv` and `2026-09.csv` but **not** `2026-10.csv`?"
+    options:
+      - "`2026-0?.csv`"
+      - "`2026-*.csv`"
+      - "`2026-??.csv`"
+      - "`*.csv`"
+    answer: 0
+    explanation: "`?` is exactly one character, so `0?` needs a `0` followed by one more character. `10` doesn't start with `0`."
+  - type: mcq
+    prompt: "`cat Notes/todo.txt` says `No such file or directory`, but `ls` shows a folder called `notes`. What's wrong?"
+    options:
+      - "Names are case-sensitive: `Notes` and `notes` differ"
+      - "`cat` can't read files that are inside other folders"
+      - "The file is hidden and needs `cat -a` to be shown"
+      - "You need `sudo` to read any file inside a folder"
+    answer: 0
+    explanation: "On Linux, a capital letter makes it a different name. `cat notes/todo.txt` works."
+  - type: mcq
+    prompt: "In `less`, how do you search for the word `refund`?"
+    options:
+      - "Type `/refund` and press Return"
+      - "Press Ctrl+F and type `refund`"
+      - "Type `grep refund` and press Return"
+      - "Press Ctrl+R and type `refund`"
+    answer: 0
+    explanation: "In `less` and `man`, `/` starts a search and **n** finds the next match. Ctrl+R searches the shell's command history, not a file."

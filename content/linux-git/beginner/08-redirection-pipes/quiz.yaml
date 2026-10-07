@@ -1,0 +1,55 @@
+pass: 4
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      echo one > /tmp/f.txt
+      echo two > /tmp/f.txt
+      echo three >> /tmp/f.txt
+      cat /tmp/f.txt
+    options:
+      - "two\nthree"
+      - "one\ntwo\nthree"
+      - "three"
+      - "one\nthree"
+    answer: 0
+    explanation: "The second `>` replaces `one` with `two`, then `>>` adds `three` at the end."
+  - type: mcq
+    prompt: "Which command saves only the **error messages** of `find / -name notes.txt` into `err.txt`?"
+    options:
+      - "`find / -name notes.txt 2> err.txt`"
+      - "`find / -name notes.txt > err.txt`"
+      - "`find / -name notes.txt | err.txt`"
+      - "`find / -name notes.txt >> err.txt`"
+    answer: 0
+    explanation: "Errors are stream 2, so `2>` redirects them. `>` and `>>` redirect normal output, and `|` sends output to a command, not a file."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      printf 'b\na\nb\nc\na\n' > /tmp/l.txt
+      sort /tmp/l.txt | uniq | wc -l
+    options:
+      - "3"
+      - "5"
+      - "2"
+      - "4"
+    answer: 0
+    explanation: "Sorted: a a b b c. `uniq` drops the repeats: a b c. Three lines."
+  - type: mcq
+    prompt: "What does `2> /dev/null` do at the end of a command?"
+    options:
+      - "Throws the error messages away, so they don't appear"
+      - "Saves the error messages in a new file called `null`"
+      - "Stops the command as soon as two errors have happened"
+      - "Shows only the error messages and hides the normal output"
+    answer: 0
+    explanation: "`/dev/null` discards anything written to it, so the errors simply vanish. Use it when you know the errors don't matter."
+  - type: mcq
+    prompt: "Why is the pipe `|` so central to working in a terminal?"
+    options:
+      - "It lets small single-job tools be combined into bigger tasks"
+      - "It makes commands run faster, because nothing is drawn on the screen"
+      - "It's the only way to save a command's output into a file"
+      - "It lets the next command run with administrator rights"
+    answer: 0
+    explanation: "Each tool does one thing (sort, count, filter); pipes combine them. That's the Unix philosophy."

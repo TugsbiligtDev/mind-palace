@@ -1,0 +1,202 @@
+steps:
+  - kind: explain
+    title: Start a repository
+    body: |
+      `git init` turns the current folder into a Git repository: it creates the hidden `.git` folder where history will be kept. Your files aren't touched, and nothing is tracked yet.
+
+      ```
+      learner@inkwell:~/inkwell/site$ git init
+      Initialized empty Git repository in /home/learner/inkwell/site/.git/
+      ```
+
+      Run it once, in the project's top folder. (Running it in your home folder by mistake would make your *whole* home folder one giant repository. If that happens, delete the stray `.git` folder.)
+
+  - kind: shell
+    title: Put the website under Git
+    fixture: [backoffice, git-identity]
+    setup: cd ~/inkwell/site
+    body: |
+      You're in Inkwell's website folder. Make it a Git repository, then run `git status` to see what Git thinks of it.
+    tests:
+      - ls -a
+      - git status --short
+    solution: git init
+    hint: "One command, run in this folder: `git init`."
+
+  - kind: explain
+    title: Three places
+    body: |
+      Git keeps your work in three places, and moving work between them is the whole daily routine:
+
+      ```
+      working folder  ──git add──▶  staging area  ──git commit──▶  repository
+      (your files,                  (what the next                 (the history:
+       as you edit them)             commit will contain)           saved snapshots)
+      ```
+
+      - The **working folder** is just your files.
+      - The **staging area** (also called the *index*) is a draft of the next commit. `git add file` puts the file's current state there.
+      - **`git commit`** takes everything in the staging area and saves it as a new snapshot in the history.
+
+      Why the middle step? So **you** choose what goes into each commit: you might have changed five files but want to save only the two that belong together.
+
+  - kind: explain
+    title: git status, your dashboard
+    body: |
+      `git status` tells you what's where. Run it constantly. It sorts files into groups:
+
+      - **Untracked files**: new files Git has never been told about (red).
+      - **Changes not staged for commit**: tracked files you've changed since the last commit but haven't added (red).
+      - **Changes to be committed**: what's staged, ready for the next commit (green).
+      - **nothing to commit, working tree clean**: everything is saved.
+
+      It also tells you, in brackets, the command for each next step. Read those hints: they're good.
+
+  - kind: explain
+    title: add and commit
+    body: |
+      ```
+      git add index.html style.css        # stage these two files
+      git add images/                     # stage a whole folder
+      git add .                           # stage everything in this folder and below
+      git commit -m "Add the home page"   # save the snapshot, with a message
+      ```
+
+      `git commit -m "message"` gives the message on the command line. Without `-m`, Git opens your editor (nano) to write it. After the commit, `git status` says *working tree clean* and `git log` shows your new commit.
+
+  - kind: shell
+    title: Your first commit
+    fixture: [backoffice, git-identity]
+    setup: |
+      cd ~/inkwell/site
+      git init -q
+    body: |
+      The website folder is a repository now, but nothing is saved in it yet.
+
+      1. Run `git status` and read it.
+      2. Stage **all** the website's files.
+      3. Commit them with the message `Add the website`.
+      4. Run `git status` and `git log` to see the result.
+    tests:
+      - git log --format=%s
+      - git ls-files
+      - git status --short
+    solution: |
+      git add .
+      git commit -m "Add the website"
+    reject:
+      - git add .
+    hint: "`git add .` stages everything here, then `git commit -m \"Add the website\"`. The message must match exactly, capital A included."
+
+  - kind: explain
+    title: What changed? git diff
+    body: |
+      Before committing, look at exactly what you changed:
+
+      | Command | Compares |
+      |---|---|
+      | `git diff` | your files with the staging area: changes **not yet staged** |
+      | `git diff --staged` | the staging area with the last commit: what **will be committed** |
+
+      A diff shows removed lines with `-` (red) and added lines with `+` (green), with a few unchanged lines around them for context:
+
+      ```
+      @@ -1 +1 @@
+      -h1 { color: navy; }
+      +h1 { color: darkgreen; }
+      ```
+
+      A changed line shows up as one line removed and one added. Long diffs open in the pager: **q** to leave.
+
+  - kind: shell
+    title: Commit only what belongs together
+    fixture: [backoffice, git-identity]
+    setup: |
+      cd ~/inkwell/site
+      git init -q && git add . && git commit -qm "Add the website"
+      printf 'h1 { color: darkgreen; }\n' > style.css
+      printf '<!DOCTYPE html>\n<title>Inkwell Books</title>\n<h1>Inkwell Books</h1>\n<p>Opening hours: TODO</p>\n' > index.html
+    body: |
+      Two files have changed since the last commit. Use `git status` and `git diff` to see how.
+
+      The colour change in `style.css` is finished; the half-written opening hours in `index.html` aren't. Commit **only `style.css`**, with the message `Make the heading dark green`. Leave `index.html` changed but uncommitted.
+    tests:
+      - git log --format=%s
+      - git status --short
+      - git show HEAD --stat --format=%s | tail -n 2
+    solution: |
+      git add style.css
+      git commit -m "Make the heading dark green"
+    reject:
+      - git commit -am "Make the heading dark green"
+      - |
+        git add .
+        git commit -m "Make the heading dark green"
+    hint: "Stage just the one file: `git add style.css`. Check with `git diff --staged`, then commit with the message."
+
+  - kind: explain
+    title: Writing good commit messages
+    body: |
+      In six months, the message is all anyone (including you) will have. Good ones:
+
+      - **Say what the commit does**, as a short command: *Fix the Home link on the about page*, not *fixed stuff*.
+      - **Keep the first line short** (about 50 characters). It's what `git log --oneline` shows.
+      - **Explain why** if it isn't obvious, in a paragraph after a blank line (that's easiest without `-m`, in the editor).
+      - **One change per commit.** "Fix link and redesign header and update prices" should be three commits.
+
+  - kind: choice
+    title: Pick the best message
+    body: Which is the best message for a commit that corrects Dune's price on the book page?
+    options:
+      - "`Correct the price of Dune on its book page`"
+      - "`changes`"
+      - "`Fixed some stuff in the books folder and other places`"
+      - "`dune.html`"
+    answer: 0
+    explanation: "It says exactly what the commit does, briefly, as a command. The others say nothing a reader could use."
+
+  - kind: explain
+    title: Reading history
+    body: |
+      | Command | Shows |
+      |---|---|
+      | `git log` | every commit: ID, author, date, message (newest first) |
+      | `git log --oneline` | one line each: short ID and first line of the message |
+      | `git log -3` | only the last 3 |
+      | `git log --oneline --graph` | adds a drawing of how branches split and join (Module 17) |
+      | `git show` | the latest commit **and its diff** (`git show 7d2afa2` for another one) |
+
+  - kind: explain
+    title: "⚠️ Classic mistakes"
+    body: |
+      - **`git add .` without looking.** It stages *everything*, including that 200 MB backup, the `.env` with a password, or `.DS_Store` junk. Run `git status` first, every time. (Module 16 teaches Git to ignore such files.)
+      - **Giant commits.** A week of work in one commit can't be understood or partly undone. Commit each finished step.
+      - **Vague messages.** "update", "wip", "asdf". See above.
+
+  - kind: mac
+    title: The loop on your Mac
+    body: |
+      Make a practice repository on your Mac and go round the loop twice.
+    commands: |
+      mkdir -p ~/git-practice && cd ~/git-practice
+      git init
+      echo "# Git practice" > README.md
+      git status
+      git add README.md
+      git commit -m "Add a README"
+      echo "Learning the core loop." >> README.md
+      git diff
+      git commit -am "Describe the project"
+      git log --oneline
+  - kind: why
+    body: |
+      `status`, `add`, `commit`, `diff`, `log`: this loop is 90% of everyday Git. Doing it in small, well-described steps gives you a history you can read, search and undo, which is the whole point of version control.
+
+  - kind: recap
+    body: |
+      - `git init` makes a repository (a `.git` folder) in the current folder.
+      - Working folder → `git add` → **staging area** → `git commit -m "…"` → history.
+      - `git status` often; it says what's untracked, changed, staged, and what to do next.
+      - `git diff` = unstaged changes; `git diff --staged` = what will be committed.
+      - `git log`, `--oneline`, `-3`, `--graph`; `git show` for one commit with its diff.
+      - Short, specific messages; one change per commit; check `git status` before `git add .`.

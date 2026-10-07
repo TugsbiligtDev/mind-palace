@@ -1,0 +1,48 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "In the prompt `priya@shop-server:~$`, what does `shop-server` tell you?"
+    options:
+      - "The name of the computer you're on"
+      - "The folder you're working in right now"
+      - "The username you logged in with today"
+      - "The shell that's running your commands"
+    answer: 0
+    explanation: "The pattern is user@hostname:folder. `priya` is the user, `shop-server` is the computer, `~` is the folder (home)."
+  - type: mcq
+    prompt: "In `ls -a notes`, which part is the **option**?"
+    options:
+      - "`-a`"
+      - "`ls`"
+      - "`notes`"
+      - "`ls -a`"
+    answer: 0
+    explanation: "Options start with a dash and change how the command works. `ls` is the command, `notes` is the argument (what to list)."
+  - type: predict
+    prompt: What does this print?
+    code: echo Inkwell   Books
+    options:
+      - "Inkwell Books"
+      - "Inkwell   Books"
+      - "Inkwell"
+      - "echo Inkwell Books"
+    answer: 0
+    explanation: "The shell splits the line on spaces into separate arguments, however many spaces there are. `echo` then prints its arguments with one space between each."
+  - type: mcq
+    prompt: "A command has been running for a minute and you want your prompt back. What do you press?"
+    options:
+      - "Control + C"
+      - "Command + Q"
+      - "Command + W"
+      - "Escape twice"
+    answer: 0
+    explanation: "Ctrl+C cancels the running command. On a Mac it's the Control key; Command+Q would quit the whole Terminal app."
+  - type: mcq
+    prompt: "You run `mkdir old orders` hoping for one folder named `old orders`. What happens?"
+    options:
+      - "Two folders are made: `old` and `orders`"
+      - "One folder is made, named `old orders`"
+      - "One folder is made, named `old_orders`"
+      - "Nothing is made, and an error is printed"
+    answer: 0
+    explanation: "Spaces separate arguments, so `mkdir` gets two names. Quote it: `mkdir \"old orders\"`."

@@ -1,0 +1,50 @@
+pass: 4
+questions:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      CITY=Lisbon
+      echo "Hello $CITY" 'and $CITY'
+    options:
+      - "Hello Lisbon and $CITY"
+      - "Hello Lisbon and Lisbon"
+      - "Hello $CITY and $CITY"
+      - "Hello and"
+    answer: 0
+    explanation: "Double quotes let `$CITY` expand; single quotes keep everything literal."
+  - type: mcq
+    prompt: "What is `$PATH` for?"
+    options:
+      - "It lists the folders the shell searches for programs, in order"
+      - "It holds the full path of the folder you're currently working in"
+      - "It stores the paths of the files you've opened most recently"
+      - "It's the path to your home folder, the same as `~`"
+    answer: 0
+    explanation: "`$PATH` is a colon-separated list of folders. The current folder is `$PWD`; home is `$HOME`."
+  - type: mcq
+    prompt: "You installed a tool into `~/.local/bin` and it says `command not found`. Which line fixes it without breaking other commands?"
+    options:
+      - "`export PATH=\"$HOME/.local/bin:$PATH\"`"
+      - "`export PATH=\"$HOME/.local/bin\"`"
+      - "`PATH = \"$HOME/.local/bin:$PATH\"`"
+      - "`export $PATH=\"$HOME/.local/bin:$PATH\"`"
+    answer: 0
+    explanation: "Add the new folder and keep the old list after a colon. The second option replaces PATH entirely, so `ls`, `cat` and nearly everything else stop being found."
+  - type: mcq
+    prompt: "You added an alias to `~/.zshrc` but it doesn't work in the terminal you're using. What's the quickest fix?"
+    options:
+      - "`source ~/.zshrc`"
+      - "`chmod +x ~/.zshrc`"
+      - "Restart the Mac"
+      - "`sudo zsh ~/.zshrc`"
+    answer: 0
+    explanation: "The file is read when a terminal starts. `source` runs it again in the current one (opening a new window works too)."
+  - type: mcq
+    prompt: "On which computer does `~/.bashrc` usually play the role that `~/.zshrc` plays on your Mac?"
+    options:
+      - "A Linux server running bash"
+      - "Any Mac made before the year 2010"
+      - "Windows computers using PowerShell"
+      - "GitHub's website, for your profile"
+    answer: 0
+    explanation: "Each shell has its own startup file: zsh reads `~/.zshrc`, bash reads `~/.bashrc`."

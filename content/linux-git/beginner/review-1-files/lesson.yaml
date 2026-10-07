@@ -1,0 +1,115 @@
+steps:
+  - kind: explain
+    title: Briefs, not instructions
+    body: |
+      Inspector Bold hands you a page of notes from Inkwell. They say *what* needs doing, not which commands to use. That part is yours.
+
+      This review covers Modules 1 to 7. Before each brief, look around first (`pwd`, `ls`, `ls -a`, `cat`), then act, then check your work. The step checks itself after every command. If you're stuck, **Check my work** explains what's still different; after a miss there's a hint, and after three you can see the commands. Try hard before you look. **Reset** starts a brief over.
+
+  - kind: shell
+    title: "1. Something hidden in the old folder"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      mkdir -p old/.trash
+      printf 'Refunds for orders 1044 and 1046 approved.\nDo not log these.\n  - M.\n' > old/.trash/refund-note.txt
+    body: |
+      > *Moth says someone tidied the `old` folder last week, "in a hurry". Find out what they tried to hide, and print it.*
+    output: true
+    solution: cat old/.trash/refund-note.txt
+    hint: "Plain `ls old` skips names that start with a dot. List it with the option for **a**ll files, then go one folder deeper."
+
+  - kind: shell
+    title: "2. Orders by year"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      printf 'order_id,date,customer,book,price\n1001,2025-11-02,Liam Chen,Dune,9.99\n' > orders/2025-11.csv
+      printf 'order_id,date,customer,book,price\n1020,2025-12-20,Priya Shah,Circe,12.00\n' > orders/2025-12.csv
+    body: |
+      > *The orders folder keeps growing. Inside `orders`, make a folder per year, `2025` and `2026`, and put each month's file in its year's folder. Nothing else should be left loose in `orders`.*
+    tests:
+      - find orders | sort
+    solution: |
+      mkdir orders/2025 orders/2026
+      mv orders/2025-*.csv orders/2025/
+      mv orders/2026-*.csv orders/2026/
+    reject:
+      - |
+        mkdir orders/2025 orders/2026
+        mv orders/2025-*.csv orders/2025/
+    hint: "Make both folders with one `mkdir`. Then one `mv` per year with a wildcard: every name that starts with `2025-` and ends with `.csv`."
+
+  - kind: shell
+    title: "3. Names for the web"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell/site/images
+      rm logo.png
+      printf 'PNG' > 'Logo FINAL.png'
+      printf 'JPG' > 'cover dune (1).jpg'
+      cd ~/inkwell
+    body: |
+      > *The new website files have names that will break links. In `site/images`, rename `Logo FINAL.png` to `logo.png` and `cover dune (1).jpg` to `cover-dune.jpg`.*
+    tests:
+      - ls site/images
+    solution: |
+      mv "site/images/Logo FINAL.png" site/images/logo.png
+      mv "site/images/cover dune (1).jpg" site/images/cover-dune.jpg
+    hint: "Both names contain spaces (and one has brackets), so quote each old name, path included. Or `cd` into the folder and use Tab to complete them."
+
+  - kind: shell
+    title: "4. A fresh backup"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      mkdir -p site-backup
+      printf '<h1>Inkwell (2024)</h1>\n' > site-backup/index.html
+      printf 'old\n' > site-backup/old-page.html
+    body: |
+      > *Priya's `site-backup` folder is from 2024 and nobody trusts it. Replace it: afterwards, `site-backup` must be an exact copy of today's `site` folder, and nothing from the old backup may be left in it.*
+    tests:
+      - find site-backup | sort
+      - cat site-backup/index.html
+    solution: |
+      rm -r site-backup
+      cp -r site site-backup
+    reject:
+      - cp -r site/* site-backup/
+    hint: "Copying on top of the old backup would leave `old-page.html` behind. Delete the old folder first (a folder needs `-r`), then copy `site` with `-r`."
+
+  - kind: shell
+    title: "5. One more thing to do"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      > *Add this as the last line of Inkwell's to-do list, `notes/todo.txt`:*
+      > ```
+      > - ask Marcus who approved refunds 1044 and 1046
+      > ```
+    tests:
+      - cat notes/todo.txt
+    solution: echo '- ask Marcus who approved refunds 1044 and 1046' >> notes/todo.txt
+    hint: "Open the file in nano, go below the last line, type the line exactly, then Ctrl+O, Return, Ctrl+X."
+
+  - kind: choice
+    title: "6. Which command is dangerous?"
+    body: |
+      > *Kenji wants to delete only the backup files ending in `.bak` in the current folder. He's choosing between these. Which one could delete far more than he wants?*
+    options:
+      - "`rm * .bak`"
+      - "`rm *.bak`"
+      - "`rm -i *.bak`"
+      - "`ls *.bak`, then `rm *.bak`"
+    answer: 0
+    explanation: "The space turns it into two arguments: `*` (every file in the folder) and `.bak`. Everything is deleted. The others only touch names ending in `.bak`, and the last two check first."
+
+  - kind: recap
+    body: |
+      Case notes so far:
+
+      - A hidden note in `old/.trash` says refunds for orders **1044** and **1046** were approved and "not logged", signed **M.**
+      - The September meeting notes already mentioned two refunds nobody remembers approving.
+      - The website folder hides a `.env` file with the shop's payment key in it.
+
+      Inspector Bold: *"Initials aren't evidence. Logs are. Next, you learn to search."*

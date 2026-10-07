@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "`git fetch` prints `+ 4f2a1c0...9a1efb0 main -> origin/main (forced update)`. What does it mean?"
+    options:
+      - "GitHub's main was rewritten: the new tip doesn't contain the old one, so someone force-pushed"
+      - "Your local main was updated automatically to match GitHub"
+      - "The fetch failed and Git had to force the connection"
+      - "A new branch called main was created on GitHub"
+    answer: 0
+    explanation: "A normal update is a fast-forward (`old..new`). A `+` and three dots mean the remote branch jumped to a commit that doesn't follow the old one."
+  - type: mcq
+    prompt: "GitHub's main lost two commits that your clone still has. Why does a plain `git push` fix it, without force?"
+    options:
+      - "GitHub's main is now an ancestor of your main, so the push is a simple fast-forward"
+      - "Git automatically force-pushes when it detects a forced update"
+      - "Plain pushes always overwrite the remote branch completely"
+      - "GitHub restores lost commits whenever someone pushes to the branch"
+    answer: 0
+    explanation: "Your main is the old main plus nothing new: GitHub's current tip is in its history, so pushing just moves GitHub's pointer forward."
+  - type: mcq
+    prompt: "Which command finds the commits that added or removed the text `api_key`?"
+    options:
+      - "`git log -S api_key`"
+      - "`git log --grep=api_key`"
+      - "`git blame api_key`"
+      - "`git show api_key`"
+    answer: 0
+    explanation: "`-S` (the pickaxe) looks at the changes. `--grep` only searches commit messages."
+  - type: mcq
+    prompt: "How do you delete the branch `old-idea` on GitHub (not locally)?"
+    options:
+      - "`git push origin --delete old-idea`"
+      - "`git branch -d old-idea`"
+      - "`git fetch --prune old-idea`"
+      - "`git reset --hard origin/old-idea`"
+    answer: 0
+    explanation: "Pushing a deletion removes the branch on the remote. `git branch -d` only deletes your local branch."
+  - type: mcq
+    prompt: "Why was `git revert`, not `git reset`, the right way to remove the analytics commit from main?"
+    options:
+      - "main is shared; revert adds a commit everyone can pull, reset would need a force-push"
+      - "reset can only undo the very last commit, and this one was older"
+      - "revert also deletes the commit from everyone's computers"
+      - "reset doesn't work on commits made by another person"
+    answer: 0
+    explanation: "Rewriting a shared branch breaks everyone else's copy. Revert is an ordinary new commit."

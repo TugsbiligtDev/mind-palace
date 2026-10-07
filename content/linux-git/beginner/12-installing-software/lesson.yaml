@@ -1,0 +1,125 @@
+steps:
+  - kind: explain
+    title: What a package manager does
+    body: |
+      Installing a command-line tool by hand means finding the right download, putting it in the right folder, adding that folder to your PATH, and doing it all again for every update. A **package manager** does it with one command:
+
+      - it **downloads** the right version for your computer,
+      - installs everything the tool needs to run (its **dependencies**),
+      - puts it somewhere already on your PATH,
+      - and **updates** or **removes** it cleanly later.
+
+      | System | Package manager |
+      |---|---|
+      | macOS | **Homebrew** (`brew`), installed by you |
+      | Ubuntu, Debian | **apt**, built in |
+      | Fedora, Red Hat | **dnf**, built in |
+
+  - kind: explain
+    title: Installing Homebrew
+    body: |
+      Homebrew isn't part of macOS. Its official install command is on its homepage, [brew.sh](https://brew.sh):
+
+      ```
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      ```
+
+      Yes, this is exactly the "download a script and run it" pattern Module 3 warned about. The difference is that you **check the source**: you copied it from brew.sh itself, the script lives in Homebrew's official repository, and millions of people use it. Never run such a line from an unknown website or a stranger's message.
+
+      The installer asks for your Mac password (it uses `sudo` once), may install Apple's *Command Line Tools* (which include Git), and at the end prints **Next steps**: two commands to add Homebrew to your PATH. Run them; don't skip that part.
+
+  - kind: explain
+    title: Where Homebrew lives
+    body: |
+      On a Mac with an Apple chip (M1, M2 and later), Homebrew installs everything under **`/opt/homebrew`**, with programs in `/opt/homebrew/bin`. (On older Intel Macs it was `/usr/local`.)
+
+      That folder isn't on the PATH by default, which is why the installer's "Next steps" add this line to `~/.zprofile` (a zsh startup file read when you log in):
+
+      ```
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+      ```
+
+      It sets `PATH` and a few Homebrew variables. If `brew` says *command not found* right after installing, this line is missing: it's the PATH problem from Module 11.
+
+  - kind: explain
+    title: Everyday brew
+    body: |
+      | Command | Does |
+      |---|---|
+      | `brew install tldr` | install a tool |
+      | `brew list` | what you've installed |
+      | `brew search python` | find a package's exact name |
+      | `brew info git` | version, description, whether it's installed |
+      | `brew upgrade` | update everything you've installed (`brew update` refreshes the list of what's available; `upgrade` runs it for you) |
+      | `brew uninstall tldr` | remove a tool |
+      | `brew doctor` | check your Homebrew setup and explain any problems |
+
+      Two kinds of package:
+
+      - **Formulae**: command-line tools (`git`, `tree`, `tldr`). `brew install tree`.
+      - **Casks**: Mac apps with windows (VS Code, Firefox). `brew install --cask visual-studio-code`. They end up in `/Applications` like any app.
+
+  - kind: choice
+    title: Formula or cask?
+    body: You want to install **Visual Studio Code**, the editor with a window, using Homebrew. Which command?
+    options:
+      - "`brew install --cask visual-studio-code`"
+      - "`brew install visual-studio-code --formula`"
+      - "`sudo brew install visual-studio-code`"
+      - "`brew upgrade visual-studio-code`"
+    answer: 0
+    explanation: "Apps with windows are casks. And never use `sudo` with Homebrew: it's designed to install as your own user, and sudo leaves root-owned files that break later installs."
+
+  - kind: shell
+    title: No brew on Linux
+    body: |
+      The practice computer is an Ubuntu server, so it doesn't have Homebrew. Type `brew` to see what happens, then try `which brew` and `which git`.
+
+      Linux servers use their own package manager, **apt**. Nothing is graded here.
+
+  - kind: info
+    title: "🔹 apt on Linux"
+    body: |
+      On Ubuntu and Debian, software comes from **apt**, which needs `sudo` because it installs for the whole system:
+
+      ```
+      sudo apt update            # refresh the list of available packages
+      sudo apt install tree      # install
+      sudo apt upgrade           # update everything
+      sudo apt remove tree       # remove
+      ```
+
+      Module 22 uses apt on a real Ubuntu machine. The ideas are the same as Homebrew's; the main differences are `sudo` and running `apt update` first.
+
+  - kind: mac
+    title: Install Homebrew and your first tools
+    body: |
+      1. Go to [brew.sh](https://brew.sh), copy the install command from there, paste it in Terminal and press Return. Type your password when asked (nothing appears while you type).
+      2. When it finishes, **read the "Next steps"** and run the two commands it shows.
+      3. Open a new Terminal window and check `brew --version` and `brew doctor` ("Your system is ready to brew" is what you want).
+      4. Install three tools this course uses: `tree`, `tldr` and the current `git`.
+    commands: |
+      brew --version
+      brew doctor
+      brew install tree tldr git
+      brew list
+      tldr tar
+  - kind: mac
+    title: Keep it up to date
+    body: |
+      Once in a while (every few weeks), update everything you installed. `brew cleanup` removes old downloads afterwards.
+    commands: |
+      brew upgrade
+      brew cleanup
+  - kind: why
+    body: |
+      Nearly every developer tool you'll meet (Git, Python, Node, databases, the GitHub CLI) is one `brew install` away on a Mac and one `apt install` away on a server. Knowing how the package manager and PATH fit together means installing never turns into a mystery.
+
+  - kind: recap
+    body: |
+      - A **package manager** downloads, installs, updates and removes software, dependencies included.
+      - Install **Homebrew** with the official command from brew.sh, then run the "Next steps" it prints.
+      - Apple Silicon: `/opt/homebrew`, put on the PATH by `brew shellenv` in `~/.zprofile`.
+      - `brew install`, `list`, `search`, `info`, `upgrade`, `uninstall`, `doctor`. Never `sudo brew`.
+      - **Formulae** are command-line tools; **casks** are apps (`--cask`).
+      - 🔹 Linux: `sudo apt update`, `sudo apt install name`.

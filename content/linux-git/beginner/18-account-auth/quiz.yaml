@@ -1,0 +1,47 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: Which file do you give to GitHub?
+    options:
+      - "`~/.ssh/id_ed25519.pub`"
+      - "`~/.ssh/id_ed25519`"
+      - "`~/.ssh/known_hosts.pub`"
+      - "`~/.ssh/authorized_keys`"
+    answer: 0
+    explanation: "The `.pub` file is the public key, safe to share. The file without `.pub` is the private key, which never leaves your computer."
+  - type: mcq
+    prompt: "Which repository address uses SSH?"
+    options:
+      - "`git@github.com:inkwell/site.git`"
+      - "`https://github.com/inkwell/site.git`"
+      - "`https://inkwell.github.io/site`"
+      - "`github.com/inkwell/site`"
+    answer: 0
+    explanation: "SSH addresses look like `git@github.com:owner/repo.git`. The HTTPS one starts with `https://`."
+  - type: mcq
+    prompt: "Why can't you use your GitHub password for `git push` over HTTPS?"
+    options:
+      - "GitHub stopped accepting passwords for Git; it needs a token or key"
+      - "Passwords only work for Git over SSH addresses, never over HTTPS ones"
+      - "Git encrypts your password in a format that GitHub's servers can't read"
+      - "You can, but only after turning off two-factor authentication first"
+    answer: 0
+    explanation: "Tokens (managed for you by `gh` or the Keychain) or SSH keys replaced passwords for Git operations."
+  - type: mcq
+    prompt: "The first `ssh -T git@github.com` asks whether to trust a host key fingerprint. What should you do?"
+    options:
+      - "Compare it with GitHub's published fingerprints, then type yes"
+      - "Type no, because an unknown key always means someone is attacking"
+      - "Delete your ~/.ssh folder and generate a completely new key"
+      - "Type your GitHub password, since that's what it's asking for"
+    answer: 0
+    explanation: "ssh is checking that it's really talking to GitHub. Comparing with GitHub's published fingerprints protects you from an impostor; after `yes`, it's remembered in `~/.ssh/known_hosts`."
+  - type: mcq
+    prompt: "What does two-factor authentication add to your GitHub login?"
+    options:
+      - "A second proof, like an app code or a passkey, after your password"
+      - "A second, longer password that you type in after the first one"
+      - "A copy of your account kept on a second server, in case one fails"
+      - "Permission to be signed in on two computers at the same time"
+    answer: 0
+    explanation: "Someone who steals your password still can't sign in without the second factor."

@@ -1,0 +1,54 @@
+pass: 4
+questions:
+  - type: mcq
+    prompt: "What does `git add notes.txt` do?"
+    options:
+      - "Puts the file's current version in the staging area"
+      - "Saves notes.txt into the history straight away, as a commit"
+      - "Creates a new, empty file called notes.txt in the folder"
+      - "Uploads notes.txt to the GitHub copy of the repository"
+    answer: 0
+    explanation: "`add` stages; `commit` saves what's staged into the history. Nothing goes online until you push (Module 19)."
+  - type: mcq
+    prompt: "You changed `index.html` and staged it, then changed it again. Which command shows the **second** change?"
+    options:
+      - "`git diff`"
+      - "`git diff --staged`"
+      - "`git log`"
+      - "`git status --short`"
+    answer: 0
+    explanation: "`git diff` compares your files with the staging area, so it shows changes made after the `add`. `--staged` would show the first change."
+  - type: predict
+    prompt: What does this print?
+    code: |
+      git config --global user.name "Ada" && git config --global user.email ada@example.com
+      mkdir -p /tmp/p && cd /tmp/p && git init -q -b main
+      echo hi > a.txt
+      echo yo > b.txt
+      git add a.txt
+      git status --short
+    options:
+      - "A  a.txt\n?? b.txt"
+      - "A  a.txt\nA  b.txt"
+      - "?? a.txt\n?? b.txt"
+      - "A  a.txt"
+    answer: 0
+    explanation: "In the short format, `A` means added to the staging area and `??` means untracked. Only `a.txt` was added."
+  - type: mcq
+    prompt: "Which is the main risk of running `git add .` without checking first?"
+    options:
+      - "Staging files that don't belong in history, like passwords or backups"
+      - "It deletes the files in the folder that you didn't stage before"
+      - "It commits everything immediately, without asking for a message"
+      - "It only works in the top folder, and fails anywhere deeper"
+    answer: 0
+    explanation: "`git add .` stages everything here and below. Run `git status` first, and use `.gitignore` for files that never belong (Module 16)."
+  - type: mcq
+    prompt: "Which command lists the history one line per commit?"
+    options:
+      - "`git log --oneline`"
+      - "`git status --log`"
+      - "`git show --short`"
+      - "`git diff --history`"
+    answer: 0
+    explanation: "`--oneline` shows the short ID and the first line of each message."

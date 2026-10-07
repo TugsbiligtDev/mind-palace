@@ -1,0 +1,4 @@
+title: Redirection & Pipes
+module: 8
+summary: "Where a command's output goes: standard input, output and error; saving output with > and >>, feeding a file in with <, catching errors with 2>; chaining small tools with the pipe |; and the classic mistake of > wiping a file."
+minutes: 35

@@ -1,0 +1,5 @@
+title: "Rewritten history"
+module: 37
+kind: review
+summary: "Six briefs on the website's repository: find the commit that leaks visitors' cookies, put back commits a force-push removed from GitHub, undo the leak safely, delete the intruder's branch, tag the clean version, and explain the choices. Uses Modules 33 to 37."
+minutes: 50

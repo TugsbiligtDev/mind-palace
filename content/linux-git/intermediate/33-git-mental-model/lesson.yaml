@@ -1,0 +1,161 @@
+steps:
+  - kind: explain
+    title: Why a model?
+    body: |
+      Inspector Bold: *"Marcus had commit access to the website. Before we go hunting in its history, you need to see history the way Git does. Then nothing it does will surprise you."*
+
+      Every Git command in the next lessons (reset, rebase, cherry-pick, reflog) only *moves pointers* around a graph of snapshots. Once you can picture that graph, they stop being magic spells and become obvious. This lesson is the picture.
+
+  - kind: explain
+    title: Commits are snapshots with parents
+    body: |
+      A **commit** is not a list of changes. It's a complete **snapshot** of every tracked file, plus:
+
+      - its **parent** commit(s): usually one; a merge commit has two; the very first has none;
+      - the author, the committer, their dates, and the message.
+
+      Git names each commit by a **hash** of all of that (SHA-1, 40 hex characters; `7d2afa2` is just the start). Change anything (one letter of the message, the date, a parent) and the hash changes. That's why a commit can never be edited, only **replaced** by a new one, and why history is tamper-evident.
+
+      Linked by their parents, commits form a **graph** that only points backwards:
+
+      ```
+      be23876 ← 7115b30 ← 46280b5 ← 7d2afa2 ← 1594832 ← 9a1efb0 ← b81b3f0 ← …
+      ```
+
+      `git log --oneline --graph --all` draws it.
+
+  - kind: shell
+    title: See the whole graph
+    fixture: [git-identity, website-repo, website-more]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      Draw the website's **entire** history as a graph, one line per commit, including every branch and tag.
+    output: true
+    solution: git log --oneline --graph --all
+    reject:
+      - git log --oneline --graph
+    hint: "`git log` with three options: `--oneline`, `--graph`, `--all`."
+
+  - kind: shell
+    title: Inside a commit
+    fixture: [git-identity, website-repo, website-more]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      Git stores commits as small text objects. Print the **raw contents of the commit `HEAD`** points at with `git cat-file -p`. You'll see its tree (the snapshot), its parent, the author and committer with their dates (seconds since 1970), and the message.
+    output: true
+    solution: git cat-file -p HEAD
+    hint: "`git cat-file -p HEAD`. (`-t` would print its type, `commit`.)"
+
+  - kind: explain
+    title: Branches and tags are pointers
+    body: |
+      A **branch** isn't a container of commits. It's a **name pointing at one commit**, stored as a tiny file:
+
+      ```
+      learner@inkwell:~/inkwell/site-repo$ cat .git/refs/heads/main
+      2721cea…
+      ```
+
+      When you commit on `main`, Git makes the new commit (whose parent is the old tip) and **moves the pointer** to it. Creating a branch just writes another 41-byte file; deleting it removes the file, not the commits (they stay, unnamed, for a while: Module 34 gets them back).
+
+      A **tag** is a pointer that doesn't move: `v1.0` marks a release forever. An *annotated* tag (Module 36) also has its own message and author.
+
+      **HEAD** says where *you* are. Normally it points at a branch (`cat .git/HEAD` → `ref: refs/heads/main`), and that branch points at a commit.
+
+  - kind: shell
+    title: A branch is just a name
+    fixture: [git-identity, website-repo, website-more]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      Without switching to it, create a branch **`about-page`** pointing at the commit **"Add the about page"** (find its short hash in `git log --oneline`). Then look at the file Git made for it in `.git/refs/heads/`.
+    tests:
+      - git rev-parse about-page
+      - git branch --show-current
+      - cat .git/refs/heads/about-page
+    solution: |
+      git log --oneline
+      git branch about-page 7115b30
+      cat .git/refs/heads/about-page
+    hint: "`git branch about-page 7115b30` creates the name at that commit (`git branch NAME` alone would use the current commit). `git switch` isn't needed."
+
+  - kind: explain
+    title: Detached HEAD
+    body: |
+      You can also point HEAD **straight at a commit** instead of at a branch:
+
+      ```
+      learner@inkwell:~/inkwell/site-repo$ git switch --detach 46280b5
+      HEAD is now at 46280b5 Fix the Home link on the about page
+      ```
+
+      That's **detached HEAD**: you're looking at an old snapshot, with no branch attached. Looking around is perfectly safe. But if you **commit** here, the new commit belongs to no branch; switch away, and nothing points to it. Git warns you, and the commit quietly disappears from `git log` (it's still recoverable for a while, through the reflog).
+
+      To keep work done in detached HEAD, give it a branch **before** you leave: `git switch -c new-name`. (`git checkout <hash>`, the older command, detaches HEAD the same way.)
+
+  - kind: shell
+    title: An experiment from the past
+    fixture: [git-identity, website-repo, website-more]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      1. Detach HEAD at **`46280b5`** ("Fix the Home link on the about page").
+      2. There, change the slogan in `index.html` from `Second-hand books, posted worldwide.` to `Old books, new readers.` and commit it with the message `Try a new slogan`.
+      3. Keep that commit on a new branch called **`slogan`**, then go back to **`main`**.
+    tests:
+      - git log -2 --format=%s slogan
+      - git branch --show-current
+      - git show slogan:index.html | grep '<p>'
+    solution: |
+      git switch --detach 46280b5
+      sed -i 's/Second-hand books, posted worldwide./Old books, new readers./' index.html
+      git commit -am "Try a new slogan"
+      git switch -c slogan
+      git switch main
+    hint: "`git switch --detach 46280b5`, edit `index.html`, `git commit -am \"Try a new slogan\"`, then `git switch -c slogan` (this names the commit you're on), and `git switch main`."
+
+  - kind: explain
+    title: Remote-tracking branches
+    body: |
+      In a clone, `git branch -a` also lists names like **`origin/main`**. These are **remote-tracking branches**: your repository's memory of where the branches on `origin` pointed **the last time you talked to it**. They're read-only pointers, moved only by `git fetch` (and `pull`, which fetches).
+
+      - `main` is *your* branch; `origin/main` is your last news of GitHub's `main`.
+      - "Your branch is ahead of 'origin/main' by 2 commits" compares exactly those two pointers.
+      - They can be out of date: someone may have pushed since your last fetch.
+
+  - kind: shell
+    title: Where is GitHub's main?
+    fixture: [git-identity, website-repo, github-account, github-site, site-clone]
+    setup: cd ~/site
+    body: |
+      In your clone `~/site`, list **all** branches, local and remote-tracking, each with the commit it points at and its message (`git branch` has an option for each of those).
+    output: true
+    solution: git branch -av
+    hint: "`git branch -a` lists all; add `-v` for the commit and message: `git branch -av`."
+
+  - kind: info
+    title: "🔹 SHA-1 today, SHA-256 tomorrow"
+    body: |
+      Git's hashes are SHA-1, designed in the 1990s and now known to be breakable with enough effort (Git added defences years ago). Git already supports **SHA-256** repositories (`git init --object-format=sha256`), with 64-character hashes, and **Git 3.0 makes SHA-256 the default for new repositories**. Day to day nothing changes for you: hashes get longer, and short hashes still work.
+
+  - kind: mac
+    title: Look inside a real repository
+    body: |
+      On your Mac, open any repository (your notes-dotfiles from the Beginner capstone) and look at the plumbing: the pointers are really just small files.
+    commands: |
+      cd ~/notes-dotfiles
+      cat .git/HEAD
+      cat .git/refs/heads/main
+      git cat-file -t HEAD
+      git cat-file -p HEAD
+      git log --oneline --graph --all
+  - kind: why
+    body: |
+      With this picture (immutable snapshots, a graph of parents, branches and tags as movable or fixed pointers, HEAD as "you are here") every powerful Git command reduces to "which pointer moves where, and which new commits are made". That's what makes undoing, rebasing and recovering safe instead of scary.
+
+  - kind: recap
+    body: |
+      - A **commit** = a full snapshot + parent(s) + author/committer + message, named by its **hash**; commits never change.
+      - Commits form a **graph** pointing to their parents: `git log --oneline --graph --all`; `git cat-file -p HEAD` shows one.
+      - A **branch** is a movable pointer (a file in `.git/refs/heads`); a **tag** a fixed one; **HEAD** says where you are.
+      - **Detached HEAD**: HEAD points straight at a commit. Safe to look; to keep new commits, `git switch -c name`.
+      - `origin/main` is a **remote-tracking branch**: your last news of the remote, updated by `fetch`.
+      - 🔹 SHA-256 becomes the default in Git 3.0.

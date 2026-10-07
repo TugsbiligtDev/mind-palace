@@ -1,0 +1,223 @@
+steps:
+  - kind: explain
+    title: Three different "undo"s
+    body: |
+      Git has several undo commands because there are several things to undo:
+
+      | Command | Undoes | Moves the branch? | Safe after pushing? |
+      |---|---|---|---|
+      | `git restore file` | changes to **files** (Beginner, Module 16) | no | yes |
+      | `git reset <commit>` | **commits**: moves the branch back, as if they never happened | **yes** | no |
+      | `git revert <commit>` | a commit's **changes**, by adding a new commit that does the opposite | no (adds a commit) | **yes** |
+
+      `reset` rewrites history; `revert` adds to it. That difference decides which one you may use.
+
+  - kind: explain
+    title: git reset, three strengths
+    body: |
+      `git reset` moves the current branch (and HEAD) to another commit. The option says what happens to your **staging area** and **files**:
+
+      | | Branch moves to `HEAD~1` | Staging area | Working files |
+      |---|---|---|---|
+      | `git reset --soft HEAD~1` | ✓ | kept (the undone commit's changes are staged) | kept |
+      | `git reset HEAD~1` (`--mixed`, the default) | ✓ | reset (changes become unstaged) | kept |
+      | `git reset --hard HEAD~1` | ✓ | reset | **reset: changes are gone** |
+
+      `HEAD~1` is "one commit before HEAD" (`HEAD~3` three before). So `--soft` means "uncommit, keep everything ready to commit again", `--mixed` "uncommit and unstage", `--hard` "throw it all away". Only `--hard` touches your files, and it's the one to be careful with.
+
+      `git reset file` (no option, a path) just unstages a file, like `git restore --staged file`.
+
+  - kind: shell
+    title: Recommit with the missing file
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      printf 'Dune 8.99\nKindred 10.50\n' > prices.txt
+      printf 'Prices are in euros and include VAT.\n' > prices-README.txt
+      git add prices.txt && git commit -qm "Add the price list"
+    body: |
+      Your last commit, `Add the price list`, should also have included `prices-README.txt`. Undo the commit with **`git reset --soft`** (its changes stay staged), stage the README too, and commit again with the same message.
+    tests:
+      - git log -3 --format=%s
+      - git diff --name-only HEAD~1 HEAD
+      - git status --short
+    solution: |
+      git reset --soft HEAD~1
+      git add prices-README.txt
+      git commit -m "Add the price list"
+    uses:
+      - match: "git\\s+reset\\s+--soft"
+        why: "practise `git reset --soft HEAD~1` here. (`git commit --amend` is the shortcut you'd often use instead.)"
+    hint: "`git reset --soft HEAD~1`, then `git status` (prices.txt is still staged), `git add prices-README.txt`, `git commit -m \"Add the price list\"`."
+
+  - kind: shell
+    title: Throw away two bad commits
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      echo "<p>TEST TEST</p>" >> index.html && git commit -qam "WIP"
+      echo "<p>more tests</p>" >> index.html && git commit -qam "WIP again"
+    body: |
+      The two newest commits (`WIP` and `WIP again`) were experiments that broke the home page. They were never pushed. Remove them **completely**, commits and changes, so `main` is back at `Add the Kindred book page` and the working folder is clean.
+    tests:
+      - git log -2 --format=%s
+      - git status --short
+      - grep -c TEST index.html
+    solution: git reset --hard HEAD~2
+    hint: "`git reset --hard HEAD~2`: the branch moves back two commits and the files follow. (Or the hash of `Add the Kindred book page`.)"
+
+  - kind: explain
+    title: git revert, for shared history
+    body: |
+      Once commits are **pushed** and others have pulled them, `reset` is the wrong tool: you'd be rewriting history your colleagues already have, and the next push and pull become a mess.
+
+      Instead, **revert**: Git makes a **new** commit that applies the opposite of an old one.
+
+      ```
+      git revert dc44b37            # opens the editor with "Revert "Add analytics""
+      git revert --no-edit dc44b37  # keeps the suggested message
+      ```
+
+      History stays honest (both the mistake and its undoing are recorded), and everyone just pulls the new commit. A revert can conflict, like a merge, if later commits changed the same lines.
+
+      **The rule:** rewrite (reset, amend, rebase) only commits that **nobody else has**. Once shared, revert.
+
+  - kind: shell
+    title: Undo Marcus's analytics
+    fixture: [git-identity, website-repo, website-more]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      The commit **`Add analytics`** (Marcus, 3 October) loads a script that sends visitors' cookies to an outside server. It's been on GitHub for days, so the history must stay as it is. Undo it **with a new commit**, keeping Git's suggested message.
+    tests:
+      - git log -3 --format=%s
+      - ls analytics.js 2>&1
+      - grep -c analytics index.html
+    solution: git revert --no-edit dc44b37
+    reject:
+      - git reset --hard dc44b37~1
+    hint: "`git log --oneline` shows `dc44b37 Add analytics`. `git revert --no-edit dc44b37` (or without `--no-edit`, and save the message in the editor)."
+
+  - kind: explain
+    title: The reflog, your safety net
+    body: |
+      Every time HEAD moves (a commit, a reset, a switch, a merge, a rebase), Git writes a line in the **reflog**:
+
+      ```
+      learner@inkwell:~/inkwell/site-repo$ git reflog
+      9a1efb0 (HEAD -> main) HEAD@{0}: reset: moving to HEAD~2
+      2721cea HEAD@{1}: checkout: moving from new-design to main
+      c9ce561 HEAD@{2}: commit: Narrow the page
+      …
+      ```
+
+      `HEAD@{1}` means "where HEAD was one move ago". So after a bad `reset --hard`, the "lost" commits are one command away:
+
+      ```
+      git reset --hard HEAD@{1}          # back to before the reset
+      git branch rescued c9ce561         # or give a lost commit a name
+      ```
+
+      The reflog is **local** (it isn't pushed) and keeps entries for about 90 days. Uncommitted changes destroyed by `reset --hard` aren't in it: only commits are.
+
+  - kind: shell
+    title: Get the commits back
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      git reset -q --hard HEAD~3
+    body: |
+      Kenji ran `git reset --hard HEAD~3` on `main` by mistake, and three commits vanished from `git log`. Use the reflog to put `main` back **exactly where it was before the reset**.
+    tests:
+      - git log -4 --format=%s
+      - git status --short
+    solution: |
+      git reflog
+      git reset --hard HEAD@{1}
+    uses:
+      - match: "git\\s+reflog"
+        why: "look it up in the reflog first: `git reflog`."
+    hint: "`git reflog`: the top line is the reset; the line below it (`HEAD@{1}`) is where main was. `git reset --hard HEAD@{1}` (or that line's hash)."
+
+  - kind: shell
+    title: A deleted branch
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      git branch -q -D new-design
+    body: |
+      Priya's branch `new-design` was deleted with `git branch -D` before it was merged. Find its last commit in the reflog (look for when HEAD **moved away from** `new-design`) and recreate the branch **`new-design`** at that commit.
+    tests:
+      - git log -3 --format=%s new-design
+      - git branch --show-current
+    solution: |
+      git reflog
+      git branch new-design c9ce561
+    hint: "In `git reflog`, the line *checkout: moving from new-design to main* comes right after the last commit made on new-design (`Narrow the page`, c9ce561). `git branch new-design c9ce561` brings the branch back."
+
+  - kind: explain
+    title: git clean, for untracked files
+    body: |
+      `restore` and `reset` only touch **tracked** files. Leftover untracked files (build output, temporary files) are removed with `git clean`, which is just as permanent as `rm`, so it insists on care:
+
+      | Command | Does |
+      |---|---|
+      | `git clean -n` | **dry run**: list what would be deleted |
+      | `git clean -f` | delete untracked files (`-f` force is required) |
+      | `git clean -fd` | … and untracked folders |
+      | `git clean -fdx` | … and **ignored** files too (like `.env`!) |
+
+      Always `-n` first.
+
+  - kind: shell
+    title: Clear out the build leftovers
+    fixture: [git-identity, website-repo, website-more]
+    setup: |
+      cd ~/inkwell/site-repo
+      echo ".env" > .gitignore && git add .gitignore && git rm -q --cached .env && git commit -qm "Stop tracking .env"
+      mkdir -p build/css && echo "x" > build/site.min.js && echo "y" > build/css/all.css
+      echo "draft" > notes.tmp
+    body: |
+      The working folder has untracked leftovers: a `build/` folder and `notes.tmp`. Delete **all untracked files and folders**, but keep **ignored** files: the shop still needs its `.env`. Look at what would go first.
+    tests:
+      - ls -a
+      - git status --short
+    solution: |
+      git clean -nd
+      git clean -fd
+    reject:
+      - git clean -fdx
+    hint: "`git clean -nd` shows `build/` and `notes.tmp`; `git clean -fd` deletes them. Don't add `-x`: that would delete `.env` too."
+
+  - kind: choice
+    title: Which undo?
+    body: "A commit with a broken price was pushed to `main` an hour ago, and two colleagues have pulled since. How do you undo it?"
+    options:
+      - "`git revert` the commit and push the new commit"
+      - "`git reset --hard HEAD~1`, then `git push --force`"
+      - "`git restore` the file, then amend the old commit and push"
+      - "Delete `main` on GitHub and push your local copy again"
+    answer: 0
+    explanation: "The commit is shared, so rewrite nothing: revert adds a commit everyone can simply pull. Resetting and force-pushing would leave your colleagues' copies out of step."
+
+  - kind: mac
+    title: Undo on your Mac
+    body: |
+      In your notes repository, make a throwaway commit, undo it with reset, and find it again in the reflog.
+    commands: |
+      cd ~/notes-dotfiles
+      echo "oops" >> README.md && git commit -am "Oops"
+      git reset --hard HEAD~1
+      git reflog
+      git reset --hard HEAD@{1}
+      git revert --no-edit HEAD
+  - kind: why
+    body: |
+      Fear of losing work makes people avoid Git's power. Knowing exactly what each undo touches (files, the staging area, the branch) and that the reflog quietly remembers every commit for months removes the fear. And the one rule (don't rewrite what others have) keeps your teammates' history safe.
+
+  - kind: recap
+    body: |
+      - `git restore` undoes **file** changes; `git reset` moves the **branch**; `git revert` adds an **opposite commit**.
+      - `reset --soft` keeps changes staged; `--mixed` (default) keeps them unstaged; `--hard` discards them.
+      - Shared history: **revert**, never reset/force-push.
+      - `git reflog` lists every move of HEAD; `git reset --hard HEAD@{1}` undoes a reset; `git branch name <hash>` revives a lost branch.
+      - `git clean -n` first, then `-fd`; `-x` also deletes ignored files.

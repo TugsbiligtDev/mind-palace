@@ -6,11 +6,5 @@ color: "#4d7c0f"
 # with a Git simulation for the Git parts. See docs/linux-git-course.md.
 engine: shell
 engine_version: "bash 5.2 · Git 2.56 (simulated)"
-before_you_start: |
-  **No experience needed.** This course starts at "what is a folder?" and ends with your own projects on GitHub.
-
-  Every lesson has a **practice terminal**: a pretend Linux computer that lives in this page. Type real commands into it; the step checks itself after each one. Nothing you type there can touch your own computer, so break things freely. **Reset** starts a step over.
-
-  The optional **On your Mac** steps repeat the important parts in your Mac's real Terminal app, plus what a web page can't do: installing software, SSH keys, GitHub itself.
 last_reviewed: "2026-10-06"
 levels: [beginner, intermediate, advanced]

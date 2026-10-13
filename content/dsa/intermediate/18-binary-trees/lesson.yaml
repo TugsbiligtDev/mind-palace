@@ -12,6 +12,10 @@ steps:
           4   5          ← 4 and 5 are leaves
       ```
 
+      <!-- page -->
+
+      A few words you will meet in every tree problem:
+
       Vocabulary:
       - **root**: the top node (no parent),
       - **leaf**: a node with no children,

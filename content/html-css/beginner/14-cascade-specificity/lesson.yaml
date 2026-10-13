@@ -32,6 +32,10 @@ steps:
       | **classes** | `.note`, attribute selectors `[type="email"]`, pseudo-classes `:hover` |
       | **types** | `p`, `h1`, pseudo-elements `::before` |
 
+      <!-- page -->
+
+      Some selectors and their scores. Count the ids, the classes and the types, in that order:
+
       | Selector | Score |
       |---|---|
       | `p` | 0, 0, 1 |
@@ -132,6 +136,8 @@ steps:
       - **Not inherited**: box properties like `background`, `border`, `margin`, `padding`, `width`, `height`, `display`. (Imagine every child repeating its parent's border.)
 
       An inherited value is the **weakest** thing there is: any rule that targets the element directly beats it, even a plain type selector.
+
+      <!-- page -->
 
       Gotcha: form controls (`button`, `input`, `select`, `textarea`) **don't inherit fonts** by default. Browsers give them their own small system font. Fix it once:
 

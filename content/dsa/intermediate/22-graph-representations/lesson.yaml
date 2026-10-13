@@ -6,6 +6,8 @@ steps:
 
       A tree is a special graph (connected, with no cycles). A general graph can have loops, several routes between two places, and parts that are not connected at all.
 
+      <!-- page -->
+
       Words to know:
       - **Undirected**: an edge works both ways (a friendship). **Directed**: an edge has a direction (a one-way street, "follows" on social media).
       - **Weighted**: each edge has a number attached, such as a distance or a cost. **Unweighted**: all edges count the same.

@@ -226,6 +226,8 @@ steps:
       soup.select("li.price")                       # CSS selectors
       ```
 
+      <!-- page -->
+
       **Be a good citizen. Before scraping, check:**
 
       1. **Is there an API or a download?** Prefer it.

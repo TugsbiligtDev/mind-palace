@@ -66,6 +66,8 @@ steps:
       | `uv sync` | make `.venv` match the project files (on a new machine, after `git clone`) |
       | `uv python install 3.14` | download a specific Python version |
 
+      <!-- page -->
+
       Two files matter:
 
       - **`pyproject.toml`**: *what you asked for*: the Python version, and your dependencies (`requests>=2.32`).

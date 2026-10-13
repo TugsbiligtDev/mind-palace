@@ -13,25 +13,60 @@ steps:
   - kind: explain
     title: The JavaScript you need for this course
     body: |
-      This course is about **thinking**, and it uses JavaScript to write the thinking down. It assumes you have written a little code before, in any language. If you did the Python course, this table is everything that changes:
+      This course is about **thinking**, and it uses JavaScript to write the thinking down. It assumes you have written a little code before, in any language. If you did the Python course, the next three short pages are everything that changes. Don't try to memorize them: come back here whenever a piece of syntax looks new.
+
+      **The basic pieces**
 
       | Idea | Python | JavaScript |
       |---|---|---|
-      | A variable | `total = 0` | `let total = 0;` (or `const` if it never changes) |
+      | A variable | `total = 0` | `let total = 0;` |
+      | A variable that never changes | `TAX = 0.2` | `const TAX = 0.2;` |
       | A function | `def add(a, b):` | `function add(a, b) { … }` |
       | Give back an answer | `return a + b` | `return a + b;` |
       | Print | `print(x)` | `console.log(x);` |
       | A block | indentation | `{ curly braces }` |
+
+      The big visual change: Python uses **indentation** to show what belongs together, JavaScript uses **curly braces** `{ }`. Lines end with a semicolon `;`.
+
+      ```js
+      function add(a, b) {
+        return a + b;
+      }
+      console.log(add(2, 3));   // 5
+      ```
+
+      <!-- page -->
+
+      **Decisions and loops**
+
+      | Idea | Python | JavaScript |
+      |---|---|---|
       | If | `if x > 0:` / `elif` / `else:` | `if (x > 0) { … } else if (…) { … } else { … }` |
       | Loop over items | `for n in nums:` | `for (const n of nums) { … }` |
       | Loop with a counter | `for i in range(len(nums)):` | `for (let i = 0; i < nums.length; i++) { … }` |
+      | Loop while something is true | `while n > 1:` | `while (n > 1) { … }` |
+
+      The counter loop has three parts inside the brackets, separated by `;`: **start** (`let i = 0`), **keep going while** (`i < nums.length`), and **after each round** (`i++`, which means "add 1 to `i`"). `i--` means "take 1 away".
+
+      ```js
+      for (let i = 0; i < 3; i++) {
+        console.log(i);   // 0, then 1, then 2
+      }
+      ```
+
+      <!-- page -->
+
+      **Arrays, comparisons and "nothing"**
+
+      | Idea | Python | JavaScript |
+      |---|---|---|
       | List / array | `[1, 2, 3]`, `len(nums)`, `nums.append(4)` | `[1, 2, 3]`, `nums.length`, `nums.push(4)` |
       | Equal / not equal | `==` / `!=` | `===` / `!==` (always the three-character ones) |
       | And / or / not | `and` / `or` / `not` | `&&` / `\|\|` / `!` |
       | Nothing | `None` | `null` (or `undefined`) |
       | Dictionary | `{"a": 1}` | `new Map()` (Module 4 explains why, not `{}`) |
 
-      A short function written both ways, so you can see the pattern:
+      Here is a short function that uses most of it, so you can see the pattern:
 
       ```js
       function countPositives(nums) {
@@ -43,14 +78,14 @@ steps:
       }
       ```
 
-      **Never programmed before?** Do the Python course's Beginner level first (Modules 1 to 13). You'll learn what variables, loops and functions are there, and this table is all you need to switch.
+      **Never programmed before?** Do the Python course's Beginner level first (Modules 1 to 13). You'll learn what variables, loops and functions are there, and these tables are all you need to switch.
 
   - kind: code
     title: Warm up in JavaScript
     body: |
       Finish `sumOfEvens(nums)`: add up only the **even** numbers in the array and return the total. `sumOfEvens([1, 2, 3, 4])` is `6`. An empty array gives `0`.
 
-      A number is even when `n % 2 === 0`. Use the table above if a piece of syntax is new.
+      A number is even when `n % 2 === 0`. If a piece of syntax is new, look back at the tables in the previous step.
     code: |
       function sumOfEvens(nums) {
         let total = 0;

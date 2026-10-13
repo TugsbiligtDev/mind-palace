@@ -24,6 +24,10 @@ steps:
               run: shellcheck scripts/*.sh   # a shell command
       ```
 
+      <!-- page -->
+
+      The three parts of a workflow, line by line:
+
       - **`on`**: the triggers. `push` (optionally only some `branches`), `pull_request` (opened or updated), `workflow_dispatch` (a "run" button, or `gh workflow run`), `schedule` (cron syntax, Module 31).
       - **`jobs`**: one or more; they run in parallel unless one `needs:` another.
       - **`steps`**: `uses:` runs a published **action** (someone else's ready-made step, `owner/name@version`); `run:` runs shell commands (bash, with `-e`: the first failing command fails the step).

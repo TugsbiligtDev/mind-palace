@@ -118,6 +118,8 @@ steps:
 
       Trees are naturally **recursive**: a tree is a node plus two smaller trees. So most tree functions look the same: handle the empty tree (`None`), then combine the answers from the left and right subtrees.
 
+      <!-- page -->
+
       **Traversals** visit every node in a set order:
 
       - **in-order**: left, node, right (for a sorted tree this gives sorted values),
@@ -203,6 +205,8 @@ steps:
       ```
 
       Because graphs can have loops (A → B → A), searching one needs a **visited** set, or you would walk in circles forever.
+
+      <!-- page -->
 
       Two ways to explore a graph:
 

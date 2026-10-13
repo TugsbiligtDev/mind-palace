@@ -14,6 +14,10 @@ steps:
 
       It worked for months. Then someone ran it with a folder that didn't exist. `cd` failed, printed an error... and bash **carried on**, deleting every `.tmp` file in whatever folder the script happened to be in.
 
+      <!-- page -->
+
+      So how do you stop that from happening?
+
       By default a bash script ignores failures and keeps going. Real scripts switch that off, on the line after the shebang:
 
       ```bash

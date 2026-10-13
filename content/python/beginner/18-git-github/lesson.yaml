@@ -128,6 +128,8 @@ steps:
       4. `"lowercase start"` if the first character is not a capital letter.
 
       `message_problems("Add search")` is `[]`. `message_problems("fix")` is `["vague", "lowercase start"]`.
+
+      `text.isupper()` is `True` when the letters in `text` are capitals: `"A".isupper()` is `True`, `"a".isupper()` is `False`. Careful with an empty message: `first[:1]` gives `""` instead of crashing, where `first[0]` would raise an error.
     code: |
       def message_problems(message):
           return []

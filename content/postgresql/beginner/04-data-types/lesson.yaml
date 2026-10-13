@@ -90,6 +90,8 @@ steps:
       - **`timestamptz`** (*timestamp with time zone*): an **exact moment**. PostgreSQL stores it in a single universal time, and shows it in your session's time zone. **Prefer `timestamptz`** for anything that happened, because "14:00" means nothing without knowing *where*. (Time zones get a whole module later, Module 27.)
       - **`interval`**: a length of time, like `'5 days'` or `'4 days 21:00:00'`.
 
+      <!-- page -->
+
       Arithmetic works the way you'd hope:
 
       - `date - date` gives a number of **days** (an integer)

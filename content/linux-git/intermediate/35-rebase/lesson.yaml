@@ -130,6 +130,10 @@ steps:
 
       Change the first word of a line to say what to do, save and quit, and Git does it from top to bottom:
 
+      <!-- page -->
+
+      The words you can use:
+
       | Word | Does |
       |---|---|
       | `pick` (`p`) | keep the commit as it is |

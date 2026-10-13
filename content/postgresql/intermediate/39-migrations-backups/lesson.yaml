@@ -95,6 +95,8 @@ steps:
       pg_restore -d restore_test bookstore.dump        # restore into another database
       ```
 
+      <!-- page -->
+
       **Use the custom format, `-Fc`:** it's compressed, `pg_restore` can restore it **in parallel** (`-j 4`), and you can restore just **one table** from it (`-t orders`). The plain format (`pg_dump bookstore > backup.sql`) is readable SQL, handy for small databases or reading.
 
       What `pg_dump` **doesn't** include: **roles and passwords**, which belong to the whole cluster. Back those up with `pg_dumpall --globals-only`.

@@ -16,9 +16,6 @@ export const trackSchema = z.object({
   // "shell" is the Linux & Git course: lessons use `shell` steps (a practice terminal).
   engine: z.enum(["postgres", "python", "javascript", "none", "web", "shell"]),
   engine_version: z.string(),
-  // Shown at the top of the course page: what a learner needs before starting, and how the
-  // course's practice works.
-  before_you_start: md.optional(),
   last_reviewed: z.string(),
   // Named practice databases. Each is a list of SQL files in public/downloads/<track>/, run in
   // order, so learners can download the exact files the lessons use. `database` is the name

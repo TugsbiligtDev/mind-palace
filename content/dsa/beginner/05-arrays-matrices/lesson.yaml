@@ -118,6 +118,8 @@ steps:
     title: Best time to buy and sell
     body: |
       Write `maxProfit(prices)`. Return the best profit from **one** buy followed by a later sell, or `0` if no profit is possible (or there are no prices).
+
+      Two tools help here. `Math.max(a, b)` gives the bigger of two numbers and `Math.min(a, b)` the smaller. `Infinity` is a number bigger than every other number, so `let lowest = Infinity;` is a handy start for "the lowest price so far": the first real price is always smaller.
     code: |
       function maxProfit(prices) {
         return 0;

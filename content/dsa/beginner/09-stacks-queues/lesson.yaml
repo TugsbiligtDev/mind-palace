@@ -273,6 +273,8 @@ steps:
       Write `calculate(expr)` for a string with non-negative whole numbers, `+ - * /`, and optional spaces (no brackets). Division truncates toward zero. `"3+2*2"` is `7` and `" 3/2 "` is `1`.
 
       Tip: build multi-digit numbers digit by digit (`num = num * 10 + digit`), and treat the end of the string like one last operator so the final number gets processed.
+
+      At the end you need the sum of everything on the stack. A plain loop works (`let total = 0; for (const n of stack) total += n;`). The answer below uses `stack.reduce((a, b) => a + b, 0)`, a one-line way to say the same thing: start at `0` and add each item in turn.
     code: |
       function calculate(expr) {
         const stack = [];

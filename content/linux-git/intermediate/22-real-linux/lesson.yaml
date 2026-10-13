@@ -166,6 +166,8 @@ steps:
 
       **The shell.** Your Mac's Terminal runs **zsh**; Ubuntu runs **bash**. Day to day they behave the same. The differences show in scripts and odd corners: zsh complains *no matches found* when a `*` matches nothing (bash passes the `*` on unchanged), zsh's arrays start at 1 and bash's at 0, and their settings files differ (`~/.zshrc` vs `~/.bashrc`).
 
+      <!-- page -->
+
       **The tools.** Linux has the **GNU** versions of `sed`, `date`, `ls` and friends; macOS has older **BSD** versions. Usually the same, but not always:
 
       | On Linux (GNU) | On a Mac (BSD) |

@@ -20,6 +20,8 @@ steps:
           f.close()
       ```
 
+      <!-- page -->
+
       A **context manager** is any object that knows how to set up (`__enter__`) and tear down (`__exit__`). `with` calls them for you. You will meet them for **files, locks** (so two threads don't clash), **database transactions**, **temporary directories**, and **temporary settings**.
 
       You can open several in one statement: `with open("a") as a, open("b", "w") as b:`.

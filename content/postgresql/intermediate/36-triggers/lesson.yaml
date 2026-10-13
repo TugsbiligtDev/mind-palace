@@ -24,6 +24,8 @@ steps:
       - **`NEW`**: the row as it **will be** (INSERT and UPDATE)
       - **`OLD`**: the row as it **was** (UPDATE and DELETE)
 
+      <!-- page -->
+
       And the timing:
 
       | | BEFORE | AFTER |

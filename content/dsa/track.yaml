@@ -4,12 +4,5 @@ tagline: Think like a problem solver, in JavaScript.
 color: "#7c3aed"
 engine: javascript
 engine_version: "ES2024"
-before_you_start: |
-  **You need a little programming first.** This course teaches how to *think* about problems, written in JavaScript. It expects you to know what a variable, a loop, an `if` and a function are, in any language.
-
-  - **Never programmed?** Do the **Python** course's Beginner level first (Modules 1 to 13).
-  - **Know Python but not JavaScript?** Module 1 opens with a one-page Python → JavaScript table and a warm-up. That's enough to start.
-
-  Every exercise runs and is checked in your browser. The optional "On your Mac" steps run the same code on your own computer.
 last_reviewed: "2026-09-30"
 levels: [beginner, intermediate, advanced]

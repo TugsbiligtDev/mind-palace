@@ -24,15 +24,18 @@ export function CodePanel({
   onDone: () => void;
 }) {
   const p = useProgress();
-  const { feedback, setFeedback, misses, pass, miss } = useStepFeedback(onDone);
+  const { feedback, setFeedback, misses, pass, miss } = useStepFeedback(slot, onDone);
 
   const onRan = useCallback(
     async (code: string, out: ProgramOutput) => {
+      const check = language === "python" ? pyStepCheck(step) : codeStepCheck(step);
       if (out.error) {
-        setFeedback({ ok: false, text: "An error. Read the message, fix the code, and run it again." });
+        // On a graded step an error is a wrong attempt; on a "just run it" step it's only a note.
+        const text = "An error. Read the message, fix the code, and run it again.";
+        if (check) miss(text);
+        else setFeedback({ ok: false, text });
         return;
       }
-      const check = language === "python" ? pyStepCheck(step) : codeStepCheck(step);
       if (!check) {
         onDone();
         setFeedback(null);

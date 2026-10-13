@@ -25,17 +25,17 @@ export function SqlPanel({
   onDone: () => void;
 }) {
   const p = useProgress();
-  const { feedback, setFeedback, misses, pass, miss } = useStepFeedback(onDone);
+  const { feedback, setFeedback, misses, pass, miss } = useStepFeedback(slot, onDone);
 
   const onRan = useCallback(
     async (input: string, out: RunOutput) => {
       if (step.expect_error) {
         if (out.error) pass("That's the error we wanted to see. Read it carefully: the ERROR line says what went wrong, and LINE points to where.");
-        else setFeedback({ ok: false, text: "No error this time. Run the broken version to see the message." });
+        else miss("No error this time. Run the broken version to see the message.");
         return;
       }
       if (out.error) {
-        setFeedback({ ok: false, text: "An error. Read the message, fix the query, and run it again." });
+        miss("An error. Read the message, fix the query, and run it again.");
         return;
       }
       const check = tryStepCheck(step);

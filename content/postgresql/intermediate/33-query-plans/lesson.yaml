@@ -30,6 +30,10 @@ steps:
       That's the plan for `SELECT o.order_id, c.first_name FROM orders o JOIN customers c ON c.customer_id = o.customer_id`.
 
       - It's a **tree**. Each `->` is a step feeding the one above it. Read from the **most indented** lines up: scan customers, build a hash, scan orders, join.
+      <!-- page -->
+
+      Each line in the plan also carries numbers in brackets. Here is what they mean:
+
       - **`cost=start..total`**: the planner's estimate of effort, in made-up units. Useful for comparing plans, not as seconds.
       - **`rows`**: how many rows the planner **expects** that step to produce.
       - **`width`**: the average row size in bytes.

@@ -41,6 +41,8 @@ steps:
       echo "Log: ${log}"             # braces mark where the name ends: ${shop}s
       ```
 
+      <!-- page -->
+
       **Quotes decide what the shell does with the text inside:**
 
       | Written | Shell does | `echo` prints |
@@ -50,6 +52,8 @@ steps:
       | `$shop` | no quotes: expands, then **splits** at spaces (two words!) and expands `*` | `Inkwell Books` (as two arguments) |
 
       Rule of thumb: put variables in **double quotes**, always: `"$file"`. Module 29 shows what goes wrong without them.
+
+      <!-- page -->
 
       **Command substitution** puts a command's output into the text: `today=$(date +%F)`, `count=$(grep -c 404 "$log")`. (Old scripts use backticks `` `date` `` for the same thing.)
 

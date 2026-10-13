@@ -25,6 +25,8 @@ steps:
       | **/word** then Return | search for *word*; **n** jumps to the next match |
       | **q** | **quit**, back to the prompt |
 
+      <!-- page -->
+
       The page has fixed sections: **NAME** (one line on what it does), **SYNOPSIS** (how to type it), **DESCRIPTION** and **OPTIONS**. In the synopsis, `[square brackets]` mean "optional" and `...` means "you can give several": `ls [OPTION]... [FILE]...`.
 
       ⚠️ The most common beginner panic: being stuck inside a manual page. **Press q.**

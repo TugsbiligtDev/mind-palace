@@ -26,6 +26,10 @@ steps:
           return result
       ```
 
+      <!-- page -->
+
+      Once the program is paused at the `(Pdb)` prompt, you control it by typing short commands.
+
       Useful pdb commands (type at the prompt):
 
       | Command | Does |
@@ -37,6 +41,8 @@ steps:
       | `l` | **list** the code around here |
       | `w` | show the call stack (**where** am I) |
       | `q` | **quit** |
+
+      <!-- page -->
 
       You can also run any program under the debugger from the start: `uv run python -m pdb script.py`, and pdb **post-mortem** opens right after a crash: `python -m pdb -c continue script.py`.
 
@@ -70,6 +76,8 @@ steps:
       1. **Set a breakpoint:** click in the gutter left of a line number. A red dot appears.
       2. **Run with the debugger:** open the Run and Debug panel (or press **F5**) and choose *Python File*. The program pauses on the red dot.
       3. **Inspect:** the **Variables** panel shows every local; you can add expressions to **Watch** and see them update as you step.
+      <!-- page -->
+
       4. **Step:** **F10** (step over a line), **F11** (step into a function), **Shift+F11** (step out), **F5** (continue).
       5. **Conditional breakpoint:** right-click a breakpoint → *Edit Breakpoint* → add a condition like `price < 0`. It stops only when the condition is true. It is perfect for "the bug only happens on the 5,000th item".
 

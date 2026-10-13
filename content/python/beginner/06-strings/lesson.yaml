@@ -12,6 +12,10 @@ steps:
 
       Square brackets pick characters out. `word[0]` is `"d"`. Negative numbers count from the end: `word[-1]` is the last character.
 
+      <!-- page -->
+
+      Picking one character is useful, but often you want a **piece** of the text.
+
       A **slice** takes a piece: `word[start:stop]` goes from `start` up to **but not including** `stop`. Leave one out and it goes to that end.
 
       | Code | Result |
@@ -111,6 +115,8 @@ steps:
       | `join(list)` | glue a list into text | `"-".join(["a","b"])` → `"a-b"` |
       | `startswith(x)` | does it begin with `x`? | `"Mr Bold".startswith("Mr")` → `True` |
       | `find(x)` | index of `x`, or `-1` if absent | `"abc".find("c")` → `2` |
+
+      <!-- page -->
 
       `x in text` asks whether one piece of text sits inside another: `"tec" in "detective"` is `True`.
 

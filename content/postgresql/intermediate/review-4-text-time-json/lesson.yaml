@@ -112,6 +112,8 @@ steps:
     title: "8. Award winners"
     body: |
       List the `title` of every book with **at least one award** in `details -> 'awards'`, and its first award (labeled **award**).
+
+      New here: `jsonb_array_length(x)` counts the items in a JSON array, so `jsonb_array_length(details -> 'awards') > 0` means "has at least one award". And `->> 0` takes the first item as text.
     sql: |
       -- Write your query here
     expect: |

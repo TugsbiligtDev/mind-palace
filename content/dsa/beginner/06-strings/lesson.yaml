@@ -198,6 +198,8 @@ steps:
     title: Longest common prefix
     body: |
       Write `longestCommonPrefix(words)`: the longest starting piece shared by **every** word. `["flower", "flow", "flight"]` gives `"fl"`. If there is none (or no words), return `""`.
+
+      `word.startsWith(piece)` is `true` when `word` begins with `piece`: `"flower".startsWith("fl")` is `true`. One way: start with the whole first word as your guess, and keep cutting its last letter off (`prefix.slice(0, -1)`) until every word starts with it.
     code: |
       function longestCommonPrefix(words) {
         return "";

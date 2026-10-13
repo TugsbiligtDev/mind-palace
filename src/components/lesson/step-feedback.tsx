@@ -5,10 +5,33 @@ import { Markdown } from "@/components/markdown";
 type Feedback = { ok: boolean; text: string } | null;
 
 // The grading state every exercise shares: the message under the editor and how many wrong
-// attempts there were (a hint shows after the first, an answer after the third).
-export function useStepFeedback(onDone: () => void) {
+// attempts there were (a hint shows after the first, an answer after the third). A run that ends
+// in an error counts as a wrong attempt too. The count is kept in this browser per step, so
+// leaving the step and coming back doesn't start it over.
+const missKey = (slot: string) => `mp:misses:${slot}`;
+
+function readMisses(slot: string) {
+  try {
+    return Number(localStorage.getItem(missKey(slot))) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function useStepFeedback(slot: string, onDone: () => void) {
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const [misses, setMisses] = useState(0);
+  const [misses, setCount] = useState(() => readMisses(slot));
+  const setMisses = useCallback(
+    (next: (m: number) => number) =>
+      setCount((m) => {
+        const n = next(m);
+        try {
+          localStorage.setItem(missKey(slot), String(n));
+        } catch {}
+        return n;
+      }),
+    [slot],
+  );
   const pass = useCallback(
     (text: string) => {
       setFeedback({ ok: true, text });
@@ -16,11 +39,16 @@ export function useStepFeedback(onDone: () => void) {
     },
     [onDone],
   );
-  const miss = useCallback((text: string) => {
-    setMisses((m) => m + 1);
-    setFeedback({ ok: false, text });
-  }, []);
-  return { feedback, setFeedback, misses, pass, miss };
+  const miss = useCallback(
+    (text: string) => {
+      setMisses((m) => m + 1);
+      setFeedback({ ok: false, text });
+    },
+    [setMisses],
+  );
+  // A wrong attempt that already shows its own message (a terminal command that failed).
+  const stumble = useCallback(() => setMisses((m) => m + 1), [setMisses]);
+  return { feedback, setFeedback, misses, pass, miss, stumble };
 }
 
 export function StepFeedback({
@@ -65,7 +93,7 @@ function HelpPanel({ hint, answer, answerLabel, misses }: { hint?: string; answe
               <Markdown>{hint}</Markdown>
             </div>
           ) : (
-            <button onClick={() => setShowHint(true)} className="text-muted underline underline-offset-4 hover:text-text">
+            <button onClick={() => setShowHint(true)} className="rounded-lg border border-border px-3 py-1.5 font-medium transition-colors hover:bg-subtle">
               Need a hint?
             </button>
           )}
@@ -74,9 +102,12 @@ function HelpPanel({ hint, answer, answerLabel, misses }: { hint?: string; answe
       {answer && misses >= 3 && (
         <div className="text-sm">
           {showAnswer ? (
-            <pre className="overflow-x-auto rounded-lg border border-border bg-code p-3 font-mono text-xs">{answer}</pre>
+            <div className="space-y-1">
+              <pre className="overflow-x-auto rounded-lg border border-border bg-code p-3 font-mono text-xs">{answer}</pre>
+              <p className="text-xs text-muted">Type it in yourself (don&apos;t just copy it) and run it to finish the step.</p>
+            </div>
           ) : (
-            <button onClick={() => setShowAnswer(true)} className="text-muted underline underline-offset-4 hover:text-text">
+            <button onClick={() => setShowAnswer(true)} className="rounded-lg border border-border px-3 py-1.5 font-medium transition-colors hover:bg-subtle">
               {answerLabel}
             </button>
           )}

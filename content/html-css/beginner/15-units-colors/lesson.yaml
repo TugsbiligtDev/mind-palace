@@ -7,6 +7,10 @@ steps:
       - **Absolute**: `px` (CSS pixels). A fixed size. Easy to reason about.
       - **Relative**: measured against something else, so they adapt.
 
+      <!-- page -->
+
+      The relative units, and what each one is measured against:
+
       | Unit | Relative to |
       |---|---|
       | `%` | the parent (for `width`: the parent's width) |
@@ -129,6 +133,8 @@ steps:
       | `oklch()` | `oklch(60% 0.11 182)` | **lightness**, **chroma** (colorfulness), **hue**; modern, and equal lightness numbers *look* equally light |
 
       Older code writes `rgba(13, 148, 136, 0.5)` with commas. Same thing.
+
+      <!-- page -->
 
       **Transparency (alpha)** goes from 0 (invisible) to 1 or 100% (solid). `transparent` is a keyword for fully see-through. Unlike `opacity`, which fades the whole element *and its children*, a color's alpha only affects that one color.
 

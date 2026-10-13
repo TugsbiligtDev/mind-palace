@@ -72,6 +72,10 @@ steps:
       | `head -5` | keep the first 5 |
       | `tr` | **tr**anslate characters: `tr a-z A-Z` upper-cases, `tr -d '"'` deletes quotes, `tr ',' '\n'` puts each item on its own line |
 
+      <!-- page -->
+
+      Now join them with pipes. Each tool does one small job, and together they answer a real question: "which visitors came most often?"
+
       The classic "top 10" pipeline:
 
       ```

@@ -11,6 +11,8 @@ steps:
     body: |
       Every account is a line in **`/etc/passwd`** (name, user ID, group ID, home folder, shell); groups are in **`/etc/group`**; password hashes in **`/etc/shadow`** (root only).
 
+      The commands that manage those files for you (never edit them by hand):
+
       | Command | Does |
       |---|---|
       | `sudo adduser kenji` | create a user, its home folder and group; asks for a password (Ubuntu's friendly tool) |
@@ -21,6 +23,10 @@ steps:
       | `sudo userdel -r kenji` | delete the user and (`-r`) their home folder |
       | `sudo usermod -L kenji` | lock the account's password |
 
+      <!-- page -->
+
+      Two things that catch people out with groups:
+
       ⚠️ `usermod -G group user` **without `-a` replaces** all of the user's other groups with that one. Always `-aG`.
 
       Group membership is read when someone **logs in**: after you add a user to a group, they need to log out and in again (the practice server applies it at once).
@@ -30,6 +36,8 @@ steps:
     fixture: [shop-server, shop-access]
     body: |
       On the shop server, create a user **`kenji`** with a home folder (use `adduser`; give him any password), and add him to the **`www-data`** group so he can edit the website's files.
+
+      `adduser` normally asks questions (a password, a full name, a phone number…). In a script, two options skip them: `--disabled-password` (no password for now) and `--gecos ""` (leave the name details empty). Typing `sudo adduser kenji` and answering the questions works too.
     tests:
       - ssh shop 'id kenji'
       - ssh shop 'ls -ld /home/kenji' | awk '{print $1, $3, $9}'
@@ -67,6 +75,8 @@ steps:
       | `systemctl is-active nginx`, `is-enabled` | one-word answers, handy in scripts |
       | `systemctl list-units --type=service --state=failed` | everything that has failed |
 
+      <!-- page -->
+
       In `status`, **Active:** says `active (running)`, `inactive (dead)` or `failed`, and **Loaded:** says whether it's `enabled` at boot. Each service is described by a **unit file** (`/etc/systemd/system/inkwell-shop.service`): what to run, as which user. Module 45 writes one.
 
   - kind: explain
@@ -81,6 +91,8 @@ steps:
       | `journalctl -p err` | only errors (and worse) |
       | `journalctl --since "1 hour ago"` / `--since today` | a time window |
       | `journalctl -f` | follow new lines, like `tail -f` |
+
+      <!-- page -->
 
       Many programs also write text files in **`/var/log`**: `syslog` (general), `auth.log` (logins and sudo), `nginx/access.log` and `error.log`. Reading them needs `sudo` or the `adm` group.
 

@@ -8,6 +8,8 @@ steps:
       - A **port** (a number from 1 to 65535) identifies a program on that computer. Well-known ones: **22** SSH, **80** HTTP, **443** HTTPS, **53** DNS. The shop app listens on **3000**. A connection always goes to *address + port*.
       - **DNS** turns names into addresses: `shop.inkwell.example` → `203.0.113.20`. Before asking DNS, the computer checks its own list in **`/etc/hosts`**.
 
+      <!-- page -->
+
       So "the website doesn't work" can mean: the name doesn't resolve, the computer can't be reached, nothing is listening on the port, a firewall is in the way, or the program answered with an error. Each tool below checks one of those.
 
   - kind: explain
@@ -22,6 +24,8 @@ steps:
       | `curl -v https://host/` | the whole HTTP conversation: resolving, connecting, request, answer |
       | `nc -zv host port` | is that port open? |
       | `ss -tln` / `sudo ss -tlnp` | which ports **this** computer listens on (and, with sudo, which programs) |
+
+      <!-- page -->
 
       `ss` options: **t**cp, **u**dp, **l**istening, **n**umeric (show `22`, not `ssh`), **p**rocesses.
 

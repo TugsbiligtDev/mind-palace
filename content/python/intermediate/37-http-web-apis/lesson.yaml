@@ -4,12 +4,18 @@ steps:
     body: |
       When your browser loads a page, it sends an **HTTP request** to a server, and the server sends back an **HTTP response**. Programs talk to each other the same way, often exchanging **JSON** instead of web pages. Such a service is called a **web API**.
 
+      <!-- page -->
+
       **A request has:**
 
       - a **method**: what you want to do. `GET` (read), `POST` (create), `PUT`/`PATCH` (change), `DELETE` (remove),
       - a **URL**: where (`https://api.example.com/books?author=herbert`), made of a host, a **path** and **query parameters** after the `?`,
       - **headers**: extra information (`Accept: application/json`, `Authorization: Bearer ...`),
       - sometimes a **body**: data you send (JSON for a POST).
+
+      <!-- page -->
+
+      The server answers with a **response**, built the same way.
 
       **A response has:**
 
@@ -23,6 +29,8 @@ steps:
       | **3xx** (301, 302) | redirect: look elsewhere |
       | **4xx** (400 bad request, 401 not logged in, 403 forbidden, 404 not found, 429 too many requests) | **your** mistake |
       | **5xx** (500, 502, 503) | the **server's** problem, often temporary |
+
+      <!-- page -->
 
       In this lesson the browser cannot reach the real internet, so we use a **fake server** inside Python (`httpx.MockTransport`). Your code is the real thing; only the network is pretended. That is also exactly how you test HTTP code (Module 34).
 
@@ -56,6 +64,8 @@ steps:
     title: Build a URL properly
     body: |
       Never glue query strings together by hand: special characters (spaces, `&`, `é`) must be **encoded**. `urllib.parse.urlencode` does it. Write `build_url(base, path, params)`: join base and path with exactly one `/`, and add `?` plus the encoded parameters, unless `params` is empty.
+
+      To get exactly one `/`, strip slashes from the touching ends: `base.rstrip("/")` removes them from the right end of `base`, `path.lstrip("/")` from the left end of `path`. Then join with `"/"`.
 
       `build_url("https://api.test", "/search", {"q": "dune messiah", "limit": 2})` is `"https://api.test/search?q=dune+messiah&limit=2"`.
     code: |
@@ -181,6 +191,8 @@ steps:
       headers = {"Authorization": f"Bearer {token}"}      # a common pattern
       # or a custom header: {"X-API-Key": key}
       ```
+
+      <!-- page -->
 
       **A key is a password.** If it leaks, others can use (and be billed for) your account. The rules:
 

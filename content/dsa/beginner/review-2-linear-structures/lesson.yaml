@@ -61,6 +61,8 @@ steps:
       Write `reverseWords(s)`: return the words of `s` in reverse order, separated by **single spaces**, with no leading or trailing spaces. The input may have extra spaces.
 
       `"  hello   world "` gives `"world hello"`.
+
+      `s.trim()` removes the spaces at the start and end of a string: `"  hi ".trim()` is `"hi"`. To split on "one or more spaces", use `s.split(/\s+/)`: the `/\s+/` is a small pattern meaning "any run of spaces".
     code: |
       function reverseWords(s) {
         // your code

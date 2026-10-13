@@ -123,6 +123,8 @@ steps:
     title: "3. The menu"
     body: |
       > *Menu links (only the ones in the nav) are white, not underlined, on a #7c2d12 background, with 0.5rem of space above and below the text and 1rem either side. That whole padded area must take up real space in the line. On hover the background becomes #9a3412. Keyboard focus shows a 3px solid #fbbf24 outline, 2px away from the link. The link in the paragraph stays as it is.*
+
+      New here: `outline-offset: 2px;` pushes the outline 2px **away** from the element, so there's a small gap between the link and its focus ring.
     html: |
       <nav>
         <a href="index.html">Home</a>

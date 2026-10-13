@@ -11,6 +11,10 @@ steps:
       | **Understandable** | it's predictable and clear | `lang`, labels and instructions, helpful error messages, consistent navigation |
       | **Robust** | assistive tech can read it | valid HTML, correct names, roles and states |
 
+      <!-- page -->
+
+      What changed in the newest version. Each one fixes a real problem people kept running into:
+
       **New in 2.2** (AA): **Focus Not Obscured** (a focused element mustn't be hidden behind sticky headers or banners), **Target Size (Minimum)** (click/tap targets at least **24 × 24 px**, or spaced out), **Dragging Movements** (anything done by dragging also works with a simple click), **Consistent Help** (help links in the same place on every page), **Redundant Entry** (don't make people type the same thing twice) and **Accessible Authentication** (no memory puzzles to log in; allow paste and password managers).
 
   - kind: web

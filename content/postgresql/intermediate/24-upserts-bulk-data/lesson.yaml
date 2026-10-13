@@ -186,6 +186,8 @@ steps:
       | **Empty vs. NULL** | Empty strings where you expected NULL, or the reverse | In CSV, an unquoted empty field is NULL and `""` is empty text. `NULL 'N/A'` treats N/A as NULL. |
       | **Stray text in numbers** | `invalid input syntax for type numeric: "$19.99"` | Load as text, then clean (Module 26). |
 
+      <!-- page -->
+
       The professional pattern: **load into a staging table where every column is `text`** (it can't fail), then clean and convert with `INSERT … SELECT` into the real table. Bad rows can then be found with a query instead of stopping the load.
 
   - kind: try

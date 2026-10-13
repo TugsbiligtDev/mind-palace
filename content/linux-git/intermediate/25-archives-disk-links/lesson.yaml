@@ -13,6 +13,8 @@ steps:
       | `tar -xzf notes.tar.gz` | e**x**tract here |
       | `tar -xzf notes.tar.gz -C restore` | extract into the folder `restore` (it must exist) |
 
+      <!-- page -->
+
       Add **v** (`-czvf`) to see each file as it goes. The `f` must come last, right before the archive's name. tar stores paths as you gave them, so pack from the folder *above* the one you want (`cd ~/inkwell; tar -czf ... notes`), or you'll unpack `home/learner/inkwell/notes/` later.
 
       `gzip file` / `gunzip file.gz` compress and uncompress a single file (logs are often rotated into `.gz` files).

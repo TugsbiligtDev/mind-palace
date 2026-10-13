@@ -97,6 +97,8 @@ steps:
       You can build simple checks yourself with the `ast` module, which parses Python source into a tree. Write `unused_imports(source)`: return a **sorted list** of names imported with plain `import x` or `from m import x` that are never used anywhere else in the source. (Handle `import a.b` as `a`, and `import x as y` as `y`.)
 
       Starter hint: walk `ast.walk(tree)`. `ast.Import` and `ast.ImportFrom` list `names`; every use of a name appears as an `ast.Name` node with `.id`, and `a.b` uses appear as `ast.Attribute` whose `.value` is a `Name`.
+
+      Each item in `names` has `.name` (what was imported) and `.asname` (the `as` name, or `None`). `alias.asname or alias.name` picks the `as` name when there is one.
     code: |
       import ast
 

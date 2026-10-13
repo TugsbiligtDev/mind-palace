@@ -4,6 +4,8 @@ steps:
     body: |
       Git combines changes with a **three-way merge**: it compares both sides with their **common ancestor** (the *base*). If only one side changed a part of a file, Git takes that change. If **both sides changed the same lines differently**, it can't know what you want, so it stops and asks. That's a conflict.
 
+      <!-- page -->
+
       Conflicts aren't errors. They're Git refusing to guess. They happen in **merge**, **rebase**, **cherry-pick**, **revert** and **stash pop**, and you resolve them the same way every time:
 
       1. look at what's conflicted (`git status`);

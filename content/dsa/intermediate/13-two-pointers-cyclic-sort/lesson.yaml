@@ -275,6 +275,10 @@ steps:
 
       **Cyclic sort:** look at position `i`. If its value is not at its home and the home does not already hold the same value, **swap it home**. Repeat at `i` until the value at `i` is right (or a duplicate), then move on.
 
+      <!-- page -->
+
+      Here it is in code:
+
       ```js
       let i = 0;
       while (i < nums.length) {

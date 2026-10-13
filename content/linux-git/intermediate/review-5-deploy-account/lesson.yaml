@@ -74,6 +74,8 @@ steps:
     fixture: [shop-server, shop-access]
     body: |
       > *Until Inkwell decides whether `deploy` is still needed: take it out of the `sudo` group and lock its password. Don't delete it (the deploy bot still uses it, without sudo).*
+
+      New here: `sudo deluser NAME GROUP` (a group name after the user) only takes the user **out of that group**; the account itself stays. And as in Module 31, `sudo usermod -L NAME` locks the password.
     tests:
       - ssh shop groups deploy
       - ssh shop sudo passwd -S deploy | awk '{print $1, $2}'

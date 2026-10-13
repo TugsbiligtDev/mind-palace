@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LevelCards } from "@/components/course/level-cards";
-import { Markdown } from "@/components/markdown";
 import { listTrackIds, loadTrack, summarize } from "@/lib/content/load";
 
 export const dynamicParams = false;
@@ -41,12 +40,6 @@ export default async function TrackPage({ params }: PageProps<"/courses/[track]"
           </Link>
         )}
       </div>
-      {bundle.track.before_you_start && (
-        <section className="mt-8 rounded-2xl border border-brand/30 bg-brand/5 p-5">
-          <h2 className="text-sm font-medium tracking-wide text-brand uppercase">Before you start</h2>
-          <Markdown className="mt-2 text-sm">{bundle.track.before_you_start}</Markdown>
-        </section>
-      )}
       <p className="mt-8 text-sm text-muted">Choose a level. Each one is a set of short lessons, each followed by a quick quiz.</p>
       <LevelCards levels={levels} />
     </div>

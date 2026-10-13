@@ -16,6 +16,8 @@ steps:
       grep ERROR logs/shop.log
       ```
 
+      <!-- page -->
+
       The options you'll use every day:
 
       | Option | Does |

@@ -200,6 +200,8 @@ steps:
       re.sub(r"\s+", " ", "a   b    c")            # 'a b c'
       ```
 
+      <!-- page -->
+
       Common building blocks:
 
       | Pattern | Matches |
@@ -211,6 +213,8 @@ steps:
       | `( )` | a **group** you can pull out |
       | `^` `$` | start / end of the text |
 
+      <!-- page -->
+
       Write patterns as **raw strings** `r"..."` so backslashes are left alone. `match` checks from the *start*; `search` looks *anywhere*; `fullmatch` needs the whole text to fit. If a regex is getting longer than a line or two, consider whether plain `split()` and `startswith()` would be clearer.
 
   - kind: code
@@ -219,6 +223,8 @@ steps:
       Log lines look like `"2026-09-30 12:01:02 ERROR db: connection timeout"`: date, time, level (upper-case letters), a source name followed by a colon, then the message. Write `parse_line(line)` returning a dictionary with keys `date`, `time`, `level`, `source`, `message`. If the line does not fit the pattern, return `None`.
 
       Use one regex with **groups**, and `re.fullmatch`.
+
+      `re.compile(pattern)` turns a pattern into a reusable object, so `PATTERN.fullmatch(line)` is the same as `re.fullmatch(pattern, line)`. Either way works. `m.groups()` gives the pieces matched by each `( )` group, in order.
     code: |
       import re
 
@@ -338,6 +344,8 @@ steps:
     title: A logger you can read back
     body: |
       Write `make_logger(stream, level)`. It returns a logger named `"agency"` that writes to the file-like object `stream` (a `StringIO`), shows messages at `level` or above, and formats each line as `LEVEL: message`. Remove old handlers first, and turn off propagation (`logger.propagate = False`) so tests are clean.
+
+      The pieces: a **logger** (`logging.getLogger("agency")`) is what your code calls. A **handler** decides where lines go (`logging.StreamHandler(stream)` writes to `stream`). A **formatter** decides how each line looks (`logging.Formatter("%(levelname)s: %(message)s")`). Connect them with `handler.setFormatter(...)` and `logger.addHandler(handler)`, and set the minimum level with `logger.setLevel(level)`. `logger.handlers.clear()` removes old handlers.
     code: |
       import logging
 

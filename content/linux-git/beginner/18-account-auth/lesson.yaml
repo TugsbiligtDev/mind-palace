@@ -118,6 +118,8 @@ steps:
 
       1. Log in the GitHub CLI with `gh auth login`. Choose **SSH** when it asks for a protocol, and let it upload your key (or add it afterwards with `gh ssh-key add`).
       2. Test the connection with `ssh -T git@github.com` (answer `yes` to the fingerprint question).
+
+      You can also skip the questions by giving the answers as options: `gh auth login --git-protocol ssh`.
     output: true
     solution: |
       gh auth login --git-protocol ssh

@@ -66,6 +66,9 @@ export function LessonPlayer({
   // Resume at the saved step until the learner picks one.
   const [chosen, setIndex] = useState<number | null>(null);
   const index = chosen ?? (p ? Math.min(saved?.step ?? 0, steps.length - 1) : null);
+  // A long explanation is split into pages with a `<!-- page -->` line, so one new idea is shown
+  // at a time. The pages live inside one step, so saved progress (kept by step number) is unchanged.
+  const [page, setPage] = useState({ step: -1, at: 0 });
 
   useEffect(() => {
     if (index !== null) {
@@ -77,16 +80,34 @@ export function LessonPlayer({
   if (!p || index === null) return <div className="h-96" />;
 
   const step = steps[index];
+  const pages = step.body.split(/^\s*<!-- page -->\s*$/m);
+  const at = page.step === index ? Math.min(page.at, pages.length - 1) : 0;
+  const lastPage = at === pages.length - 1;
+  // The lesson's "why this matters" sits near the end; it's shown on the first step too, so the
+  // learner knows the point of a lesson before starting it.
+  const why = steps.find((st) => st.kind === "why");
   const done = saved?.stepsDone.includes(index) ?? false;
   const isExercise = step.kind === "try" || step.kind === "code" || step.kind === "web" || step.kind === "shell";
   // An ungraded HTML & CSS or terminal step is "try things out": nothing to pass, so Continue stays open.
   const graded = isGraded(step);
-  const needsAction = ((isExercise && graded) || step.kind === "mac" || step.kind === "choice") && !done;
+  const needsAction = ((isExercise && graded) || step.kind === "mac" || step.kind === "choice") && !done && lastPage;
   const last = index === steps.length - 1;
   // Steps skipped with the step bar. The lesson only counts as finished once they're done.
   const skipped = steps.flatMap((st, i) => (i !== index && mustDo(st) && !saved?.stepsDone.includes(i) ? [i] : []));
 
+  function goTo(i: number, at = 0) {
+    setIndex(i);
+    setPage({ step: i, at });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function back() {
+    if (at > 0) goTo(index!, at - 1);
+    else if (index! > 0) goTo(index! - 1, Infinity);
+  }
+
   function next() {
+    if (!lastPage) return goTo(index!, at + 1);
     if ((!isExercise || !graded) && step.kind !== "mac" && step.kind !== "choice") completeStep(topicKey, index!);
     advance();
   }
@@ -95,8 +116,7 @@ export function LessonPlayer({
     if (last) {
       if (skipped.length === 0) completeLesson(topicKey);
       router.push(quizHref);
-    } else setIndex(index! + 1);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    } else goTo(index! + 1);
   }
 
   return (
@@ -110,7 +130,7 @@ export function LessonPlayer({
           {steps.map((_, i) => (
             <button
               key={i}
-              onClick={() => setIndex(i)}
+              onClick={() => goTo(i)}
               aria-label={`Go to step ${i + 1}`}
               className="flex h-6 flex-1 items-center"
             >
@@ -128,13 +148,25 @@ export function LessonPlayer({
         </p>
       </div>
 
+      {index === 0 && why && (
+        <aside className={`mb-6 rounded-2xl border border-brand/30 bg-brand/5 px-6 py-4 ${isExercise ? "" : "mx-auto max-w-2xl"}`}>
+          <p className="mb-1 text-xs font-medium tracking-wide text-brand uppercase">Why you&apos;re learning this</p>
+          <Markdown>{why.body}</Markdown>
+        </aside>
+      )}
+
       <div className={isExercise ? "grid items-start gap-6 lg:grid-cols-2" : "mx-auto max-w-2xl"}>
         <article className="min-w-0 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
           <p className="mb-2 text-xs font-medium tracking-wide text-brand uppercase">{KIND_LABEL[step.kind]}</p>
           {"title" in step && <h1 className="mb-4 text-2xl font-semibold tracking-tight">{step.title}</h1>}
-          <Markdown>{step.body}</Markdown>
-          {step.kind === "mac" && <MacCommands commands={step.commands} />}
-          {step.kind === "choice" && (
+          {pages.length > 1 && (
+            <p className="mb-3 text-xs text-muted tabular-nums">
+              Part {at + 1} of {pages.length}
+            </p>
+          )}
+          <Markdown key={at}>{pages[at]}</Markdown>
+          {lastPage && step.kind === "mac" && <MacCommands commands={step.commands} />}
+          {lastPage && step.kind === "choice" && (
             <ChoiceStep
               key={`${topicKey}-${index}`}
               code={step.code}
@@ -145,7 +177,7 @@ export function LessonPlayer({
               onDone={() => completeStep(topicKey, index)}
             />
           )}
-          {step.kind === "mac" && step.expect_output && (
+          {lastPage && step.kind === "mac" && step.expect_output && (
             <MacCheck key={`${topicKey}-${index}`} expected={step.expect_output} done={done} onDone={() => completeStep(topicKey, index)} />
           )}
         </article>
@@ -164,19 +196,19 @@ export function LessonPlayer({
 
       <div className={`mt-6 flex items-center gap-3 ${isExercise ? "" : "mx-auto max-w-2xl"}`}>
         <button
-          onClick={() => setIndex(Math.max(0, index - 1))}
-          disabled={index === 0}
+          onClick={back}
+          disabled={index === 0 && at === 0}
           className="rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-subtle hover:text-text disabled:opacity-40"
         >
           ← Back
         </button>
         <div className="ml-auto flex items-center gap-3">
-          {step.kind === "mac" && !done && (
+          {lastPage && step.kind === "mac" && !done && (
             <button onClick={advance} className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-subtle hover:text-text">
               Skip for now
             </button>
           )}
-          {step.kind === "mac" && !step.expect_output && !done && (
+          {lastPage && step.kind === "mac" && !step.expect_output && !done && (
             <button
               onClick={() => completeStep(topicKey, index)}
               className="rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-subtle"
@@ -195,7 +227,7 @@ export function LessonPlayer({
             disabled={needsAction}
             className="rounded-lg bg-brand px-5 py-2 text-sm font-medium text-brand-contrast shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            {last ? (skipped.length > 0 ? "Take the quiz →" : "Finish · take the quiz →") : "Continue →"}
+            {!lastPage ? "Next part →" : last ? (skipped.length > 0 ? "Take the quiz →" : "Finish · take the quiz →") : "Continue →"}
           </button>
         </div>
       </div>
@@ -205,7 +237,7 @@ export function LessonPlayer({
           {skipped.map((i, n) => (
             <span key={i}>
               {n > 0 && ", "}
-              <button onClick={() => setIndex(i)} className="text-brand underline underline-offset-4">
+              <button onClick={() => goTo(i)} className="text-brand underline underline-offset-4">
                 step {i + 1}
               </button>
             </span>

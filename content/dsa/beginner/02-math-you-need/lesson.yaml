@@ -37,6 +37,8 @@ steps:
       - `halvings(8)` is `3`
       - `halvings(10)` is `3` (10 → 5 → 2 → 1)
       - `halvings(1)` is `0`
+
+      `Math.floor(x)` rounds a number **down** to a whole number: `Math.floor(10 / 2)` is `5`, `Math.floor(5 / 2)` is `2`. Use a `while` loop (Module 1, "Decisions and loops"), because you don't know in advance how many rounds it takes.
     code: |
       function halvings(n) {
         return n;
@@ -213,6 +215,8 @@ steps:
     title: Compare decimals safely
     body: |
       Write `nearlyEqual(a, b)` that returns `true` when `a` and `b` differ by less than `0.000001`, so `nearlyEqual(0.1 + 0.2, 0.3)` is `true`.
+
+      `Math.abs(x)` gives the size of a number without its sign: `Math.abs(-3)` and `Math.abs(3)` are both `3`. So `Math.abs(a - b)` is "how far apart `a` and `b` are", whichever one is bigger.
     code: |
       function nearlyEqual(a, b) {
         return a === b;

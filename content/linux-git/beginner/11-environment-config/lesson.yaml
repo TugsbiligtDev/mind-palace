@@ -61,6 +61,8 @@ steps:
 
       It tries `/usr/local/bin/git`, then `/usr/bin/git` (found, runs it). If no folder in the list has it: `command not found`.
 
+      <!-- page -->
+
       So "command not found" has three usual causes: a **typo**, the program **isn't installed**, or it's installed in a folder that **isn't on your PATH**. That last one is common after installing tools, and it's fixed by adding the folder:
 
       ```

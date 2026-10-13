@@ -22,7 +22,7 @@ export function WebPanel({
   onDone: () => void;
 }) {
   const p = useProgress();
-  const { feedback, setFeedback, misses, pass, miss } = useStepFeedback(onDone);
+  const { feedback, setFeedback, misses, pass, miss } = useStepFeedback(slot, onDone);
   const [checking, setChecking] = useState(false);
   const check = useMemo(() => webStepCheck(step), [step]);
   const starter = webStarter(step);

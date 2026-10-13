@@ -4,6 +4,10 @@ steps:
     body: |
       Many problems that look different are really the *same shape*. If you learn the shapes, you can recognise them and reach for the right tool. This lesson collects the most useful patterns, each with its cost in **Big-O** (Module 21).
 
+      <!-- page -->
+
+      Here is the whole toolbox on one page. Each row gets its own explanation and exercise in this lesson, so just skim it now and come back later as a map.
+
       | Need | Tool | Cost |
       |---|---|---|
       | last-in, first-out (undo, matching brackets) | a **list** as a stack (`append`, `pop`) | O(1) each |

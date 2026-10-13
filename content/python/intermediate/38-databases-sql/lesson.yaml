@@ -4,12 +4,16 @@ steps:
     body: |
       JSON and CSV files are fine for small data, but as data grows you need to **search fast, change safely, avoid duplicates and let many users in at once**. A **database** does all of that.
 
+      <!-- page -->
+
       A **relational database** stores data in **tables**, like spreadsheets with rules:
 
       - a **row** is one record (one book),
       - a **column** is one property (title, price) with a **type**,
       - a **primary key** uniquely identifies each row (usually an `id`),
       - a **foreign key** points at another table's primary key, forming **relationships** (a book's `author_id` refers to a row in `authors`).
+
+      <!-- page -->
 
       You talk to it in **SQL**. Python ships with **SQLite**, a complete database that lives in a single file (or in memory), through the `sqlite3` module. It is perfect for learning and for many real applications. (If you followed the PostgreSQL course, SQL here will look familiar. The dialect differs slightly, but the ideas are the same.)
 
@@ -163,6 +167,8 @@ steps:
       ```
 
       If the user types `x' OR '1'='1`, the query becomes `... WHERE title = 'x' OR '1'='1'` and returns **every row**. A worse input can delete tables or steal data. (The famous cartoon: a student named `Robert'); DROP TABLE Students;--`.)
+
+      <!-- page -->
 
       The fix is **parameterized queries**: keep the SQL and the data *separate*, using placeholders, and let the database driver handle the data safely:
 

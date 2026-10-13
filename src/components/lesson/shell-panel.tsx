@@ -13,7 +13,7 @@ import { StepFeedback, useStepFeedback } from "./step-feedback";
 // still missing.
 export function ShellPanel({ step, slot, done, onDone }: { step: Extract<Step, { kind: "shell" }>; slot: string; done: boolean; onDone: () => void }) {
   const p = useProgress();
-  const { feedback, setFeedback, misses, pass, miss } = useStepFeedback(onDone);
+  const { feedback, setFeedback, misses, pass, miss, stumble } = useStepFeedback(slot, onDone);
   const check = useMemo(() => shellStepCheck(step), [step]);
   const [saved] = useState(() => p?.code[slot] || undefined);
   const [checking, setChecking] = useState(false);
@@ -49,9 +49,14 @@ export function ShellPanel({ step, slot, done, onDone }: { step: Extract<Step, {
       // What actually ran: `!!` counts as the command it repeated.
       typed.current = [...typed.current, ran.result.echo ?? ran.line];
       last.current = ran.result.stdout + ran.result.stderr;
-      if (check && !doneRef.current) grade(true);
+      if (check && !doneRef.current) {
+        // A command that failed counts as a wrong attempt, so the hint and the answer open up
+        // even for a learner who never presses "Check my work".
+        if (ran.result.exitCode !== 0) stumble();
+        grade(true);
+      }
     },
-    [check, grade],
+    [check, grade, stumble],
   );
 
   const onReady = useCallback(
@@ -82,7 +87,7 @@ export function ShellPanel({ step, slot, done, onDone }: { step: Extract<Step, {
           >
             {checking ? "Checking…" : "Check my work"}
           </button>
-          <span className="text-xs text-muted">The step also checks itself after every command.</span>
+          <span className="text-xs text-muted">The step also checks itself after every command. Stuck? Press it for a hint.</span>
         </div>
       )}
       <StepFeedback feedback={feedback} misses={misses} done={done && !!check} hint={step.hint} answer={check?.solution.replace(/\s+# (allow-error|edit:|answers:).*$/gm, "").trim()} answerLabel="Stuck? Show the commands" />

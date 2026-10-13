@@ -209,6 +209,8 @@ steps:
       order_id  integer NOT NULL REFERENCES orders (order_id) ON DELETE CASCADE
       ```
 
+      <!-- page -->
+
       Inkwell uses all three main actions: `orders.customer_id` is RESTRICT, `order_items.order_id` is CASCADE, and `employees.manager_id` is SET NULL.
 
       `ON UPDATE` works the same way for when a parent's key changes, but with identity keys that never change, you'll rarely need it.

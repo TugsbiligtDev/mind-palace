@@ -25,6 +25,8 @@ steps:
       | `~*` | matches, ignoring case |
       | `!~` / `!~*` | does **not** match |
 
+      <!-- page -->
+
       Unlike LIKE, a regex matches **anywhere** in the text unless you anchor it. The building blocks you'll use most:
 
       | Piece | Matches | Example |

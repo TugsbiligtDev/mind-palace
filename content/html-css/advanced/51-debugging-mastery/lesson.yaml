@@ -116,6 +116,8 @@ steps:
 
       Properties that create a stacking context include: `position` (non-static) **with** a `z-index`, `opacity` below 1, `transform`, `filter`, `will-change`, `isolation: isolate`, `contain: paint`, and flex/grid items with a `z-index`.
 
+      <!-- page -->
+
       To debug: walk **up** from the hidden element, checking each ancestor for those properties (Chrome's Layers panel and the Computed tab help). Fixes, best first:
 
       - **remove** the property that accidentally creates the context (often a `transform` left over from an animation, or `z-index: 1` added "just in case");

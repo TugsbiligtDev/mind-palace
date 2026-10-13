@@ -188,6 +188,8 @@ steps:
     title: "6. Save and load safely"
     body: |
       Write `save_ledger(path, ledger)` and `load_ledger(path)`. Saving writes JSON. Loading must return `[]` if the file is missing, damaged, or not a list. It must also **drop any item that is not a dictionary** with the keys `date`, `description`, `cents` (a whole number) and `category`, so one bad row can never crash the program.
+
+      `isinstance(value, kind)` checks what type something is: `isinstance([1, 2], list)` is `True`, `isinstance("hi", dict)` is `False`, `isinstance(5, int)` is `True`. Use it to test "is this a list?" and "is this a dictionary?".
     code: |
       def save_ledger(path, ledger):
           # your code

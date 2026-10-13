@@ -39,6 +39,8 @@ steps:
          4242 learner   20   0   22000   9000   5400 R  97.4   3.1  52:17.00 report-builder
       ```
 
+      <!-- page -->
+
       **Load average** is how many processes wanted the CPU, averaged over 1, 5 and 15 minutes; compare it with the number of CPUs (`nproc`). `S` is the state: **R** running, **S** sleeping (waiting for something), **T** stopped, **Z** zombie (finished, not yet collected by its parent).
 
       In top: **q** quits, **P** sorts by CPU, **M** by memory, **k** asks for a PID to kill. **htop** (`sudo apt install htop`) is a friendlier, colourful version with a mouse and arrow keys.
@@ -68,6 +70,8 @@ steps:
       | `KILL` | 9 | "stop now": the kernel ends it, no questions | `kill -9 PID` |
       | `HUP` | 1 | "your terminal went away" (many services re-read their settings) | closing the window |
       | `STOP` / `CONT` | 19 / 18 | pause / resume | **Ctrl+Z** sends `TSTP`, similar |
+
+      <!-- page -->
 
       A well-behaved program cleans up on `TERM` (saves its work, deletes temporary files) and exits. A stuck or badly written one may ignore it. **`kill -9` is the last resort**: the process gets no chance to clean up, so files it was writing may be left half-done. Always try plain `kill` first and give it a few seconds.
 
@@ -102,6 +106,10 @@ steps:
       learner@inkwell:~$ jobs
       [1]+  Running                 sleep 300 &
       ```
+
+      <!-- page -->
+
+      The keys and commands for moving jobs between the foreground and the background:
 
       | Keys / command | Does |
       |---|---|

@@ -14,6 +14,8 @@ steps:
       - **`find(x)`**: follow parents up to the root. Two items are in the same group when they have the **same root**.
       - **`union(a, b)`**: find both roots. If they differ, make one root the parent of the other. The groups are merged.
 
+      <!-- page -->
+
       Two upgrades make it very fast:
       - **Path compression:** while finding, point every visited item **directly at the root**, so the next `find` is short.
       - **Union by size:** attach the **smaller** tree under the **bigger** one, so trees stay shallow.

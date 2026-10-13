@@ -48,6 +48,8 @@ steps:
       | `items.index(x)` | position of the first `x` |
       | `items.sort()` | sort **in place** (returns `None`!) |
 
+      <!-- page -->
+
       Two easy mix-ups:
 
       - `append` adds one thing; `extend` adds many. `[1].append([2, 3])` gives `[1, [2, 3]]`, a list inside a list. `[1].extend([2, 3])` gives `[1, 2, 3]`.

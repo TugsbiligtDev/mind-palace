@@ -79,6 +79,8 @@ steps:
       | **ENUM type** | `CREATE TYPE order_status AS ENUM ('pending','paid','shipped','delivered','cancelled')` | compact, sorts in the listed order, reusable in many tables | **adding** values is easy, **removing or renaming** them is hard |
       | **Lookup table** | `order_statuses (status PRIMARY KEY, label, sort_order)` + a foreign key | values are data: editable, can carry extra columns (a label, a color) | one more table and join |
 
+      <!-- page -->
+
       Rough guide: **CHECK** for short lists local to one table; **ENUM** for stable lists that will only grow; a **lookup table** when the list changes often, has extra info, or is managed by non-developers.
 
   - kind: try

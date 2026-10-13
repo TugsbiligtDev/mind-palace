@@ -6,6 +6,10 @@ steps:
 
       Think of a blueprint for a book. Every book has a title and an author (its **data**, called *attributes*) and can do things such as describe itself (its **behaviour**, called *methods*). One blueprint makes as many books as you like.
 
+      <!-- page -->
+
+      Here is that blueprint in code. Read it first, then the notes below explain each new piece.
+
       ```python
       class Book:
           def __init__(self, title, author):
@@ -187,6 +191,8 @@ steps:
       - `Book.from_string("Dune by Herbert (1965)")` is a `@classmethod` that builds a book from that text pattern. The year is a whole number.
       - `Book.is_valid_year(y)` is a `@staticmethod`: `True` if `1450 <= y <= 2100`.
       - `label()` returns `"Dune (1965)"`.
+
+      Tip for `from_string`: split the text on `" by "`, then on `" ("`. The year piece still ends with `)`: `"1965)".rstrip(")")` removes it (`rstrip` strips characters from the **right** end), and `int(...)` turns it into a number.
     code: |
       class Book:
           def __init__(self, title, author, year):

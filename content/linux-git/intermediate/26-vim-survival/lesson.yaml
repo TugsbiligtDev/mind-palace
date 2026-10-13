@@ -21,6 +21,10 @@ steps:
       | **Insert** | **i** (insert before the cursor), **a** (after), **o** (new line below) | type text, like any editor. The bottom line says `-- INSERT --` |
       | **Command line** | **:** in Normal mode | type a command at the bottom, then Return: `:w` save, `:q` quit |
 
+      <!-- page -->
+
+      With the three modes in mind, these five moves are all you need to edit a file and get out.
+
       The survival kit:
 
       | To | Press |

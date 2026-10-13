@@ -12,7 +12,11 @@ steps:
       fi
       ```
 
-      `if` runs a **command** and looks at its **exit code**: 0 means true. So any command can be a condition (`grep -q`, `cd somewhere`, `ping -c1 host`). For comparing things, the command is **`[[ … ]]`**, bash's test (spaces inside the brackets are required):
+      `if` runs a **command** and looks at its **exit code**: 0 means true. So any command can be a condition (`grep -q`, `cd somewhere`, `ping -c1 host`). For comparing things, the command is **`[[ … ]]`**, bash's test (spaces inside the brackets are required). The next part lists what it can test.
+
+      <!-- page -->
+
+      The tests you can put inside `[[ … ]]`. You don't need to memorize them: come back to this table when you need one.
 
       | Test | True when |
       |---|---|
@@ -75,6 +79,8 @@ steps:
       app-2026-09-02.log: 1
       …
       ```
+
+      `basename PATH` prints just the file name from a path: `basename ~/logs/old/app.log` prints `app.log`. Inside your loop, `$(basename "$f")` gives the name.
     tests:
       - ~/log-lines.sh
       - "printf 'a\\nb\\nc\\n' > ~/logs/old/app-2026-09-05.log && ~/log-lines.sh; rm -f ~/logs/old/app-2026-09-05.log"

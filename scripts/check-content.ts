@@ -98,15 +98,20 @@ async function main() {
       copies.push(copy);
       return copy;
     };
+    // Each copy is a whole database in memory: close them after every step and question, or a
+    // long lesson runs GitHub's machine out of memory.
+    const release = async () => {
+      await Promise.all(copies.map((c) => c.close()));
+      copies = [];
+    };
 
     for (const { level, topics } of bundle.levels) {
       for (const t of topics) {
         if (only && !t.key.includes(only)) continue;
-        await Promise.all(copies.map((c) => c.close()));
-        copies = [];
         if (!bases.has(t.engine.key)) bases.set(t.engine.key, await makeBase(t.engine.setup));
         lessonBase = bases.get(t.engine.key)!;
         for (const [i, step] of t.lesson.steps.entries()) {
+          await release();
           if (step.kind === "code" || step.kind === "web") {
             fail(`${t.key} lesson step ${i + 1}`, `a SQL course uses "try" steps, not "${step.kind}" steps`);
             continue;
@@ -137,6 +142,7 @@ async function main() {
 
         const shapeOk = checkQuizShape(t);
         for (const [i, q] of t.quiz.questions.entries()) {
+          await release();
           if (!shapeOk[i]) continue;
           const where = `${t.key} quiz Q${i + 1}`;
           if (q.type === "predict") {
@@ -160,7 +166,7 @@ async function main() {
       }
       console.log(`  checked ${bundle.track.id}/${level.id} (${topics.length} topics)`);
     }
-    await Promise.all(copies.map((c) => c.close()));
+    await release();
     await Promise.all([...bases.values()].map((b) => b.close()));
   }
 

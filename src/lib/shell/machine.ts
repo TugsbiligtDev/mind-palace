@@ -1,7 +1,7 @@
 // The practice terminal's computer: a simulated Linux machine (just-bash plus the commands in
 // ./commands) that remembers its current folder, variables and aliases between commands, the
 // way a real terminal session does. The same class runs in the browser and in the content check.
-import { Bash, InMemoryFs, MountableFs, getCommandNames, parse, serialize, type IFileSystem, type ScriptNode } from "just-bash";
+import { Bash, InMemoryFs, MountableFs, getCommandNames, type IFileSystem } from "just-bash";
 import { customCommands, STUB_NAMES } from "./commands";
 import { Repo } from "./git/repo";
 import { PermissionError, Perms } from "./perms";
@@ -97,37 +97,44 @@ function backgroundPart(line: string): string | undefined {
   return undefined;
 }
 
-// Commands that change how the rest of the line runs, so a line using them runs in one piece.
-const WHOLE_LINE = new Set(["exit", "logout", "return", "break", "continue", "set", "shopt", "alias", "unalias", "source", ".", "exec", "trap", "eval"]);
+// Words that change how the rest of the line runs (or start a loop or a test that spans it), so
+// a line using them runs in one piece.
+const WHOLE_LINE = new Set(["exit", "logout", "return", "break", "continue", "set", "shopt", "alias", "unalias", "source", ".", "exec", "trap", "eval", "if", "then", "else", "elif", "fi", "for", "while", "until", "do", "done", "case", "esac", "select", "function"]);
 
 /**
  * `a; b || c` as its separate commands, each with the operator before it. just-bash collects a
  * line's normal output and its error messages separately, so a line run in one go shows every
  * error after all the output; running it piece by piece keeps them in the order they happened.
- * Undefined when the line is a single command, or something safer to run in one go.
+ * Undefined when the line is a single command, or something safer to run in one go (brackets,
+ * braces, backticks or $(...), a comment, a here-document, a loop or a test).
  */
 function splitLine(line: string): { op: string; text: string }[] | undefined {
   if (line.includes("\n") || line.includes("<<")) return undefined;
-  let ast: ScriptNode;
-  try {
-    ast = parse(line);
-  } catch {
-    return undefined;
-  }
   const pieces: { op: string; text: string }[] = [];
-  for (const st of ast.statements) {
-    if (st.background || st.deferredError) return undefined;
-    for (const [i, p] of st.pipelines.entries()) {
-      for (const c of p.commands) {
-        if (c.type !== "SimpleCommand") return undefined;
-        const name = c.name ? serialize({ type: "Script", statements: [{ type: "Statement", pipelines: [{ ...p, commands: [{ ...c, args: [], redirections: [], assignments: [] }] }], operators: [], background: false }] }) : "";
-        if (WHOLE_LINE.has(name.replace(/^!\s*/, "").trim())) return undefined;
-      }
-      const text = serialize({ type: "Script", statements: [{ type: "Statement", pipelines: [p], operators: [], background: false }] });
-      pieces.push({ op: i ? st.operators[i - 1] : ";", text });
+  let q: string | null = null;
+  let op = ";";
+  let start = 0;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) {
+      if (c === q) q = null;
+      else if (c === "\\" && q === '"') i++;
+      continue;
+    }
+    if (c === "'" || c === '"') q = c;
+    else if (c === "\\") i++;
+    else if ("(){}`".includes(c) || (c === "#" && (i === 0 || /\s/.test(line[i - 1])))) return undefined;
+    else if (c === ";" || ((c === "&" || c === "|") && line[i + 1] === c)) {
+      pieces.push({ op, text: line.slice(start, i).trim() });
+      op = c === ";" ? ";" : c + c;
+      if (c !== ";") i++;
+      start = i + 1;
     }
   }
-  return pieces.length > 1 ? pieces : undefined;
+  if (q) return undefined;
+  pieces.push({ op, text: line.slice(start).trim() });
+  if (pieces.length < 2 || pieces.some((p) => !p.text || WHOLE_LINE.has(p.text.replace(/^!\s*/, "").split(/\s+/)[0]))) return undefined;
+  return pieces;
 }
 
 // "sleep 600" or "sleep 2m": how many seconds a background sleep lasts.

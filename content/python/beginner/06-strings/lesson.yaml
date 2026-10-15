@@ -120,6 +120,64 @@ steps:
 
       `x in text` asks whether one piece of text sits inside another: `"tec" in "detective"` is `True`.
 
+      <!-- page -->
+
+      Here they are on Inkwell's sign. You can **chain** methods: `shelf.strip().upper()` strips first, then turns the result into capitals.
+
+      ```python
+      shelf = "  Inkwell Books  "
+      print("[" + shelf.strip() + "]")
+      print(shelf.strip().upper())
+      print(shelf.strip().lower())
+      print("Inkwell Books".replace("Books", "Cafe"))
+      print("ink,quill,paper".split(","))
+      print(" + ".join(["ink", "quill"]))
+      print("Inkwell".startswith("Ink"))
+      print("Inkwell".find("well"))
+      print("Inkwell".find("zz"))
+      print("well" in "Inkwell")
+      ```
+
+      prints:
+
+      ```
+      [Inkwell Books]
+      INKWELL BOOKS
+      inkwell books
+      Inkwell Cafe
+      ['ink', 'quill', 'paper']
+      ink + quill
+      True
+      3
+      -1
+      True
+      ```
+
+      (The square brackets in the first line are only there so you can see that the spaces are gone.)
+
+  - kind: code
+    title: "Try it: string methods"
+    body: |
+      Run this and match each output line with its method. Then try some changes:
+
+      - put a different word into `replace`,
+      - split `"a-b-c"` on `"-"`,
+      - look for `"Ink"` with `find`: where does it start?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      shelf = "  Inkwell Books  "
+      print("[" + shelf.strip() + "]")
+      print(shelf.strip().upper())
+      print(shelf.strip().lower())
+      print("Inkwell Books".replace("Books", "Cafe"))
+      print("ink,quill,paper".split(","))
+      print(" + ".join(["ink", "quill"]))
+      print("Inkwell".startswith("Ink"))
+      print("Inkwell".find("well"))
+      print("Inkwell".find("zz"))
+      print("well" in "Inkwell")
+
   - kind: code
     title: Make a URL slug
     body: |
@@ -186,6 +244,45 @@ steps:
       - **Escape characters** start with a backslash: `\n` is a new line, `\t` a tab, `\"` a quote, `\\` a backslash. `print("a\nb")` prints two lines.
       - **Triple quotes** `"""..."""` make a **multi-line string** that keeps line breaks.
 
+      <!-- page -->
+
+      One more example. `:.2f` after a value means "show it with 2 decimals":
+
+      ```python
+      book = "Dune"
+      price = 8.5
+      copies = 3
+      print(f"{book} costs {price}")
+      print(f"{copies} copies cost {price * copies:.2f}")
+      print(f"Price: {price:.2f}")
+      print("line one\nline two")
+      ```
+
+      prints:
+
+      ```
+      Dune costs 8.5
+      3 copies cost 25.50
+      Price: 8.50
+      line one
+      line two
+      ```
+
+  - kind: code
+    title: "Try it: f-strings"
+    body: |
+      Run this. Then change `:.2f` to `:.1f` and see how many decimals you get. Change `book` to another title, and put a `\n` inside one of the f-strings.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      book = "Dune"
+      price = 8.5
+      copies = 3
+      print(f"{book} costs {price}")
+      print(f"{copies} copies cost {price * copies:.2f}")
+      print(f"Price: {price:.2f}")
+      print("line one\nline two")
+
   - kind: code
     title: A clue summary
     body: |
@@ -242,6 +339,21 @@ steps:
 
       They still work, and you should be able to read them. Write **f-strings** in your own code.
 
+  - kind: code
+    title: "Try it: three ways, same text"
+    body: |
+      All three lines print exactly the same sentence. In the `%` style, `%s` means "text goes here" and `%d` means "a whole number goes here".
+
+      Then try one change: change `clues = 3` to `clues = 4` and check all three update.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      name = "Ada"
+      clues = 3
+      print("%s found %d clues" % (name, clues))       # very old
+      print("{} found {} clues".format(name, clues))   # older
+      print(f"{name} found {clues} clues")             # write this one
+
   - kind: info
     title: "🔹 t-strings (new in Python 3.14)"
     body: |
@@ -253,6 +365,35 @@ steps:
       ```
 
       An f-string immediately produces finished text. A **t-string** produces a *template object* that keeps the fixed text and the inserted values **separate**, so a library can inspect and safely process them (for example, to stop harmful input in a database query or web page). You will rarely write one yourself as a beginner. It is good to know the name when you see it.
+
+      You can see the difference by printing both:
+
+      ```python
+      name = "Ada"
+      print(f"Hello {name}")          # finished text
+      template = t"Hello {name}"
+      print(template.strings)         # the fixed text pieces
+      print(template.values)          # the inserted values, kept apart
+      ```
+
+      prints:
+
+      ```
+      Hello Ada
+      ('Hello ', '')
+      ('Ada',)
+      ```
+
+  - kind: choice
+    title: "Quick check: f or t?"
+    body: |
+      `name = "Ada"`. What does `f"Hi {name}"` give you, compared with `t"Hi {name}"`?
+    options:
+      - "Both give the text `Hi Ada`"
+      - "The f-string gives the text `Hi Ada`; the t-string gives a template object with `Hi ` and `Ada` kept separate"
+      - "The t-string gives the text; the f-string gives a template object"
+    answer: 1
+    explanation: "An f-string is finished text straight away. A t-string is a Template that keeps the fixed text and the values apart, so a library can check the values before joining them."
 
   - kind: why
     body: |

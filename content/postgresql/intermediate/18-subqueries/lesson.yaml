@@ -57,10 +57,39 @@ steps:
       SELECT full_name,
              salary,
              salary - (SELECT avg(salary) FROM employees) AS above_average
-      FROM employees;
+      FROM employees
+      ORDER BY salary DESC;
       ```
 
+      Returns:
+
+      | full_name | salary | above_average |
+      |---|---|---|
+      | Helen Carter | 150000.00 | 79250.000000000000 |
+      | Marcus Reed | 95000.00 | 24250.000000000000 |
+      | Priya Sharma | 92000.00 | 21250.000000000000 |
+      | Lena Ortiz | 52000.00 | -18750.000000000000 |
+      | Tom Becker | 48000.00 | -22750.000000000000 |
+      | Sara Lindqvist | 46000.00 | -24750.000000000000 |
+      | Kenji Mori | 45000.00 | -25750.000000000000 |
+      | Omar Haddad | 38000.00 | -32750.000000000000 |
+
+      The subquery worked out the average once (70750) and every row subtracted it.
+
       If it returns **no rows**, the value is NULL. If it returns **more than one** row, PostgreSQL stops with an error, because it can't squeeze a list into one value.
+
+  - kind: try
+    title: "Try it: a subquery as a column"
+    body: |
+      Run it and look at the `above_average` column: positive means above the average, negative means below.
+
+      Then run just the part in parentheses on its own to see the single value it produces. Try changing `avg` to `max`: now everyone's number shows how far below the top salary they are. Nothing is graded here.
+    sql: |
+      SELECT full_name,
+             salary,
+             salary - (SELECT avg(salary) FROM employees) AS above_average
+      FROM employees
+      ORDER BY salary DESC;
 
   - kind: try
     title: Your turn with a scalar subquery
@@ -90,14 +119,39 @@ steps:
       When the inner query returns a **list**, use `IN`:
 
       ```sql
-      SELECT first_name, last_name
+      SELECT customer_id, first_name, last_name
       FROM customers
-      WHERE customer_id IN (SELECT customer_id FROM orders WHERE status = 'cancelled');
+      WHERE customer_id IN (SELECT customer_id FROM orders WHERE status = 'cancelled')
+      ORDER BY customer_id
+      LIMIT 5;
       ```
+
+      Returns:
+
+      | customer_id | first_name | last_name |
+      |---|---|---|
+      | 1 | Emma | Johnson |
+      | 2 | Liam | Smith |
+      | 3 | Olivia | Brown |
+      | 4 | Noah | Garcia |
+      | 5 | Ava | Martinez |
 
       Read it as: *customers whose ID is in the list of IDs with a cancelled order.* The subquery must return **one column**. Duplicates in the list don't matter: a customer with three cancelled orders still appears once.
 
       Compared with a join, IN never multiplies rows (no fan-out, Module 14). It only asks "is this in the list?"
+
+  - kind: try
+    title: "Try it: IN with a subquery"
+    body: |
+      Run it. Then run the inner query on its own (with `LIMIT 5` after it) to see the list of IDs it hands to IN.
+
+      Then change `'cancelled'` to `'pending'` and run again. Nothing is graded here.
+    sql: |
+      SELECT customer_id, first_name, last_name
+      FROM customers
+      WHERE customer_id IN (SELECT customer_id FROM orders WHERE status = 'cancelled')
+      ORDER BY customer_id
+      LIMIT 5;
 
   - kind: try
     title: Your turn with IN
@@ -157,7 +211,8 @@ steps:
 
       Delete the INSERT and run again: Blue Owl Press appears. One NULL made it vanish.
     sql: |
-      INSERT INTO books (title, genre_id, price) VALUES ('Untitled Manuscript', 4, 9.99);
+      INSERT INTO books (title, genre_id, price)
+      VALUES ('Untitled Manuscript', 4, 9.99);
 
       SELECT name
       FROM publishers
@@ -168,7 +223,8 @@ steps:
     body: |
       Keep the INSERT. Rewrite the query with **NOT EXISTS**, so it returns Blue Owl Press even with the NULL present.
     sql: |
-      INSERT INTO books (title, genre_id, price) VALUES ('Untitled Manuscript', 4, 9.99);
+      INSERT INTO books (title, genre_id, price)
+      VALUES ('Untitled Manuscript', 4, 9.99);
 
       SELECT name
       FROM publishers
@@ -196,9 +252,33 @@ steps:
       FROM employees e;
       ```
 
+      Returns:
+
+      | full_name | orders_rung_up |
+      |---|---|
+      | Helen Carter | 0 |
+      | Marcus Reed | 0 |
+      | Priya Sharma | 0 |
+      | Tom Becker | 1902 |
+      | Sara Lindqvist | 1955 |
+      | Kenji Mori | 1966 |
+      | Lena Ortiz | 0 |
+      | Omar Haddad | 0 |
+
       For Tom it counts Tom's orders, for Sara, Sara's, and so on. Unlike a plain subquery (which runs once), this one depends on `e`.
 
       They're very readable. On big tables they can be slow, and a join with GROUP BY often does the same job faster (Module 33 shows how to tell).
+
+  - kind: try
+    title: "Try it: a correlated subquery"
+    body: |
+      Run it and check the counts. Then add `AND o.status = 'cancelled'` inside the subquery's WHERE: now each employee gets their own count of cancelled orders. Nothing is graded here.
+    sql: |
+      SELECT e.full_name,
+             (SELECT count(*)
+              FROM orders o
+              WHERE o.employee_id = e.employee_id) AS orders_rung_up
+      FROM employees e;
 
   - kind: try
     title: Your turn with a correlated subquery
@@ -230,7 +310,27 @@ steps:
       ) AS order_totals;
       ```
 
-      This answers a two-level question: first total each order, then average those totals (35.68). A plain `avg(unit_price)` would average the **order lines**, which is a different number.
+      Returns:
+
+      | avg_order_value |
+      |---|
+      | 35.68 |
+
+      This answers a two-level question: first total each order, then average those totals. A plain `avg(unit_price)` would average the **order lines**, which is a different number.
+
+  - kind: try
+    title: "Try it: a derived table"
+    body: |
+      Run it. Then run only the inner SELECT (add `LIMIT 3` at the end) to see the temporary table: one row per order with its total, like order 1 at 24.98.
+
+      Then change `avg(total)` to `max(total)` to find the biggest order. Nothing is graded here.
+    sql: |
+      SELECT round(avg(total), 2) AS avg_order_value
+      FROM (
+          SELECT order_id, sum(quantity * unit_price) AS total
+          FROM order_items
+          GROUP BY order_id
+      ) AS order_totals;
 
   - kind: try
     title: Your turn to follow the money

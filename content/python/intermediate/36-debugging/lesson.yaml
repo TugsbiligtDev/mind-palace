@@ -12,6 +12,28 @@ steps:
 
       Change **one thing at a time**, and write down what you learned. The tools in this lesson are just ways to look inside a running program.
 
+  - kind: code
+    title: "Try it: follow the method"
+    body: |
+      This average is wrong: it should be 4.0. Follow the method:
+
+      1. **Reproduce:** run it; it prints the wrong number every time.
+      2. **Hypothesis:** "the total or the count is wrong".
+      3. **Test it:** add `print("total", total, "count", count)` just before the `return`, and run.
+      4. **Fix one thing**, run again, and check you get 4.0.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      def average(scores):
+          total = 0
+          count = 0
+          for s in scores:
+              total += s
+          count += 1
+          return total / count
+
+      print(average([2, 4, 6]))
+
   - kind: explain
     title: breakpoint() and pdb
     body: |
@@ -288,6 +310,32 @@ steps:
       - **Bisect:** if it worked yesterday, `git bisect` finds the commit that broke it by halving the history.
       - **Take breaks.** A fresh mind sees the typo.
       - After fixing, ask: *why did I not catch this earlier, and can a test or a type hint catch it next time?*
+
+      For example, *read the error literally*:
+
+      ```python
+      prices = {"dune": 8.5}
+      print(prices["emma"])
+      ```
+
+      prints:
+
+      ```
+      KeyError: 'emma'
+      ```
+
+      It names the exact problem: there is no key `'emma'` in the dictionary. No guessing needed.
+
+  - kind: choice
+    title: "Quick check: yesterday it worked"
+    body: |
+      Your program worked last week and is broken today, after 30 commits. Which habit finds the guilty commit fastest?
+    options:
+      - "Read every commit from the newest back"
+      - "`git bisect`: test the middle commit and halve the search each time"
+      - "Rewrite the function from scratch"
+    answer: 1
+    explanation: "Bisecting halves the history at each step, so 30 commits take about 5 tests instead of up to 30. Reading every commit is slow, and rewriting throws away the clue."
 
   - kind: why
     body: |

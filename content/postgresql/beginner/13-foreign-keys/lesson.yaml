@@ -60,6 +60,53 @@ steps:
       - Name the FK column after what it points at: `customer_id`, `book_id`. Anyone can then guess the link.
       - An FK column **may be NULL** unless you add NOT NULL. NULL means "not linked to anything", like an online order with no employee.
 
+      **Example.** A `returns` table using both spellings. The named one shows up in its error:
+
+      ```sql
+      CREATE TABLE returns (
+          return_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          order_id     integer NOT NULL REFERENCES orders (order_id),
+          employee_id  integer,
+          CONSTRAINT returns_employee_fk FOREIGN KEY (employee_id) REFERENCES employees (employee_id)
+      );
+      INSERT INTO returns (order_id, employee_id)
+      VALUES (1, NULL)
+      RETURNING *;
+      ```
+
+      | return_id | order_id | employee_id |
+      |---|---|---|
+      | 1 | 1 | NULL |
+
+      A NULL employee is fine (nobody handled it yet). Employee 99 doesn't exist:
+
+      ```sql
+      INSERT INTO returns (order_id, employee_id) VALUES (1, 99);
+      ```
+
+      ```text
+      ERROR:  insert or update on table "returns" violates foreign key constraint "returns_employee_fk"
+      ```
+
+  - kind: try
+    title: "Try it: two ways to write a foreign key"
+    body: |
+      Run it: the first return goes in, the second is refused, and the error uses the name you chose. Change `99` to `3` (a real employee) and run again.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE TABLE returns (
+          return_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          order_id     integer NOT NULL REFERENCES orders (order_id),
+          employee_id  integer,
+          CONSTRAINT returns_employee_fk FOREIGN KEY (employee_id) REFERENCES employees (employee_id)
+      );
+      INSERT INTO returns (order_id, employee_id)
+      VALUES (1, NULL)
+      RETURNING *;
+      INSERT INTO returns (order_id, employee_id) VALUES (1, 99);
+    broken_starter: true
+
   - kind: explain
     title: One-to-many
     body: |
@@ -68,6 +115,52 @@ steps:
       The rule: **the foreign key goes on the "many" side.** `orders` holds `customer_id`. You can't do it the other way round, because a customer row can't hold a list of order IDs in one column.
 
       Other Inkwell examples: one publisher → many books, one genre → many books, one order → many order lines.
+
+      **Example.** Customer 1 (Emma) and her orders. Four order rows all point at the same customer:
+
+      ```sql
+      SELECT order_id, customer_id, ordered_at
+      FROM orders
+      WHERE customer_id = 1
+      ORDER BY order_id;
+      ```
+
+      | order_id | customer_id | ordered_at |
+      |---|---|---|
+      | 1 | 1 | 2024-02-03 10:05:00+00 |
+      | 4 | 1 | 2024-03-15 20:45:00+00 |
+      | 12 | 1 | 2024-07-01 22:10:00+00 |
+      | 20 | 1 | 2024-10-12 20:30:00+00 |
+
+      One customer row, many order rows: the `customer_id` lives on the "many" side.
+
+  - kind: try
+    title: "Try it: one customer, many orders"
+    body: |
+      The example, then a count of orders per customer. Run it, then change `customer_id = 1` to `2`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT order_id, customer_id, ordered_at
+      FROM orders
+      WHERE customer_id = 1
+      ORDER BY order_id;
+
+      SELECT customer_id, count(*) AS orders
+      FROM orders
+      GROUP BY customer_id
+      ORDER BY orders DESC, customer_id;
+
+  - kind: choice
+    title: "Quick check: where does the FK go?"
+    body: One **publisher** publishes many **books**. Each book has one publisher. Which column do you add?
+    options:
+      - "`books.publisher_id`, pointing at `publishers`"
+      - "`publishers.book_id`, pointing at `books`"
+      - "Both of them"
+      - "`publishers.book_ids`, holding a list of book IDs"
+    answer: 0
+    explanation: "The foreign key goes on the \"many\" side. Each book holds one publisher ID. A publisher row can't hold all its books in one column."
 
   - kind: explain
     title: One-to-one
@@ -96,8 +189,10 @@ steps:
           customer_id  integer NOT NULL UNIQUE REFERENCES customers (customer_id),
           points       integer NOT NULL DEFAULT 0
       );
-      INSERT INTO loyalty_cards (card_no, customer_id) VALUES ('LC-0001', 1);
-      INSERT INTO loyalty_cards (card_no, customer_id) VALUES ('LC-0002', 1);
+      INSERT INTO loyalty_cards (card_no, customer_id)
+      VALUES ('LC-0001', 1);
+      INSERT INTO loyalty_cards (card_no, customer_id)
+      VALUES ('LC-0002', 1);
     expect_error: true
 
   - kind: explain
@@ -213,9 +308,32 @@ steps:
 
       Inkwell uses all three main actions: `orders.customer_id` is RESTRICT, `order_items.order_id` is CASCADE, and `employees.manager_id` is SET NULL.
 
+      **RESTRICT** in action: customer 4 has two orders, so deleting them is refused.
+
+      ```sql
+      DELETE FROM customers WHERE customer_id = 4;
+      ```
+
+      ```text
+      ERROR:  update or delete on table "customers" violates RESTRICT setting of
+              foreign key constraint "orders_customer_id_fkey" on table "orders"
+      ```
+
+      The customer and their orders are untouched.
+
       `ON UPDATE` works the same way for when a parent's key changes, but with identity keys that never change, you'll rarely need it.
 
       **Be careful with CASCADE.** One delete can quietly remove thousands of rows in other tables.
+
+  - kind: try
+    title: "Try it: RESTRICT"
+    body: |
+      Run it and read the error. Then try customer `17` instead: Harper has no orders, so nothing points at her row and the delete works.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      DELETE FROM customers WHERE customer_id = 4;
+    broken_starter: true
 
   - kind: try
     title: CASCADE in action
@@ -230,7 +348,8 @@ steps:
           note      text NOT NULL
       );
       INSERT INTO orders (customer_id) VALUES (17);
-      INSERT INTO order_notes (order_id, note) VALUES (31, 'Gift wrap'), (31, 'Leave with neighbor');
+      INSERT INTO order_notes (order_id, note)
+      VALUES (31, 'Gift wrap'), (31, 'Leave with neighbor');
 
       DELETE FROM orders WHERE order_id = 31;
       SELECT count(*) AS notes_left FROM order_notes;
@@ -274,6 +393,45 @@ steps:
 
       The Inkwell dataset script follows exactly this order.
 
+      **Example.** An order for a customer who isn't there yet is refused:
+
+      ```sql
+      INSERT INTO orders (customer_id) VALUES (21);
+      ```
+
+      ```text
+      ERROR:  insert or update on table "orders" violates foreign key constraint "orders_customer_id_fkey"
+      ```
+
+      Parent first, then child, and both go in:
+
+      ```sql
+      INSERT INTO customers (first_name, last_name, email)
+      VALUES ('Nina', 'Park', 'nina.park@example.com') RETURNING customer_id;   -- 21
+
+      INSERT INTO orders (customer_id)
+      VALUES (21)
+      RETURNING customer_id, status;
+      ```
+
+      | customer_id | status |
+      |---|---|
+      | 21 | pending |
+
+  - kind: try
+    title: "Try it: parents first"
+    body: |
+      The right order: customer, then order. Run it. Then swap the two INSERTs so the order comes first, and read the error.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      INSERT INTO customers (first_name, last_name, email)
+      VALUES ('Nina', 'Park', 'nina.park@example.com') RETURNING customer_id;
+
+      INSERT INTO orders (customer_id)
+      VALUES (21)
+      RETURNING order_id, customer_id, status;
+
   - kind: explain
     title: "Common mistake: FK columns aren't indexed"
     body: |
@@ -292,6 +450,22 @@ steps:
 
       Inkwell's foreign key columns have **no** indexes yet, on purpose. Adding them is one of your later exercises.
 
+  - kind: try
+    title: "Try it: index a foreign key"
+    body: |
+      Run it. The second query lists the indexes on `orders`: `orders_pkey` (made automatically for the primary key) and the new `orders_customer_id_idx`.
+
+      Then try `employees (manager_id)`: change the index name to `employees_manager_id_idx` and the `tablename` to `'employees'`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE INDEX orders_customer_id_idx ON orders (customer_id);
+
+      SELECT indexname
+      FROM pg_indexes
+      WHERE tablename = 'orders'
+      ORDER BY indexname;
+
   - kind: info
     title: "🔹 DEFERRABLE constraints"
     body: |
@@ -302,8 +476,10 @@ steps:
     body: |
       A new order (it gets `order_id` **31**) with one line. Run it and read the error, then fix the script so both rows are saved. Checked by looking at order 31 and its line.
     sql: |
-      INSERT INTO order_items (order_id, book_id, quantity, unit_price) VALUES (31, 1, 1, 9.99);
-      INSERT INTO orders (customer_id, ordered_at, status) VALUES (1, '2025-02-01 10:00+00', 'paid');
+      INSERT INTO order_items (order_id, book_id, quantity, unit_price)
+      VALUES (31, 1, 1, 9.99);
+      INSERT INTO orders (customer_id, ordered_at, status)
+      VALUES (1, '2025-02-01 10:00+00', 'paid');
     broken_starter: true
     expect: |
       INSERT INTO orders (customer_id, ordered_at, status) VALUES (1, '2025-02-01 10:00+00', 'paid');

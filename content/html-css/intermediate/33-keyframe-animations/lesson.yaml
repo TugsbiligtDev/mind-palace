@@ -26,6 +26,44 @@ steps:
       }
       ```
 
+  - kind: web
+    title: "Try it: keyframes"
+    body: |
+      The notice fades in once when the page loads; the badge pulses for ever (`infinite`). Neither needs a hover: animations run by themselves.
+
+      Try this:
+
+      1. Change any character in the CSS to replay the fade-in, or change `400ms` to `2s` to watch it.
+      2. Change the pulse's `50%` scale to `1.3`.
+      3. Remove `infinite` from `.badge`. It pulses once and stops.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p class="notice">Poetry night is on Thursday.</p>
+      <span class="badge">New</span>
+    css: |
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+
+      @keyframes pulse {
+        0%, 100% { scale: 1; }
+        50%      { scale: 1.08; }
+      }
+
+      .notice {
+        animation: fade-in 400ms ease-out;
+      }
+
+      .badge {
+        display: inline-block;
+        background: #7c2d12;
+        color: white;
+        padding: 4px 10px;
+        animation: pulse 1s ease-in-out infinite;
+      }
+
   - kind: explain
     title: The animation properties
     body: |
@@ -184,6 +222,17 @@ steps:
       ```
 
       That blanket rule (with `!important`, one of its rare honest uses) is common in resets.
+
+  - kind: choice
+    title: "Quick check: a good use"
+    body: |
+      Which animation follows the guidelines?
+    options:
+      - "A logo that spins for ever on every page"
+      - "A 200ms fade when a newly added item appears in the basket"
+      - "A banner that flashes five times a second to catch attention"
+    answer: 1
+    explanation: "A short fade shows that something changed. Endless spinning is decoration, and flashing more than three times a second can trigger seizures."
 
   - kind: why
     body: |

@@ -8,6 +8,39 @@ steps:
 
       A **trie** (say "try") stores words so that **shared beginnings are stored once**, and a prefix lookup costs only the length of the prefix.
 
+      **Example: the slow way.** With a plain list (or Set), finding words that start with `app` means testing every stored word:
+
+      ```js
+      const words = ["apple", "apply", "banana", "application", "band", "ape"];
+      let tested = 0;
+      const matches = words.filter((w) => {
+        tested++;
+        return w.startsWith("app");
+      });
+      console.log(matches, "after testing", tested, "words");
+      ```
+
+      prints:
+
+      ```
+      [ 'apple', 'apply', 'application' ] after testing 6 words
+      ```
+
+  - kind: code
+    title: "Try it: prefix search, slowly"
+    body: |
+      Run it, then search for `ban` instead. Every word is tested every time, however short the prefix. A trie only walks the 3 letters of the prefix.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const words = ["apple", "apply", "banana", "application", "band", "ape"];
+      let tested = 0;
+      const matches = words.filter((w) => {
+        tested++;
+        return w.startsWith("app");
+      });
+      console.log(matches, "after testing", tested, "words");
+
   - kind: explain
     title: How a trie is built
     body: |
@@ -34,6 +67,23 @@ steps:
       - `isEnd`: `true` if a word ends at this node.
 
       Insert, search and prefix check all cost **O(L)** where `L` is the length of the word, no matter how many words are stored.
+
+      <!-- page -->
+
+      **Example: inserting `app`, then `apple`, into an empty trie.**
+
+      | insert | letter | child already there? | action |
+      |---|---|---|---|
+      | app | a | no | make node `a` |
+      | app | p | no | make node `ap` |
+      | app | p | no | make node `app`, mark it `isEnd` |
+      | apple | a | yes | just follow it |
+      | apple | p | yes | follow |
+      | apple | p | yes | follow (`app` stays a word) |
+      | apple | l | no | make node `appl` |
+      | apple | e | no | make node `apple`, mark it `isEnd` |
+
+      `apple` only cost 2 new nodes, because its first three letters were already stored for `app`.
 
   - kind: code
     title: "Find the bug: a prefix is not a word"
@@ -154,6 +204,15 @@ steps:
 
       Visiting the children **in alphabetical order** gives the words already sorted.
 
+      **Example: prefix `ap` in a trie holding `app`, `apple`, `apply` and `bat`.**
+
+      1. Walk `a` → `p`. We're on the node for `ap`.
+      2. Depth-first from there, children in alphabetical order:
+         - `p` → node `app` is a word end → collect **app**
+         - `l` → `e` → node `apple` is a word end → collect **apple**
+         - back up to `appl`, try `y` → node `apply` is a word end → collect **apply**
+      3. Result: `["app", "apple", "apply"]`, already sorted. The `b` branch was never touched.
+
   - kind: code
     title: An autocomplete box
     body: |
@@ -218,6 +277,14 @@ steps:
       A dictionary where you can search with a **wildcard**: `.` matches any single letter. `"b.t"` matches "bat", "bit", "bot".
 
       A normal letter follows one edge. A `.` must try **every child** (branch), so the search becomes a recursive depth-first search: if any branch finds a word, the answer is yes.
+
+      **Example: `b.t` in a trie holding `bat`, `bed` and `bit`.**
+
+      - `b`: one edge, follow it.
+      - `.`: branch into **every** child of `b`: `a`, `e` and `i`.
+        - under `a`: next letter `t`, there's a `t`, and `bat` ends there → **found**, stop.
+
+      (Had the search been `b.x`, all three branches would fail at the last letter, and the answer would be no.)
 
   - kind: code
     title: Add and search words with a dot
@@ -314,6 +381,18 @@ steps:
     title: A trie plus backtracking (later)
     body: |
       Tries combine beautifully with **backtracking**: to find which dictionary words hide inside a letter grid (the "Word Search II" problem), you walk the grid and the trie together, and stop a path as soon as no word can continue it. Once you have learned backtracking (Module 27), try it yourself: search for the "Word Search II" problem on LeetCode. It is a great test of both ideas together.
+
+  - kind: choice
+    title: "Quick check: why a trie helps"
+    body: |
+      In Word Search II you walk a letter grid looking for dictionary words. Why walk a **trie** at the same time?
+    options:
+      - "To sort the words alphabetically"
+      - "To store the grid in less memory"
+      - "To stop a path as soon as no dictionary word starts with the letters so far"
+      - "To count how many times each letter appears"
+    answer: 2
+    explanation: "If the trie has no child for the next letter, no word can continue that path, so the search abandons it at once. That pruning is what makes it fast."
 
   - kind: why
     body: |

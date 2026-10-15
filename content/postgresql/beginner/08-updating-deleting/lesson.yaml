@@ -9,6 +9,43 @@ steps:
 
       Here in the browser, every run starts from a fresh copy, so experiment freely.
 
+      **Example.** One of each, with `RETURNING` (Module 5) to show the rows they touched:
+
+      ```sql
+      UPDATE books SET stock = 10
+      WHERE title = 'Foundation'
+      RETURNING title, stock;
+      ```
+
+      | title | stock |
+      |---|---|
+      | Foundation | 10 |
+
+      ```sql
+      DELETE FROM sales WHERE sale_id = 1 RETURNING sale_id, book_title;
+      ```
+
+      | sale_id | book_title |
+      |---|---|
+      | 1 | Pride and Prejudice |
+
+      *Foundation* had 0 copies and now has 10. Sale 1 is gone. The next pages go through each part.
+
+  - kind: try
+    title: "Try it: one UPDATE, one DELETE"
+    body: |
+      Both examples. Run them and compare with the tables you just saw. Then change `10` to `25`, or `sale_id = 1` to `sale_id = 2`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      UPDATE books SET stock = 10
+      WHERE title = 'Foundation'
+      RETURNING title, stock;
+
+      DELETE FROM sales
+      WHERE sale_id = 1
+      RETURNING sale_id, book_title;
+
   - kind: explain
     title: UPDATE … SET … WHERE
     body: |
@@ -21,6 +58,25 @@ steps:
       - **`SET`** gives the new values. Change several columns at once with commas: `SET price = 9.99, stock = 10`.
       - **`WHERE`** picks **which rows** to change, exactly like in SELECT.
       - A new value can use the old one: `SET stock = stock + 1` adds one copy to every matching row.
+
+      psql answers the example above with `UPDATE 1`: one row changed.
+
+      <!-- page -->
+
+      Both ideas at once. *I, Robot* (book 9) had 7 copies and cost 9.50. Three more copies arrive, and the price drops:
+
+      ```sql
+      UPDATE books
+      SET stock = stock + 3, price = 8.99
+      WHERE book_id = 9
+      RETURNING title, stock, price;
+      ```
+
+      returns the row with its new values (7 + 3 = 10):
+
+      | title | stock | price |
+      |---|---|---|
+      | I, Robot | 10 | 8.99 |
 
   - kind: try
     title: Fix one sale
@@ -66,6 +122,21 @@ steps:
       RETURNING title, price;
 
   - kind: try
+    title: "Try it: several columns, and the old value"
+    body: |
+      The *I, Robot* example. Run it and check the new stock and price. Then:
+
+      - change `stock + 3` to `stock - 2`
+      - add a third change, `pages = 260`, and `pages` to the RETURNING list
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      UPDATE books
+      SET stock = stock + 3, price = 8.99
+      WHERE book_id = 9
+      RETURNING title, stock, price;
+
+  - kind: try
     title: Your turn with two columns
     body: |
       *Foundation* (book 8) is sold out, and a delivery of new copies has arrived. In one UPDATE, set its `stock` to **10** and its `price` to **9.99**. Return `title`, `stock` and `price`.
@@ -88,7 +159,7 @@ steps:
       WHERE quantity > 2;
       ```
 
-      Removes every row matching the WHERE. **Without WHERE it removes all of them**, with the same danger and the same habits: write the WHERE first, SELECT first, check the count.
+      Removes every row matching the WHERE. On the `practice` data, psql answers `DELETE 2`: two sales had more than 2 copies. **Without WHERE it removes all of them**, with the same danger and the same habits: write the WHERE first, SELECT first, check the count.
 
       `RETURNING` works here too and shows the rows that were removed, which makes a handy receipt.
 

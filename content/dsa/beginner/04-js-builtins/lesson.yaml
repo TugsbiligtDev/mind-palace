@@ -6,6 +6,62 @@ steps:
 
       A loop that looks like O(n) can secretly be O(n²) if the line inside it is an O(n) built-in. This module is a cost menu for the tools you will use all course.
 
+      **Example.** Two loops that look the same size. The first calls `includes`, which scans the array each time. Counting the scanning work:
+
+      ```js
+      const n = 1000;
+      const a = Array.from({ length: n }, (_, i) => i);
+      const b = Array.from({ length: n }, (_, i) => i * 2);
+
+      let checks = 0;
+      function countingIncludes(arr, x) {      // same work as arr.includes(x)
+        for (const item of arr) { checks++; if (item === x) return true; }
+        return false;
+      }
+      let shared = 0;
+      for (const x of a) if (countingIncludes(b, x)) shared++;
+      console.log("with includes:", checks, "checks");
+
+      checks = 0;
+      const bSet = new Set(b);
+      for (const x of a) { checks++; if (bSet.has(x)) shared++; }
+      console.log("with a Set:", checks, "checks");
+      ```
+
+      prints:
+
+      ```
+      with includes: 625250 checks
+      with a Set: 1000 checks
+      ```
+
+      Same answer, but the first loop did over 600,000 checks: O(n²). The `Set` version did 1,000: O(n). (Sets come in Module 7.)
+
+  - kind: code
+    title: "Try it: the hidden loop"
+    body: |
+      Run it and compare with the output above. Then change `n` to `2000`: the first count roughly **quadruples**, the second only doubles.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const n = 1000;
+      const a = Array.from({ length: n }, (_, i) => i);
+      const b = Array.from({ length: n }, (_, i) => i * 2);
+
+      let checks = 0;
+      function countingIncludes(arr, x) {
+        for (const item of arr) { checks++; if (item === x) return true; }
+        return false;
+      }
+      let shared = 0;
+      for (const x of a) if (countingIncludes(b, x)) shared++;
+      console.log("with includes:", checks, "checks");
+
+      checks = 0;
+      const bSet = new Set(b);
+      for (const x of a) { checks++; if (bSet.has(x)) shared++; }
+      console.log("with a Set:", checks, "checks");
+
   - kind: explain
     title: What array methods cost
     body: |
@@ -19,6 +75,70 @@ steps:
       | `includes`, `indexOf` | **O(n)** | scan until found |
 
       The classic mistake is using `shift()` inside a loop to take items from the front. Each `shift` is O(n), so the whole loop is O(n²).
+
+      <!-- page -->
+
+      Here they are on a small shelf of books. The cheap ones first:
+
+      ```js
+      const shelf = ["Dune", "Emma", "Ulysses"];
+      console.log(shelf[1], shelf.length);
+      shelf.push("Beloved");          // add at the end
+      console.log(shelf);
+      console.log(shelf.pop());       // take from the end
+      shelf.unshift("Annie");         // add at the front
+      console.log(shelf);
+      console.log(shelf.shift());     // take from the front
+      console.log(shelf.includes("Emma"), shelf.indexOf("Emma"), shelf.indexOf("Zorba"));
+      ```
+
+      prints:
+
+      ```
+      Emma 3
+      [ 'Dune', 'Emma', 'Ulysses', 'Beloved' ]
+      Beloved
+      [ 'Annie', 'Dune', 'Emma', 'Ulysses' ]
+      Annie
+      true 1 -1
+      ```
+
+      `indexOf` gives `-1` when the item is not there. Now the copying ones. `slice(1, 3)` copies from position 1 up to (but not including) position 3, and `splice(1, 2)` cuts 2 items out of the array itself:
+
+      ```js
+      const nums = [10, 20, 30, 40, 50];
+      console.log(nums.slice(1, 3));        // copy positions 1 and 2
+      console.log(nums.concat([60, 70]));   // a new, longer array
+      console.log([...nums]);               // spread: a full copy
+      nums.splice(1, 2);                    // cut out 2 items starting at position 1
+      console.log(nums);
+      ```
+
+      prints:
+
+      ```
+      [ 20, 30 ]
+      [ 10, 20, 30, 40, 50, 60, 70 ]
+      [ 10, 20, 30, 40, 50 ]
+      [ 10, 40, 50 ]
+      ```
+
+      <!-- page -->
+
+      **Arrow functions.** The next step (and the rest of the course) uses a short way to write a small function: `(x) => x * 2` means "take `x` and give back `x * 2`". It is the same as `function (x) { return x * 2; }`.
+
+      ```js
+      const double = (x) => x * 2;
+      console.log(double(4));
+      ```
+
+      prints:
+
+      ```
+      8
+      ```
+
+      So `(a) => a.pop()` is "a function that pops from the array it is given". The next step also builds a test array with `Array.from({ length: size }, (_, i) => i)`: it makes `size` slots and fills each one with its own position number, `0, 1, 2, …`.
 
   - kind: code
     title: Time it yourself
@@ -57,6 +177,36 @@ steps:
       const s = parts.join("");
       ```
 
+      `join` glues the pieces together, with the text you pass going between them:
+
+      ```js
+      const parts = [];
+      for (let i = 0; i < 3; i++) parts.push("ab");
+      const s = parts.join("");
+      console.log(s);
+      console.log(["a", "b", "c"].join("-"));
+      ```
+
+      prints:
+
+      ```
+      ababab
+      a-b-c
+      ```
+
+  - kind: code
+    title: "Try it: join"
+    body: |
+      The `join` example. Run it, then join with `", "` instead of `"-"`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const parts = [];
+      for (let i = 0; i < 3; i++) parts.push("ab");
+      const s = parts.join("");
+      console.log(s);
+      console.log(["a", "b", "c"].join("-"));
+
   - kind: explain
     title: Sort, and its famous trap
     body: |
@@ -73,10 +223,54 @@ steps:
       nums.sort((a, b) => b - a);   // descending
       ```
 
+      All three side by side:
+
+      ```js
+      console.log([10, 9, 1].sort());
+      console.log([10, 9, 1].sort((a, b) => a - b));
+      console.log([10, 9, 1].sort((a, b) => b - a));
+      ```
+
+      prints:
+
+      ```
+      [ 1, 10, 9 ]
+      [ 1, 9, 10 ]
+      [ 10, 9, 1 ]
+      ```
+
       Facts to remember:
       - `sort` is **O(n log n)**.
       - It is **stable**: equal items keep their original order.
       - It **changes the array**. `toSorted()` and `toReversed()` return a new array and leave the original alone.
+
+  - kind: code
+    title: "Try it: sort, comparators and toSorted"
+    body: |
+      Run this and compare the lines:
+
+      1. Without a comparator, `120` comes first, because as text `"1"` is before `"2"`, `"3"` and `"8"`.
+      2. With `(a, b) => a - b` the numbers go smallest first, and `(a, b) => b - a` flips it.
+      3. `sort` changed `shelf` itself, while `toSorted` left `pile` alone and gave back a new array.
+
+      Then try one change: put `1000` into the first array and run again. Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      // 1. Without a comparator: sorted as text
+      console.log([25, 8, 120, 3].sort());
+
+      // 2. With a comparator: sorted as numbers
+      console.log([25, 8, 120, 3].sort((a, b) => a - b));
+      console.log([25, 8, 120, 3].sort((a, b) => b - a));
+
+      // 3. sort changes the array it is called on...
+      const shelf = [3, 1, 2];
+      shelf.sort((a, b) => a - b);
+      console.log("after sort:", shelf);
+
+      // ...but toSorted gives a new array and leaves the original alone
+      const pile = [3, 1, 2];
+      const tidy = pile.toSorted((a, b) => a - b);
+      console.log("pile:", pile, "tidy:", tidy);
 
   - kind: code
     title: Sort numbers correctly, without harm
@@ -117,6 +311,59 @@ steps:
       - Methods: `map.set(k, v)`, `map.get(k)`, `map.has(k)`, `map.delete(k)`, and `set.add(x)`, `set.has(x)`.
 
       All of these are O(1) on average. Module 7 goes deep on why.
+
+      ```js
+      const stock = new Map();
+      stock.set("Dune", 3);
+      stock.set("Emma", 0);
+      console.log(stock.get("Dune"), stock.has("Emma"), stock.get("Zorba"));
+      console.log(stock.size);
+
+      const seen = new Set();
+      seen.add("Dune");
+      seen.add("Dune");
+      console.log(seen.has("Dune"), seen.size);
+      ```
+
+      prints:
+
+      ```
+      3 true undefined
+      2
+      true 1
+      ```
+
+      `get` on a missing key gives `undefined`, and adding `"Dune"` to a set twice still keeps it once.
+
+  - kind: code
+    title: "Try it: Map and Set"
+    body: |
+      Run this and read each line:
+
+      - `get` finds a price, and a missing title gives `undefined`.
+      - `prices.get("Zorba") || 0` uses `||` ("or") as a fallback: when the left side is `undefined`, you get the right side, `0`.
+      - `set` on an existing key replaces its value, here raising Dune from 12 to 13.
+      - A plain `{}` already "has" a `toString` key, even though you never added one. That is the trap the next step is about.
+
+      Then add a third book to `prices` and print the whole map again. Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      // A Map from title to price
+      const prices = new Map();
+      prices.set("Dune", 12);
+      prices.set("Emma", 8);
+      console.log(prices.get("Dune"));
+      console.log(prices.get("Zorba"));          // missing key: undefined
+      console.log(prices.get("Zorba") || 0);     // || 0 swaps undefined for 0
+      prices.set("Dune", prices.get("Dune") + 1); // raise a price by 1
+      console.log(prices);
+
+      // A Set keeps each value once
+      const genres = new Set(["sci-fi", "drama", "sci-fi"]);
+      console.log(genres.size, genres.has("drama"));
+
+      // The plain-object trap
+      const plain = {};
+      console.log(plain["toString"]);
 
   - kind: code
     title: The plain-object trap
@@ -161,16 +408,64 @@ steps:
       ```js
       const grid = Array(3).fill([]);   // 3 slots, all holding THE SAME array
       grid[0].push("x");
-      console.log(grid);                // [ ['x'], ['x'], ['x'] ]
+      console.log(grid);
+      ```
+
+      prints:
+
+      ```
+      [ [ 'x' ], [ 'x' ], [ 'x' ] ]
       ```
 
       `fill` puts one array in every slot. Build independent arrays with `Array.from`:
 
       ```js
-      const grid = Array.from({ length: 3 }, () => []);
+      const fresh = Array.from({ length: 3 }, () => []);
+      fresh[0].push("x");
+      console.log(fresh);
+      ```
+
+      prints:
+
+      ```
+      [ [ 'x' ], [], [] ]
       ```
 
       The function you pass runs once per slot, so each slot gets a fresh array. This bug is one of the most common in matrix and graph problems.
+
+  - kind: code
+    title: "Try it: shared arrays and real copies"
+    body: |
+      Four short experiments. Run them and notice:
+
+      1. With `fill`, pushing into slot 0 shows up in **every** slot.
+      2. With `Array.from`, only slot 0 changes.
+      3. `const b = a` does not copy: `a` and `b` are two names for one array.
+      4. `[...c]` makes a real copy, so pushing into `d` leaves `c` alone.
+
+      Then change part 1 to `Array(4).fill([])` and run again. Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      // 1. fill puts ONE array in every slot
+      const shared = Array(2).fill([]);
+      shared[0].push("x");
+      console.log("shared:", shared);
+
+      // 2. Array.from runs the function once per slot: separate arrays
+      const separate = Array.from({ length: 2 }, () => []);
+      separate[0].push("x");
+      console.log("separate:", separate);
+
+      // 3. Two names, one array
+      const a = [1, 2];
+      const b = a;
+      b.push(3);
+      console.log("a:", a, "b:", b);
+
+      // 4. Spread makes a real copy
+      const c = [1, 2];
+      const d = [...c];
+      d.push(3);
+      console.log("c:", c, "d:", d);
 
   - kind: code
     title: "Find the bug: the grid that changes everywhere"

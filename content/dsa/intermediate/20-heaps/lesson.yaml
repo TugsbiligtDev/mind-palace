@@ -8,6 +8,55 @@ steps:
 
       JavaScript has **no built-in heap**, so you write one. (LeetCode preloads a library for it, but interviewers expect you to be able to build your own.)
 
+      **Example: the emergency room with a plain array.** Taking the most urgent patient means scanning every waiting patient (O(n)) each time:
+
+      ```js
+      const waiting = [
+        { name: "Ana", urgency: 3 },
+        { name: "Ben", urgency: 1 },   // 1 = most urgent
+        { name: "Cy", urgency: 2 },
+      ];
+
+      function takeMostUrgent() {
+        let best = 0;
+        for (let i = 1; i < waiting.length; i++) {
+          if (waiting[i].urgency < waiting[best].urgency) best = i;
+        }
+        return waiting.splice(best, 1)[0].name;
+      }
+
+      console.log(takeMostUrgent(), takeMostUrgent(), takeMostUrgent());
+      ```
+
+      prints:
+
+      ```
+      Ben Cy Ana
+      ```
+
+  - kind: code
+    title: "Try it: a slow priority queue"
+    body: |
+      Run it: Ben, then Cy, then Ana, by urgency, not arrival. Then push a new patient with urgency `0` before the last line and run again. A heap gives the same order with O(log n) work per patient.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const waiting = [
+        { name: "Ana", urgency: 3 },
+        { name: "Ben", urgency: 1 },   // 1 = most urgent
+        { name: "Cy", urgency: 2 },
+      ];
+
+      function takeMostUrgent() {
+        let best = 0;
+        for (let i = 1; i < waiting.length; i++) {
+          if (waiting[i].urgency < waiting[best].urgency) best = i;
+        }
+        return waiting.splice(best, 1)[0].name;
+      }
+
+      console.log(takeMostUrgent(), takeMostUrgent(), takeMostUrgent());
+
   - kind: explain
     title: A tree stored in an array
     body: |
@@ -31,6 +80,45 @@ steps:
       - **left child** = `2i + 1`,
       - **right child** = `2i + 2`.
 
+      **Example.** The index rules on the array above:
+
+      ```js
+      const heap = [1, 3, 2, 7, 4, 5, 9];
+
+      for (const i of [0, 1, 2]) {
+        const left = heap[2 * i + 1], right = heap[2 * i + 2];
+        console.log(`node ${heap[i]} at ${i}: children ${left} and ${right}`);
+      }
+      console.log("parent of 4 (index 4):", heap[(4 - 1) >> 1]);
+      console.log("smallest:", heap[0]);
+      ```
+
+      prints:
+
+      ```
+      node 1 at 0: children 3 and 2
+      node 3 at 1: children 7 and 4
+      node 2 at 2: children 5 and 9
+      parent of 4 (index 4): 3
+      smallest: 1
+      ```
+
+  - kind: code
+    title: "Try it: parent and child indexes"
+    body: |
+      Run it and match each line to the picture. Then print the parent of `9` (index 6).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const heap = [1, 3, 2, 7, 4, 5, 9];
+
+      for (const i of [0, 1, 2]) {
+        const left = heap[2 * i + 1], right = heap[2 * i + 2];
+        console.log(`node ${heap[i]} at ${i}: children ${left} and ${right}`);
+      }
+      console.log("parent of 4 (index 4):", heap[(4 - 1) >> 1]);
+      console.log("smallest:", heap[0]);
+
   - kind: explain
     title: Push (sift-up) and pop (sift-down)
     body: |
@@ -41,6 +129,27 @@ steps:
       **Peek** is just `data[0]`: O(1).
 
       A comparator function `compare(a, b)` (negative if `a` should come out first) lets one class serve as a min-heap of numbers, a max-heap (flip the comparison), or a heap of pairs and objects.
+
+      <!-- page -->
+
+      **Example: push `0` onto `[1, 3, 2, 7, 4, 5, 9]`.**
+
+      | step | array | 0 is at |
+      |---|---|---|
+      | add at the end | [1, 3, 2, 7, 4, 5, 9, 0] | 7 |
+      | 0 < parent 7: swap | [1, 3, 2, 0, 4, 5, 9, 7] | 3 |
+      | 0 < parent 3: swap | [1, 0, 2, 3, 4, 5, 9, 7] | 1 |
+      | 0 < parent 1: swap | [0, 1, 2, 3, 4, 5, 9, 7] | 0 |
+
+      **Then pop the minimum:**
+
+      | step | array |
+      |---|---|
+      | take 0, move last (7) to the root | [7, 1, 2, 3, 4, 5, 9] |
+      | 7 > smaller child 1: swap | [1, 7, 2, 3, 4, 5, 9] |
+      | 7 > smaller child 3: swap | [1, 3, 2, 7, 4, 5, 9] |
+
+      Three swaps each way for 8 items: about log₂ 8.
 
   - kind: code
     title: Write your own MinHeap
@@ -136,6 +245,22 @@ steps:
       - At the end, the heap holds the k largest, and its root is the **k-th largest**.
 
       It also works on **streams**, where items arrive forever and you cannot sort them all. Compare with quickselect (Module 12): quickselect is O(n) but needs all the data at once. The heap works one item at a time.
+
+      <!-- page -->
+
+      **Example: the 3 largest of `5, 1, 9, 3, 7, 2, 8`.** (The heap is shown sorted so it's easy to read.)
+
+      | item | heap after (smallest first) | dropped |
+      |---|---|---|
+      | 5 | [5] | — |
+      | 1 | [1, 5] | — |
+      | 9 | [1, 5, 9] | — |
+      | 3 | [3, 5, 9] | 1 |
+      | 7 | [5, 7, 9] | 3 |
+      | 2 | [5, 7, 9] | 2 |
+      | 8 | [7, 8, 9] | 5 |
+
+      The heap ends with the 3 largest, `7, 8, 9`, and its root, 7, is the 3rd largest.
 
   - kind: code
     title: "Find the bug: the heap that keeps growing"
@@ -677,6 +802,22 @@ steps:
 
       Total cost: `O(N log k)` for `N` items in all, far better than merging one after another.
 
+      <!-- page -->
+
+      **Example: merging `[1, 4, 7]`, `[2, 5]` and `[3, 6]`** (L0, L1, L2):
+
+      | heap (value, list) | pop | push next from that list | output |
+      |---|---|---|---|
+      | 1(L0) 2(L1) 3(L2) | 1 | 4(L0) | [1] |
+      | 2(L1) 3(L2) 4(L0) | 2 | 5(L1) | [1, 2] |
+      | 3(L2) 4(L0) 5(L1) | 3 | 6(L2) | [1, 2, 3] |
+      | 4(L0) 5(L1) 6(L2) | 4 | 7(L0) | [1, 2, 3, 4] |
+      | 5(L1) 6(L2) 7(L0) | 5 | — | [1, 2, 3, 4, 5] |
+      | 6(L2) 7(L0) | 6 | — | [1, 2, 3, 4, 5, 6] |
+      | 7(L0) | 7 | — | [1, 2, 3, 4, 5, 6, 7] |
+
+      The heap never held more than 3 items, one per list.
+
   - kind: code
     title: Merge k sorted arrays
     body: |
@@ -860,6 +1001,20 @@ steps:
       - a **min-heap `high`** holding the larger half (its top is the smallest of the big numbers).
 
       Keep them balanced (sizes differ by at most 1). Then the median is the top of the bigger heap, or the average of both tops when the sizes are equal. Adding a number costs O(log n) and reading the median is O(1).
+
+      <!-- page -->
+
+      **Example: the stream `5, 15, 1, 3, 8`.** (`low` shown biggest first, `high` smallest first.)
+
+      | add | low (max-heap) | high (min-heap) | median |
+      |---|---|---|---|
+      | 5 | [5] | [] | 5 |
+      | 15 | [5] | [15] | 10 |
+      | 1 | [5, 1] | [15] | 5 |
+      | 3 | [3, 1] | [5, 15] | 4 |
+      | 8 | [5, 3, 1] | [8, 15] | 5 |
+
+      When 3 arrived, `low` became too big, so its top (5) moved over to `high`. After all five numbers, sorted they are `1 3 5 8 15`, and the median is indeed 5.
 
   - kind: code
     title: Find the median from a data stream

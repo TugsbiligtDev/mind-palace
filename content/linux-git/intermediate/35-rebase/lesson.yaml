@@ -16,6 +16,28 @@ steps:
 
       Rebase rewrites your branch's commits, so the rule from Module 34 applies: rebase **your own unshared work** freely; rebasing commits others already have needs care (and a force-push, below).
 
+      <!-- page -->
+
+      **Example: a rebase.** `kindred` has two commits; meanwhile `main` got *Add news*:
+
+      ```
+      learner@inkwell:~/demo$ git log --oneline --graph --all
+      * 1ee23be (HEAD -> kindred) Add a tagline
+      | * 536e092 (main) Add news
+      * | ea4ab19 Add the Kindred page
+      |/
+      * 5191796 Base
+      learner@inkwell:~/demo$ git rebase main
+      Successfully rebased and updated refs/heads/kindred.
+      learner@inkwell:~/demo$ git log --oneline --graph --all
+      * 382733b (HEAD -> kindred) Add a tagline
+      * c783477 Add the Kindred page
+      * 536e092 (main) Add news
+      * 5191796 Base
+      ```
+
+      Afterwards it's one straight line: your two commits now sit on top of *Add news*, with new IDs.
+
   - kind: shell
     title: Bring a branch up to date
     fixture: [git-identity, website-repo, website-more]
@@ -53,6 +75,39 @@ steps:
       Fix the file (as in Module 17), `git add` it, and **`git rebase --continue`** (not `git commit`). Git may open the editor for the commit message: save it as it is. Other ways out: `git rebase --skip` (drop this commit) and `git rebase --abort` (go back to how things were before the rebase).
 
       Careful with the conflict labels during a rebase: `HEAD`/"ours" is the branch you're rebasing **onto** (`main` plus the commits already replayed), and "theirs" is **your** commit being replayed. It's the opposite of what you'd guess.
+
+      <!-- page -->
+
+      **Example.** Both branches changed the same slogan line; the rebase stops, and here we back out with `--abort`:
+
+      ```
+      learner@inkwell:~/demo$ git rebase main
+      Auto-merging slogan.txt
+      CONFLICT (content): Merge conflict in slogan.txt
+      error: could not apply 8edcb90... Change the slogan
+      hint: Resolve all conflicts manually, mark them as resolved with
+      hint: "git add/rm <conflicted_files>", then run "git rebase --continue".
+      hint: You can instead skip this commit: run "git rebase --skip".
+      hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+      hint: Disable this message with "git config set advice.mergeConflict false"
+      Could not apply 8edcb90... Change the slogan
+      learner@inkwell:~/demo$ git status --short
+      UU slogan.txt
+      learner@inkwell:~/demo$ cat slogan.txt
+      <<<<<<< HEAD
+      Books for every reader
+      =======
+      Books for curious minds
+      >>>>>>> 8edcb90 (Change the slogan)
+      learner@inkwell:~/demo$ git rebase --abort
+      learner@inkwell:~/demo$ git log --oneline --graph --all
+      * 38c7c11 (main) Tweak the slogan
+      | * 8edcb90 (HEAD -> rewording) Change the slogan
+      |/
+      * 48546c9 Add the slogan
+      ```
+
+      In the file, `HEAD` is `main`'s version (the base being rebased **onto**), and the lower half is **your** commit, the opposite of a merge.
 
   - kind: shell
     title: A conflicting slogan
@@ -93,6 +148,26 @@ steps:
       ```
 
       It's safe, because the commits being rewritten are your own, not yet pushed.
+
+      <!-- page -->
+
+      **Example.** Kenji pushed *Add Sunday hours*; you made *Mention gift wrap* without pushing:
+
+      ```
+      learner@inkwell:~/site$ git pull --rebase
+      remote: Enumerating objects: 3, done.
+      remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+      Unpacking objects: 100% (3/3), done.
+      From github.com:inkwell/site
+         9a1efb0..4672ffd  main       -> origin/main
+      Successfully rebased and updated refs/heads/main.
+      learner@inkwell:~/site$ git log --oneline --graph -3
+      * 84e5ac3 (HEAD -> main) Mention gift wrap
+      * 4672ffd (origin/main, origin/HEAD) Add Sunday hours
+      * 9a1efb0 Lower the price of Dune
+      ```
+
+      A straight line: Kenji's commit, then yours on top. Compare with the merge commit `git pull` made in Module 19.
 
   - kind: shell
     title: Pull without a merge commit
@@ -145,6 +220,32 @@ steps:
 
       It's the way to turn "WIP", "fix", "fix again" into one clean commit before you open a pull request. If it goes wrong: `git rebase --abort` during, `git reflog` after.
 
+      <!-- page -->
+
+      **Example.** Before: one real commit and two typo fixes on top of `main`. Change the second and third lines of the to-do list to `fixup`, save and quit, and the history becomes one commit:
+
+      ```
+      learner@inkwell:~/demo$ git log --oneline
+      15cb4db (HEAD -> kindred) Fix another typo
+      412586e Fix typo
+      ea4ab19 Add the Kindred page
+      5191796 (main) Base
+      learner@inkwell:~/demo$ git log --oneline
+      ef50b38 (HEAD -> kindred) Add the Kindred page
+      5191796 (main) Base
+      learner@inkwell:~/demo$ git show --stat --format=%s HEAD
+      commit ef50b38ede9a1ec551ff1b36fc7b12a3942f4262 (HEAD -> kindred)
+      Author: Learner <learner@inkwell.example>
+      Date:   Wed Oct 14 15:30:41 2026 +0000
+
+          Add the Kindred page
+
+       k.html | 3 +++
+       1 file changed, 3 insertions(+)
+      ```
+
+      The commit kept the first message (`fixup` drops the others) and contains all three changes. Its ID is new.
+
   - kind: shell
     title: One clean commit
     fixture: [git-identity, website-repo, website-more]
@@ -174,6 +275,32 @@ steps:
       ```
 
       `--autosquash` finds every `fixup!` (and `squash!`) commit and puts it right under its target, marked `fixup`: you just save and quit. (Plain `git rebase --autosquash main` does it without opening the editor.)
+
+      <!-- page -->
+
+      **Example.** A mistake in the **first** of two commits, fixed with a fixup commit and folded in by autosquash:
+
+      ```
+      learner@inkwell:~/demo$ git log --oneline
+      b820815 (HEAD -> dune) Add the price page
+      d44910a Add the Dune page
+      9cce45c (main) Base
+      learner@inkwell:~/demo$ sed -i 's/Dnue/Dune/' dune.html
+      learner@inkwell:~/demo$ git commit -qa --fixup=HEAD~1
+      learner@inkwell:~/demo$ git log --oneline
+      9efe8dd (HEAD -> dune) fixup! Add the Dune page
+      b820815 Add the price page
+      d44910a Add the Dune page
+      9cce45c (main) Base
+      learner@inkwell:~/demo$ git rebase -i --autosquash main
+      Successfully rebased and updated refs/heads/dune.
+      learner@inkwell:~/demo$ git log --oneline
+      f87640c (HEAD -> dune) Add the price page
+      868b211 Add the Dune page
+      9cce45c (main) Base
+      ```
+
+      The `fixup!` commit disappeared into *Add the Dune page*, and both commits got new IDs. (On a real computer, `-i` opens the editor with the list already arranged: save and quit. The practice terminal skips that step.)
 
   - kind: shell
     title: Fix an older commit
@@ -214,6 +341,28 @@ steps:
 
       And only force-push **your own** branches, never `main`. (Many teams make that impossible with branch protection: Module 40.)
 
+      <!-- page -->
+
+      **Example.** `kindred` was pushed, then rebased onto a newer `main`:
+
+      ```
+      learner@inkwell:~/shop$ git push
+      To github.com:learner/shop.git
+       ! [rejected]        kindred -> kindred (non-fast-forward)
+      error: failed to push some refs to 'github.com:learner/shop.git'
+      hint: Updates were rejected because the tip of your current branch is behind
+      hint: its remote counterpart. If you want to integrate the remote changes,
+      hint: use 'git pull' before pushing again.
+      hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+      learner@inkwell:~/shop$ git push --force-with-lease
+      Enumerating objects: 2, done.
+      Counting objects: 100% (2/2), done.
+      Writing objects: 100% (2/2), done.
+      Total 2 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+      To github.com:learner/shop.git
+       + 77893e6...d3f4d10 kindred -> kindred (forced update)
+      ```
+
   - kind: shell
     title: Push the tidied branch
     fixture: [git-identity, website-repo, github-account, github-site, site-clone]
@@ -241,6 +390,18 @@ steps:
     title: "🔹 git history"
     body: |
       Recent Git versions add an experimental **`git history`** command for the most common rewrites (such as changing an old commit's message) without setting up an interactive rebase. It's still marked experimental and its options may change, so this course sticks with `rebase -i`, which every Git has. Keep an eye on the release notes.
+
+  - kind: choice
+    title: "Quick check: which tool?"
+    body: |
+      You want to change the message of a commit three back on your own unpushed branch. Which works on **every** current Git?
+    options:
+      - "`git history`"
+      - "`git commit --amend`"
+      - "`git revert HEAD~2`"
+      - "`git rebase -i HEAD~3`, then `reword` that line"
+    answer: 3
+    explanation: "Interactive rebase can reword any commit in the list. `--amend` only changes the latest commit, `revert` adds a new commit, and `git history` is still experimental."
 
   - kind: mac
     title: Rebase on your Mac

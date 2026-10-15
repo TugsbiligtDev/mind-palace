@@ -149,6 +149,36 @@ steps:
       Even better than checking types is to just **call the method** and let each class do its own thing (that is *polymorphism*: "many shapes, one interface"). Only check types when you truly must treat a case differently.
 
   - kind: code
+    title: "Try it: isinstance and issubclass"
+    body: |
+      A small family of animals. Run it and match each `True` or `False` to its line:
+
+      - `rex` is a `Dog`, and so also an `Animal`.
+      - `rex` is not a `Cat`, and the text `"rex"` is not an animal at all.
+      - `issubclass` asks the same question about the classes themselves.
+
+      Then try one change: add `print(isinstance(Cat(), Dog))` and guess the answer before you run it. Nothing is graded here.
+    code: |
+      class Animal:
+          pass
+
+
+      class Dog(Animal):
+          pass
+
+
+      class Cat(Animal):
+          pass
+
+
+      rex = Dog()
+      print(isinstance(rex, Dog))
+      print(isinstance(rex, Animal))
+      print(isinstance(rex, Cat))
+      print(isinstance("rex", Animal))
+      print(issubclass(Cat, Animal))
+
+  - kind: code
     title: Who is who?
     body: |
       Using the classes below (already defined), write `kind_of(obj)` returning `"square"` if the object is a `Square`, `"shape"` if it is any other `Shape`, and `"not a shape"` otherwise. Check `Square` **before** `Shape`, because every Square is also a Shape.
@@ -217,7 +247,20 @@ steps:
 
           def start(self):
               return self.engine.start()   # delegate the work
+
+      car = Car()
+      print(car.start())
+      print(isinstance(car, Engine))
       ```
+
+      prints:
+
+      ```
+      vroom
+      False
+      ```
+
+      The car answers `start()` by asking its engine. And a Car is **not** an Engine: it only *has* one.
 
       A Car is not a kind of Engine, so `class Car(Engine)` would be wrong (and confusing). The famous advice is **"favour composition over inheritance"**:
 
@@ -306,7 +349,58 @@ steps:
       - A subclass **must** implement every `@abstractmethod`, or it cannot be created either.
       - Any code can now rely on "anything that is a Notifier has `send`".
 
+      ```python
+      print(EmailNotifier().send("Your book is ready"))
+      try:
+          Notifier()
+      except TypeError as e:
+          print("TypeError:", e)
+      ```
+
+      prints:
+
+      ```
+      email: Your book is ready
+      TypeError: Can't instantiate abstract class Notifier without an implementation for abstract method 'send'
+      ```
+
       It is a contract that Python enforces at the moment of creation, not later in the middle of a run.
+
+  - kind: code
+    title: "Try it: an abstract class"
+    body: |
+      An `Exporter` contract with two children. `CsvExporter` keeps the contract; `LazyExporter` forgot to write `export`. Run it and notice:
+
+      - `CsvExporter()` works normally.
+      - Both `Exporter()` and `LazyExporter()` fail with `TypeError` the moment you try to create them.
+
+      Then try one change: give `LazyExporter` its own `export` method (any return value) and run again. Now only `Exporter` fails. Nothing is graded here.
+    code: |
+      from abc import ABC, abstractmethod
+
+
+      class Exporter(ABC):
+          @abstractmethod
+          def export(self, rows):
+              """Turn rows into text."""
+
+
+      class CsvExporter(Exporter):
+          def export(self, rows):
+              return ",".join(rows)
+
+
+      class LazyExporter(Exporter):
+          pass                       # forgot to write export!
+
+
+      print(CsvExporter().export(["Dune", "Emma"]))
+
+      for cls in (Exporter, LazyExporter):
+          try:
+              cls()
+          except TypeError as e:
+              print("TypeError:", e)
 
   - kind: code
     title: A notifier contract
@@ -436,6 +530,29 @@ steps:
       ```
 
       Multiple inheritance is powerful and confusing. It is safest for small **mixin** classes that add one capability. Recognise it; prefer composition.
+
+  - kind: code
+    title: "Try it: who wins?"
+    body: |
+      Run it: `C` takes `hello` from `A`, the first parent listed, and the MRO shows the order Python searches.
+
+      Then try one change: swap the parents to `class C(B, A):` and run again. Both lines change.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      class A:
+          def hello(self):
+              return "A"
+
+      class B:
+          def hello(self):
+              return "B"
+
+      class C(A, B):
+          pass
+
+      print(C().hello())
+      print([k.__name__ for k in C.__mro__])
 
   - kind: why
     body: |

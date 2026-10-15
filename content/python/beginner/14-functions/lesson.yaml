@@ -19,6 +19,30 @@ steps:
 
       Functions turn a long program into small named pieces, each easy to test. Do not repeat yourself: if you copy the same lines twice, make a function.
 
+  - kind: code
+    title: "Try it: define and call"
+    body: |
+      Run it and notice:
+
+      - `area` is defined once and called twice, with different arguments.
+      - `greet` has no `return`, so what it gives back is `None`.
+
+      Then try one change: add a third call, `print(area(10, 2))`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      def area(width, height):
+          return width * height
+
+      print(area(3, 4))
+      print(area(5, 5))
+
+      def greet(name):
+          print("Hello", name)    # prints, but returns nothing
+
+      result = greet("Ada")
+      print(result)
+
   - kind: explain
     title: "Arguments: positional, keyword, default"
     body: |
@@ -258,6 +282,25 @@ steps:
       ```
 
       `nonlocal` does the same for a name in an *enclosing function* (used with closures, Intermediate Module 26). Relying on `global` makes code hard to test and reason about. Prefer parameters and `return`. Just recognise the keywords when you meet them.
+
+  - kind: code
+    title: "Try it: global"
+    body: |
+      Run it: `count` goes up to 2, because `global count` tells `bump` to change the module-level name.
+
+      Then try one change: delete the `global count` line and run again. Python now treats `count` as a new local name inside `bump` and stops with an `UnboundLocalError`. Put the line back afterwards.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      count = 0
+
+      def bump():
+          global count
+          count += 1
+
+      bump()
+      bump()
+      print(count)
 
   - kind: why
     body: |

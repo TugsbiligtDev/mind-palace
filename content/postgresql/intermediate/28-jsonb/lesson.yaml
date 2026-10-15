@@ -41,6 +41,46 @@ steps:
 
       A missing key gives NULL, not an error.
 
+      <!-- page -->
+
+      All four on one book, *Good Omens* (book 18). Its `details` document is:
+
+      ```text
+      {"awards": ["Costa Book Award"], "format": "hardcover", "edition": 4,
+       "language": "en", "dimensions_cm": {"width": 13.7, "height": 21.0}}
+      ```
+
+      ```sql
+      SELECT details -> 'format'                AS arrow,
+             details ->> 'format'               AS double_arrow,
+             details #> '{dimensions_cm,height}' AS by_path,
+             details -> 'awards' -> 0           AS first_award
+      FROM books
+      WHERE book_id = 18;
+      ```
+
+      | arrow | double_arrow | by_path | first_award |
+      |---|---|---|---|
+      | "hardcover" | hardcover | 21.0 | "Costa Book Award" |
+
+      `->` keeps the JSON quotes; `->>` gives plain text. The path `{dimensions_cm,height}` goes into `dimensions_cm`, then takes `height`. Arrays count from **0**.
+
+  - kind: try
+    title: "Try it: -> ->> #> and -> 0"
+    body: |
+      The example from before. Run it and compare with the table you just saw.
+
+      Then play: try `details ->> 'language'`, `details #>> '{dimensions_cm,width}'`, or `details -> 'awards' -> 1` (NULL: there's only one award). Change `18` to `7` for *Dune*, which has no awards.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT details -> 'format'                AS arrow,
+             details ->> 'format'               AS double_arrow,
+             details #> '{dimensions_cm,height}' AS by_path,
+             details -> 'awards' -> 0           AS first_award
+      FROM books
+      WHERE book_id = 18;
+
   - kind: try
     title: Read the details
     body: |
@@ -95,6 +135,7 @@ steps:
       WHERE details @> '{"awards": ["Hugo Award"]}';
 
       SELECT count(*) FILTER (WHERE details @> '{"format": "ebook"}') AS ebooks,
+             
              count(*) FILTER (WHERE NOT details ? 'dimensions_cm')    AS no_dimensions
       FROM books;
 
@@ -112,10 +153,119 @@ steps:
              jsonb_agg(b.title ORDER BY b.title) AS books
       FROM genres g
       JOIN books b ON b.genre_id = g.genre_id
-      GROUP BY g.name;
+      WHERE b.book_id <= 12          -- keeps the lists short
+      GROUP BY g.name
+      ORDER BY g.name;
       ```
 
-      Changing a document: `details || '{"signed": true}'` merges keys in, `details - 'awards'` removes one, and `jsonb_set(details, '{dimensions_cm,height}', '21.5')` replaces a nested value.
+      One row per genre, with its books in a JSON array:
+
+      | genre | books |
+      |---|---|
+      | Classic | ["Animal Farm", "Emma", "Pride and Prejudice"] |
+      | Fantasy | ["The Fellowship of the Ring", "The Hobbit"] |
+      | Horror | ["Frankenstein"] |
+      | Mystery | ["And Then There Were None", "Murder on the Orient Express"] |
+      | Science Fiction | ["1984", "Dune", "Foundation", "I, Robot"] |
+
+      And `to_jsonb` on a whole row:
+
+      ```sql
+      SELECT to_jsonb(p) AS publisher
+      FROM publishers p
+      WHERE publisher_id = 3;
+      ```
+
+      | publisher |
+      |---|
+      | {"name": "Tor Books", "country": "USA", "founded_year": 1980, "publisher_id": 3} |
+
+  - kind: try
+    title: "Try it: jsonb_agg and to_jsonb"
+    body: |
+      Both examples are here. Run them, then remove the `WHERE b.book_id <= 12` line to see every genre's full list, or change `p` to `g` and `publishers` to `genres` in the second query.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT g.name AS genre,
+             jsonb_agg(b.title ORDER BY b.title) AS books
+      FROM genres g
+      JOIN books b ON b.genre_id = g.genre_id
+      WHERE b.book_id <= 12
+      GROUP BY g.name
+      ORDER BY g.name;
+
+      SELECT to_jsonb(p) AS publisher
+      FROM publishers p
+      WHERE publisher_id = 3;
+
+  - kind: explain
+    title: Changing a document
+    body: |
+      Three ways to change a jsonb value. Each returns a **new** document; to save it, put it in an `UPDATE … SET details = …`.
+
+      **`||` merges keys in:**
+
+      ```sql
+      SELECT details || '{"signed": true}' AS added
+      FROM books
+      WHERE book_id = 18;
+      ```
+
+      | added |
+      |---|
+      | {"awards": ["Costa Book Award"], "format": "hardcover", "signed": true, "edition": 4, "language": "en", "dimensions_cm": {"width": 13.7, "height": 21.0}} |
+
+      **`-` removes a key:**
+
+      ```sql
+      SELECT details - 'awards' AS removed FROM books WHERE book_id = 18;
+      ```
+
+      | removed |
+      |---|
+      | {"format": "hardcover", "edition": 4, "language": "en", "dimensions_cm": {"width": 13.7, "height": 21.0}} |
+
+      <!-- page -->
+
+      **`jsonb_set` replaces a value**, even a nested one. The path says where, and the new value is written as JSON:
+
+      ```sql
+      SELECT jsonb_set(details, '{dimensions_cm,height}', '21.5') AS replaced
+      FROM books
+      WHERE book_id = 18;
+      ```
+
+      | replaced |
+      |---|
+      | {"awards": ["Costa Book Award"], "format": "hardcover", "edition": 4, "language": "en", "dimensions_cm": {"width": 13.7, "height": 21.5}} |
+
+      The height went from 21.0 to 21.5; everything else is unchanged.
+
+  - kind: try
+    title: "Try it: || - and jsonb_set"
+    body: |
+      The three examples, then an UPDATE that saves a change for real. Run it: the last result shows *Good Omens* now has `"signed": true`.
+
+      Then play: remove `'language'` instead of `'awards'`, or use `jsonb_set` to change `'{edition}'` to `'5'`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT details || '{"signed": true}' AS added
+      FROM books
+      WHERE book_id = 18;
+
+      SELECT details - 'awards' AS removed
+      FROM books
+      WHERE book_id = 18;
+
+      SELECT jsonb_set(details, '{dimensions_cm,height}', '21.5') AS replaced
+      FROM books
+      WHERE book_id = 18;
+
+      UPDATE books SET details = details || '{"signed": true}'
+      WHERE book_id = 18;
+      SELECT title, details FROM books WHERE book_id = 18;
 
   - kind: try
     title: Your turn to build JSON
@@ -144,6 +294,36 @@ steps:
       | `JSON_TABLE(doc, '$.items[*]' COLUMNS (…))` | turns a JSON array into **rows and columns** |
 
       `JSON_TABLE` is the star: it turns a nested document, like an order from an app, into an ordinary table you can join and aggregate.
+
+      The first three on *Good Omens*:
+
+      ```sql
+      SELECT JSON_VALUE(details, '$.edition' RETURNING int) AS edition,
+             JSON_QUERY(details, '$.awards')                AS awards,
+             JSON_EXISTS(details, '$.dimensions_cm')        AS has_dimensions
+      FROM books
+      WHERE book_id = 18;
+      ```
+
+      | edition | awards | has_dimensions |
+      |---|---|---|
+      | 4 | ["Costa Book Award"] | t |
+
+      `edition` is already an `int`, with no `::int` cast needed.
+
+  - kind: try
+    title: "Try it: JSON_VALUE, JSON_QUERY, JSON_EXISTS"
+    body: |
+      The example from before. Run it, then change `18` to `2` (*Emma*, an ebook): `has_dimensions` turns false. Try the path `'$.dimensions_cm.height'` in JSON_VALUE (with `RETURNING numeric`).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT JSON_VALUE(details, '$.edition' RETURNING int) AS edition,
+             
+             JSON_QUERY(details, '$.awards')                AS awards,
+             JSON_EXISTS(details, '$.dimensions_cm')        AS has_dimensions
+      FROM books
+      WHERE book_id = 18;
 
   - kind: try
     title: JSON_TABLE

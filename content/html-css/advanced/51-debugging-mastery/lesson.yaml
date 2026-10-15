@@ -10,6 +10,25 @@ steps:
       4. **Form a theory** from what CSS does (box model, flow, stacking), and test it by toggling one thing at a time in DevTools.
       5. **Fix the cause**, not the symptom, then check you haven't broken something else.
 
+      For example: *"The Add to basket button wraps onto two lines."*
+
+      1. **Reproduce**: only on the book page, only below about 400px, only for long titles.
+      2. **Isolate**: copy just the card's HTML and CSS into a scratch file. Still broken.
+      3. **Inspect**: the button's box is 96px wide; its parent is a flex row.
+      4. **Theory**: the long title takes the space and the button is allowed to shrink. Test it: in DevTools, add `flex-shrink: 0` to the button. It stops wrapping.
+      5. **Fix the cause**: add `flex-shrink: 0` to the button rule, then check the other pages that use the card.
+
+  - kind: choice
+    title: "Quick check: the first step"
+    body: |
+      A card looks broken. What comes first?
+    options:
+      - "Add `!important` until it looks right"
+      - "Rewrite the card's CSS"
+      - "Reproduce it reliably: which page, width, browser and state shows it"
+    answer: 2
+    explanation: "If you can't make the bug appear on demand, you can't tell whether a change fixed it. Guessing with `!important` only hides the cause."
+
   - kind: explain
     title: Make the invisible visible
     body: |
@@ -19,6 +38,38 @@ steps:
       - **DevTools overlays**: click the **flex**, **grid** or **container** badges in the Elements panel to draw tracks, gaps, line numbers and container sizes on the page. The Layout pane lists every grid and flex container.
       - **The box-model diagram** (Computed tab): exact content, padding, border and margin of the selected element.
       - **Force states**: in Styles, the `:hov` button forces `:hover`, `:focus`, `:focus-visible` and `:active`, so you can inspect states without holding the mouse still.
+
+      The outline trick in action:
+
+      ```css
+      * { outline: 1px solid red; }
+      ```
+
+      In the page: every heading, paragraph, image and wrapper gets a thin red frame, and nothing moves. A box that's wider than it should be, or sticks out past the edge, is suddenly easy to see.
+
+  - kind: web
+    title: "Try it: the outline trick"
+    body: |
+      Something makes this page scroll sideways. The first rule is the outline trick: every box gets a red outline, and nothing moves. Look for the box that sticks out past the right edge.
+
+      Try this:
+
+      1. Find the culprit (it's the `.banner`, with a fixed `width: 900px`) and change its `width` to `max-width: 100%`.
+      2. Then delete the outline rule. The sideways scroll is gone.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <header>Inkwell Books</header>
+      <div class="banner">Poetry night, Thursday 7pm</div>
+      <p>Bring a poem, or just listen.</p>
+    css: |
+      * { outline: 1px solid red; }
+
+      .banner {
+        width: 900px;
+        background: #fde68a;
+        padding: 8px;
+      }
 
   - kind: explain
     title: Horizontal overflow
@@ -32,6 +83,35 @@ steps:
       - a grid column with a big minimum (`minmax(400px, 1fr)`).
 
       To find it: shrink the window, then in the Console run a one-liner that lists every element wider than the page, or use the outline trick and scroll right to see what sticks out. Fix the element, never just `overflow-x: hidden` on `body` (that hides the symptom and breaks `position: sticky`).
+
+  - kind: web
+    title: "Try it: the outline trick"
+    body: |
+      This page has **one** overflow culprit (different from the next step's). Switch the preview to **Phone** size: the page scrolls sideways.
+
+      Try:
+
+      1. Add `* { outline: 1px solid red; }` at the bottom of `style.css`. Scroll right: one red box sticks out past the others.
+      2. Find its rule. It's the `.opening-hours` box with `min-width: 500px`. Delete that line: the sideways scroll is gone.
+      3. Remove the outline rule when you're done (it's only a temporary detective tool).
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <h1>Visit us</h1>
+      <p>14 Harbour Street.</p>
+      <div class="opening-hours">Mon–Sat 9–6 · Sun 11–4</div>
+    css: |
+      body {
+        margin: 0;
+        padding: 1rem;
+        font-family: system-ui, sans-serif;
+      }
+
+      .opening-hours {
+        min-width: 500px;
+        padding: 1rem;
+        background: #f5f0e8;
+      }
 
   - kind: web
     title: Hunt the overflow
@@ -123,6 +203,53 @@ steps:
       - **remove** the property that accidentally creates the context (often a `transform` left over from an animation, or `z-index: 1` added "just in case");
       - give the ancestor's **context** a higher z-index than the thing covering it;
       - move the dropdown out of the group, or render it in the **top layer** with `popover` (Module 25), which escapes every stacking context.
+
+  - kind: web
+    title: "Try it: a trapped sticker"
+    body: |
+      The "Sale" sticker has `z-index: 10`, and the green banner only `z-index: 1`. Yet the sticker slips **under** the banner. Walk up from the sticker: its parent `.book` has `opacity: 0.95`, which creates a stacking context. The sticker's `10` only counts **inside** that group, and the whole group sits under the banner.
+
+      Try:
+
+      1. Delete `opacity: 0.95;` from `.book`. The sticker now sits on top of the banner.
+      2. Put it back, and instead give `.book` a `z-index: 2`. The whole group rises above the banner, sticker included.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <article class="book">
+        <h3>The Odyssey</h3>
+        <span class="sticker">Sale</span>
+      </article>
+      <section class="banner">Free delivery this week</section>
+    css: |
+      body {
+        font-family: system-ui, sans-serif;
+      }
+
+      .book {
+        position: relative;
+        opacity: 0.95;
+        padding: 1rem;
+        background: #f5f0e8;
+      }
+
+      .sticker {
+        position: absolute;
+        right: 1rem;
+        bottom: -1.5rem;
+        z-index: 10;
+        padding: 0.5rem 1rem;
+        background: #b91c1c;
+        color: white;
+      }
+
+      .banner {
+        position: relative;
+        z-index: 1;
+        padding: 2rem 1rem;
+        background: #15803d;
+        color: white;
+      }
 
   - kind: web
     title: Free the dropdown
@@ -236,6 +363,26 @@ steps:
       3. **Reduce** the case to a few lines in a blank page (CodePen, or a scratch file with Live Server). If the tiny case shows the bug, it's the browser; if not, something else in your page is involved.
       4. **Work around** with progressive enhancement (`@supports`, a fallback value first), and **report** real browser bugs (bugs.webkit.org, bugzilla.mozilla.org, crbug.com). Search them first: someone has often found it already, with a workaround.
 
+      <!-- page -->
+
+      **Example: the four steps on one bug.** "The book filter's dropdown has no rounded corners in Safari."
+
+      1. **Confirm:** in Safari's Web Inspector, `border-radius: 8px` on the `<select>` is present and not crossed out, yet the corners are square.
+      2. **Check support:** MDN shows `border-radius` as Widely available, so the property itself is fine. The issue is the `<select>`, which Safari draws with its own built-in look.
+      3. **Reduce:** a blank page with just `<select style="border-radius: 8px">` shows the same square corners. It isn't your page.
+      4. **Work around:** adding `appearance: none` hands the drawing over to your CSS. The corners appear, and you then style the arrow yourself.
+
+  - kind: choice
+    title: "Quick check: reduce the case"
+    body: |
+      A tiny test page with just the broken component works fine in Safari. What does that suggest?
+    options:
+      - "Safari has a bug, so report it"
+      - "Something else in your full page is involved"
+      - "The component can never work in Safari"
+    answer: 1
+    explanation: "If the reduced case doesn't show the bug, it isn't the browser on its own: another rule or element in your page is part of the problem."
+
   - kind: explain
     title: Reading MDN and the spec
     body: |
@@ -246,6 +393,28 @@ steps:
       - **Formal syntax**, and the examples.
 
       The **specification** (drafts.csswg.org) is the source of truth that browsers implement. It's dense, but for edge cases ("what exactly does `auto` mean here?") the definition section is often clearer than any blog post. The CSS Working Group's GitHub issues show why things work the way they do.
+
+      **Example: reading MDN's formal definition** for `width` (shortened):
+
+      | Line | Says | So |
+      |---|---|---|
+      | Initial value | `auto` | with nothing set, the browser decides |
+      | Applies to | all elements **but non-replaced inline elements**, table rows, and row groups | a plain `<span>` ignores it: the bug from the quick check |
+      | Inherited | no | a parent's width isn't passed down |
+      | Percentages | refer to the width of the containing block | `50%` is half of the parent's content box |
+
+      Ten seconds on that table explains the "my width does nothing" bug: make the span `display: inline-block` (or `block`) and `width` starts to apply.
+
+  - kind: choice
+    title: "Quick check: applies to"
+    body: |
+      `width: 200px` does nothing on a `<span>`. Which part of the property's MDN page explains why?
+    options:
+      - "The browser compatibility table"
+      - "The examples"
+      - "The formal definition's *Applies to* line"
+    answer: 2
+    explanation: "`width` doesn't apply to inline boxes like a plain `span`. The formal definition lists what each property applies to."
 
   - kind: why
     body: |

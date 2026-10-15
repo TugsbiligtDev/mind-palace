@@ -17,6 +17,17 @@ steps:
 
       Migrations live in **Git** next to the app code. A tool applies the ones a database hasn't had yet, **in order**, and records each in a table (often `schema_migrations`). Any database can be brought up to date by running what's missing.
 
+  - kind: choice
+    title: "Quick check: which migrations run?"
+    body: "Production has run migrations 001 and 002. Your branch adds 003 and 004. What does the migration tool run when you deploy?"
+    options:
+      - "003, then 004"
+      - "001, 002, 003 and 004"
+      - "Only 004, the newest"
+      - "004, then 003"
+    answer: 0
+    explanation: "The tool checks `schema_migrations`, sees 001 and 002 are already applied, and runs only the missing ones, in order."
+
   - kind: explain
     title: The rules of migrations
     body: |
@@ -38,7 +49,8 @@ steps:
 
       BEGIN;
       ALTER TABLE orders ADD COLUMN notes text;
-      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes');
+      INSERT INTO schema_migrations (version)
+      VALUES ('001_add_order_notes');
       COMMIT;
 
       SELECT version FROM schema_migrations;
@@ -52,7 +64,8 @@ steps:
           version     text PRIMARY KEY,
           applied_at  timestamptz NOT NULL DEFAULT now()
       );
-      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes');
+      INSERT INTO schema_migrations (version)
+      VALUES ('001_add_order_notes');
 
       SELECT version FROM schema_migrations ORDER BY version;
     expect: |
@@ -85,6 +98,17 @@ steps:
 
       Whatever the tool: **read the SQL it generates** before running it on production. That's where your SQL knowledge pays off.
 
+  - kind: choice
+    title: "Quick check: before production"
+    body: "Your ORM generated a migration for you. What should you do before running it on production?"
+    options:
+      - "Nothing: generated migrations are always right"
+      - "Edit an older migration to include it"
+      - "Read the SQL it generated"
+      - "Run it twice to be safe"
+    answer: 2
+    explanation: "Tools can generate a slow, locking or destructive change. Reading the SQL is where your SQL knowledge pays off. Never edit an old migration, and running one twice is what the tool prevents."
+
   - kind: explain
     title: "Backups: pg_dump and pg_restore"
     body: |
@@ -103,6 +127,17 @@ steps:
 
       pg_dump is great for small and medium databases and for moving data. Big production systems add **physical** backups and point-in-time recovery (`pg_basebackup` plus WAL archiving, or your cloud provider's backups).
 
+  - kind: choice
+    title: "Quick check: what's in the dump?"
+    body: "You run `pg_dump -Fc -d bookstore -f bookstore.dump`. What is **not** in the file?"
+    options:
+      - "The tables' data"
+      - "The roles and their passwords"
+      - "The indexes"
+      - "The functions"
+    answer: 1
+    explanation: "pg_dump backs up one database: tables, data, indexes, functions. Roles belong to the whole cluster, so they need `pg_dumpall --globals-only`."
+
   - kind: explain
     title: A backup you haven't restored is a hope
     body: |
@@ -111,6 +146,23 @@ steps:
       - **Test restores regularly**: restore into a scratch database and run a few sanity queries (row counts, the latest rows).
       - **Keep copies somewhere else**: a backup on the same disk dies with the disk.
       - **Know how long a restore takes.** "Four hours" is useful to know *before* an outage.
+
+      **Example: a restore test that caught a problem.** The nightly backup "worked" for months. The first test restore said:
+
+      ```text
+      $ createdb restore_test
+      $ pg_restore -d restore_test bookstore.dump
+      pg_restore: error: could not execute query: ERROR:  role "reporting" does not exist
+      Command was: GRANT SELECT ON TABLE public.orders TO reporting;
+      pg_restore: warning: errors ignored on restore: 1
+      $ psql -d restore_test -c "SELECT count(*) FROM orders;"
+       count
+      -------
+       39419
+      (1 row)
+      ```
+
+      The data is all there (the count matches), but the permissions for the reporting team would have been missing on the day of a real disaster. The fix: also back up the roles (`pg_dumpall --globals-only`) and restore those first. Found on a quiet Tuesday, not during an outage.
 
   - kind: mac
     title: Back up, restore, verify
@@ -166,7 +218,8 @@ steps:
       Migration **003_add_order_gift_flag** adds a `is_gift` boolean (default false) to `orders`. It runs fine, but tomorrow the migration tool will run it **again** and fail. Find what's missing and fix it. Keep the first two lines.
     sql: |
       CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
-      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+      INSERT INTO schema_migrations (version)
+      VALUES ('001_add_order_notes'), ('002_add_customer_phone');
 
       BEGIN;
       ALTER TABLE orders ADD COLUMN is_gift boolean NOT NULL DEFAULT false;
@@ -191,7 +244,8 @@ steps:
       Write migration **003_customer_vip** in one transaction: add `is_vip` (boolean, NOT NULL, default false) to `customers`, set it to **true** for customers with **20 or more orders**, and record the version. Keep the first two lines.
     sql: |
       CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
-      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+      INSERT INTO schema_migrations (version)
+      VALUES ('001_add_order_notes'), ('002_add_customer_phone');
     expect: |
       CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
       INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
@@ -216,10 +270,12 @@ steps:
       Migration 003 (the starter applies it) turned out to be a mistake. Teams that only move forward undo it with a **new** migration. Write **004_drop_customer_vip**: in one transaction, drop the `is_vip` column and record the version.
     sql: |
       CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
-      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+      INSERT INTO schema_migrations (version)
+      VALUES ('001_add_order_notes'), ('002_add_customer_phone');
       BEGIN;
       ALTER TABLE customers ADD COLUMN is_vip boolean NOT NULL DEFAULT false;
-      INSERT INTO schema_migrations (version) VALUES ('003_customer_vip');
+      INSERT INTO schema_migrations (version)
+      VALUES ('003_customer_vip');
       COMMIT;
     expect: |
       CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());

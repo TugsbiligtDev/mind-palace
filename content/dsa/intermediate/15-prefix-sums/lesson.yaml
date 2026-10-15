@@ -6,6 +6,48 @@ steps:
 
       Do the work **once** up front, and every question becomes O(1).
 
+      **Example.** Three questions about the same array, answered the slow way. Each answer loops over its range again:
+
+      ```js
+      const nums = [3, 1, 4, 1, 5, 9, 2, 6];
+      let work = 0;
+
+      function rangeSum(l, r) {
+        let s = 0;
+        for (let i = l; i <= r; i++) { s += nums[i]; work++; }
+        return s;
+      }
+
+      console.log(rangeSum(0, 3), rangeSum(2, 6), rangeSum(0, 7));
+      console.log("numbers added:", work);
+      ```
+
+      prints:
+
+      ```
+      9 21 31
+      numbers added: 17
+      ```
+
+  - kind: code
+    title: "Try it: the slow way"
+    body: |
+      Run it, then ask more questions: add `rangeSum(1, 7)` and `rangeSum(0, 6)` to the second line. The work keeps piling up. The next page makes each question one subtraction.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const nums = [3, 1, 4, 1, 5, 9, 2, 6];
+      let work = 0;
+
+      function rangeSum(l, r) {
+        let s = 0;
+        for (let i = l; i <= r; i++) { s += nums[i]; work++; }
+        return s;
+      }
+
+      console.log(rangeSum(0, 3), rangeSum(2, 6), rangeSum(0, 7));
+      console.log("numbers added:", work);
+
   - kind: explain
     title: Prefix sums
     body: |
@@ -21,6 +63,45 @@ steps:
       **sum(l, r) = prefix[r + 1] − prefix[l]**
 
       For `l = 1, r = 3`: `prefix[4] − prefix[1] = 9 − 3 = 6` (that is `1 + 4 + 1`). Building `prefix` costs O(n) once, and each question then costs O(1).
+
+      <!-- page -->
+
+      Here is the same example in code. Each new running total is the last one plus the next number:
+
+      ```js
+      const nums = [3, 1, 4, 1, 5];
+      const prefix = [0];
+      for (const n of nums) prefix.push(prefix[prefix.length - 1] + n);
+      console.log(prefix);
+      console.log(prefix[4] - prefix[1]);
+      console.log(prefix[5] - prefix[2]);
+      ```
+
+      It prints:
+
+      ```
+      [ 0, 3, 4, 8, 9, 14 ]
+      6
+      10
+      ```
+
+      The second line is the sum of positions 1 to 3 (`1 + 4 + 1`). The third is the sum of positions 2 to 4 (`4 + 1 + 5`). Neither question added the numbers again.
+
+  - kind: code
+    title: "Try it: prefix sums"
+    body: |
+      Run this and check the three lines.
+
+      Then add a line that prints the sum of positions 0 to 2 (`3 + 1 + 4`, which is 8). Which two prefix values do you subtract?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const nums = [3, 1, 4, 1, 5];
+      const prefix = [0];
+      for (const n of nums) prefix.push(prefix[prefix.length - 1] + n);
+      console.log(prefix);
+      console.log(prefix[4] - prefix[1]);
+      console.log(prefix[5] - prefix[2]);
 
   - kind: code
     title: A class that answers range sums
@@ -70,6 +151,29 @@ steps:
 
       Both come from one left-to-right pass and one right-to-left pass: O(n) time.
 
+      <!-- page -->
+
+      A worked example of the left-to-right pass: for each position, the product of everything **before** it.
+
+      ```js
+      const nums = [2, 3, 4];
+      const before = [];
+      let product = 1;
+      for (const n of nums) {
+        before.push(product);
+        product *= n;
+      }
+      console.log(before);
+      ```
+
+      It prints:
+
+      ```
+      [ 1, 2, 6 ]
+      ```
+
+      Nothing comes before position 0, so it gets `1` (multiplying by 1 changes nothing). Position 1 gets `2`, and position 2 gets `2 × 3 = 6`. Notice the order: store the product **first**, then multiply in the current number. The right-to-left pass is the mirror image.
+
   - kind: code
     title: Product of array except self
     body: |
@@ -118,6 +222,19 @@ steps:
       So while you walk along keeping the running total, ask a Map: **"how many earlier prefixes equal `total − k`?"** That count is the number of subarrays ending here.
 
       Start the map with `{0: 1}`: the "empty prefix" before the array begins. Forgetting that is the classic bug.
+
+      <!-- page -->
+
+      A worked example by hand: `nums = [3, 4, -7, 7]` and `k = 7`. "Totals seen" includes the starting `0`.
+
+      | Number | Running total | Looking for (total − 7) | Totals seen before | Subarrays found |
+      |---|---|---|---|---|
+      | 3 | 3 | -4 | 0 | none |
+      | 4 | 7 | 0 | 0, 3 | 1: `[3, 4]` |
+      | -7 | 0 | -7 | 0, 3, 7 | none |
+      | 7 | 7 | 0 | 0, 3, 7, 0 | 2: `[3, 4, -7, 7]` and `[7]` |
+
+      The answer is 3. Look at the second row: the subarray `[3, 4]` starts at position 0, and it is only found because the starting `0` is in the map.
 
   - kind: code
     title: "Find the bug: the missing starting prefix"
@@ -180,6 +297,56 @@ steps:
       - `diff[r + 1] -= v`  (the increase stops after `r`)
 
       At the end, a single running total over `diff` gives the final array. Each update costs **O(1)**, plus one O(n) pass at the end.
+
+      <!-- page -->
+
+      A worked example: six zeros, and one update "add 5 to positions 1 to 3".
+
+      ```js
+      const n = 6;
+      const diff = Array(n + 1).fill(0);
+      diff[1] += 5;
+      diff[3 + 1] -= 5;
+      console.log(diff);
+      const result = [];
+      let running = 0;
+      for (let i = 0; i < n; i++) {
+        running += diff[i];
+        result.push(running);
+      }
+      console.log(result);
+      ```
+
+      It prints:
+
+      ```
+      [ 0, 5, 0, 0, -5, 0, 0 ]
+      [ 0, 5, 5, 5, 0, 0 ]
+      ```
+
+      `diff` only marks where the `+5` starts (position 1) and where it stops (position 4). The running total carries the `5` across positions 1, 2 and 3, then the `-5` cancels it. `diff` has one extra slot so that `r + 1` always fits.
+
+  - kind: code
+    title: "Try it: a difference array"
+    body: |
+      Run this and compare the two lines.
+
+      Then add a second update, "add 2 to positions 0 to 4": two more lines, `diff[0] += 2;` and `diff[4 + 1] -= 2;`, before the first `console.log`. Predict the final array, then run.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const n = 6;
+      const diff = Array(n + 1).fill(0);
+      diff[1] += 5;
+      diff[3 + 1] -= 5;
+      console.log(diff);
+      const result = [];
+      let running = 0;
+      for (let i = 0; i < n; i++) {
+        running += diff[i];
+        result.push(running);
+      }
+      console.log(result);
 
   - kind: code
     title: Apply range updates

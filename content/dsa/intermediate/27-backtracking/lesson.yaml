@@ -19,12 +19,98 @@ steps:
 
       The un-choose step is what lets the same `path` array be reused for every branch.
 
+      **Example: the template, filled in.** Every subset of `[1, 2, 3]`:
+
+      ```js
+      function subsets(nums) {
+        const all = [];
+        const path = [];
+        function explore(i) {
+          if (i === nums.length) {   // a complete answer
+            all.push([...path]);
+            return;
+          }
+          path.push(nums[i]);   // 1. CHOOSE to include nums[i]
+          explore(i + 1);       // 2. EXPLORE
+          path.pop();           // 3. UN-CHOOSE
+          explore(i + 1);       // the other branch: leave nums[i] out
+        }
+        explore(0);
+        return all;
+      }
+
+      console.log(subsets([1, 2, 3]));
+      ```
+
+      prints:
+
+      ```
+      [ [ 1, 2, 3 ], [ 1, 2 ], [ 1, 3 ], [ 1 ], [ 2, 3 ], [ 2 ], [ 3 ], [] ]
+      ```
+
+  - kind: code
+    title: "Try it: every subset"
+    body: |
+      Run it: 8 subsets, from all three to none. Then remove the `path.pop();` line and run again: without un-choosing, the path never shrinks and the answers come out wrong.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      function subsets(nums) {
+        const all = [];
+        const path = [];
+        function explore(i) {
+          if (i === nums.length) {   // a complete answer
+            all.push([...path]);
+            return;
+          }
+          path.push(nums[i]);   // 1. CHOOSE to include nums[i]
+          explore(i + 1);       // 2. EXPLORE
+          path.pop();           // 3. UN-CHOOSE
+          explore(i + 1);       // the other branch: leave nums[i] out
+        }
+        explore(0);
+        return all;
+      }
+
+      console.log(subsets([1, 2, 3]));
+
   - kind: explain
     title: The shared-reference trap, again
     body: |
       When you find a complete answer, you save the current `path`. But `path` is **one array that keeps changing** as you choose and un-choose. If you save `path` itself, every saved answer points at the same array and ends up **empty** when the search finishes.
 
       **Always save a copy: `result.push([...path])`.** This is the number-one backtracking bug (you met the same shared-reference idea in Module 4).
+
+      **Example.** The same search, saving `path` itself into `wrong` and a copy into `right`:
+
+      ```js
+      const wrong = [], right = [], path = [];
+
+      function explore(i) {
+        if (i === 2) {
+          wrong.push(path);        // the same array every time
+          right.push([...path]);   // a snapshot of it right now
+          return;
+        }
+        path.push(i);
+        explore(i + 1);
+        path.pop();
+        explore(i + 1);
+      }
+      explore(0);
+
+      console.log(wrong);
+      console.log(right);
+      ```
+
+      prints:
+
+      ```
+      [ [], [], [], [] ]
+      [ [ 0, 1 ], [ 0 ], [ 1 ], [] ]
+      ```
+
+      All four entries of `wrong` are the one `path` array, which is empty by the end.
 
   - kind: code
     title: "Find the bug: the answers that all vanish"
@@ -94,6 +180,13 @@ steps:
       2. At each level of the search, **skip a value if it equals the previous one at the same level**: `if (i > start && nums[i] === nums[i - 1]) continue;`
 
       The rule means "a duplicate may only be used as a follow-on to its twin, never as a fresh start at the same position."
+
+      **Example: the subsets of `[1, 2, 2]`.**
+
+      - Naive search (8 results): `[1, 2, 2]`, `[1, 2]`, `[1, 2]`, `[1]`, `[2, 2]`, `[2]`, `[2]`, `[]`. `[1, 2]` and `[2]` each appear twice, once for each 2.
+      - Sorted, with the skip rule (6 results): `[]`, `[1]`, `[1, 2]`, `[1, 2, 2]`, `[2]`, `[2, 2]`. Each subset once.
+
+      The skip happens when the search, starting a fresh choice at the same position, meets the **second** 2 right after trying the first.
 
   - kind: code
     title: Subsets with duplicates

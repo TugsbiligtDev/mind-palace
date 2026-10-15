@@ -9,6 +9,40 @@ steps:
       - **`timestamptz`** stores **one exact moment**. Internally it's always UTC (universal time). When you look at it, PostgreSQL **displays** it in your session's time zone.
       - **`timestamp`** (without time zone) stores only **wall-clock numbers**: "2026-02-20 23:40". It has no idea where. It's right only for things like "the shop opens at 09:00 local time, wherever the shop is".
 
+      **Example.** The same text as both types, first in UTC, then with the session in Tokyo:
+
+      ```sql
+      SELECT '2024-04-21 18:45+00'::timestamptz AS a_moment,
+             '2024-04-21 18:45'::timestamp     AS wall_clock;
+      ```
+
+      | a_moment | wall_clock |
+      |---|---|
+      | 2024-04-21 18:45:00+00 | 2024-04-21 18:45:00 |
+
+      After `SET TimeZone = 'Asia/Tokyo';`, the same query gives:
+
+      | a_moment | wall_clock |
+      |---|---|
+      | 2024-04-22 03:45:00+09 | 2024-04-21 18:45:00 |
+
+      The **moment** is shown on Tokyo's clock (same instant, next day). The **wall clock** value doesn't move, because it never knew where it was.
+
+  - kind: try
+    title: "Try it: moment vs. wall clock"
+    body: |
+      The query twice, once in UTC and once in Tokyo. Run it and compare the two results. Then change `'Asia/Tokyo'` to `'America/New_York'`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT '2024-04-21 18:45+00'::timestamptz AS a_moment,
+             '2024-04-21 18:45'::timestamp     AS wall_clock;
+
+      SET TimeZone = 'Asia/Tokyo';
+
+      SELECT '2024-04-21 18:45+00'::timestamptz AS a_moment,
+             '2024-04-21 18:45'::timestamp     AS wall_clock;
+
   - kind: explain
     title: The TimeZone setting
     body: |
@@ -32,7 +66,9 @@ steps:
       (The step is checked once your changed version has run.)
     sql: |
       SHOW TimeZone;
-      SELECT payment_id, paid_at FROM payments WHERE payment_id = 3365;
+      SELECT payment_id, paid_at
+      FROM payments
+      WHERE payment_id = 3365;
     expect: |
       SET TimeZone = 'Asia/Tokyo';
       SHOW TimeZone;
@@ -49,13 +85,50 @@ steps:
       | `timestamp` (wall clock) | `timestamptz` (a moment) | *This wall-clock time was in Rome, so which moment was it?* |
 
       ```sql
-      SELECT paid_at AT TIME ZONE 'Asia/Tokyo' AS tokyo_time
-      FROM payments;
+      SELECT paid_at, paid_at AT TIME ZONE 'Asia/Tokyo' AS tokyo_time
+      FROM payments
+      WHERE payment_id = 3365;
       ```
+
+      | paid_at | tokyo_time |
+      |---|---|
+      | 2024-04-21 18:45:13.041182+00 | 2024-04-22 03:45:13.041182 |
+
+      Mia's payment again: `paid_at` is the moment (shown in UTC, `+00`), and `tokyo_time` is what Tokyo clocks read. It has no `+..` at the end, because it's a wall-clock `timestamp` now.
+
+      The other direction: *"23:40 on 20 February, Rome time. Which moment was that?"*
+
+      ```sql
+      SELECT '2026-02-20 23:40'::timestamp AT TIME ZONE 'Europe/Rome' AS moment;
+      ```
+
+      | moment |
+      |---|
+      | 2026-02-20 22:40:00+00 |
+
+      Rome is one hour ahead of UTC in winter, so the moment was 22:40 UTC.
+
+      <!-- page -->
 
       The zone can come from a **column**, too. Every Inkwell customer has a `time_zone`, so `paid_at AT TIME ZONE c.time_zone` shows each payment in its own customer's local time.
 
       The most common use: **reporting by local day**. `(paid_at AT TIME ZONE 'Asia/Tokyo')::date` is the date in Tokyo, whatever the session zone.
+
+  - kind: try
+    title: "Try it: both directions"
+    body: |
+      Both examples are here. Run them and compare with the tables you just saw.
+
+      Then play: try `'America/New_York'` or `'Europe/London'` in either query, or another payment ID in the first.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT paid_at,
+             paid_at AT TIME ZONE 'Asia/Tokyo' AS tokyo_time
+      FROM payments
+      WHERE payment_id = 3365;
+
+      SELECT '2026-02-20 23:40'::timestamp AT TIME ZONE 'Europe/Rome' AS moment;
 
   - kind: try
     title: Each customer's own clock
@@ -102,6 +175,47 @@ steps:
 
       Full list: `SELECT name FROM pg_timezone_names;`
 
+      <!-- page -->
+
+      The name follows daylight saving. Noon UTC in January and in July, seen in Rome:
+
+      ```sql
+      SELECT '2026-01-15 12:00+00'::timestamptz AT TIME ZONE 'Europe/Rome' AS winter_rome,
+             
+             '2026-07-15 12:00+00'::timestamptz AT TIME ZONE 'Europe/Rome' AS summer_rome;
+      ```
+
+      | winter_rome | summer_rome |
+      |---|---|
+      | 2026-01-15 13:00:00 | 2026-07-15 14:00:00 |
+
+      And the offset-spelling trap:
+
+      ```sql
+      SET TimeZone = 'UTC+8';
+      SELECT '2026-01-15 12:00+00'::timestamptz AS shown;
+      ```
+
+      | shown |
+      |---|
+      | 2026-01-15 04:00:00-08 |
+
+      `UTC+8` gave **minus** 8 hours (`-08`). With `'Asia/Shanghai'` you'd get the 20:00 you expected.
+
+  - kind: try
+    title: "Try it: names vs. offsets"
+    body: |
+      Both examples are here. Run them, then change `'UTC+8'` to `'Asia/Shanghai'` and run again: `20:00:00+08`, eight hours **ahead**.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT '2026-01-15 12:00+00'::timestamptz AT TIME ZONE 'Europe/Rome' AS winter_rome,
+             
+             '2026-07-15 12:00+00'::timestamptz AT TIME ZONE 'Europe/Rome' AS summer_rome;
+
+      SET TimeZone = 'UTC+8';
+      SELECT '2026-01-15 12:00+00'::timestamptz AS shown;
+
   - kind: explain
     title: Daylight-saving pitfalls
     body: |
@@ -125,6 +239,7 @@ steps:
       SET TimeZone = 'America/New_York';
 
       SELECT '2026-03-07 12:00'::timestamptz + interval '1 day'    AS plus_1_day,
+             
              '2026-03-07 12:00'::timestamptz + interval '24 hours' AS plus_24_hours;
 
   - kind: explain
@@ -140,6 +255,35 @@ steps:
         - `paid_at >= current_date - 7` = since midnight 7 days ago (whole days)
 
         Decide which one the question means.
+
+      <!-- page -->
+
+      The first two in action:
+
+      ```sql
+      SELECT (date_trunc('month', date '2026-02-10') + interval '1 month' - interval '1 day')::date AS end_of_feb,
+             
+             date '2026-01-31' + interval '1 month'                     AS jan31_plus_1_month,
+             date '2026-01-31' + interval '1 month' + interval '1 month' AS plus_2_months;
+      ```
+
+      | end_of_feb | jan31_plus_1_month | plus_2_months |
+      |---|---|---|
+      | 2026-02-28 | 2026-02-28 00:00:00 | 2026-03-28 00:00:00 |
+
+      (Adding an interval to a date gives a timestamp, hence the `00:00:00`.)
+
+  - kind: try
+    title: "Try it: month ends"
+    body: |
+      The example from before. Run it, then change `'2026-02-10'` to a date in April (30 days) or to `'2028-02-10'` (a leap year: 29 days).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT (date_trunc('month', date '2026-02-10') + interval '1 month' - interval '1 day')::date AS end_of_feb,
+             
+             date '2026-01-31' + interval '1 month'                     AS jan31_plus_1_month,
+             date '2026-01-31' + interval '1 month' + interval '1 month' AS plus_2_months;
 
   - kind: explain
     title: "Filtering by date: < next day, not BETWEEN"
@@ -198,6 +342,39 @@ steps:
       ```
 
       For a **local-day** report, generate the days, then compare against `(paid_at AT TIME ZONE 'Asia/Tokyo')::date`, so every payment lands in the right day for the person who reads the report.
+
+      A small daily report for the first five days of February, using half-open ranges (UTC days):
+
+      ```sql
+      SELECT d::date AS day, count(p.payment_id) AS payments
+      FROM generate_series('2026-02-01'::date, '2026-02-05'::date, interval '1 day') AS d
+      LEFT JOIN payments p ON p.paid_at >= d AND p.paid_at < d + interval '1 day'
+      GROUP BY d
+      ORDER BY d;
+      ```
+
+      | day | payments |
+      |---|---|
+      | 2026-02-01 | 63 |
+      | 2026-02-02 | 69 |
+      | 2026-02-03 | 54 |
+      | 2026-02-04 | 51 |
+      | 2026-02-05 | 65 |
+
+      The LEFT JOIN keeps a day even if it had no payments (it would show 0).
+
+  - kind: try
+    title: "Try it: a day-by-day report"
+    body: |
+      The example from before. Run it, then change the end date to `'2026-02-14'` for two weeks, or `interval '1 day'` to `interval '1 week'` (and the `+ interval` in the ON clause too) for weekly totals.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT d::date AS day, count(p.payment_id) AS payments
+      FROM generate_series('2026-02-01'::date, '2026-02-05'::date, interval '1 day') AS d
+      LEFT JOIN payments p ON p.paid_at >= d AND p.paid_at < d + interval '1 day'
+      GROUP BY d
+      ORDER BY d;
 
   - kind: try
     title: "Find the bug: New Year in Tokyo"

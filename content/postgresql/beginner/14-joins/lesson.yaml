@@ -6,6 +6,44 @@ steps:
 
       A **join** does that. It matches rows from two tables using a condition, usually "this FK equals that PK", and glues each matching pair into one wider row.
 
+      **Example.** Order 3 only knows its customer's number:
+
+      | order_id | customer_id |
+      |---|---|
+      | 3 | 4 |
+
+      Customer 4 lives in the `customers` table:
+
+      | customer_id | first_name | last_name |
+      |---|---|---|
+      | 4 | Noah | Garcia |
+
+      A join glues the matching rows into one:
+
+      | order_id | customer_id | first_name | last_name |
+      |---|---|---|---|
+      | 3 | 4 | Noah | Garcia |
+
+      The next page shows the query that does this.
+
+  - kind: try
+    title: "Try it: two halves, then one row"
+    body: |
+      The two separate lookups, then a join that does both at once (explained on the next page). Run it and compare the three results. Then change `3` to `1` in the first and last query.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT order_id, customer_id FROM orders WHERE order_id = 3;
+
+      SELECT customer_id, first_name, last_name
+      FROM customers
+      WHERE customer_id = 4;
+
+      SELECT o.order_id, o.customer_id, c.first_name, c.last_name
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE o.order_id = 3;
+
   - kind: explain
     title: INNER JOIN
     body: |
@@ -14,6 +52,17 @@ steps:
       FROM orders AS o
       JOIN customers AS c ON c.customer_id = o.customer_id;
       ```
+
+      The first four rows: order 1 has `customer_id` 1, so it's paired with Emma, and so on.
+
+      | order_id | first_name |
+      |---|---|
+      | 1 | Emma |
+      | 2 | Liam |
+      | 3 | Noah |
+      | 4 | Emma |
+
+      <!-- page -->
 
       - **`JOIN … ON condition`** pairs up rows where the condition is true. `JOIN` on its own means **INNER JOIN**.
       - `orders AS o` gives the table a short **alias**. Then `o.order_id` means "order_id from orders". (`AS` is optional for tables, and most people leave it out: `FROM orders o`.)
@@ -55,6 +104,21 @@ steps:
       LEFT JOIN reviews r ON r.book_id = b.book_id;
       ```
 
+      Four of the books, with `WHERE b.title IN ('Atomic Habits', 'Dune', 'Emma', 'Homo Deus')` added:
+
+      | title | rating |
+      |---|---|
+      | Atomic Habits | 4 |
+      | Atomic Habits | 5 |
+      | Dune | 5 |
+      | Dune | 5 |
+      | Emma | NULL |
+      | Homo Deus | NULL |
+
+      Books with two reviews appear twice. *Emma* and *Homo Deus* have no reviews, so they appear once, with NULL. A plain `JOIN` would return only the first four rows.
+
+      <!-- page -->
+
       That makes LEFT JOIN the tool for "find things that **don't** have a match": keep everything, then look for the NULLs.
 
   - kind: try
@@ -89,7 +153,6 @@ steps:
       **`FULL JOIN`** (short for FULL OUTER JOIN) keeps **every row from both sides**. Matched rows are paired up, and unmatched rows from either side get NULLs on the other side.
 
       It's for comparing two lists: "what's in A only, what's in B only, and what's in both?"
-
       (LEFT JOIN is also a kind of *outer* join. "Outer" just means unmatched rows are kept.)
 
   - kind: try
@@ -119,6 +182,15 @@ steps:
                   AND b.book_id <> a.book_id;
       ```
 
+      Each book paired with every *other* book of the same genre (`<>` stops a book being paired with itself). The first rows, sorted:
+
+      | book | same_genre_as |
+      |---|---|
+      | 1984 | Dune |
+      | 1984 | Foundation |
+      | 1984 | I, Robot |
+      | American Gods | Good Omens |
+
       The classic use is the employee → manager link from Module 13: join `employees` to `employees` to put each person's name next to their manager's name.
 
   - kind: try
@@ -142,7 +214,30 @@ steps:
       JOIN books b        ON b.book_id = oi.book_id;
       ```
 
+      The first rows (sorted by order):
+
+      | order_id | title | quantity |
+      |---|---|---|
+      | 1 | Pride and Prejudice | 1 |
+      | 1 | The Hobbit | 1 |
+      | 2 | 1984 | 2 |
+      | 3 | Dune | 1 |
+      | 3 | Foundation | 1 |
+
       This is how you walk through a **junction table**: `orders` → `order_items` → `books`. Orders and books are many-to-many, and order_items sits in the middle.
+
+  - kind: try
+    title: "Try it: three tables"
+    body: |
+      The example from before. Run it, then add `JOIN customers c ON c.customer_id = o.customer_id` as a fourth table and put `c.first_name` in the SELECT: now each line shows who bought it.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT o.order_id, b.title, oi.quantity
+      FROM orders o
+      JOIN order_items oi ON oi.order_id = o.order_id
+      JOIN books b        ON b.book_id = oi.book_id
+      ORDER BY o.order_id;
 
   - kind: try
     title: Your turn with three tables
@@ -173,7 +268,34 @@ steps:
 
       means the same as `ON c.customer_id = o.customer_id`, and the result shows `customer_id` only once. It's one reason to name FK columns exactly like the key they point at.
 
+      ```sql
+      SELECT order_id, customer_id, first_name
+      FROM orders o
+      JOIN customers c USING (customer_id)
+      ORDER BY order_id;
+      ```
+
+      | order_id | customer_id | first_name |
+      |---|---|---|
+      | 1 | 1 | Emma |
+      | 2 | 2 | Liam |
+      | 3 | 4 | Noah |
+
+      (First three rows.) Notice you can write plain `customer_id` without `o.` or `c.`: with USING there's only one.
+
       Use `ON` when the names differ or the condition is more than a simple equality (like the self join above).
+
+  - kind: try
+    title: "Try it: USING"
+    body: |
+      Run it. Then change `USING (customer_id)` to `ON c.customer_id = o.customer_id` and run again: you get an error, *column reference "customer_id" is ambiguous*. With ON, both copies exist, so you must write `o.customer_id`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT order_id, customer_id, first_name
+      FROM orders o
+      JOIN customers c USING (customer_id)
+      ORDER BY order_id;
 
   - kind: explain
     title: "The fan-out trap"
@@ -213,6 +335,8 @@ steps:
       GROUP BY b.book_id, b.title;
       ```
 
+      Sorted with the most reviewed first, the top three are *Sapiens* (3), *Atomic Habits* (2) and *Dune* (2). At the bottom, *Emma* and *Homo Deus* show **0**.
+
       Two details matter:
 
       - **LEFT JOIN**, so books with zero reviews still appear.
@@ -238,12 +362,49 @@ steps:
 
       **`CROSS JOIN`** pairs **every** row with **every** row: 9 genres × 6 publishers = 54 rows, with no condition. It's occasionally useful (every size × every color), but usually a CROSS JOIN you didn't mean is a forgotten ON clause.
 
+      ```sql
+      SELECT g.name AS genre, p.name AS publisher
+      FROM genres g
+      CROSS JOIN publishers p
+      ORDER BY g.name, p.name;
+      ```
+
+      The first rows: *Classic* paired with each publisher in turn, then the next genre.
+
+      | genre | publisher |
+      |---|---|
+      | Classic | Bloomsbury |
+      | Classic | Blue Owl Press |
+      | Classic | HarperCollins |
+      | Classic | Penguin Classics |
+
+  - kind: try
+    title: "Try it: RIGHT JOIN and CROSS JOIN"
+    body: |
+      The first query is the LEFT JOIN from earlier, written as a RIGHT JOIN: `books` is now on the right, so every book is kept, and *Emma* still shows NULL. The second is the CROSS JOIN: count the rows.
+
+      Then play: swap the tables in the first query and make it a `LEFT JOIN`. Same rows.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT b.title, r.rating
+      FROM reviews r
+      RIGHT JOIN books b ON b.book_id = r.book_id
+      ORDER BY b.title;
+
+      SELECT g.name AS genre, p.name AS publisher
+      FROM genres g
+      CROSS JOIN publishers p
+      ORDER BY g.name, p.name;
+
   - kind: try
     title: "Find the bug: the customers who vanished"
     body: |
       *"Every customer, with how many **5-star** reviews they wrote, including 0."* This query drops everyone without a 5-star review. Fix it so every customer appears.
     sql: |
-      SELECT c.first_name, c.last_name, count(r.review_id) AS five_stars
+      SELECT c.first_name,
+             c.last_name,
+             count(r.review_id) AS five_stars
       FROM customers c
       LEFT JOIN reviews r ON r.customer_id = c.customer_id
       WHERE r.rating = 5

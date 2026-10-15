@@ -51,6 +51,41 @@ steps:
 
       Note that `"5"` (text) and `5` (a number) are **different**: `"5" + "5"` is `"55"`, but `5 + 5` is `10`.
 
+      <!-- page -->
+
+      `type(value)` tells you the type, and adding `.__name__` gives just its name as text:
+
+      ```python
+      print(type(3.5).__name__)
+      print(type("hi").__name__)
+      print(type(False).__name__)
+      print("5" + "5")
+      print(5 + 5)
+      ```
+
+      prints:
+
+      ```
+      float
+      str
+      bool
+      55
+      10
+      ```
+
+  - kind: code
+    title: "Try it: what type is that?"
+    body: |
+      Run this and check each line against the table. Then swap `3.5` for `3` and `False` for `None`, and predict the names before you run it.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      print(type(3.5).__name__)
+      print(type("hi").__name__)
+      print(type(False).__name__)
+      print("5" + "5")
+      print(5 + 5)
+
   - kind: code
     title: What type is it?
     body: |
@@ -157,6 +192,43 @@ steps:
 
       Whole numbers (`int`) are always exact, and Python's `int` can be as large as memory allows (`2 ** 100` just works).
 
+      <!-- page -->
+
+      Two helpers for working with floats: `abs(x)` gives the size of a number ignoring its sign, and `round(x, 2)` rounds to 2 decimals.
+
+      ```python
+      print(0.1 + 0.2)
+      print(0.1 + 0.2 == 0.3)
+      print(abs(-7))
+      print(abs(2 - 9))
+      print(round(3.14159, 2))
+      ```
+
+      prints:
+
+      ```
+      0.30000000000000004
+      False
+      7
+      7
+      3.14
+      ```
+
+      `abs(2 - 9)` is `7`, not `-7`: it tells you *how far apart* 2 and 9 are, whichever is bigger.
+
+  - kind: code
+    title: "Try it: floats, abs and round"
+    body: |
+      Run this. Then change `abs(2 - 9)` to `abs(9 - 2)`: the answer stays the same. Try `round(3.14159, 3)` too.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      print(0.1 + 0.2)
+      print(0.1 + 0.2 == 0.3)
+      print(abs(-7))
+      print(abs(2 - 9))
+      print(round(3.14159, 2))
+
   - kind: code
     title: Close enough
     body: |
@@ -225,6 +297,25 @@ steps:
       a = 10
       print(b)   # 5: b still points at the old value
       ```
+
+  - kind: code
+    title: "Try it: two name tags"
+    body: |
+      The first half is the example above: changing `a` does not change `b`. The second half does the same with a **list**, which *can* change in place. Run it and compare the two `print(b)` lines.
+
+      Then try one change: replace `a.append(3)` with `a = [9]` and run again. Now `b` stays `[1, 2]`, because `a` got a new tag instead of changing the shared list.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      a = 5
+      b = a
+      a = 10
+      print(b)      # 5
+
+      a = [1, 2]
+      b = a
+      a.append(3)   # changes the one list both names point at
+      print(b)
 
   - kind: why
     body: |

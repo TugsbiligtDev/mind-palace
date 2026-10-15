@@ -11,6 +11,37 @@ steps:
 
       They run on your Mac, from Terminal or inside VS Code.
 
+      **Example: what each tool does to the same messy file.**
+
+      ```css
+      .card{color:#333;padding:10px 20px}
+      .Title { colr: navy;
+        font-size:20px }
+      ```
+
+      **Prettier** rewrites the layout and changes nothing else:
+
+      ```css
+      .card {
+        color: #333;
+        padding: 10px 20px;
+      }
+      .Title {
+        colr: navy;
+        font-size: 20px;
+      }
+      ```
+
+      **Stylelint** reads the meaning and reports the mistakes, with line and column:
+
+      ```text
+      style.css
+        5:3  ✖  Unexpected unknown property "colr"           property-no-unknown
+        4:1  ✖  Expected class selector ".Title" to be kebab-case   selector-class-pattern
+      ```
+
+      The browser would have silently ignored `colr: navy`; Stylelint catches it.
+
   - kind: mac
     title: Install Node and the tools
     body: |
@@ -67,6 +98,29 @@ steps:
       - Built in already: HTML and CSS **IntelliSense** suggest property names and values (and warn about unknown ones), and **Emmet** (Module 3).
 
       Settings you choose live in a `.vscode/settings.json` file in the project, so everyone on the project gets the same setup.
+
+      **Example: the project's shared settings**, in `.vscode/settings.json`:
+
+      ```json
+      {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "css.validate": true
+      }
+      ```
+
+      `esbenp.prettier-vscode` is the Prettier extension's ID. Now, in this project, pressing ⌘S turns `.card{color:#333}` into the tidy three-line version, for everyone who opens the folder.
+
+  - kind: choice
+    title: "Quick check: tidy on save"
+    body: |
+      You want every file tidied automatically each time you save. What do you set up?
+    options:
+      - "Prettier as the default formatter, with *Format On Save* ticked"
+      - "The Code Spell Checker extension"
+      - "Emmet"
+    answer: 0
+    explanation: "Prettier formats the file, and *Format On Save* runs it every time you press ⌘S. A spell checker only catches typos, and Emmet expands abbreviations."
 
   - kind: explain
     title: Consistent names and files

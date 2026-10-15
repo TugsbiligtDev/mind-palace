@@ -22,6 +22,40 @@ steps:
       }
       ```
 
+      In the page: a link inside `#content` with `class="text-white"` shows **white** text. Without layers, the id rule would win and the link would stay dark red.
+
+  - kind: web
+    title: "Try it: a later layer wins"
+    body: |
+      This is the example above. The link is inside `#content` and has `class="text-white"`. The id rule is more specific, but it's in the earlier `base` layer, so the `utilities` rule wins: the link is white on the orange box.
+
+      Try this:
+
+      1. Swap the order in the first line to `@layer reset, base, utilities, components;`. Still white: `utilities` still comes after `base`.
+      2. Now make it `@layer reset, utilities, base, components;`. The link turns dark red: `base` is now the later layer.
+      3. Move the `.text-white` rule out of its layer (delete `@layer utilities {` and its `}`). Unlayered styles beat every layer, so it's white again whatever the order.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div id="content">
+        <p><a class="text-white" href="events.html">Poetry night, Thursday</a></p>
+      </div>
+    css: |
+      @layer reset, base, components, utilities;
+
+      #content {
+        background: #c2410c;
+        padding: 1rem;
+      }
+
+      @layer base {
+        #content a { color: #7c2d12; }
+      }
+
+      @layer utilities {
+        .text-white { color: white; }
+      }
+
   - kind: explain
     title: Declaring and filling layers
     body: |
@@ -32,6 +66,37 @@ steps:
       - Layers can nest: `@layer components.cards { … }`.
 
       One twist: for `!important` declarations, layer order **reverses** (an important rule in an early layer beats an important one in a later layer). That lets a reset protect something absolutely, but it's rarely needed.
+
+  - kind: web
+    title: "Try it: layer order"
+    body: |
+      The word *Inkwell* is matched by an id rule in `base` and a class rule in `utilities`. Right now it is **white on green**: the later layer wins, even though the id is more specific.
+
+      Try:
+
+      1. Swap the order in the first line to `@layer utilities, base;`. The text turns dark red: `base` is now the later layer. (The green background stays, because only `utilities` sets a background.)
+      2. Swap it back, then add a rule **outside any layer** at the bottom: `.highlight { color: gold; }`. It turns gold: unlayered styles beat every layer.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div id="intro">
+        <p>Welcome to <span class="highlight">Inkwell</span> Books.</p>
+      </div>
+    css: |
+      @layer base, utilities;
+
+      @layer base {
+        #intro span {
+          color: #7c2d12;
+        }
+      }
+
+      @layer utilities {
+        .highlight {
+          color: white;
+          background: #15803d;
+        }
+      }
 
   - kind: web
     title: Layer the stylesheet
@@ -147,6 +212,8 @@ steps:
       ```
 
       Now `.my-calendar { color: … }` in `components` overrides the library's `div#dp-root .dp-wrapper table td.dp-day` without a fight.
+
+      In the page: the calendar days take your colors from `.my-calendar`, and the library's styles only show for the things your rules don't set.
 
   - kind: web
     title: Contain the vendor styles

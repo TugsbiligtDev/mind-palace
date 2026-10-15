@@ -20,6 +20,31 @@ steps:
 
       Two machines on a closed network inside your laptop. That is the entire lab. You will snapshot it so you can break things and roll back in seconds.
 
+      **Example: the finished lab**, drawn out. Everything below lives inside your own laptop:
+
+      ```
+      Your laptop
+      └── Hypervisor (UTM or VirtualBox)
+          ├── Kali VM (attacker)     192.168.56.102  ─┐
+          │                                           ├─ private lab network 192.168.56.0/24
+          └── Target VM (victim)     192.168.56.101  ─┘
+                                     (no way out to your home network or the internet)
+      ```
+
+      The two addresses are what this course uses throughout; yours may end in different numbers, but they will share the same first three.
+
+  - kind: choice
+    title: "Quick check: why a private network?"
+    body: |
+      Why do the two VMs sit on their own private network?
+    options:
+      - "So the scans and the weak target stay inside your computer and never reach the internet or other people's devices"
+      - "Because private networks are faster"
+      - "Because Kali can't use the internet"
+    answer: 0
+    explanation: |
+      The isolation is what keeps the lab **legal and safe**: your scans can't leak out, and nobody outside can reach the deliberately weak target.
+
   - kind: explain
     title: "Step 1 — install a hypervisor"
     body: |
@@ -30,12 +55,55 @@ steps:
 
       This is ordinary free software from the official site — treat installing it like any app. Once it is running, you have the stage on which both VMs will live.
 
+      **Example: which hypervisor do I need?** Your Mac can tell you which kind of chip it has:
+
+      ```
+      $ uname -m
+      arm64
+      ```
+
+      `arm64` means Apple Silicon (M1 to M4): install **UTM**. `x86_64` means an Intel Mac: install **VirtualBox** (UTM works too).
+
+  - kind: mac
+    title: "Try it: which chip is in your Mac?"
+    body: |
+      Run this before downloading anything. `arm64` → UTM; `x86_64` → VirtualBox.
+    commands: |
+      uname -m
+
   - kind: explain
     title: "Step 2 — build the Kali attacker VM"
     body: |
       Get Kali from its **official** site (kali.org) — and *only* the official site; a security tool from a random mirror is a contradiction in terms. The easy route is Kali's **pre-built VM image** for your hypervisor, which you import directly rather than installing from scratch.
 
       Give it a sensible amount of RAM (4 GB is fine to start), boot it, and log in. You now have hundreds of tools from Module 13 at your fingertips. Open a terminal and run the commands you already know — `whoami`, `id`, `ip addr` — to confirm you are at home here.
+
+      **Example: your first minute in Kali.** After logging in (the pre-built image's user and password are both `kali`), open a terminal:
+
+      ```
+      kali@kali:~$ whoami
+      kali
+      kali@kali:~$ id
+      uid=1000(kali) gid=1000(kali) groups=1000(kali),4(adm),27(sudo)
+      kali@kali:~$ ip addr show eth0
+      2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+          link/ether 08:00:27:5c:1e:a2 brd ff:ff:ff:ff:ff:ff
+          inet 192.168.56.102/24 brd 192.168.56.255 scope global dynamic eth0
+      ```
+
+      You're an ordinary user who may use `sudo`, and Kali has an address on the lab network. Change the default `kali` password with `passwd` straight away: a default password is the first thing an attacker tries.
+
+  - kind: choice
+    title: "Quick check: where does Kali come from?"
+    body: |
+      Where should you download Kali Linux from?
+    options:
+      - "Any mirror that's fast"
+      - "Only the official site, kali.org"
+      - "A file a stranger shared in a forum, because it has extra tools"
+    answer: 1
+    explanation: |
+      A security toolbox from an unknown source could be tampered with. Get it from **kali.org** only.
 
   - kind: explain
     title: "Step 3 — add a deliberately-vulnerable target"
@@ -46,6 +114,28 @@ steps:
 
       **Apple Silicon note:** most training images (Metasploitable 2 included) are built for Intel PCs. UTM can still run them through emulation, but slowly. If yours crawls, run **Juice Shop** instead (it has an ARM build), or use the browser-based machines on TryHackMe or Hack The Box (see the last tip in this lesson).
 
+      **Example: picking a target.**
+
+      | Training target | Good for | Runs well on |
+      |---|---|---|
+      | Metasploitable 2 | old network services, Linux | Intel machines (slow on Apple Silicon) |
+      | OWASP Juice Shop | modern web app flaws | everything, including Apple Silicon |
+      | A beginner VulnHub machine | a small "capture the flag" challenge | mostly Intel |
+
+      Starting out on an Apple Silicon Mac? Juice Shop is the easiest first target. On an Intel machine, Metasploitable 2 gives you the most to explore in the Intermediate modules.
+
+  - kind: choice
+    title: "Quick check: a legal target"
+    body: |
+      Which of these is a legal target for your lab?
+    options:
+      - "Your neighbour's Wi-Fi router, if it uses a weak password"
+      - "Metasploitable 2, downloaded and running in your own lab"
+      - "Your school's website, as long as you don't change anything"
+    answer: 1
+    explanation: |
+      Metasploitable 2 is built to be attacked for practice, and it's yours, on your own computer. The others belong to someone else, so testing them without written permission is a crime.
+
   - kind: explain
     title: "Step 4 — isolate the network (the critical step)"
     body: |
@@ -55,6 +145,30 @@ steps:
       - **Bridged:** the VMs appear as real devices on your home network and can reach the internet and your neighbours' devices. ❌ For a deliberately-vulnerable target, this is dangerous and can be unlawful if your scans leak out.
 
       A deliberately-weak machine on an isolated network is a safe lab. The same machine on a bridged network is a liability you have invited onto the internet. Confirm the setting twice.
+
+      **Example: proving the lab is sealed.** In VirtualBox the setting reads **Attached to: Host-only Adapter** (UTM calls it **Host Only**) on both VMs. Then check from Kali: the target answers, the internet doesn't:
+
+      ```
+      kali@kali:~$ ping -c 2 192.168.56.101
+      64 bytes from 192.168.56.101: icmp_seq=1 ttl=64 time=0.402 ms
+      64 bytes from 192.168.56.101: icmp_seq=2 ttl=64 time=0.377 ms
+      kali@kali:~$ ping -c 2 8.8.8.8
+      ping: connect: Network is unreachable
+      ```
+
+      `8.8.8.8` is a public internet address. "Network is unreachable" is the answer you want: there's no way out. If that ping succeeds, a VM is still bridged (or on NAT): fix the setting before going any further.
+
+  - kind: choice
+    title: "Quick check: the right setting"
+    body: |
+      Which network setting do you choose for the two lab VMs?
+    options:
+      - "Bridged, so they get real addresses on your home network"
+      - "Host-Only (or Internal), so they see each other and nothing else"
+      - "Whatever the default is"
+    answer: 1
+    explanation: |
+      **Host-Only / Internal** keeps all lab traffic inside your computer. Bridged would put a deliberately weak machine on your real network, and let your scans leak out.
 
   - kind: explain
     title: "Step 5 — snapshot, then find your target"
@@ -67,6 +181,16 @@ steps:
       - Your target will be on the same little subnet.
 
       You now have an authorised target — one you own, on a sealed network — and its address. Everything that follows is legal because of how you built this.
+
+      **Example: finding the target's address.** Log in to the target's own console (Metasploitable 2's login is `msfadmin` / `msfadmin`) and ask it:
+
+      ```
+      msfadmin@metasploitable:~$ ifconfig eth0
+      eth0      Link encap:Ethernet  HWaddr 08:00:27:a1:44:9e
+                inet addr:192.168.56.101  Bcast:192.168.56.255  Mask:255.255.255.0
+      ```
+
+      `inet addr:192.168.56.101` is the address you'll use from Kali. (This old machine still uses `ifconfig`; Kali uses `ip addr`.) Same first three numbers as Kali (`192.168.56`), so they're on the same lab network.
 
   - kind: mac
     title: "Optional — a legal taste of active scanning"
@@ -87,6 +211,34 @@ steps:
 
       Keep your notes in a simple document: target IP, date, commands run, and results. This is the seed of a real engagement log.
 
+      **Example: a page of lab notes.** Short, dated, and written while you work:
+
+      ```
+      Target:  192.168.56.101 (Metasploitable 2, my lab)   Date: 2026-10-15
+      Passive: the image's documentation says it runs many old services on purpose
+
+      10:02  ping -c 2 192.168.56.101      → replies, host is up
+      10:04  nmap -sV 192.168.56.101       → saved to scan-101.txt
+             21/tcp  open  ftp     vsftpd 2.3.4
+             22/tcp  open  ssh     OpenSSH 4.7p1 Debian 8ubuntu1
+             80/tcp  open  http    Apache httpd 2.2.8 ((Ubuntu) DAV/2)
+             (… and many more)
+      ```
+
+      Every command, when you ran it, and what it said. In a month you'll be glad you wrote it down.
+
+  - kind: choice
+    title: "Quick check: what belongs in the notes?"
+    body: |
+      Which entry is the most useful in your lab notes?
+    options:
+      - "\"Scanned it, lots of stuff open\""
+      - "\"10:04 nmap -sV 192.168.56.101: 21 ftp vsftpd 2.3.4, 22 ssh OpenSSH 4.7p1, 80 http Apache 2.2.8\""
+      - "\"Did recon\""
+    answer: 1
+    explanation: |
+      Time, exact command and exact results. Anyone, including you next month, can repeat it and build a report from it.
+
   - kind: explain
     title: "Step 7 — write it up"
     body: |
@@ -98,6 +250,37 @@ steps:
       - **First impressions:** for each service, one line on what an attacker might investigate next — *not* an exploit, just the reasoning (e.g. "port 21 FTP, old version — worth checking for known vulnerabilities and anonymous login in a later module").
 
       That document is your Beginner capstone. It proves you can set up a lab and safely, legally map a target — exactly the Beginner goal.
+
+      <!-- page -->
+
+      **Example: a lab write-up** (the start of one; yours lists every open port you found):
+
+      ```
+      LAB REPORT: first look at 192.168.56.101
+      Scope:    one VM I own, 192.168.56.101, on my isolated lab network. 15 Oct 2026.
+      Method:   read the image's documentation (passive), then ping and
+                nmap -sV from Kali (active).
+      Findings:
+        21/tcp  FTP   vsftpd 2.3.4      very old; check for known flaws and
+                                        anonymous login (Modules 16, 17)
+        22/tcp  SSH   OpenSSH 4.7p1     old version; note for later
+        80/tcp  HTTP  Apache 2.2.8      website; look at it in a browser and
+                                        read its headers (Module 9)
+      ```
+
+      Notice the last column: reasoning about what to look at next, not an attack.
+
+  - kind: choice
+    title: "Quick check: the right tone"
+    body: |
+      Which line belongs in the "first impressions" part of your write-up?
+    options:
+      - "Port 21 FTP, vsftpd 2.3.4: old version, worth checking for known vulnerabilities in a later module"
+      - "Port 21: hacked it"
+      - "Port 21 FTP: here is the full exploit code"
+    answer: 0
+    explanation: |
+      At this stage the write-up records what you found and **why it's worth a closer look**. Exploitation comes later, in its own modules.
 
   - kind: info
     title: "🔹 No computer powerful enough? Use the cloud ranges"

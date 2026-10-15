@@ -12,6 +12,26 @@ steps:
 
       Changes re-run the pipeline **from the step they affect**. Changing `width` re-runs layout, paint and composite for possibly the whole page; changing `color` only paint and composite; changing `transform` or `opacity` often only composite (Module 32). Less work per frame means smoother scrolling and animation, and better battery life.
 
+      For example, two ways to make a button grow on hover:
+
+      ```css
+      .grow-width:hover { width: 220px; }       /* layout + paint + composite, every frame */
+      .grow-scale:hover { scale: 1.1; }         /* often composite only */
+      ```
+
+      They look similar, but the first makes the browser re-lay out the button and everything around it; the second just enlarges an already-painted layer.
+
+  - kind: choice
+    title: "Quick check: the cheap change"
+    body: |
+      Which change usually costs the browser the **least** work per frame?
+    options:
+      - "Changing `width`"
+      - "Changing `transform`"
+      - "Changing `margin`"
+    answer: 1
+    explanation: "`transform` (and `opacity`) can often be handled at the composite step alone. `width` and `margin` change box sizes and positions, so layout and paint run again."
+
   - kind: explain
     title: Core Web Vitals
     body: |
@@ -29,6 +49,17 @@ steps:
       - **CLS**: reserve space for everything that loads late: images, embeds, ads, fonts.
       - **INP**: mostly JavaScript's job, but huge DOMs and expensive CSS (giant shadows, blur over large areas, layout-triggering animations) slow every update down.
 
+  - kind: choice
+    title: "Quick check: which metric?"
+    body: |
+      The page jumps down while you read, as a late image loads above the text. Which Core Web Vital gets worse?
+    options:
+      - "LCP"
+      - "INP"
+      - "CLS"
+    answer: 2
+    explanation: "Cumulative Layout Shift measures unexpected movement. Reserving space for late images (`width` and `height`, or `aspect-ratio`) prevents it."
+
   - kind: explain
     title: Preventing layout shift
     body: |
@@ -40,6 +71,48 @@ steps:
       - **Banners inserted at the top** (cookie notices, "new version" bars). Fix: overlay them (`position: fixed`) or reserve their space from the start.
 
       DevTools' Performance panel marks each **layout shift** in red; Lighthouse lists the elements that moved.
+
+      For example, a map that a script fills in later:
+
+      ```css
+      .map {
+        aspect-ratio: 4 / 3;
+        background: #f5f0e8;
+      }
+      ```
+
+      In the page: before the map arrives, there's already an empty beige box, 4 units wide for every 3 tall, holding its place. The text below it is already where it will stay, so nothing jumps when the map appears.
+
+  - kind: web
+    title: "Try it: reserve the space"
+    body: |
+      Two empty slots that something will fill later: a map (`aspect-ratio: 4 / 3`) and a newsletter box (`min-height: 120px`). Both show as beige boxes already, so the last paragraph sits where it will stay.
+
+      Try:
+
+      1. Delete the `aspect-ratio` line. The map box shrinks to nothing and the text below jumps up: that jump is what visitors would see when the map finally loads.
+      2. Put it back, and change `4 / 3` to `16 / 9`: a wider, shorter box.
+      3. Change `min-height: 120px` to `40px`.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <h2>Find the shop</h2>
+      <div class="map"></div>
+      <div class="newsletter"></div>
+      <p>Open every day except Christmas.</p>
+    css: |
+      .map {
+        aspect-ratio: 4 / 3;
+        max-width: 400px;
+        background: #f5f0e8;
+      }
+
+      .newsletter {
+        min-height: 120px;
+        margin-top: 1rem;
+        background: #f5f0e8;
+      }
+
 
   - kind: web
     title: Stop the jumps
@@ -120,6 +193,19 @@ steps:
 
       `contain-intrinsic-size` gives the skipped section an estimated height, so the scrollbar doesn't jump; `auto` makes the browser remember the real height once it has rendered it. Use it on large, independent sections, not on small items or the content at the top.
 
+      In the page: nothing looks different. The difference is speed: the browser only does the work for the sections near the screen, so a long catalogue appears sooner.
+
+  - kind: choice
+    title: "Quick check: where to use it"
+    body: |
+      Where does `content-visibility: auto` help most?
+    options:
+      - "On each of 500 small list items"
+      - "On the hero at the top of the page"
+      - "On large, independent sections further down a long page"
+    answer: 2
+    explanation: "It lets the browser skip rendering big off-screen sections until you scroll near them. It isn't worth it on tiny items, and the content at the top is on screen anyway."
+
   - kind: explain
     title: will-change, sparingly
     body: |
@@ -132,6 +218,18 @@ steps:
       ```
 
       Rules: apply it only to the few elements that really animate (a drawer, a carousel track), ideally just before the animation starts, and only when you've measured a problem. Most of the time, animating `transform` and `opacity` is already smooth without it.
+
+      The right way, on the one element that slides:
+
+      ```css
+      .drawer {
+        will-change: transform;
+      }
+      ```
+
+      In the page: the drawer looks exactly the same. Like `content-visibility`, it only changes how much work the browser does, which is why you check it with DevTools (later in this lesson), not with your eyes.
+
+      The same goes for the last change in the next step: a card lifted with `translate: 0 -4px` on hover moves up 4px, exactly like one lifted with `top: -4px`, but `translate` only needs the cheap composite step, while `top` re-runs layout (Module 32).
 
   - kind: web
     title: Tune the catalogue
@@ -196,6 +294,25 @@ steps:
       - **Avoid `@import` inside CSS files**: each one is a separate request discovered late. Use `<link>`s or a build tool to combine files.
       - **Fonts**: preload the one or two above-the-fold fonts, use `font-display: swap`, and WOFF2 (Modules 16 and 26).
       - **media attributes**: `<link rel="stylesheet" href="print.css" media="print">` doesn't block screen rendering.
+
+      <!-- page -->
+
+      **Example: one head, before and after.**
+
+      ```html
+      <!-- Before: three blocking stylesheets, one of them pulled in late by @import -->
+      <link rel="stylesheet" href="base.css">     <!-- base.css starts with @import "fonts.css"; -->
+      <link rel="stylesheet" href="print.css">
+      <link rel="stylesheet" href="site.css">
+
+      <!-- After -->
+      <link rel="preload" href="fonts/lora.woff2" as="font" type="font/woff2" crossorigin>
+      <style>/* the few rules for the header and hero, inlined */</style>
+      <link rel="stylesheet" href="site.min.css">              <!-- one combined, minified file -->
+      <link rel="stylesheet" href="print.css" media="print">   <!-- no longer blocks the screen -->
+      ```
+
+      The first paint now waits for one file instead of four, and the header can be drawn from the inlined rules straight away.
 
   - kind: mac
     title: Measure, don't guess

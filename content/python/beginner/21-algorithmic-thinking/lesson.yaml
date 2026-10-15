@@ -11,6 +11,64 @@ steps:
       1. Is it **correct**? (Does it work for every input, including strange ones?)
       2. How does its **work grow** as the input grows?
 
+      For example, two algorithms for "does this list contain a repeat?":
+
+      - **A:** compare every item with every other item.
+      - **B:** walk through once, remembering what you have seen in a set.
+
+      Both are correct. Counting the comparisons shows how differently their work grows:
+      ```python
+      def comparisons_a(n):            # every pair
+          return n * (n - 1) // 2
+
+      def comparisons_b(n):            # one pass
+          return n
+
+      for n in [10, 1_000, 1_000_000]:
+          print(n, "items:", comparisons_a(n), "vs", comparisons_b(n))
+      ```
+
+      prints:
+
+      ```
+      10 items: 45 vs 10
+      1000 items: 499500 vs 1000
+      1000000 items: 499999500000 vs 1000000
+      ```
+
+  - kind: code
+    title: "Try it: time the two methods"
+    body: |
+      The same two algorithms, really run on a list of 2,000 different numbers (the worst case: no repeat to stop early). Run it and compare the times.
+
+      Then try one change: double `n` to `4000`. Method A takes about **four** times as long; method B only about twice as long.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      import time
+
+      def has_repeat_a(items):
+          for i in range(len(items)):
+              for j in range(i + 1, len(items)):
+                  if items[i] == items[j]:
+                      return True
+          return False
+
+      def has_repeat_b(items):
+          seen = set()
+          for x in items:
+              if x in seen:
+                  return True
+              seen.add(x)
+          return False
+
+      n = 2000
+      items = list(range(n))
+      for method in [has_repeat_a, has_repeat_b]:
+          start = time.perf_counter()
+          method(items)
+          print(method.__name__, round(time.perf_counter() - start, 4), "seconds")
+
   - kind: explain
     title: Big-O in everyday words
     body: |

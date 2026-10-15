@@ -70,10 +70,38 @@ steps:
       A handy trick is a **label column** saying where each row came from:
 
       ```sql
-      SELECT first_name || ' ' || last_name AS name, 'author' AS kind FROM authors
+      SELECT name, 'publisher' AS kind FROM publishers
       UNION ALL
-      SELECT full_name, 'staff' FROM employees;
+      SELECT name, 'genre' FROM genres
+      ORDER BY name
+      LIMIT 6;
       ```
+
+      Returns:
+
+      | name | kind |
+      |---|---|
+      | Bloomsbury | publisher |
+      | Blue Owl Press | publisher |
+      | Classic | genre |
+      | Fantasy | genre |
+      | HarperCollins | publisher |
+      | Horror | genre |
+
+      The text `'publisher'` is written once in the first query, so it fills the `kind` column for every publisher row. The second query's `'genre'` lands in the same column, because columns match by position.
+
+  - kind: try
+    title: "Try it: a label column"
+    body: |
+      Run it. Then remove `LIMIT 6` to see all 15 rows (6 publishers and 9 genres).
+
+      Then change `UNION ALL` to `UNION`: the count stays 15, because no row appears in both lists. Nothing is graded here.
+    sql: |
+      SELECT name, 'publisher' AS kind FROM publishers
+      UNION ALL
+      SELECT name, 'genre' FROM genres
+      ORDER BY name
+      LIMIT 6;
 
   - kind: try
     title: Your turn to build a people list
@@ -95,19 +123,52 @@ steps:
       -- countries with both customers and authors
       SELECT country FROM customers
       INTERSECT
-      SELECT country FROM authors;
+      SELECT country FROM authors
+      ORDER BY country;
+      ```
 
+      Returns 10 rows: Australia, Brazil, Canada, Germany, India, Italy, Japan, Spain, UK, USA.
+
+      ```sql
       -- countries authors come from, where no customer lives
       SELECT country FROM authors
       EXCEPT
-      SELECT country FROM customers;
+      SELECT country FROM customers
+      ORDER BY country;
       ```
+
+      Returns:
+
+      | country |
+      |---|
+      | Ireland |
+      | Israel |
+      | Nigeria |
+      | Poland |
+      | Sweden |
 
       Both remove duplicates, like UNION. (`INTERSECT ALL` and `EXCEPT ALL` keep them.)
 
       **Order matters for EXCEPT**: `A EXCEPT B` is "A without B", which is different from `B EXCEPT A`.
 
       A bonus: set operations treat **two NULLs as equal**. So `EXCEPT` doesn't have the NOT IN + NULL trap from Module 18.
+
+  - kind: try
+    title: "Try it: INTERSECT and EXCEPT"
+    body: |
+      Run both queries and compare them with the lists above.
+
+      Then swap the two sides of EXCEPT (customers first, authors second): now you get the countries where customers live but no author comes from. Nothing is graded here.
+    sql: |
+      SELECT country FROM customers
+      INTERSECT
+      SELECT country FROM authors
+      ORDER BY country;
+
+      SELECT country FROM authors
+      EXCEPT
+      SELECT country FROM customers
+      ORDER BY country;
 
   - kind: try
     title: Your turn with EXCEPT
@@ -127,7 +188,8 @@ steps:
 
       (`orders.employee_id` in the step before is full of NULLs, from online orders. EXCEPT didn't mind those either.)
     sql: |
-      INSERT INTO books (title, genre_id, price) VALUES ('Untitled Manuscript', 4, 9.99);
+      INSERT INTO books (title, genre_id, price)
+      VALUES ('Untitled Manuscript', 4, 9.99);
 
       SELECT publisher_id FROM publishers
       EXCEPT

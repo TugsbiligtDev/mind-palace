@@ -10,6 +10,18 @@ steps:
 
       Git runs in the **Terminal**. A few commands cover 90% of daily use.
 
+      **Example: a project's save points.** After a few days of work on Inkwell's site, `git log --oneline` lists the commits, newest first:
+
+      ```text
+      $ git log --oneline
+      a3f9c2e Make the header sticky
+      71b0d4e Add the events page
+      2c88c41 Add the book grid
+      9e1f003 First version of the home page
+      ```
+
+      Each line is a snapshot: a short ID and its message. If the sticky header broke something, you can compare `a3f9c2e` with `71b0d4e` to see exactly which lines changed, or go back to how the site was before it.
+
   - kind: mac
     title: Install and introduce yourself
     body: |
@@ -95,6 +107,17 @@ steps:
 
       Git then ignores them for `git add .` and `git status`.
 
+  - kind: choice
+    title: "Quick check: keep it out"
+    body: |
+      Your project has a `.env` file holding an API key. What should you do?
+    options:
+      - "Commit it, and delete it later if needed"
+      - "List `.env` in `.gitignore` so Git never adds it"
+      - "Rename it to `env.txt` and commit it"
+    answer: 1
+    explanation: "Once a secret is pushed, assume it's public forever, even after you delete it. `.gitignore` keeps it out of every commit in the first place."
+
   - kind: explain
     title: Good commits
     body: |
@@ -103,6 +126,27 @@ steps:
       - **Commit working states.** Each commit should leave the site in a working condition.
 
       Two handy undos: `git restore index.html` throws away unsaved-to-Git edits to a file (careful: that work is gone); `git restore --staged index.html` un-stages it but keeps your edits.
+
+      **Example: the same week, committed two ways.**
+
+      ```text
+      ✗  e81c2a0 stuff
+         4bd9f11 changes
+         09ac7e3 fixed it
+
+      ✓  e81c2a0 Fix the header wrapping on phones
+         4bd9f11 Add the contact form
+         09ac7e3 Use the new brand colours on buttons
+      ```
+
+      Six months later, only the second list tells you where the contact form arrived.
+
+      **Example: the two undos.** You edited `index.html` and staged it with `git add`, then changed your mind:
+
+      ```text
+      $ git restore --staged index.html   # no longer staged; your edits are still in the file
+      $ git restore index.html            # the edits are thrown away; the file is back to the last commit
+      ```
 
   - kind: mac
     title: Push to GitHub

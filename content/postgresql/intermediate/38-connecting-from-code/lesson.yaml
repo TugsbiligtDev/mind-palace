@@ -6,6 +6,25 @@ steps:
 
       This module covers what you need to connect an app **safely**. The code itself runs on your Mac, but the SQL ideas can be tried right here.
 
+      **Example.** The same question from three clients:
+
+      - in psql: `SELECT count(*) FROM orders;`
+      - from Python: `conn.execute("SELECT count(*) FROM orders").fetchone()`
+      - from this page: the Run button
+
+      All three send the same SQL to the server and get back the same answer, 39,419. Only the way the answer is shown differs.
+
+  - kind: choice
+    title: "Quick check: what's a driver?"
+    body: "A Python app needs to talk to PostgreSQL. What does a **driver** like psycopg do?"
+    options:
+      - "Stores the data instead of PostgreSQL"
+      - "Turns Python into SQL automatically"
+      - "Makes the database run faster"
+      - "Lets the code connect to the server and send SQL"
+    answer: 3
+    explanation: "A driver speaks PostgreSQL's network protocol for your program: it opens the connection, sends the SQL and hands back the rows. The server still stores the data and runs the query."
+
   - kind: explain
     title: Connection strings
     body: |
@@ -19,6 +38,22 @@ steps:
       - The same pieces as Module 2: user, password, host, port, database.
       - `?sslmode=require` asks for an **encrypted** connection. Always use it for databases over the internet.
       - Special characters in the password (`@`, `:`, `/`, `#`) must be **URL-encoded** (`@` → `%40`), or the string is misread.
+
+  - kind: choice
+    title: "Quick check: read a connection string"
+    body: |
+      ```text
+      postgresql://report:pa%40ss@db.inkwell.example:6543/bookstore?sslmode=require
+      ```
+
+      What is the **password**?
+    options:
+      - "`pa@ss`"
+      - "`pa%40ss`"
+      - "`report`"
+      - "`6543`"
+    answer: 0
+    explanation: "The password sits between `:` and `@`. `%40` is the URL-encoded form of `@`, so the real password is `pa@ss`. `report` is the user and `6543` the port."
 
   - kind: explain
     title: Drivers
@@ -48,6 +83,17 @@ steps:
       ```
 
       Notice that neither puts the value **into** the SQL text. The `%s` and `$1` are **placeholders**. That's the most important habit in this module.
+
+  - kind: choice
+    title: "Quick check: the safe line"
+    body: "Which Python line sends the user's `email` **safely**?"
+    options:
+      - "`conn.execute(f\"SELECT * FROM customers WHERE email = '{email}'\")`"
+      - "`conn.execute(\"SELECT * FROM customers WHERE email = '\" + email + \"'\")`"
+      - "`conn.execute(\"SELECT * FROM customers WHERE email = %s\", (email,))`"
+      - "`conn.execute(\"SELECT * FROM customers WHERE email = '%s'\" % email)`"
+    answer: 2
+    explanation: "Only the line ending in `, (email,))` passes the value separately, through a placeholder. The other three glue the text into the SQL, which is exactly how SQL injection happens (next page)."
 
   - kind: explain
     title: SQL injection
@@ -97,7 +143,20 @@ steps:
       - Placeholders work for **values**, not for table or column **names**. If a name must vary, choose it from a fixed allow-list in code (or use your driver's identifier helper, like `psycopg.sql.Identifier`).
       - Escaping quotes by hand is not a fix. Let the driver do it.
 
-      PostgreSQL's own `PREPARE` / `EXECUTE` shows the same mechanism in plain SQL.
+      PostgreSQL's own `PREPARE` / `EXECUTE` shows the same mechanism in plain SQL. First, a normal visitor:
+
+      ```sql
+      PREPARE find_customer(text) AS
+          SELECT first_name, email FROM customers WHERE email = $1;
+
+      EXECUTE find_customer('emma.johnson@example.com');
+      ```
+
+      | first_name | email |
+      |---|---|
+      | Emma | emma.johnson@example.com |
+
+      `PREPARE` saves the query under a name, with `$1` as a slot for a `text` value. Each `EXECUTE` fills the slot. `DEALLOCATE find_customer;` throws the saved query away (it also disappears when the session ends).
 
   - kind: try
     title: The same attack, parameterized
@@ -108,6 +167,25 @@ steps:
           SELECT first_name, email FROM customers WHERE email = $1;
 
       EXECUTE find_customer('nobody@example.com'' OR ''1''=''1');
+
+  - kind: try
+    title: "Try it: PREPARE, EXECUTE, DEALLOCATE"
+    body: |
+      Run it: Emma is found, `pg_prepared_statements` lists the saved query, and after DEALLOCATE the list is empty.
+
+      Then play: add `EXECUTE find_customer('liam.smith@example.com');` before the DEALLOCATE. One prepared query, run with different values.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      PREPARE find_customer(text) AS
+          SELECT first_name, email FROM customers WHERE email = $1;
+
+      EXECUTE find_customer('emma.johnson@example.com');
+
+      SELECT name, parameter_types FROM pg_prepared_statements;
+
+      DEALLOCATE find_customer;
+      SELECT count(*) AS still_prepared FROM pg_prepared_statements;
 
   - kind: try
     title: Your turn to parameterize
@@ -133,6 +211,35 @@ steps:
       - Give each app its **own role** with least privilege (Module 37), so a leaked password unlocks as little as possible.
       - If a password does leak, **change it** at once. Deleting the commit isn't enough.
 
+      **Example.** A `.env` file in the project folder:
+
+      ```text
+      DATABASE_URL=postgresql://app_user:s3cret@db.example.com:5432/bookstore?sslmode=require
+      ```
+
+      one line in `.gitignore`, so Git never picks it up:
+
+      ```text
+      .env
+      ```
+
+      and the code reads it from the environment instead of containing it:
+
+      ```python
+      conn = psycopg.connect(os.environ["DATABASE_URL"])
+      ```
+
+  - kind: choice
+    title: "Quick check: a leaked password"
+    body: "You notice you pushed a commit to GitHub with the database password in it. What's the first thing to do?"
+    options:
+      - "Delete the commit and carry on"
+      - "Change the password at once"
+      - "Make the GitHub repository private"
+      - "Nothing, if nobody has starred the project"
+    answer: 1
+    explanation: "Assume it's been seen: bots scan GitHub for secrets within minutes. Deleting the commit or hiding the repo doesn't un-leak it. Change the password, then move it into `.env`."
+
   - kind: explain
     title: Connection limits and pools
     body: |
@@ -144,6 +251,15 @@ steps:
       - In front of the database: **PgBouncer**, a separate pooling server.
 
       Also: always **close** connections (or return them to the pool), and never hold one open while waiting for a person.
+
+  - kind: try
+    title: "Try it: how many connections?"
+    body: |
+      Run it: `100`, the default limit. On your Mac, `SELECT count(*) FROM pg_stat_activity;` shows how many are in use right now (this page is a single built-in session, so it has none to show).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SHOW max_connections;
 
   - kind: explain
     title: ORMs vs. raw SQL
@@ -164,6 +280,17 @@ steps:
       **Cons:** complex reports are awkward, and it's easy to write code that sends terrible SQL without noticing.
 
       Most teams use an ORM for everyday work and **drop down to raw SQL** for reporting and tricky queries. Knowing SQL well is what lets you do both.
+
+  - kind: choice
+    title: "Quick check: when to drop to SQL"
+    body: "Your team uses an ORM. Which task is the best reason to write raw SQL instead?"
+    options:
+      - "Saving a new customer from a sign-up form"
+      - "Loading one order by its ID"
+      - "Updating a customer's email"
+      - "A monthly revenue report with window functions and several joins"
+    answer: 3
+    explanation: "Everyday reads and writes are what ORMs do well. Complex reports are where ORMs get awkward and plain SQL is clearer and faster."
 
   - kind: explain
     title: The ORM N+1 trap
@@ -242,8 +369,12 @@ steps:
     body: |
       An ORM loaded 20 orders, then ran **one extra query per order** to fetch its customer's email. Write the **single** query it should have run: `order_id` and the customer's `email` for orders **100 to 119**.
     sql: |
-      SELECT email FROM customers WHERE customer_id = (SELECT customer_id FROM orders WHERE order_id = 100);
-      SELECT email FROM customers WHERE customer_id = (SELECT customer_id FROM orders WHERE order_id = 101);
+      SELECT email
+      FROM customers
+      WHERE customer_id = (SELECT customer_id FROM orders WHERE order_id = 100);
+      SELECT email
+      FROM customers
+      WHERE customer_id = (SELECT customer_id FROM orders WHERE order_id = 101);
       -- … and 18 more
     expect: |
       SELECT o.order_id, c.email

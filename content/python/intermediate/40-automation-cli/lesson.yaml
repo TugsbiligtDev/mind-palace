@@ -13,6 +13,35 @@ steps:
 
       This lesson pulls the earlier modules together: `argparse`, `pathlib`, `shutil`, `csv`, HTTP and parsing.
 
+  - kind: code
+    title: "Try it: a safe renamer"
+    body: |
+      A tiny automation in the style above: the logic is a function, and `dry_run=True` only **shows** what it would do. Run it: the first listing is unchanged.
+
+      The last call uses `dry_run=False`, so it really renames, and the second listing shows the new names. Then try one change: in the last call, change the prefix `"case-"` to `"2026-"` and run again.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      from pathlib import Path
+
+      folder = Path("photos")
+      folder.mkdir(exist_ok=True)
+      for name in ["a.jpg", "b.jpg", "notes.txt"]:
+          (folder / name).write_text("x")
+
+      def add_prefix(folder, prefix, dry_run=True):
+          for path in sorted(folder.glob("*.jpg")):
+              new = path.with_name(prefix + path.name)
+              if dry_run:
+                  print(f"would rename {path.name} -> {new.name}")
+              else:
+                  path.rename(new)
+
+      add_prefix(folder, "case-")
+      print(sorted(p.name for p in folder.iterdir()))
+      add_prefix(folder, "case-", dry_run=False)
+      print(sorted(p.name for p in folder.iterdir()))
+
   - kind: explain
     title: Subcommands with argparse
     body: |

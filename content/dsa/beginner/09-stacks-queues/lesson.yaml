@@ -10,8 +10,18 @@ steps:
       const stack = [];
       stack.push("a");
       stack.push("b");
-      stack.pop();      // "b"
-      stack[stack.length - 1]   // peek at the top without removing
+      stack.push("c");
+      console.log(stack.pop());                // take the top
+      console.log(stack[stack.length - 1]);    // peek at the top without removing
+      console.log(stack);
+      ```
+
+      prints:
+
+      ```
+      c
+      b
+      [ 'a', 'b' ]
       ```
 
       Stacks appear whenever the *most recent* thing must be handled first: matching brackets, the undo button, and the call stack of your own recursive functions.
@@ -60,6 +70,19 @@ steps:
       The obvious array version uses `push` and `shift`, but you know from Module 4 that `shift()` is **O(n)**, because every item slides forward. A busy queue would crawl.
 
       **The fix: never move the items. Move a marker.** Keep an index `head` pointing at the current front. To dequeue, return `items[head]` and add 1 to `head`. Nothing shifts, so it is **O(1)**.
+
+      **Example.** Three in, two out, one more in. The array only grows, and `head` moves along it:
+
+      | operation | items | head | front |
+      |---|---|---|---|
+      | enqueue A | [A] | 0 | A |
+      | enqueue B | [A, B] | 0 | A |
+      | enqueue C | [A, B, C] | 0 | A |
+      | dequeue → A | [A, B, C] | 1 | B |
+      | dequeue → B | [A, B, C] | 2 | C |
+      | enqueue D | [A, B, C, D] | 2 | C |
+
+      A and B are still in the array, but they're behind `head`, so they no longer count. Nothing ever slid forward.
 
   - kind: code
     title: Build a fast Queue
@@ -135,6 +158,22 @@ steps:
 
       🔹 A **deque** ("deck", double-ended queue) lets you add and remove at *both* ends. You will need one in Module 17. In JavaScript you build it from a doubly linked list or a circular array.
 
+      <!-- page -->
+
+      **Example.** Type `a`, `b`, `c`, undo twice, redo once, then type `x`:
+
+      | action | done | undone | text |
+      |---|---|---|---|
+      | type a | [a] | [] | "a" |
+      | type b | [a, b] | [] | "ab" |
+      | type c | [a, b, c] | [] | "abc" |
+      | undo | [a, b] | [c] | "ab" |
+      | undo | [a] | [c, b] | "a" |
+      | redo | [a, b] | [c] | "ab" |
+      | type x | [a, b, x] | [] | "abx" |
+
+      Typing `x` cleared *undone*: `c` can't come back any more.
+
   - kind: code
     title: A tiny text editor
     body: |
@@ -204,6 +243,18 @@ steps:
 
       `2 1 + 3 *` means `(2 + 1) * 3 = 9`. Watch out for the order: the **first** number you pop is the *right-hand* operand.
 
+      **Example: `2 1 + 3 *`, token by token.**
+
+      | token | action | stack after |
+      |---|---|---|
+      | 2 | push | [2] |
+      | 1 | push | [2, 1] |
+      | `+` | pop 1 and 2, push 2 + 1 = 3 | [3] |
+      | 3 | push | [3, 3] |
+      | `*` | pop 3 and 3, push 3 * 3 = 9 | [9] |
+
+      One value is left: 9.
+
   - kind: code
     title: Evaluate Reverse Polish Notation
     body: |
@@ -266,6 +317,18 @@ steps:
       - At the end, add up everything on the stack.
 
       `3 + 2 * 2` → push `3`, push `2`, then `*`: pop `2`, push `4`. Stack `[3, 4]` sums to 7.
+
+      **A longer example: `3 + 2 * 2 - 6 / 3`.**
+
+      | number | operator before it | action | stack after |
+      |---|---|---|---|
+      | 3 | `+` | push 3 | [3] |
+      | 2 | `+` | push 2 | [3, 2] |
+      | 2 | `*` | pop 2, push 2 * 2 = 4 | [3, 4] |
+      | 6 | `-` | push -6 | [3, 4, -6] |
+      | 3 | `/` | pop -6, push -6 / 3 = -2 | [3, 4, -2] |
+
+      Add up the stack: 3 + 4 − 2 = **5**.
 
   - kind: code
     title: A calculator with precedence
@@ -334,6 +397,24 @@ steps:
 
       On `(`: push `result` and `sign` onto the stack, then start over with `result = 0`.
       On `)`: finish the bracket, pop the saved sign and result, and combine: `result = savedResult + savedSign * bracketResult`.
+
+      <!-- page -->
+
+      **Example: `1 - (2 + 3) + 4`.**
+
+      | read | what happens | result | sign | stack |
+      |---|---|---|---|---|
+      | 1 | add +1 | 1 | +1 | [] |
+      | `-` | sign = −1 | 1 | −1 | [] |
+      | `(` | save 1 and −1, start over | 0 | +1 | [1, −1] |
+      | 2 | add +2 | 2 | +1 | [1, −1] |
+      | `+` | sign = +1 | 2 | +1 | [1, −1] |
+      | 3 | add +3 | 5 | +1 | [1, −1] |
+      | `)` | bracket = 5, so 1 + (−1) × 5 | −4 | +1 | [] |
+      | `+` | sign = +1 | −4 | +1 | [] |
+      | 4 | add +4 | 0 | +1 | [] |
+
+      The answer is 0, the same as 1 − 5 + 4.
 
   - kind: code
     title: Calculator with brackets

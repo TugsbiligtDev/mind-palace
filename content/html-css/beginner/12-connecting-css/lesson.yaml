@@ -11,11 +11,24 @@ steps:
       }
       ```
 
+      With this rule, every `<h1>` on the page turns dark red and 40 pixels tall (a little bigger than the browser's default heading).
+
       - `h1` is the **selector**: which elements this rule applies to (here, every `<h1>`).
       - Inside the curly braces `{ }` are **declarations**, each a **property** and a **value** separated by a colon: `color: darkred`.
       - Every declaration ends with a **semicolon**. The last one could skip it, but always write it: the day you add another line, a missing `;` silently breaks it.
 
       If the browser doesn't understand a declaration (a typo like `colr: red`), it skips just that one line and carries on. No error, just no effect. DevTools shows it crossed out with a warning sign.
+
+  - kind: choice
+    title: "Quick check: name the parts"
+    body: |
+      In `h1 { color: darkred; }`, what is `color: darkred;`?
+    options:
+      - "The selector"
+      - "A declaration: a property and its value"
+      - "A comment"
+    answer: 1
+    explanation: "`h1` is the selector. Inside the braces, `color: darkred;` is one declaration: the property `color` and the value `darkred`."
 
   - kind: explain
     title: Three places CSS can live
@@ -26,6 +39,8 @@ steps:
       <p style="color: gray;">Second-hand books.</p>
       ```
 
+      Only this one paragraph turns gray.
+
       **2. Internal**, in a `<style>` element in the page's `<head>`:
 
       ```html
@@ -34,6 +49,8 @@ steps:
       </style>
       ```
 
+      Every paragraph **on this page** turns gray.
+
       **3. External**, in a separate `.css` file, connected with `<link>` in the `<head>`:
 
       ```html
@@ -41,6 +58,19 @@ steps:
       ```
 
       `rel="stylesheet"` says what the linked file is; `href` is its path (Module 2 rules apply: a wrong path means no styles at all).
+
+      With `p { color: gray; }` inside `css/style.css`, every paragraph on **every page that has this link** turns gray.
+
+  - kind: choice
+    title: "Quick check: which place?"
+    body: |
+      Inkwell's site has 12 pages, and every paragraph on every page should be gray. Where should `p { color: gray; }` go?
+    options:
+      - "In a `style` attribute on every paragraph"
+      - "In a `<style>` element in each page's head"
+      - "In one external `style.css`, linked from every page"
+    answer: 2
+    explanation: "One external file, linked from all 12 pages, means one place to change. Inline and internal CSS would have to be repeated on every page (or every paragraph)."
 
   - kind: explain
     title: Why external is the default
@@ -52,6 +82,42 @@ steps:
       - **HTML stays about content**, CSS about looks. Each file is easier to read.
 
       Inline styles are the opposite: they affect one element, repeat everywhere, and are hard to override (Module 14 shows why). Use them almost never. A `<style>` block is fine for a one-page experiment, or for these lesson exercises.
+
+  - kind: web
+    title: "Try it: rules in all three places"
+    body: |
+      This preview uses all three places at once (the snippet in `index.html` is wrapped in a page that already links `style.css`):
+
+      - **External**: `style.css` makes the `h1` dark red and the `h2`s teal.
+      - **Internal**: the `<style>` block at the top of `index.html` makes every `p` gray.
+      - **Inline**: one `style` attribute makes just the last paragraph italic (`font-style: italic` slants the letters; Module 16 has more).
+
+      Try this:
+
+      1. In `style.css`, change `darkred` to `navy`, and `28px` to `40px`.
+      2. Misspell a property on purpose: change `color: teal;` to `colr: teal;`. The `h2`s lose their color, but the rest of the stylesheet still works: the browser only skips the line it can't read.
+      3. Delete the `;` after `darkred` (or `navy`). The heading loses its color **and** its size: the two lines now run together into one value the browser can't read, so it skips both.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <style>
+        p { color: gray; }
+      </style>
+      <h1>Poetry night</h1>
+      <h2>When</h2>
+      <p>Every Thursday at 7pm.</p>
+      <h2>Where</h2>
+      <p>Upstairs, in the poetry corner.</p>
+      <p style="font-style: italic;">Tea and biscuits provided.</p>
+    css: |
+      h1 {
+        color: darkred;
+        font-size: 28px;
+      }
+
+      h2 {
+        color: teal;
+      }
 
   - kind: web
     title: Connect the stylesheet
@@ -122,6 +188,29 @@ steps:
     body: |
       From now on, most exercises have two tabs. When the `index.html` tab holds just a snippet (no `<html>` or `<head>`), the lesson wraps it in a page that **already links `style.css`**, so you can focus on the CSS. When it holds a full page, it's up to the page to link the stylesheet, exactly like a real site.
 
+      **Example: the two kinds of `index.html` tab.**
+
+      ```html
+      <!-- A snippet: the lesson wraps it in a page that already links style.css -->
+      <h2>Summer sale</h2>
+      <p>Every poetry book is 20% off.</p>
+      ```
+
+      ```html
+      <!-- A full page: it must link style.css itself, or the CSS tab is ignored -->
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <title>Sale · Inkwell Books</title>
+          <link rel="stylesheet" href="style.css">
+        </head>
+        <body>
+          <h2>Summer sale</h2>
+        </body>
+      </html>
+      ```
+
   - kind: web
     title: Move inline styles out
     body: |
@@ -171,9 +260,36 @@ steps:
       }
       ```
 
+      The browser reads this exactly as `header { padding: 16px; }`: the two comments change nothing on the page.
+
       There is no `//` single-line comment in CSS. Writing one quietly breaks the next rule.
 
       Formatting conventions: one declaration per line, two-space indent, a space after the colon, and a blank line between rules. Browsers don't care; your future self does. (Prettier, in Module 37, does this automatically.)
+
+  - kind: web
+    title: "Try it: CSS comments"
+    body: |
+      The comments in `style.css` change nothing: the header has its padding and the paragraph is teal.
+
+      Try this:
+
+      1. Add a comment of your own, like `/* shop colours */`, above the `p` rule. Nothing changes.
+      2. Now replace the `/* matches the logo's height */` comment with `// matches the logo's height`. The **next** rule, the teal `p`, stops working: CSS doesn't understand `//`, and the confusion swallows the rule after it. Put the `/* */` back.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <header>Inkwell Books</header>
+      <p>Second-hand books, carefully chosen.</p>
+    css: |
+      /* ===== Header ===== */
+      header {
+        padding: 16px;
+        background: #fdf8f0;
+      } /* matches the logo's height */
+
+      p {
+        color: teal;
+      }
 
   - kind: why
     body: |

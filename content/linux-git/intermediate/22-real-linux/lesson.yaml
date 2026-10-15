@@ -21,6 +21,13 @@ steps:
 
       The commands you've learned work on all of them. The differences are mostly the package manager and where a few settings files live. This course uses **Ubuntu**, the most common choice for servers and for learning.
 
+      Each distribution writes its name and version into the text file `/etc/os-release`, so `grep` can pull out one line of it. Here, the version number:
+
+      ```
+      learner@inkwell:~$ grep VERSION_ID /etc/os-release
+      VERSION_ID="24.04"
+      ```
+
   - kind: shell
     title: Which Linux is this?
     body: |
@@ -79,7 +86,12 @@ steps:
       | `/tmp` | temporary files, emptied at reboot | |
       | `/root` | the root user's home (not `/home/root`) | |
 
-      A Mac has most of these too, but hides them and adds its own (`/Applications`, `/Users`, `/Library`). On a server, `/etc` and `/var/log` are where nearly every investigation starts.
+      A Mac has most of these too, but hides them and adds its own (`/Applications`, `/Users`, `/Library`). On a server, `/etc` and `/var/log` are where nearly every investigation starts. On this server:
+
+      ```
+      learner@inkwell:~$ ls /var/log
+      auth.log  journal  syslog
+      ```
 
   - kind: choice
     title: Where would you look?
@@ -107,6 +119,65 @@ steps:
       | `apt list --installed` | what's installed |
 
       apt asks *"Do you want to continue? [Y/n]"* before bigger changes; `-y` answers yes in advance. When you type a program that isn't installed, Ubuntu tells you which package has it.
+
+      <!-- page -->
+
+      Here's apt at work on **jq**, a small tool for reading JSON files. First, find it and read about it:
+
+      ```
+      learner@inkwell:~$ apt search json
+      Sorting... Done
+      Full Text Search... Done
+      jq/noble 1.7.1-3build1 amd64
+        lightweight and flexible command-line JSON processor
+
+      libjq1/noble 1.7.1-3build1 amd64
+        lightweight and flexible command-line JSON processor - shared library
+      learner@inkwell:~$ apt show jq
+      Package: jq
+      Version: 1.7.1-3build1
+      Priority: optional
+      Section: utils
+      Origin: Ubuntu
+      Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+      Installed-Size: 104 kB
+      Depends: libjq1
+      Download-Size: 65 kB
+      APT-Sources: http://archive.ubuntu.com/ubuntu noble/main amd64 Packages
+      Description: lightweight and flexible command-line JSON processor
+      ```
+
+      `Depends: libjq1` means jq needs another package, and apt installs it too. `sudo apt install -y jq` prints many progress lines; the important ones say what it adds:
+
+      ```
+      The following additional packages will be installed:
+        libjq1
+      The following NEW packages will be installed:
+        libjq1 jq
+      ...
+      Setting up libjq1 (1.7.1-3build1) ...
+      Setting up jq (1.7.1-3build1) ...
+      ```
+
+      Afterwards the program is on the system, and `which` finds it:
+
+      ```
+      learner@inkwell:~$ which jq
+      /usr/bin/jq
+      ```
+
+  - kind: shell
+    title: "Try it: apt"
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `apt search json` lists packages that mention JSON.
+      2. `apt show jq` describes one of them.
+      3. `sudo apt install -y jq` installs it. Notice it installs `libjq1` too.
+      4. `which jq` shows where the program landed.
+      5. `sudo apt remove -y jq` takes it off again.
+
+      Then search for something else, like `apt search zip`, and read about one of the results with `apt show`. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Install htop on a fresh server
@@ -196,10 +267,37 @@ steps:
     body: |
       Fedora, RHEL, Rocky and Amazon Linux use **dnf** instead of apt. The ideas are identical, and the commands nearly so: `sudo dnf install htop`, `sudo dnf upgrade`, `sudo dnf remove htop`, `dnf search word`. There's no separate `update` step: dnf refreshes its list by itself.
 
+      **Example: the same job on both families.**
+
+      | Job | Ubuntu (apt) | Fedora / RHEL (dnf) |
+      |---|---|---|
+      | install htop | `sudo apt update` then `sudo apt install htop` | `sudo dnf install htop` |
+      | update everything | `sudo apt upgrade` | `sudo dnf upgrade` |
+      | find a package | `apt search word` | `dnf search word` |
+
+  - kind: choice
+    title: "Quick check: which tool?"
+    body: |
+      You SSH into a company server and `cat /etc/os-release` says **Rocky Linux**. How do you install `jq`?
+    options:
+      - "`sudo dnf install jq`"
+      - "`sudo apt install jq`"
+      - "`brew install jq`"
+      - "`sudo yum update jq`"
+    answer: 0
+    explanation: "Rocky Linux is in the Red Hat family, so it uses dnf. apt is for Ubuntu and Debian, brew for the Mac."
+
   - kind: info
     title: "🔹 /proc, the kernel's window"
     body: |
-      `/proc` isn't a real folder on disk. The kernel makes it up as you read it, to show what's going on inside: `/proc/cpuinfo` (the processors), `/proc/meminfo` (memory), `/proc/uptime`, and a folder per running program (`/proc/1` is the first one). Tools like `free`, `uptime` and `ps` read their numbers from here. Try `head -3 /proc/meminfo` or `nproc` (how many processors).
+      `/proc` isn't a real folder on disk. The kernel makes it up as you read it, to show what's going on inside: `/proc/cpuinfo` (the processors), `/proc/meminfo` (memory), `/proc/uptime`, and a folder per running program (`/proc/1` is the first one). Tools like `free`, `uptime` and `ps` read their numbers from here. Try `head -3 /proc/meminfo` or `nproc` (how many processors):
+
+      ```
+      learner@inkwell:~$ head -3 /proc/meminfo
+      MemTotal:        4005284 kB
+      MemFree:         2264112 kB
+      MemAvailable:    3215788 kB
+      ```
 
   - kind: shell
     title: Look around (not graded)

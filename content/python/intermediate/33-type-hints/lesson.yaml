@@ -289,6 +289,27 @@ steps:
 
       They mean exactly the same as `list[int]`, `str | None`, `int | str`, `dict[str, int]`. You will meet them in older code and libraries. **In new code use the modern forms.**
 
+  - kind: code
+    title: "Try it: old and new spellings"
+    body: |
+      `old` and `new` are the same function written with the old and the modern spellings. Both run the same way, and printing their annotations shows the hints side by side.
+
+      Then try one change: call `new(["a", "b"])`. It still runs: hints are notes for tools like a type checker, not rules Python enforces.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      from typing import List, Optional
+
+      def old(xs: List[int]) -> Optional[str]:
+          return str(sum(xs)) if xs else None
+
+      def new(xs: list[int]) -> str | None:
+          return str(sum(xs)) if xs else None
+
+      print(old([1, 2]), new([1, 2]), new([]))
+      print(old.__annotations__)
+      print(new.__annotations__)
+
   - kind: why
     body: |
       Type hints turn many bugs from "found by a user at 2 a.m." into "found by your editor before you saved". They are also the best documentation a function can have. Nearly every serious Python codebase uses them, and Pydantic (Module 39) and FastAPI build directly on them.

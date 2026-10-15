@@ -6,6 +6,29 @@ steps:
 
       So a full destination is an address *and* a port: `192.168.1.10:443` means "machine .10, door 443 (the web server)." The core of scanning, which you will learn in Intermediate, is simply: **which doors are open, and what is standing behind each one?**
 
+      **Example: one machine, three doors.** The lab target `192.168.56.101` runs three services at once. Each gets its own port, so traffic for one never reaches the others:
+
+      | You send to | Arrives at |
+      |---|---|
+      | `192.168.56.101:22` | the SSH remote-login program |
+      | `192.168.56.101:80` | the web server |
+      | `192.168.56.101:3306` | the database |
+      | `192.168.56.101:8080` | nothing: no program listens there, so the door is **closed** |
+
+      Same address every time; the port picks the program.
+
+  - kind: choice
+    title: "Quick check: address and port"
+    body: |
+      What does `10.0.0.5:22` mean?
+    options:
+      - "The 22nd machine on network 10.0.0.5"
+      - "Machine 10.0.0.5, port (door) 22"
+      - "Machine 10.0.0.22, port 5"
+    answer: 1
+    explanation: |
+      Before the colon is the machine's address, after it is the port. So this is machine `10.0.0.5`, door 22, which by convention is SSH.
+
   - kind: explain
     title: TCP vs. UDP
     body: |
@@ -19,6 +42,18 @@ steps:
 
       TCP trades speed for reliability; UDP trades reliability for speed. This difference even changes how you *scan*: because UDP never confirms a connection, UDP scans are slower and less certain than TCP scans.
 
+  - kind: choice
+    title: "Quick check: TCP or UDP?"
+    body: |
+      A video call keeps going even if a few packets are lost, because waiting for a resend would freeze the picture. Which protocol fits that, and why?
+    options:
+      - "TCP, because it resends every lost packet and keeps them in order"
+      - "UDP, because it is fast and doesn't wait for lost packets"
+      - "Either: they behave the same way"
+    answer: 1
+    explanation: |
+      **UDP** is fire-and-forget: a lost piece is simply skipped, which is fine for live video. TCP's resending is right for web pages and files, where every byte must arrive, but it would make a live call stutter.
+
   - kind: explain
     title: The TCP three-way handshake
     body: |
@@ -29,6 +64,39 @@ steps:
       3. **ACK** — the client: "Acknowledged. Let's go."
 
       Only then does real data flow. This handshake is not trivia — it is the basis of port scanning. A scanner sends a SYN; a **SYN-ACK** back means the port is **open**, while a **RST** (reset) means it is **closed**. Understanding these three packets is understanding how a scanner "sees" a machine.
+
+      <!-- page -->
+
+      **Example: a handshake caught on the wire.** This is how the packet-capture tool `tcpdump` (Module 8) prints Kali (`192.168.56.102`) opening a connection to the lab target's SSH port, 22. In the `Flags` box, `S` is SYN, `.` is ACK, and `R` is RST:
+
+      ```
+      09:12:01.204118 IP 192.168.56.102.51544 > 192.168.56.101.22: Flags [S], seq 1043017221, win 64240, length 0
+      09:12:01.204561 IP 192.168.56.101.22 > 192.168.56.102.51544: Flags [S.], seq 2810348213, ack 1043017222, win 65160, length 0
+      09:12:01.204602 IP 192.168.56.102.51544 > 192.168.56.101.22: Flags [.], ack 1, win 502, length 0
+      ```
+
+      Line 1 is SYN (Kali asks), line 2 is SYN-ACK (`S.`, the target agrees), line 3 is ACK. Port 22 is **open**. Notice each address ends in a port: Kali picked a random one, `51544`, for its own side.
+
+      Now the same knock on port 23, where nothing is listening:
+
+      ```
+      09:12:05.881020 IP 192.168.56.102.51560 > 192.168.56.101.23: Flags [S], seq 3391202817, win 64240, length 0
+      09:12:05.881377 IP 192.168.56.101.23 > 192.168.56.102.51560: Flags [R.], seq 0, ack 3391202818, win 0, length 0
+      ```
+
+      The answer is `R.` (RST): port 23 is **closed**.
+
+  - kind: choice
+    title: "Quick check: what did the scanner see?"
+    body: |
+      A scanner sends a **SYN** to port 80 and gets back a **SYN-ACK**. What does it report?
+    options:
+      - "Port 80 is open"
+      - "Port 80 is closed"
+      - "The machine is switched off"
+    answer: 0
+    explanation: |
+      A SYN-ACK is the server saying "yes, let's talk", so something is listening: the port is **open**. A closed port answers with RST, and a switched-off machine doesn't answer at all.
 
   - kind: explain
     title: The ports worth memorising
@@ -48,6 +116,32 @@ steps:
 
       When a scan reports "22 open, 80 open, 445 open," you already have a story: a Linux-ish box with SSH and a website, plus Windows file sharing. Each open port is a possible way in and a thing to investigate.
 
+      **Example: reading a real scan.** This is part of what Nmap (the scanner you will run in Module 15) reports for a training target in your lab. Just read it for now:
+
+      ```
+      PORT    STATE SERVICE
+      21/tcp  open  ftp
+      23/tcp  open  telnet
+      25/tcp  open  smtp
+      53/tcp  open  domain
+      445/tcp open  microsoft-ds
+      ```
+
+      Match each line to the table: 21 file transfer, 23 Telnet (old, cleartext remote login), 25 email sending, 53 DNS (Nmap calls it `domain`), 445 SMB (Nmap calls it `microsoft-ds`). The tool's names are sometimes different from the everyday ones, but the port number tells you.
+
+  - kind: choice
+    title: "Quick check: name the service"
+    body: |
+      A scan shows `3389/tcp open`. What is most likely behind that door?
+    options:
+      - "A website"
+      - "Email sending (SMTP)"
+      - "Windows file sharing (SMB)"
+      - "Windows Remote Desktop (RDP)"
+    answer: 3
+    explanation: |
+      3389 is **RDP**, remote desktop on Windows. A website is 80/443, SMTP is 25, and SMB is 445.
+
   - kind: explain
     title: DNS — names into addresses
     body: |
@@ -55,10 +149,41 @@ steps:
 
       DNS matters to a tester twice over. First, it is **reconnaissance gold**: the names and addresses an organisation publishes (subdomains like `mail.`, `vpn.`, `dev.`) map out its estate before you send a single packet at it (Module 14). Second, DNS itself can be attacked or misconfigured. For now: DNS turns names into IP addresses, usually over UDP port 53.
 
+      **Example: the walk through the hierarchy**, when nothing is cached yet and your computer asks for `www.example.com`:
+
+      ```
+      your computer → resolver:        "Address of www.example.com?"
+      resolver → root server:          "Who handles .com?"         → "ask the .com servers"
+      resolver → .com server:          "Who handles example.com?"  → "ask example.com's servers"
+      resolver → example.com's server: "Address of www?"           → 104.20.23.154
+      resolver → your computer:        104.20.23.154  (and keeps it in its cache for next time)
+      ```
+
+      The next visitor who asks the same resolver gets the cached answer straight away, without the walk.
+
   - kind: mac
     title: Watch DNS resolve a name
     body: |
       Totally safe — a DNS lookup is a public question anyone's computer asks constantly. `dig` asks the DNS system to resolve a name and shows you the answer.
+
+      **What to expect.** `dig +short` prints just the addresses; `nslookup` adds which DNS server answered (yours will show your own router or provider). Sites can change their addresses, so your numbers may differ:
+
+      ```
+      $ dig +short example.com
+      104.20.23.154
+      172.66.147.243
+      $ nslookup example.com
+      Server:		192.168.1.1
+      Address:	192.168.1.1#53
+
+      Non-authoritative answer:
+      Name:	example.com
+      Address: 104.20.23.154
+      Name:	example.com
+      Address: 172.66.147.243
+      ```
+
+      `#53` is port 53, the DNS door from the table. The full `dig example.com` is longer: look for its `ANSWER SECTION`, where each line pairs the name with an address.
     commands: |
       dig example.com
       dig +short example.com
@@ -69,6 +194,38 @@ steps:
       When a device joins a network, how does it get an IP address, a router to use, and a DNS server? Usually it does not ask a human — **DHCP** (Dynamic Host Configuration Protocol) hands them out automatically. The device broadcasts "I'm new here, can someone configure me?" and a DHCP server leases it an address and the settings to go with it.
 
       For you this explains two things: why your laptop "just works" on a new Wi-Fi network, and why addresses on a network can change over time (leases expire). On an internal engagement, the DHCP range also hints at how big the network is meant to be.
+
+      **Example: the lease your Mac received.** `ipconfig getpacket en0` shows the settings the DHCP server handed over when you joined your network (shortened here; your numbers will differ):
+
+      ```
+      yiaddr = 192.168.1.42
+      server_identifier (ip): 192.168.1.1
+      lease_time (uint32): 0x15180
+      subnet_mask (ip): 255.255.255.0
+      router (ip_mult): {192.168.1.1}
+      domain_name_server (ip_mult): {192.168.1.1}
+      ```
+
+      `yiaddr` ("your IP address") is the address you were given, `router` is your way out, and `domain_name_server` is who answers your DNS questions. `lease_time` is in seconds, written in hex: `0x15180` is 86,400 seconds, one day, after which the lease must be renewed. The subnet mask `255.255.255.0` is the same as `/24`.
+
+  - kind: mac
+    title: "Try it: your own DHCP lease"
+    body: |
+      See what your Mac was handed when it joined your Wi-Fi. Find the lines `yiaddr`, `router`, `subnet_mask` and `domain_name_server`. (If it prints nothing, your Mac uses another card: try `en1`.)
+    commands: |
+      ipconfig getpacket en0
+
+  - kind: choice
+    title: "Quick check: who gave you that address?"
+    body: |
+      You open your laptop in a café and it gets the address `10.4.2.87` without you typing anything. What gave it that address?
+    options:
+      - "DNS"
+      - "DHCP"
+      - "The TCP handshake"
+    answer: 1
+    explanation: |
+      **DHCP** hands out an address (plus the router and DNS server to use) to every device that joins. DNS only turns names into addresses, and the handshake opens a TCP connection.
 
   - kind: info
     title: "🔹 Ports can be moved"

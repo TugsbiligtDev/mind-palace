@@ -15,6 +15,38 @@ steps:
       - Run it with `bash summary.sh`, or make it **executable** once (`chmod +x summary.sh`) and run `./summary.sh`. The `./` says "the file in this folder": the shell doesn't look in the current folder by itself.
       - Put your scripts in `~/bin` and that folder on your PATH (Module 11), and you can run them by name from anywhere.
 
+      <!-- page -->
+
+      Here's a tiny script, `open.sh`, run both ways. `bash open.sh` works straight away; `./open.sh` needs the `chmod +x` first:
+
+      ```
+      learner@inkwell:~$ cat open.sh
+      #!/usr/bin/env bash
+      # open.sh: say that the shop is open
+      echo "Inkwell Books is open"
+      learner@inkwell:~$ bash open.sh
+      Inkwell Books is open
+      learner@inkwell:~$ ./open.sh
+      bash: ./open.sh: Permission denied
+      learner@inkwell:~$ chmod +x open.sh
+      learner@inkwell:~$ ./open.sh
+      Inkwell Books is open
+      ```
+
+  - kind: shell
+    title: "Try it: run a script"
+    setup: |
+      printf '#!/usr/bin/env bash\n# open.sh: say that the shop is open\necho "Inkwell Books is open"\n' > ~/open.sh
+    body: |
+      `open.sh` is waiting in your home folder. Type each of these and press **Return** after each one:
+
+      1. `cat open.sh` shows the script.
+      2. `bash open.sh` runs it.
+      3. `./open.sh` says *Permission denied*: it isn't executable yet.
+      4. `chmod +x open.sh`, then `./open.sh` again.
+
+      Then open it with `nano open.sh`, change the message, save, and run it again. Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: Your first script
     body: |
@@ -57,6 +89,52 @@ steps:
 
       **Command substitution** puts a command's output into the text: `today=$(date +%F)`, `count=$(grep -c 404 "$log")`. (Old scripts use backticks `` `date` `` for the same thing.)
 
+      <!-- page -->
+
+      All of this works at the prompt too, which is the quickest way to test it. Double quotes expand, single quotes don't:
+
+      ```
+      learner@inkwell:~$ shop="Inkwell Books"
+      learner@inkwell:~$ echo "Welcome to $shop"
+      Welcome to Inkwell Books
+      learner@inkwell:~$ echo 'Welcome to $shop'
+      Welcome to $shop
+      ```
+
+      Why braces matter: without them, bash looks for a variable called `file_old`, finds none, and prints nothing for it:
+
+      ```
+      learner@inkwell:~$ file=report
+      learner@inkwell:~$ echo "$file_old.txt"
+      .txt
+      learner@inkwell:~$ echo "${file}_old.txt"
+      report_old.txt
+      ```
+
+      And command substitution, on the shop's `orders.json`:
+
+      ```
+      learner@inkwell:~$ lines=$(wc -l < ~/logs/orders.json)
+      learner@inkwell:~$ echo "orders.json has $lines lines"
+      orders.json has 9 lines
+      learner@inkwell:~$ echo "Dune orders: $(grep -c Dune ~/logs/orders.json)"
+      Dune orders: 3
+      ```
+
+  - kind: shell
+    title: "Try it: variables and quotes"
+    fixture: shop-logs
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `shop="Inkwell Books"`
+      2. `echo "Welcome to $shop"`, then `echo 'Welcome to $shop'`
+      3. `file=report`, then `echo "$file_old.txt"` and `echo "${file}_old.txt"`
+      4. `lines=$(wc -l < ~/logs/orders.json)`, then `echo "orders.json has $lines lines"`
+      5. `echo "Dune orders: $(grep -c Dune ~/logs/orders.json)"`
+
+      Then change `Dune` to `Circe` in number 5. Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: A summary script
     fixture: shop-logs
@@ -98,6 +176,56 @@ steps:
 
       `./count.sh Dune notes.txt` sets `$1=Dune` and `$2=notes.txt`. Quote them: an argument like `"The Hobbit"` contains a space.
 
+      <!-- page -->
+
+      That `count.sh`, run on the shop's orders:
+
+      ```
+      learner@inkwell:~$ ./count.sh Dune logs/orders.json
+      Dune appears 3 times in logs/orders.json
+      learner@inkwell:~$ ./count.sh "Amara Okafor" logs/orders.json
+      Amara Okafor appears 2 times in logs/orders.json
+      ```
+
+      And `args.sh`, which only reports what it received. Look at what the quotes change:
+
+      ```
+      learner@inkwell:~$ cat args.sh
+      #!/usr/bin/env bash
+      echo "How many: $#"
+      echo "First: $1"
+      echo "Second: $2"
+      echo "All: $@"
+      learner@inkwell:~$ ./args.sh Dune "The Hobbit"
+      How many: 2
+      First: Dune
+      Second: The Hobbit
+      All: Dune The Hobbit
+      learner@inkwell:~$ ./args.sh Dune The Hobbit
+      How many: 3
+      First: Dune
+      Second: The
+      All: Dune The Hobbit
+      ```
+
+  - kind: shell
+    title: "Try it: arguments"
+    fixture: shop-logs
+    setup: |
+      printf '#!/usr/bin/env bash\n# count.sh WORD FILE\necho "$1 appears $(grep -c "$1" "$2") times in $2"\n' > ~/count.sh
+      printf '#!/usr/bin/env bash\necho "How many: $#"\necho "First: $1"\necho "Second: $2"\necho "All: $@"\n' > ~/args.sh
+      chmod +x ~/count.sh ~/args.sh
+    body: |
+      `count.sh` and `args.sh` are ready in your home folder. Type each of these and press **Return** after each one:
+
+      1. `cat count.sh`
+      2. `./count.sh Dune logs/orders.json`
+      3. `./count.sh "Amara Okafor" logs/orders.json`
+      4. `./args.sh Dune "The Hobbit"`
+      5. `./args.sh Dune The Hobbit` (no quotes this time)
+
+      Then run `./args.sh` with no arguments at all, and with four. Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: Count any status
     fixture: shop-logs
@@ -137,6 +265,29 @@ steps:
 
       The practice terminal can't type into a script that's already running, so use one of these forms here; on your Mac or a server, just run the script and type.
 
+      With the two lines above saved as `find-book.sh`, both forms give it its answer (the `Which book?` prompt only shows when someone types at a keyboard):
+
+      ```
+      learner@inkwell:~$ echo Dune | ./find-book.sh
+      Looking for Dune
+      learner@inkwell:~$ ./find-book.sh <<< "Circe"
+      Looking for Circe
+      ```
+
+  - kind: shell
+    title: "Try it: read"
+    setup: |
+      printf '#!/usr/bin/env bash\nread -r -p "Which book? " book\necho "Looking for $book"\n' > ~/find-book.sh
+      chmod +x ~/find-book.sh
+    body: |
+      `find-book.sh` is ready in your home folder. Type each of these and press **Return** after each one:
+
+      1. `cat find-book.sh`
+      2. `echo Dune | ./find-book.sh`
+      3. `./find-book.sh <<< "Circe"`
+
+      Then feed it a title with a space, like `"The Hobbit"`. Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: How many orders for a book?
     fixture: shop-logs
@@ -165,6 +316,19 @@ steps:
 
       1. Install a current bash on your Mac: `brew install bash` (it goes to `/opt/homebrew/bin/bash`).
       2. Start scripts with **`#!/usr/bin/env bash`** rather than `#!/bin/bash`: `env` finds the first bash on your PATH, which is Homebrew's on your Mac and the normal one on Linux.
+
+      **Example: a modern script on the Mac's old bash.** Two lines that work on Ubuntu's bash 5:
+
+      ```
+      $ /bin/bash -c 'declare -A prices; x=ABC; echo ${x,,}'
+      /bin/bash: line 0: declare: -A: invalid option
+      declare: usage: declare [-afFirtx] [-p] [name[=value] ...]
+      /bin/bash: ${x,,}: bad substitution
+      $ /bin/bash --version | head -1
+      GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+      ```
+
+      Both features arrived after bash 3.2. With Homebrew's bash and `#!/usr/bin/env bash` at the top of the script, the same lines print `abc`.
 
   - kind: mac
     title: Scripts on your Mac

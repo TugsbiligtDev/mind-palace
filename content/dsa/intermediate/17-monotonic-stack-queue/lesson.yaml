@@ -8,6 +8,62 @@ steps:
 
       A monotonic stack is an ordinary stack that you keep **sorted** (each new item removes whatever would break the order). For "next greater", keep the stack **decreasing**: values still *waiting* for something bigger.
 
+      **Example: the brute force**, which the next pages replace. For each position, scan to the right until something bigger turns up:
+
+      ```js
+      function nextGreaterSlow(nums) {
+        const out = [];
+        let steps = 0;
+        for (let i = 0; i < nums.length; i++) {
+          let found = -1;
+          for (let j = i + 1; j < nums.length; j++) {
+            steps++;
+            if (nums[j] > nums[i]) { found = nums[j]; break; }
+          }
+          out.push(found);
+        }
+        console.log("steps:", steps);
+        return out;
+      }
+
+      console.log(nextGreaterSlow([2, 1, 2, 4, 3]));
+      console.log(nextGreaterSlow([5, 4, 3, 2, 1]));
+      ```
+
+      prints:
+
+      ```
+      steps: 6
+      [ 4, 2, 4, -1, -1 ]
+      steps: 10
+      [ -1, -1, -1, -1, -1 ]
+      ```
+
+  - kind: code
+    title: "Try it: next greater, slowly"
+    body: |
+      Run it and compare with the output above. A falling list like `[5, 4, 3, 2, 1]` is the worst case: nothing is ever found, so every scan goes to the end. Try a longer falling list.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      function nextGreaterSlow(nums) {
+        const out = [];
+        let steps = 0;
+        for (let i = 0; i < nums.length; i++) {
+          let found = -1;
+          for (let j = i + 1; j < nums.length; j++) {
+            steps++;
+            if (nums[j] > nums[i]) { found = nums[j]; break; }
+          }
+          out.push(found);
+        }
+        console.log("steps:", steps);
+        return out;
+      }
+
+      console.log(nextGreaterSlow([2, 1, 2, 4, 3]));
+      console.log(nextGreaterSlow([5, 4, 3, 2, 1]));
+
   - kind: explain
     title: How the stack works
     body: |
@@ -19,6 +75,59 @@ steps:
       Anything left on the stack at the end never found a bigger number.
 
       We store **indexes** on the stack so we can write results into the right slot. Each item is pushed once and popped once, so the whole pass is **O(n)**.
+
+      <!-- page -->
+
+      A worked example of the mirror problem, **next smaller** (keep the stack *increasing*, and pop while the top is **bigger** than the new number). The line inside the loop shows the values waiting on the stack:
+
+      ```js
+      const nums = [4, 5, 2, 10, 8];
+      const result = Array(nums.length).fill(-1);
+      const stack = [];
+      for (let i = 0; i < nums.length; i++) {
+        while (stack.length > 0 && nums[stack[stack.length - 1]] > nums[i]) {
+          result[stack.pop()] = nums[i];
+        }
+        stack.push(i);
+        console.log("after", nums[i], "stack holds", stack.map((j) => nums[j]));
+      }
+      console.log(result);
+      ```
+
+      It prints:
+
+      ```
+      after 4 stack holds [ 4 ]
+      after 5 stack holds [ 4, 5 ]
+      after 2 stack holds [ 2 ]
+      after 10 stack holds [ 2, 10 ]
+      after 8 stack holds [ 2, 8 ]
+      [ 2, 2, -1, 8, -1 ]
+      ```
+
+      When `2` arrives, it is smaller than both `5` and `4`, so both get their answer (`2`) and leave the stack. `2` and `8` are still waiting at the end: nothing smaller comes after them, so they keep `-1`.
+
+  - kind: code
+    title: "Try it: a monotonic stack"
+    body: |
+      Run this and watch the stack after each number.
+
+      Then change the array to `[3, 7, 1, 7, 5]` and predict the result before you run. Which numbers are still waiting on the stack at the end?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      // Next SMALLER item to the right (the mirror of next greater).
+      const nums = [4, 5, 2, 10, 8];
+      const result = Array(nums.length).fill(-1);
+      const stack = [];
+      for (let i = 0; i < nums.length; i++) {
+        while (stack.length > 0 && nums[stack[stack.length - 1]] > nums[i]) {
+          result[stack.pop()] = nums[i];
+        }
+        stack.push(i);
+        console.log("after", nums[i], "stack holds", stack.map((j) => nums[j]));
+      }
+      console.log(result);
 
   - kind: code
     title: "Find the bug: equal is not greater"
@@ -161,6 +270,20 @@ steps:
 
       Add a bar of height 0 at the end to flush the stack.
 
+      <!-- page -->
+
+      A worked example by hand, on heights `[2, 4, 3]` (plus the extra `0` at index 3). The stack holds indexes.
+
+      | i | Bar | Popped bar | Width | Area | Stack after |
+      |---|---|---|---|---|---|
+      | 0 | 2 | | | | `[0]` |
+      | 1 | 4 | | | | `[0, 1]` |
+      | 2 | 3 | index 1 (height 4) | `2 - 0 - 1 = 1` | 4 | `[0, 2]` |
+      | 3 | 0 | index 2 (height 3) | `3 - 0 - 1 = 2` | 6 | `[0]` |
+      | 3 | 0 | index 0 (height 2) | stack empty, so `3` | 6 | `[3]` |
+
+      The largest area is 6: height 3 across the last two bars (or height 2 across all three).
+
   - kind: code
     title: Largest rectangle
     body: |
@@ -211,6 +334,33 @@ steps:
       4. The **front** is always the window's maximum.
 
       In JavaScript, use an array with a `head` index for the front (no `shift`, so it stays O(1)).
+
+      <!-- page -->
+
+      A worked example of that array-with-a-head deque. `pop()` removes from the back, and `head++` removes from the front:
+
+      ```js
+      const deque = [];
+      let head = 0;
+      deque.push(10, 20, 30);
+      console.log(deque.slice(head));
+      deque.pop();
+      console.log(deque.slice(head));
+      head++;
+      console.log(deque.slice(head));
+      console.log("front:", deque[head], "back:", deque[deque.length - 1]);
+      ```
+
+      It prints:
+
+      ```
+      [ 10, 20, 30 ]
+      [ 10, 20 ]
+      [ 20 ]
+      front: 20 back: 20
+      ```
+
+      The `10` is still in the array, but everything before `head` counts as gone. The deque is empty when `deque.length === head`.
 
   - kind: code
     title: Sliding window maximum

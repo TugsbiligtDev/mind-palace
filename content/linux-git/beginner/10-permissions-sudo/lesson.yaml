@@ -14,6 +14,20 @@ steps:
 
       Every file has an **owner** (a user) and a **group**, and three sets of permissions: one for the owner, one for the group, one for everybody else.
 
+  - kind: shell
+    title: "Try it: who am I?"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `whoami`
+      2. `id`
+      3. `groups`
+      4. `ls -l notes`: the third and fourth columns are each file's owner and group.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Reading rwx
     body: |
@@ -69,6 +83,54 @@ steps:
 
       Only a file's owner (or root) can change its permissions.
 
+      <!-- page -->
+
+      Here's a one-line script being made, refused, fixed and run. (`./hello.sh` means "run the program at this path".)
+
+      ```
+      learner@inkwell:~/inkwell$ echo 'echo hello from Inkwell' > hello.sh
+      learner@inkwell:~/inkwell$ ls -l hello.sh
+      -rw-r--r-- 1 learner learner 24 Oct 14 21:09 hello.sh
+      learner@inkwell:~/inkwell$ ./hello.sh
+      bash: ./hello.sh: Permission denied
+      learner@inkwell:~/inkwell$ chmod u+x hello.sh
+      learner@inkwell:~/inkwell$ ls -l hello.sh
+      -rwxr--r-- 1 learner learner 24 Oct 14 21:09 hello.sh
+      learner@inkwell:~/inkwell$ ./hello.sh
+      hello from Inkwell
+      ```
+
+      An `x` appeared in the owner's set, and the script ran. One more: give the group write and take read away from others:
+
+      ```
+      learner@inkwell:~/inkwell$ ls -l notes/todo.txt
+      -rw-r--r-- 1 learner learner 110 Oct 14 21:09 notes/todo.txt
+      learner@inkwell:~/inkwell$ chmod g+w notes/todo.txt
+      learner@inkwell:~/inkwell$ chmod o-r notes/todo.txt
+      learner@inkwell:~/inkwell$ ls -l notes/todo.txt
+      -rw-rw---- 1 learner learner 110 Oct 14 21:09 notes/todo.txt
+      ```
+
+  - kind: shell
+    title: "Try it: chmod with letters"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      mkdir -p scripts
+      printf '#!/usr/bin/env bash\n# Copy the website to a dated backup folder.\ncp -r ~/inkwell/site ~/inkwell/site-backup\necho "backup done"\n' > scripts/backup.sh
+    body: |
+      Type these one at a time:
+
+      1. `echo 'echo hello from Inkwell' > hello.sh` makes a tiny script.
+      2. `./hello.sh`: read the error.
+      3. `chmod u+x hello.sh`, then `ls -l hello.sh`: spot the new `x`.
+      4. `./hello.sh` again.
+      5. `chmod g+w notes/todo.txt`, then `ls -l notes/todo.txt`
+
+      Then take the `x` away again with `chmod u-x hello.sh` and try running it once more.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: A script that won't run
     fixture: backoffice
@@ -118,6 +180,41 @@ steps:
 
       `chmod 600 notes.txt` sets all three at once. `stat -c %a file` prints a file's mode as digits.
 
+      <!-- page -->
+
+      Here's `640` (owner read and write, group read, others nothing) on the to-do list, then back to `644`:
+
+      ```
+      learner@inkwell:~/inkwell$ chmod 640 notes/todo.txt
+      learner@inkwell:~/inkwell$ ls -l notes/todo.txt
+      -rw-r----- 1 learner learner 110 Oct 14 21:09 notes/todo.txt
+      learner@inkwell:~/inkwell$ stat -c %a notes/todo.txt
+      640
+      learner@inkwell:~/inkwell$ chmod 644 notes/todo.txt
+      learner@inkwell:~/inkwell$ stat -c %a notes/todo.txt
+      644
+      ```
+
+      Read the digits one at a time: 6 = `rw-` for the owner, 4 = `r--` for the group, 0 = `---` for others.
+
+  - kind: shell
+    title: "Try it: chmod with numbers"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      printf 'PAYMENT_KEY=pk-inkwell-7f3a-NOT-A-REAL-KEY\nSHOP_EMAIL=orders@inkwell.example\n' > site/.env
+    body: |
+      Type these one at a time:
+
+      1. `chmod 640 notes/todo.txt`, then `ls -l notes/todo.txt`
+      2. `stat -c %a notes/todo.txt`
+      3. `chmod 644 notes/todo.txt`, then `stat -c %a notes/todo.txt`
+      4. `stat -c %a notes`: folders usually show `755`.
+
+      Then pick a mode from the table, say `664`, set it on `notes/todo.txt`, and guess the letters before you check with `ls -l`.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: Lock the payment key
     fixture: backoffice
@@ -150,6 +247,40 @@ steps:
       `sudo` ("superuser do") asks for **your own** password (not root's), checks you're allowed (you're in the `sudo` group), and runs that one command as root. On a Mac it's the same: admin users can `sudo`.
 
       Treat it like the master key it is: the command gets full power over the whole machine, with no "are you sure?".
+
+      <!-- page -->
+
+      Here's the difference one `sudo` makes. `/root` is root's own home folder:
+
+      ```
+      learner@inkwell:~$ whoami
+      learner
+      learner@inkwell:~$ sudo whoami
+      [sudo] password for learner: (the practice computer doesn't ask for it)
+      root
+      learner@inkwell:~$ ls /root
+      ls: cannot open directory '/root': Permission denied
+      learner@inkwell:~$ sudo ls -a /root
+      .  ..
+      ```
+
+      With `sudo` in front, `whoami` ran as root, and root was allowed into `/root` (it's empty here). A real server asks for your password the first time; the practice computer skips that.
+
+  - kind: shell
+    title: "Try it: sudo"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Type these one at a time:
+
+      1. `whoami`, then `sudo whoami`
+      2. `ls /root`: read the error.
+      3. `sudo ls -a /root`
+      4. `ls -l /etc/shadow`: the file of password hashes belongs to root.
+
+      Then try `cat /etc/shadow`, and after the error type `sudo !!`.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Who approved the refunds?
@@ -188,6 +319,37 @@ steps:
       3. **Which set applies to me?** Owner, group, or others.
       4. **Fix the right thing:** a script missing `x` needs `chmod u+x`; a file you should own may need `chown` (below); a genuine system file needs `sudo`, for that one command.
 
+      <!-- page -->
+
+      **Example: a script that won't run.**
+
+      ```
+      learner@inkwell:~/inkwell$ printf "echo hello from the script\n" > hello.sh
+      learner@inkwell:~/inkwell$ ./hello.sh
+      bash: ./hello.sh: Permission denied
+      learner@inkwell:~/inkwell$ ls -l hello.sh
+      -rw-r--r-- 1 learner learner 27 Oct 14 23:16 hello.sh
+      learner@inkwell:~/inkwell$ chmod u+x hello.sh
+      learner@inkwell:~/inkwell$ ./hello.sh
+      hello from the script
+      ```
+
+      Step 2 of the checklist: `ls -l` shows `-rw-r--r--`, with no `x` anywhere. Step 4: the owner (you) needs `x`, so `chmod u+x`, and it runs. No sudo needed. (Your date and time in `ls -l` will differ.)
+
+  - kind: shell
+    title: "Try it: fix the right thing"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `printf "echo hello from the script\n" > hello.sh`
+      2. `./hello.sh`: denied.
+      3. `ls -l hello.sh`: which letter is missing?
+      4. `chmod u+x hello.sh`, then `./hello.sh` again.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: "⚠️ Two bad habits"
     body: |
@@ -195,6 +357,36 @@ steps:
       - **sudo by reflex**: putting `sudo` in front of every failing command. It hides the real problem, and running things as root you don't understand is how systems get wrecked. Files created with `sudo` belong to root, which causes new "Permission denied" errors later.
 
       Also note: `sudo echo hi > /etc/hosts` fails. The `>` is done by **your** shell, before sudo starts. Write `echo hi | sudo tee -a /etc/hosts` instead.
+
+      <!-- page -->
+
+      **Example: the `sudo echo` trap, and the fix.**
+
+      ```
+      learner@inkwell:~/inkwell$ sudo echo 10.0.0.9 shop > /etc/hosts
+      bash: /etc/hosts: Permission denied
+      learner@inkwell:~/inkwell$ echo 10.0.0.9 shop | sudo tee -a /etc/hosts
+      [sudo] password for learner: (the practice computer doesn't ask for it)
+      10.0.0.9 shop
+      learner@inkwell:~/inkwell$ tail -2 /etc/hosts
+      ::1     ip6-localhost ip6-loopback
+      10.0.0.9 shop
+      ```
+
+      The first line failed even with sudo: your own shell tried to open `/etc/hosts`. With `tee`, the writing is done by a program that **is** running as root.
+
+  - kind: shell
+    title: "Try it: sudo and tee"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `sudo echo 10.0.0.9 shop > /etc/hosts`: denied.
+      2. `echo 10.0.0.9 shop | sudo tee -a /etc/hosts`
+      3. `tail -2 /etc/hosts`: the new line is there.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: info
     title: "🔹 chown: changing the owner"

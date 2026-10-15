@@ -11,7 +11,49 @@ steps:
       s.at(-1)      // "o"  (the last one)
       ```
 
-      You can loop over it with `for (const ch of s)` or an index. But remember from Module 4: strings are **immutable**. `s[0] = "j"` does nothing. To "change" a string you build a new one.
+      You can loop over it with `for (const ch of s)` or an index. But remember from Module 4: strings are **immutable**. `s[0] = "j"` can't change it (in this course's editor it even stops with an error: *Cannot assign to read only property*). To "change" a string you build a new one.
+
+      The same, run for real, plus the failed edit:
+
+      ```js
+      const s = "hello";
+      console.log(s.length, s[0], s.at(-1));
+
+      for (const ch of s) console.log(ch);
+
+      const t = "hello";
+      console.log("j" + t.slice(1));   // to "change" it, build a new string
+      console.log(t);                  // the original is untouched
+      ```
+
+      prints:
+
+      ```
+      5 h o
+      h
+      e
+      l
+      l
+      o
+      jello
+      hello
+      ```
+
+  - kind: code
+    title: "Try it: strings as rows"
+    body: |
+      Run it and compare with the output above. Then try `s.at(-2)` and `s[10]` (there is no position 10: `undefined`). And try `t[0] = "j";` to see the error.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const s = "hello";
+      console.log(s.length, s[0], s.at(-1));
+
+      for (const ch of s) console.log(ch);
+
+      const t = "hello";
+      console.log("j" + t.slice(1));
+      console.log(t);
 
   - kind: explain
     title: Characters are numbers underneath
@@ -23,9 +65,17 @@ steps:
       - `"0"` is 48 … `"9"` is 57
 
       ```js
-      "a".charCodeAt(0)            // 97
-      String.fromCharCode(98)      // "b"
-      "c".charCodeAt(0) - "a".charCodeAt(0)   // 2  (position in the alphabet)
+      console.log("a".charCodeAt(0));
+      console.log(String.fromCharCode(98));
+      console.log("c".charCodeAt(0) - "a".charCodeAt(0));   // position in the alphabet
+      ```
+
+      prints:
+
+      ```
+      97
+      b
+      2
       ```
 
       Subtracting `"a"`'s code turns a lowercase letter into a small index from 0 to 25. That trick powers the next idea.
@@ -63,7 +113,15 @@ steps:
       for (const ch of "banana") {
         counts[ch.charCodeAt(0) - 97]++;
       }
-      // counts[0] (a) = 3, counts[1] (b) = 1, counts[13] (n) = 2
+      console.log("a:", counts[0], "b:", counts[1], "n:", counts[13]);
+      console.log(counts.join(" "));
+      ```
+
+      prints:
+
+      ```
+      a: 3 b: 1 n: 2
+      3 1 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0
       ```
 
       Plain numbers filling `Array(26).fill(0)` are safe (unlike arrays, numbers are copied, not shared). Because 26 is a constant, this uses **O(1)** space.
@@ -106,8 +164,20 @@ steps:
       Real problems add wrinkles, such as "ignore punctuation and upper/lower case". Clean the text first, then compare:
 
       ```js
+      const s = "Was it a car, or a cat I saw?";
       const clean = s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      console.log(clean);
+      console.log(clean === [...clean].reverse().join(""));
       ```
+
+      prints:
+
+      ```
+      wasitacaroracatisaw
+      true
+      ```
+
+      (The last line checks it the easy way, by reversing a copy. The exercise does it with two pointers, without making a copy.)
 
       (`replace` with that pattern deletes every character that is not a letter or digit.)
 
@@ -194,6 +264,41 @@ steps:
 
       The habit: **do not build a string one character at a time inside a big loop**, and do not take a `slice` on every step of a loop unless you must. Both quietly turn O(n) into O(n²).
 
+      **Example.** Taking a `slice` on every step of a loop copies characters each time. Counting the copied characters:
+
+      ```js
+      const s = "abcdefghijklmnopqrst";   // 20 characters
+      let copied = 0;
+      for (let i = 0; i < s.length; i++) {
+        const rest = s.slice(i);          // copies everything from i to the end
+        copied += rest.length;
+      }
+      console.log("characters copied:", copied);
+      ```
+
+      prints:
+
+      ```
+      characters copied: 210
+      ```
+
+      For 20 characters that's 210 copies, about n²/2. With 20,000 characters it would be 200 million.
+
+  - kind: code
+    title: "Try it: the cost of slice in a loop"
+    body: |
+      Run it, then double the string (`s + s`, 40 characters): the count roughly **quadruples**, the sign of O(n²).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const s = "abcdefghijklmnopqrst";
+      let copied = 0;
+      for (let i = 0; i < s.length; i++) {
+        const rest = s.slice(i);
+        copied += rest.length;
+      }
+      console.log("characters copied:", copied);
+
   - kind: code
     title: Longest common prefix
     body: |
@@ -234,9 +339,17 @@ steps:
       JavaScript strings are made of 16-bit units. Most characters use one unit, but **emoji and many symbols use two** (a "surrogate pair"). So `.length` counts units, not what a human sees:
 
       ```js
-      "hi".length        // 2
-      "😀".length        // 2   (!)
-      [..."😀"].length   // 1   (spread walks by real characters)
+      console.log("hi".length);
+      console.log("😀".length);        // 2 (!)
+      console.log([..."😀"].length);   // spread walks by real characters
+      ```
+
+      prints:
+
+      ```
+      2
+      2
+      1
       ```
 
       For everyday interview problems the strings are plain ASCII, so you can ignore this. Just remember it if a string might contain emoji or accents.

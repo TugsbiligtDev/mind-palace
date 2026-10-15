@@ -12,6 +12,31 @@ steps:
 
       None is "correct". What matters is that a team picks one and sticks to it. This module covers the three you'll meet most.
 
+      **Example: two developers, one clash.** Line 120 of Inkwell's stylesheet, written in 2024 for the book list:
+
+      ```css
+      .title { font-size: 1.5rem; color: navy; }
+      ```
+
+      Line 4,830, written in 2026 for the new events page:
+
+      ```css
+      .title { font-size: 1rem; text-transform: uppercase; }
+      ```
+
+      Both used the obvious name. Now every book title on the old pages is suddenly small and in capitals, and nobody connects the bug to a change made on a different page. A naming agreement (like `.book-card__title` and `.event__title`) would have kept them apart.
+
+  - kind: choice
+    title: "Quick check: why methodologies?"
+    body: |
+      Why do teams need a CSS methodology at all?
+    options:
+      - "Because browsers refuse stylesheets over 1,000 lines"
+      - "Because every CSS rule is global, so without shared agreements any selector can clash with any other"
+      - "Because CSS can't use classes without one"
+    answer: 1
+    explanation: "CSS has no built-in modules: any rule can match anything on any page. A methodology is a team agreement on naming, files and specificity that keeps that under control."
+
   - kind: explain
     title: BEM
     body: |
@@ -29,6 +54,47 @@ steps:
       ```
 
       Every selector is a **single class**: same low specificity everywhere, no descendant chains, no fights. And the class name tells you exactly which component a rule belongs to. The cost: long class names in the HTML. A modifier never appears alone; it's always next to its base class.
+
+      The class names do nothing by themselves: the page shows a plain card until CSS uses them. Add `.card--featured { border: 2px solid #7c2d12; }` and only the featured card gets a thick dark-red border; add `.card__price--sale { color: #b91c1c; }` and only that price turns red.
+
+  - kind: web
+    title: "Try it: BEM names"
+    body: |
+      Two shop notices, named in BEM. The block is `notice`, its parts are `notice__title` and `notice__date`, and `notice--urgent` is the variant.
+
+      Notice in `style.css` that every selector is one class. Then try:
+
+      1. In `index.html`, add `notice--urgent` to the first notice too (keep `notice` next to it). Both now get the red border.
+      2. Add a modifier of your own: write `.notice__date--past { text-decoration: line-through; }` in the CSS and put `notice__date--past` next to `notice__date` on one date.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <article class="notice">
+        <h3 class="notice__title">Poetry night</h3>
+        <p class="notice__date">Friday, 7pm</p>
+      </article>
+      <article class="notice notice--urgent">
+        <h3 class="notice__title">Shop closed for stocktaking</h3>
+        <p class="notice__date">Monday</p>
+      </article>
+    css: |
+      .notice {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .notice__title {
+        margin: 0;
+      }
+
+      .notice__date {
+        color: #57534e;
+      }
+
+      .notice--urgent {
+        border: 2px solid #b91c1c;
+      }
 
   - kind: web
     title: Name it with BEM
@@ -150,6 +216,17 @@ steps:
 
       Most real projects mix them: components for the big pieces, a few utilities for one-off spacing and accessibility helpers.
 
+  - kind: choice
+    title: "Quick check: which style?"
+    body: |
+      `<button class="px-4 py-2 rounded bg-brand text-white">` is an example of which approach?
+    options:
+      - "Utility-first: many tiny classes that each do one thing"
+      - "BEM: a block with elements and modifiers"
+      - "Inline styles"
+    answer: 0
+    explanation: "Each class sets one thing (padding, rounding, colour), which is the utility-first approach Tailwind uses. A BEM name would look like `button button--primary`."
+
   - kind: explain
     title: CUBE CSS
     body: |
@@ -169,6 +246,51 @@ steps:
       ```
 
       "Every child that follows another child gets space above it." No margins on the children themselves.
+
+      In the page: the first child stays where it is, and every child after it gets `1em` of space above it. Put `style="--flow-space: 2em"` on one `.flow` element and only that element's gaps get twice as big.
+
+  - kind: web
+    title: "Try it: flow and an exception"
+    body: |
+      A staff noticeboard. `.flow` spaces out the notes, and `[data-state="new"]` is an exception that marks new ones.
+
+      Try:
+
+      1. Change `1em` in the flow rule to `2em`: every gap grows.
+      2. In `index.html`, change `--flow-space: 0.25em` on the second board to `3em`: only that board changes.
+      3. Add `data-state="new"` to another note.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <section class="board flow">
+        <p>Order more Dickens.</p>
+        <p data-state="new">Window display on Monday.</p>
+        <p>Fix the shop bell.</p>
+      </section>
+      <section class="board flow" style="--flow-space: 0.25em">
+        <p>Tea</p>
+        <p>Milk</p>
+        <p>Biscuits</p>
+      </section>
+    css: |
+      .board {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .board > * {
+        margin: 0;
+      }
+
+      .flow > * + * {
+        margin-block-start: var(--flow-space, 1em);
+      }
+
+      .board > [data-state="new"] {
+        font-weight: bold;
+        color: #7c2d12;
+      }
 
   - kind: web
     title: Compositions and utilities
@@ -250,6 +372,17 @@ steps:
 
       This order (sometimes called ITCSS, "inverted triangle") matches how the cascade works: broad and weak first, narrow and strong last. Module 40's cascade layers enforce it.
 
+  - kind: choice
+    title: "Quick check: what goes last?"
+    body: |
+      In the general-to-specific file order, which file comes **last**?
+    options:
+      - "The reset"
+      - "The tokens"
+      - "The utilities"
+    answer: 2
+    explanation: "Utilities are single-purpose helpers that should win, so they load last. The reset is the broadest and weakest, so it comes first."
+
   - kind: explain
     title: A modern reset
     body: |
@@ -278,6 +411,8 @@ steps:
       h1, h2, h3 { text-wrap: balance; }
       p { text-wrap: pretty; }
       ```
+
+      In the page, the visible changes are: headings and paragraphs lose their built-in gaps and sit tight together (you add space back on purpose, with flow), a big image shrinks to fit its container instead of spilling out, and a button uses the page's font instead of the browser's small default one.
 
       Every line fixes something you've met in this course. Don't use older "reset everything" stylesheets that remove list bullets and heading sizes from every element: they make you rebuild accessibility-relevant defaults by hand.
 

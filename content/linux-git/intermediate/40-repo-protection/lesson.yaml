@@ -132,6 +132,21 @@ steps:
       3. Put the new secret somewhere safe (environment variables, the server's settings, GitHub Actions secrets in Module 41), and make sure `.gitignore` keeps it out.
       4. Only then, if you like, **clean the history** (`git filter-repo`, Module 49) and force-push. That's tidying up: it can't recall copies already made.
 
+      **Example.** Marcus pushed `STRIPE_KEY=sk_live_…` in `checkout.js` to a public repository at 10:00. At 10:20: he **rolls the key** in Stripe's dashboard (the old one stops working at once), checks Stripe's logs for payments he didn't make, puts the new key in the server's environment settings, and adds `.env` to `.gitignore`. Only then does he consider cleaning the history.
+
+  - kind: choice
+    title: "Quick check: the first move"
+    body: |
+      A live API key was pushed to a public repository an hour ago. What do you do **first**?
+    options:
+      - "Rewrite the history with git filter-repo and force-push"
+      - "Make the repository private"
+      - "Revoke or rotate the key at the service that issued it"
+      - "Delete the file in a new commit"
+    answer: 2
+    explanation: |
+      Assume someone already copied it. Only **revoking** the key makes those copies worthless. Cleaning history, deleting the file or going private can't recall a copy that's already been made.
+
   - kind: explain
     title: Line endings and .gitattributes
     body: |
@@ -186,10 +201,36 @@ steps:
     body: |
       Most projects use other people's code (npm packages, Python libraries, GitHub Actions). **Dependabot alerts** (Settings → Code security) compare your dependency files with a database of known vulnerabilities and tell you when a version you use has a security problem, usually with a ready-made PR to upgrade. Turn them on for every repository; Module 54 adds automatic version updates.
 
+  - kind: choice
+    title: "Quick check: an alert"
+    body: |
+      Dependabot says a library your site uses has a known security hole, fixed in version 4.17.21. What's the usual fix?
+    options:
+      - "Delete the alert"
+      - "Make the repository private"
+      - "Rewrite the library yourself"
+      - "Update the dependency to the fixed version (Dependabot can open the PR for you)"
+    answer: 3
+    explanation: "The alert tells you which version is safe. Updating to it, often via Dependabot's own pull request, closes the hole."
+
   - kind: info
     title: "🔹 Classic branch protection rules"
     body: |
       Before rulesets, GitHub had **branch protection rules** (Settings → Branches), with similar options: require PRs and reviews, require status checks, block force-pushes. Many repositories still use them and they still work. Rulesets are the newer, more flexible way (several can apply at once, they can target tags, and anyone with read access can see them), so prefer rulesets for new set-ups.
+
+      **Example.** An older repository's *Settings → Branches* shows a rule for `main`: *Require a pull request before merging* (1 approval), *Require status checks to pass* (`shellcheck`), *Do not allow force pushes*. A ruleset with the `pull_request`, `required_status_checks` and `non_fast_forward` rules does the same job.
+
+  - kind: choice
+    title: "Quick check: old or new?"
+    body: |
+      You find a repository protected by a classic branch protection rule. Does it still work?
+    options:
+      - "Yes: classic rules still work; rulesets are the newer, more flexible way"
+      - "No: GitHub switched them off"
+      - "Only for private repositories"
+      - "Only if you also add a ruleset"
+    answer: 0
+    explanation: "Both exist side by side. New set-ups usually use rulesets, which can be layered and tested in evaluate mode first."
 
   - kind: mac
     title: Protect a real repository

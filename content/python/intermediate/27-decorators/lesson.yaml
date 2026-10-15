@@ -22,6 +22,27 @@ steps:
 
       The line `@shout` above `def greet` is a shortcut for `greet = shout(greet)`. From then on, the name `greet` points at the **wrapper**. Using `*args, **kwargs` lets the wrapper accept any arguments and pass them straight through.
 
+      <!-- page -->
+
+      One more fact you will need soon: because a function is an object, you can **attach your own attributes** to it, just like on an object of your own class:
+
+      ```python
+      def greet(name):
+          return "hello " + name
+
+      greet.uses = 0          # functions can carry attributes too
+      greet.uses += 1
+      print(greet.uses)
+      print(greet("ada"))
+      ```
+
+      prints:
+
+      ```
+      1
+      hello ada
+      ```
+
   - kind: code
     title: Your first decorator
     body: |
@@ -105,6 +126,47 @@ steps:
       Now `greet.__name__` is `'greet'` again. **Always use `@wraps(func)`** when you write a decorator.
 
   - kind: code
+    title: "Try it: functools.wraps"
+    body: |
+      Two do-nothing decorators that differ in one line: `careful` uses `@wraps(func)`, `plain` does not. Run it and compare the two output lines:
+
+      - `restock` (wrapped by `plain`) reports its name as `wrapper` and has lost its docstring (`None`).
+      - `discount` (wrapped by `careful`) keeps its own name and docstring.
+
+      Then try one change: add `@wraps(func)` to `plain` as well and run again. Nothing is graded here.
+    code: |
+      from functools import wraps
+
+
+      def plain(func):
+          def wrapper(*args, **kwargs):
+              return func(*args, **kwargs)
+          return wrapper
+
+
+      def careful(func):
+          @wraps(func)
+          def wrapper(*args, **kwargs):
+              return func(*args, **kwargs)
+          return wrapper
+
+
+      @plain
+      def restock(title):
+          """Order more copies of a book."""
+          return f"ordered {title}"
+
+
+      @careful
+      def discount(title):
+          """Put a book on sale."""
+          return f"{title} on sale"
+
+
+      print(restock("Dune"), "|", restock.__name__, "|", restock.__doc__)
+      print(discount("Emma"), "|", discount.__name__, "|", discount.__doc__)
+
+  - kind: code
     title: A logging decorator
     body: |
       Write a decorator `logged` that appends the text `"calling <name>"` to a **global list called `LOG`** each time the decorated function is called, then runs it. The decorated function must keep its own `__name__` (use `functools.wraps`).
@@ -173,6 +235,42 @@ steps:
       ```
 
       Read `@repeat(3)` as: call `repeat(3)` first, and use whatever it returns as the decorator. Three nested functions can feel like a lot, but the pattern is always the same.
+
+  - kind: code
+    title: "Try it: a decorator with an argument"
+    body: |
+      `prefix(label)` makes a decorator that puts a label in front of whatever the function returns. The same three layers as `repeat`: setting, decorator, wrapper. Run it and notice:
+
+      - `@prefix("NEW")` and `@prefix("SALE")` make two different decorators from one recipe.
+      - the wrapper passes any arguments through, so `offer` can take two.
+
+      Then try one change: decorate `arrival` with `@prefix("STAFF PICK")` instead. Nothing is graded here.
+    code: |
+      from functools import wraps
+
+
+      def prefix(label):                        # 1. takes the setting
+          def decorator(func):                  # 2. the real decorator
+              @wraps(func)
+              def wrapper(*args, **kwargs):     # 3. the wrapper
+                  return f"[{label}] " + func(*args, **kwargs)
+              return wrapper
+          return decorator
+
+
+      @prefix("NEW")
+      def arrival(title):
+          return f"{title} just arrived"
+
+
+      @prefix("SALE")
+      def offer(title, percent):
+          return f"{title} is {percent}% off"
+
+
+      print(arrival("Dune"))
+      print(offer("Emma", 20))
+      print(arrival.__name__)
 
   - kind: code
     title: An access check
@@ -315,6 +413,38 @@ steps:
       - **Registration**: `@app.route("/")` in web frameworks, `@pytest.fixture` in tests, `@property`, `@classmethod`, `@dataclass` (you have used several already!).
 
       You will write them occasionally and *use* them constantly. The important habits: use `@wraps`, pass `*args, **kwargs`, and keep the added behaviour small and focused.
+
+  - kind: code
+    title: "Try it: two everyday decorators"
+    body: |
+      Two decorators from the list above. `@logged` (our own, with `@wraps`) records every call. `@cache` remembers answers, so the second `square(4)` is not computed again: only one "computing" line appears for it.
+
+      Then try one change: remove `@cache` and run again. Now `square(4)` is computed twice.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      from functools import cache, wraps
+
+      def logged(func):
+          @wraps(func)
+          def wrapper(*args, **kwargs):
+              print(f"calling {func.__name__}{args}")
+              return func(*args, **kwargs)
+          return wrapper
+
+      @logged
+      def add(a, b):
+          return a + b
+
+      @cache
+      def square(n):
+          print("computing", n)
+          return n * n
+
+      print(add(2, 3))
+      print(square(4))
+      print(square(4))
+      print(add.__name__)    # still "add", thanks to @wraps
 
   - kind: why
     body: |

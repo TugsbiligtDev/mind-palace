@@ -8,6 +8,33 @@ steps:
 
       **On your Mac,** a change is **permanent the moment it runs**. psql has no undo button. (Module 30 covers transactions, the safety net.)
 
+      **Example.** Inkwell has 20 customers. One INSERT, and there are 21:
+
+      ```sql
+      SELECT count(*) FROM customers;           -- 20
+
+      INSERT INTO customers (customer_id, first_name, last_name, city, country)
+      VALUES (21, 'Nina', 'Park', 'Seoul', 'South Korea');
+
+      SELECT count(*) FROM customers;           -- 21
+      ```
+
+      The next pages explain each part of that INSERT.
+
+  - kind: try
+    title: "Try it: 20, then 21"
+    body: |
+      Run it: the first count says 20, the second 21. Run it again: still 20, then 21, because each run starts from a fresh copy. On your Mac, the second run would make 22.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT count(*) FROM customers;
+
+      INSERT INTO customers (customer_id, first_name, last_name, city, country)
+      VALUES (21, 'Nina', 'Park', 'Seoul', 'South Korea');
+
+      SELECT count(*) FROM customers;
+
   - kind: explain
     title: INSERT … VALUES
     body: |
@@ -92,7 +119,26 @@ steps:
       RETURNING book_id, title;
       ```
 
+      Instead of `INSERT 0 1`, you get the new row back:
+
+      | book_id | title |
+      |---|---|
+      | 31 | Circe |
+
       This is how apps find out the ID of something they just created. `RETURNING *` returns every column.
+
+  - kind: try
+    title: "Try it: RETURNING"
+    body: |
+      This adds *Piranesi* at 12.50 and returns three of its columns. Run it.
+
+      Then change the last line to `RETURNING *` and run again: every column comes back, and the ones you didn't fill in show as NULL.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      INSERT INTO books (book_id, title, price)
+      VALUES (34, 'Piranesi', 12.50)
+      RETURNING book_id, title, price;
 
   - kind: try
     title: Your turn with RETURNING
@@ -118,7 +164,7 @@ steps:
              (33, 'Beloved',   'Toni Morrison');
       ```
 
-      It's faster than one INSERT per row, and it's all-or-nothing: if one row is bad, **none** are added.
+      psql replies `INSERT 0 3`: three rows added. It's faster than one INSERT per row, and it's all-or-nothing: if one row is bad, **none** are added.
 
   - kind: try
     title: Your turn for a multi-row insert
@@ -155,6 +201,44 @@ steps:
 
       Don't. You have to know all ten columns and their order, it breaks silently when someone adds or reorders columns, and nobody reading it can tell which value goes where. **Always name the columns.**
 
+      **The better way.** Name only the columns you're filling. The rest get NULL (or their default):
+
+      ```sql
+      INSERT INTO customers (customer_id, first_name, last_name, city, country)
+      VALUES (21, 'Nina', 'Park', 'Seoul', 'South Korea')
+      RETURNING customer_id, first_name, city, country;
+      ```
+
+      | customer_id | first_name | city | country |
+      |---|---|---|---|
+      | 21 | Nina | Seoul | South Korea |
+
+      And if the list and the values don't match up, PostgreSQL tells you at once:
+
+      ```sql
+      INSERT INTO customers (first_name, last_name, email, city)
+      VALUES ('Nina', 'Park', 'Seoul');
+      ```
+
+      ```text
+      ERROR:  INSERT has more target columns than expressions
+      ```
+
+  - kind: try
+    title: "Try it: name the columns"
+    body: |
+      Run it: the first INSERT works, the second is refused (4 columns, 3 values). Fix the second by removing `email` from its column list.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      INSERT INTO customers (customer_id, first_name, last_name, city, country)
+      VALUES (21, 'Nina', 'Park', 'Seoul', 'South Korea')
+      RETURNING customer_id, first_name, city, country;
+
+      INSERT INTO customers (first_name, last_name, email, city)
+      VALUES ('Nina', 'Park', 'Seoul');
+    broken_starter: true
+
   - kind: explain
     title: Quotes, and a quote inside a quote
     body: |
@@ -168,6 +252,16 @@ steps:
       ```
 
       Two single quotes in a row inside text mean one real apostrophe. It's *not* a double-quote character.
+
+      ```sql
+      SELECT 'Inkwell''s shelf' AS label;
+      ```
+
+      returns one apostrophe, not two:
+
+      | label |
+      |---|
+      | Inkwell's shelf |
 
   - kind: try
     title: Fix the apostrophe

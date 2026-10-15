@@ -15,6 +15,17 @@ steps:
       | `shop-800.avif` | 800 × 500 (15 KB) |
       | `shop-square.jpg` | 500 × 500, cropped |
 
+  - kind: choice
+    title: "Quick check: the right file"
+    body: |
+      A phone shows the shop photo 375 pixels wide. Which of the lesson's files is a sensible download for it?
+    options:
+      - "`shop-1600.jpg`"
+      - "`shop-400.jpg`"
+      - "`shop-square.jpg`, whatever the layout"
+    answer: 1
+    explanation: "400 pixels is just above the 375 shown, so nothing is wasted. The 1600-pixel version would download about 16 times as many pixels for the same picture."
+
   - kind: explain
     title: srcset and sizes
     body: |
@@ -32,6 +43,8 @@ steps:
       - `src` is the fallback for very old browsers.
 
       The browser does the maths: shown width × the screen's pixel density (2× on a Retina screen), then picks the smallest file that's big enough. A phone gets the 400 or 800 version; a big Retina monitor gets 1600. You don't decide; you give it the options.
+
+      On the page, everyone sees the same photo of the shelves at the same size. The difference is invisible: which file was downloaded. For example, on a 375px-wide phone with a 2× screen, the photo is shown 375px wide (`100vw`), which needs 750 real pixels, so the browser fetches `shop-800.jpg` (the smallest file that's at least 750 wide).
 
       For a fixed-size image (a logo always 200px wide), use density descriptors instead: `srcset="logo.png 1x, logo@2x.png 2x"`.
 
@@ -92,6 +105,29 @@ steps:
 
       The `<img>` is required: it's what actually displays, it carries the `alt`, and the CSS styles it. Sources just change which file it shows.
 
+      What appears: with the first example, every current browser shows the shelves photo, but downloads the 15 KB AVIF file instead of the 63 KB JPEG. With the second, a phone narrower than 600px shows the square crop; anything wider shows the long 800 × 500 photo.
+
+  - kind: web
+    title: "Try it: art direction"
+    body: |
+      This `<picture>` switches to the square crop on screens narrower than **500px**.
+
+      1. Use the width buttons above the preview: on **Phone** (375) the photo is square, on **Tablet** and **Desktop** it's the wide one.
+      2. In `index.html`, change `500px` to `800px`, then try **Tablet** (768) again: it's square now too.
+      3. Delete the whole `<source …>` line: the `<img>` alone shows the wide photo everywhere.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <picture>
+        <source media="(width < 500px)" srcset="images/shop-square.jpg">
+        <img src="images/shop-800.jpg" alt="Tall wooden shelves full of colourful books" width="800" height="500">
+      </picture>
+    css: |
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
   - kind: web
     title: Modern formats, square on phones
     body: |
@@ -148,6 +184,8 @@ steps:
 
       `loading="lazy"` also works on `<iframe>`, which is great for heavy embeds like maps and videos.
 
+      None of these change what the page looks like: both images appear exactly where they would anyway. What changes is timing. The hero starts downloading before anything else; `cover.jpg` isn't downloaded at all until the visitor scrolls close to it, so someone who never scrolls never pays for it. You can watch it happen in DevTools' Network tab (see "See what you saved" below).
+
   - kind: web
     title: Prioritise the page
     body: |
@@ -194,6 +232,8 @@ steps:
       ```html
       <link rel="preload" href="fonts/inkwell-serif.woff2" as="font" type="font/woff2" crossorigin>
       ```
+
+      Nothing appears on the page from this line. The effect is that headings set in that font show up in the right font sooner, instead of first flashing in a fallback font.
 
       `as="font"` and `crossorigin` are both required for fonts, even your own (otherwise it's downloaded twice). Preload only the one or two fonts used at the top of the page; preloading everything makes everything slow.
 

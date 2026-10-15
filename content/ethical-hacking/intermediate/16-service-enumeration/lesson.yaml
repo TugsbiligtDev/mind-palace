@@ -6,12 +6,65 @@ steps:
 
       Beginners scan, see a few open ports, and rush to look for an exploit. Professionals slow down and squeeze every service dry first, because the way in is almost always a detail enumeration surfaces — a readable file share, a guessable username, a version with a known flaw. This module walks the services you will meet most.
 
+      **Example: the same three ports, before and after enumeration.**
+
+      ```
+      After the scan:              After enumeration:
+      21/tcp  open  ftp            vsftpd 3.0.3, anonymous login allowed, folder pub/ holds staff.csv
+      80/tcp  open  http           Apache 2.4.29, unlinked /backup/ folder lists site-old.zip
+      445/tcp open  microsoft-ds   Samba 4.7.6, share "backups" readable without a password
+      ```
+
+      The left column is a list of doors. The right column is three concrete leads, none of which needed an exploit to find.
+
+  - kind: choice
+    title: "Quick check: where tests are won"
+    body: |
+      A scan shows three open ports. What does a professional do next?
+    options:
+      - "Search for an exploit for the first port straight away"
+      - "Interrogate every service for versions, users, shares and settings, and write it all down"
+      - "Scan again with a faster timing"
+    answer: 1
+    explanation: |
+      Enumerate first. The way in is usually a detail (a readable share, an anonymous login, an old version) that only careful enumeration turns up.
+
   - kind: explain
     title: Banner grabbing
     body: |
       The simplest enumeration is **banner grabbing**: connecting to a port and reading the greeting the service sends. Many services announce their software and version unprompted. `nmap -sV` does this automatically, and tools like `netcat` (`nc`) let you do it by hand.
 
       Why it matters: that banner is often all you need to pivot from "a service is here" to "this *exact* version, which has a known weakness." Defensively, this is why hardening guides tell you to suppress or fake version banners — not because it fixes anything, but because it denies the attacker free intelligence.
+
+      Connecting to the SSH port on a lab host with `nc` prints the greeting the service sends unprompted:
+
+      ```
+      $ nc 10.10.50.20 22
+      SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.5
+      ```
+
+      One line, and you already know the exact SSH build and that it is an Ubuntu package.
+
+  - kind: mac
+    title: "Try it: grab a banner"
+    body: |
+      Connect to the SSH port of `scanme.nmap.org` (the host the Nmap project provides for exactly this kind of practice) and read its greeting. `-w 5` gives up after 5 seconds of silence. Press **Ctrl-C** if it keeps waiting.
+
+      You should see a line like `SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13`: software, exact version and operating system, given away for free.
+    commands: |
+      nc -w 5 scanme.nmap.org 22
+
+  - kind: choice
+    title: "Quick check: read the banner"
+    body: |
+      A banner reads `220 ProFTPD 1.3.5 Server (Debian)`. What have you learned?
+    options:
+      - "Only that port 21 is open"
+      - "The FTP software (ProFTPD), its exact version (1.3.5) and the OS family (Debian)"
+      - "The admin's password"
+    answer: 1
+    explanation: |
+      The greeting names the product, the version and the operating system: exactly what you need to look up known weaknesses in the next module.
 
   - kind: explain
     title: "SMB (445) — Windows file sharing"
@@ -20,12 +73,63 @@ steps:
 
       Tools like `enum4linux`, `smbclient` and Nmap's `smb-*` scripts automate this. Historically SMB has been the source of some of the most serious Windows vulnerabilities, and misconfigured open shares leak sensitive files constantly. A readable share found here can hand you credentials that unlock everything else.
 
+      Listing the shares on a lab host with no credentials (`-N`) shows what is exposed:
+
+      ```
+      $ smbclient -L //10.10.50.20 -N
+          Sharename       Type      Comment
+          ---------       ----      -------
+          print$          Disk      Printer Drivers
+          backups         Disk
+          IPC$            IPC       IPC Service
+      ```
+
+      A share called `backups`, listed without any login, is a thread worth pulling: an open backup share is a classic place to find a forgotten config file.
+
+  - kind: choice
+    title: "Quick check: which share first?"
+    body: |
+      `smbclient -L //10.10.50.20 -N` lists `print$`, `IPC$`, `HR-Documents` and `backups`, without a login. Which line is the most interesting finding?
+    options:
+      - "IPC$, because it's a system share"
+      - "That HR-Documents and backups are listed to anyone, with no credentials"
+      - "print$, because printers are always weak"
+    answer: 1
+    explanation: |
+      `IPC$` and `print$` are standard on every Samba/Windows server. Named shares like `HR-Documents` and `backups`, visible without a login, may hold sensitive files or credentials: the next step is to see whether they can be read.
+
   - kind: explain
     title: "FTP (21) and SSH (22)"
     body: |
       **FTP** moves files, often in cleartext. Enumeration checks the version and — critically — whether **anonymous login** is allowed (username `anonymous`, any password). Misconfigured anonymous FTP that exposes files is a classic, still-common finding.
 
+      Testing anonymous access on a lab host, the `230` reply is the tell:
+
+      ```
+      $ ftp 10.10.50.20
+      Name (10.10.50.20): anonymous
+      331 Please specify the password.
+      Password:
+      230 Login successful.
+      ftp> ls
+      drwxr-xr-x    2 0   0   4096 Jan 03  2024 pub
+      ```
+
+      `230 Login successful` after an `anonymous` login means the server lets anyone in: a finding on its own, and a chance to read whatever sits in `pub`.
+
       **SSH** is secure remote login, so you are not "breaking" the encryption. Here enumeration means noting the version, the host key, and which authentication methods are offered (password vs. key-only). A password-authenticating SSH service becomes relevant later for credential attacks (Module 19); the encryption itself stays intact.
+
+  - kind: choice
+    title: "Quick check: the FTP tell"
+    body: |
+      You try `anonymous` on an FTP server and get `530 Login incorrect.` What does it mean?
+    options:
+      - "Anonymous login is refused: good for the client"
+      - "Anonymous login worked"
+      - "The FTP server is down"
+    answer: 0
+    explanation: |
+      `530` is a refusal. `230 Login successful` would have been the finding. Either way, write the result in your notes.
 
   - kind: explain
     title: "HTTP/HTTPS (80/443) — the biggest surface"
@@ -38,6 +142,30 @@ steps:
 
       Finding an unlinked `/admin` panel or an exposed `/.git` folder is routine here, and it is the doorway into the web-hacking modules that follow. You will meet these tools properly in Module 20.
 
+      Pointed at the lab web server, `gobuster` reports which guessed paths actually exist, by status code:
+
+      ```
+      $ gobuster dir -u http://10.10.50.20 -w common.txt
+      /index.html           (Status: 200)
+      /admin                (Status: 301)
+      /backup               (Status: 200)
+      /.git                 (Status: 301)
+      ```
+
+      None of `/admin`, `/backup` or `/.git` is linked from the site, yet all respond: the web surface is far larger than the visible menu.
+
+  - kind: choice
+    title: "Quick check: read gobuster"
+    body: |
+      `gobuster` reports `/.git (Status: 301)` on a website. Why would that excite a tester?
+    options:
+      - "It means the site uses GitHub to host its pages"
+      - "An exposed .git folder may let anyone download the site's source code and history, sometimes with passwords inside"
+      - "301 means the folder is blocked"
+    answer: 1
+    explanation: |
+      `.git` is the version-control folder. If it's served to the web, its contents (source code, history, sometimes secrets committed by mistake) can often be pulled down. 301 is a redirect, meaning the path exists.
+
   - kind: explain
     title: "DNS (53), SMTP (25), and databases"
     body: |
@@ -47,12 +175,69 @@ steps:
       - **SMTP (25):** mail servers can sometimes be asked whether a username exists (`VRFY`), letting you build a valid-user list for later.
       - **Databases (3306 MySQL, 5432 PostgreSQL, 1433 MSSQL, 27017 MongoDB):** a database exposed to the network is a serious finding on its own — and an unauthenticated one (famously, open MongoDB and Redis instances) is a breach waiting to happen.
 
+      **Example: a zone transfer that should have been refused.** `dig axfr` asks a DNS server for its whole zone at once. Against a lab DNS server that's set up badly:
+
+      ```
+      $ dig axfr @10.10.50.53 corp.lab
+      corp.lab.          3600 IN SOA  ns1.corp.lab. admin.corp.lab. ...
+      ns1.corp.lab.      3600 IN A    10.10.50.53
+      mail.corp.lab.     3600 IN A    10.10.50.25
+      fileserver.corp.lab. 3600 IN A  10.10.50.40
+      hr-db.corp.lab.    3600 IN A    10.10.50.61
+      ```
+
+      One query handed over the internal map, including a host called `hr-db`. A correctly set-up server answers `Transfer failed.` instead.
+
+      **Example: an exposed database.** A scan line like this one is a finding by itself:
+
+      ```
+      27017/tcp open  mongodb  MongoDB 3.6.8
+      ```
+
+  - kind: choice
+    title: "Quick check: name the finding"
+    body: |
+      A scan from outside the company shows `3306/tcp open mysql MySQL 5.7.33`. Why is this a finding even before you try anything?
+    options:
+      - "MySQL is always vulnerable"
+      - "A database should not be reachable from outside; it should only accept connections from the application servers that need it"
+      - "Port 3306 is reserved for websites"
+    answer: 1
+    explanation: |
+      Databases belong behind the application, not open to the network. An exposed one invites password guessing and version-specific attacks, and an unauthenticated one is a breach waiting to happen.
+
   - kind: explain
     title: Keeping notes that become the report
     body: |
       Enumeration produces a flood of detail, and you cannot hold it in your head. Keep a structured note per host as you go: IP, each open port, the service and version, and every interesting finding (a readable share, an anonymous login, a hidden admin page, a valid username).
 
       Two reasons this discipline matters. First, the way in is often a *combination* — a username from SMTP plus a password-auth SSH service — that you only spot when both are written down. Second, these notes *are* your report (Module 27). Testers who enumerate thoroughly and record carefully simply find more.
+
+      **Example: one host's notes.** A simple, structured block per host:
+
+      ```
+      HOST 10.10.50.20  (Ubuntu, Samba file server)
+      21  ftp   vsftpd 3.0.3       anonymous OK, pub/staff.csv (names + emails)
+      22  ssh   OpenSSH 8.2p1      password login allowed
+      25  smtp  Postfix            VRFY on: users jsmith, akhan exist
+      80  http  Apache 2.4.29      /backup/ lists site-old.zip
+      445 smb   Samba 4.7.6        "backups" readable with no login
+      IDEAS: valid usernames (25) + password SSH (22) → try a few common passwords? (Module 19, if in scope)
+      ```
+
+      The last line is the point: two ordinary details, written next to each other, suggest a way in.
+
+  - kind: choice
+    title: "Quick check: why notes per host?"
+    body: |
+      Why does a structured note per host find more than memory?
+    options:
+      - "Because the way in is often a combination of details from different services, which you only spot when they're written side by side"
+      - "Because clients want long documents"
+      - "Because tools delete their output"
+    answer: 0
+    explanation: |
+      A username from SMTP and a password-login SSH service are dull on their own, and a lead together. And the same notes become your report.
 
   - kind: info
     title: "🔹 Automated enumeration helpers"

@@ -24,6 +24,38 @@ steps:
 
       A **primary key** (PK) is a column, or set of columns, whose value **identifies exactly one row**. Every row gets a different one, forever. It's how you say "*this* row, not any other", and it's how other tables point at a row (Module 13).
 
+      <!-- page -->
+
+      In `bookstore`, the key of `publishers` is `publisher_id`. Asking for one key value always gives **at most one** row:
+
+      ```sql
+      SELECT * FROM publishers WHERE publisher_id = 2;
+      ```
+
+      | publisher_id | name | country | founded_year |
+      |---|---|---|---|
+      | 2 | HarperCollins | USA | 1989 |
+
+      `\d publishers` shows how the key is set up: `not null`, and filled in by the database (`generated always as identity`, explained below):
+
+      | Column | Type | Nullable | Default |
+      |---|---|---|---|
+      | publisher_id | integer | not null | generated always as identity |
+      | name | text | not null |  |
+      | country | text |  |  |
+      | founded_year | integer |  |  |
+
+  - kind: try
+    title: "Try it: one key, one row"
+    body: |
+      Both examples are here. Run them, then change `2` to any other number from 1 to 8: always exactly one publisher. Try `99`: no rows, because no publisher has that key.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT * FROM publishers WHERE publisher_id = 2;
+
+      \d publishers
+
   - kind: try
     title: A table with no key
     body: |
@@ -82,6 +114,30 @@ steps:
       - **They can be missing or private.** Not everyone gives a passport number.
 
       **Most tables use a surrogate key.** If a natural value must also be unique, add a separate UNIQUE rule for it (Module 12). That's exactly what Inkwell does: `customer_id` is the key, and `email` is UNIQUE. Likewise `book_id` is the key of `books`, and `isbn` is UNIQUE.
+
+      ```sql
+      SELECT book_id, isbn, title FROM books ORDER BY book_id LIMIT 3;
+      ```
+
+      | book_id | isbn | title |
+      |---|---|---|
+      | 1 | 978-0141439518 | Pride and Prejudice |
+      | 2 | 978-0141439587 | Emma |
+      | 3 | 978-0451524935 | 1984 |
+
+      `book_id` (surrogate) is just a counter. `isbn` (natural) means something in the real world.
+
+  - kind: try
+    title: "Try it: two kinds of key"
+    body: |
+      Run it, then swap in `customers` with the columns `customer_id, email, first_name`, and order by `customer_id`. Same pattern: a counter as the key, plus a real-world value that's also unique.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT book_id, isbn, title
+      FROM books
+      ORDER BY book_id
+      LIMIT 3;
 
   - kind: explain
     title: "Identity columns: the modern standard"
@@ -161,6 +217,40 @@ steps:
 
       `serial` was the pre-2017 way to auto-number a column. It still works, but it has quirks (it lets you type your own IDs by accident, and its permissions are handled separately). Recognize it. For new tables, use `GENERATED ALWAYS AS IDENTITY`.
 
+      **Example of the quirk.** With `serial`, someone can type an ID by hand, and the counter doesn't notice:
+
+      ```sql
+      CREATE TABLE old_cases (case_id serial PRIMARY KEY, title text);
+      INSERT INTO old_cases (title)
+      VALUES ('First'), ('Second');        -- get 1 and 2
+      INSERT INTO old_cases (case_id, title)
+      VALUES (3, 'Typed by hand'); -- allowed!
+      INSERT INTO old_cases (title)
+      VALUES ('Third');                     -- counter hands out 3
+      ```
+
+      ```text
+      ERROR:  duplicate key value violates unique constraint "old_cases_pkey"
+      ```
+
+      With `GENERATED ALWAYS AS IDENTITY`, the hand-typed 3 would have been refused at once, so the clash could never happen.
+
+  - kind: try
+    title: "Try it: serial's trap"
+    body: |
+      Run it and read the error on the last line. Then change `serial` to `integer GENERATED ALWAYS AS IDENTITY` and run again: now the hand-typed ID is the line that's refused. Delete that line, and everything runs.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE TABLE old_cases (case_id serial PRIMARY KEY, title text);
+      INSERT INTO old_cases (title)
+      VALUES ('First'), ('Second')
+      RETURNING *;
+      INSERT INTO old_cases (case_id, title)
+      VALUES (3, 'Typed by hand');
+      INSERT INTO old_cases (title) VALUES ('Third');
+    broken_starter: true
+
   - kind: explain
     title: UUID keys
     body: |
@@ -225,7 +315,27 @@ steps:
       GROUP BY publisher_id;   -- works: publisher_id is the PK
       ```
 
+      The first three rows:
+
+      | publisher_id | name | country |
+      |---|---|---|
+      | 1 | Penguin Classics | UK |
+      | 2 | HarperCollins | USA |
+      | 3 | Tor Books | USA |
+
       It becomes handy with joins in Module 14.
+
+  - kind: try
+    title: "Try it: GROUP BY the key"
+    body: |
+      Run it: no error, even though `name` and `country` aren't in GROUP BY. Then change `GROUP BY publisher_id` to `GROUP BY country` and read the error: `country` isn't a key, so PostgreSQL asks which `name` you meant.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT publisher_id, name, country
+      FROM publishers
+      GROUP BY publisher_id
+      ORDER BY publisher_id;
 
   - kind: try
     title: "Find the bug: the ID that was refused"
@@ -236,7 +346,8 @@ steps:
           case_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           title    text NOT NULL
       );
-      INSERT INTO cases (case_id, title) VALUES (1, 'The missing invoice');
+      INSERT INTO cases (case_id, title)
+      VALUES (1, 'The missing invoice');
       SELECT * FROM cases;
     broken_starter: true
     expect: |

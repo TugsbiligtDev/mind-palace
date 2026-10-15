@@ -13,6 +13,24 @@ steps:
 
       **Public** repositories can be seen (not changed) by anyone, which is great for a portfolio and for open source. **Private** ones only by you and the people you invite. You can switch later in *Settings*.
 
+      <!-- page -->
+
+      **Example** with the GitHub CLI, then a look at the new (empty) repository:
+
+      ```
+      learner@inkwell:~$ gh repo create reading-list --public --description "Books we've read"
+      ✓ Created repository learner/reading-list on github.com
+        https://github.com/learner/reading-list
+      learner@inkwell:~$ gh repo view learner/reading-list
+      learner/reading-list
+      Books we've read
+
+      This repository does not have a README
+
+
+      View this repository on GitHub: https://github.com/learner/reading-list
+      ```
+
   - kind: shell
     title: Make a public repository
     fixture: [git-identity, github-account]
@@ -45,6 +63,25 @@ steps:
       | three backticks on their own lines | a block of code |
 
       An empty line starts a new paragraph.
+
+      <!-- page -->
+
+      **Example.** This `README.md`:
+
+      ```
+      # Bookshelf
+
+      Books I've read in 2026, with a one-line opinion.
+
+      ## How to add a book
+
+      1. Add a line to `books.md`
+      2. Commit with the message **Add <title>**
+
+      Made at [Inkwell](https://inkwell.example).
+      ```
+
+      shows on GitHub as a big **Bookshelf** heading, a paragraph, a smaller heading, a numbered list (with `books.md` in code style and *Add <title>* in bold), and a clickable *Inkwell* link.
 
   - kind: shell
     title: Write the README
@@ -90,6 +127,31 @@ steps:
 
       On GitHub: *Add file → Create new file*, name it `LICENSE`, and pick a template. [choosealicense.com](https://choosealicense.com) explains the differences. For private repositories or personal notes, you don't need one.
 
+      **Example.** A `LICENSE` file from GitHub's MIT template starts like this:
+
+      ```
+      MIT License
+
+      Copyright (c) 2026 Ada Lovelace
+
+      Permission is hereby granted, free of charge, to any person obtaining a copy
+      of this software ...
+      ```
+
+      GitHub then shows **MIT license** in the repository's sidebar.
+
+  - kind: choice
+    title: "Quick check: no license"
+    body: |
+      Ada's repository is public but has **no** LICENSE file. Can Bo copy her code into his own project?
+    options:
+      - "No: visible isn't the same as allowed; without a license, nobody may reuse it"
+      - "Yes: public means free to use"
+      - "Only if he credits her"
+      - "Only for a private project"
+    answer: 0
+    explanation: "Public only means anyone can look. The right to copy, change or reuse comes from a license, like MIT."
+
   - kind: explain
     title: History and blame on the website
     body: |
@@ -98,6 +160,24 @@ steps:
       - The **commits** link (a clock icon with a number) lists the history; click one to see its diff.
       - On any file, **History** shows only the commits that changed that file.
       - **Blame** shows, line by line, which commit last changed each line, who made it and when. It's not about blaming people; it answers "why is this line like this?" (`git blame file` does the same in the terminal, Module 36.)
+
+      <!-- page -->
+
+      **The same in the terminal**, on the about page: the commits that changed that file, then who last touched each line:
+
+      ```
+      learner@inkwell:~/site$ git log --oneline -- about.html
+      46280b5 Fix the Home link on the about page
+      7115b30 Add the about page
+      learner@inkwell:~/site$ git blame about.html
+      7115b301 (Kenji Mori 2026-08-20 15:40:00 +0000 1) <!DOCTYPE html>
+      7115b301 (Kenji Mori 2026-08-20 15:40:00 +0000 2) <title>About Inkwell</title>
+      7115b301 (Kenji Mori 2026-08-20 15:40:00 +0000 3) <h1>About us</h1>
+      7115b301 (Kenji Mori 2026-08-20 15:40:00 +0000 4) <p>Three people, a lot of books.</p>
+      46280b50 (Priya Shah 2026-09-01 09:05:00 +0000 5) <a href="index.html">Home</a>
+      ```
+
+      Line 5 was last changed by Priya in *Fix the Home link on the about page*; the rest is from Kenji's first version. GitHub's **Blame** view shows exactly this, with links.
 
   - kind: choice
     title: Which view?
@@ -122,6 +202,33 @@ steps:
       ```
 
       In a commit message or pull request, writing `Closes #3` closes the issue automatically when the change is merged into `main` (Module 21).
+
+      <!-- page -->
+
+      **Example.** List, add and close:
+
+      ```
+      learner@inkwell:~/site$ gh issue list
+
+      Showing 1 of 1 open issue in inkwell/site
+
+      ID  TITLE                                         LABELS
+      #1  Update the number of books on the about page
+      learner@inkwell:~/site$ gh issue create --title "Dune price on the home page is old" --body "Says 9.99, should be 8.99"
+
+      Creating issue in inkwell/site
+
+      https://github.com/inkwell/site/issues/2
+      learner@inkwell:~/site$ gh issue list
+
+      Showing 2 of 2 open issues in inkwell/site
+
+      ID  TITLE                                         LABELS
+      #2  Dune price on the home page is old
+      #1  Update the number of books on the about page
+      learner@inkwell:~/site$ gh issue close 2
+      ✓ Closed issue inkwell/site#2 (Dune price on the home page is old)
+      ```
 
   - kind: shell
     title: Log a bug

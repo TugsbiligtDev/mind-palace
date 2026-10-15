@@ -180,7 +180,53 @@ steps:
               return 0 < year <= 2100
       ```
 
-      `Book.from_string("Dune by Herbert")` builds a book; `Book.is_valid_year(1965)` needs no book at all.
+      `Book.from_string("Dune by Herbert")` builds a book; `Book.is_valid_year(1965)` needs no book at all. Both are called on the **class**, not on an object:
+
+      ```python
+      dune = Book.from_string("Dune by Herbert")
+      print(dune.title, "|", dune.author)
+      print(Book.is_valid_year(1965))
+      print(Book.is_valid_year(3000))
+      ```
+
+      prints:
+
+      ```
+      Dune | Herbert
+      True
+      False
+      ```
+
+  - kind: code
+    title: "Try it: @classmethod and @staticmethod"
+    body: |
+      A library `Member` with one alternative constructor and one helper. Run it and notice:
+
+      - `Member.from_line(...)` splits the text and hands the pieces to `cls(...)`, which is the same as calling `Member(...)`.
+      - `Member.looks_like_email(...)` needs no member at all.
+
+      Then try one change: build a second member from `"Bo, bo@example.com"` and print their email. Nothing is graded here.
+    code: |
+      class Member:
+          def __init__(self, name, email):
+              self.name = name
+              self.email = email
+
+          @classmethod
+          def from_line(cls, text):          # "Ada, ada@example.com"
+              name, email = text.split(", ")
+              return cls(name, email)
+
+          @staticmethod
+          def looks_like_email(text):
+              return "@" in text
+
+
+      ada = Member.from_line("Ada, ada@example.com")
+      print(ada.name)
+      print(ada.email)
+      print(Member.looks_like_email("ada@example.com"))
+      print(Member.looks_like_email("hello"))
 
   - kind: code
     title: Two ways to make a Book
@@ -311,6 +357,39 @@ steps:
       **Use a dict or (soon) a dataclass when** you only need a bundle of fields with no behaviour: a record from a file.
 
       Beginners often write classes with one method and no state (`class Calculator: def add(...)`). That is a function wearing a costume. Python is not Java: modules and functions are perfectly good "units".
+
+      For example, the costume and the plain function do the same job, but the function needs no object first:
+
+      ```python
+      class Calculator:              # one method, nothing remembered
+          def add(self, a, b):
+              return a + b
+
+      print(Calculator().add(2, 3))
+
+      def add(a, b):                 # the same thing, without the costume
+          return a + b
+
+      print(add(2, 3))
+      ```
+
+      prints:
+
+      ```
+      5
+      5
+      ```
+
+  - kind: choice
+    title: "Quick check: class or not?"
+    body: |
+      Which of these is the best fit for a **class**?
+    options:
+      - "`average(numbers)`: give back the average of a list"
+      - "A library loan that remembers its book and due date, and can be renewed or returned"
+      - "A record read from a CSV file with three fields and no behaviour"
+    answer: 1
+    explanation: "A loan has data (book, due date) that changes over time through its own actions (renew, return), and you need many separate loans: that is a class. `average` only turns input into output, so it is a function. A plain bundle of fields is a dict or a dataclass."
 
   - kind: why
     body: |

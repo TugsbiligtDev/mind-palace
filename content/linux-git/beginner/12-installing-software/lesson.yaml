@@ -15,6 +15,47 @@ steps:
       | Ubuntu, Debian | **apt**, built in |
       | Fedora, Red Hat | **dnf**, built in |
 
+      **Example, on Inkwell's Ubuntu server.** `jq` (a tool for reading JSON) isn't installed. One `apt` command fetches it **and** `libjq1`, a library it needs:
+
+      ```
+      learner@inkwell:~$ jq
+      Command 'jq' not found, but can be installed with:
+      sudo apt install jq
+      learner@inkwell:~$ sudo apt install jq
+      [sudo] password for learner: (the practice computer doesn't ask for it)
+      Get:1 http://archive.ubuntu.com/ubuntu noble/main amd64 libjq1 amd64 1.7.1-3build1 [141 kB]
+      Get:2 http://archive.ubuntu.com/ubuntu noble/main amd64 jq amd64 1.7.1-3build1 [65 kB]
+      Fetched 206 kB in 0s (1,523 kB/s)
+      Selecting previously unselected package libjq1.
+      (Reading database ... 74512 files and directories currently installed.)
+      Preparing to unpack .../libjq1_1.7.1-3build1_amd64.deb ...
+      Unpacking libjq1 (1.7.1-3build1) ...
+      Selecting previously unselected package jq.
+      (Reading database ... 74512 files and directories currently installed.)
+      Preparing to unpack .../jq_1.7.1-3build1_amd64.deb ...
+      Unpacking jq (1.7.1-3build1) ...
+      Setting up libjq1 (1.7.1-3build1) ...
+      Setting up jq (1.7.1-3build1) ...
+      Processing triggers for man-db (2.12.0-4build2) ...
+      learner@inkwell:~$ echo '{"book": "Dune", "price": 9.99}' | jq .book
+      "Dune"
+      ```
+
+      Downloaded, its dependency included, put on the PATH, ready to run. `brew install jq` does the same on a Mac.
+
+  - kind: shell
+    title: "Try it: install a tool"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Type these one at a time:
+
+      1. `jq`: not installed yet.
+      2. `sudo apt install jq`: read which two packages it fetched.
+      3. `echo '{"book": "Dune", "price": 9.99}' | jq .price`
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Installing Homebrew
     body: |
@@ -28,6 +69,18 @@ steps:
 
       The installer asks for your Mac password (it uses `sudo` once), may install Apple's *Command Line Tools* (which include Git), and at the end prints **Next steps**: two commands to add Homebrew to your PATH. Run them; don't skip that part.
 
+  - kind: choice
+    title: "Quick check: a safe install line"
+    body: |
+      A friend messages you a `curl … | bash` line that "installs Homebrew faster". What should you do?
+    options:
+      - "Run it: it's the same thing"
+      - "Run it with sudo to be safe"
+      - "Paste it into an AI and run whatever it says"
+      - "Use only the line from brew.sh itself"
+    answer: 3
+    explanation: "A pasted script can do anything with your account. The official line comes from brew.sh and runs Homebrew's own script; a stranger's (or a friend's forwarded) copy might not."
+
   - kind: explain
     title: Where Homebrew lives
     body: |
@@ -40,6 +93,29 @@ steps:
       ```
 
       It sets `PATH` and a few Homebrew variables. If `brew` says *command not found* right after installing, this line is missing: it's the PATH problem from Module 11.
+
+      **Example: checking on an Apple-chip Mac.** After the "Next steps", these answer from the Homebrew folder:
+
+      ```
+      ada@MacBook ~ % which brew
+      /opt/homebrew/bin/brew
+      ada@MacBook ~ % which tree
+      /opt/homebrew/bin/tree
+      ```
+
+      If `which brew` prints nothing (zsh says *brew not found*), the `eval` line isn't in `~/.zprofile` yet.
+
+  - kind: choice
+    title: "Quick check: brew not found"
+    body: |
+      You just installed Homebrew, and `brew` says *command not found*. What's the most likely cause?
+    options:
+      - "`/opt/homebrew/bin` isn't on your PATH yet: the Next steps were skipped"
+      - "Homebrew didn't install"
+      - "You need to restart the Mac"
+      - "brew only works with sudo"
+    answer: 0
+    explanation: "The installer puts brew in `/opt/homebrew/bin` but can't change your PATH for you. Running its Next steps adds the `eval … shellenv` line that does."
 
   - kind: explain
     title: Everyday brew
@@ -90,6 +166,55 @@ steps:
       ```
 
       Module 22 uses apt on a real Ubuntu machine. The ideas are the same as Homebrew's; the main differences are `sudo` and running `apt update` first.
+
+      **Example** on the practice server: refresh the lists, see what can be updated, update it all, and check again:
+
+      ```
+      learner@inkwell:~$ sudo apt update
+      [sudo] password for learner: (the practice computer doesn't ask for it)
+      Hit:1 http://archive.ubuntu.com/ubuntu noble InRelease
+      Get:2 http://archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+      Get:3 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+      Hit:4 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+      Fetched 252 kB in 1s (306 kB/s)
+      Reading package lists... Done
+      Building dependency tree... Done
+      Reading state information... Done
+      3 packages can be upgraded. Run 'apt list --upgradable' to see them.
+      learner@inkwell:~$ apt list --upgradable
+      Listing... Done
+      curl/noble-updates 8.5.0-2ubuntu10.7 amd64 [upgradable from: 8.5.0-2ubuntu10.6]
+      openssh-server/noble-updates 1:9.6p1-3ubuntu13.14 amd64 [upgradable from: 1:9.6p1-3ubuntu13.13]
+      libssl3t64/noble-updates 3.0.13-0ubuntu3.6 amd64 [upgradable from: 3.0.13-0ubuntu3.5]
+      learner@inkwell:~$ sudo apt upgrade
+      Preparing to unpack .../curl_8.5.0-2ubuntu10.7_amd64.deb ...
+      Unpacking curl (8.5.0-2ubuntu10.7) over (8.5.0-2ubuntu10.6) ...
+      Preparing to unpack .../openssh-server_9.6p1-3ubuntu13.14_amd64.deb ...
+      Unpacking openssh-server (1:9.6p1-3ubuntu13.14) over (1:9.6p1-3ubuntu13.13) ...
+      Preparing to unpack .../libssl3t64_3.0.13-0ubuntu3.6_amd64.deb ...
+      Unpacking libssl3t64 (3.0.13-0ubuntu3.6) over (3.0.13-0ubuntu3.5) ...
+      Setting up curl (8.5.0-2ubuntu10.7) ...
+      Setting up openssh-server (1:9.6p1-3ubuntu13.14) ...
+      Setting up libssl3t64 (3.0.13-0ubuntu3.6) ...
+      learner@inkwell:~$ apt list --upgradable
+      Listing... Done
+      ```
+
+      Three packages had newer versions. After `upgrade`, the list is empty: everything is up to date.
+
+  - kind: shell
+    title: "Try it: apt"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Type these one at a time:
+
+      1. `sudo apt update`
+      2. `apt list --upgradable`
+      3. `sudo apt upgrade`, then `apt list --upgradable` again
+      4. `sudo apt install jq`, then `echo '{"book": "Dune"}' | jq .book`
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: mac
     title: Install Homebrew and your first tools

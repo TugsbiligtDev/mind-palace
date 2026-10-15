@@ -12,6 +12,52 @@ steps:
 
       PostgreSQL has two tools for this. This module covers both.
 
+      **Example.** Order 174 has two payments: the payment, then a refund.
+
+      ```sql
+      SELECT payment_id, kind, amount, method, paid_at
+      FROM payments
+      WHERE order_id = 174
+      ORDER BY paid_at;
+      ```
+
+      | payment_id | kind | amount | method | paid_at |
+      |---|---|---|---|---|
+      | 138 | payment | 52.97 | card | 2023-04-24 21:41:18.566665+00 |
+      | 36615 | refund | -52.97 | card | 2023-05-18 12:08:25.514257+00 |
+
+      `GROUP BY` can tell you **when** the latest one happened:
+
+      ```sql
+      SELECT order_id, max(paid_at) AS latest
+      FROM payments
+      WHERE order_id = 174
+      GROUP BY order_id;
+      ```
+
+      | order_id | latest |
+      |---|---|
+      | 174 | 2023-05-18 12:08:25.514257+00 |
+
+      But not that it was a **refund** of **−52.97**. Getting the whole latest row is what this module is about.
+
+  - kind: try
+    title: "Try it: the time, but not the row"
+    body: |
+      Both examples. Run them, then try adding `kind` to the second SELECT. The error (*must appear in the GROUP BY clause*) is the problem this module solves.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT payment_id, kind, amount, method, paid_at
+      FROM payments
+      WHERE order_id = 174
+      ORDER BY paid_at;
+
+      SELECT order_id, max(paid_at) AS latest
+      FROM payments
+      WHERE order_id = 174
+      GROUP BY order_id;
+
   - kind: explain
     title: DISTINCT ON
     body: |
@@ -89,6 +135,15 @@ steps:
       ) AS top;
       ```
 
+      The first rows it returns (sorted by genre):
+
+      | genre | title | copies |
+      |---|---|---|
+      | Classic | Pride and Prejudice | 1391 |
+      | Classic | Emma | 855 |
+      | Fantasy | The Hobbit | 649 |
+      | Fantasy | The Fellowship of the Ring | 613 |
+
       For each genre, the inner query finds its 2 best-selling books. This is the go-to pattern for **"top N per group"** when N is more than 1.
 
       - `CROSS JOIN LATERAL`: rows on the left with **no** result on the right disappear (like an inner join).
@@ -148,6 +203,14 @@ steps:
       WHERE e.employee_id = 6;
       ```
 
+      Returns:
+
+      | full_name | anniversary |
+      |---|---|
+      | Kenji Mori | 2024-01-08 |
+      | Kenji Mori | 2025-01-08 |
+      | Kenji Mori | 2026-01-08 |
+
       One row per **work anniversary** of each employee, up to the end of June 2026, great for calendars and "who was working here on date X?". (For a function in FROM, the word `LATERAL` is actually optional, because PostgreSQL assumes it. Many people write it anyway for clarity.)
 
   - kind: try
@@ -183,7 +246,9 @@ steps:
     body: |
       *"For customers 1 to 20, each one's **most recent** order: `customer_id`, `order_id`, `ordered_at`."* This returns their **first** order instead. Fix it.
     sql: |
-      SELECT DISTINCT ON (customer_id) customer_id, order_id, ordered_at
+      SELECT DISTINCT ON (customer_id) customer_id,
+             order_id,
+             ordered_at
       FROM orders
       WHERE customer_id <= 20
       ORDER BY customer_id, ordered_at;

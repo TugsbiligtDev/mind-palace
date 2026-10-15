@@ -12,6 +12,23 @@ steps:
 
       macOS and Linux are cousins — both descend from Unix — which is why the terminal commands you learn next work on your Mac *and* on a Linux server.
 
+      **Example: telling them apart by a path.** During an investigation you find these three paths in a log:
+
+      - `C:\Users\Ada\Downloads\invoice.exe` → Windows (a drive letter and backslashes)
+      - `/home/ada/.ssh/id_ed25519` → Linux
+      - `/Users/ada/Library/Keychains` → macOS
+
+  - kind: choice
+    title: "Quick check: which OS?"
+    body: |
+      A server log mentions `/var/www/html/index.php` and `/home/deploy`. Which family is that server most likely running?
+    options:
+      - "Windows"
+      - "Linux"
+      - "It's impossible to tell"
+    answer: 1
+    explanation: "Forward slashes, a single root and `/home` are Linux landmarks. Windows would show drive letters like `C:\\`, and a Mac uses `/Users` for home folders."
+
   - kind: explain
     title: The filesystem — where things live
     body: |
@@ -32,6 +49,27 @@ steps:
 
       Note the slashes: Linux/macOS use `/`, Windows uses `\`.
 
+      **Example: the top of a Linux tree.** On your Kali lab machine, `ls /` lists what sits directly under the root (you will learn `ls` properly in Module 3):
+
+      ```
+      kali@kali:~$ ls /
+      bin   dev  home        lib    lost+found  mnt  proc  run   srv  tmp  var
+      boot  etc  initrd.img  lib64  media       opt  root  sbin  sys  usr  vmlinuz
+      ```
+
+      You can spot the landmarks: `etc`, `home`, `tmp`, `var`. Notice `root` too: that is the root *user's* home folder, not the same thing as the root `/` of the tree.
+
+  - kind: choice
+    title: "Quick check: where to look"
+    body: |
+      You're investigating a Linux server and want its logs. Which folder do you look in first?
+    options:
+      - "`/tmp`"
+      - "`/etc`"
+      - "`/var/log`"
+    answer: 2
+    explanation: "`/var/log` holds the logs. `/etc` holds configuration, and `/tmp` is temporary scratch space."
+
   - kind: explain
     title: Users and the superuser
     body: |
@@ -40,7 +78,29 @@ steps:
       - On Linux/macOS it is **root** (user id 0).
       - On Windows it is **Administrator** (and the even deeper `SYSTEM`).
 
+      **Example: root really is user 0.** The account list `/etc/passwd` has one line per account. Here are its first three lines on Kali (`head -n 3` shows just the first three lines; more in Module 3):
+
+      ```
+      kali@kali:~$ head -n 3 /etc/passwd
+      root:x:0:0:root:/root:/usr/bin/zsh
+      daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+      bin:x:2:2:bin:/bin:/usr/sbin/nologin
+      ```
+
+      Fields are separated by `:`. The first is the name, the third is the user id: `root` has id **0**. Further down, your own account `kali` has id 1000, an ordinary user.
+
       Ordinary users are deliberately limited: they can change their own files but not the system's. This is the single most important security idea in an OS. A great deal of hacking is the attempt to go from a *limited* user to root/Administrator — called **privilege escalation**, which you will study in depth later.
+
+  - kind: choice
+    title: "Quick check: the all-powerful account"
+    body: |
+      In `/etc/passwd`, how do you recognise the account that can do anything?
+    options:
+      - "Its user id (the third field) is 0"
+      - "It is always listed last"
+      - "Its name contains `admin`"
+    answer: 0
+    explanation: "On Linux the superuser is the account with user id 0, normally called `root`. Names can be anything; the id is what counts."
 
   - kind: explain
     title: Permissions in one picture
@@ -59,6 +119,17 @@ steps:
 
       A file that "everyone can write" (`-rw-rw-rw-`) is a classic weakness: anyone can tamper with it. You will practise reading and changing these in Module 4.
 
+  - kind: choice
+    title: "Quick check: read the permissions"
+    body: |
+      A file shows `-rw-r-----`. What may **everyone else** (not the owner, not the group) do with it?
+    options:
+      - "Read it"
+      - "Read and write it"
+      - "Nothing"
+    answer: 2
+    explanation: "Split after the first character: owner `rw-`, group `r--`, others `---`. The last three are all dashes, so everyone else has no access."
+
   - kind: explain
     title: Why offensive security lives on Linux
     body: |
@@ -71,10 +142,54 @@ steps:
 
       That is why the next three modules teach Linux from the terminal up. It is the one skill everything else depends on.
 
+      **Example: the tools are already there.** On a fresh Kali machine you can ask where a tool lives and which version you have, with nothing to install:
+
+      ```
+      kali@kali:~$ which nmap
+      /usr/bin/nmap
+      kali@kali:~$ nmap --version
+      Nmap version 7.95 ( https://nmap.org )
+      ```
+
+      `which` answers with the tool's location, so it is installed and ready. On a plain Windows or Mac machine the same question gets no answer until you find, download and install it yourself, and you would repeat that for hundreds of tools.
+
+  - kind: choice
+    title: "Quick check: why Linux?"
+    body: |
+      Which reason for using Linux as the attacker's machine is **not** given on this page?
+    options:
+      - "The tools are built for it"
+      - "Most servers you'll test run it"
+      - "It is the only OS that can connect to the internet"
+    answer: 2
+    explanation: "Every OS can use the internet. The real reasons are the tools, scriptability, being free and disposable, and that the targets run it too."
+
   - kind: info
     title: "🔹 A distribution is just a packaging"
     body: |
       "Linux" is really a *kernel* (the core) wrapped up with tools into a **distribution** (distro): Ubuntu, Debian, Kali, Fedora, and many more. They differ mostly in which software is pre-installed and how you install more. Commands you learn on one usually work on the others. Kali is simply Debian with a security toolkit bolted on.
+
+      **Example.** On Kali, the file `/etc/os-release` says which distro it is, and what it's built on:
+
+      ```
+      kali@kali:~$ grep -E '^(NAME|ID|ID_LIKE)=' /etc/os-release
+      NAME="Kali GNU/Linux"
+      ID=kali
+      ID_LIKE=debian
+      ```
+
+      `ID_LIKE=debian` is Kali admitting it's Debian underneath, which is why Debian's install commands work on it.
+
+  - kind: choice
+    title: "Quick check: what a distro is"
+    body: |
+      What is the difference between Ubuntu and Kali?
+    options:
+      - "They use completely different kernels"
+      - "Mostly which software comes pre-installed: both are Linux distributions"
+      - "Kali isn't Linux"
+    answer: 1
+    explanation: "Distros share the Linux kernel and most commands. They differ in the bundled software and how you install more."
 
   - kind: why
     body: |

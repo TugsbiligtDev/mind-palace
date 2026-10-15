@@ -22,6 +22,71 @@ steps:
       | `array_length(tags, 1)` | how many items |
       | `unnest(tags)` | one row per item |
 
+      <!-- page -->
+
+      Each one on the real tags. **`@>`**, books tagged with **both** `staff-pick` and `book-club` (18 books; the first four by title):
+
+      ```sql
+      SELECT title, tags
+      FROM books
+      WHERE tags @> '{staff-pick,book-club}'
+      ORDER BY title;
+      ```
+
+      | title | tags |
+      |---|---|
+      | The Burning Bridge | {bestseller,staff-pick,book-club} |
+      | The Distant Forest | {staff-pick,award-winner,new-release,book-club} |
+      | The Distant Letter | {bestseller,staff-pick,new-release,book-club} |
+      | The Endless Signal | {staff-pick,award-winner,book-club} |
+
+      **`&&`**, books with **at least one** of `signed-copy` or `new-release` (107 books; the first four):
+
+      ```sql
+      SELECT title, tags
+      FROM books
+      WHERE tags && '{signed-copy,new-release}'
+      ORDER BY title;
+      ```
+
+      | title | tags |
+      |---|---|
+      | 1984 | {new-release} |
+      | Atomic Habits | {bestseller,new-release,book-club} |
+      | Frankenstein | {staff-pick,new-release} |
+      | Good Omens | {signed-copy,book-club} |
+
+      <!-- page -->
+
+      **`unnest`**: *Pride and Prejudice* has two tags, so it becomes two rows:
+
+      ```sql
+      SELECT title, unnest(tags) AS tag FROM books WHERE book_id = 1;
+      ```
+
+      | title | tag |
+      |---|---|
+      | Pride and Prejudice | signed-copy |
+      | Pride and Prejudice | book-club |
+
+      Unnest, then group, and you can count how many books carry each tag:
+
+      ```sql
+      SELECT tag, count(*) AS books
+      FROM books, unnest(tags) AS tag
+      GROUP BY tag
+      ORDER BY books DESC;
+      ```
+
+      | tag | books |
+      |---|---|
+      | staff-pick | 63 |
+      | award-winner | 61 |
+      | new-release | 57 |
+      | bestseller | 56 |
+      | signed-copy | 55 |
+      | book-club | 54 |
+
   - kind: try
     title: Play with an array
     body: |
@@ -38,6 +103,34 @@ steps:
              array_length(tags, 1) AS how_many
       FROM books
       WHERE 'signed-copy' = ANY(tags);
+
+  - kind: try
+    title: "Try it: @>, && and unnest"
+    body: |
+      The examples from before. Run them and compare with the tables you just saw.
+
+      Then play: put three tags in the `@>` list (fewer books match), or one tag in the `&&` list. Change `book_id = 1` to `9`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT title, tags
+      FROM books
+      WHERE tags @> '{staff-pick,book-club}'
+      ORDER BY title;
+
+      SELECT title, tags
+      FROM books
+      WHERE tags && '{signed-copy,new-release}'
+      ORDER BY title;
+
+      SELECT title, unnest(tags) AS tag
+      FROM books
+      WHERE book_id = 1;
+
+      SELECT tag, count(*) AS books
+      FROM books, unnest(tags) AS tag
+      GROUP BY tag
+      ORDER BY books DESC;
 
   - kind: try
     title: Your turn with arrays
@@ -68,6 +161,45 @@ steps:
 
       When in doubt, use a junction table. It never gets in your way later.
 
+      <!-- page -->
+
+      **Example: both, on one book.** *Good Omens*' tags are an array, stored right in the row:
+
+      ```sql
+      SELECT title, tags FROM books WHERE book_id = 18;
+      ```
+
+      | title | tags |
+      |---|---|
+      | Good Omens | {signed-copy,book-club} |
+
+      Its authors are people, so they come through the junction table, each link with its own `author_order`:
+
+      ```sql
+      SELECT b.title, ba.author_order, a.first_name, a.last_name
+      FROM books b
+      JOIN book_authors ba ON ba.book_id = b.book_id
+      JOIN authors a       ON a.author_id = ba.author_id
+      WHERE b.book_id = 18
+      ORDER BY ba.author_order;
+      ```
+
+      | title | author_order | first_name | last_name |
+      |---|---|---|---|
+      | Good Omens | 1 | Terry | Pratchett |
+      | Good Omens | 2 | Neil | Gaiman |
+
+  - kind: choice
+    title: "Quick check: array or junction table?"
+    body: "Inkwell wants to record which **translators** worked on each book. Each translator has a name, a country and a contact email. What should it use?"
+    options:
+      - "A `translators text[]` array on `books`"
+      - "A comma-separated text column on `books`"
+      - "Columns `translator1`, `translator2` on `books`"
+      - "A `translators` table plus a junction table `book_translators`"
+    answer: 3
+    explanation: "Translators are real entities with their own facts (country, email), and links should be checked by foreign keys. That calls for a table and a junction table. An array suits simple labels like tags."
+
   - kind: explain
     title: "Fixed lists of values: three options"
     body: |
@@ -90,9 +222,45 @@ steps:
     sql: |
       CREATE TYPE priority AS ENUM ('low', 'medium', 'high');
       CREATE TABLE tasks (title text, level priority NOT NULL);
-      INSERT INTO tasks VALUES ('Restock Dune', 'high'), ('Dust the shelves', 'low'), ('Plan book club', 'medium');
+      INSERT INTO tasks
+      VALUES ('Restock Dune', 'high'), ('Dust the shelves', 'low'), ('Plan book club', 'medium');
 
       SELECT title, level FROM tasks ORDER BY level;
+
+  - kind: try
+    title: "Try it: a lookup table"
+    body: |
+      The third option. The allowed statuses are **rows** in `shipment_statuses`, each with a friendly label and a sort order, and `shipments.status` is a foreign key to it. Run it: the shipments come back with their labels, in the table's sort order, and the last INSERT is refused because `'lost'` isn't in the list.
+
+      Then add `('lost', 'Lost in the post', 4)` to the first INSERT and run again: adding a status is just adding a row.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE TABLE shipment_statuses (
+          status      text PRIMARY KEY,
+          label       text NOT NULL,
+          sort_order  integer NOT NULL
+      );
+      INSERT INTO shipment_statuses VALUES
+        ('packed',     'Packed in the warehouse', 1),
+        ('in_transit', 'On its way',              2),
+        ('delivered',  'Delivered',               3);
+
+      CREATE TABLE shipments (
+          shipment_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          order_id     integer NOT NULL,
+          status       text NOT NULL REFERENCES shipment_statuses (status)
+      );
+      INSERT INTO shipments (order_id, status)
+      VALUES (1, 'delivered'), (2, 'in_transit');
+
+      SELECT s.shipment_id, s.order_id, st.label
+      FROM shipments s
+      JOIN shipment_statuses st USING (status)
+      ORDER BY st.sort_order;
+
+      INSERT INTO shipments (order_id, status) VALUES (3, 'lost');
+    broken_starter: true
 
   - kind: explain
     title: Generated columns
@@ -157,6 +325,22 @@ steps:
 
       By default the start is **included** and the end **excluded**, written `[2026-03-01,2026-03-10)`, the same half-open idea as Module 27. Ranges shine for bookings and "no two promotions may overlap" rules (an *exclusion constraint* on a range column can enforce that).
 
+  - kind: try
+    title: "Try it: ranges"
+    body: |
+      Run it: the range prints as `[2026-03-01,2026-03-10)`. It contains the 5th, but **not** the 10th (the end is excluded), and it overlaps the 9th–12th.
+
+      Then play: change the second range to start on `'2026-03-10'`. No overlap now, because the first range stops just before the 10th.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT daterange('2026-03-01', '2026-03-10')                      AS r,
+             
+             daterange('2026-03-01', '2026-03-10') @> '2026-03-05'::date AS contains_5th,
+             daterange('2026-03-01', '2026-03-10') @> '2026-03-10'::date AS contains_10th,
+             daterange('2026-03-01', '2026-03-10')
+               && daterange('2026-03-09', '2026-03-12')                 AS overlaps;
+
   - kind: info
     title: "🔹 Domains, inet and citext"
     body: |
@@ -164,6 +348,24 @@ steps:
         `CREATE DOMAIN email_address AS text CHECK (VALUE ~ '^[^@]+@[^@]+$');`
       - **`inet` / `cidr`**: IP addresses and networks, with operators like "is this address inside this network?": `'192.168.1.5'::inet << '192.168.1.0/24'`.
       - **`citext`**: case-insensitive text from an extension (`CREATE EXTENSION citext;`). `'Emma@Example.com' = 'emma@example.com'` is true. Handy for emails and usernames. (This browser sandbox doesn't include it. Try it on your Mac.)
+
+  - kind: try
+    title: "Try it: a domain and inet"
+    body: |
+      Run it: a good email passes the domain's rule, and the IP check says `192.168.1.5` is inside the `192.168.1.0/24` network while `10.0.0.7` isn't. The last line is refused: `'not-an-email'` has no `@`.
+
+      Then change `'not-an-email'` to a real address, like `'liam@example.com'`, and run again.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE DOMAIN email_address AS text CHECK (VALUE ~ '^[^@]+@[^@]+$');
+      SELECT 'emma@example.com'::email_address AS ok;
+
+      SELECT '192.168.1.5'::inet << '192.168.1.0/24' AS inside,
+             '10.0.0.7'::inet    << '192.168.1.0/24' AS also_inside;
+
+      SELECT 'not-an-email'::email_address;
+    broken_starter: true
 
   - kind: try
     title: "Find the bug: the first tag is missing"

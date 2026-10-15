@@ -20,6 +20,42 @@ steps:
 
       The tooltip now sits below the button, wherever the button is.
 
+  - kind: web
+    title: "Try it: a tethered tooltip"
+    body: |
+      The tooltip is tied to the **ⓘ** button with `anchor-name` and `position-anchor`, and sits in the area below it. (You need a current Chrome, Edge or Safari to see it tethered.)
+
+      Try this:
+
+      1. Change `position-area: bottom` to `right`, then to `top`.
+      2. Move the button: change `.row`'s `padding-left` to `12rem`. The tooltip follows it.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p class="row">
+        Delivery time
+        <button class="info-button" aria-label="About delivery">ⓘ</button>
+      </p>
+      <p class="tooltip">Usually two working days.</p>
+    css: |
+      .row {
+        padding-left: 2rem;
+      }
+
+      .info-button {
+        anchor-name: --info;
+      }
+
+      .tooltip {
+        position: absolute;
+        position-anchor: --info;
+        position-area: bottom;
+        margin: 4px;
+        padding: 4px 8px;
+        background: #1c1917;
+        color: white;
+      }
+
   - kind: explain
     title: position-area
     body: |
@@ -38,6 +74,39 @@ steps:
       - `span-` values stretch over two cells: `bottom span-right` starts under the anchor and extends to the right (handy for dropdown menus aligned to the button's left edge).
 
       Add a small `margin` on the tethered element to leave a gap.
+
+      In the page: with `position-area: right`, the tethered element appears just to the right of the anchor, vertically centred on it. With `top left` it sits diagonally above and to the left, touching the anchor's corner.
+
+  - kind: web
+    title: "Try it: position-area"
+    body: |
+      The word *Dune* is named as the anchor `--book`. The yellow note is tethered to it with `position-area: right`, so it sits just to the right of the word.
+
+      Try other areas in the 3 × 3 grid:
+
+      1. `position-area: top`: the note moves above the word, centred.
+      2. `position-area: bottom span-right`: it moves below, starting under the word and stretching to the right.
+      3. `position-area: top left`: it moves to the corner, diagonally above and to the left.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <p style="margin: 4rem">
+        This week's pick is <strong class="book">Dune</strong>, a desert adventure.
+      </p>
+      <span class="note">Signed copy!</span>
+    css: |
+      .book {
+        anchor-name: --book;
+      }
+
+      .note {
+        position: absolute;
+        position-anchor: --book;
+        position-area: right;
+        padding: 0.25rem 0.5rem;
+        background: #fef08a;
+        white-space: nowrap;
+      }
 
   - kind: web
     title: An anchored tooltip
@@ -99,6 +168,43 @@ steps:
 
       You can do maths with it: `top: calc(anchor(bottom) + 8px)`. And `anchor-size(width)` gives the anchor's size: `width: anchor-size(width)` makes a dropdown exactly as wide as its button.
 
+      In the page: the badge's top edge lines up with the cover's top edge, and the badge starts exactly where the cover ends on the right, so the two touch side by side.
+
+  - kind: web
+    title: "Try it: anchor()"
+    body: |
+      A "Staff pick" strip tethered to the Emma cover with `anchor()`. Its top is at the cover's bottom (`top: anchor(bottom)`), its left edge at the cover's left (`left: anchor(left)`), and `width: anchor-size(width)` makes it exactly as wide as the cover. So it sits right under the cover, same width.
+
+      Try:
+
+      1. Change `top: anchor(bottom)` to `top: calc(anchor(bottom) + 10px)`. A 10px gap opens up.
+      2. Change `left: anchor(left)` to `left: anchor(right)`. The strip jumps to start at the cover's right edge.
+      3. Delete the `width` line. The strip shrinks to fit its words.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div style="padding: 2rem">
+        <img class="emma" src="images/cover-emma.svg" alt="Emma" width="120" height="180">
+        <span class="strip">Staff pick</span>
+      </div>
+    css: |
+      .emma {
+        anchor-name: --emma;
+      }
+
+      .strip {
+        position: absolute;
+        position-anchor: --emma;
+        top: anchor(bottom);
+        left: anchor(left);
+        width: anchor-size(width);
+        box-sizing: border-box;
+        padding: 0.25rem;
+        background: #15803d;
+        color: white;
+        text-align: center;
+      }
+
   - kind: web
     title: Pin a label to the cover
     body: |
@@ -157,6 +263,8 @@ steps:
       - For full control, define named options with `@position-try --name { … }`.
 
       The browser tries each in order and uses the first that fits.
+
+      In the page: a tip under a button high on the page shows below it as usual; the same tip under a button at the very bottom of the screen shows **above** the button instead, so it's never cut off.
 
   - kind: web
     title: Flip when there's no room
@@ -230,6 +338,41 @@ steps:
       ```
 
       That's a fully accessible dropdown (keyboard, Escape, light dismiss, top layer) with **no JavaScript**. Popovers default to `inset: 0; margin: auto` (centred), which is why those two lines come first.
+
+      In the page: clicking *Account* opens the menu directly under the button, its left edge lined up with the button's left edge. Clicking anywhere else or pressing Escape closes it.
+
+  - kind: web
+    title: "Try it: an anchored popover"
+    body: |
+      The *Opening hours* button opens the `#hours` popover. Because it was opened by its `popovertarget` button, it's anchored to that button automatically, and `position-area: right` puts it beside the button.
+
+      Click the button in the preview to open it, then try:
+
+      1. Change `position-area: right` to `bottom span-right`. Close and reopen: it now drops down below the button.
+      2. Delete the `inset: auto;` and `margin: 0;` lines. Reopen: the popover goes back to the middle of the screen, the popover's default.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <p style="padding: 1rem">
+        <button type="button" popovertarget="hours">Opening hours</button>
+      </p>
+      <div id="hours" popover>
+        <p>Mon–Sat: 9–6</p>
+        <p>Sun: 11–4</p>
+      </div>
+    css: |
+      #hours {
+        inset: auto;
+        margin: 0;
+        position-area: right;
+        margin-left: 6px;
+        padding: 0.5rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      #hours p {
+        margin: 0;
+      }
 
   - kind: web
     title: A dropdown menu
@@ -311,6 +454,17 @@ steps:
       ```
 
       For popover menus, the fallback is simply the centred popover, which still works fine.
+
+  - kind: choice
+    title: "Quick check: no support"
+    body: |
+      A visitor's browser doesn't support anchor positioning. With the `@supports` pattern above, what do they get?
+    options:
+      - "A broken page"
+      - "The plain `position: absolute` fallback, placed sensibly by the rules outside `@supports`"
+      - "The same tethered tooltip"
+    answer: 1
+    explanation: "Rules inside `@supports (anchor-name: --x)` are only used where the feature exists. Everyone else gets the fallback rules written outside it."
 
   - kind: why
     body: |

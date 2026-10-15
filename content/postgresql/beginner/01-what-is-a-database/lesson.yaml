@@ -86,6 +86,29 @@ steps:
 
       **PostgreSQL** is a DBMS. So are MySQL and SQLite. People often say "database" when they mean the DBMS. That's fine in conversation, but it helps to know they're different things: the DBMS is the software, and a database is the collection of data it manages.
 
+      For example, the DBMS **enforces the rules**. `price` is a number column, so it refuses text:
+
+      ```sql
+      INSERT INTO books (title, price) VALUES ('Test', 'cheap');
+      ```
+
+      ```text
+      ERROR:  invalid input syntax for type numeric: "cheap"
+      ```
+
+      Nothing was saved. The DBMS checked the value before storing it.
+
+  - kind: choice
+    title: "Quick check: the DBMS"
+    body: Which of these is a **DBMS**?
+    options:
+      - "The `books` table"
+      - "PostgreSQL"
+      - "SQL"
+      - "Inkwell's list of customers"
+    answer: 1
+    explanation: "PostgreSQL is the software that stores, checks and serves the data. `books` and the customer list are data it manages, and SQL is the language you use to talk to it."
+
   - kind: explain
     title: "The relational model: tables, rows, columns"
     body: |
@@ -125,7 +148,25 @@ steps:
       SELECT title FROM books WHERE price > 18;
       ```
 
-      reads almost like English: *"give me the titles of books that cost more than 18."* You never tell PostgreSQL which rows to look at first or how to search. It works that out for you.
+      reads almost like English: *"give me the titles of books that cost more than 18."* On the `practice` data it returns:
+
+      | title |
+      |---|
+      | It |
+      | Sapiens |
+
+      You never tell PostgreSQL which rows to look at first or how to search. It works that out for you.
+
+  - kind: try
+    title: "Try it: your first SQL"
+    body: |
+      The query from above. Run it and compare with the table you just saw.
+
+      Then change `18` to `15` and run it again: more books cost more than 15.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT title FROM books WHERE price > 18;
 
   - kind: explain
     title: Client and server
@@ -139,6 +180,25 @@ steps:
 
       This page runs a real PostgreSQL 18 server **inside your browser tab**, with Inkwell Books' data loaded. Every time you press Run you get a fresh copy, so you can't break anything.
 
+      For example, when you press **Run** below a query on this page:
+
+      1. the page (the **client**) sends your SQL to the PostgreSQL **server** running in your tab
+      2. the server finds the rows
+      3. the client shows them to you as a table
+
+      On your Mac it's the same, with psql as the client and the server running in the background.
+
+  - kind: choice
+    title: "Quick check: client or server?"
+    body: You type a query in **psql** on your Mac and press Enter. Which program **holds the data and runs the query**?
+    options:
+      - "psql"
+      - "Terminal"
+      - "zsh"
+      - "The PostgreSQL server"
+    answer: 3
+    explanation: "psql is only the client: it sends your SQL and shows the answer. The server, running in the background, holds the data and does the work. Terminal and zsh are just where you typed."
+
   - kind: explain
     title: Where PostgreSQL fits
     body: |
@@ -149,6 +209,27 @@ steps:
       - **an industry standard**, used by startups, banks and governments, and offered by every big cloud provider
 
       The skills you learn here carry over to almost every other SQL database.
+
+      You can ask the server which version it is:
+
+      ```sql
+      SELECT version();
+      ```
+
+      ```text
+      PostgreSQL 18.3 (PGlite 0.5.8) on wasm32-unknown-emscripten, …
+      ```
+
+      That's PostgreSQL 18, running inside your browser (PGlite is the browser edition). On your Mac it would say something like `PostgreSQL 18.3 on aarch64-apple-darwin…`.
+
+  - kind: try
+    title: "Try it: which version?"
+    body: |
+      Run it to ask the server for its version. Then try `SELECT now();` to ask it for the current time.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT version();
 
   - kind: info
     title: "🔹 Other databases you'll hear about"

@@ -14,6 +14,46 @@ steps:
       - To match a real `%` or `_`, escape it with a backslash: `LIKE '100\%'`.
       - LIKE can't say *"a digit"*, *"one or more letters"*, or *"this or that"*. For those, you need regular expressions.
 
+      **Examples.** Titles starting with *the* in any capitals (280 books; the first three):
+
+      ```sql
+      SELECT title FROM books WHERE title ILIKE 'the%' ORDER BY title;
+      ```
+
+      | title |
+      |---|
+      | The Bright Bridge |
+      | The Bright Bridge, Book 2 |
+      | The Bright Crown |
+
+      And escaping: `\%` means a real percent sign, while a plain `%` means "anything":
+
+      ```sql
+      SELECT '100%' LIKE '100\%' AS real_percent,
+             '1000' LIKE '100\%' AS other,
+             '1000' LIKE '100%'  AS unescaped;
+      ```
+
+      | real_percent | other | unescaped |
+      |---|---|---|
+      | t | f | t |
+
+  - kind: try
+    title: "Try it: LIKE and ILIKE again"
+    body: |
+      Both examples. Run them, then change `'the%'` to `'%river%'` (titles containing *river*), or try `LIKE` instead of `ILIKE` with `'the%'`: no rows, because every title starts with a capital T.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT title
+      FROM books
+      WHERE title ILIKE 'the%'
+      ORDER BY title;
+
+      SELECT '100%' LIKE '100\%' AS real_percent,
+             '1000' LIKE '100\%' AS other,
+             '1000' LIKE '100%'  AS unescaped;
+
   - kind: explain
     title: Regular expressions
     body: |
@@ -41,6 +81,30 @@ steps:
       | `a\|b` | a or b | `murder\|mystery` |
       | `\.` | a real dot (plain `.` means any character) | |
 
+      <!-- page -->
+
+      Some examples on book titles:
+
+      ```sql
+      SELECT title FROM books WHERE title ~ '^\d+$';
+      ```
+
+      Returns one book: `1984`. `^` and `$` pin the pattern to both ends, and `\d+` means "one or more digits", so the title must be **only** digits.
+
+      ```sql
+      SELECT title FROM books WHERE title ~ 'Book \d$' ORDER BY title LIMIT 3;
+      ```
+
+      Returns:
+
+      | title |
+      |---|
+      | The Bright Bridge, Book 2 |
+      | The Bright Island, Book 2 |
+      | The Bright Library, Book 2 |
+
+      No `^` this time, so "Book" and a digit can be anywhere, as long as the digit is the **last** character.
+
   - kind: try
     title: Match with a regex
     body: |
@@ -49,6 +113,21 @@ steps:
       SELECT title, description
       FROM books
       WHERE description ~* 'poirot|dragons';
+
+  - kind: try
+    title: "Try it: anchors and digits"
+    body: |
+      Run it: the only book whose title is all digits. Then try these patterns in its place, one at a time:
+
+      1. `'Book \d$'`: titles that end in "Book" and a digit.
+      2. `'^The'` and then `'The$'`: see how the anchor changes everything.
+      3. `'\d{4}'`: titles with four digits in a row.
+
+      Nothing is graded here.
+    sql: |
+      SELECT title
+      FROM books
+      WHERE title ~ '^\d+$';
 
   - kind: try
     title: Your turn to validate a format
@@ -75,6 +154,21 @@ steps:
       | `regexp_split_to_table(t, pattern)` | splits text into rows | `regexp_split_to_table('a  b c', '\s+')` → `a`, `b`, `c` |
 
       `regexp_substr` is new in PostgreSQL 15. On older versions you'll see `substring(t from pattern)` for the same job.
+
+  - kind: try
+    title: "Try it: the regexp functions"
+    body: |
+      These are the examples from the table. Run them and check each result against the table.
+
+      Then change `'Room 214, floor 2'` to some text of your own with numbers in it. And try removing `'g'` from the regexp_replace: only the **first** non-digit, `(`, is removed. Nothing is graded here.
+    sql: |
+      SELECT regexp_replace('(976) 9911-2233', '\D', '', 'g') AS digits,
+             
+             regexp_substr('Room 214, floor 2', '\d+')      AS first_number;
+
+      SELECT regexp_matches('A1 B22', '[A-Z](\d+)', 'g');
+
+      SELECT regexp_split_to_table('a  b c', '\s+');
 
   - kind: try
     title: Split reviews into words
@@ -110,9 +204,32 @@ steps:
       )
       ```
 
+      On one messy name:
+
+      ```sql
+      SELECT initcap(regexp_replace(trim('   mARY   ann  shelley '), '\s+', ' ', 'g')) AS clean;
+      ```
+
+      Returns:
+
+      | clean |
+      |---|
+      | Mary Ann Shelley |
+
       Other common steps: `lower(email)` before comparing emails, `regexp_replace(x, '[^A-Za-z0-9 ]', '', 'g')` to keep only letters, digits and spaces.
 
       Clean on the way **in** (in an import's staging step, Module 24) when you can, so the stored data is already tidy.
+
+  - kind: try
+    title: "Try it: a cleaning pipeline"
+    body: |
+      Run it to watch the name get cleaner one step at a time: `step1` only trims the ends, `step2` also squashes the inner spaces, `step3` capitalizes.
+
+      Then put your own messy name in all three places, with extra spaces and odd capitals. Nothing is graded here.
+    sql: |
+      SELECT trim('   mARY   ann  shelley ') AS step1,
+             regexp_replace(trim('   mARY   ann  shelley '), '\s+', ' ', 'g') AS step2,
+             initcap(regexp_replace(trim('   mARY   ann  shelley '), '\s+', ' ', 'g')) AS step3;
 
   - kind: try
     title: Your turn to tidy names
@@ -147,6 +264,28 @@ steps:
 
       On 10 rows you won't notice. On 10 million, it's seconds per search. The fix is a *trigram* index from the `pg_trgm` extension, which ships with PostgreSQL: `CREATE EXTENSION pg_trgm;` then `CREATE INDEX ON books USING gin (title gin_trgm_ops);`.
 
+      **Example.** `EXPLAIN` (Module 33) shows how PostgreSQL will run a search. A "contains" pattern reads the whole table:
+
+      ```sql
+      EXPLAIN SELECT title FROM books WHERE title LIKE '%River%';
+      ```
+
+      ```text
+      Seq Scan on books  (cost=…)
+        Filter: (title ~~ '%River%'::text)
+      ```
+
+      *Seq Scan* means every row is read and tested. (`~~` is PostgreSQL's internal name for LIKE.)
+
+  - kind: try
+    title: "Try it: see the full scan"
+    body: |
+      Run it and find *Seq Scan* in the plan. Then try `ILIKE '%river%'` (it shows as `~~*`) or a regex, `title ~ 'River$'`: all of them scan every row.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      EXPLAIN SELECT title FROM books WHERE title LIKE '%River%';
+
   - kind: info
     title: "🔹 SIMILAR TO"
     body: |
@@ -163,7 +302,8 @@ steps:
     body: |
       *"How many customers use each email **domain** (the part after `@`)?"* Return the domain labeled **domain** and the count labeled **customers**. This query groups by the part **before** the `@`. Fix it.
     sql: |
-      SELECT split_part(email, '@', 1) AS domain, count(*) AS customers
+      SELECT split_part(email, '@', 1) AS domain,
+             count(*) AS customers
       FROM customers
       GROUP BY 1;
     expect: |

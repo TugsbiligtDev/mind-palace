@@ -26,6 +26,18 @@ steps:
 
       This is the key move of web testing. The browser enforces rules (hidden fields, length limits, JavaScript checks) that exist only on the *client*. By editing the request *after* the browser sends it, you test what the **server** actually accepts — because the server is the only thing that can really enforce security. Anything checked only in the browser can be changed in Burp.
 
+      You can see a raw response without Burp too: `curl -I` asks the lab server for just the headers.
+
+      ```
+      $ curl -I http://10.10.50.30
+      HTTP/1.1 200 OK
+      Server: nginx/1.18.0 (Ubuntu)
+      X-Powered-By: PHP/7.4.3
+      Set-Cookie: PHPSESSID=8f2c...; path=/
+      ```
+
+      The `Server` and `X-Powered-By` headers quietly name the software and versions (recall Module 9), and the session cookie carries no `HttpOnly` flag: both are details worth noting before you touch a single parameter.
+
   - kind: explain
     title: The parts of Burp you will use
     body: |

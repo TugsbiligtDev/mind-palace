@@ -1,7 +1,7 @@
 // The practice terminal's computer: a simulated Linux machine (just-bash plus the commands in
 // ./commands) that remembers its current folder, variables and aliases between commands, the
 // way a real terminal session does. The same class runs in the browser and in the content check.
-import { Bash, InMemoryFs, MountableFs, getCommandNames, type IFileSystem } from "just-bash";
+import { Bash, InMemoryFs, MountableFs, getCommandNames, parse, serialize, type IFileSystem, type ScriptNode } from "just-bash";
 import { customCommands, STUB_NAMES } from "./commands";
 import { Repo } from "./git/repo";
 import { PermissionError, Perms } from "./perms";
@@ -95,6 +95,39 @@ function backgroundPart(line: string): string | undefined {
     else if (c === "&" && line[i + 1] !== "&" && line[i - 1] !== "&" && line[i - 1] !== ">" && line[i + 1] !== ">" && !line.slice(i + 1).trim()) return line.slice(0, i).trim();
   }
   return undefined;
+}
+
+// Commands that change how the rest of the line runs, so a line using them runs in one piece.
+const WHOLE_LINE = new Set(["exit", "logout", "return", "break", "continue", "set", "shopt", "alias", "unalias", "source", ".", "exec", "trap", "eval"]);
+
+/**
+ * `a; b || c` as its separate commands, each with the operator before it. just-bash collects a
+ * line's normal output and its error messages separately, so a line run in one go shows every
+ * error after all the output; running it piece by piece keeps them in the order they happened.
+ * Undefined when the line is a single command, or something safer to run in one go.
+ */
+function splitLine(line: string): { op: string; text: string }[] | undefined {
+  if (line.includes("\n") || line.includes("<<")) return undefined;
+  let ast: ScriptNode;
+  try {
+    ast = parse(line);
+  } catch {
+    return undefined;
+  }
+  const pieces: { op: string; text: string }[] = [];
+  for (const st of ast.statements) {
+    if (st.background || st.deferredError) return undefined;
+    for (const [i, p] of st.pipelines.entries()) {
+      for (const c of p.commands) {
+        if (c.type !== "SimpleCommand") return undefined;
+        const name = c.name ? serialize({ type: "Script", statements: [{ type: "Statement", pipelines: [{ ...p, commands: [{ ...c, args: [], redirections: [], assignments: [] }] }], operators: [], background: false }] }) : "";
+        if (WHOLE_LINE.has(name.replace(/^!\s*/, "").trim())) return undefined;
+      }
+      const text = serialize({ type: "Script", statements: [{ type: "Statement", pipelines: [p], operators: [], background: false }] });
+      pieces.push({ op: i ? st.operators[i - 1] : ";", text });
+    }
+  }
+  return pieces.length > 1 ? pieces : undefined;
 }
 
 // "sleep 600" or "sleep 2m": how many seconds a background sleep lasts.
@@ -404,6 +437,32 @@ export class Machine {
     if (!/^\s/.test(line)) this.history.push(cmd);
     this.journal.push({ line: cmd });
 
+    await this.registerPathPrograms();
+
+    const bg = backgroundPart(cmd);
+    if (bg !== undefined) {
+      const r = await this.background(bg);
+      return { ...r, echo: expanded.echo };
+    }
+
+    const pieces = splitLine(cmd);
+    if (!pieces) return this.execLine(cmd, opts, expanded.echo);
+    let text = "";
+    let code = Number(this.env["?"] ?? 0);
+    for (const p of pieces) {
+      if ((p.op === "&&" && code !== 0) || (p.op === "||" && code === 0)) continue;
+      const r = await this.execLine(p.text, opts);
+      text += r.stdout + r.stderr;
+      code = r.exitCode;
+      // Ctrl+C or Ctrl+Z stops the whole line, not just one command of it.
+      if (code === 130 || code === 148) break;
+    }
+    this.env["?"] = String(code);
+    return { stdout: text, stderr: "", exitCode: code, echo: expanded.echo };
+  }
+
+  /** Runs one command (or a line that has to run in one go) in the learner's shell. */
+  private async execLine(cmd: string, opts: { signal?: AbortSignal }, echo?: string): Promise<RunResult> {
     // cd is part of bash itself, so check the simple `cd folder` here: entering a folder needs
     // its x (search) permission.
     const cdTo = /^\s*cd\s+(\S+)\s*$/.exec(cmd)?.[1];
@@ -411,16 +470,8 @@ export class Machine {
       const target = join(this.cwd, cdTo.replace(/^~(?=\/|$)/, HOME));
       if ((await this.perms.isDir(target)) && !(await this.perms.can(target, "x"))) {
         this.env["?"] = "1";
-        return { stdout: "", stderr: `bash: cd: ${cdTo}: Permission denied\n`, exitCode: 1, echo: expanded.echo };
+        return { stdout: "", stderr: `bash: cd: ${cdTo}: Permission denied\n`, exitCode: 1, echo };
       }
-    }
-
-    await this.registerPathPrograms();
-
-    const bg = backgroundPart(cmd);
-    if (bg !== undefined) {
-      const r = await this.background(bg);
-      return { ...r, echo: expanded.echo };
     }
 
     // ls prints columns on screen but one name per line into a pipe or a file. A command can't
@@ -447,11 +498,11 @@ export class Machine {
       if (e instanceof PermissionError || (e as { code?: string }).code === "EACCES") {
         const path = (e as PermissionError).path ?? "";
         this.env["?"] = "1";
-        return { stdout: "", stderr: `bash: ${path ? tildify(path).replace(`${this.cwd}/`, "") : basename(cmd)}: Permission denied\n`, exitCode: 1, echo: expanded.echo };
+        return { stdout: "", stderr: `bash: ${path ? tildify(path).replace(`${this.cwd}/`, "") : basename(cmd)}: Permission denied\n`, exitCode: 1, echo };
       }
       const msg = (e as Error).message || String(e);
       this.env["?"] = "1";
-      return { stdout: "", stderr: `bash: ${msg}\n`, exitCode: 1, echo: expanded.echo };
+      return { stdout: "", stderr: `bash: ${msg}\n`, exitCode: 1, echo };
     } finally {
       if (this.clock) cancel(this.clock.timer);
       this.clock = undefined;
@@ -470,7 +521,7 @@ export class Machine {
         if (!this.jobs.includes(job)) this.jobs.push(job);
         await this.procs.update(job.pid, { state: "T" });
         this.env["?"] = "148";
-        return { stdout: r.stdout, stderr: `^Z\n${this.jobLine(job)}\n`, exitCode: 148, echo: expanded.echo };
+        return { stdout: r.stdout, stderr: `^Z\n${this.jobLine(job)}\n`, exitCode: 148, echo };
       }
       if (fgJob) await this.endJob(fgJob, "Done", true);
       // Ctrl+C: bash prints ^C and gives the prompt back (exit status 130).
@@ -484,7 +535,7 @@ export class Machine {
             : `\nbash: stopped after 8 seconds (an endless loop?). The practice terminal stops long-running commands.\n`
           : "^C\n",
         exitCode: 130,
-        echo: expanded.echo,
+        echo: echo,
       };
     }
     // just-bash's safety limits speak to programmers; say it the way the course does. And an
@@ -501,7 +552,9 @@ export class Machine {
     // Jobs that finished or were stopped meanwhile are reported before the next prompt.
     const notes = await this.jobNotices();
     // bash forgets a folder that no longer exists only when you leave it; just-bash may reset it.
-    return { stdout: r.stdout, stderr: r.stderr + notes, exitCode: r.exitCode, echo: expanded.echo };
+    // sudo asks for the password before the command runs, so its notice comes first on screen.
+    const notice = /^\[sudo\] password for .*\n/m.exec(r.stderr)?.[0] ?? "";
+    return { stdout: notice + r.stdout, stderr: r.stderr.replace(notice, "") + notes, exitCode: r.exitCode, echo };
   }
 
   // just-bash reports any input redirect it can't open (`cat < /etc/shadow`) as a missing file.

@@ -12,6 +12,51 @@ steps:
       | `ls --help` | a short list of options, printed straight away |
       | `tldr ls` | a handful of everyday examples |
 
+      **Example: `tldr`**, the quickest of the three, on `ls`:
+
+      ```
+      learner@inkwell:~$ tldr ls
+
+        ls
+
+        List directory contents.
+
+        - List files one per line:
+
+          ls -1
+
+        - List all files, including hidden files:
+
+          ls -a
+
+        - Long format list (permissions, ownership, size, and modification date) of all files:
+
+          ls -la
+
+        - Long format list with size in human-readable units (KiB, MiB, GiB):
+
+          ls -lh
+
+        - Long format list sorted by size (descending):
+
+          ls -lS
+
+        - Long format list of all files, sorted by modification date (oldest first):
+
+          ls -ltr
+      ```
+
+      Six common uses, each with the exact command. When you need every option, `man ls` has them all.
+
+  - kind: shell
+    title: "Try it: tldr"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Type `tldr ls`. Then try `tldr cp` and `tldr mkdir`. (You'll meet `man` and `--help` on the next pages.)
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Reading a manual page
     body: |
@@ -62,6 +107,38 @@ steps:
 
       🔹 On a Mac, many commands come from BSD and **don't understand `--help`**: `ls --help` on a Mac prints an error and a one-line usage. Use `man` there.
 
+      <!-- page -->
+
+      Here's `--help` for `mkdir`, the folder-making command from last lesson:
+
+      ```
+      learner@inkwell:~$ mkdir --help
+      Usage: mkdir [OPTION]... DIRECTORY...
+      Create the DIRECTORY(ies), if they do not already exist.
+
+        -m, --mode=MODE   set file mode (as in chmod), not a=rwx - umask
+        -p, --parents     no error if existing, make parent directories as needed
+        -v, --verbose     print a message for each created directory
+            --help        display this help and exit
+      ```
+
+      Read it line by line: the **Usage** line is the synopsis, then one line per option. `-p, --parents` means the short name `-p` and the long name `--parents` do the same thing, and the words on the right say what it does. So `mkdir -p` is the one that makes missing parent folders too.
+
+  - kind: shell
+    title: "Try it: --help and help"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Get some help from the terminal itself. Type these one at a time:
+
+      1. `mkdir --help`: the short summary from the last page.
+      2. `cat --help`: `cat` prints a file's contents (more in Module 6). Find the option that numbers the lines.
+      3. `help cd`: `cd` is built into the shell, so it uses `help` instead of `--help`.
+
+      Then pick any other command you know, like `wc --help` or `help pwd`, and read its options.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: One name per line
     fixture: backoffice
@@ -99,6 +176,52 @@ steps:
       | `command not found` | the shell has no program with that name | spelling, capitals, is it installed? |
       | `No such file or directory` | nothing at that path | spelling, capitals, `pwd`: are you where you think? |
       | `Permission denied` | it exists, but you're not allowed | who owns it (Module 10) |
+
+      <!-- page -->
+
+      Here's one solved, start to finish. `cat` prints what's inside a file. Someone in the home folder asked for Inkwell's readme:
+
+      ```
+      learner@inkwell:~$ cat inkwell/readme.txt
+      cat: inkwell/readme.txt: No such file or directory
+      ```
+
+      `cat` is talking, about `inkwell/readme.txt`, and the problem is that nothing has that name. So look at what *is* there:
+
+      ```
+      learner@inkwell:~$ ls inkwell
+      logs  notes  old  orders  README.txt  site
+      ```
+
+      The file is `README.txt`, in capitals. Fix that one part and run it again:
+
+      ```
+      learner@inkwell:~$ cat inkwell/README.txt
+      INKWELL BOOKS - shared files
+      ============================
+      orders/  one CSV file of orders per month
+      notes/   meeting notes, to-do lists
+      logs/    what the web shop writes while it runs
+      site/    the website
+      old/     things nobody dared to delete
+      Ask Kenji before deleting anything!
+      ```
+
+  - kind: shell
+    title: "Try it: read an error"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Make the errors happen yourself, then fix them. Type these one at a time:
+
+      1. `cat inkwell/readme.txt`: read the error. Who is talking, about what, and what's the problem?
+      2. `ls inkwell` to see the real names.
+      3. `cat inkwell/README.txt`: fixed.
+      4. `sl inkwell`: a typo in the command name gives a different error.
+
+      Then try `cat inkwell/README` (without `.txt`) and see which error you get.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Read the error, fix the command
@@ -144,6 +267,38 @@ steps:
       3. **Add context**: the tool and the system, like `ubuntu`, `macos`, `zsh`, `git`.
       4. Prefer **official documentation**, and answers that are recent and well voted. Check the date: advice from 2012 may no longer apply.
 
+      **Example: one error, turned into a good search.** Kenji gets:
+
+      ```
+      cp: cannot create regular file 'backup/kenji/prices.csv': Permission denied
+      ```
+
+      | Step | Result |
+      |---|---|
+      | 1. Copy the exact message | `cp: cannot create regular file 'backup/kenji/prices.csv': Permission denied` |
+      | 2. Remove his own details | `cp "cannot create regular file" "Permission denied"` |
+      | 3. Add context | `cp "cannot create regular file" "Permission denied" ubuntu` |
+
+      The last version matches everyone who ever hit this problem, not just people with a folder called `kenji`.
+
+  - kind: choice
+    title: "Quick check: a good search"
+    body: |
+      You get:
+
+      ```
+      mv: cannot stat 'reports/Q3-Priya.txt': No such file or directory
+      ```
+
+      What's the best thing to search for?
+    options:
+      - '`mv "cannot stat" "No such file or directory" ubuntu`'
+      - "`mv: cannot stat 'reports/Q3-Priya.txt': No such file or directory`"
+      - "`mv not working`"
+      - "`Priya file missing`"
+    answer: 0
+    explanation: "Keep the exact error words, drop your own file names, and add where you are (`ubuntu`). Pasting the whole line keeps your own file name in it, and the vaguer searches lose the message."
+
   - kind: explain
     title: Asking an AI to explain
     body: |
@@ -159,6 +314,18 @@ steps:
       - **Never paste secrets**: passwords, keys, tokens, customer data.
       - Ask *"what could go wrong if I run this?"* before running anything that deletes or changes things.
 
+  - kind: choice
+    title: "Quick check: using AI safely"
+    body: |
+      An AI suggests a command that ends in `-delete`. What should you do before running it?
+    options:
+      - "Run it: AI is usually right"
+      - "Paste your password so it can check your files"
+      - "Check the parts in `man` or `--help`, and ask what could go wrong"
+      - "Run it twice to be sure"
+    answer: 2
+    explanation: "Anything that deletes or changes things deserves a check. AI can be confidently wrong, and it should never see secrets."
+
   - kind: explain
     title: "⚠️ Never run what you don't understand"
     body: |
@@ -169,6 +336,21 @@ steps:
       - Anything starting with `sudo` runs with full power over the whole computer (Module 10).
 
       The rule: **before you press Return on a pasted command, you can say what every part does.** If you can't, look it up (`man`, `tldr`, an AI explanation), or try it first on a throwaway folder. This practice terminal is a safe place for exactly that.
+
+      **Example: reading a pasted command before running it.** A forum says *"To tidy up, run this"*:
+
+      ```
+      find ~/Downloads -name "*.tmp" -mtime +30 -delete
+      ```
+
+      | Part | Means |
+      |---|---|
+      | `find ~/Downloads` | look through the Downloads folder and everything inside it |
+      | `-name "*.tmp"` | only files whose names end in `.tmp` |
+      | `-mtime +30` | only ones last changed more than 30 days ago |
+      | `-delete` | delete each match, with no undo |
+
+      Now you can say what it does: "delete month-old `.tmp` files in Downloads". Safer still, run it first **without** `-delete`: it just lists what it would remove.
 
   - kind: choice
     title: A helpful stranger

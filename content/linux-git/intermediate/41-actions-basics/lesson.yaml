@@ -6,6 +6,20 @@ steps:
 
       **GitHub Actions** is GitHub's CI. You describe what to do in a **workflow** file in `.github/workflows/`, push it, and GitHub runs it on a fresh virtual machine (a **runner**) each time something happens. The practice GitHub runs them too: real bash on a fresh Ubuntu, with your repository checked out.
 
+      **Example.** Kenji pushes a script with an unquoted variable at 14:02. At 14:03 a ✗ appears next to his commit on GitHub, and the run's log says which line ShellCheck didn't like. Nobody had to remember to check.
+
+  - kind: choice
+    title: "Quick check: where do workflows live?"
+    body: |
+      Where does GitHub look for workflow files?
+    options:
+      - "In `~/.github` on your computer"
+      - "In the repository's Settings page only"
+      - "In `.github/workflows/` in the repository"
+      - "In `README.md`"
+    answer: 2
+    explanation: "Workflows are YAML files committed in `.github/workflows/`, so they're versioned and reviewed like any other code."
+
   - kind: explain
     title: Anatomy of a workflow
     body: |
@@ -70,6 +84,29 @@ steps:
       ```
 
       Read the failing step's last lines first: the actual error is usually right above `Process completed with exit code 1`. Fix it locally, commit, push: a new run starts.
+
+      <!-- page -->
+
+      **Example.** A repository whose CI lints its scripts; the newest push added a script with an unquoted variable:
+
+      ```
+      learner@inkwell:~/site$ gh run list
+      STATUS  TITLE                  WORKFLOW  BRANCH  EVENT  ID           ELAPSED  AGE
+      X       Add the report script  CI        main    push   11000000014  9s       less than a minute ago
+      ✓       Add CI                 CI        main    push   11000000007  9s       less than a minute ago
+      learner@inkwell:~/site$ gh run view --log-failed
+      shellcheck	Lint the scripts	shellcheck scripts/*.sh
+      shellcheck	Lint the scripts	In scripts/report.sh line 3:
+      shellcheck	Lint the scripts	cat $file
+      shellcheck	Lint the scripts	    ^-- SC2086 (info): Double quote to prevent globbing and word splitting.
+      shellcheck	Lint the scripts	Did you mean:
+      shellcheck	Lint the scripts	cat "$file"
+      shellcheck	Lint the scripts	For more information:
+      shellcheck	Lint the scripts	  https://www.shellcheck.net/wiki/SC2086 -- Double quote to prevent globbing and word spli ...
+      shellcheck	Lint the scripts	##[error]Process completed with exit code 1.
+      ```
+
+      The top run (the newest push) failed; the log points at `cat $file` in `scripts/report.sh`, line 3, and suggests the fix: quote it.
 
   - kind: shell
     title: Fix the red run

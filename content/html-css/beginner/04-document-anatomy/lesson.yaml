@@ -11,7 +11,29 @@ steps:
       - `<p>` is the **opening tag**, `</p>` (with a slash) the **closing tag**.
       - Together with the content between them they make an **element**: here, a paragraph.
 
+      In the page, that line shows up as one plain paragraph: *Second-hand books, carefully chosen.* The tags themselves never show.
+
       The tag name says *what the content is*. `p` is a paragraph, `h1` a top-level heading, `a` a link. The browser has a default look for each (headings big and bold, paragraphs with space around them), and CSS can change any of it later.
+
+      Two small tags you'll meet right away work *inside* a paragraph: `<strong>` marks words as important (shown **bold**) and `<em>` marks words you'd stress when speaking (shown *in italics*):
+
+      ```html
+      <p>This copy of <em>Emma</em> is <strong>signed</strong>.</p>
+      ```
+
+      shows: This copy of *Emma* is **signed**.
+
+  - kind: choice
+    title: "Quick check: tag or element?"
+    body: |
+      In `<p>Open daily.</p>`, what is the **element**?
+    options:
+      - "Only `<p>`"
+      - "Only `</p>`"
+      - "The whole thing: opening tag, content and closing tag"
+      - "Only the words *Open daily.*"
+    answer: 2
+    explanation: "An element is the opening tag, the content and the closing tag together. `<p>` and `</p>` are just its two tags."
 
   - kind: explain
     title: Attributes
@@ -23,11 +45,24 @@ steps:
       <p class="tagline" id="intro">Second-hand books.</p>
       ```
 
+      In the page, the first line shows the words *About us* as a link (blue and underlined); clicking it opens `about.html`. The second shows a normal paragraph: `class` and `id` change nothing you can see until CSS uses them.
+
       - `href` tells a link where to go.
       - `class` and `id` give the element names that CSS can use (Module 13).
       - Order doesn't matter, separate them with spaces, and always wrap values in **double quotes**.
 
       Some attributes are **boolean**: just being there means "yes". `<input required>` is a required field; there's no value to write.
+
+  - kind: choice
+    title: "Quick check: where attributes go"
+    body: |
+      Which line is written correctly?
+    options:
+      - "`<a>About us</a href=\"about.html\">`"
+      - "`<a href=\"about.html\">About us</a>`"
+      - "`<a>href=\"about.html\" About us</a>`"
+    answer: 1
+    explanation: "Attributes go inside the **opening** tag, as `name=\"value\"`. Anything between the tags is shown as text."
 
   - kind: explain
     title: Void elements
@@ -43,7 +78,21 @@ steps:
       <link rel="stylesheet" href="style.css">
       ```
 
+      In a page, the `img` shows the logo picture, `br` starts a new line inside a paragraph, `hr` draws a thin line across the page, and `input` shows an empty text box. The `meta` and `link` lines show nothing: they work behind the scenes in the head.
+
       You may see them written `<br />` with a slash. That's an old habit from a stricter language (XHTML). Browsers accept it, but it does nothing. This course writes `<br>`.
+
+  - kind: choice
+    title: "Quick check: no closing tag"
+    body: |
+      Which of these elements is **void** (has no closing tag)?
+    options:
+      - "`<p>`"
+      - "`<strong>`"
+      - "`<a>`"
+      - "`<img>`"
+    answer: 3
+    explanation: "An image can't hold content, so `<img>` is void. Paragraphs, strong text and links all wrap content and need their closing tags."
 
   - kind: explain
     title: Nesting
@@ -53,6 +102,8 @@ steps:
       ```html
       <p>This book is <strong>signed by the author</strong>.</p>
       ```
+
+      shows: This book is **signed by the author**. The `strong` is the child, the `p` its parent.
 
       The rule: **close in the reverse order you opened**, like boxes inside boxes. Whatever opened last must close first.
 
@@ -64,6 +115,32 @@ steps:
       Browsers try to repair crossed tags silently, and sometimes they guess right. Don't rely on it: other tools (and the next person to edit the file) won't guess the same way.
 
       Indenting children by two spaces makes the nesting visible at a glance. Browsers ignore the spaces; people don't.
+
+  - kind: web
+    title: "Try it: tags, attributes and nesting"
+    body: |
+      The `index.html` tab uses everything from this lesson so far. Look at the preview and match each line to what it draws:
+
+      - `<h1>` is the big bold heading.
+      - The first `<p>` has `<em>` and `<strong>` **nested** inside it: *Emma* in italics, **signed by the author** in bold.
+      - `<br>` (a void element) breaks the second paragraph onto two lines.
+      - `<hr>` draws a line across the page.
+      - The `<a href>` shows as a link, and `<img src alt>` shows the Inkwell logo.
+
+      Try this:
+
+      1. Change `<em>Emma</em>` to `<strong>Emma</strong>` and watch the italics turn bold.
+      2. Delete the `</strong>` after *author*. Everything after it turns bold too, because the browser keeps an unclosed tag going. Put it back.
+      3. Change the image's `alt` to something else, then break its `src` (`images/logoo.svg`): the alt text now shows instead of the picture.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <h1>Inkwell Books</h1>
+      <p>This copy of <em>Emma</em> is <strong>signed by the author</strong>.</p>
+      <p>Open late on Fridays.<br>Coffee is free.</p>
+      <hr>
+      <p><a href="about.html">About us</a></p>
+      <img src="images/logo.svg" alt="Inkwell Books">
 
   - kind: web
     title: Close what you opened
@@ -124,6 +201,19 @@ steps:
       - `<head>` holds information **about** the page. Nothing in it shows on the page itself.
       - `<body>` holds everything visitors **see**.
 
+      Opened in a browser, this page shows just one thing: the big heading **Inkwell Books**. The words *Inkwell Books* also appear on the browser tab, from the `<title>`.
+
+  - kind: choice
+    title: "Quick check: where it shows"
+    body: |
+      You put `<title>Inkwell Books</title>` in the head. Where do visitors see those words?
+    options:
+      - "As a big heading at the top of the page"
+      - "On the browser tab"
+      - "Nowhere: the head is only for search engines"
+    answer: 1
+    explanation: "Nothing in the head appears in the page itself, but the title is shown on the browser tab (and in bookmarks and search results)."
+
   - kind: explain
     title: What goes in the head
     body: |
@@ -134,6 +224,18 @@ steps:
       - `<title>` is the text in the **browser tab**, in bookmarks and as the headline in search results. Make it specific: `Contact · Inkwell Books`, not `Page`.
 
       Later modules add the stylesheet `<link>` (Module 12) and sharing and search tags (Module 27).
+
+      **Example: the head of Inkwell's events page**, with the three lines in order:
+
+      ```html
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Events · Inkwell Books</title>
+      </head>
+      ```
+
+      The browser tab now reads *Events · Inkwell Books*. Remove the `charset` line and a word like `café` can turn into `cafÃ©`. Remove the viewport line and, on a phone, the whole page shrinks to tiny text.
 
   - kind: web
     title: Complete the skeleton
@@ -199,9 +301,27 @@ steps:
       <p>Open Tuesday to Sunday.</p>
       ```
 
+      shows only: *Open Tuesday to Sunday.* The comment line is invisible on the page.
+
       Use comments to explain *why*, or to switch off a piece of HTML for a moment while testing. In VS Code, ⌘/ comments out the current line.
 
       ⚠️ Comments are **not secret**. Anyone can see them with View Source or DevTools. Never put passwords or private notes in them.
+
+  - kind: web
+    title: "Try it: comments"
+    body: |
+      The preview shows only the two paragraphs: the comments are skipped.
+
+      Try this:
+
+      1. Write a comment of your own, such as `<!-- updated in October -->`. Nothing changes in the preview.
+      2. "Comment out" the second paragraph by wrapping it in `<!--` and `-->`. It disappears from the page, but it's still in your file for later.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <!-- Opening hours: update every December -->
+      <p>Open Tuesday to Sunday.</p>
+      <p>Closed on Mondays.</p>
 
   - kind: explain
     title: "Common mistake: the unclosed tag"
@@ -216,6 +336,18 @@ steps:
       The `<strong>` never closes, so the browser keeps it going, and the next paragraph comes out bold too. Browsers never show an error for broken HTML. They quietly guess, and sometimes the guess is wrong. Module 11 shows how to catch these with the validator and DevTools.
 
       Habits that prevent it: type the closing tag right after the opening one, then fill in the middle (Emmet does this for you), and indent nested elements.
+
+  - kind: web
+    title: "Try it: the unclosed tag"
+    body: |
+      This is the example above. In the preview, the second paragraph is bold too, even though no `<strong>` is written near it.
+
+      Fix it: add `</strong>` right after *best sellers*. Only those words stay bold.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p>Our <strong>best sellers this week:</p>
+      <p>Dune, Emma, Beloved</p>
 
   - kind: why
     body: |

@@ -19,6 +19,18 @@ steps:
       | `git fetch` | download new commits **from** the remote, without changing your files |
       | `git pull` | fetch, **then merge** them into your branch |
 
+  - kind: choice
+    title: "Quick check: what is origin?"
+    body: |
+      After `git clone git@github.com:inkwell/site.git`, what is `origin`?
+    options:
+      - "A branch"
+      - "Your first commit"
+      - "A folder on your computer"
+      - "The short name for the GitHub copy you cloned from"
+    answer: 3
+    explanation: "`origin` is a remote: a nickname for another copy of the repository, here the one on GitHub. Git sets it up for you when you clone."
+
   - kind: explain
     title: git clone
     body: |
@@ -29,6 +41,25 @@ steps:
       makes a folder `site` with the files, the **whole history**, and a remote called `origin` already set up. Your local `main` is set to **track** `origin/main`, so `git push` and `git pull` know where to go.
 
       `git clone <address> other-name` puts it in a folder with another name. Copy the address from the green **Code** button on the repository's GitHub page (choose SSH).
+
+      **Example**, cloning into a folder with a name of your choice:
+
+      ```
+      learner@inkwell:~$ git clone git@github.com:inkwell/site.git shop-site
+      Cloning into 'shop-site'...
+      remote: Enumerating objects: 22, done.
+      remote: Total 22 (delta 0), reused 22 (delta 0), pack-reused 0
+      Receiving objects: 100% (22/22), done.
+      learner@inkwell:~$ cd shop-site
+      learner@inkwell:~/shop-site$ git remote -v
+      origin	git@github.com:inkwell/site.git (fetch)
+      origin	git@github.com:inkwell/site.git (push)
+      learner@inkwell:~/shop-site$ git log --oneline -2
+      9a1efb0 (HEAD -> main, origin/main, origin/HEAD) Lower the price of Dune
+      1594832 Add the Dune book page
+      ```
+
+      The whole history came along (`git log` works at once), and `origin` points back at GitHub.
 
   - kind: shell
     title: Clone Inkwell's website
@@ -58,6 +89,47 @@ steps:
 
       `git status` compares the two: *Your branch is ahead of 'origin/main' by 2 commits* means you have commits GitHub doesn't; *behind* means GitHub has commits you haven't merged. It's only as fresh as your last fetch.
 
+      <!-- page -->
+
+      **Example.** Commit once in a fresh clone, without pushing:
+
+      ```
+      learner@inkwell:~/site$ git branch -a
+      * main
+        remotes/origin/HEAD -> origin/main
+        remotes/origin/main
+      learner@inkwell:~/site$ echo '<p>New hours</p>' >> about.html
+      learner@inkwell:~/site$ git commit -qam "Update the hours"
+      learner@inkwell:~/site$ git status
+      On branch main
+      Your branch is ahead of 'origin/main' by 1 commit.
+        (use "git push" to publish your local commits)
+
+      nothing to commit, working tree clean
+      learner@inkwell:~/site$ git log --oneline -2
+      80017c9 (HEAD -> main) Update the hours
+      9a1efb0 (origin/main, origin/HEAD) Lower the price of Dune
+      ```
+
+      Your `main` moved forward; `origin/main` didn't. So `status` says you're **ahead by 1**: GitHub doesn't have that commit yet.
+
+  - kind: shell
+    title: "Try it: ahead of origin"
+    fixture: [git-identity, website-repo, github-account, github-site]
+    setup: |
+      git config --global pull.rebase false
+      git clone -q git@github.com:inkwell/site.git ~/site 2> /dev/null
+      cd ~/site
+    body: |
+      You're in a fresh clone of the website. Type these one at a time:
+
+      1. `git branch -a`
+      2. `echo '<p>New hours</p>' >> about.html`, then `git commit -am "Update the hours"`
+      3. `git status`: ahead by 1.
+      4. `git log --oneline -2`: `main` and `origin/main` now label different commits.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Pushing
     body: |
@@ -69,6 +141,32 @@ steps:
       ```
 
       `-u` (`--set-upstream`) links your `main` to `origin/main`, so from then on plain `git push` and `git pull` know where to go. Without it, a plain `git push` on a new branch says *"The current branch has no upstream branch"*, and shows you the command to fix it.
+
+      <!-- page -->
+
+      **Example.** A brand-new repository for Inkwell's recipes, created on GitHub with `gh` (Module 20), then connected and pushed:
+
+      ```
+      learner@inkwell:~/recipes$ gh repo create recipes --private
+      ✓ Created repository learner/recipes on github.com
+        https://github.com/learner/recipes
+      learner@inkwell:~/recipes$ git remote add origin git@github.com:learner/recipes.git
+      learner@inkwell:~/recipes$ git push -u origin main
+      Enumerating objects: 3, done.
+      Counting objects: 100% (3/3), done.
+      Writing objects: 100% (3/3), done.
+      Total 3 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+      To github.com:learner/recipes.git
+       * [new branch]      main
+      branch 'main' set up to track 'origin/main'.
+      learner@inkwell:~/recipes$ git status
+      On branch main
+      Your branch is up to date with 'origin/main'.
+
+      nothing to commit, working tree clean
+      ```
+
+      After `-u`, `git status` knows which branch on GitHub to compare with.
 
   - kind: shell
     title: Publish your notes
@@ -107,6 +205,39 @@ steps:
       ```
       git config --global pull.rebase false
       ```
+
+      <!-- page -->
+
+      **Example.** Kenji has pushed a commit from his own copy. Watch what each command knows:
+
+      ```
+      learner@inkwell:~/site$ git status
+      On branch main
+      Your branch is up to date with 'origin/main'.
+
+      nothing to commit, working tree clean
+      learner@inkwell:~/site$ git fetch
+      remote: Enumerating objects: 3, done.
+      remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+      Unpacking objects: 100% (3/3), done.
+      From github.com:inkwell/site
+         9a1efb0..d914ad9  main       -> origin/main
+      learner@inkwell:~/site$ git status
+      On branch main
+      Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+        (use "git pull" to update your local branch)
+
+      nothing to commit, working tree clean
+      learner@inkwell:~/site$ git log --oneline main..origin/main
+      d914ad9 (origin/main, origin/HEAD) Add Sunday hours
+      learner@inkwell:~/site$ git pull
+      Updating 9a1efb0..d914ad9
+      Fast-forward
+       about.html | 1 +
+       1 file changed, 1 insertion(+)
+      ```
+
+      Before `fetch`, `status` said *up to date*: it only knew GitHub as it was at the clone. `fetch` brought Kenji's commit in, `log main..origin/main` showed it, and `pull` merged it (a fast-forward).
 
   - kind: shell
     title: Kenji pushed something
@@ -150,6 +281,47 @@ steps:
       2. `git push` again.
 
       ⚠️ Never "fix" it with `git push --force`: that replaces their commits with yours on GitHub, and their work disappears from the shared history.
+
+      <!-- page -->
+
+      **Example: the whole loop.** You and Kenji both committed; he pushed first:
+
+      ```
+      learner@inkwell:~/site$ git push
+      To github.com:inkwell/site.git
+       ! [rejected]        main -> main (fetch first)
+      error: failed to push some refs to 'github.com:inkwell/site.git'
+      hint: Updates were rejected because the remote contains work that you do not
+      hint: have locally. This is usually caused by another repository pushing to
+      hint: the same ref. If you want to integrate the remote changes, use
+      hint: 'git pull' before pushing again.
+      hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+      learner@inkwell:~/site$ git pull --no-edit
+      remote: Enumerating objects: 3, done.
+      remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+      Unpacking objects: 100% (3/3), done.
+      From github.com:inkwell/site
+         9a1efb0..d914ad9  main       -> origin/main
+      Merge made by the 'ort' strategy.
+       about.html | 1 +
+       1 file changed, 1 insertion(+)
+      learner@inkwell:~/site$ git push
+      Enumerating objects: 5, done.
+      Counting objects: 100% (5/5), done.
+      Writing objects: 100% (5/5), done.
+      Total 5 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+      To github.com:inkwell/site.git
+         d914ad9..d8d8bef  main -> main
+      learner@inkwell:~/site$ git log --oneline --graph -4
+      *   d8d8bef (HEAD -> main, origin/main, origin/HEAD) Merge branch 'main' of github.com:inkwell/site
+      |\
+      * | 9b7f059 Mention gift wrap
+      | * d914ad9 Add Sunday hours
+      |/
+      * 9a1efb0 Lower the price of Dune
+      ```
+
+      The pull made a merge commit joining your work and Kenji's. The second push was accepted, and nothing of Kenji's was lost.
 
   - kind: shell
     title: Rejected, then fixed

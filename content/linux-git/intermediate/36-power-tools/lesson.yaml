@@ -15,6 +15,33 @@ steps:
 
       A stash is local and easy to forget: treat it as a pocket, not a filing cabinet.
 
+      <!-- page -->
+
+      **Example.** Half-finished changes on `main`, put aside and brought back:
+
+      ```
+      learner@inkwell:~/demo$ git status --short
+       M page.html
+      learner@inkwell:~/demo$ git stash push -m "footer redesign"
+      Saved working directory and index state On main: footer redesign
+      learner@inkwell:~/demo$ git status --short
+      learner@inkwell:~/demo$ git stash list
+      stash@{0}: On main: footer redesign
+      learner@inkwell:~/demo$ git stash pop
+      On branch main
+      Changes not staged for commit:
+        (use "git add <file>..." to update what will be committed)
+        (use "git restore <file>..." to discard changes in working directory)
+      	modified:   page.html
+
+      no changes added to commit (use "git add" and/or "git commit -a")
+      Dropped refs/stash@{0} (f70e31d0d3992ca55dc0bd32efb028756cd508a3)
+      learner@inkwell:~/demo$ git status --short
+       M page.html
+      ```
+
+      In between, the folder was clean: the moment to switch branches and make the urgent fix.
+
   - kind: shell
     title: An urgent fix in the middle of work
     fixture: [git-identity, website-repo, website-more]
@@ -93,6 +120,29 @@ steps:
 
       It can conflict like a merge: fix, `git add`, `git cherry-pick --continue` (or `--abort`).
 
+      <!-- page -->
+
+      **Example.** A fix was made on the `experiment` branch; `main` needs just that one commit:
+
+      ```
+      learner@inkwell:~/demo$ git log --oneline --all
+      5309ffa (experiment) Fix the broken link
+      d67762c Try an idea
+      ec431ea (HEAD -> main) Base
+      learner@inkwell:~/demo$ git cherry-pick experiment
+      [main 9b97ff0] Fix the broken link
+       Date: Wed Oct 14 15:32:05 2026 +0000
+       1 file changed, 1 insertion(+)
+       create mode 100644 link.txt
+      learner@inkwell:~/demo$ git log --oneline
+      9b97ff0 (HEAD -> main) Fix the broken link
+      ec431ea Base
+      learner@inkwell:~/demo$ ls
+      a.txt  link.txt
+      ```
+
+      `experiment` (the branch name) means its newest commit, the link fix. Only that change arrived: `idea.txt` stayed behind.
+
   - kind: shell
     title: Just the fix, please
     fixture: [git-identity, website-repo, website-more]
@@ -132,6 +182,19 @@ steps:
       - **MINOR** (1.**2**.0): new features, nothing breaks;
       - **MAJOR** (**2**.0.0): something that worked before may now break.
 
+      <!-- page -->
+
+      **Example** in a small repository:
+
+      ```
+      learner@inkwell:~/demo$ git tag -a v1.1 -m "Book pages and hours"
+      learner@inkwell:~/demo$ git tag
+      v1.1
+      learner@inkwell:~/demo$ git log --oneline --decorate
+      0f92398 (HEAD -> main, tag: v1.1) Add book pages
+      a733619 First release
+      ```
+
   - kind: shell
     title: Tag the release
     fixture: [git-identity, website-repo, website-more, github-account, github-site, site-clone]
@@ -165,6 +228,26 @@ steps:
       - `git show <commit>` (message and full change), `git show <commit> --stat` (just the files), `git show v1.0:index.html` (a file as it was).
       - `git blame file` shows, for every line, the commit and author that last changed it; `-L 10,20` limits it to some lines.
 
+      <!-- page -->
+
+      **Examples** on Kenji's website repository:
+
+      ```
+      learner@inkwell:~/inkwell/site-repo$ git log --oneline --grep=Dune
+      9a1efb0 (tag: v1.0) Lower the price of Dune
+      1594832 Add the Dune book page
+      learner@inkwell:~/inkwell/site-repo$ git log --oneline -- books/
+      2721cea (HEAD -> main) Add the Kindred book page
+      9a1efb0 (tag: v1.0) Lower the price of Dune
+      1594832 Add the Dune book page
+      learner@inkwell:~/inkwell/site-repo$ git log --oneline --since=2026-09-20
+      2721cea (HEAD -> main) Add the Kindred book page
+      dc44b37 Add analytics
+      b81b3f0 Add opening hours to the about page
+      9a1efb0 (tag: v1.0) Lower the price of Dune
+      1594832 Add the Dune book page
+      ```
+
   - kind: shell
     title: Priya's recent work
     fixture: [git-identity, website-repo, website-more]
@@ -197,6 +280,56 @@ steps:
 
       `git log --oneline main..feature` before merging answers "what am I about to bring in?"; `git diff main...feature` is the review view.
 
+      <!-- page -->
+
+      **Example.** `feature` has two commits; `main` got one more after it branched:
+
+      ```
+      learner@inkwell:~/demo$ git log --oneline main..feature
+      a3fed99 (feature) Feature part 2
+      c7ab2fa Feature part 1
+      learner@inkwell:~/demo$ git log --oneline main...feature
+      b7401fb (HEAD -> main) Main moved on
+      a3fed99 (feature) Feature part 2
+      c7ab2fa Feature part 1
+      learner@inkwell:~/demo$ git diff --stat main...feature
+       f1.txt | 1 +
+       f2.txt | 1 +
+       2 files changed, 2 insertions(+)
+      ```
+
+      `..` listed only what a merge would bring. `...` added `main`'s own new commit. The `diff` with three dots shows only what `feature` changed, the pull-request view.
+
+  - kind: shell
+    title: "Try it: two dots and three"
+    fixture: git-identity
+    setup: |
+      mkdir -p ~/demo && cd ~/demo
+      git init -q
+      echo base > a.txt
+      git add .
+      git commit -q -m Base
+      git switch -q -c feature
+      echo f1 > f1.txt
+      git add .
+      git commit -q -m 'Feature part 1'
+      echo f2 > f2.txt
+      git add .
+      git commit -q -m 'Feature part 2'
+      git switch -q main
+      echo m > m.txt
+      git add .
+      git commit -q -m 'Main moved on'
+    body: |
+      `feature` has two commits, and `main` has one of its own since they split. Type these one at a time:
+
+      1. `git log --oneline main..feature`
+      2. `git log --oneline feature..main`: the other way round.
+      3. `git log --oneline main...feature`
+      4. `git diff --stat main...feature`
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: What would merging bring?
     fixture: [git-identity, website-repo, website-more]
@@ -226,6 +359,28 @@ steps:
       git branch --merged main         # branches whose commits are all in main
       git branch -d fix-1 fix-2
       git branch --no-merged main      # still has work that isn't in main
+      ```
+
+      <!-- page -->
+
+      **Example.** An alias, then the merged-or-not lists:
+
+      ```
+      learner@inkwell:~/demo$ git config --global alias.st "status --short"
+      learner@inkwell:~/demo$ echo change >> a.txt
+      learner@inkwell:~/demo$ git st
+       M a.txt
+      learner@inkwell:~/demo$ git branch --merged main
+        done-work
+      * main
+      learner@inkwell:~/demo$ git branch --no-merged main
+        wip
+      learner@inkwell:~/demo$ git branch -d done-work
+      Deleted branch done-work (was 59ff663).
+      learner@inkwell:~/demo$ git branch -d wip
+      error: the branch 'wip' is not fully merged
+      hint: If you are sure you want to delete it, run 'git branch -D wip'
+      hint: Disable this message with "git config set advice.forceDeleteBranch false"
       ```
 
   - kind: shell
@@ -271,6 +426,25 @@ steps:
       ```
 
       It's careful: it never deletes the branch you're on, a branch with commits its upstream doesn't have, or a branch with **no upstream** at all (like the ones in the last step, which is why `--merged` and `-d` were the tools there). On your Mac, `brew upgrade git` gets it.
+
+      <!-- page -->
+
+      **Example** in a clone with two branches that track `origin/main` and add nothing to it:
+
+      ```
+      learner@inkwell:~/site$ git branch -vv
+        fix-1 9a1efb0 [origin/main] Lower the price of Dune
+        fix-2 9a1efb0 [origin/main] Lower the price of Dune
+      * main  9a1efb0 [origin/main] Lower the price of Dune
+      learner@inkwell:~/site$ git branch --delete-merged --dry-run
+      Would delete branch fix-1 (was 9a1efb0).
+      Would delete branch fix-2 (was 9a1efb0).
+      learner@inkwell:~/site$ git branch --delete-merged
+      Deleted branch fix-1 (was 9a1efb0).
+      Deleted branch fix-2 (was 9a1efb0).
+      learner@inkwell:~/site$ git branch
+      * main
+      ```
 
   - kind: shell
     title: Tidy up after the pull requests

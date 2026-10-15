@@ -11,6 +11,24 @@ steps:
 
       So `books` really lives at *cluster → practice → public → books*.
 
+      **Example.** You can look at each level. `\dn` lists the **schemas** in this database:
+
+      | Name | Owner |
+      |---|---|
+      | public | detective |
+
+      and `\dt` lists the **tables** inside it (`books`, `customers`, `sales`). On your Mac, `\l` lists the **databases** in the cluster.
+
+  - kind: try
+    title: "Try it: look inside the boxes"
+    body: |
+      Run it: first the schemas, then the tables. Then add `\d books` to look one level further, at the columns of one table.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      \dn
+      \dt
+
   - kind: explain
     title: The public schema
     body: |
@@ -21,6 +39,14 @@ steps:
       ```sql
       SELECT * FROM public.books;
       ```
+
+      For example, `SELECT title FROM public.books LIMIT 3;` returns the same rows as `SELECT title FROM books LIMIT 3;` (`LIMIT 3` just keeps the first 3 rows; Module 6 covers it):
+
+      | title |
+      |---|
+      | Pride and Prejudice |
+      | Emma |
+      | 1984 |
 
       Schemas are useful for grouping: a company might keep `sales.orders` and `hr.employees` in one database, or keep an `audit` schema of change logs apart from the everyday tables.
 
@@ -148,6 +174,14 @@ steps:
 
       `IF EXISTS` means "only if it's there". Without it, dropping a missing table is an error. With it, you just get a notice. It's handy in scripts you run more than once.
 
+      On a database with no `suspects` table, the plain version fails:
+
+      ```text
+      ERROR: table "suspects" does not exist
+      ```
+
+      while `DROP TABLE IF EXISTS suspects;` simply finishes (psql replies `DROP TABLE`, plus a notice that there was nothing to drop).
+
   - kind: try
     title: Gone for good
     body: |
@@ -170,6 +204,42 @@ steps:
 
       Why lowercase? PostgreSQL quietly **folds unquoted names to lowercase**. `SELECT * FROM Books` and `SELECT * FROM BOOKS` both read the table `books`.
 
+      **Example.** Because names are folded to lowercase, these two queries are the same:
+
+      ```sql
+      SELECT title, price FROM Books WHERE Price > 18;
+      SELECT title, price FROM books WHERE price > 18;
+      ```
+
+      | title | price |
+      |---|---|
+      | It | 19.99 |
+      | Sapiens | 22.00 |
+
+      And a keyword as a name fails:
+
+      ```sql
+      CREATE TABLE order (order_id integer);
+      ```
+
+      ```text
+      ERROR:  syntax error at or near "order"
+      ```
+
+      Call it `orders` instead.
+
+  - kind: try
+    title: "Try it: names and capitals"
+    body: |
+      Run it: the capitals make no difference. The last line fails because `order` is an SQL keyword. Change it to `orders` and run again.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      SELECT title, price FROM Books WHERE Price > 18;
+
+      CREATE TABLE order (order_id integer);
+    broken_starter: true
+
   - kind: explain
     title: "The trouble with \"CamelCase\""
     body: |
@@ -182,7 +252,13 @@ steps:
       SELECT * FROM ReadingNotes;     -- error: folds to readingnotes
       ```
 
-      Every query, by every person, for the life of the table. Avoid it: use lowercase snake_case and never quote names.
+      The second line fails with:
+
+      ```text
+      ERROR: relation "readingnotes" does not exist
+      ```
+
+      PostgreSQL lowercased the unquoted name and went looking for `readingnotes`, which doesn't exist. And you'd have to remember the quotes in every query, by every person, for the life of the table. Avoid it: use lowercase snake_case and never quote names.
 
       Quotes also matter for values: **single quotes** `'…'` are text values, and **double quotes** `"…"` are names. Mixing them up is a very common error.
 

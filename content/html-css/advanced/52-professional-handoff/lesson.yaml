@@ -12,6 +12,41 @@ steps:
       - **Auto layout** frames correspond to Flexbox: direction, gap, padding, alignment, and "fill/hug" sizing (`flex: 1` / `width: fit-content`).
       - **Export**: select a layer → Export → SVG for icons and logos, PNG/JPG at 1×/2× (or WebP) for photos.
 
+      <!-- page -->
+
+      **Example: Dev Mode, translated.** Selecting the "Add to basket" button in Inkwell's Figma file shows:
+
+      ```text
+      Auto layout   horizontal · gap 8 · padding 12 / 20 · hug contents
+      Fill          color/brand   (#7C2D12)
+      Text          text/button   Inter 600 16/24
+      Corner radius radius/2      (6)
+      ```
+
+      which becomes:
+
+      ```css
+      .button {
+        display: inline-flex;          /* auto layout, hug contents */
+        gap: var(--space-2);           /* 8 */
+        padding: 12px 20px;
+        background: var(--color-brand);   /* the variable's name, not the hex */
+        font: 600 1rem/1.5 Inter, sans-serif;
+        border-radius: var(--radius-2);
+      }
+      ```
+
+  - kind: choice
+    title: "Quick check: auto layout"
+    body: |
+      A Figma frame uses **auto layout**: horizontal, gap 16, padding 24. What CSS does that map to?
+    options:
+      - "`display: flex; gap: 16px; padding: 24px;`"
+      - "`position: absolute;` for every child"
+      - "`display: table;`"
+    answer: 0
+    explanation: "Figma's auto layout is Flexbox in design form: a direction, a gap, padding and alignment."
+
   - kind: explain
     title: Reading a spec
     body: |
@@ -29,6 +64,67 @@ steps:
       | Price text | `body/strong`: 16/24, weight 700, `color/success` = #15803D |
 
       Translating: auto layout vertical → `display: flex; flex-direction: column; gap: 12px`; "20/28" means font-size 20px, line-height 28px; an **inside** stroke behaves like a border with `box-sizing: border-box`; drop shadow → `box-shadow: 0 4px 16px rgb(0 0 0 / 8%)`. Design tools speak pixels: convert font sizes to rem in your code (20px = 1.25rem).
+
+      <!-- page -->
+
+      A smaller spec, translated line by line. The "Staff pick" tag:
+
+      | Property | Value |
+      |---|---|
+      | Auto layout | horizontal, gap 8, padding 4 12 |
+      | Fill | `color/accent` = #FEF3C7 |
+      | Radius | 999 |
+      | Text | `label/s`: 14/20, weight 600 |
+
+      ```css
+      .tag {
+        display: inline-flex;          /* auto layout, horizontal, hugging its content */
+        gap: 8px;
+        padding: 4px 12px;
+        background: var(--color-accent);
+        border-radius: 999px;
+        font-size: 0.875rem;           /* 14px */
+        line-height: 1.25rem;          /* 20px */
+        font-weight: 600;
+      }
+      ```
+
+      In the page: a small pale-yellow pill with rounded ends, its bold label and star icon side by side with 8px between them.
+
+  - kind: web
+    title: "Try it: spec to CSS"
+    body: |
+      The "Staff pick" tag from the previous page, built from its spec. The star and the label are the two items in its horizontal auto layout.
+
+      Try:
+
+      1. Change `gap: 8px` to `gap: 2px`: the star moves up close to the word.
+      2. Change `display: inline-flex` to `display: flex`. The tag stretches across the whole width: "hug" in Figma means `inline-flex` (or `width: fit-content`), not `flex`.
+      3. Change `border-radius: 999px` to `4px`: a rectangle with slightly rounded corners.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <p>Emma</p>
+      <span class="tag"><span aria-hidden="true">★</span> Staff pick</span>
+    css: |
+      :root {
+        --color-accent: #fef3c7;
+      }
+
+      body {
+        font-family: system-ui, sans-serif;
+      }
+
+      .tag {
+        display: inline-flex;
+        gap: 8px;
+        padding: 4px 12px;
+        background: var(--color-accent);
+        border-radius: 999px;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        font-weight: 600;
+      }
 
   - kind: web
     title: Build the card from the spec
@@ -120,6 +216,31 @@ steps:
 
       Agree with the designer on what "done" means: matches at the agreed breakpoints, uses the tokens, behaves sensibly in between, and meets accessibility requirements. Then compare side by side (overlay tools like PerfectPixel help) and discuss differences, rather than chasing every pixel.
 
+      <!-- page -->
+
+      **Example: the same card, copied and built.**
+
+      ```css
+      /* Copied pixels: breaks on narrow phones and with long titles */
+      .card { width: 320px; height: 410px; padding: 23px; }
+
+      /* Built intent */
+      .card { max-width: 320px; min-height: 410px; padding: var(--space-l); }  /* --space-l is 24px */
+      ```
+
+      On a 300px-wide screen the first card sticks out sideways; the second shrinks. Give it the title *Die unendliche Geschichte: Vollständige Ausgabe* and the first one's text spills out of its fixed height, while the second grows to fit.
+
+  - kind: choice
+    title: "Quick check: what 320 wide means"
+    body: |
+      The design shows a card 320px wide. What should you usually write?
+    options:
+      - "`width: 320px`"
+      - "`max-width: 320px`, so it can shrink on narrow screens"
+      - "`min-width: 320px`"
+    answer: 1
+    explanation: "A design shows one width, but the browser has every width. \"320 wide\" usually means \"up to 320\", so `max-width` keeps the intent and still fits a small screen."
+
   - kind: explain
     title: Code review
     body: |
@@ -132,6 +253,26 @@ steps:
       - **Simplicity**: is there a shorter, more robust way (Grid instead of positioning hacks)?
 
       Be kind and specific: explain *why*, suggest a fix, and separate must-fix issues from nitpicks ("nit: …"). When receiving a review, assume good intent, ask when you don't understand, and say thanks.
+
+      <!-- page -->
+
+      **Example: review comments on a pull request**, the kind and specific way:
+
+      ```text
+      style.css, line 14:  .newsletter__button { background: #7c2d12 !important; }
+        Must fix: please use var(--color-brand) and drop the !important. It would
+        override the disabled state and the dark theme. Was something else
+        overriding it? If so, let's fix that rule instead.
+
+      style.css, line 22:  .newsletter__button:focus { outline: none; }
+        Must fix: keyboard users can't see where they are. Suggest
+        :focus-visible { outline: 3px solid var(--color-brand); }
+
+      style.css, line 3:   gap: 16px;
+        nit: var(--space-m) is the same value and keeps it on the scale.
+      ```
+
+      Each comment says what, why, and a fix, and the nitpick is labelled so it doesn't block the merge.
 
   - kind: web
     title: Review and fix a pull request
@@ -212,6 +353,32 @@ steps:
       - **Delete fearlessly**: unused CSS is debt. Coverage in DevTools, and search the codebase for a class before deleting it.
       - **Comment the why**: `/* 1px less than the header so the shadow overlaps */`, not `/* set margin */`.
       - **Automate**: Prettier, Stylelint and visual checks in CI, so reviewers can focus on design and accessibility.
+
+      **Example: a rule before and after a maintenance pass.**
+
+      ```css
+      /* Before */
+      #sidebar .widget h3.title { margin: 13px 0 !important; color: #7c2d12; }   /* set margin */
+
+      /* After */
+      .widget__title {
+        margin-block: var(--space-s);   /* was 13px; --space-s (12px) is the nearest step on the scale */
+        color: var(--color-brand);
+      }
+      ```
+
+      Specificity drops from an id plus classes plus `!important` to one class, the raw values become tokens, and the comment now explains a decision instead of repeating the code.
+
+  - kind: choice
+    title: "Quick check: a good comment"
+    body: |
+      Which comment helps the next developer most?
+    options:
+      - "`/* set margin */`"
+      - "`/* 1px less than the header so the shadow overlaps */`"
+      - "`/* fixed it */`"
+    answer: 1
+    explanation: "Good comments explain **why**. The code already says what it sets."
 
   - kind: why
     body: |

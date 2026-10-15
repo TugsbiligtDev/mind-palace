@@ -6,6 +6,36 @@ steps:
 
       The language of that conversation is **HTTP**. Learn to read an HTTP request and response and you can follow — and later test — almost anything a website does.
 
+      **Example: one round of the conversation.** You type `example.com` into the browser. The browser sends:
+
+      ```
+      GET / HTTP/1.1
+      Host: example.com
+      ```
+
+      and the server answers (shortened):
+
+      ```
+      HTTP/1.1 200 OK
+      Content-Type: text/html
+
+      <html><head><title>Example Domain</title></head> ...
+      ```
+
+      The browser reads that HTML and notices the page also needs a picture and a stylesheet, so it repeats the same request and response for each one. A typical page is dozens of these little conversations.
+
+  - kind: choice
+    title: "Quick check: who starts it?"
+    body: |
+      In the web conversation, who sends the **request** and who sends the **response**?
+    options:
+      - "The server requests, the browser responds"
+      - "The browser (client) requests, the server responds"
+      - "Both send requests at the same time"
+    answer: 1
+    explanation: |
+      The **client** (your browser, or a tool like `curl`) always asks; the **server** answers. Every web test is about what goes into those requests and what comes back.
+
   - kind: explain
     title: Anatomy of a request
     body: |
@@ -26,6 +56,41 @@ steps:
 
       Everything a web test does is, at bottom, crafting or tampering with requests like this — which is why tools that let you see and edit them (Module 20's Burp Suite) are so central.
 
+  - kind: mac
+    title: "Try it: see your own request"
+    body: |
+      `curl -v` ("verbose") prints the request it sends, each line starting with `>`. `-o /dev/null` throws the page away so only the conversation shows. Find the **method**, the **path** and the **headers**:
+
+      ```
+      > GET / HTTP/2
+      > Host: example.com
+      > User-Agent: curl/8.7.1
+      > Accept: */*
+      ```
+
+      (`HTTP/2` is a newer version of HTTP; the parts are the same.) Lines starting with `<` are the response, and lines with `*` are curl's own notes.
+    commands: |
+      curl -v https://example.com -o /dev/null
+
+  - kind: choice
+    title: "Quick check: the parts of a request"
+    body: |
+      ```
+      GET /account/orders HTTP/1.1
+      Host: shop.example.com
+      Cookie: session=7f3a
+      ```
+
+      What is the **path**?
+    options:
+      - "GET"
+      - "shop.example.com"
+      - "/account/orders"
+      - "session=7f3a"
+    answer: 2
+    explanation: |
+      `GET` is the method, `/account/orders` is the path (which resource), and `Host` and `Cookie` are headers.
+
   - kind: explain
     title: Methods — GET and POST
     body: |
@@ -38,6 +103,40 @@ steps:
       | PUT / DELETE | Create/replace, remove | APIs |
 
       One security point already: because **GET puts data in the URL**, anything sent that way (a search term, worse, a password) ends up in browser history, server logs and bookmarks. Sensitive data belongs in a POST body, not a GET URL — a finding you will report more than once.
+
+      <!-- page -->
+
+      **Example: the same shop, two methods.** Searching for books sends a GET, with the search term inside the path:
+
+      ```
+      GET /search?q=mystery+novels HTTP/1.1
+      Host: shop.example.com
+      ```
+
+      Signing in sends a POST. The data sits in the **body**, below an empty line, not in the path:
+
+      ```
+      POST /login HTTP/1.1
+      Host: shop.example.com
+      Content-Type: application/x-www-form-urlencoded
+      Content-Length: 28
+
+      username=ada&password=s3cret
+      ```
+
+      The search term `mystery novels` (a `+` stands for a space) will be saved in history and logs. The password will not, because it never appears in the URL.
+
+  - kind: choice
+    title: "Quick check: where did the password go?"
+    body: |
+      A site's login form sends `GET /login?user=ada&pass=s3cret`. Why is that a finding?
+    options:
+      - "GET is slower than POST"
+      - "The password is in the URL, so it ends up in browser history, server logs and bookmarks"
+      - "GET requests can't carry data"
+    answer: 1
+    explanation: |
+      GET puts its data in the URL, and URLs get saved everywhere. A password belongs in the body of a POST, where it isn't written to history or logs.
 
   - kind: explain
     title: The response and its status code
@@ -53,6 +152,43 @@ steps:
 
       To a tester these are signals. A **403** says "something is here but you are not allowed" — worth probing. A **500** means your input broke the server, which often means the input was handled carelessly — the scent of a bug. A **302** to a login page tells you a resource is protected.
 
+      <!-- page -->
+
+      **Example.** `curl` is a command-line web client, and `curl -I` asks for just the status line and headers. Here are the first lines of three answers from the training target in your lab:
+
+      ```
+      kali@kali:~$ curl -I http://192.168.56.101/
+      HTTP/1.1 200 OK
+      kali@kali:~$ curl -I http://192.168.56.101/dvwa/
+      HTTP/1.1 302 Found
+      Location: login.php
+      kali@kali:~$ curl -I http://192.168.56.101/old-backup/
+      HTTP/1.1 404 Not Found
+      ```
+
+      The home page exists (200). The `/dvwa/` app sends you to its login page (302, and `Location` says where to), so it is protected. `/old-backup/` does not exist (404).
+
+  - kind: mac
+    title: "Try it: two status codes"
+    body: |
+      Ask for a page that exists and one that doesn't, and read the first line of each answer: `200` for the first, `404` for the second. (`HTTP/2` is a newer version of HTTP; the status codes mean the same.)
+    commands: |
+      curl -I https://example.com/
+      curl -I https://example.com/no-such-page
+
+  - kind: choice
+    title: "Quick check: read the signal"
+    body: |
+      You send an unusual value in a search box and the server answers `500 Internal Server Error`. What does that suggest?
+    options:
+      - "You typed the address wrong"
+      - "The page is protected and you need to log in"
+      - "Your input broke something on the server, so it may be handled carelessly"
+      - "Everything worked"
+    answer: 2
+    explanation: |
+      **5xx** means the *server* broke. Breaking it with your input hints the input isn't handled safely, which is worth a closer look. A wrong address would be 404, a protected page 401/403 or a 302 to the login, and success is 200.
+
   - kind: explain
     title: Headers carry the metadata
     body: |
@@ -65,6 +201,37 @@ steps:
 
       Reading headers is free reconnaissance: the site often tells you what it is built from before you do anything clever.
 
+      **Example:** the full headers of the lab target's home page:
+
+      ```
+      kali@kali:~$ curl -I http://192.168.56.101/
+      HTTP/1.1 200 OK
+      Date: Wed, 14 Oct 2026 10:15:02 GMT
+      Server: Apache/2.2.8 (Ubuntu) DAV/2
+      X-Powered-By: PHP/5.2.4-2ubuntu5.10
+      Content-Type: text/html
+      ```
+
+      In five lines the server has announced its web server *and* version (`Apache/2.2.8`), its operating system (`Ubuntu`) and its programming language *and* version (`PHP/5.2.4`). Both versions are many years old. Notice also what is *missing*: no `Content-Security-Policy`, no `Strict-Transport-Security`.
+
+  - kind: choice
+    title: "Quick check: free reconnaissance"
+    body: |
+      A response contains these headers. Which one tells an attacker what to look up?
+
+      ```
+      Content-Type: text/html
+      Server: nginx/1.14.0
+      Date: Wed, 14 Oct 2026 10:15:02 GMT
+      ```
+    options:
+      - "Content-Type"
+      - "Server"
+      - "Date"
+    answer: 1
+    explanation: |
+      `Server: nginx/1.14.0` names the exact software and version, so anyone can look up its known weaknesses. `Content-Type` and `Date` reveal nothing useful.
+
   - kind: explain
     title: Cookies and sessions — how a site remembers you
     body: |
@@ -74,7 +241,35 @@ steps:
       2. Your browser includes `Cookie: session=abc123` on every later request.
       3. The server looks up `abc123`, sees "this is Ada, already logged in," and treats you accordingly.
 
+      **Example.** Here is step 1 in a real response, and step 2 in the next request:
+
+      ```
+      HTTP/1.1 302 Found
+      Set-Cookie: PHPSESSID=8f2c1e9a7b3d4c5e6f708192a3b4c5d6; path=/; HttpOnly
+      Location: /account
+      ```
+
+      ```
+      GET /account HTTP/1.1
+      Host: shop.example.com
+      Cookie: PHPSESSID=8f2c1e9a7b3d4c5e6f708192a3b4c5d6
+      ```
+
+      `PHPSESSID` is the name PHP sites give their session cookie, and the long value is the session token. (`HttpOnly` asks the browser not to let page scripts read it, a protection you will meet again.)
+
       That little token *is* your logged-in identity. If an attacker steals it, copies it, or guesses it, they become you without ever knowing your password. That is why session handling is one of the richest areas of web security (Module 22).
+
+  - kind: choice
+    title: "Quick check: what is worth stealing?"
+    body: |
+      After you sign in, every request your browser sends includes `Cookie: session=9b1d77e0`. If an attacker copies that value into their own browser, what happens?
+    options:
+      - "Nothing: they still need your password"
+      - "The site treats them as you, already logged in"
+      - "The site logs you out and locks the account"
+    answer: 1
+    explanation: |
+      The session token *is* your logged-in identity: the server looks it up and sees "this is you". That's why stealing or guessing session tokens is such a common attack.
 
   - kind: explain
     title: Reading a URL

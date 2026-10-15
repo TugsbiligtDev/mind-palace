@@ -18,6 +18,55 @@ steps:
 
       Now the same card is stacked in a narrow slot and side-by-side in a wide one, anywhere on the page. Components finally become truly reusable.
 
+      In the page: a `.card-slot` 300px wide shows the card stacked (image above the text); a `.card-slot` 600px wide on the same screen shows it as two columns, a 120px image column beside the text.
+
+  - kind: web
+    title: "Try it: the same card, two slots"
+    body: |
+      The **same** card sits in a 300px slot and a 480px slot. The container query sees each slot's width, so the card is stacked in the narrow one and side-by-side in the wide one, on the same screen.
+
+      Try this:
+
+      1. Change `.wide`'s width to `380px`. It drops below 400px, so that card stacks too.
+      2. Change the query to `(width >= 250px)`. Now both cards are side-by-side.
+      3. Remove `container-type: inline-size;`. Neither card changes any more: without a container to ask, the query never matches.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="card-slot narrow">
+        <div class="card">
+          <img src="images/cover-dune.svg" alt="" width="120" height="180">
+          <p>Dune, £8.99</p>
+        </div>
+      </div>
+      <div class="card-slot wide">
+        <div class="card">
+          <img src="images/cover-dune.svg" alt="" width="120" height="180">
+          <p>Dune, £8.99</p>
+        </div>
+      </div>
+    css: |
+      .card-slot {
+        container-type: inline-size;
+        border: 2px dashed gray;
+        margin-bottom: 1rem;
+      }
+
+      .narrow { width: 300px; }
+      .wide   { width: 480px; }
+
+      .card {
+        gap: 1rem;
+        padding: 0.5rem;
+      }
+
+      @container (width >= 400px) {
+        .card {
+          display: grid;
+          grid-template-columns: 120px 1fr;
+        }
+      }
+
   - kind: explain
     title: The rules
     body: |
@@ -26,6 +75,47 @@ steps:
       - `@container (…)` uses the same conditions as media queries: `(width >= 400px)`, `(400px <= width < 700px)`.
       - It finds the **nearest** ancestor that's a container.
       - `container-type: inline-size` stops the element from sizing itself from its contents' width (it can't depend on what it measures), so give it a width from its layout (a grid cell, a block that fills its parent).
+
+  - kind: web
+    title: "Try it: a container query"
+    body: |
+      Two `.box` wrappers with the same event notice inside: one is 260px wide, one is 560px wide. Each box is a container, and `@container (width >= 400px)` turns the notice into a row with a brown background. Only the wide one matches.
+
+      Try:
+
+      1. Change `400px` to `200px`. Both notices turn into rows: both boxes are now wide enough.
+      2. Change it back, then change the first box's `width: 260px` (in `index.html`) to `450px`. Now it matches too.
+      3. Delete the `container-type` line. Nothing matches any more: `@container` needs a container to ask.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="box" style="width: 260px">
+        <div class="event"><strong>Poetry night</strong><span>Friday, 7pm</span></div>
+      </div>
+      <div class="box" style="width: 560px">
+        <div class="event"><strong>Poetry night</strong><span>Friday, 7pm</span></div>
+      </div>
+    css: |
+      .box {
+        container-type: inline-size;
+        margin-bottom: 1rem;
+        border: 1px dashed #a8a29e;
+      }
+
+      .event {
+        display: flex;
+        flex-direction: column;
+        padding: 0.5rem;
+      }
+
+      @container (width >= 400px) {
+        .event {
+          flex-direction: row;
+          justify-content: space-between;
+          background: #7c2d12;
+          color: white;
+        }
+      }
 
   - kind: web
     title: One card, two slots
@@ -143,6 +233,19 @@ steps:
 
       A name also documents intent: `@container card (…)` reads clearly in a big stylesheet.
 
+      In the page: when the sidebar is narrower than 300px, its `.widget-title` text shrinks to 1rem. Another container nested inside the sidebar doesn't get in the way, because the query asks for `sidebar` by name.
+
+  - kind: choice
+    title: "Quick check: which container?"
+    body: |
+      With `@container sidebar (width < 300px) { … }`, which container's width is checked?
+    options:
+      - "The nearest container of any name"
+      - "The browser window"
+      - "The nearest ancestor container named `sidebar`"
+    answer: 2
+    explanation: "A named query skips other containers and asks the nearest one called `sidebar`. Without a name, `@container` uses the nearest container of all."
+
   - kind: explain
     title: Container units
     body: |
@@ -164,6 +267,47 @@ steps:
       ```
 
       `cqi` is the one you'll use most.
+
+      In the page: put the same card in a narrow slot and a wide one, and the title is smaller in the narrow card and bigger in the wide one (never below 1rem, never above 1.75rem), even though the screen is the same.
+
+  - kind: web
+    title: "Try it: a named container and cqi"
+    body: |
+      Two `.panel` boxes, 280px and 600px wide. The shorthand `container: panel / inline-size` names them `panel`. The heading's size uses `6cqi` (6% of the panel's width), so the wide panel has a bigger heading. And `@container panel (width >= 400px)` gives the note a yellow background, only in the wide panel.
+
+      Try:
+
+      1. Change `6cqi` to `10cqi`. Both headings grow, the wide one most (until it hits the `3rem` cap).
+      2. Change the query to `@container panel (width >= 200px)`. Both notes turn yellow.
+      3. Change the name in the query to `@container box (…)`. Nothing matches: no container is called `box`.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <section class="panel" style="width: 280px">
+        <h2 class="panel-heading">Staff picks</h2>
+        <p class="panel-note">Signed copies available.</p>
+      </section>
+      <section class="panel" style="width: 600px">
+        <h2 class="panel-heading">Staff picks</h2>
+        <p class="panel-note">Signed copies available.</p>
+      </section>
+    css: |
+      .panel {
+        container: panel / inline-size;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .panel-heading {
+        font-size: clamp(1rem, 6cqi, 3rem);
+      }
+
+      @container panel (width >= 400px) {
+        .panel-note {
+          background: #fef08a;
+        }
+      }
 
   - kind: web
     title: Name it and size the title
@@ -226,6 +370,17 @@ steps:
       ```
 
       Any element is a style container by default, so no `container-type` is needed. Supported in Chrome, Edge and Safari; Firefox support is still arriving, so treat it as an enhancement for now.
+
+  - kind: choice
+    title: "Quick check: what's queried?"
+    body: |
+      What does `@container style(--variant: featured)` test?
+    options:
+      - "The container's width"
+      - "Whether the container's custom property `--variant` is `featured`"
+      - "Whether the page is in dark mode"
+    answer: 1
+    explanation: "Style queries test a custom property's value on the container, instead of its size. Size queries are the `(width >= …)` kind."
 
   - kind: why
     body: |

@@ -6,6 +6,28 @@ steps:
 
       The tool for this is **Nmap** (Network Mapper), the most widely used scanner in the world. At heart it does something you already understand: it probes ports using the TCP handshake from Module 7 and reports which are open and what is behind them.
 
+      **Example: the line you are crossing.** Module 14 learned `dev.example.com` is at `203.0.113.40` from public records. This module would send packets to it:
+
+      | Module 14 (passive) | Module 15 (active) |
+      |---|---|
+      | `dig +short dev.example.com` asks public DNS | `nmap 203.0.113.40` knocks on its ports |
+      | nothing in the target's logs | every probe can be logged by the target |
+      | allowed for anyone | only with written authorisation, inside scope |
+
+      So before the first scan, check that `203.0.113.40` is actually listed in your scope. If it isn't, it stays a note in your report, not a target.
+
+  - kind: choice
+    title: "Quick check: before the first scan"
+    body: |
+      Passive recon found `203.0.113.40`. What must be true before you run Nmap against it?
+    options:
+      - "It must answer ping"
+      - "It must be listed in your written scope"
+      - "It must be a Linux machine"
+    answer: 1
+    explanation: |
+      Scanning is active: it interacts with someone's systems. Only addresses inside your **authorised scope** may be scanned. Anything else stays a note.
+
   - kind: explain
     title: What a scan actually asks
     body: |
@@ -17,12 +39,62 @@ steps:
 
       That third state is new and important: "filtered" means something is actively blocking you, which is itself information about the target's defences. Running this probe across many ports and hosts, quickly and reliably, is all Nmap is doing.
 
+      **Example: three ports, three answers**, as Nmap reports them:
+
+      ```
+      PORT     STATE     SERVICE
+      22/tcp   open      ssh
+      23/tcp   closed    telnet
+      3389/tcp filtered  ms-wbt-server
+      ```
+
+      - 22 answered SYN-ACK: something is listening.
+      - 23 answered RST: the machine is there, but nothing listens on that port.
+      - 3389 never answered: a firewall swallowed the probe. That tells you there *is* a firewall, and that it cares about remote desktop.
+
+  - kind: choice
+    title: "Quick check: no reply"
+    body: |
+      Nmap sends a SYN to port 8080 and gets **no reply at all**. How does it report the port?
+    options:
+      - "open"
+      - "closed"
+      - "filtered"
+    answer: 2
+    explanation: |
+      Silence usually means a firewall is dropping the probe, so Nmap says **filtered**. A closed port would answer with RST, and an open one with SYN-ACK.
+
   - kind: explain
     title: Host discovery first
     body: |
       Before scanning ports, you find which hosts in a range are alive. `nmap -sn 10.10.50.0/24` does a **ping sweep** — no port scan, just "who is home?" across the whole subnet (CIDR from Module 6 in action).
 
       A caution you already know: some hosts ignore ping but still run services. On an internal test you often skip discovery and scan suspected hosts directly (`-Pn`, "treat as up"), because "no ping reply" is not "not there."
+
+      Run against your lab subnet, the sweep just lists who answered:
+
+      ```
+      $ nmap -sn 10.10.50.0/24
+      Nmap scan report for 10.10.50.1
+      Host is up (0.00031s latency).
+      Nmap scan report for 10.10.50.20
+      Host is up (0.00048s latency).
+      Nmap done: 256 IP addresses (2 hosts up) scanned in 2.31 seconds
+      ```
+
+      Two hosts answered out of 256 addresses: the gateway and one target. No ports were touched yet, only "are you there?"
+
+  - kind: choice
+    title: "Quick check: the quiet host"
+    body: |
+      A ping sweep says `10.10.50.30` is down, but your scope document says it's a web server. What do you do?
+    options:
+      - "Cross it off: it's not there"
+      - "Scan it anyway with -Pn, since many hosts ignore ping but still run services"
+      - "Scan the whole internet to find where it moved"
+    answer: 1
+    explanation: |
+      "No ping reply" is not "not there". `-Pn` tells Nmap to treat the host as up and scan its ports directly. (Scanning outside scope is never the answer.)
 
   - kind: explain
     title: The scan types you will use
@@ -38,6 +110,35 @@ steps:
 
       The lesson from `-p-`: a scan of only common ports misses a service deliberately moved to port 8443 or 2222. Thoroughness is a choice between speed and completeness, and you make it consciously.
 
+      A default scan of one lab host prints the open ports and the service names Nmap guesses from the port number:
+
+      ```
+      $ nmap 10.10.50.20
+      Starting Nmap 7.94 ( https://nmap.org )
+      Nmap scan report for 10.10.50.20
+      Host is up (0.00042s latency).
+      Not shown: 997 closed tcp ports (reset)
+      PORT    STATE SERVICE
+      80/tcp  open  http
+      139/tcp open  netbios-ssn
+      445/tcp open  microsoft-ds
+      Nmap done: 1 IP address (1 host up) scanned in 1.52 seconds
+      ```
+
+      Three ports are open. Notice the `SERVICE` column is only a guess from the port number, not a real identification: that is what the next flag fixes.
+
+  - kind: choice
+    title: "Quick check: which scan?"
+    body: |
+      You suspect an admin panel is running on an unusual port, like 49152. Which scan will find it?
+    options:
+      - "nmap <target>"
+      - "nmap -p- <target>"
+      - "nmap -sn <target>"
+    answer: 1
+    explanation: |
+      The default scan covers only the 1,000 most common ports. `-p-` scans **all 65,535**. `-sn` doesn't scan ports at all; it only checks whether hosts are up.
+
   - kind: explain
     title: The two flags that change everything — -sV and -O
     body: |
@@ -47,6 +148,31 @@ steps:
       - **`-O`** (OS detection): Nmap guesses the operating system from subtle differences in how the host responds.
 
       A common, practical combination is `nmap -sC -sV <target>`: version detection plus a set of safe default scripts. The output — ports, services, versions, OS — is the raw material for everything that follows.
+
+      Add `-sV` to the same lab host and the vague guesses become exact software and versions:
+
+      ```
+      $ nmap -sV 10.10.50.20
+      PORT    STATE SERVICE     VERSION
+      80/tcp  open  http        Apache httpd 2.4.29 ((Ubuntu))
+      139/tcp open  netbios-ssn Samba smbd 4.7.6
+      445/tcp open  netbios-ssn Samba smbd 4.7.6
+      Service detection performed. Please report any incorrect results.
+      ```
+
+      "Apache httpd 2.4.29" and "Samba smbd 4.7.6" are specific enough to look up for known weaknesses in the next module. That is why `-sV` is the flag that earns its keep.
+
+  - kind: choice
+    title: "Quick check: the most useful line"
+    body: |
+      Which line from a scan is most useful for the next step, looking up known vulnerabilities?
+    options:
+      - "21/tcp open ftp"
+      - "21/tcp open ftp vsftpd 2.3.4"
+      - "Host is up (0.00042s latency)."
+    answer: 1
+    explanation: |
+      The one with the exact **software and version**, from `-sV`. You can look up `vsftpd 2.3.4` for known flaws; "ftp" alone could be anything.
 
   - kind: explain
     title: The Nmap Scripting Engine (NSE)
@@ -59,6 +185,32 @@ steps:
 
       Be deliberate: some scripts are intrusive or can crash fragile services. On an engagement you choose scripts knowingly and note which you ran — part of testing responsibly.
 
+      **Example: a default script at work.** `-sC` on the lab host's web port adds a few indented lines under the port, each from a script:
+
+      ```
+      $ nmap -sC -sV -p 80 10.10.50.20
+      PORT   STATE SERVICE VERSION
+      80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+      |_http-title: Staff Portal - Login
+      | http-methods:
+      |_  Supported Methods: GET HEAD POST OPTIONS
+      |_http-server-header: Apache/2.4.29 (Ubuntu)
+      ```
+
+      Without opening a browser, you know the page title (a staff login), which HTTP methods the server accepts, and the header it sends. The lines starting with `|` are script output.
+
+  - kind: choice
+    title: "Quick check: choosing scripts"
+    body: |
+      Why do you choose NSE scripts deliberately and write down which ones you ran?
+    options:
+      - "Because some scripts are intrusive and can disrupt fragile services"
+      - "Because scripts cost money"
+      - "Because Nmap only allows one script per day"
+    answer: 0
+    explanation: |
+      Categories like `vuln` or `brute` actively poke services and can crash weak ones. You run them knowingly, within the rules, and record them so the client knows what touched their systems.
+
   - kind: explain
     title: Timing, noise, and being a good guest
     body: |
@@ -68,6 +220,20 @@ steps:
       - **Detection:** a fast scan is obvious in logs and to intrusion-detection systems. Whether you care depends on the engagement (a stealthy red team cares; a straightforward pentest usually does not).
 
       Scanning is interacting with someone's systems. Do it within scope, at a sane rate, and record what you did.
+
+      **Example: the same scan at two speeds** on the lab network:
+
+      ```
+      $ nmap -T4 -p- 10.10.50.20
+      ...
+      Nmap done: 1 IP address (1 host up) scanned in 9.87 seconds
+
+      $ nmap -T2 -p- 10.10.50.20
+      ...
+      Nmap done: 1 IP address (1 host up) scanned in 2 hours, 41 minutes
+      ```
+
+      Same ports found; `-T2` waits politely between probes, so it took vastly longer. On a real engagement the rules of engagement, not curiosity, decide which you use.
 
   - kind: mac
     title: Run a real scan — legally

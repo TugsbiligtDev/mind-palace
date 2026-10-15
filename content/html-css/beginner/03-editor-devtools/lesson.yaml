@@ -6,6 +6,24 @@ steps:
 
       This course uses **Visual Studio Code** (VS Code). It's free, made by Microsoft, and the most popular editor among web developers. The editor on the right of each lesson is a small cousin of it.
 
+      **Example: what VS Code does for you.** In a new, empty `index.html`, type `!` and press **Tab**. VS Code writes the whole page skeleton for you:
+
+      ```html
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+      </head>
+      <body>
+
+      </body>
+      </html>
+      ```
+
+      In a plain text editor you'd type all eleven lines by hand. VS Code also colours tags, attributes and text differently, and when you type `<p>` it adds the closing `</p>` for you.
+
   - kind: mac
     title: Install VS Code and open your project
     body: |
@@ -27,6 +45,25 @@ steps:
 
       Handy keys: ⌘S save, ⌘P open a file by name, ⌘/ comment a line, ⌥↑/⌥↓ move a line, ⌘D select the next match.
 
+      **Example: three everyday jobs, and where to do each.**
+
+      | You want to… | Do this |
+      |---|---|
+      | open `about.html` without hunting through folders | ⌘P, type `about`, press Return |
+      | tidy the indenting of a messy file | ⇧⌘P, type `format`, choose **Format Document** |
+      | install Live Server | ⇧⌘X, search `live server`, click **Install** |
+
+  - kind: choice
+    title: "Quick check: find a command"
+    body: |
+      You forgot the shortcut for *Format Document*. Where can you search for it by name?
+    options:
+      - "The Explorer (⇧⌘E)"
+      - "The Command Palette (⇧⌘P)"
+      - "The Extensions view (⇧⌘X)"
+    answer: 1
+    explanation: "The Command Palette lists every command and lets you search it by name. The Explorer shows files; Extensions adds add-ons."
+
   - kind: explain
     title: "Emmet: type less, write more"
     body: |
@@ -39,6 +76,23 @@ steps:
       | `ul>li*3` | a list with three items (`>` = inside, `*3` = three times) |
       | `a.button` | `<a href="" class="button"></a>` |
       | `h2+p` | an `h2` followed by a `p` (`+` = next to) |
+
+      For example, typing `ul>li*3` and pressing Tab gives you this, with the cursor waiting inside the first `<li>`:
+
+      ```html
+      <ul>
+        <li></li>
+        <li></li>
+        <li></li>
+      </ul>
+      ```
+
+      And `h2+p` then Tab gives two elements side by side:
+
+      ```html
+      <h2></h2>
+      <p></p>
+      ```
 
       You don't need Emmet to write HTML, but it saves thousands of keystrokes. Try `!` in a new `index.html` file.
 

@@ -43,6 +43,19 @@ steps:
 
       Both take a file of hashes and a wordlist and report which ones they recovered. The takeaway is sobering and useful: modern hardware tries billions of guesses per second against a *fast* hash — which is precisely why passwords should be stored with a *deliberately slow*, salted algorithm (next step).
 
+      Run on a hash file you recovered in your lab, John reports each weak password it recovers next to its user:
+
+      ```
+      $ john --wordlist=rockyou.txt lab_hashes.txt
+      Using default input encoding: UTF-8
+      Loaded 3 password hashes (Raw-SHA256)
+      summer2023       (jsmith)
+      letmein1         (pbrown)
+      2g 0:00:00:01 DONE  (2 of 3 recovered)
+      ```
+
+      Two of the three fell in about a second, because both were common words a wordlist already contains. The finding for the report is not "I cracked them": it is that these were stored as a fast, unsalted hash *and* the passwords were weak, two fixes in one.
+
   - kind: explain
     title: Online attacks, spraying, and reuse
     body: |

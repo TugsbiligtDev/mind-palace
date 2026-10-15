@@ -12,6 +12,18 @@ steps:
 
       `reset` rewrites history; `revert` adds to it. That difference decides which one you may use.
 
+  - kind: choice
+    title: "Quick check: which undo?"
+    body: |
+      You **pushed** a commit an hour ago, and Priya has already pulled it. Now you want to undo it. Which command?
+    options:
+      - "`git reset --hard HEAD~1`"
+      - "`git revert <the commit>`"
+      - "`git restore .`"
+      - "`git clean -f`"
+    answer: 1
+    explanation: "Once others have the commit, only add to history: `revert` makes a new commit that undoes it. `reset` would rewrite history Priya already has."
+
   - kind: explain
     title: git reset, three strengths
     body: |
@@ -26,6 +38,31 @@ steps:
       `HEAD~1` is "one commit before HEAD" (`HEAD~3` three before). So `--soft` means "uncommit, keep everything ready to commit again", `--mixed` "uncommit and unstage", `--hard` "throw it all away". Only `--hard` touches your files, and it's the one to be careful with.
 
       `git reset file` (no option, a path) just unstages a file, like `git restore --staged file`.
+
+      <!-- page -->
+
+      **Example: all three, on a repository with three commits** (*First*, *Second*, *Third*, each adding a line to `a.txt`). After each reset, `git status --short` shows where *Third*'s change ended up:
+
+      ```
+      learner@inkwell:~/demo$ git reset --soft HEAD~1
+      learner@inkwell:~/demo$ git status --short
+      M  a.txt
+      learner@inkwell:~/demo$ git commit -q -m "Third, again"
+      learner@inkwell:~/demo$ git reset HEAD~1
+      Unstaged changes after reset:
+      M	a.txt
+      learner@inkwell:~/demo$ git status --short
+       M a.txt
+      learner@inkwell:~/demo$ git commit -qam "Third, once more"
+      learner@inkwell:~/demo$ git reset --hard HEAD~1
+      HEAD is now at 545a7a8 Second
+      learner@inkwell:~/demo$ git status --short
+      learner@inkwell:~/demo$ cat a.txt
+      one
+      two
+      ```
+
+      `M ` (staged) after `--soft`, ` M` (not staged) after `--mixed`, and nothing at all after `--hard`: the line `three` is gone from the file.
 
   - kind: shell
     title: Recommit with the missing file
@@ -82,6 +119,26 @@ steps:
 
       **The rule:** rewrite (reset, amend, rebase) only commits that **nobody else has**. Once shared, revert.
 
+      <!-- page -->
+
+      **Example** on the same small repository: revert *Third*, and look at the history and the file:
+
+      ```
+      learner@inkwell:~/demo$ git revert --no-edit HEAD
+      [main c2f549a] Revert "Third"
+       1 file changed, 1 deletion(-)
+      learner@inkwell:~/demo$ git log --oneline
+      c2f549a (HEAD -> main) Revert "Third"
+      995f99c Third
+      545a7a8 Second
+      a21e3c9 First
+      learner@inkwell:~/demo$ cat a.txt
+      one
+      two
+      ```
+
+      *Third* is still in the history, followed by the commit that undoes it, and the file is back to two lines.
+
   - kind: shell
     title: Undo Marcus's analytics
     fixture: [git-identity, website-repo, website-more]
@@ -104,7 +161,7 @@ steps:
 
       ```
       learner@inkwell:~/inkwell/site-repo$ git reflog
-      9a1efb0 (HEAD -> main) HEAD@{0}: reset: moving to HEAD~2
+      9a1efb0 (HEAD -> main, tag: v1.0) HEAD@{0}: reset: moving to HEAD~3
       2721cea HEAD@{1}: checkout: moving from new-design to main
       c9ce561 HEAD@{2}: commit: Narrow the page
       …
@@ -167,6 +224,24 @@ steps:
       | `git clean -fdx` | … and **ignored** files too (like `.env`!) |
 
       Always `-n` first.
+
+      <!-- page -->
+
+      **Example.** Some leftovers in a repository: two files and a `dist` folder:
+
+      ```
+      learner@inkwell:~/demo$ git clean -n
+      Would remove build.tmp
+      Would remove notes.bak
+      learner@inkwell:~/demo$ git clean -fd
+      Removing build.tmp
+      Removing dist/
+      Removing notes.bak
+      learner@inkwell:~/demo$ ls
+      a.txt
+      ```
+
+      The dry run (`-n`) listed only the files; folders need `-d`. Then `-fd` removed all three.
 
   - kind: shell
     title: Clear out the build leftovers

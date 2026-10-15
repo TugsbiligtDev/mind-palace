@@ -8,6 +8,28 @@ steps:
 
       You've met one already: the PRIMARY KEY. This module covers the rest.
 
+      **Example.** `books` has a rule that a price can't be negative. Try to break it:
+
+      ```sql
+      UPDATE books SET price = -5 WHERE book_id = 1;
+      ```
+
+      ```text
+      ERROR:  new row for relation "books" violates check constraint "books_price_check"
+      ```
+
+      The price stays as it was. It doesn't matter who sends the UPDATE, the website or you in psql: the rule applies to everyone.
+
+  - kind: try
+    title: "Try it: a rule says no"
+    body: |
+      Run it and read the error. Then change `-5` to `12.50`: allowed, so the row is updated.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      UPDATE books SET price = -5 WHERE book_id = 1;
+    broken_starter: true
+
   - kind: explain
     title: NOT NULL
     body: |
@@ -83,6 +105,25 @@ steps:
 
       Now NULLs count as equal to each other for this rule.
 
+  - kind: try
+    title: "Try it: NULLS NOT DISTINCT"
+    body: |
+      Each customer may have one address with **no** label. Run it: the first INSERT adds three rows (Home, Work, and one with no label), and the second is refused, because customer 1 already has an unlabeled address.
+
+      Then delete the words `NULLS NOT DISTINCT` and run it again: both NULL rows are accepted, because plain UNIQUE treats two NULLs as different.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE TABLE addresses (
+          customer_id  integer NOT NULL,
+          label        text,
+          UNIQUE NULLS NOT DISTINCT (customer_id, label)
+      );
+      INSERT INTO addresses
+      VALUES (1, 'Home'), (1, 'Work'), (1, NULL);
+      INSERT INTO addresses VALUES (1, NULL);
+    broken_starter: true
+
   - kind: explain
     title: CHECK
     body: |
@@ -98,6 +139,20 @@ steps:
       ```sql
       CHECK (ends_on >= starts_on)
       ```
+
+      Inkwell's `reviews.rating` has a rule like the first one, so a 6-star review is refused:
+
+      ```sql
+      INSERT INTO reviews (book_id, customer_id, rating) VALUES (2, 1, 6);
+      ```
+
+      ```text
+      ERROR:  new row for relation "reviews" violates check constraint "reviews_rating_check"
+      ```
+
+      Change the 6 to any number from 1 to 5 and it goes in.
+
+      <!-- page -->
 
       One catch: a CHECK **passes when the result is unknown**. `CHECK (price > 0)` lets NULL through, because `NULL > 0` isn't false. If the value is required, add NOT NULL as well.
 
@@ -125,6 +180,61 @@ steps:
       ```
 
       `DEFAULT` + `NOT NULL` is a great pair: the value is never missing, and nobody has to remember to supply it.
+
+      <!-- page -->
+
+      A support-ticket table where only the subject is required:
+
+      ```sql
+      CREATE TABLE tickets (
+          ticket_id   integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          subject     text NOT NULL,
+          status      text NOT NULL DEFAULT 'pending',
+          is_urgent   boolean NOT NULL DEFAULT false
+      );
+      INSERT INTO tickets (subject) VALUES ('Lost parcel') RETURNING *;
+      ```
+
+      Only the subject was given; the defaults filled the rest (`f` is how PostgreSQL shows `false`):
+
+      | ticket_id | subject | status | is_urgent |
+      |---|---|---|---|
+      | 1 | Lost parcel | pending | f |
+
+      Give a value and it replaces the default:
+
+      ```sql
+      INSERT INTO tickets (subject, is_urgent)
+      VALUES ('Wrong book sent', true)
+      RETURNING *;
+      ```
+
+      | ticket_id | subject | status | is_urgent |
+      |---|---|---|---|
+      | 2 | Wrong book sent | pending | t |
+
+  - kind: try
+    title: "Try it: DEFAULT"
+    body: |
+      Both examples are here. Run them and compare with the tables you just saw.
+
+      Then play: add a column `created_at timestamptz NOT NULL DEFAULT now()` and run it again, or give `status` a value of your own, like `'closed'`, in the second INSERT.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE TABLE tickets (
+          ticket_id   integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          subject     text NOT NULL,
+          status      text NOT NULL DEFAULT 'pending',
+          is_urgent   boolean NOT NULL DEFAULT false
+      );
+      INSERT INTO tickets (subject)
+      VALUES ('Lost parcel')
+      RETURNING *;
+
+      INSERT INTO tickets (subject, is_urgent)
+      VALUES ('Wrong book sent', true)
+      RETURNING *;
 
   - kind: explain
     title: Name your constraints

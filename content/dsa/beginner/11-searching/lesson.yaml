@@ -8,6 +8,16 @@ steps:
 
       The rule to remember: **sorted data lets you throw away half the search each step.**
 
+      **Example: guessing a number from 1 to 100.** The secret is 37:
+
+      | guess | range left | answer |
+      |---|---|---|
+      | 50 | 1–100 | lower |
+      | 25 | 1–49 | higher |
+      | 37 | 26–49 | correct! |
+
+      Three guesses. Guessing 1, 2, 3, … in order (linear search) would have taken 37.
+
   - kind: code
     title: Play the guessing game
     body: |
@@ -56,6 +66,17 @@ steps:
       1. **`lo <= hi`**: while the range holds at least one item. With `<` you skip a range of one item.
       2. **`mid ± 1`**: you already checked `mid`, so exclude it. Otherwise the loop can run forever.
       3. **Computing `mid`**: `Math.floor((lo + hi) / 2)`, or `(lo + hi) >> 1`. In other languages `(lo + hi)` can overflow, but a JavaScript number will not for realistic sizes.
+
+      <!-- page -->
+
+      **Example: finding `11` in `[1, 3, 5, 7, 9, 11, 13]`.**
+
+      | lo | hi | mid | nums[mid] | decision |
+      |---|---|---|---|---|
+      | 0 | 6 | 3 | 7 | 7 < 11: lo = 4 |
+      | 4 | 6 | 5 | 11 | found: return 5 |
+
+      Two looks instead of six. If the target were missing, `lo` would pass `hi` and the loop would end with −1.
 
   - kind: code
     title: Write binary search
@@ -165,6 +186,16 @@ steps:
 
       **When to use which?** `lo <= hi` with `mid ± 1` finds an *exact* match. `lo < hi` with `hi = mid` finds a *boundary* ("first that is at least…").
 
+      **Example: where does `2` go in `[1, 3, 5, 6]`?**
+
+      | lo | hi | mid | nums[mid] | decision |
+      |---|---|---|---|---|
+      | 0 | 4 | 2 | 5 | 5 ≥ 2: hi = 2 |
+      | 0 | 2 | 1 | 3 | 3 ≥ 2: hi = 1 |
+      | 0 | 1 | 0 | 1 | 1 < 2: lo = 1 |
+
+      Now `lo === hi === 1`: the answer is 1, between the 1 and the 3.
+
   - kind: code
     title: Find the insert position
     body: |
@@ -216,6 +247,12 @@ steps:
       Then check `nums[first] === x`. If not, `x` is not in the array.
 
       This turns "how many times does x appear?" into two O(log n) searches instead of an O(n) scan: `count = last − first + 1`.
+
+      **Example on `[5, 7, 7, 8, 8, 10]` with `x = 8`:**
+
+      - `lowerBound(8)` = **3** (the first 8 is at index 3)
+      - `lowerBound(9)` = **5** (the first value ≥ 9 is the 10, at index 5), so the last 8 is at 5 − 1 = **4**
+      - `nums[3]` is 8, so 8 is there, and it appears 4 − 3 + 1 = **2** times.
 
   - kind: code
     title: First and last position
@@ -279,6 +316,19 @@ steps:
       *What is the integer square root of `x`?* The answer is the biggest `r` with `r × r <= x`. For small `r` the question "is `r × r <= x`?" is yes; past some point it turns to no. Search for that turning point among the numbers `0 … x`.
 
       The pattern: keep the last value that answered "yes", and move `lo` up or `hi` down. You will use it a lot in Module 16.
+
+      <!-- page -->
+
+      **Example: the integer square root of 20.** Search `0 … 20` for the biggest `r` where `r × r ≤ 20`:
+
+      | lo | hi | mid | mid × mid ≤ 20? | then |
+      |---|---|---|---|---|
+      | 0 | 20 | 10 | 100: no | hi = 9 |
+      | 0 | 9 | 4 | 16: yes | best = 4, lo = 5 |
+      | 5 | 9 | 7 | 49: no | hi = 6 |
+      | 5 | 6 | 5 | 25: no | hi = 4 |
+
+      `lo` passed `hi`, and the last "yes" was 4: the answer (4 × 4 = 16 ≤ 20 < 25 = 5 × 5).
 
   - kind: code
     title: Integer square root

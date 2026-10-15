@@ -10,6 +10,39 @@ steps:
 
       **How this course works.** In each "Try it" step, write code on the right and press **Run**. When a step has hidden tests, Run also checks your answer. A wrong answer tells you the first test that failed.
 
+      **Example.** A structure (an array of book weights) and an algorithm (look at every one, remember the heaviest):
+
+      ```js
+      const weights = [320, 540, 210, 480];   // the data structure: an array
+
+      let heaviest = weights[0];               // the algorithm: check each one
+      for (const w of weights) {
+        if (w > heaviest) heaviest = w;
+      }
+      console.log(heaviest);
+      ```
+
+      prints:
+
+      ```
+      540
+      ```
+
+  - kind: code
+    title: "Try it: your first run"
+    body: |
+      Press **Run** and compare with the output above. Then add a heavier book, like `900`, to the array and run again.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const weights = [320, 540, 210, 480];
+
+      let heaviest = weights[0];
+      for (const w of weights) {
+        if (w > heaviest) heaviest = w;
+      }
+      console.log(heaviest);
+
   - kind: explain
     title: The JavaScript you need for this course
     body: |
@@ -32,7 +65,13 @@ steps:
       function add(a, b) {
         return a + b;
       }
-      console.log(add(2, 3));   // 5
+      console.log(add(2, 3));
+      ```
+
+      prints:
+
+      ```
+      5
       ```
 
       <!-- page -->
@@ -50,8 +89,37 @@ steps:
 
       ```js
       for (let i = 0; i < 3; i++) {
-        console.log(i);   // 0, then 1, then 2
+        console.log(i);
       }
+      ```
+
+      prints:
+
+      ```
+      0
+      1
+      2
+      ```
+
+      And here are `for...of`, `if` and `else` working together on a short list of prices:
+
+      ```js
+      const prices = [4, 7, 10];
+      for (const p of prices) {
+        if (p > 5) {
+          console.log(p, "is over 5");
+        } else {
+          console.log(p, "is 5 or less");
+        }
+      }
+      ```
+
+      prints (`console.log` with several values prints them on one line, with spaces between):
+
+      ```
+      4 is 5 or less
+      7 is over 5
+      10 is over 5
       ```
 
       <!-- page -->
@@ -66,6 +134,42 @@ steps:
       | Nothing | `None` | `null` (or `undefined`) |
       | Dictionary | `{"a": 1}` | `new Map()` (Module 4 explains why, not `{}`) |
 
+      `nums[i]` reads the item at position `i`, and positions start at **0**:
+
+      ```js
+      const nums = [3, 8, 5];
+      console.log(nums[0], nums[2], nums.length);
+      nums.push(4);
+      console.log(nums);
+      console.log(5 === 5, 5 !== 5);
+      console.log(7 > 3 && 2 > 9, 7 > 3 || 2 > 9);
+      ```
+
+      prints:
+
+      ```
+      3 5 3
+      [ 3, 8, 5, 4 ]
+      true false
+      false true
+      ```
+
+      Two more pieces you will use all the time: `total += 5` is short for `total = total + 5`, and `%` gives the **remainder** after dividing (`7 % 2` is `1`, so 7 is odd; `8 % 2` is `0`, so 8 is even).
+
+      ```js
+      let total = 10;
+      total += 5;
+      console.log(total);
+      console.log(7 % 2, 8 % 2, 9 % 3);
+      ```
+
+      prints:
+
+      ```
+      15
+      1 0 0
+      ```
+
       Here is a short function that uses most of it, so you can see the pattern:
 
       ```js
@@ -79,6 +183,36 @@ steps:
       ```
 
       **Never programmed before?** Do the Python course's Beginner level first (Modules 1 to 13). You'll learn what variables, loops and functions are there, and these tables are all you need to switch.
+
+  - kind: code
+    title: "Try it: JavaScript basics"
+    body: |
+      Press **Run** and match each printed line to the code that made it:
+
+      1. a `for...of` loop that adds up every price with `+=`,
+      2. a counter loop that shows each position `i` and the value `prices[i]`,
+      3. `%` picking out the odd prices (a remainder of `1` when divided by 2).
+
+      Then make one change: add `12` to the end of `prices` and run again. Every part updates by itself. Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const prices = [4, 7, 10, 3];
+
+      // 1. A for...of loop: add up every price
+      let total = 0;
+      for (const p of prices) {
+        total += p;
+      }
+      console.log("total:", total);
+
+      // 2. A counter loop: show each position and its value
+      for (let i = 0; i < prices.length; i++) {
+        console.log("position", i, "holds", prices[i]);
+      }
+
+      // 3. % gives the remainder: 0 means "divides evenly"
+      for (const p of prices) {
+        if (p % 2 === 1) console.log(p, "is odd");
+      }
 
   - kind: code
     title: Warm up in JavaScript
@@ -136,6 +270,58 @@ steps:
       Constraints matter more than beginners expect. A solution that is fine for 10 numbers may take years for 10 million, and the constraints tell you which one you need.
 
       Most problems on sites like LeetCode also give a **function signature**, such as `function largest(nums)`. The name and the parameters are fixed. You write the body and **`return`** the answer. Printing it with `console.log` is not the same as returning it.
+
+      **Example.** `largest` **returns** its answer, so the caller can use it. `printLargest` only prints, so what it gives back is `undefined`:
+
+      ```js
+      function largest(nums) {
+        let best = nums[0];
+        for (const n of nums) if (n > best) best = n;
+        return best;
+      }
+
+      function printLargest(nums) {
+        let best = nums[0];
+        for (const n of nums) if (n > best) best = n;
+        console.log(best);
+      }
+
+      const a = largest([3, 9, 2]);
+      const b = printLargest([3, 9, 2]);
+      console.log("a is", a, "and b is", b);
+      ```
+
+      prints:
+
+      ```
+      9
+      a is 9 and b is undefined
+      ```
+
+      The `9` on the first line came from inside `printLargest`. Tests check what you **return**, so `printLargest` would fail them.
+
+  - kind: code
+    title: "Try it: return vs. print"
+    body: |
+      Run it and compare with the output above. Then add `return best;` at the end of `printLargest` and run again: now `b` is 9 too.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      function largest(nums) {
+        let best = nums[0];
+        for (const n of nums) if (n > best) best = n;
+        return best;
+      }
+
+      function printLargest(nums) {
+        let best = nums[0];
+        for (const n of nums) if (n > best) best = n;
+        console.log(best);
+      }
+
+      const a = largest([3, 9, 2]);
+      const b = printLargest([3, 9, 2]);
+      console.log("a is", a, "and b is", b);
 
   - kind: explain
     title: Write your own examples and edge cases first

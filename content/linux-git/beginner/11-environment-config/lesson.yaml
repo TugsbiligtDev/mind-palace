@@ -49,6 +49,36 @@ steps:
 
       Now any program that wants to open an editor (Git, for example) knows you prefer nano. `env` (or `printenv`) lists the whole environment.
 
+      **Example, on a real Linux server.** `bash -c '…'` starts a new, separate shell, the way a program you run would:
+
+      ```
+      $ SHOP=inkwell
+      $ bash -c 'echo "the program sees: $SHOP"'
+      the program sees:
+      $ export SHOP
+      $ bash -c 'echo "the program sees: $SHOP"'
+      the program sees: inkwell
+      ```
+
+      Before `export`, the new shell got nothing. After it, the value was passed on. (The practice terminal here is simpler than real bash and passes every variable on, so try this one on your Mac.)
+
+  - kind: choice
+    title: "Quick check: who can see it?"
+    body: |
+      ```
+      $ EDITOR=nano
+      $ git commit
+      ```
+
+      Does Git know you prefer nano?
+    options:
+      - "Yes: the variable is set"
+      - "No: it wasn't exported, so Git (a separate program) can't see it"
+      - "Only if Git is run with sudo"
+      - "Only on a Mac"
+    answer: 1
+    explanation: "A plain variable stays inside your shell. `export EDITOR=nano` (or `export EDITOR` afterwards) puts it in the environment that programs like Git inherit."
+
   - kind: explain
     title: How the shell finds a command
     body: |
@@ -114,6 +144,21 @@ steps:
       ```
 
       Edit the file, then either open a new terminal or run **`source ~/.bashrc`** to apply it to the terminal you're in now. (`source` runs a file's commands in the current shell.)
+
+      <!-- page -->
+
+      **Example.** Add a line to `~/.bashrc`. It does nothing in this terminal until you `source` the file:
+
+      ```
+      learner@inkwell:~$ echo "export GREETING=hello" >> ~/.bashrc
+      learner@inkwell:~$ echo $GREETING
+
+      learner@inkwell:~$ source ~/.bashrc
+      learner@inkwell:~$ echo $GREETING
+      hello
+      ```
+
+      The first `echo $GREETING` printed an empty line: the setting was only in the file. After `source`, the shell had run it. A new terminal would run it automatically.
 
   - kind: shell
     title: A permanent alias

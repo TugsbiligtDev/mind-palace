@@ -14,7 +14,13 @@ steps:
       FROM order_totals;
       ```
 
-      Now it reads **top to bottom**, like a recipe: *first make order_totals, then average them*. Inside the query, `order_totals` behaves like a table. It exists only while this one statement runs.
+      Returns:
+
+      | avg_order_value |
+      |---|
+      | 35.68 |
+
+      The same answer as the derived table in Module 18. Now it reads **top to bottom**, like a recipe: *first make order_totals, then average them*. Inside the query, `order_totals` behaves like a table. It exists only while this one statement runs.
 
   - kind: try
     title: Your first CTE
@@ -35,22 +41,51 @@ steps:
       One WITH can define **several** CTEs, separated by commas. Each can use the ones **before** it:
 
       ```sql
-      WITH paid AS (
-          SELECT order_id, sum(amount) AS paid FROM payments GROUP BY order_id
+      WITH order_totals AS (
+          SELECT order_id, sum(quantity * unit_price) AS total
+          FROM order_items
+          GROUP BY order_id
       ),
-      bought AS (
-          SELECT order_id, sum(quantity * unit_price) AS bought FROM order_items GROUP BY order_id
-      ),
-      compared AS (
-          SELECT order_id, paid, bought, paid - bought AS gap
-          FROM paid JOIN bought USING (order_id)
+      big_orders AS (
+          SELECT order_id, total
+          FROM order_totals
+          WHERE total > 100
       )
-      SELECT * FROM compared WHERE gap <> 0;
+      SELECT (SELECT count(*) FROM order_totals) AS all_orders,
+             (SELECT count(*) FROM big_orders)   AS big_orders,
+             (SELECT max(total) FROM big_orders) AS biggest;
       ```
 
-      Each step does one small job and has a name that says what it holds. That's how you break a hard question into easy pieces (Module 25 comes back to this).
+      Returns:
 
-      A CTE can also be used **more than once** in the final query, which a derived table can't.
+      | all_orders | big_orders | biggest |
+      |---|---|---|
+      | 39419 | 1079 | 207.92 |
+
+      `big_orders` is built from `order_totals`, the step before it. Each step does one small job and has a name that says what it holds. That's how you break a hard question into easy pieces (Module 25 comes back to this).
+
+      A CTE can also be used **more than once** in the final query, which a derived table can't: `big_orders` is used twice above.
+
+  - kind: try
+    title: "Try it: a chain of CTEs"
+    body: |
+      Run it. Then change `100` to `150` and see how many big orders are left.
+
+      Then replace the final SELECT with `SELECT * FROM big_orders ORDER BY total DESC LIMIT 5;` to look inside the second step. Nothing is graded here.
+    sql: |
+      WITH order_totals AS (
+          SELECT order_id, sum(quantity * unit_price) AS total
+          FROM order_items
+          GROUP BY order_id
+      ),
+      big_orders AS (
+          SELECT order_id, total
+          FROM order_totals
+          WHERE total > 100
+      )
+      SELECT (SELECT count(*) FROM order_totals) AS all_orders,
+             (SELECT count(*) FROM big_orders)   AS big_orders,
+             (SELECT max(total) FROM big_orders) AS biggest;
 
   - kind: try
     title: Your turn to chain CTEs
@@ -94,6 +129,16 @@ steps:
       SELECT n FROM counter;
       ```
 
+      Returns:
+
+      | n |
+      |---|
+      | 1 |
+      | 2 |
+      | 3 |
+      | 4 |
+      | 5 |
+
       PostgreSQL runs the anchor once, then keeps running the recursive part on the **newest** rows, until a round produces **no** new rows. Here: 1, then 2, 3, 4, 5, then `n < 5` stops it.
 
       The `WHERE` is essential. Without a stopping condition, it runs forever.
@@ -136,6 +181,17 @@ steps:
       )                                                 -- already in the chart
       SELECT * FROM chart;
       ```
+
+      Returns:
+
+      | employee_id | full_name | depth |
+      |---|---|---|
+      | 1 | Helen Carter | 0 |
+      | 2 | Marcus Reed | 1 |
+      | 3 | Priya Sharma | 1 |
+      | 4 | Tom Becker | 2 |
+      | … | … | … |
+      | 8 | Omar Haddad | 3 |
 
       Round 1 finds the CEO's direct reports, round 2 finds *their* reports, and so on, until nobody new is found. The stopping condition is built in: the chain simply runs out.
 
@@ -201,6 +257,81 @@ steps:
 
       - **A depth limit**: carry a `depth` column and add `WHERE c.depth < 20` in the recursive part.
       - 🔹 **The `CYCLE` clause** (PostgreSQL 14+): `CYCLE employee_id SET is_cycle USING path` after the CTE makes PostgreSQL detect and stop at repeats for you.
+
+      <!-- page -->
+
+      **Example.** A tiny team where Ana's boss is Ben and Ben's boss is Ana: a loop. With a depth limit, the walk stops after 5 steps instead of running forever:
+
+      ```sql
+      CREATE TABLE team (person text PRIMARY KEY, boss text);
+      INSERT INTO team VALUES ('Ana', 'Ben'), ('Ben', 'Ana');
+
+      WITH RECURSIVE chain AS (
+          SELECT person, boss, 1 AS depth FROM team WHERE person = 'Ana'
+          UNION ALL
+          SELECT t.person, t.boss, c.depth + 1
+          FROM team t JOIN chain c ON t.person = c.boss
+          WHERE c.depth < 5
+      )
+      SELECT * FROM chain;
+      ```
+
+      | person | boss | depth |
+      |---|---|---|
+      | Ana | Ben | 1 |
+      | Ben | Ana | 2 |
+      | Ana | Ben | 3 |
+      | Ben | Ana | 4 |
+      | Ana | Ben | 5 |
+
+      With `CYCLE` instead, PostgreSQL stops as soon as a person repeats, and marks that row:
+
+      ```sql
+      WITH RECURSIVE chain AS (
+          SELECT person, boss FROM team WHERE person = 'Ana'
+          UNION ALL
+          SELECT t.person, t.boss
+          FROM team t JOIN chain c ON t.person = c.boss
+      ) CYCLE person SET is_cycle USING path
+      SELECT person, boss, is_cycle FROM chain;
+      ```
+
+      | person | boss | is_cycle |
+      |---|---|---|
+      | Ana | Ben | f |
+      | Ben | Ana | f |
+      | Ana | Ben | t |
+
+  - kind: try
+    title: "Try it: stop a loop"
+    body: |
+      Both examples. Run them and compare with the tables you just saw.
+
+      Then play: change `depth < 5` to `depth < 2`, or remove the `CYCLE …` line from the second query (and run it on your Mac only if you like waiting: here it would stop with an error after running out of memory).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE TABLE team (person text PRIMARY KEY, boss text);
+      INSERT INTO team VALUES ('Ana', 'Ben'), ('Ben', 'Ana');
+
+      WITH RECURSIVE chain AS (
+          SELECT person, boss, 1 AS depth
+          FROM team
+          WHERE person = 'Ana'
+          UNION ALL
+          SELECT t.person, t.boss, c.depth + 1
+          FROM team t JOIN chain c ON t.person = c.boss
+          WHERE c.depth < 5
+      )
+      SELECT * FROM chain;
+
+      WITH RECURSIVE chain AS (
+          SELECT person, boss FROM team WHERE person = 'Ana'
+          UNION ALL
+          SELECT t.person, t.boss
+          FROM team t JOIN chain c ON t.person = c.boss
+      ) CYCLE person SET is_cycle USING path
+      SELECT person, boss, is_cycle FROM chain;
 
   - kind: info
     title: "🔹 Data-modifying CTEs"

@@ -487,6 +487,31 @@ steps:
 
       Where to put tests: a `tests/` folder next to your code, with `test_*.py` files. Name tests after behaviour (`test_rejects_negative_amount`), keep each one short and focused, and make them independent and fast so you actually run them.
 
+      For example, this function has two paths, but its only test takes one of them:
+
+      ```python
+      def shipping(total):
+          if total >= 50:
+              return 0
+          return 5
+
+      def test_free_shipping():
+          assert shipping(80) == 0
+      ```
+
+      The test passes, yet `return 5` never ran. A coverage report flags that line as **missed**, so you know to add a test such as `assert shipping(20) == 5`.
+
+  - kind: choice
+    title: "Quick check: what coverage tells you"
+    body: |
+      Your tests reach **100% coverage**. What does that tell you?
+    options:
+      - "The code has no bugs"
+      - "Every line ran during the tests at least once, which is not the same as every line being right"
+      - "The tests are fast"
+    answer: 1
+    explanation: "Coverage only says which lines ran. A line can run and still give a wrong answer if no test checks the result, so use it to find untested code, not as proof of correctness."
+
   - kind: info
     title: "🔹 unittest"
     body: |

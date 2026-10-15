@@ -6,6 +6,66 @@ steps:
 
       The brute force checks every piece: O(n²) pieces (or worse). The **sliding window** keeps one piece `[left … right]` and slides it along, updating the answer from what changes at the edges. Each item enters the window once and leaves once, so the whole thing is **O(n)**.
 
+      **Example.** The best total of 3 days in a row. Brute force adds up every window from scratch. The sliding window adds the new day and takes away the one that left:
+
+      ```js
+      const sales = [4, 2, 7, 1, 8, 3, 6];
+      const k = 3;
+
+      let best = -Infinity, adds = 0;
+      for (let i = 0; i + k <= sales.length; i++) {
+        let sum = 0;
+        for (let j = i; j < i + k; j++) { sum += sales[j]; adds++; }
+        best = Math.max(best, sum);
+      }
+      console.log("brute force:", best, "with", adds, "additions");
+
+      let sum = 0; adds = 0;
+      for (let i = 0; i < k; i++) { sum += sales[i]; adds++; }
+      best = sum;
+      for (let right = k; right < sales.length; right++) {
+        sum += sales[right] - sales[right - k];   // one in, one out
+        adds++;
+        best = Math.max(best, sum);
+      }
+      console.log("sliding window:", best, "with", adds, "updates");
+      ```
+
+      prints:
+
+      ```
+      brute force: 17 with 15 additions
+      sliding window: 17 with 7 updates
+      ```
+
+  - kind: code
+    title: "Try it: slide the window"
+    body: |
+      Run it and compare with the output above. Then change `k` to `5`: brute force does more work per window, the slide doesn't.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const sales = [4, 2, 7, 1, 8, 3, 6];
+      const k = 3;
+
+      let best = -Infinity, adds = 0;
+      for (let i = 0; i + k <= sales.length; i++) {
+        let sum = 0;
+        for (let j = i; j < i + k; j++) { sum += sales[j]; adds++; }
+        best = Math.max(best, sum);
+      }
+      console.log("brute force:", best, "with", adds, "additions");
+
+      let sum = 0; adds = 0;
+      for (let i = 0; i < k; i++) { sum += sales[i]; adds++; }
+      best = sum;
+      for (let right = k; right < sales.length; right++) {
+        sum += sales[right] - sales[right - k];   // one in, one out
+        adds++;
+        best = Math.max(best, sum);
+      }
+      console.log("sliding window:", best, "with", adds, "updates");
+
   - kind: explain
     title: Fixed-size windows
     body: |
@@ -19,6 +79,51 @@ steps:
         best = Math.max(best, sum);
       }
       ```
+
+      <!-- page -->
+
+      A worked example: five days of temperatures, and the total of every 3-day window.
+
+      ```js
+      const temps = [4, 2, 7, 1, 3];
+      const k = 3;
+      let sum = 0;
+      for (let i = 0; i < k; i++) sum += temps[i];
+      console.log("window ends at", k - 1, "sum", sum);
+      for (let i = k; i < temps.length; i++) {
+        sum += temps[i] - temps[i - k];
+        console.log("window ends at", i, "sum", sum);
+      }
+      ```
+
+      It prints:
+
+      ```
+      window ends at 2 sum 13
+      window ends at 3 sum 10
+      window ends at 4 sum 11
+      ```
+
+      The first window is `4 + 2 + 7 = 13`. Sliding by one adds `1` and removes `4`, giving `10`. Then it adds `3` and removes `2`, giving `11`. Each slide costs two operations, however big `k` is.
+
+  - kind: code
+    title: "Try it: a fixed-size window"
+    body: |
+      Run this and check each window's sum against the numbers by hand.
+
+      Then change `k` to `2` and run again. How many windows are there now?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const temps = [4, 2, 7, 1, 3];
+      const k = 3;
+      let sum = 0;
+      for (let i = 0; i < k; i++) sum += temps[i];
+      console.log("window ends at", k - 1, "sum", sum);
+      for (let i = k; i < temps.length; i++) {
+        sum += temps[i] - temps[i - k];
+        console.log("window ends at", i, "sum", sum);
+      }
 
   - kind: code
     title: Best window of length k
@@ -70,6 +175,67 @@ steps:
       ```
 
       The state is usually a **Map of counts** (or a sum). `right` only moves forward, and `left` only moves forward, so each moves at most `n` times: **O(n)** in total.
+
+      <!-- page -->
+
+      A worked example with a sum as the state: *the longest run of numbers whose sum is at most 8*.
+
+      ```js
+      const nums = [3, 1, 2, 7, 4, 2, 1, 1, 5];
+      const limit = 8;
+      let left = 0;
+      let sum = 0;
+      let best = 0;
+      for (let right = 0; right < nums.length; right++) {
+        sum += nums[right];
+        while (sum > limit) {
+          sum -= nums[left];
+          left++;
+        }
+        best = Math.max(best, right - left + 1);
+        console.log("window", left, "to", right, "sum", sum, "best", best);
+      }
+      ```
+
+      It prints:
+
+      ```
+      window 0 to 0 sum 3 best 1
+      window 0 to 1 sum 4 best 2
+      window 0 to 2 sum 6 best 3
+      window 3 to 3 sum 7 best 3
+      window 4 to 4 sum 4 best 3
+      window 4 to 5 sum 6 best 3
+      window 4 to 6 sum 7 best 3
+      window 4 to 7 sum 8 best 4
+      window 6 to 8 sum 7 best 4
+      ```
+
+      Look at the fourth line: adding the `7` made the sum 13, so the window shrank from the left until it was back under the limit. The best answer is 4 (`4 + 2 + 1 + 1`). This is a "longest" problem, so the answer is recorded **after** shrinking, when the window is valid again.
+
+  - kind: code
+    title: "Try it: expand and shrink"
+    body: |
+      Run this and follow the window as it grows on the right and shrinks on the left.
+
+      Then change `limit` to `5` and run again. Which windows does it keep now, and what is the best length?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const nums = [3, 1, 2, 7, 4, 2, 1, 1, 5];
+      const limit = 8;
+      let left = 0;
+      let sum = 0;
+      let best = 0;
+      for (let right = 0; right < nums.length; right++) {
+        sum += nums[right];
+        while (sum > limit) {
+          sum -= nums[left];
+          left++;
+        }
+        best = Math.max(best, right - left + 1);
+        console.log("window", left, "to", right, "sum", sum, "best", best);
+      }
 
   - kind: code
     title: Longest substring without repeats
@@ -221,6 +387,29 @@ steps:
       Some problems ask whether a window **matches a target** made of letter counts, like "is some piece of `s2` an anagram of `s1`?" Keep two count maps (or 26-slot arrays) and a small counter of how many letters currently match. As the window slides by one, only two counts change, so you update the "matched" number in O(1).
 
       For a **fixed** window length `s1.length`, that is a fixed-size window with a count array, and it is O(n).
+
+      <!-- page -->
+
+      A worked example of the count arrays. Each letter's slot is `ch.charCodeAt(0) - 97` (Module 6: `a` is slot 0, `b` slot 1, and so on), and `every` checks that all 26 slots agree:
+
+      ```js
+      const counts = Array(26).fill(0);
+      for (const ch of "bca") counts[ch.charCodeAt(0) - 97]++;
+      console.log(counts.slice(0, 5));
+
+      const other = Array(26).fill(0);
+      for (const ch of "cab") other[ch.charCodeAt(0) - 97]++;
+      console.log(counts.every((c, i) => c === other[i]));
+      ```
+
+      It prints:
+
+      ```
+      [ 1, 1, 1, 0, 0 ]
+      true
+      ```
+
+      `"bca"` and `"cab"` hold the same letters the same number of times, so their count arrays are equal: one is a rearrangement of the other.
 
   - kind: code
     title: Permutation in a string

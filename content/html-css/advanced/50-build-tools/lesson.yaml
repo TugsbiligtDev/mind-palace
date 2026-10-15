@@ -14,6 +14,33 @@ steps:
 
       The trade-off: more moving parts (Node, dependencies, configuration) to install and keep updated.
 
+      For example, minifying turns this:
+
+      ```css
+      /* Book card */
+      .card {
+        padding: 1rem;
+        border: 1px solid #d6c7ae;
+      }
+      ```
+
+      into this, which the browser reads exactly the same way:
+
+      ```css
+      .card{padding:1rem;border:1px solid #d6c7ae}
+      ```
+
+  - kind: choice
+    title: "Quick check: fingerprinting"
+    body: |
+      A build renames `style.css` to `style.a3f9c1.css`. What's that for?
+    options:
+      - "Browsers can cache it for ever, and fetch the new file when its name changes"
+      - "It makes the file smaller"
+      - "It hides the code from visitors"
+    answer: 0
+    explanation: "The name changes whenever the content changes, so browsers can keep the old file for ever and still pick up updates. Minifying is what makes files smaller."
+
   - kind: explain
     title: Vite
     body: |
@@ -24,6 +51,20 @@ steps:
       - It handles HTML, CSS, images and JavaScript out of the box, and multi-page sites with a little configuration.
 
       It replaces Live Server for bigger projects, and frameworks (React, Vue, Svelte, Astro) are commonly built on it.
+
+      **Example: what `npm run build` prints** for a small Vite project (your numbers and file names will differ):
+
+      ```text
+      $ npm run build
+      vite building for production...
+      ✓ 5 modules transformed.
+      dist/index.html                  0.46 kB │ gzip: 0.30 kB
+      dist/assets/index-BdT4Wq2x.css   1.20 kB │ gzip: 0.62 kB
+      dist/assets/index-CkYb1Z3e.js    2.70 kB │ gzip: 1.42 kB
+      ✓ built in 112ms
+      ```
+
+      The odd letters in `index-BdT4Wq2x.css` are a **fingerprint** of the file's contents. When the CSS changes, the name changes, so browsers can never use a stale cached copy.
 
   - kind: mac
     title: Try Vite
@@ -59,6 +100,34 @@ steps:
       Both read a **browserslist**: a description of the browsers you support, like `"> 0.5%, last 2 versions, not dead"`, usually in `package.json`. Vite uses one of them under the hood (Lightning CSS can be switched on in its config).
 
       This is why you never write `-webkit-` prefixes by hand (Module 38): the build adds exactly the ones your targets need.
+
+      **Example: the same CSS, written and shipped.** You write modern CSS:
+
+      ```css
+      .card {
+        color: oklch(40% 0.1 30);
+        & h3 { margin: 0; }
+      }
+      ```
+
+      With a browserslist that includes older browsers, Lightning CSS ships:
+
+      ```css
+      .card{color:#6b3a2c;color:oklch(40% .1 30)}.card h3{margin:0}
+      ```
+
+      The nesting became a plain `.card h3` selector, an ordinary colour was added as a fallback before the `oklch()` one, and everything was minified. Point the browserslist at only the newest browsers and it would keep the nesting and skip the fallback.
+
+  - kind: choice
+    title: "Quick check: who adds prefixes?"
+    body: |
+      In a project with a build step, who adds `-webkit-` prefixes where they're needed?
+    options:
+      - "You, by hand, in every rule"
+      - "The build tool (Autoprefixer or Lightning CSS), based on the browserslist"
+      - "The browser itself"
+    answer: 1
+    explanation: "The build reads the list of browsers you support and adds exactly the prefixes they need, so you never write them by hand."
 
   - kind: explain
     title: Tailwind CSS v4
@@ -128,6 +197,58 @@ steps:
       ```
 
       Native CSS now covers most of it: `$variables` → custom properties, nesting → native nesting, `darken()` → `color-mix()` or relative colors. Mixins and loops still have no direct CSS equivalent. Recognise it, edit it carefully in old projects, and prefer native CSS in new ones.
+
+      <!-- page -->
+
+      Here is the same card in native CSS. The mixin has no equivalent, so its two lines are simply written into `.card`:
+
+      ```css
+      :root {
+        --brand: #7c2d12;
+      }
+
+      .card {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+
+        &:hover { border-color: var(--brand); }
+        .title { color: color-mix(in oklch, var(--brand), black 10%); }
+      }
+      ```
+
+      In the page: a card with a thin grey border that turns brown when you hover it, and a title in a slightly darker brown.
+
+  - kind: web
+    title: "Try it: Sass ideas in native CSS"
+    body: |
+      The card from the previous page, in native CSS, running in the preview. `$brand` became `--brand`, the nesting stayed, and `darken()` became `color-mix()`.
+
+      Try:
+
+      1. Hover the card: the border turns brown.
+      2. Change `--brand` to `#15803d`. The hover border and the title both turn green: one variable, like `$brand`, but this one can change while the page runs.
+      3. Change `black 10%` to `black 40%`: a darker title.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <article class="card"><h3 class="title">Emma</h3><p>Jane Austen</p></article>
+    css: |
+      :root {
+        --brand: #7c2d12;
+      }
+
+      .card {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+
+        &:hover {
+          border-color: var(--brand);
+        }
+
+        .title {
+          color: color-mix(in oklch, var(--brand), black 10%);
+        }
+      }
 
   - kind: web
     title: From Sass to native CSS

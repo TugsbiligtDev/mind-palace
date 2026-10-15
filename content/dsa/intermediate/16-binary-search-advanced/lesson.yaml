@@ -8,6 +8,58 @@ steps:
 
       That range does not have to be an array. It can be a set of possible answers. Whenever you can look at the middle and say "the answer is definitely on the left" or "definitely on the right", binary search works.
 
+      <!-- page -->
+
+      A worked example with no array at all: *the smallest whole number whose square is at least 50*. For the numbers 1 to 50, the question "is `mid * mid >= 50`?" goes "no, no, … yes, yes", so we can halve:
+
+      ```js
+      let lo = 1;
+      let hi = 50;
+      while (lo < hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        const works = mid * mid >= 50;
+        console.log(lo, hi, "try", mid, works);
+        if (works) hi = mid;
+        else lo = mid + 1;
+      }
+      console.log("answer:", lo);
+      ```
+
+      It prints:
+
+      ```
+      1 50 try 25 true
+      1 25 try 13 true
+      1 13 try 7 false
+      8 13 try 10 true
+      8 10 try 9 true
+      8 9 try 8 true
+      answer: 8
+      ```
+
+      A "yes" might be the first yes, so it is kept (`hi = mid`). A "no" can never be the answer, so it is thrown away (`lo = mid + 1`). Six tries instead of up to fifty: `7 × 7 = 49` is too small, and `8 × 8 = 64` is the first that works.
+
+  - kind: code
+    title: "Try it: find the switch point"
+    body: |
+      Run this and follow how `lo` and `hi` close in on the answer.
+
+      Then change `50` to `200` in both `let hi = 50` and `mid * mid >= 50`, and run again. Is the answer what you expect (`14 × 14 = 196`, `15 × 15 = 225`)?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      // The smallest whole number whose square is at least 50.
+      let lo = 1;
+      let hi = 50;
+      while (lo < hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        const works = mid * mid >= 50;
+        console.log(lo, hi, "try", mid, works);
+        if (works) hi = mid;
+        else lo = mid + 1;
+      }
+      console.log("answer:", lo);
+
   - kind: explain
     title: Rotated sorted arrays
     body: |
@@ -19,6 +71,28 @@ steps:
       - otherwise → go into the other half.
 
       Still **O(log n)**. The `<=` matters: when `lo === mid` the "left half" is a single item.
+
+      <!-- page -->
+
+      A worked example: the first check on `[4, 5, 6, 7, 0, 1, 2]`.
+
+      ```js
+      const nums = [4, 5, 6, 7, 0, 1, 2];
+      const lo = 0;
+      const hi = nums.length - 1;
+      const mid = Math.floor((lo + hi) / 2);
+      console.log(nums[lo], nums[mid], nums[hi]);
+      console.log(nums[lo] <= nums[mid]);
+      ```
+
+      It prints:
+
+      ```
+      4 7 2
+      true
+      ```
+
+      `4 <= 7`, so the left half `[4, 5, 6, 7]` is sorted. Searching for `5`? It lies between `4` and `7`, so go left. Searching for `1`? It is not inside `4 … 7`, so it must be in the other half: go right.
 
   - kind: code
     title: "Find the bug: the one-item left half"
@@ -130,6 +204,16 @@ steps:
 
       Either way, you have kept a side that must contain a peak, so halving works. O(log n).
 
+      A worked example by hand, on `[1, 3, 5, 4, 2]`:
+
+      | lo | hi | mid | `nums[mid]` vs `nums[mid + 1]` | Move |
+      |---|---|---|---|---|
+      | 0 | 4 | 2 | 5 vs 4: falling | `hi = 2` |
+      | 0 | 2 | 1 | 3 vs 5: rising | `lo = 2` |
+      | 2 | 2 | | `lo` meets `hi` | stop |
+
+      The peak is at index 2, the value `5`.
+
   - kind: code
     title: Find a peak
     body: |
@@ -175,6 +259,46 @@ steps:
       So binary search the speed between `1` and the biggest pile. To test a speed, simulate: hours needed = the sum of `Math.ceil(pile / speed)`.
 
       The recipe: **(1)** define the range of answers, **(2)** write a `works(answer)` function, **(3)** binary search for the first answer where it works.
+
+      <!-- page -->
+
+      A worked example of step (2), checking one speed at a time for piles `[4, 9, 8]`. `Math.ceil` rounds up: a pile of 9 at speed 2 takes 5 hours, because the last banana still needs its own hour.
+
+      ```js
+      const piles = [4, 9, 8];
+      for (const speed of [2, 3, 4, 5]) {
+        let hours = 0;
+        for (const p of piles) hours += Math.ceil(p / speed);
+        console.log("speed", speed, "needs", hours, "hours");
+      }
+      ```
+
+      It prints:
+
+      ```
+      speed 2 needs 11 hours
+      speed 3 needs 8 hours
+      speed 4 needs 6 hours
+      speed 5 needs 5 hours
+      ```
+
+      Faster speeds never need more hours. If Koko has `h = 6` hours, speeds 2 and 3 fail and speed 4 is the first that works, so the answer is 4. Binary search finds that first "yes" without trying every speed.
+
+  - kind: code
+    title: "Try it: check one answer"
+    body: |
+      Run this and read the hours for each speed.
+
+      Then add `1` and `9` to the list of speeds (`[1, 2, 3, 4, 5, 9]`) and run again. What is the most hours Koko could ever need, and the fewest?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const piles = [4, 9, 8];
+      for (const speed of [2, 3, 4, 5]) {
+        let hours = 0;
+        for (const p of piles) hours += Math.ceil(p / speed);
+        console.log("speed", speed, "needs", hours, "hours");
+      }
 
   - kind: code
     title: Koko eating bananas

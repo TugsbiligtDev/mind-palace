@@ -13,6 +13,30 @@ steps:
       5. **Test with your examples**, then the strange ones.
       6. **Clean up.** Rename things, delete dead code.
 
+      For example, the problem "find the longest word in a list":
+
+      1. **Understand.** In: a list of words. Out: the longest one. Examples: `["cat", "giraffe", "ox"]` gives `"giraffe"`; `["ox"]` gives `"ox"`; and the strange one, `[]`, gives... nothing? We decide: `None`.
+      2. **Break it down.** Look at each word; remember the longest seen so far.
+      3. **Pseudocode.** "best = nothing; for each word: if best is nothing or word is longer than best, best = word; give back best".
+      4. **Code** it (the next page shows how), then **test** with all three examples, including the empty list.
+
+  - kind: code
+    title: "Try it: test the strange example"
+    body: |
+      This first try passes the normal examples, then crashes on the strange one, the empty list. That is exactly why step 1 asks you to write one down.
+
+      Fix it: inside `longest`, before the `return`, add `if not words: return None` (on two lines, indented). Then all three lines print.
+
+      To continue, make it run without an error: the change above does it.
+    broken_starter: true
+    code: |
+      def longest(words):
+          return max(words, key=len)
+
+      print(longest(["cat", "giraffe", "ox"]))
+      print(longest(["ox"]))
+      print(longest([]))
+
   - kind: explain
     title: "Pseudocode: think before you type"
     body: |
@@ -241,6 +265,22 @@ steps:
       - **Verify.** AI can be confidently wrong. Run the code and test it, and check the docs.
       - Do not paste secrets, passwords, API keys or private data into any AI tool.
       - Be honest in school or work about where help came from.
+
+      For example, two ways to ask about the same broken loop:
+
+      - *"Fix my code."* You get working code, and learn nothing about why it broke.
+      - *"My loop prints the last item twice. Without giving me the fix, what should I look at?"* You get a hint, find the bug yourself, and remember it next time.
+
+  - kind: choice
+    title: "Quick check: a good question"
+    body: |
+      You are stuck on an exercise. Which request to an AI assistant helps you **learn** the most?
+    options:
+      - "\"Write the solution so I can paste it in.\""
+      - "\"Here is my code and the error. Explain what the error means and give me a hint, not the answer.\""
+      - "\"Here is my API key, please test my program for me.\""
+    answer: 1
+    explanation: "Asking for an explanation and a hint keeps you doing the thinking. Pasting a full answer skips the learning, and you should never paste secrets such as API keys into any AI tool."
 
   - kind: why
     body: |

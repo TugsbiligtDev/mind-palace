@@ -13,6 +13,43 @@ steps:
       - `mkdir -p a/b/c` makes the whole chain of folders, creating any **p**arents that are missing. Without `-p`, `mkdir a/b/c` fails if `a/b` doesn't exist yet. `-p` also doesn't complain if the folder already exists.
       - `touch file.txt` creates an empty file (or, if it exists, just updates its "last changed" time).
 
+      <!-- page -->
+
+      Here they are in `~/inkwell`. The first `mkdir` fails because `drafts` and `drafts/2026` don't exist yet; with `-p` it works:
+
+      ```
+      learner@inkwell:~/inkwell$ mkdir drafts/2026/october
+      mkdir: cannot create directory 'drafts/2026/october': No such file or directory
+      learner@inkwell:~/inkwell$ mkdir -p drafts/2026/october
+      learner@inkwell:~/inkwell$ tree drafts
+      drafts
+      `-- 2026
+          `-- october
+
+      2 directories, 0 files
+      learner@inkwell:~/inkwell$ touch notes/ideas.txt
+      learner@inkwell:~/inkwell$ ls notes
+      books-sold.txt  ideas.txt  meeting-2026-09-30.txt  todo.txt
+      ```
+
+      `mkdir` and `touch` print nothing when they work, which is why the `tree` and `ls` are there: look again after.
+
+  - kind: shell
+    title: "Try it: mkdir -p and touch"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `mkdir drafts/2026/october`: read the error.
+      2. `mkdir -p drafts/2026/october`
+      3. `tree drafts` to see the chain you made.
+      4. `touch notes/ideas.txt`, then `ls notes`.
+
+      Then add a sister folder with `mkdir -p drafts/2026/november` and run `tree drafts` again.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: Build the archive
     fixture: backoffice
@@ -49,6 +86,36 @@ steps:
 
       ⚠️ If the destination file already exists, `cp` **replaces it without asking**. `cp -i` asks first.
 
+      <!-- page -->
+
+      Here's a file copy, then a folder copy that fails without `-r` and works with it:
+
+      ```
+      learner@inkwell:~/inkwell$ cp notes/books-sold.txt notes/books-sold-copy.txt
+      learner@inkwell:~/inkwell$ ls notes
+      books-sold-copy.txt  books-sold.txt  meeting-2026-09-30.txt  todo.txt
+      learner@inkwell:~/inkwell$ cp logs logs-backup
+      cp: -r not specified; omitting directory 'logs'
+      learner@inkwell:~/inkwell$ cp -r logs logs-backup
+      learner@inkwell:~/inkwell$ ls logs-backup
+      access.log  shop.log
+      ```
+
+  - kind: shell
+    title: "Try it: cp and cp -r"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `cp notes/books-sold.txt notes/books-sold-copy.txt`, then `ls notes`
+      2. `cp logs logs-backup`: read the error.
+      3. `cp -r logs logs-backup`, then `ls logs-backup`
+
+      Then copy a file into a folder, keeping its name: `cp README.txt notes/`, and `ls notes` again.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: Back up before you change
     fixture: backoffice
@@ -82,6 +149,43 @@ steps:
 
       ⚠️ Like `cp`, `mv` silently **replaces** an existing file with the same name. `mv -i` asks first.
 
+      <!-- page -->
+
+      **Example.** Rename a note, then move it into a folder, checking with `ls` each time:
+
+      ```
+      learner@inkwell:~/inkwell$ touch notes/draft.txt
+      learner@inkwell:~/inkwell$ mv notes/draft.txt notes/final.txt
+      learner@inkwell:~/inkwell$ ls notes
+      books-sold.txt  final.txt  meeting-2026-09-30.txt  todo.txt
+      learner@inkwell:~/inkwell$ mkdir archive
+      learner@inkwell:~/inkwell$ mv notes/final.txt archive/
+      learner@inkwell:~/inkwell$ ls notes archive
+      archive:
+      final.txt
+
+      notes:
+      books-sold.txt  meeting-2026-09-30.txt  todo.txt
+      ```
+
+      `mv` prints nothing when it works. The `ls` lines show `draft.txt` became `final.txt`, then left `notes` for `archive`.
+
+  - kind: shell
+    title: "Try it: rename and move"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time, with `ls` after each `mv`:
+
+      1. `touch notes/draft.txt`
+      2. `mv notes/draft.txt notes/final.txt`
+      3. `mkdir archive`, then `mv notes/final.txt archive/`
+      4. `ls notes archive`
+
+      Then move a whole folder and rename it in one go: `mv old archive/old-2025`.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Quoting and escaping names
     body: |
@@ -92,7 +196,35 @@ steps:
       mv copy\ of\ copy\ of\ notes.txt notes-copy.txt    ← a backslash before each space
       ```
 
+      Here's a name with a space being renamed, then moved into a folder:
+
+      ```
+      learner@inkwell:~/inkwell$ touch "staff list.txt"
+      learner@inkwell:~/inkwell$ mv "staff list.txt" staff-list.txt
+      learner@inkwell:~/inkwell$ mv staff-list.txt notes/
+      learner@inkwell:~/inkwell$ ls notes
+      books-sold.txt  meeting-2026-09-30.txt  staff-list.txt  todo.txt
+      ```
+
       Tab completion writes the backslashes for you. Quotes also protect other characters the shell treats specially, like `*`, `?`, `&`, `(`, `)` and `$`. Single quotes `'…'` protect everything; double quotes `"…"` still let `$` through (Module 11).
+
+  - kind: shell
+    title: "Try it: mv and quotes"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      mkdir archive
+    body: |
+      Type these one at a time:
+
+      1. `touch "staff list.txt"` makes a file with a space in its name.
+      2. `mv "staff list.txt" staff-list.txt` renames it.
+      3. `mv staff-list.txt notes/` moves it into `notes`.
+      4. `ls notes` to check.
+
+      Then make another one, `touch "book club.txt"`, and rename it the backslash way: type `mv book` and press **Tab** to let the shell write the `\ ` for you.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Rename and file away
@@ -127,6 +259,43 @@ steps:
       | `[abc]` | one of the characters inside: `report[12].txt` = `report1.txt`, `report2.txt` |
 
       **Preview before you act**: `ls orders/*.csv` or `echo orders/*.csv` shows exactly which names the pattern will become. Wildcards don't match hidden files unless the pattern starts with a dot.
+
+      <!-- page -->
+
+      Here are the three kinds, previewed with `ls` and `echo`:
+
+      ```
+      learner@inkwell:~/inkwell$ ls notes/*.txt
+      notes/books-sold.txt  notes/meeting-2026-09-30.txt  notes/todo.txt
+      learner@inkwell:~/inkwell$ echo logs/*.log
+      logs/access.log logs/shop.log
+      learner@inkwell:~/inkwell$ ls orders/2026-0?.csv
+      orders/2026-08.csv  orders/2026-09.csv
+      learner@inkwell:~/inkwell$ ls orders/2026-0[8].csv
+      orders/2026-08.csv
+      ```
+
+      Notice `echo` never looks at files itself: the shell turned `logs/*.log` into the two names before `echo` ran, and `echo` just printed them.
+
+  - kind: shell
+    title: "Try it: wildcards"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      mkdir -p archive/orders
+      printf 'order_id,date,customer,book,price\n' > orders/template.csv
+      printf 'remember: totals go in the monthly report\n' > orders/README.txt
+    body: |
+      Preview some patterns. Nothing moves when you only `ls` or `echo`. Type these one at a time:
+
+      1. `ls notes/*.txt`
+      2. `echo logs/*.log`
+      3. `ls orders/2026-0?.csv`
+      4. `ls orders/*`: every file in `orders`, whatever its name.
+
+      Then change step 4 to `ls orders/*.csv` and compare: which name dropped out?
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Every CSV in one go
@@ -164,6 +333,46 @@ steps:
       | `rm -r drafts` | a folder **and everything inside it** |
 
       You'll often see `rm -rf`: recursive and **f**orce (never ask, ignore missing files). It's the most dangerous common command there is. Before any `rm`, especially with `-r` or a wildcard: `pwd`, then `ls` the exact same pattern, then delete.
+
+      <!-- page -->
+
+      Here's that habit on two throwaway files in `logs`, then on a throwaway folder:
+
+      ```
+      learner@inkwell:~/inkwell$ touch logs/a.tmp logs/b.tmp
+      learner@inkwell:~/inkwell$ ls logs/*.tmp
+      logs/a.tmp  logs/b.tmp
+      learner@inkwell:~/inkwell$ rm logs/*.tmp
+      learner@inkwell:~/inkwell$ ls logs
+      access.log  shop.log
+      learner@inkwell:~/inkwell$ cp -r logs logs-backup
+      learner@inkwell:~/inkwell$ rmdir logs-backup
+      rmdir: failed to remove 'logs-backup': Directory not empty
+      learner@inkwell:~/inkwell$ rm -r logs-backup
+      learner@inkwell:~/inkwell$ ls
+      logs  notes  old  orders  README.txt  site
+      ```
+
+      `ls` the pattern, `rm` the same pattern, `ls` again. `rmdir` refused because the folder wasn't empty; `rm -r` took it and everything inside.
+
+  - kind: shell
+    title: "Try it: rm safely"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      printf 'tmp\n' > notes/~draft.tmp
+      printf 'tmp\n' > notes/meeting.tmp
+    body: |
+      Practise on throwaway files you make yourself. Type these one at a time:
+
+      1. `touch logs/a.tmp logs/b.tmp`
+      2. `ls logs/*.tmp` to preview.
+      3. `rm -i logs/*.tmp`: type `y` and Return for each one.
+      4. `cp -r logs logs-backup`, then `rmdir logs-backup` (read the error), then `rm -r logs-backup`.
+
+      Then `ls` to check that only your throwaway things went.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Clear out the junk

@@ -12,6 +12,26 @@ steps:
 
       So you need ways to see mistakes the browser hides. There are three: the **validator**, the **Elements panel**, and the **accessibility tree**.
 
+      For example, this line has three mistakes: a closing tag in the wrong order, a missing `</p>`, and an attribute value with no closing quote.
+
+      ```html
+      <p>Rare <strong>books</p></strong>
+      <p class="note>Open daily.
+      ```
+
+      The browser shows no error at all. It draws *Rare* **books**, then gives up on the broken `class`: the whole second paragraph vanishes. Only the tools below show you what went wrong.
+
+  - kind: choice
+    title: "Quick check: how mistakes show"
+    body: |
+      You forget a closing tag in your HTML. What does the browser do?
+    options:
+      - "Shows a red error message on the page"
+      - "Refuses to show the page"
+      - "Guesses what you meant and draws something, without any warning"
+    answer: 2
+    explanation: "Browsers repair broken HTML silently. That's why you need the validator, the Elements panel and the accessibility tree to see mistakes."
+
   - kind: explain
     title: The W3C validator
     body: |
@@ -71,6 +91,26 @@ steps:
       The Elements panel is also **live**: when you edit there, you're editing the DOM.
 
   - kind: web
+    title: "Try it: catch the browser repairing"
+    body: |
+      This snippet has two of the repairs from the table. Right-click the preview → **Inspect**, then compare the Elements panel with the code on the right:
+
+      - The table has no `<tbody>` in the code, but the Elements panel shows `<table>` → `<tbody>` → `<tr>`: the browser added it.
+      - The `<strong>` around *Rare books* never closes. In the preview, the next paragraph is bold too. In the Elements panel, the browser has closed the first `<strong>` for you and put a **second** `<strong>` inside the next paragraph, copying the bold forward.
+
+      Try this:
+
+      1. Add the missing `</strong>` right after *Rare books* (before its `</p>`). The second paragraph goes back to normal, and the extra `<strong>` vanishes from the Elements panel.
+      2. Look again at the table in the Elements panel: the added `<tbody>` is harmless, so the browser keeps adding it whatever you do.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <table>
+        <tr><td>Dune</td><td>£8.99</td></tr>
+      </table>
+      <p><strong>Rare books</p><p>Ask at the counter to see them.</p>
+
+  - kind: web
     title: Spot the repairs
     body: |
       This snippet *looks* almost fine in the preview, but the browser rewrote it. Right-click the preview → **Inspect**, and compare the Elements panel with the code.
@@ -124,6 +164,20 @@ steps:
       - A link or button whose name is just "click here" or empty.
       - A `div` that looks like a button but has role **generic**: it's invisible to keyboard and screen reader users (Module 23).
 
+      **Example: the same three elements, as the accessibility tree sees them.**
+
+      ```html
+      <a href="events.html">Events</a>
+      <img src="images/cover-dune.svg">
+      <div class="button" onclick="buy()">Buy</div>
+      ```
+
+      | Element | Role | Name | Problem? |
+      |---|---|---|---|
+      | the link | link | "Events" | none |
+      | the image | image | *(none)* | missing `alt` |
+      | the div | generic | *(none)* | looks like a button, but isn't one: keyboard and screen reader users can't use it |
+
   - kind: mac
     title: Read a page's accessibility tree
     body: |
@@ -151,6 +205,25 @@ steps:
       4. **Check the accessibility tree** for missing names and wrong roles.
 
       Most problems are a missing closing tag, a typo in a path, or a duplicate id. This routine finds them in minutes instead of hours.
+
+      For example, Inkwell's logo doesn't show. Step 1, the validator, finds nothing wrong. Step 2, the Elements panel, shows the `<img>` is there. Step 3, the Console, shows the culprit:
+
+      ```
+      GET https://inkwellbooks.com/images/Logo.svg 404 (Not Found)
+      ```
+
+      The file is `logo.svg`, lowercase. Fix the capital in `src` and the logo appears.
+
+  - kind: choice
+    title: "Quick check: the image won't load"
+    body: |
+      A picture on your page doesn't show. Which step of the routine is most likely to point at the problem?
+    options:
+      - "Check the accessibility tree for roles"
+      - "Check the Console for a red 404 error for the image's path"
+      - "Validate and fix the page's headings"
+    answer: 1
+    explanation: "A missing picture is usually a wrong path, and the Console reports it as a failed (404) request, naming the exact file."
 
   - kind: why
     body: |

@@ -13,6 +13,63 @@ steps:
 
       `sum`, `avg`, `min` and `max` **ignore NULLs**. They work with the values that exist.
 
+      <!-- page -->
+
+      One example of each, on the `books` table.
+
+      **sum**: how many copies are on the shelves in total?
+
+      ```sql
+      SELECT sum(stock) AS copies_in_stock FROM books;
+      ```
+
+      | copies_in_stock |
+      |---|
+      | 454 |
+
+      **avg**: the average book price. Averages come out with many decimals, so wrap them in `round(…, 2)` (Module 9):
+
+      ```sql
+      SELECT avg(price) AS avg_price, round(avg(price), 2) AS rounded
+      FROM books;
+      ```
+
+      | avg_price | rounded |
+      |---|---|
+      | 12.5710344827586207 | 12.57 |
+
+      **min and max**: the oldest and newest publication years.
+
+      ```sql
+      SELECT min(published_year) AS oldest, max(published_year) AS newest
+      FROM books;
+      ```
+
+      | oldest | newest |
+      |---|---|
+      | 1813 | 2023 |
+
+      Each query reads all the books but returns **one row**.
+
+  - kind: try
+    title: "Try it: sum, avg, min, max"
+    body: |
+      The three examples from before. Run them and compare with the tables you just saw.
+
+      Then play: try `max(price)` and `min(price)`, or `sum(price)` (the value of one copy of every book). Add `WHERE genre = 'Horror'` before the `;` to get the answer for just one genre.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT sum(stock) AS copies_in_stock FROM books;
+
+      SELECT avg(price) AS avg_price,
+             round(avg(price), 2) AS rounded
+      FROM books;
+
+      SELECT min(published_year) AS oldest,
+             max(published_year) AS newest
+      FROM books;
+
   - kind: try
     title: Summarize every sale
     body: |
@@ -55,7 +112,15 @@ steps:
       GROUP BY customer_email;
       ```
 
-      Picture it: all of Emma's sales go into one pile and Liam's into another, then each pile gets summed. You get **one row per group**.
+      Picture it: all of Emma's sales go into one pile and Liam's into another, then each pile gets summed. You get **one row per group**. Here are the top five, after adding `ORDER BY copies DESC LIMIT 5`:
+
+      | customer_email | copies |
+      |---|---|
+      | aisha.khan@example.com | 6 |
+      | emma.johnson@example.com | 5 |
+      | chloe.dubois@example.com | 4 |
+      | mateo.silva@example.com | 4 |
+      | james.wilson@example.com | 4 |
 
       The rule: every column in `SELECT` must either be in `GROUP BY` or be inside an aggregate. Otherwise PostgreSQL wouldn't know *which* row's value to show for the whole group. (There's one exception, when you group by a table's primary key, which you'll meet in Module 11.)
 
@@ -157,6 +222,20 @@ steps:
       HAVING sum(quantity * unit_price) > 40;
       ```
 
+      returns only the 7 customers above 40:
+
+      | customer_email | spent |
+      |---|---|
+      | james.wilson@example.com | 68.39 |
+      | aisha.khan@example.com | 101.80 |
+      | mateo.silva@example.com | 85.99 |
+      | chloe.dubois@example.com | 48.48 |
+      | emma.johnson@example.com | 61.67 |
+      | noah.garcia@example.com | 48.25 |
+      | liam.smith@example.com | 42.98 |
+
+      <!-- page -->
+
       You can't write `WHERE sum(quantity * unit_price) > 40`, because when WHERE runs, the sums don't exist yet. That follows from the **logical order** in which PostgreSQL processes a query, which is *not* the order you type it:
 
       **FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT**
@@ -195,6 +274,20 @@ steps:
       - `array_agg(title)` collects them into an **array** (a list value): `{Emma,"Pride and Prejudice"}`.
 
       Add `ORDER BY` inside the parentheses to control the order: `string_agg(title, ', ' ORDER BY title)`.
+
+      ```sql
+      SELECT genre, string_agg(title, ', ' ORDER BY title) AS titles
+      FROM books
+      GROUP BY genre;
+      ```
+
+      Three of its rows:
+
+      | genre | titles |
+      |---|---|
+      | Classic | Animal Farm, Emma, Jane Eyre, Pride and Prejudice, The Great Gatsby, Wuthering Heights |
+      | Horror | Dracula, Frankenstein, It, The Shining |
+      | Mystery | And Then There Were None, Murder on the Orient Express, Rebecca, The Hound of the Baskervilles |
 
   - kind: try
     title: Books per genre, in one line

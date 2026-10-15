@@ -6,6 +6,34 @@ steps:
 
       This lesson builds the most common ones with Grid and Flexbox, mobile-first, and where possible with **no media queries at all**: layouts that adapt to their content and space by themselves (sometimes called *intrinsic* layout).
 
+      **Example: a design, read as patterns.** A designer sends Inkwell's new home page:
+
+      ```text
+      ┌──────────────────────────────────────┐
+      │ logo          Books  Events  Contact │  ← sticky header
+      ├──────────────────────────────────────┤
+      │      FULL-WIDTH SUMMER SALE BANNER   │  ← full-bleed banner
+      ├──────────────────────────────────────┤
+      │  [book] [book] [book] [book]         │  ← card grid
+      │  [book] [book] [book] [book]         │
+      ├──────────────────────────────────────┤
+      │ © Inkwell Books                      │  ← sticky footer
+      └──────────────────────────────────────┘
+      ```
+
+      Four patterns you can name, each with a known recipe. That's the whole page.
+
+  - kind: choice
+    title: "Quick check: intrinsic layout"
+    body: |
+      What does an **intrinsic** layout do?
+    options:
+      - "Uses a media query for every screen size"
+      - "Adapts to its content and the space it has by itself, often with no media queries"
+      - "Uses fixed pixel widths so it always looks the same"
+    answer: 1
+    explanation: "Intrinsic layouts, like an auto-fit grid or a wrapping flex row, rearrange themselves based on space and content, so they need few or no breakpoints."
+
   - kind: explain
     title: The holy-grail page
     body: |
@@ -196,6 +224,49 @@ steps:
 
       `place-items: center` is shorthand for `align-items` + `justify-items`. It's the quickest "put this in the middle" in CSS.
 
+  - kind: web
+    title: "Try it: three ways to centre"
+    body: |
+      Three boxes, each centring its content a different way: `text-align`, `margin-inline: auto`, and `place-items: center`.
+
+      Try this:
+
+      1. In `.grid`, replace `display: grid; place-items: center;` with `display: flex; justify-content: center; align-items: center;`. It looks the same.
+      2. Remove `max-width` from `.narrow`. `margin-inline: auto` has nothing left to centre: the box fills the width.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="panel text">Centred text</div>
+      <div class="panel"><p class="narrow">A narrow block, centred</p></div>
+      <div class="panel grid"><span class="stamp">Centred both ways</span></div>
+    css: |
+      .panel {
+        border: 2px dashed gray;
+        margin-bottom: 12px;
+        min-height: 60px;
+      }
+
+      .text {
+        text-align: center;
+      }
+
+      .narrow {
+        max-width: 14rem;
+        margin-inline: auto;
+        background: #fde68a;
+      }
+
+      .grid {
+        display: grid;
+        place-items: center;
+        height: 120px;
+      }
+
+      .stamp {
+        background: #fdba74;
+        padding: 8px;
+      }
+
   - kind: explain
     title: Full-bleed sections
     body: |
@@ -290,6 +361,43 @@ steps:
       - **Switcher**: a row of items that becomes a column all at once below a width: `display: flex; flex-wrap: wrap` with `flex-basis: calc((40rem - 100%) * 999)` on the items. (A clever trick from the *Every Layout* book; recognise it when you see it.)
 
       Most real pages are three or four of these patterns nested inside each other.
+
+      <!-- page -->
+
+      **Example: three of the patterns on one page.**
+
+      ```css
+      body {                      /* sticky footer */
+        min-height: 100svh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        margin: 0;
+      }
+      header {                    /* sticky header */
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: white;
+      }
+      .books {                    /* card grid */
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+        gap: 1rem;
+      }
+      ```
+
+      With `<header>`, `<main>` (holding `.books`) and `<footer>` as the body's three children, the header stays at the top as you scroll, the footer sits at the bottom even on a short page, and the cards reflow at any width.
+
+  - kind: choice
+    title: "Quick check: name the pattern"
+    body: |
+      A row of book cards should wrap onto new rows by itself as the screen narrows, with no media queries. Which pattern is it?
+    options:
+      - "Sticky footer: `grid-template-rows: auto 1fr auto`"
+      - "Card grid: `repeat(auto-fit, minmax(16rem, 1fr))`"
+      - "Sticky header: `position: sticky; top: 0`"
+    answer: 1
+    explanation: "`auto-fit` with `minmax()` fits as many 16rem-wide columns as there's room for, and moves the rest onto new rows."
 
   - kind: why
     body: |

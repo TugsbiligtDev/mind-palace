@@ -8,6 +8,32 @@ steps:
 
       Be careful what you install: packages are code from strangers that runs on your computer. Prefer well-known, widely used packages, and check the name (typos such as `reqeusts` are a real attack).
 
+      Modules from the standard library import straight away. A name that is not installed (here, a typo of the popular `requests` package) cannot be imported:
+
+      ```python
+      import json                      # part of Python: always there
+      print(json.dumps({"case": 42}))
+      import reqeusts                  # not installed (and a typo!)
+      ```
+
+      prints:
+
+      ```
+      {"case": 42}
+      ModuleNotFoundError: No module named 'reqeusts'
+      ```
+
+  - kind: choice
+    title: "Quick check: before you install"
+    body: |
+      A blog tells you to run `uv add reqeusts` to fetch web pages. What should you do first?
+    options:
+      - "Run it: blog posts are checked"
+      - "Check the name: the well-known package is `requests`, and a near-miss spelling can be a trap"
+      - "Install it with `pip` instead, which is safer"
+    answer: 1
+    explanation: "Packages are code from strangers that runs on your computer. Attackers publish packages with names one typo away from popular ones. Check the spelling and that the package is widely used before you install it. The tool you use doesn't change the risk."
+
   - kind: explain
     title: Why virtual environments exist
     body: |
@@ -243,6 +269,30 @@ steps:
       - **conda**: another package manager, popular in data science because it also installs non-Python software.
 
       `uv` does all of this faster and in one tool. If a project has a `requirements.txt`, you can still use it: `uv pip install -r requirements.txt`.
+
+      For example, an older project might ship a `requirements.txt` like this, one package per line with its exact version:
+
+      ```
+      requests==2.32.3
+      rich==13.9.4
+      ```
+
+      | The classic way | With uv |
+      |---|---|
+      | `python -m venv .venv`, then activate it | `uv venv` (or let `uv run` make one) |
+      | `pip install -r requirements.txt` | `uv pip install -r requirements.txt` |
+      | `pip install requests` | `uv add requests` |
+
+  - kind: choice
+    title: "Quick check: an old project"
+    body: |
+      You download an older project that has a `requirements.txt` and no `pyproject.toml`. How can you install what it needs with uv?
+    options:
+      - "`uv add requirements.txt`"
+      - "`uv pip install -r requirements.txt`"
+      - "You can't: uv only works with new projects"
+    answer: 1
+    explanation: "`uv pip install -r requirements.txt` reads the list and installs every package in it. `uv add requirements.txt` would try to add a package with that file name."
 
   - kind: why
     body: |

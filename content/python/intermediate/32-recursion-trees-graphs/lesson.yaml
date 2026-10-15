@@ -376,6 +376,37 @@ steps:
 
       Recipe: define the sub-problem, write the recursion, add `@cache`. You will not need more than that as an intermediate programmer.
 
+  - kind: code
+    title: "Try it: fewest coins"
+    body: |
+      The example above, with a counter to show how often `best` really runs. Thanks to `@cache` each amount is worked out only once, so 27 needs just 28 calls (amounts 0 to 27).
+
+      Then try one change: remove `@cache` and run again. The answer stays 5, but the number of calls jumps from 28 to over 6,000.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      from functools import cache
+
+      calls = 0
+
+      def min_coins(coins, amount):
+          @cache
+          def best(rest):
+              global calls
+              calls += 1
+              if rest == 0:
+                  return 0
+              options = [best(rest - c)
+                         for c in coins if c <= rest]
+              if not options:
+                  return float("inf")
+              return 1 + min(options)
+          answer = best(amount)
+          return answer if answer != float("inf") else -1
+
+      print(min_coins([1, 5, 10], 27))
+      print("calls:", calls)
+
   - kind: info
     title: "🔹 Dijkstra's algorithm"
     body: |
@@ -400,6 +431,39 @@ steps:
       ```
 
       It powers map directions. Recognise the shape: BFS + heap.
+
+  - kind: code
+    title: "Try it: cheapest routes"
+    body: |
+      The `dijkstra` function above, run on a small map. Going straight from `A` to `C` costs 5, but `A → B → C` costs only 1 + 2 = 3, and the result shows that cheaper cost.
+
+      Then try one change: make the `A` to `B` road cost `4` and run again.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      import heapq
+
+      def dijkstra(graph, start):
+          best = {start: 0}
+          heap = [(0, start)]
+          while heap:
+              cost, node = heapq.heappop(heap)
+              if cost > best.get(node, float("inf")):
+                  continue
+              for neighbour, w in graph[node]:
+                  new_cost = cost + w
+                  if new_cost < best.get(neighbour, float("inf")):
+                      best[neighbour] = new_cost
+                      heapq.heappush(heap, (new_cost, neighbour))
+          return best
+
+      roads = {
+          "A": [("B", 1), ("C", 5)],
+          "B": [("C", 2), ("D", 6)],
+          "C": [("D", 1)],
+          "D": [],
+      }
+      print(dijkstra(roads, "A"))
 
   - kind: why
     body: |

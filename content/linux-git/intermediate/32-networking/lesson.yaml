@@ -12,6 +12,33 @@ steps:
 
       So "the website doesn't work" can mean: the name doesn't resolve, the computer can't be reached, nothing is listening on the port, a firewall is in the way, or the program answered with an error. Each tool below checks one of those.
 
+      <!-- page -->
+
+      **Example: the three ideas, one command each.** A name turned into an address, a port checked, and the local list of names:
+
+      ```
+      learner@inkwell:~$ dig +short shop.inkwell.example
+      203.0.113.20
+      learner@inkwell:~$ nc -zv shop.inkwell.example 22
+      Connection to shop.inkwell.example (203.0.113.20) 22 port [tcp/ssh] succeeded!
+      learner@inkwell:~$ grep inkwell /etc/hosts
+      127.0.1.1	inkwell
+      ```
+
+      `shop.inkwell.example` is `203.0.113.20`, its port 22 (SSH) is open, and this computer's own name, `inkwell`, is in `/etc/hosts`.
+
+  - kind: choice
+    title: "Quick check: which part?"
+    body: |
+      `curl http://shop.inkwell.example:3000/status`: which part is the **port**?
+    options:
+      - "`shop.inkwell.example`"
+      - "`/status`"
+      - "`http`"
+      - "`3000`"
+    answer: 3
+    explanation: "The number after the colon is the port: 3000, where the shop app listens. The name is resolved by DNS, and `/status` is the page asked for."
+
   - kind: explain
     title: The tools
     body: |
@@ -28,6 +55,32 @@ steps:
       <!-- page -->
 
       `ss` options: **t**cp, **u**dp, **l**istening, **n**umeric (show `22`, not `ssh`), **p**rocesses.
+
+      <!-- page -->
+
+      **Examples** on the practice computer:
+
+      ```
+      learner@inkwell:~$ ip -br addr
+      lo               UNKNOWN        127.0.0.1/8 ::1/128 
+      eth0             UP             10.0.2.15/24 
+      learner@inkwell:~$ ip route
+      default via 10.0.2.2 dev eth0 proto dhcp src 10.0.2.15 metric 100 
+      10.0.2.0/24 dev eth0 proto kernel scope link src 10.0.2.15 metric 100 
+      learner@inkwell:~$ ping -c 3 shop.inkwell.example
+      PING shop.inkwell.example (203.0.113.20) 56(84) bytes of data.
+      64 bytes from shop.inkwell.example (203.0.113.20): icmp_seq=1 ttl=64 time=12.3 ms
+      64 bytes from shop.inkwell.example (203.0.113.20): icmp_seq=2 ttl=64 time=13.2 ms
+      64 bytes from shop.inkwell.example (203.0.113.20): icmp_seq=3 ttl=64 time=11.6 ms
+
+      --- shop.inkwell.example ping statistics ---
+      3 packets transmitted, 3 received, 0% packet loss, time 2004ms
+      rtt min/avg/max/mdev = 11.628/12.388/13.224/0.654 ms
+      learner@inkwell:~$ curl http://shop.inkwell.example:3000/
+      {"name":"Inkwell shop API","version":"2.3.1"}
+      ```
+
+      Our address is `10.0.2.15`, traffic leaves through `10.0.2.2`, the shop answers pings in about 12 ms, and its app on port 3000 replied with a line of JSON.
 
   - kind: shell
     title: Look the shop up
@@ -62,6 +115,27 @@ steps:
       A refusal tells you the network and the computer are fine and points at the program. A timeout points at the path to it.
 
       A program can also listen **only on localhost** (`127.0.0.1:3000` in `ss`): it then works from the server itself but refuses everyone else. `0.0.0.0` or `*` means all addresses.
+
+      <!-- page -->
+
+      **Example: all three errors**, with curl's exit codes:
+
+      ```
+      learner@inkwell:~$ curl http://shop.inkwell.example:8080/
+      curl: (7) Failed to connect to shop.inkwell.example port 8080 after 0 ms: Couldn't connect to server
+      learner@inkwell:~$ echo "exit code: $?"
+      exit code: 7
+      learner@inkwell:~$ curl http://203.0.113.99/
+      curl: (28) Failed to connect to 203.0.113.99 port 80 after 10002 ms: Timeout was reached
+      learner@inkwell:~$ echo "exit code: $?"
+      exit code: 28
+      learner@inkwell:~$ curl http://nosuchname.example/
+      curl: (6) Could not resolve host: nosuchname.example
+      learner@inkwell:~$ echo "exit code: $?"
+      exit code: 6
+      ```
+
+      Port 8080 on the shop: refused at once (nothing listens there). `203.0.113.99`: no answer at all, so curl waited 10 seconds and gave up. The made-up name never got as far as connecting.
 
   - kind: choice
     title: Read the error
@@ -119,6 +193,15 @@ steps:
     body: |
       Older guides use `ifconfig` (addresses) and `netstat -tlnp` (listening ports). They come from the **net-tools** package, which modern Ubuntu doesn't install anymore: `ip` and `ss` replaced them. If you need them: `sudo apt install net-tools`. On a Mac, `ifconfig` and `netstat` are still the normal tools (there's no `ip` or `ss`; `lsof -i -P | grep LISTEN` shows listening programs).
 
+  - kind: shell
+    title: "Try it: old and new tools"
+    fixture: [shop-server, shop-access]
+    setup: cd ~
+    body: |
+      Type `ifconfig`: not installed. Then type its replacement, `ip -br addr`. On your Mac it's the other way round: try `ifconfig` there.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: info
     title: "🔹 ufw, Ubuntu's firewall"
     body: |
@@ -132,6 +215,26 @@ steps:
       ```
 
       Everything not allowed then **times out** from outside. Module 45 sets a server's firewall up properly.
+
+      **Example** on the shop server, where the firewall is still off:
+
+      ```
+      learner@shop:~$ sudo ufw status
+      [sudo] password for learner: (the practice computer doesn't ask for it)
+      Status: inactive
+      ```
+
+  - kind: choice
+    title: "Quick check: the order"
+    body: |
+      You're logged in to a server over SSH and want to turn on ufw. What must you do **before** `sudo ufw enable`?
+    options:
+      - "`sudo ufw allow OpenSSH`"
+      - "Restart the server"
+      - "Log out"
+      - "Nothing: SSH is always allowed"
+    answer: 0
+    explanation: "Once ufw is on, everything not allowed is blocked, including your own SSH connection. Allow SSH first, or you lock yourself out."
 
   - kind: mac
     title: Networking tools on your Mac

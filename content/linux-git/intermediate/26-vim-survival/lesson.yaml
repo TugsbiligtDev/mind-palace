@@ -10,6 +10,30 @@ steps:
 
       You don't need to *love* vim. You need to get in, make a change, save, and get out without panic. That's this lesson. The practice terminal has a small vim built in, with the commands taught here.
 
+      **Example.** You SSH into a server and run `crontab -e`. Nobody set an editor, so the screen fills with:
+
+      ```
+      # Edit this file to introduce tasks to be run by cron.
+      ~
+      ~
+      ~
+      "/tmp/crontab.Xr8T1a/crontab" 23L, 890C
+      ```
+
+      That's vim. Typing letters doesn't add them, and Ctrl+C doesn't quit. The next pages fix that.
+
+  - kind: choice
+    title: "Quick check: when you'll meet vim"
+    body: |
+      Which of these is most likely to drop you into vim without asking?
+    options:
+      - "Opening a file in VS Code"
+      - "Running `ls` on a server"
+      - "Running `git commit` (no `-m`) on a server where no editor is set"
+      - "Opening Finder on your Mac"
+    answer: 2
+    explanation: "Git, crontab and visudo open the default editor when they need text from you, and on a bare server that's usually vim."
+
   - kind: explain
     title: Modes, the whole secret
     body: |
@@ -36,6 +60,52 @@ steps:
       | save, stay | `:w` |
 
       Lost? Press **Esc** twice: you're back in Normal mode, and nothing is harmed. If vim says `E37: No write since last change`, you tried `:q` with unsaved changes: use `:wq` to keep them or `:q!` to throw them away.
+
+      <!-- page -->
+
+      A whole edit, start to finish. Kenji's reorder list before:
+
+      ```
+      learner@inkwell:~$ cat reorder.txt
+      To reorder
+      - Dune
+      - Circe
+      - Kindred
+      ```
+
+      Then `vim reorder.txt`, and these keys:
+
+      1. `G` jumps to the last line (`- Kindred`).
+      2. `o` opens a new line below it and switches to Insert mode (`-- INSERT --` at the bottom).
+      3. Type `- Beloved`.
+      4. **Esc** goes back to Normal mode.
+      5. `:wq` and Return saves and quits.
+
+      Back at the prompt, the file has a new last line:
+
+      ```
+      learner@inkwell:~$ cat reorder.txt
+      To reorder
+      - Dune
+      - Circe
+      - Kindred
+      - Beloved
+      ```
+
+  - kind: shell
+    title: "Try it: in and out of vim"
+    setup: |
+      printf 'To reorder\n- Dune\n- Circe\n- Kindred\n' > ~/reorder.txt
+    body: |
+      `reorder.txt` is a scratch file to play with. Type each of these and press **Return** after each one:
+
+      1. `vim reorder.txt` opens it.
+      2. Press `G`, then `o`, type `- Beloved`, press **Esc**, then type `:wq` and press Return.
+      3. `cat reorder.txt` shows your new line.
+      4. `vim reorder.txt` again. Press `i`, type some nonsense, **Esc**, then `:q!` and Return.
+      5. `cat reorder.txt`: the nonsense was thrown away.
+
+      Then open it once more and try `:q` after a change, to see vim's `E37` warning. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: In, add a line, out
@@ -72,6 +142,18 @@ steps:
 
       A number before a move repeats it: `5j` goes down five lines, `3w` three words. `:set number` shows line numbers.
 
+  - kind: choice
+    title: "Quick check: moving"
+    body: |
+      You're in Normal mode near the top of a 200-line file. Which keys take you to the **last** line?
+    options:
+      - "`gg`"
+      - "`G`"
+      - "`$`"
+      - "`l`"
+    answer: 1
+    explanation: "`G` jumps to the last line and `gg` to the first. `$` is the end of the current line, and `l` moves one character right."
+
   - kind: explain
     title: Changing text without Insert mode
     body: |
@@ -92,6 +174,42 @@ steps:
       | `J` | join the next line onto this one |
 
       `dd` then `p` moves a line; `yy` then `p` duplicates it.
+
+      <!-- page -->
+
+      For example, to take Dune off the reorder list: `vim reorder.txt`, `2G` (line 2, `- Dune`), `dd`, then `:wq`. Before and after:
+
+      ```
+      learner@inkwell:~$ cat reorder.txt
+      To reorder
+      - Dune
+      - Circe
+      - Kindred
+      ```
+
+      ```
+      learner@inkwell:~$ cat reorder.txt
+      To reorder
+      - Circe
+      - Kindred
+      ```
+
+      No Insert mode needed: `dd` works straight from Normal mode.
+
+  - kind: shell
+    title: "Try it: moving and changing"
+    setup: |
+      printf 'To reorder\n- Dune\n- Circe\n- Kindred\n' > ~/reorder.txt
+    body: |
+      Open the scratch list with `vim reorder.txt`, then try these keys (in Normal mode, so press **Esc** first if you're unsure):
+
+      1. `j` and `k` move down and up; `G` and `gg` jump to the end and the start.
+      2. `2G` then `dd` deletes the Dune line. `u` brings it back.
+      3. `yy` then `p` duplicates a line.
+      4. `x` deletes one letter; `r` and a key replaces one.
+      5. `:wq` to save, or `:q!` to throw it all away. Then `cat reorder.txt`.
+
+      Then try `cw` on a word: type a new word, then **Esc**. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Fix the shop's settings
@@ -129,6 +247,31 @@ steps:
       | `:s/old/new/` | only on the current line, first match |
 
       After `:%s`, vim says how many it changed, and `u` undoes all of them at once.
+
+      For example, `vim reorder.txt`, then `:%s/Circe/The Hobbit/g` Return and `:wq`. Every `Circe` became `The Hobbit`:
+
+      ```
+      learner@inkwell:~$ cat reorder.txt
+      To reorder
+      - Dune
+      - The Hobbit
+      - Kindred
+      ```
+
+  - kind: shell
+    title: "Try it: search and replace"
+    setup: |
+      printf 'To reorder\n- Dune\n- Circe\n- Kindred\n' > ~/reorder.txt
+    body: |
+      Open the scratch list with `vim reorder.txt`, then:
+
+      1. `/Kindred` and Return puts the cursor on Kindred.
+      2. `gg` goes back to the top; `/e` and Return finds the first `e`, `n` the next one, `N` the one before.
+      3. `:%s/Circe/The Hobbit/g` and Return replaces it.
+      4. `u` undoes the replacement; do step 3 again.
+      5. `:wq`, then `cat reorder.txt`
+
+      Then try replacing `- ` with `* ` in every line. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: A price rise

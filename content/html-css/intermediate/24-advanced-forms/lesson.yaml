@@ -16,6 +16,80 @@ steps:
 
       ⚠️ This is a **convenience for the visitor**, not security. Anyone can switch it off, so the server that receives the form must check everything again.
 
+      <!-- page -->
+
+      Here are the rules on Inkwell's poetry-night booking form:
+
+      ```html
+      <form>
+        <label for="reader">Your name</label>
+        <input id="reader" name="reader" required minlength="3">
+
+        <label for="mail">Email</label>
+        <input id="mail" name="mail" type="email">
+
+        <label for="seats">Seats</label>
+        <input id="seats" name="seats" type="number" min="1" max="4">
+
+        <label for="code">Ticket code</label>
+        <input id="code" name="code" pattern="[A-Z]{3}[0-9]{2}">
+
+        <button type="submit">Book</button>
+      </form>
+      ```
+
+      In a pattern, `[A-Z]` means "one capital letter", `[0-9]` "one digit", and `{3}` "exactly three of the thing before". So `[A-Z]{3}[0-9]{2}` accepts `POE24` but not `poe24` or `POE2`. `{5,8}` would mean "5 to 8 of them".
+
+      What happens when you press **Book**:
+
+      - Name left empty: the browser stops and shows a bubble such as *"Please fill out this field."*
+      - Name `Al` (2 characters): stopped, and the message asks for at least 3 characters.
+      - Email `ada`: stopped, the message asks for an `@`.
+      - Seats `6`: stopped, *"Value must be less than or equal to 4."*
+      - Code `poe24`: stopped, *"Please match the requested format."*
+
+      The exact words depend on the browser and the visitor's language.
+
+  - kind: web
+    title: "Try it: validation rules"
+    body: |
+      The poetry-night booking form, with its rules in place.
+
+      1. Press **Book** with everything empty. The browser jumps to the name field and explains what's missing.
+      2. Type `Al` as the name and press **Book** again. Then `Alice`.
+      3. Try `ada` as the email, `6` seats, and `poe24` as the code, one at a time. Fix each one when the browser complains.
+      4. When everything is valid, **Book** says the form would be sent.
+      5. In `index.html`, change `max="4"` to `max="10"` and try 6 seats again.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <form>
+        <label for="reader">Your name</label>
+        <input id="reader" name="reader" required minlength="3">
+
+        <label for="mail">Email</label>
+        <input id="mail" name="mail" type="email">
+
+        <label for="seats">Seats</label>
+        <input id="seats" name="seats" type="number" min="1" max="4">
+
+        <label for="code">Ticket code</label>
+        <input id="code" name="code" pattern="[A-Z]{3}[0-9]{2}">
+
+        <button type="submit">Book</button>
+      </form>
+    css: |
+      form {
+        display: grid;
+        gap: 0.25rem;
+        max-width: 20rem;
+        font-family: system-ui, sans-serif;
+      }
+
+      button {
+        margin-top: 0.5rem;
+      }
+
   - kind: web
     title: Validate the order form
     body: |
@@ -103,6 +177,19 @@ steps:
       }
       ```
 
+      With this rule, a required email field looks normal when the page loads. Type `ada` and click somewhere else: the field turns pale red with a red border. Finish it as `ada@example.com` and it goes back to normal straight away. With `input:invalid` instead, the empty field would be red the moment the page appeared.
+
+  - kind: choice
+    title: "Quick check: red too early"
+    body: |
+      A required email field turns red **as soon as the page loads**, before anyone has typed. Which selector was used?
+    options:
+      - "`input:user-invalid`"
+      - "`input:invalid`"
+      - "`input:optional`"
+    answer: 1
+    explanation: "An empty required field is invalid from the start, so `:invalid` paints it red at once. `:user-invalid` waits until the visitor has interacted with the field."
+
   - kind: explain
     title: Error messages everyone gets
     body: |
@@ -121,7 +208,53 @@ steps:
 
       `aria-describedby` takes one or more ids, separated by spaces. Hints (format examples) belong there too: they're better than placeholders, because they don't vanish.
 
+      In the page you see the label, the field, the grey hint and the red error underneath. Nothing about `aria-describedby` or `aria-invalid` is visible; a screen reader, when the field gets focus, says something like *"Postcode, edit text, invalid entry. For example BS1 4XE. That postcode looks too short."*
+
       Showing and hiding messages as people type needs a little JavaScript; the HTML structure above is what that script fills in.
+
+  - kind: web
+    title: "Try it: :invalid against :user-invalid"
+    body: |
+      Two required phone fields. The first is styled with `:invalid`, the second with `:user-invalid`.
+
+      1. Look at the preview before touching anything: the first field is **already** orange, the second isn't.
+      2. Type a letter in the second field, delete it, and click elsewhere. Now it turns orange too, because you've had a go.
+      3. Type `0117 496 0000` into each field and watch them both clear.
+      4. In `style.css`, change `darkorange` to `purple`.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <form>
+        <p>
+          <label for="eager">Phone (styled with :invalid)</label><br>
+          <input id="eager" type="tel" required>
+        </p>
+        <p>
+          <label for="patient">Phone (styled with :user-invalid)</label><br>
+          <input id="patient" type="tel" required aria-describedby="patient-hint">
+          <span id="patient-hint" class="hint">We'll ring if your order is delayed.</span>
+        </p>
+      </form>
+    css: |
+      input {
+        font: inherit;
+        padding: 0.4rem;
+        border: 2px solid #78716c;
+      }
+
+      #eager:invalid {
+        border-color: darkorange;
+      }
+
+      #patient:user-invalid {
+        border-color: darkorange;
+      }
+
+      .hint {
+        display: block;
+        color: #57534e;
+        font-size: 0.875rem;
+      }
 
   - kind: web
     title: Style and describe the errors
@@ -220,6 +353,18 @@ steps:
 
       `autocomplete="off"` is rarely right; browsers often ignore it on login fields anyway.
 
+      For example, the "create an account" form for Inkwell's loyalty card:
+
+      ```html
+      <label for="country">Country</label>
+      <input id="country" name="country" autocomplete="country-name">
+
+      <label for="pw">Choose a password</label>
+      <input id="pw" name="pw" type="password" autocomplete="new-password">
+      ```
+
+      Nothing changes in how the page looks. When the visitor clicks into *Country*, the browser offers the country saved in their details, and in *Choose a password* it offers to make up a strong password and remember it.
+
   - kind: web
     title: Make the address form fill itself
     body: |
@@ -272,6 +417,42 @@ steps:
       ```
 
       The input's `list` attribute matches the datalist's `id`. Unlike `<select>`, the visitor isn't limited to the options.
+
+      In the page, `accent-color` turns the tick inside every checked checkbox and the dot of the chosen radio button Inkwell brown instead of the browser's blue. The genre field looks like a plain text box; click into it (or type `F`) and a little list drops down offering the matching genres.
+
+  - kind: web
+    title: "Try it: accent-color and datalist"
+    body: |
+      A teal-themed form with a suggestion list of delivery days.
+
+      1. Tick and untick the checkbox, and switch between the radio buttons: they're teal.
+      2. Click into the *Delivery day* field: the suggestions appear. Type `W` to narrow them down. You can also type a day that isn't on the list.
+      3. In `style.css`, change `teal` to `darkorange`. In `index.html`, add `<option value="Saturday">` to the datalist.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <form>
+        <label><input type="checkbox" checked> Text me when it ships</label>
+        <p>
+          <label><input type="radio" name="wrap" checked> No gift wrap</label>
+          <label><input type="radio" name="wrap"> Gift wrap</label>
+        </p>
+        <label for="day">Delivery day</label>
+        <input id="day" name="day" list="days">
+        <datalist id="days">
+          <option value="Monday">
+          <option value="Wednesday">
+          <option value="Friday">
+        </datalist>
+      </form>
+    css: |
+      :root {
+        accent-color: teal;
+      }
+
+      body {
+        font-family: system-ui, sans-serif;
+      }
 
   - kind: web
     title: Brand the controls, suggest the genres
@@ -335,7 +516,31 @@ steps:
       - `<progress value="3" max="5">3 of 5</progress>` shows **progress through a task** (an upload, step 3 of 5 in checkout).
       - `<meter value="0.8" low="0.3" high="0.7">80%</meter>` shows **a measurement within a range** (stock level, disk space, password strength).
 
+      In the page, `<progress value="3" max="5">` draws the browser's own bar, three-fifths filled in. The `<meter>` above draws a similar bar four-fifths full. The text between the tags ("3 of 5", "80%") is only shown by very old browsers that don't know the element.
+
       Each is announced properly by screen readers, which a styled `div` bar isn't.
+
+  - kind: web
+    title: "Try it: progress and meter"
+    body: |
+      A checkout progress bar (step 3 of 5) and a stock-level meter. Both are drawn by the browser itself.
+
+      Try this:
+
+      1. Change the progress bar's `value` to `5`. It fills completely.
+      2. Change the meter's `value` to `0.2`. It falls below `low`, and the bar turns from green to red. (`optimum="1"` tells the browser that a high stock level is the good end.)
+      3. Remove `value` from `<progress>` altogether. It turns into an "in progress, no idea how long" bar.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p>
+        <label for="steps">Checkout</label>
+        <progress id="steps" value="3" max="5">3 of 5</progress>
+      </p>
+      <p>
+        <label for="stock">Stock of Dune</label>
+        <meter id="stock" value="0.8" low="0.3" high="0.7" optimum="1">80%</meter>
+      </p>
 
   - kind: why
     body: |

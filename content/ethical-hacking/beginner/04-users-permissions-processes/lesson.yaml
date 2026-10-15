@@ -12,6 +12,37 @@ steps:
 
       The very first thing you do after landing on a machine is run `id`. It tells you how much power you already have — and how much you still need to get.
 
+      **Example** on the Kali lab machine:
+
+      ```
+      kali@kali:~$ whoami
+      kali
+      kali@kali:~$ id
+      uid=1000(kali) gid=1000(kali) groups=1000(kali),4(adm),27(sudo)
+      kali@kali:~$ groups
+      kali adm sudo
+      ```
+
+      Read the `id` line left to right: user id 1000 (an ordinary user, not 0), main group `kali`, and membership of `adm` (may read system logs) and `sudo` (may borrow root's power, next page). Being in `sudo` is already a lot of power.
+
+  - kind: choice
+    title: "Quick check: read the id line"
+    body: |
+      You land on a lab machine and run `id`:
+
+      ```
+      uid=1001(webdev) gid=1001(webdev) groups=1001(webdev),33(www-data)
+      ```
+
+      What does it tell you?
+    options:
+      - "You are root, because a uid is shown"
+      - "You are an ordinary user called webdev, in the webdev and www-data groups, and not in sudo"
+      - "You are in the sudo group, because there are two groups"
+    answer: 1
+    explanation: |
+      Root is always uid **0**; this is uid 1001, an ordinary account. The groups list is `webdev` and `www-data` only, so there is no `sudo` group: you have little power yet.
+
   - kind: explain
     title: sudo — borrowing root's power
     body: |
@@ -24,6 +55,52 @@ steps:
       It asks for *your* password, checks that you are allowed, and runs that one command as root. This is safer than logging in as root all the time, and it leaves a trail in the logs of who did what.
 
       For a security tester, the question "which commands can this user run with `sudo`?" (`sudo -l`) is one of the richest. A single misconfigured `sudo` rule is one of the most common ways to escalate from a limited user to full root — a theme you will return to.
+
+      <!-- page -->
+
+      **Example: `sudo -l` on two machines.** First on your own Kali box, after typing your password:
+
+      ```
+      kali@kali:~$ sudo -l
+      [sudo] password for kali:
+      Matching Defaults entries for kali on kali:
+          env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin, use_pty
+
+      User kali may run the following commands on kali:
+          (ALL : ALL) ALL
+      ```
+
+      The last line says `kali` may run *any* command as *any* user. Normal for your own admin account.
+
+      Now the same question asked by a limited `webdev` account on a training target in your lab:
+
+      ```
+      webdev@target:~$ sudo -l
+      User webdev may run the following commands on target:
+          (root) NOPASSWD: /usr/bin/vim
+      ```
+
+      This user may run one program, the `vim` text editor, as root and without a password. That sounds harmless, but an editor running as root can open any file on the system. That is the kind of rule a tester writes down at once.
+
+  - kind: choice
+    title: "Quick check: the interesting sudo rule"
+    body: |
+      A limited account runs `sudo -l` and sees:
+
+      ```
+      User backup may run the following commands on target:
+          (root) NOPASSWD: /usr/bin/tar
+      ```
+
+      What does this rule mean?
+    options:
+      - "backup may run any command as root"
+      - "backup may run tar, but only as itself"
+      - "backup may run the tar program as root, without typing a password"
+      - "backup cannot use sudo at all"
+    answer: 2
+    explanation: |
+      `(root)` is who the command runs as, `NOPASSWD` means no password is asked, and `/usr/bin/tar` is the only program allowed. One program running as root is exactly the kind of rule a tester writes down.
 
   - kind: explain
     title: Reading permissions
@@ -43,6 +120,38 @@ steps:
 
       **r**ead = view the contents; **w**rite = change them; e**x**ecute = run it as a program (or, for a folder, enter it). Permissions are the fence. Most attacks are about finding a gap in it.
 
+      <!-- page -->
+
+      **Example: three lines, three types.** From a `recon` folder on Kali:
+
+      ```
+      kali@kali:~/recon$ ls -l
+      total 8
+      drwxr-x--- 2 kali kali 4096 Oct 14 09:20 evidence
+      -rw-r--r-- 1 kali kali   71 Oct 14 09:05 notes.txt
+      lrwxrwxrwx 1 kali kali    9 Oct 14 09:21 latest -> notes.txt
+      ```
+
+      - `evidence` starts with `d`: a folder. Owner `rwx`, group `r-x`, others `---`, so other users cannot even look inside.
+      - `notes.txt` starts with `-`: a file. Owner can read and write, everyone else may only read.
+      - `latest` starts with `l`: a link (a shortcut) pointing at `notes.txt`. Links always show `rwxrwxrwx`; the real rules are the ones on the file it points to.
+
+  - kind: choice
+    title: "Quick check: who may do what?"
+    body: |
+      ```
+      -rw-r----- 1 ada staff 512 Oct 14 10:00 salaries.csv
+      ```
+
+      Can a user who is **not** `ada` and **not** in the `staff` group read this file?
+    options:
+      - "No: the last three characters are ---, so others get nothing"
+      - "Yes: the group part has r"
+      - "Yes: every file can be read by everyone"
+    answer: 0
+    explanation: |
+      Split it up: `-` (a file), `rw-` owner ada, `r--` group staff, `---` everyone else. The `r` in the middle only helps members of `staff`; everyone else has no permissions at all.
+
   - kind: explain
     title: Permissions as numbers (octal)
     body: |
@@ -56,10 +165,34 @@ steps:
 
       Add them up per group. So `rwx` = 4+2+1 = **7**, `r-x` = 4+1 = **5**, `r--` = **4**. The whole line `rwxr-x---` becomes **750**.
 
+      **Worked example: `rw-r-----`.** Split it into threes and add each one:
+
+      ```
+      rw-   →  4 + 2 + 0  =  6   (owner)
+      r--   →  4 + 0 + 0  =  4   (group)
+      ---   →  0 + 0 + 0  =  0   (others)
+                               =  640
+      ```
+
+      So `rw-r-----` is **640**: a private file the group may read. Going the other way works too: **600** is 6, 0, 0 = `rw-------`, owner only.
+
       Two numbers you must recognise on sight:
 
       - **755** (`rwxr-xr-x`) — owner full, everyone else read/run. Normal for programs.
       - **777** (`rwxrwxrwx`) — *everyone* can read, write and run. Almost always a mistake, and a gift to an attacker.
+
+  - kind: choice
+    title: "Quick check: letters to numbers"
+    body: |
+      What is `rwxr--r--` as a number?
+    options:
+      - "755"
+      - "644"
+      - "744"
+      - "777"
+    answer: 2
+    explanation: |
+      `rwx` = 4+2+1 = **7**, `r--` = **4**, `r--` = **4**, so **744**. (755 would be `rwxr-xr-x`, and 644 would be `rw-r--r--`.)
 
   - kind: explain
     title: Changing ownership and permissions
@@ -68,6 +201,24 @@ steps:
 
       - **`chmod`** changes the permission bits: `chmod 755 tool.sh` or `chmod +x tool.sh` (just add execute).
       - **`chown`** changes the owner: `chown ada:staff tool.sh` (needs root, so usually `sudo chown ...`).
+
+      **Example** on a script called `recon.sh` (watch the first column, and the owner name):
+
+      ```
+      kali@kali:~/recon$ ls -l recon.sh
+      -rw-r--r-- 1 kali kali 210 Oct 14 09:30 recon.sh
+      kali@kali:~/recon$ chmod +x recon.sh
+      kali@kali:~/recon$ ls -l recon.sh
+      -rwxr-xr-x 1 kali kali 210 Oct 14 09:30 recon.sh
+      kali@kali:~/recon$ chmod 700 recon.sh
+      kali@kali:~/recon$ ls -l recon.sh
+      -rwx------ 1 kali kali 210 Oct 14 09:30 recon.sh
+      kali@kali:~/recon$ sudo chown root:root recon.sh
+      kali@kali:~/recon$ ls -l recon.sh
+      -rwx------ 1 root root 210 Oct 14 09:30 recon.sh
+      ```
+
+      `chmod +x` added an `x` in all three groups. `chmod 700` set the exact bits: owner everything, nobody else anything. `sudo chown` handed the file to `root`. Like most commands that change things, `chmod` and `chown` print nothing when they succeed.
 
       You will do this constantly — for example, after downloading a script you must `chmod +x` it before you can run it. And when auditing a machine, spotting a file that is `chmod 777` or owned by the wrong person is often the loose thread that unravels everything.
 
@@ -94,6 +245,56 @@ steps:
 
       Why it matters: after getting onto a machine, `ps aux` shows what services are running, what is running *as root* (a potential escalation path), and sometimes even passwords accidentally passed on a command line.
 
+      <!-- page -->
+
+      **Example.** The full `ps aux` list is long, so here are its first lines plus two interesting ones, from a training target in the lab:
+
+      ```
+      webdev@target:~$ ps aux
+      USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+      root         1  0.0  0.3 167964 12880 ?        Ss   09:00   0:01 /sbin/init
+      root       702  0.0  0.2  15432  9120 ?        Ss   09:00   0:00 /usr/sbin/sshd -D
+      mysql      845  0.2  9.8 1795212 398412 ?      Ssl  09:00   0:04 /usr/sbin/mysqld
+      webdev    2481  0.0  0.1   9896  3424 pts/0    S    09:41   0:00 python3 backup.py --db-pass Hunter22
+      ```
+
+      The `USER` column tells you who each process runs as (`sshd` as root, the database as `mysql`), and `PID` is its number. The last line is a real-world gift: someone passed a password on the command line, so anyone who can run `ps` can read it.
+
+      Stopping that process by its PID:
+
+      ```
+      webdev@target:~$ kill 2481
+      webdev@target:~$ ps aux | grep backup.py
+      webdev    2533  0.0  0.0   6332  2048 pts/0    S+   09:42   0:00 grep backup.py
+      ```
+
+      `kill` printed nothing; the second command (a filter you will learn in Module 5) only finds itself, so `backup.py` is gone. `top` shows a similar table that refreshes every few seconds until you press `q`.
+
+  - kind: mac
+    title: "Try it: your Mac's processes"
+    body: |
+      Look at the programs running on your own Mac; nothing is stopped.
+
+      - `ps` shows just the processes in this terminal window (your shell, with its PID).
+      - `ps aux` shows **every** process: scroll up through it and find a `USER` column with `root` in it.
+      - `top` is the live view, sorted by CPU use. Watch it update, then press **`q`** to quit.
+    commands: |
+      ps
+      ps aux
+      top
+
+  - kind: choice
+    title: "Quick check: which line is a finding?"
+    body: |
+      Which line from `ps aux` on a lab target would you write down as a security problem?
+    options:
+      - "root  1  ... /sbin/init"
+      - "mysql  845  ... /usr/sbin/mysqld"
+      - "deploy  3120  ... mysql -u admin -pSecret123 shop"
+    answer: 2
+    explanation: |
+      Someone typed a database password (`-pSecret123`) on the command line, and anyone who can run `ps` can read it. The other two are normal: `init` always runs as root, and the database runs as its own `mysql` user.
+
   - kind: explain
     title: Software and services
     body: |
@@ -104,10 +305,65 @@ steps:
 
       When you enumerate a target, "what services are running, and are they started at boot?" tells you both the attack surface and how the machine is meant to be used.
 
+      <!-- page -->
+
+      **Example: install a tool.** Here `apt` finds Nmap is already on Kali, so it has nothing to do:
+
+      ```
+      kali@kali:~$ sudo apt install nmap
+      nmap is already the newest version (7.95+dfsg-3kali1).
+      Summary:
+        Upgrading: 0, Installing: 0, Removing: 0, Not Upgrading: 0
+      ```
+
+      **Example: check and start a service.** SSH is installed on Kali but switched off:
+
+      ```
+      kali@kali:~$ systemctl status ssh
+      ○ ssh.service - OpenBSD Secure Shell server
+           Loaded: loaded (/usr/lib/systemd/system/ssh.service; disabled; preset: disabled)
+           Active: inactive (dead)
+             Docs: man:sshd(8)
+                   man:sshd_config(5)
+      kali@kali:~$ sudo systemctl start ssh
+      kali@kali:~$ systemctl status ssh
+      ● ssh.service - OpenBSD Secure Shell server
+           Loaded: loaded (/usr/lib/systemd/system/ssh.service; disabled; preset: disabled)
+           Active: active (running) since Wed 2026-10-14 09:50:12 UTC; 3s ago
+      ```
+
+      Two words to read: `Active` says whether it is running *now* (`inactive (dead)`, then `active (running)`), and `disabled` in the `Loaded` line means it will *not* start by itself at boot. `sudo systemctl enable ssh` would change that.
+
+  - kind: choice
+    title: "Quick check: reading systemctl"
+    body: |
+      `systemctl status apache2` shows:
+
+      ```
+      Loaded: loaded (/usr/lib/systemd/system/apache2.service; enabled; preset: enabled)
+      Active: active (running) since Wed 2026-10-14 08:00:03 UTC; 2h ago
+      ```
+
+      What do you learn?
+    options:
+      - "The web server is running now, and starts by itself at boot"
+      - "The web server is installed but switched off"
+      - "The web server is running now, but will not start again after a reboot"
+    answer: 0
+    explanation: |
+      `active (running)` means it is running now. `enabled` in the `Loaded` line means it is set to start at boot. (`disabled` would mean the third answer.)
+
   - kind: info
     title: "🔹 SUID — a file that runs as its owner"
     body: |
-      Sometimes you will see an `s` where an `x` should be: `-rwsr-xr-x`. That is the **SUID** bit: the program runs with the *owner's* privileges, not yours. A SUID program owned by root runs as root even when you launch it. Used correctly it is necessary (that is how `passwd` lets you change your own password). Used carelessly it is a direct route to privilege escalation — which is why hunting for unusual SUID files is a standard enumeration step later in the course.
+      Sometimes you will see an `s` where an `x` should be: `-rwsr-xr-x`. For example:
+
+      ```
+      kali@kali:~$ ls -l /usr/bin/passwd
+      -rwsr-xr-x 1 root root 118168 Apr  5  2025 /usr/bin/passwd
+      ```
+
+      That `s` is the **SUID** bit: the program runs with the *owner's* privileges, not yours. A SUID program owned by root runs as root even when you launch it. Used correctly it is necessary (that is how `passwd` lets you change your own password). Used carelessly it is a direct route to privilege escalation — which is why hunting for unusual SUID files is a standard enumeration step later in the course.
 
   - kind: why
     body: |

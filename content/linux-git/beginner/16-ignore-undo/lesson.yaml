@@ -10,6 +10,31 @@ steps:
 
       A file called **`.gitignore`** in the repository's top folder lists patterns for Git to ignore. Ignored files don't show up as untracked, and `git add .` skips them.
 
+      **Example.** Finder left a `.DS_Store` behind and a test run wrote `debug.log`. Both show up as untracked, until a `.gitignore` names them:
+
+      ```
+      learner@inkwell:~/demo$ git status --short
+      ?? .DS_Store
+      ?? debug.log
+      learner@inkwell:~/demo$ printf '.DS_Store\n*.log\n' > .gitignore
+      learner@inkwell:~/demo$ git status --short
+      ?? .gitignore
+      ```
+
+      Only `.gitignore` itself is left to commit. The two junk files are still on disk; Git just stopped mentioning them.
+
+  - kind: choice
+    title: "Quick check: commit or ignore?"
+    body: |
+      Which of these belongs in the repository?
+    options:
+      - "`style.css`, the site's styles"
+      - "`.env` with the shop's payment key"
+      - "`.DS_Store`"
+      - "`server.log`, written by the running site"
+    answer: 0
+    explanation: "`style.css` is part of the project. The key is a secret, `.DS_Store` is Mac junk, and the log is rebuilt every time the site runs."
+
   - kind: explain
     title: .gitignore patterns
     body: |
@@ -72,6 +97,26 @@ steps:
 
       `git restore .` does it for every file in the folder. It doesn't touch untracked files.
 
+      <!-- page -->
+
+      **Example.** A bad edit to `index.html`, looked at, then thrown away:
+
+      ```
+      learner@inkwell:~/demo$ echo '<p>oops</p>' >> index.html
+      learner@inkwell:~/demo$ git diff
+      diff --git a/index.html b/index.html
+      index 2796d44..f7f49ed 100644
+      --- a/index.html
+      +++ b/index.html
+      @@ -1 +1,2 @@
+       <h1>Inkwell</h1>
+      +<p>oops</p>
+      learner@inkwell:~/demo$ git restore index.html
+      learner@inkwell:~/demo$ git diff
+      learner@inkwell:~/demo$ cat index.html
+      <h1>Inkwell</h1>
+      ```
+
   - kind: shell
     title: Undo a bad edit
     fixture: [backoffice, git-identity]
@@ -104,6 +149,21 @@ steps:
       ```
 
       `git status` even prints this command for you, under *Changes to be committed*. In a repository with no commits yet, the hint is `git rm --cached file` instead.
+
+      **Example.** `notes.txt` was staged along with `index.html` by accident:
+
+      ```
+      learner@inkwell:~/demo$ git add .
+      learner@inkwell:~/demo$ git status --short
+      M  index.html
+      A  notes.txt
+      learner@inkwell:~/demo$ git restore --staged notes.txt
+      learner@inkwell:~/demo$ git status --short
+      M  index.html
+      ?? notes.txt
+      ```
+
+      `notes.txt` went back to untracked (`??`), and it's still on disk. `index.html` stayed staged (`M`).
 
   - kind: shell
     title: That wasn't meant to be staged
@@ -142,6 +202,23 @@ steps:
 
       `--amend` replaces the last commit with a new one (with a new ID). ⚠️ Only amend commits you haven't shared yet (pushed, Module 19): rewriting history others already have causes trouble.
 
+      **Example.** A typo in the message, fixed straight after:
+
+      ```
+      learner@inkwell:~/demo$ git add style.css
+      learner@inkwell:~/demo$ git commit -q -m "Add the stlye sheet"
+      learner@inkwell:~/demo$ git log --oneline -1
+      07ef973 (HEAD -> main) Add the stlye sheet
+      learner@inkwell:~/demo$ git commit --amend -q -m "Add the style sheet"
+      learner@inkwell:~/demo$ git log --oneline -1
+      0846f58 (HEAD -> main) Add the style sheet
+      learner@inkwell:~/demo$ git log --oneline
+      0846f58 (HEAD -> main) Add the style sheet
+      944cee1 Add the home page
+      ```
+
+      The amended commit has a new ID, and the misspelt one is gone from the history (still two commits in all, not three).
+
   - kind: shell
     title: A typo in the message
     fixture: [git-identity, website-repo]
@@ -177,6 +254,46 @@ steps:
       | `git mv about.html about-us.html` | renames **and** stages the rename |
 
       Then commit as usual.
+
+      <!-- page -->
+
+      **Example.** One rename and one removal, both staged in one go:
+
+      ```
+      learner@inkwell:~/demo$ git mv index.html home.html
+      learner@inkwell:~/demo$ git rm old.html
+      rm 'old.html'
+      learner@inkwell:~/demo$ git status --short
+      R  index.html -> home.html
+      D  old.html
+      learner@inkwell:~/demo$ ls
+      home.html
+      ```
+
+      `R` = renamed, `D` = deleted. Both are already staged; a `git commit` saves them.
+
+  - kind: shell
+    title: "Try it: git mv and git rm"
+    fixture: git-identity
+    setup: |
+      mkdir -p ~/demo && cd ~/demo
+      git init -q
+      echo '<h1>Inkwell</h1>' > index.html
+      git add .
+      git commit -q -m 'Add the home page'
+      echo 'old' > old.html
+      git add .
+      git commit -q -m 'Add old page'
+    body: |
+      The repository has `index.html` and `old.html`, both committed. Type these one at a time:
+
+      1. `git mv index.html home.html`
+      2. `git rm old.html`
+      3. `git status --short`, then `git commit -m "Rename home page, remove old page"`
+
+      Then try `git rm --cached home.html` and `git status`: the file stays in `ls`, but Git will stop tracking it.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Rename one, remove one

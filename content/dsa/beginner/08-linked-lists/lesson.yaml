@@ -46,6 +46,81 @@ steps:
 
       For an empty list, the head is simply `null`.
 
+      **Example.** With the helpers defined, build a list, look at its first two nodes, and read it back:
+
+      ```js
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      const head = fromArray([1, 2, 3]);
+      console.log(head.val, head.next.val);
+      console.log(toArray(head));
+      console.log(toArray(fromArray([])));
+      ```
+
+      prints:
+
+      ```
+      1 2
+      [ 1, 2, 3 ]
+      []
+      ```
+
+  - kind: code
+    title: "Try it: build and read a list"
+    body: |
+      Run it and compare with the output above. Then add `console.log(head.next.next.next);`: the last node points at `null`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      class ListNode {
+        constructor(val, next = null) {
+          this.val = val;
+          this.next = next;
+        }
+      }
+
+      function fromArray(values) {
+        const dummy = new ListNode(0);
+        let tail = dummy;
+        for (const v of values) {
+          tail.next = new ListNode(v);
+          tail = tail.next;
+        }
+        return dummy.next;
+      }
+
+      function toArray(head) {
+        const out = [];
+        for (let n = head; n !== null; n = n.next) out.push(n.val);
+        return out;
+      }
+
+      const head = fromArray([1, 2, 3]);
+      console.log(head.val, head.next.val);
+      console.log(toArray(head));
+      console.log(toArray(fromArray([])));
+
   - kind: explain
     title: Reversing a list
     body: |
@@ -65,6 +140,18 @@ steps:
       ```
 
       When `curr` is `null`, `prev` is the new head. **The classic mistake** is flipping `curr.next` without saving it first: you lose the rest of the list.
+
+      <!-- page -->
+
+      **Example: reversing `1 → 2 → 3`.** One row per trip round the loop:
+
+      | step | curr | next (saved) | prev after (reversed part) | still to do |
+      |---|---|---|---|---|
+      | 1 | 1 | 2 | 1 → null | 2 → 3 → null |
+      | 2 | 2 | 3 | 2 → 1 → null | 3 → null |
+      | 3 | 3 | null | 3 → 2 → 1 → null | (none) |
+
+      After step 3, `curr` is `null`, so the loop stops, and `prev` (node 3) is the new head.
 
   - kind: code
     title: Reverse a linked list
@@ -185,6 +272,16 @@ steps:
       }
       // slow is now at the middle
       ```
+
+      **Example.** Where the pointers stand on `1 → 2 → 3 → 4 → 5`:
+
+      | step | slow | fast |
+      |---|---|---|
+      | 0 | 1 | 1 |
+      | 1 | 2 | 3 |
+      | 2 | 3 | 5 |
+
+      `fast` is on the last node, so the loop stops: `slow` is on 3, the middle. With 6 nodes, one more step puts `fast` past the end (`null`) and `slow` on 4, the second of the two middles.
 
   - kind: code
     title: Find the middle
@@ -404,6 +501,18 @@ steps:
       ```
 
       Now every real node has a node *before* it, so the same code works for the head and for the rest.
+
+      **Example: removing every `1` from `1 → 1 → 2`.** Without a dummy, the head itself must be removed, twice, and needs special code. With one:
+
+      ```
+      start:            dummy → 1 → 1 → 2      curr = dummy
+      curr.next is 1:   dummy → 1 → 2          skip it, curr stays
+      curr.next is 1:   dummy → 2              skip it, curr stays
+      curr.next is 2:   keep it                curr moves to 2
+      end:              return dummy.next      →  2
+      ```
+
+      The first real node was treated exactly like the others.
 
   - kind: code
     title: Merge two sorted lists
@@ -723,6 +832,49 @@ steps:
       ```
 
       The cost: one more pointer per node, and twice as many pointers to update on every insert or delete. It is the structure behind an *LRU cache* (keep the most recently used items, drop the oldest), a classic interview design question.
+
+      **Example.** Three nodes linked both ways, walked forwards and then backwards:
+
+      ```js
+      class DNode {
+        constructor(val) { this.val = val; this.prev = null; this.next = null; }
+      }
+
+      const a = new DNode(1), b = new DNode(2), c = new DNode(3);
+      a.next = b; b.prev = a;
+      b.next = c; c.prev = b;
+
+      const forward = [], backward = [];
+      for (let n = a; n; n = n.next) forward.push(n.val);
+      for (let n = c; n; n = n.prev) backward.push(n.val);
+      console.log(forward, backward);
+      ```
+
+      prints:
+
+      ```
+      [ 1, 2, 3 ] [ 3, 2, 1 ]
+      ```
+
+  - kind: code
+    title: "Try it: walk both ways"
+    body: |
+      Run it, then remove the middle node in O(1): `a.next = c; c.prev = a;` before the loops. Both walks skip 2.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      class DNode {
+        constructor(val) { this.val = val; this.prev = null; this.next = null; }
+      }
+
+      const a = new DNode(1), b = new DNode(2), c = new DNode(3);
+      a.next = b; b.prev = a;
+      b.next = c; c.prev = b;
+
+      const forward = [], backward = [];
+      for (let n = a; n; n = n.next) forward.push(n.val);
+      for (let n = c; n; n = n.prev) backward.push(n.val);
+      console.log(forward, backward);
 
   - kind: why
     body: |

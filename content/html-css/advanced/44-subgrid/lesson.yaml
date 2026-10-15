@@ -22,6 +22,43 @@ steps:
       Now every card's title, text and price sit in **shared rows**: the tallest title in the row sets the height for all of them, and the prices line up.
 
   - kind: web
+    title: "Try it: subgrid rows"
+    body: |
+      Two event cards, each with a title and a date. The first title wraps onto two lines. Each card spans 2 rows of `.events` and uses `grid-template-rows: subgrid`, so the two dates sit at the **same height**.
+
+      Try:
+
+      1. Delete the `grid-template-rows: subgrid;` line. The cards still sit side by side, but the second date jumps up: each card now makes its own rows.
+      2. Put it back and change `row-gap: 0.25rem` to `row-gap: 2rem`. The space between title and date grows in both cards together.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="events">
+        <article class="event"><h3>An evening of poetry, music and tea with local writers</h3><p>Friday</p></article>
+        <article class="event"><h3>Story time</h3><p>Saturday</p></article>
+      </div>
+    css: |
+      .events {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .event {
+        display: grid;
+        grid-row: span 2;
+        grid-template-rows: subgrid;
+        row-gap: 0.25rem;
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .event > * {
+        margin: 0;
+      }
+    widths: [500]
+
+  - kind: web
     title: Align the prices
     body: |
       Each card has three parts: title, author, price. Make the parts line up across cards:
@@ -97,6 +134,43 @@ steps:
 
       Lines named `x-start` and `x-end` create an implicit **area** called `x`, so `grid-column: content` is enough. This is Module 34's full-bleed pattern, readable at a glance.
 
+      In the page: ordinary children sit in a centred column at most 65 characters wide, with space on both sides, and a `.full` child stretches from the left edge of the page to the right edge.
+
+  - kind: web
+    title: "Try it: named lines"
+    body: |
+      A receipt with three named areas across: `edge`, `middle` and, inside it, the lines `middle-start` and `middle-end`. The items sit in `middle`; the total uses `edge`, so it stretches wider.
+
+      Try:
+
+      1. Change `.total`'s `grid-column: edge` to `grid-column: middle`. It shrinks to the same width as the items.
+      2. Change the middle track from `16rem` to `10rem`. Everything in `middle` gets narrower, and no line numbers had to change.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="receipt">
+        <p>Dune, £8.99</p>
+        <p>Emma, £5.50</p>
+        <p class="total">Total: £14.49</p>
+      </div>
+    css: |
+      .receipt {
+        display: grid;
+        grid-template-columns: [edge-start] 2rem [middle-start] 16rem [middle-end] 2rem [edge-end];
+      }
+
+      .receipt > * {
+        grid-column: middle;
+        margin: 0.25rem 0;
+      }
+
+      .receipt > .total {
+        grid-column: edge;
+        padding: 0.5rem;
+        background: #f5f0e8;
+        font-weight: bold;
+      }
+
   - kind: web
     title: Name the lines
     body: |
@@ -168,6 +242,44 @@ steps:
       Items are placed **in order**. When a wide item doesn't fit at the end of a row, it moves to the next row and leaves a **hole**. `grid-auto-flow: dense` lets later, smaller items **backfill** those holes.
 
       ⚠️ Dense packing changes the visual order without changing the HTML order. Fine for a photo gallery; bad when order means something (Module 20's warning about `order`).
+
+  - kind: web
+    title: "Try it: auto rows and dense"
+    body: |
+      Six shelf labels in 3 columns. Every row Grid creates is `60px` tall (`grid-auto-rows`). Label C is `.long` and spans 2 columns. After A and B only one column is left in the first row, so C wraps to the second row and leaves a **hole** after B.
+
+      Try:
+
+      1. Add `grid-auto-flow: dense;` to `.labels`. Label D jumps back up to fill the hole after B, so the page order no longer matches the HTML order.
+      2. Change `60px` to `100px`. Every row gets taller.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="labels">
+        <div>A</div>
+        <div>B</div>
+        <div class="long">C</div>
+        <div>D</div>
+        <div>E</div>
+        <div>F</div>
+      </div>
+    css: |
+      .labels {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-auto-rows: 60px;
+        gap: 0.5rem;
+      }
+
+      .labels > * {
+        display: grid;
+        place-items: center;
+        background: #f5f0e8;
+      }
+
+      .long {
+        grid-column: span 2;
+      }
 
   - kind: web
     title: Pack the gallery
@@ -242,6 +354,44 @@ steps:
       ```
 
       Unlike absolute positioning, the container still grows to fit the **tallest** layer, so long text never spills out of the image.
+
+      In the page: the text appears on top of the image, along its bottom edge, and the box is exactly as tall as the image.
+
+  - kind: web
+    title: "Try it: overlap in one cell"
+    body: |
+      A book cover and a "Sale" sticker share the same grid cell (`grid-area: 1 / 1`). The sticker sits on top, in the **top-right** corner, because of `justify-self: end` and `align-self: start`.
+
+      Try:
+
+      1. Change `align-self: start` to `end`. The sticker moves to the bottom-right corner.
+      2. Change `justify-self: end` to `center`.
+      3. Delete the `grid-area` line from `.cover > *`. The sticker drops below the cover: they're in separate rows again.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="cover">
+        <img src="images/cover-emma.svg" alt="Emma" width="160" height="240">
+        <span class="sticker">Sale</span>
+      </div>
+    css: |
+      .cover {
+        display: grid;
+        width: 160px;
+      }
+
+      .cover > * {
+        grid-area: 1 / 1;
+      }
+
+      .sticker {
+        justify-self: end;
+        align-self: start;
+        z-index: 1;
+        padding: 0.25rem 0.5rem;
+        background: #b91c1c;
+        color: white;
+      }
 
   - kind: web
     title: Caption over the photo

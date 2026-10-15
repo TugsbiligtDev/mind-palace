@@ -16,6 +16,17 @@ steps:
 
       HTML and CSS build the form. Something on the server (or a service like Formspree or Netlify Forms) has to receive the data. In these lessons the preview never sends anything.
 
+  - kind: choice
+    title: "Quick check: get or post?"
+    body: |
+      Which form should use `method="post"`?
+    options:
+      - "A search box for book titles"
+      - "A sign-up form asking for an email address and a password"
+      - "A filter that shows only poetry books"
+    answer: 1
+    explanation: "Sign-ups send private data and change something on the server, so `post` hides them in the request body. Searches and filters are fine as `get`, in the URL, where they can be bookmarked."
+
   - kind: explain
     title: Inputs, names and values
     body: |
@@ -26,9 +37,22 @@ steps:
       <input type="email" name="email">
       ```
 
+      In the page, these show as two empty text boxes side by side. Nothing tells you which is which yet: that's what labels are for, a few steps down.
+
       The `name` is crucial: it's the **key** the data is sent under. A field without a `name` is not sent at all. Submitting the form above sends something like `full_name=Ada+Reed&email=ada@example.com`.
 
       `value` sets what's in a field at the start, or, for checkboxes and radio buttons, what gets sent when it's ticked.
+
+  - kind: choice
+    title: "Quick check: the missing name"
+    body: |
+      A form has `<input type="email" id="email">`, with no `name`. What happens to the email address when the form is sent?
+    options:
+      - "It's sent under the key `email`, taken from the id"
+      - "It isn't sent at all"
+      - "The browser refuses to submit the form"
+    answer: 1
+    explanation: "Only fields with a `name` are sent. The `id` is for labels and CSS, not for the data."
 
   - kind: explain
     title: Input types
@@ -49,6 +73,27 @@ steps:
 
       `<textarea name="message" rows="5"></textarea>` is a multi-line text box. Unlike input, it has a closing tag, and any starting text goes between the tags.
 
+      ```html
+      <input type="password" name="code">
+      <input type="number" name="copies" min="1" max="5" value="1">
+      <input type="date" name="pickup">
+      <input type="checkbox" name="gift-wrap">
+      ```
+
+      In the page: a box where whatever you type shows as dots; a box holding *1* with little up and down arrows that stop at 5; a date box that opens a calendar when clicked; and a small square you can tick.
+
+  - kind: choice
+    title: "Quick check: the right type"
+    body: |
+      Which `type` gives phone users a keyboard with `@` and checks the format for free?
+    options:
+      - "`type=\"text\"`"
+      - "`type=\"tel\"`"
+      - "`type=\"email\"`"
+      - "`type=\"password\"`"
+    answer: 2
+    explanation: "`type=\"email\"` brings up the `@` keyboard and checks the address looks valid before sending. `tel` shows a phone keypad, and `password` hides the characters."
+
   - kind: explain
     title: Every field needs a label
     body: |
@@ -58,6 +103,8 @@ steps:
       <label for="email">Email address</label>
       <input type="email" id="email" name="email">
       ```
+
+      shows the words *Email address* followed by an empty box. Click the words, and the cursor jumps into the box.
 
       The connection matters:
 
@@ -70,6 +117,19 @@ steps:
       <label><input type="checkbox" name="newsletter"> Send me the newsletter</label>
       ```
 
+      shows a checkbox with *Send me the newsletter* next to it. Clicking the words ticks the box.
+
+  - kind: choice
+    title: "Quick check: connect the label"
+    body: |
+      The field is `<input type="text" id="town" name="town">`. Which label is connected to it?
+    options:
+      - "`<label for=\"town\">Town</label>`"
+      - "`<label name=\"town\">Town</label>`"
+      - "`<label id=\"town\">Town</label>`"
+    answer: 0
+    explanation: "A label's `for` must match the field's `id`. Then clicking *Town* focuses the box, and screen readers announce the label."
+
   - kind: explain
     title: "A placeholder is not a label"
     body: |
@@ -79,6 +139,8 @@ steps:
       <input type="email" placeholder="you@example.com">   ✗ no label
       ```
 
+      shows a box with *you@example.com* written inside it in pale grey. Type one letter and the grey hint vanishes.
+
       It's tempting to use it instead of a label. Don't:
 
       - It **disappears as soon as you type**, so people forget what the field was for.
@@ -86,6 +148,49 @@ steps:
       - Many screen readers don't treat it as the field's name.
 
       Use a real label for the name, and a placeholder (if at all) only for an *example* format.
+
+  - kind: web
+    title: "Try it: fields and labels"
+    body: |
+      This is a small *Reserve a book* form with several input types, each with a label connected by `for` and `id`, and a checkbox wrapped inside its label.
+
+      Try this in the preview:
+
+      1. Click each **label's words**. The cursor jumps into its field, and clicking *Gift wrap it* ticks the box.
+      2. Type in the *Library card PIN* box: you see dots. Use the arrows on *Copies*: they stop at 3. Click *Pick up on* for a calendar.
+      3. Type `hello` in *Email address* and press **Reserve**. The browser refuses: `type="email"` checks the format for free. Fix it to a real-looking address and press again.
+      4. In the code, change `for="copies"` to `for="copy"`. Clicking *Copies* no longer reaches the box: `for` must match the `id` exactly.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <form action="/reserve" method="post">
+        <p>
+          <label for="reader">Your name</label>
+          <input type="text" id="reader" name="reader">
+        </p>
+        <p>
+          <label for="contact">Email address</label>
+          <input type="email" id="contact" name="contact">
+        </p>
+        <p>
+          <label for="pin">Library card PIN</label>
+          <input type="password" id="pin" name="pin">
+        </p>
+        <p>
+          <label for="copies">Copies</label>
+          <input type="number" id="copies" name="copies" min="1" max="3" value="1">
+        </p>
+        <p>
+          <label for="pickup">Pick up on</label>
+          <input type="date" id="pickup" name="pickup">
+        </p>
+        <p>
+          <label for="note">Anything else?</label>
+          <textarea id="note" name="note" rows="3"></textarea>
+        </p>
+        <p><label><input type="checkbox" name="gift-wrap"> Gift wrap it</label></p>
+        <button type="submit">Reserve</button>
+      </form>
 
   - kind: web
     title: Label the newsletter form
@@ -138,6 +243,8 @@ steps:
 
       Choosing "Collect in store" sends `delivery=collect`. Add `checked` to pre-select one.
 
+      In the page, this shows two round buttons, each followed by its words. Click one and the other one empties: they share the name `delivery`, so only one can be chosen.
+
       **Checkboxes** are independent yes/no choices.
 
       **A dropdown** is `<select>` with `<option>`s. Use it when there are many choices and space is tight:
@@ -149,6 +256,19 @@ steps:
         <option value="poetry">Poetry</option>
       </select>
       ```
+
+      shows *Favourite genre* and a box reading *Fiction* with a small arrow. Click it, and a list opens with *Fiction* and *Poetry*.
+
+  - kind: choice
+    title: "Quick check: one group"
+    body: |
+      Three radio buttons should let people pick exactly one delivery option. What must they share?
+    options:
+      - "The same `id`"
+      - "The same `value`"
+      - "The same `name`"
+    answer: 2
+    explanation: "Radio buttons with the same `name` form one group, so choosing one empties the others. Each needs its own `id` (for its label) and its own `value` (what gets sent)."
 
   - kind: explain
     title: Buttons and fieldsets
@@ -167,6 +287,41 @@ steps:
         …radio buttons…
       </fieldset>
       ```
+
+      In the page, a `fieldset` draws a thin border around the group, with the legend *Delivery* sitting in a gap in the top border line.
+
+  - kind: web
+    title: "Try it: radio groups, select and fieldset"
+    body: |
+      This *Gift card* form groups three radio buttons in a `fieldset` with the legend *Amount*. All three share `name="amount"`, and each has its own `value`. Below it is a `select` dropdown and two kinds of button.
+
+      Try this in the preview:
+
+      1. Click each amount. Only one can be chosen at a time. *£10* starts chosen because it has `checked`.
+      2. Click a label's words, such as *£25*: it picks that radio.
+      3. In the code, change the last radio's `name="amount"` to `name="big"`. Now you can choose *£50* **and** another amount at once: it left the group.
+      4. Click **Start again** (a `type="reset"` button): every choice jumps back to how the page started. That's why reset buttons are risky.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <form action="/gift-card" method="post">
+        <fieldset>
+          <legend>Amount</legend>
+          <input type="radio" id="ten" name="amount" value="10" checked> <label for="ten">£10</label>
+          <input type="radio" id="twenty-five" name="amount" value="25"> <label for="twenty-five">£25</label>
+          <input type="radio" id="fifty" name="amount" value="50"> <label for="fifty">£50</label>
+        </fieldset>
+        <p>
+          <label for="design">Card design</label>
+          <select id="design" name="design">
+            <option value="cat">The shop cat</option>
+            <option value="shelves">Bookshelves</option>
+            <option value="harbour">The harbour</option>
+          </select>
+        </p>
+        <button type="reset">Start again</button>
+        <button type="submit">Buy gift card</button>
+      </form>
 
   - kind: web
     title: The order form

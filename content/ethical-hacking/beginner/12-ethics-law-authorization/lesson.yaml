@@ -6,6 +6,30 @@ steps:
 
       This module comes *before* a single scanning or exploitation module on purpose. Everything after this assumes you have permission. Without it, the most basic scan can be a crime. "I was only learning" and "I didn't cause harm" are not defences. Read this one twice.
 
+      **Example: the same command, two stories.** Two people type the exact same scan:
+
+      ```
+      nmap -sV 203.0.113.0/24
+      ```
+
+      - **Sam** is a hired tester. The company that owns `203.0.113.0/24` signed a letter last week listing that range and today's date. Sam's scan is a normal day at work.
+      - **Alex** saw the range in a forum post and was "just curious". Nobody gave permission. Alex's scan is unauthorised access to someone else's systems.
+
+      Same tool, same flags, same output on screen. The only difference is the signed permission, and it is the difference between a job and a crime.
+
+  - kind: choice
+    title: "Quick check: the one difference"
+    body: |
+      What separates an ethical hacker's scan from a criminal's, when the commands are identical?
+    options:
+      - "Better tools"
+      - "Good intentions"
+      - "Written authorization from someone allowed to grant it"
+      - "Doing it at night"
+    answer: 2
+    explanation: |
+      Only **authorization** separates them. Good intentions aren't a defence, and the tools and skills are often exactly the same.
+
   - kind: explain
     title: The law is real and it has teeth
     body: |
@@ -17,6 +41,27 @@ steps:
 
       People have been prosecuted for port-scanning or for "just looking." The law generally cares about whether you had *permission*, not whether you meant well or caused loss. You are responsible for knowing the law where you are and where your target is — they can differ. When unsure, the answer is simple: **do not touch it.**
 
+      **Example: excuses that don't work.** All of these have been tried, and none of them makes unauthorised access legal:
+
+      | What the person said | Why it doesn't help |
+      |---|---|
+      | "I was only learning." | Learning is done on your own lab or sanctioned ranges, not other people's systems. |
+      | "I didn't break or take anything." | Under laws like the CFAA, access without permission is the offence, damage or not. |
+      | "The system was wide open." | An unlocked door is not an invitation to walk in. |
+      | "I was going to tell them about it." | Good intentions don't replace permission. |
+
+  - kind: choice
+    title: "Quick check: is it legal?"
+    body: |
+      You notice your gym's members' website looks badly built. You run a quick scan "just to see", change nothing, and plan to tell them. Is that allowed?
+    options:
+      - "Yes, because you plan to report it"
+      - "Yes, because you didn't change anything"
+      - "No: you have no permission, so it's unauthorised access whatever your intentions"
+    answer: 2
+    explanation: |
+      The law cares whether you had **permission**, not whether you meant well or caused harm. If you want to help, contact them first and test only with written authorization.
+
   - kind: explain
     title: Scope and rules of engagement
     body: |
@@ -27,12 +72,70 @@ steps:
 
       A professional reads these before touching anything and keeps carefully inside them. Straying outside scope is the fastest way to turn an authorised test into a crime — and to lose the trust the whole profession runs on.
 
+      <!-- page -->
+
+      **Example: a scope and its rules**, the way they appear in a real engagement document (shortened):
+
+      ```
+      IN SCOPE
+        203.0.113.0/24            (office servers)
+        shop.example.com          (web application only)
+      OUT OF SCOPE
+        mail.example.com          (hosted by a third party)
+        anything not listed above
+      RULES OF ENGAGEMENT
+        Testing window:   Mon to Fri, 09:00 to 17:00 UTC, 12 to 16 October
+        Not allowed:      denial of service, social engineering of staff
+        If something breaks, or you find signs of a real attacker:
+                          stop and phone J. Smith, +44 20 7946 0000
+      ```
+
+      Read it before you touch anything: what may you test (the IN SCOPE list), what may you never test (OUT OF SCOPE, plus everything unlisted), and how and when you may test (the rules).
+
+  - kind: choice
+    title: "Quick check: in or out?"
+    body: |
+      Using the scope above, may you test `mail.example.com` on Wednesday 14 October at 11:00 UTC?
+    options:
+      - "Yes: it's inside the testing window"
+      - "No: mail.example.com is listed as out of scope"
+      - "Yes: it belongs to the same company"
+    answer: 1
+    explanation: |
+      The time is fine, but the target isn't. `mail.example.com` is explicitly **out of scope** (it's run by a third party), and the right time never makes the wrong target acceptable.
+
   - kind: explain
     title: Get it in writing
     body: |
       A verbal "yeah, go ahead" is worth nothing if things go wrong. Real engagements have a signed document — often called a **"get-out-of-jail" letter** or authorisation-to-test letter — that states who authorised the work, exactly what is in scope, and the dates. It is signed by someone with the actual authority to grant it (a manager who does not own the system cannot authorise testing it).
 
       Keep a copy. If a scan trips an alarm and the security team or the police come asking, that letter is the difference between "authorised penetration test" and "unauthorised intrusion." No letter, no testing. This is not bureaucracy — it is the thing that keeps you employed and free.
+
+      **Example: what an authorisation letter says** (a short version; real ones add legal wording):
+
+      ```
+      AUTHORISATION TO TEST
+      I, Priya Shah, Chief Information Officer of Example Ltd, authorise
+      Sam Lee of Northgate Security to carry out a penetration test of the
+      systems listed in the attached scope, between 12 and 16 October 2026,
+      under the attached rules of engagement.
+      Signed: P. Shah            Date: 5 October 2026
+      Emergency contact: J. Smith, +44 20 7946 0000
+      ```
+
+      It names **who** authorises (and that she has the authority: she is the CIO), **who** may test, **what** (the scope), **when** (the dates) and **how** (the rules). Keep a copy with you during the test.
+
+  - kind: choice
+    title: "Quick check: is this permission?"
+    body: |
+      A marketing manager tells you on the phone: "Sure, test our website, go ahead." Can you start?
+    options:
+      - "Yes: you were given permission"
+      - "Yes, if you record the phone call"
+      - "No: you need it in writing, signed by someone with authority over those systems"
+    answer: 2
+    explanation: |
+      A verbal OK is worth nothing if something goes wrong, and a marketing manager may not have the authority to grant it. No signed letter, no testing.
 
   - kind: explain
     title: Responsible disclosure
@@ -44,6 +147,43 @@ steps:
       3. Never access more data than needed to demonstrate the issue, and never hold it to ransom.
 
       The goal is to get the problem fixed with the least harm — not fame, not leverage. Doing it well builds the reputation a career is made of; doing it badly (public "drops," extortion) is how good researchers end up in court.
+
+      <!-- page -->
+
+      **Example: a good disclosure.** You notice that a library app you use shows other people's borrowing history when you change a number in the URL. You stop there, and:
+
+      1. Find its security contact. Many sites publish one at `/.well-known/security.txt`:
+
+         ```
+         $ curl https://library.example.org/.well-known/security.txt
+         Contact: mailto:security@library.example.org
+         Policy: https://library.example.org/disclosure
+         ```
+
+      2. Email that address privately: what you saw, how to reproduce it, and that you looked at no more than one record to confirm it.
+      3. Wait for the fix (90 days is a common default), and only then, with their agreement, talk about it publicly.
+
+      What you **don't** do: download everyone's records "as proof", post it online, or ask for money to stay quiet.
+
+  - kind: mac
+    title: "Try it: find a security contact"
+    body: |
+      Many organisations publish their security contact in a `security.txt` file. Ask for GitHub's: it's a normal, public web page, and reading it is exactly what the file is for. Find the `Contact:` and `Policy:` lines.
+    commands: |
+      curl https://github.com/.well-known/security.txt
+
+  - kind: choice
+    title: "Quick check: you found a flaw"
+    body: |
+      While using a shopping app normally, you spot a flaw you weren't hired to test. What do you do?
+    options:
+      - "Post it on social media so they're forced to fix it fast"
+      - "Report it privately to the owner and give them reasonable time to fix it"
+      - "Download some customer data to prove it's real, then report it"
+      - "Ask them for a reward before you tell them what it is"
+    answer: 1
+    explanation: |
+      That's **responsible disclosure**: private report, reasonable time, no more access than needed. Public dumps, extra data and demands for money all turn a researcher into a problem, or a defendant.
 
   - kind: explain
     title: Three kinds of authorised work
@@ -57,6 +197,18 @@ steps:
       | **Red team** | A goal-driven, stealthy simulation of a real adversary | A contract, usually with very few people aware it is happening |
 
       In every case, someone with authority has said yes, in writing, with defined limits. A bug bounty's published scope is just as binding as a pentest contract — testing a company that has *no* program, or going outside a program's listed scope, is unauthorised no matter how good your intentions.
+
+  - kind: choice
+    title: "Quick check: which arrangement?"
+    body: |
+      A company publishes a web page inviting anyone to test `app.example.com` (and nothing else) for cash rewards, under listed rules. What is this?
+    options:
+      - "A penetration test"
+      - "A bug bounty program"
+      - "A red team"
+    answer: 1
+    explanation: |
+      A public program with published scope and rewards is a **bug bounty**. Its scope is binding: testing anything except `app.example.com` would be unauthorised.
 
   - kind: info
     title: "🔹 Where to practise legally"

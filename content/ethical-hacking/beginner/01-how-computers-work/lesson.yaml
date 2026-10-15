@@ -6,6 +6,19 @@ steps:
 
       This whole course has one promise, printed on the tin: **learn how attacks work, so you can defend against them.** Nothing here is a weapon you point at strangers. It is the mechanic's knowledge of the engine, so you can hear when something is wrong.
 
+      **Example.** A shop's "forgot password" page emails a reset link to whatever address is typed into a hidden form field. The computer does exactly what it was told. An attacker changes that hidden field to their own address, and the reset link for *your* account lands in *their* inbox. Nothing was "broken": the program simply trusted something it shouldn't have. Knowing how the page works is what lets a defender spot that.
+
+  - kind: choice
+    title: "Quick check: the promise"
+    body: |
+      What is the one promise of this course?
+    options:
+      - "Learn to break into any system you find"
+      - "Learn how attacks work, so you can defend against them"
+      - "Learn to write viruses"
+    answer: 1
+    explanation: "Everything here is the mechanic's knowledge of the engine: understanding attacks in order to prevent and detect them, only on systems you're allowed to test."
+
   - kind: explain
     title: Three parts that matter
     body: |
@@ -19,6 +32,19 @@ steps:
 
       When you open a program, the computer copies it from storage into RAM, and the CPU starts following its instructions.
 
+      **Example.** You type your email password into a mail app. The app (copied from **storage** into **RAM** when you opened it) holds the password in RAM while the **CPU** runs the code that sends it. If the app also "remembers" it, a copy is written back to **storage**. Three places a secret can be found, three different ways to protect it.
+
+  - kind: choice
+    title: "Quick check: wiped at power-off"
+    body: |
+      Which part loses everything it holds when the power goes off?
+    options:
+      - "Storage (SSD)"
+      - "RAM"
+      - "Both"
+    answer: 1
+    explanation: "RAM is fast working memory that is wiped without power. Storage keeps files across reboots, which is why ransomware targets it."
+
   - kind: explain
     title: Everything is 0s and 1s — binary
     body: |
@@ -30,7 +56,28 @@ steps:
       |---|---|---|---|---|---|---|---|
       | Binary | 0 | 1 | 10 | 11 | 100 | 101 | 1000 |
 
-      Why you will care: an IP address like `192.168.1.1` is really four bytes (four groups of eight bits), and subnet masks (a networking idea you meet in Module 6) only make sense in binary.
+      **Worked example: 13 in binary.** Each binary place is worth double the one to its right: 8, 4, 2, 1. Build 13 from those: 13 = 8 + 4 + 1. So the 8, 4 and 1 places are on and the 2 place is off:
+
+      ```
+      places:  8  4  2  1
+      13   =   1  1  0  1   →  1101
+      ```
+
+      A full byte has eight places: 128, 64, 32, 16, 8, 4, 2, 1. The byte `11000000` has the 128 and 64 places on, so it is 128 + 64 = **192**.
+
+      Why you will care: an IP address like `192.168.1.1` is really four bytes (four groups of eight bits), and subnet masks (a networking idea you meet in Module 6) only make sense in binary. That first `192` is exactly the `11000000` you just worked out.
+
+  - kind: choice
+    title: "Quick check: read a binary number"
+    body: |
+      What is the binary number `1010` in ordinary (decimal) numbers?
+    options:
+      - "10"
+      - "12"
+      - "1010"
+      - "5"
+    answer: 0
+    explanation: "The places are 8, 4, 2, 1. `1010` has the 8 and the 2 places on: 8 + 2 = 10."
 
   - kind: explain
     title: Hexadecimal — shorthand for bytes
@@ -44,7 +91,27 @@ steps:
       - A file's fingerprint (hash): `d41d8cd98f00b204e9800998ecf8427e`
       - Raw bytes in a packet or a memory dump
 
+      **Example: see the bytes inside a word.** On a Mac or Linux terminal, `xxd` shows any data as hex. Here it shows the two letters `Hi`:
+
+      ```
+      $ echo -n "Hi" | xxd
+      00000000: 4869                                     Hi
+      ```
+
+      Read the middle part in pairs: `48` is the byte for `H`, `69` is the byte for `i`. Two letters, two bytes, four hex characters. (The `00000000:` on the left is just the position in the data, and the right side repeats the text. `echo -n "Hi" |` simply hands the text to `xxd`; you will meet the `|` pipe properly in Module 5.)
+
       You do not need to convert hex in your head. You just need to recognise it and know each pair of characters is one byte.
+
+  - kind: choice
+    title: "Quick check: count the bytes"
+    body: |
+      A file's fingerprint is `d41d8cd98f00b204e9800998ecf8427e` (32 hex characters). How many bytes is that?
+    options:
+      - "32"
+      - "64"
+      - "16"
+    answer: 2
+    explanation: "Two hex characters make one byte, so 32 characters are 16 bytes."
 
   - kind: explain
     title: What an operating system does
@@ -56,6 +123,26 @@ steps:
       - **Memory.** The OS hands each process its own slice of RAM and tries to stop one process from reading another's. When that separation fails, secrets leak.
 
       A huge share of hacking is simply persuading the OS to run your code, or to run it with more privilege than it should.
+
+      **Example: the OS saying no.** On a Mac, an ordinary user asks to read the file that controls who may become the superuser:
+
+      ```
+      $ cat /etc/sudoers
+      cat: /etc/sudoers: Permission denied
+      ```
+
+      The file exists, and `cat` works fine. The **operating system** checked the file's permissions against who is asking, and refused. Most attacks are attempts to get past exactly this kind of check.
+
+  - kind: choice
+    title: "Quick check: which job failed?"
+    body: |
+      A malicious program manages to read passwords out of the web browser's slice of RAM. Which OS job failed?
+    options:
+      - "Keeping each process's memory separate"
+      - "Starting and stopping processes"
+      - "Organising files into folders"
+    answer: 0
+    explanation: "The OS is supposed to give each process its own memory and stop others reading it. When that separation fails, secrets leak."
 
   - kind: explain
     title: Virtual machines — the hacker's safe room
@@ -70,6 +157,19 @@ steps:
 
       In this course you will meet **Kali Linux**, a VM pre-loaded with security tools, and a separate deliberately-weak **target VM**. They talk only to each other — your legal practice ground.
 
+      **Example: a snapshot saves the day.** You take a snapshot of your target VM called *clean install*. You then run a tool that crashes the VM's web server and fills its disk. Instead of reinstalling for an hour, you click *Restore snapshot → clean install*, and seconds later the VM is exactly as it was. Your Mac was never touched.
+
+  - kind: choice
+    title: "Quick check: why a VM?"
+    body: |
+      You want to run a risky tool against a deliberately weak target. Why do it between two VMs on a private network?
+    options:
+      - "It makes the tool run faster"
+      - "If something goes wrong, your real machine and other people's devices aren't affected, and you can roll back"
+      - "VMs can't be hacked"
+    answer: 1
+    explanation: "Isolation, snapshots and a private network keep risky work away from your real files and from devices you don't own. VMs can be hacked, which is exactly why they're the safe room."
+
   - kind: explain
     title: Client vs. server
     body: |
@@ -80,10 +180,40 @@ steps:
 
       Your browser (client) asks a web server for a page; the server answers. One machine can be both: a server you attack might itself be a client to a database behind it. Attacks usually travel along these request–response lines, so always ask: *who is the client here, and who is the server?*
 
+      **Example.** You search for a book on a shop's site:
+
+      1. Your **browser** (client) asks the **web server**: "search for *Dune*".
+      2. The web server, now acting as a **client**, asks its **database server**: "find books named *Dune*".
+      3. The database answers the web server, and the web server answers your browser.
+
+      One request, two client–server pairs. An attacker who can make the web server send a *strange* question to the database (Module 21) is using that second pair.
+
+  - kind: choice
+    title: "Quick check: who's the client?"
+    body: |
+      A web server asks a database server for a customer's orders. In that exchange, which one is the client?
+    options:
+      - "The database server"
+      - "The web server"
+      - "Neither: servers can't be clients"
+    answer: 1
+    explanation: "Whoever asks is the client. The web server is a server to browsers, but a client to the database behind it."
+
   - kind: info
     title: "🔹 Bits vs. bytes, and why it bites you"
     body: |
       Network speeds are measured in **bits** per second (Mbps, little `b`); file sizes in **bytes** (MB, big `B`). Eight bits to a byte, so a "100 Mbps" connection downloads at roughly 12.5 MB per second, not 100. It is a classic source of confusion — and of marketing that sounds faster than it is.
+
+  - kind: choice
+    title: "Quick check: real download speed"
+    body: |
+      Your connection is advertised as **400 Mbps**. Roughly how fast does a file download?
+    options:
+      - "400 MB per second"
+      - "50 MB per second"
+      - "3,200 MB per second"
+    answer: 1
+    explanation: "Speeds are in bits; file sizes in bytes. 400 megabits ÷ 8 = 50 megabytes per second."
 
   - kind: why
     body: |

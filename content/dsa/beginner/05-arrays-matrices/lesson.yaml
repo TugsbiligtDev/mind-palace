@@ -10,6 +10,39 @@ steps:
 
       Trade-off: reading any position is instant, but **inserting or deleting in the middle** is O(n), because everything after it must shift.
 
+      **Example.** Reading position 3 is one step. Inserting at the front makes every item move up one place:
+
+      ```js
+      const seats = ["A", "B", "C", "D", "E"];
+      console.log(seats[3]);             // jump straight there
+
+      seats.splice(0, 0, "NEW");         // insert at position 0
+      console.log(seats);
+      console.log("items that had to move:", seats.length - 1);
+      ```
+
+      prints:
+
+      ```
+      D
+      [ 'NEW', 'A', 'B', 'C', 'D', 'E' ]
+      items that had to move: 5
+      ```
+
+  - kind: code
+    title: "Try it: read vs. insert"
+    body: |
+      Run it and compare with the output above. Then insert at position 4 instead (`splice(4, 0, "NEW")`): only 1 item has to move.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const seats = ["A", "B", "C", "D", "E"];
+      console.log(seats[3]);
+
+      seats.splice(0, 0, "NEW");
+      console.log(seats);
+      console.log("items that had to move:", seats.length - 1);
+
   - kind: explain
     title: Walking and changing an array
     body: |
@@ -21,9 +54,75 @@ steps:
       arr.forEach((x, i) => { /* callback style */ });
       ```
 
-      Use the classic `for` when you need the **index** or need to stop early.
+      Use the classic `for` when you need the **index** or need to stop early. All three on a small array:
+
+      ```js
+      const arr = ["a", "b", "c"];
+      for (let i = 0; i < arr.length; i++) console.log(i, arr[i]);
+      for (const x of arr) console.log(x);
+      arr.forEach((x, i) => console.log(x, "at", i));
+      ```
+
+      prints:
+
+      ```
+      0 a
+      1 b
+      2 c
+      a
+      b
+      c
+      a at 0
+      b at 1
+      c at 2
+      ```
+
+      `forEach` takes an arrow function (Module 4) and calls it once per item, handing it the item and its position.
 
       Changing an array **in place** means editing `arr` itself instead of building a new array. In-place solutions use O(1) extra space, which interviewers love. The price: you destroy the original.
+
+      The tidiest in-place move is a **swap**. `[x, y] = [y, x]` swaps two values in one line, and it works on array positions too:
+
+      ```js
+      const arr = ["a", "b", "c", "d"];
+      [arr[0], arr[3]] = [arr[3], arr[0]];
+      console.log(arr);
+      ```
+
+      prints:
+
+      ```
+      [ 'd', 'b', 'c', 'a' ]
+      ```
+
+      Positions 0 and 3 traded places, and no new array was made.
+
+  - kind: code
+    title: "Try it: loops and a swap"
+    body: |
+      Run this and notice:
+
+      - the counter loop gives you each position `i` as well as the title,
+      - the `for...of` loop gives only the titles,
+      - the last line swaps positions 1 and 2, changing `shelf` itself.
+
+      Then change the swap to trade positions `0` and `3` and run again. Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const shelf = ["Dune", "Emma", "Ulysses", "Beloved"];
+
+      // Counter loop: you get the position i
+      for (let i = 0; i < shelf.length; i++) {
+        console.log(i, shelf[i]);
+      }
+
+      // for...of: just the values
+      for (const title of shelf) {
+        console.log(title.length, "letters in", title);
+      }
+
+      // Swap two items in place (the array itself changes)
+      [shelf[1], shelf[2]] = [shelf[2], shelf[1]];
+      console.log(shelf);
 
   - kind: code
     title: Reverse in place with two pointers
@@ -71,7 +170,53 @@ steps:
       1. **`k` can be bigger than the array.** Rotating a 5-item array by 7 is the same as by 2, so use `k % n` (and handle `n = 0`).
       2. **The new array is the last `k` items followed by the rest**: `arr.slice(n - k)` then `arr.slice(0, n - k)`.
 
+      The pieces on a 6-item array:
+
+      ```js
+      const letters = ["a", "b", "c", "d", "e", "f"];
+      console.log(letters.slice(4));      // from position 4 to the end
+      console.log(letters.slice(0, 4));   // from 0 up to (not including) 4
+      console.log(8 % letters.length);    // 8 steps on a 6-item array = 2 steps
+      ```
+
+      prints:
+
+      ```
+      [ 'e', 'f' ]
+      [ 'a', 'b', 'c', 'd' ]
+      2
+      ```
+
       (There is also an in-place version with O(1) extra space: reverse the whole array, then reverse the first `k` items, then reverse the rest. Try it on paper with `[1, 2, 3, 4, 5]` and `k = 2`.)
+
+  - kind: code
+    title: "Try it: slice, spread and %"
+    body: |
+      Run this and read the lines:
+
+      - `slice(4)` is "from position 4 to the end", and `slice(0, 4)` is "the first 4 items".
+      - `slice(6)` on a 6-item array gives `[]`, an empty array.
+      - `[...back, ...front]` spreads two arrays into one new array, in the order you write them.
+      - `8 % 6` is `2`: eight steps on a six-item array land where two steps would.
+
+      Then change `slice(4)` to `slice(2)` and run again. Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const letters = ["a", "b", "c", "d", "e", "f"];
+
+      // slice(start): from start to the end
+      console.log(letters.slice(4));
+      // slice(start, end): up to, but not including, end
+      console.log(letters.slice(0, 4));
+      // slice(start) with start = length gives an empty array
+      console.log(letters.slice(6));
+
+      // Spread two arrays into one new array
+      const front = ["x", "y"];
+      const back = ["z"];
+      console.log([...back, ...front]);
+
+      // % keeps a step count inside the array's size
+      console.log(8 % letters.length, 6 % letters.length);
 
   - kind: code
     title: Rotate right
@@ -113,6 +258,37 @@ steps:
       - `best`: the best profit found so far.
 
       At each price, the profit *if you sold today* is `price - lowest`. Update `best`, then update `lowest`. One pass, O(n) time, O(1) space.
+
+      Two tools make "remember the best" short. `Math.max(a, b)` gives the bigger number and `Math.min(a, b)` the smaller. `Infinity` is bigger than every number, so it is a safe start for "the lowest so far" (and `-Infinity` for "the highest so far"):
+
+      ```js
+      console.log(Math.max(4, 9), Math.min(4, 9));
+      console.log(Infinity > 1000000, Math.min(Infinity, 7));
+      ```
+
+      prints:
+
+      ```
+      9 4
+      true 7
+      ```
+
+  - kind: code
+    title: "Try it: remember the best so far"
+    body: |
+      This one-pass loop keeps the highest and the lowest price seen so far. Run it and follow the printed lines: `highest` only changes when a bigger price arrives, and `lowest` only when a smaller one does.
+
+      Then add a price of `1` to the end of `prices` and run again. Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const prices = [12, 7, 19, 3, 15];
+
+      let highest = -Infinity;  // smaller than every real price
+      let lowest = Infinity;    // bigger than every real price
+      for (const price of prices) {
+        highest = Math.max(highest, price);
+        lowest = Math.min(lowest, price);
+        console.log("saw", price, "-> highest", highest, "lowest", lowest);
+      }
 
   - kind: code
     title: Best time to buy and sell
@@ -158,10 +334,16 @@ steps:
         [1, 2, 3],
         [4, 5, 6],
       ];
-      grid[1][2]          // 6  (row 1, column 2)
-      grid.length         // 2  rows
-      grid[0].length      // 3  columns
+      console.log(grid[1][2], grid.length, grid[0].length);
       ```
+
+      prints:
+
+      ```
+      6 2 3
+      ```
+
+      That is the value at row 1, column 2, then 2 rows, then 3 columns.
 
       Visit every cell with a loop inside a loop: **rows outside, columns inside**. That is O(rows × cols).
 
@@ -170,6 +352,32 @@ steps:
       ```js
       const grid = Array.from({ length: rows }, () => Array(cols).fill(0));
       ```
+
+  - kind: code
+    title: "Try it: walk a grid"
+    body: |
+      Run this and watch the order of the printed cells: the whole of row 0 first, then row 1. That is "rows outside, columns inside".
+
+      The second part builds a fresh grid of 3 rows and 2 columns with `Array.from`, then sets one cell.
+
+      Then change `board[2][1] = 9;` to `board[0][1] = 9;` and run again. Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const grid = [
+        ["a", "b", "c"],
+        ["d", "e", "f"],
+      ];
+
+      // Rows outside, columns inside
+      for (let r = 0; r < grid.length; r++) {
+        for (let c = 0; c < grid[0].length; c++) {
+          console.log("row", r, "col", c, "holds", grid[r][c]);
+        }
+      }
+
+      // A fresh 3 x 2 grid of zeros, then change one cell
+      const board = Array.from({ length: 3 }, () => Array(2).fill(0));
+      board[2][1] = 9;
+      console.log(board);
 
   - kind: code
     title: Transpose a grid
@@ -227,6 +435,37 @@ steps:
       }
       ```
 
+      Here it is for cell `(1, 2)`, the bottom-right corner of a 2 × 3 grid. `inside ? a : b` is a short "if": it gives `a` when `inside` is true, otherwise `b`.
+
+      ```js
+      const grid = [
+        [1, 2, 3],
+        [4, 5, 6],
+      ];
+      const rows = grid.length;
+      const cols = grid[0].length;
+      const r = 1;
+      const c = 2;
+      const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr;
+        const nc = c + dc;
+        const inside = nr >= 0 && nr < rows && nc >= 0 && nc < cols;
+        console.log(nr, nc, inside ? grid[nr][nc] : "off the edge");
+      }
+      ```
+
+      prints:
+
+      ```
+      0 2 3
+      2 2 off the edge
+      1 1 5
+      1 3 off the edge
+      ```
+
+      Two neighbours exist, and the other two would have been off the edge.
+
   - kind: code
     title: "Find the bug: falling off the edge"
     body: |
@@ -275,7 +514,29 @@ steps:
       - The **main diagonal** is every cell where **row = column**: `(0,0), (1,1), (2,2)…`
       - The **anti-diagonal** is every cell where **row + column = n − 1**: `(0,2), (1,1), (2,0)` when `n = 3`.
 
-      For an odd `n` both diagonals share the centre cell. Do not count it twice.
+      For an odd `n` both diagonals share the centre cell. Do not count it twice. In row `i`, the two diagonal cells are at columns `i` and `n - 1 - i`:
+
+      ```js
+      const g = [
+        ["a", "b", "c"],
+        ["d", "e", "f"],
+        ["g", "h", "i"],
+      ];
+      const n = g.length;
+      for (let i = 0; i < n; i++) {
+        console.log("row", i, "main:", g[i][i], "anti:", g[i][n - 1 - i]);
+      }
+      ```
+
+      prints:
+
+      ```
+      row 0 main: a anti: c
+      row 1 main: e anti: e
+      row 2 main: i anti: g
+      ```
+
+      In row 1 both diagonals land on the same cell, `e`.
 
   - kind: code
     title: Add both diagonals

@@ -6,6 +6,28 @@ steps:
 
       The key idea: when your computer sends data, it does not go in one lump. It is chopped into small **packets**, each labelled with *where it is going* and *where it came from*, and sent hop by hop across the network. Addressing those labels correctly is what the whole system is about.
 
+      **Example: loading one web page.** Your laptop (`192.168.1.42`) asks a web server (`203.0.113.10`) for its home page. The request is small, but the page that comes back is too big for one packet, so the server sends it in pieces, each with its own label:
+
+      ```
+      packet 1   from 203.0.113.10   to 192.168.1.42   piece 1 of 3 of the page
+      packet 2   from 203.0.113.10   to 192.168.1.42   piece 2 of 3 of the page
+      packet 3   from 203.0.113.10   to 192.168.1.42   piece 3 of 3 of the page
+      ```
+
+      Your laptop puts the three pieces back in order and the browser draws the page. If one gets lost on the way, only that piece is sent again.
+
+  - kind: choice
+    title: "Quick check: what is on the label?"
+    body: |
+      What does every packet carry, so the network can deliver it?
+    options:
+      - "The whole file being sent, in one piece"
+      - "Where it is going and where it came from"
+      - "The name of the person using the computer"
+    answer: 1
+    explanation: |
+      Data is chopped into small packets, and each one is labelled with its **destination** and **source** addresses. That label is all the network needs to pass it along, hop by hop.
+
   - kind: explain
     title: Two models, layer by layer
     body: |
@@ -20,6 +42,19 @@ steps:
 
       The older **OSI model** splits the same thing into seven layers (Physical, Data Link, Network, Transport, Session, Presentation, Application). You do not need to memorise all seven, but you will hear people say "that is a layer 7 problem" (application) or "a layer 3 device" (routing). Thinking in layers lets you locate a problem — or an attack — at the right level.
 
+  - kind: choice
+    title: "Quick check: which layer?"
+    body: |
+      Someone says SSH is "a layer 7 problem". In the four-layer TCP/IP table, which layer is SSH?
+    options:
+      - "Link"
+      - "Internet"
+      - "Transport"
+      - "Application"
+    answer: 3
+    explanation: |
+      SSH, like HTTP and DNS, is the actual content of the conversation: the **Application** layer (layer 7 in OSI). TCP underneath is Transport, IP is Internet, and Ethernet or Wi-Fi is Link.
+
   - kind: explain
     title: IP addresses — the postal address
     body: |
@@ -30,6 +65,24 @@ steps:
       ```
 
       Each number is one byte (remember Module 1: one byte holds 0–255). An IP address has two parts: the **network** part (which network you are on) and the **host** part (which machine on it). A **subnet mask** marks where the split falls.
+
+      **Example: the same address as the computer sees it.** Each of the four numbers becomes eight bits:
+
+      ```
+      192      .168      .1        .42
+      11000000  10101000  00000001  00101010
+      ```
+
+      (42 = 32 + 8 + 2, so the 32, 8 and 2 places are on.) With the common subnet mask `255.255.255.0`, the first three bytes (`192.168.1`) are the network part and the last byte (`42`) is the host part: machine number 42 on network 192.168.1.
+
+  - kind: mac
+    title: "Try it: your own IP address"
+    body: |
+      Ask your Mac for its IP address on its main network card (`en0`, usually Wi-Fi). You will see four numbers, something like `192.168.1.42`.
+
+      Which part is the network and which is the host? On most home networks the first three numbers are the network (your home) and the last is your machine. If it prints nothing, your Mac is on a different card: try `ipconfig getifaddr en1`.
+    commands: |
+      ipconfig getifaddr en0
 
   - kind: explain
     title: Subnets and CIDR
@@ -52,6 +105,34 @@ steps:
 
       When a client scopes a test as "`10.10.0.0/16`, nothing else," CIDR is how they draw the fence — and staying inside it is your legal obligation.
 
+      <!-- page -->
+
+      **Worked examples** using your lab network, `192.168.56.0/24`:
+
+      | Address | Inside `192.168.56.0/24`? | Why |
+      |---|---|---|
+      | `192.168.56.101` | Yes | first three numbers match `192.168.56` |
+      | `192.168.56.7` | Yes | same first three; only the last number differs |
+      | `192.168.57.3` | **No** | the third number is 57, not 56 |
+      | `10.168.56.101` | **No** | the first number is different |
+
+      And the same idea at other sizes:
+
+      - `10.10.0.0/16` runs from `10.10.0.1` to `10.10.255.254`: only `10.10` is fixed, so `10.10.200.9` is inside but `10.11.0.1` is not.
+      - `192.168.56.101/32` is exactly one machine, `192.168.56.101`, and nothing else.
+
+  - kind: choice
+    title: "Quick check: inside the fence?"
+    body: |
+      The scope is `172.16.0.0/16`. Which address is **inside** it?
+    options:
+      - "172.17.0.5"
+      - "172.16.200.14"
+      - "172.1.16.0"
+    answer: 1
+    explanation: |
+      `/16` fixes the first **two** numbers, `172.16`. `172.16.200.14` matches, so it is in scope. `172.17.0.5` has 17 as its second number, and `172.1.16.0` has 1: both are outside.
+
   - kind: explain
     title: MAC addresses — the hardware name
     body: |
@@ -61,7 +142,24 @@ steps:
       00:1b:44:11:3a:b7
       ```
 
+      **Example.** `arp -a` (on your Mac, or Linux) shows the IP-to-MAC pairs your machine has learned on its local network:
+
+      ```
+      $ arp -a
+      ? (192.168.1.1) at a4:2b:b0:12:7f:3e on en0 ifscope [ethernet]
+      ? (192.168.1.37) at 3c:22:fb:9a:10:c4 on en0 ifscope [ethernet]
+      ```
+
+      Each line pairs a local IP address with the MAC address of the card that answered for it. The first is usually your home router. (`?` just means no name was found; `en0` is your network card.)
+
       The difference matters. An **IP address** can change (it is assigned, and it routes across the whole internet). A **MAC address** is fixed to the hardware and only matters on the *local* network segment — it is how a switch knows which physical port to send a frame to. Attacks like **ARP spoofing** abuse the link between the two: an attacker on the same local network falsely announces "that IP belongs to my MAC", so traffic meant for someone else flows through them.
+
+  - kind: mac
+    title: "Try it: the IP-to-MAC table on your Mac"
+    body: |
+      Show the IP and MAC pairs your Mac has learned on your own network. You will see at least your router (often ending in `.1`). The list only holds machines your Mac has talked to recently, so it may be short.
+    commands: |
+      arp -a
 
   - kind: explain
     title: Routers, switches, and the journey of a packet
@@ -73,6 +171,29 @@ steps:
 
       So a packet from your laptop to a website: switch to your router, router to your ISP, hop by hop across many routers, to the server's network, to its switch, to the server. Each hop reads the labels and passes it on. (You will literally watch these hops with `traceroute` in Module 8.)
 
+      **Example: the journey of one packet** from your laptop to a web server in another country:
+
+      | Hop | Device | Reads | Decides |
+      |---|---|---|---|
+      | 1 | Your home switch (often built into the router box) | the **MAC** address | which port your router is on |
+      | 2 | Your home router `192.168.1.1` | the **IP** address | "not local, send it to the ISP" |
+      | 3 to 9 | Routers at your ISP and across the internet | the **IP** address | the next router that is closer |
+      | 10 | The server's network switch | the **MAC** address | which port the server is on |
+
+      Switches only ever handle the short local hops at each end; routers carry the packet everything in between.
+
+  - kind: choice
+    title: "Quick check: switch or router?"
+    body: |
+      Which device moves traffic between machines **inside one local network**, using MAC addresses?
+    options:
+      - "A switch"
+      - "A router"
+      - "A DNS server"
+    answer: 0
+    explanation: |
+      A **switch** is the hallway inside one building: it forwards by MAC address. A **router** connects different networks and forwards by IP address. DNS (Module 7) turns names into addresses and doesn't move packets at all.
+
   - kind: explain
     title: Private vs. public IPs, and NAT
     body: |
@@ -82,7 +203,30 @@ steps:
       - `172.16.0.0/12` (172.16–31.x.x)
       - `192.168.0.0/16` (192.168.x.x)
 
+      **Example: private or public?**
+
+      | Address | Private or public? | Why |
+      |---|---|---|
+      | `10.0.5.20` | Private | starts with 10 |
+      | `172.20.1.9` | Private | 172 followed by 16 to 31 |
+      | `172.32.0.1` | **Public** | 172 followed by 32 is just outside 16–31 |
+      | `192.168.56.101` | Private | starts with 192.168 (your lab target) |
+      | `198.51.100.23` | **Public** | not in any private range |
+
       These are not routable on the public internet. Your router performs **NAT** (Network Address Translation): it swaps your private source address for its one **public** address on the way out, and remembers how to send replies back. That is why your phone and laptop can share a single public IP — and why, from the outside, you often see only the router, not the machines behind it. Getting *behind* NAT to reach those internal machines is a whole skill (pivoting, Module 25).
+
+  - kind: choice
+    title: "Quick check: the public one"
+    body: |
+      Which of these addresses is **public** (reachable on the internet)?
+    options:
+      - "10.200.3.4"
+      - "192.168.0.10"
+      - "172.31.255.1"
+      - "8.8.8.8"
+    answer: 3
+    explanation: |
+      `10.x`, `192.168.x` and `172.16` to `172.31` are the private ranges, so the first three are all private (172.31 is the last one inside the range). `8.8.8.8` is in none of them: it's Google's public DNS server.
 
   - kind: info
     title: "🔹 IPv6 — the newer, longer address"

@@ -94,7 +94,47 @@ steps:
           print("No name given")
       ```
 
+      This prints `No name given`, because the empty text `""` counts as false.
+
       Careful though: `0` is falsy, so `if count:` is false when the count is zero. If zero is a valid answer, test explicitly: `if count is not None`.
+
+      <!-- page -->
+
+      `bool(value)` shows you how Python judges any value:
+
+      ```python
+      print(bool(0), bool(5))
+      print(bool(""), bool("Ada"))
+      print(bool(None))
+      print(bool([]), bool([1, 2]))
+      ```
+
+      prints:
+
+      ```
+      False True
+      False True
+      False
+      False True
+      ```
+
+  - kind: code
+    title: "Try it: truthy and falsy"
+    body: |
+      Run this. Then change `name = "Moth"` to `name = ""` and run it again: the `else` branch runs. Try `bool(0.0)` and `bool(" ")` (a single space) too, and predict them first.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      print(bool(0), bool(5))
+      print(bool(""), bool("Ada"))
+      print(bool(None))
+      print(bool([]), bool([1, 2]))
+
+      name = "Moth"
+      if name:
+          print("Hello", name)
+      else:
+          print("No name given")
 
   - kind: code
     title: Empty or not?
@@ -138,6 +178,21 @@ steps:
       ```
 
       For lists, `[1, 2] == [1, 2]` is `True` but `[1, 2] is [1, 2]` is `False`: two separate lists that happen to look alike.
+
+      ```python
+      result = None
+      print(result is None)
+      print([1, 2] == [1, 2])
+      print([1, 2] is [1, 2])
+      ```
+
+      prints:
+
+      ```
+      True
+      True
+      False
+      ```
 
   - kind: code
     title: FizzBuzz
@@ -209,6 +264,45 @@ steps:
       ```
 
       Each `return` ends the function immediately, so later lines only run when the earlier checks passed. This is called a **guard clause**.
+
+      <!-- page -->
+
+      Call the flat version with a few visitors:
+
+      ```python
+      print(can_enter(30, True))
+      print(can_enter(15, True))
+      print(can_enter(30, False))
+      ```
+
+      prints:
+
+      ```
+      True
+      False
+      False
+      ```
+
+      The 15-year-old is stopped by the first guard; the adult without a ticket gets past the first guard and is stopped by the second.
+
+  - kind: code
+    title: "Try it: guard clauses"
+    body: |
+      Run this. Then add a third guard: nobody over `99` may enter (`if age > 99: return False`), and add a call that tests it.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      def can_enter(age, has_ticket):
+          if age < 18:
+              return False
+          if not has_ticket:
+              return False
+          return True
+
+
+      print(can_enter(30, True))
+      print(can_enter(15, True))
+      print(can_enter(30, False))
 
   - kind: code
     title: Flatten the nesting

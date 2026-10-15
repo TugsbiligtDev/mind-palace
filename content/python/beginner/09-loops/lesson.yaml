@@ -290,6 +290,22 @@ steps:
 
       It reads oddly (many people misread it), so most programmers use a `return` or a flag variable instead. Recognise it; don't rely on it.
 
+  - kind: code
+    title: "Try it: for / else"
+    body: |
+      Run it: `all even` prints, because the loop finished without `break`.
+
+      Then try one change: add an odd number such as `7` to the list. Now `found an odd number` prints and the `else` part is skipped.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      for n in [4, 6, 8]:
+          if n % 2 == 1:
+              print("found an odd number")
+              break
+      else:
+          print("all even")
+
   - kind: why
     body: |
       Loops are where the computer's speed pays off: a task you would never do by hand 10,000 times takes a blink. Nearly every real program is loops around decisions. The mistakes to remember are all small: an off-by-one range, a loop that can never stop, and changing a list while looping over it.

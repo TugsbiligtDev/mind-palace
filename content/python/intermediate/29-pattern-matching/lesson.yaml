@@ -58,6 +58,32 @@ steps:
       `["go", direction]` matches a list of exactly two items whose first is `"go"`, and binds the second to `direction`. `["take", *items]` matches `take` followed by any number of things.
 
   - kind: code
+    title: "Try it: sequence patterns"
+    body: |
+      Commands for Inkwell's till. Run it and notice:
+
+      - `"sell Dune"` splits into two words and fits `["sell", title]`.
+      - `"order"` on its own still fits `["order", *titles]`: `*titles` happily collects **zero** items, giving `[]`.
+      - `"sell two books"` has three words, so `["sell", title]` does not fit and it falls to `_`.
+
+      Then try one change: add a case `["sell", title, "gift"]` above the plain sell case, and test it with `"sell Emma gift"`. Nothing is graded here.
+    code: |
+      def till(text):
+          match text.split():
+              case ["sell", title]:
+                  return f"sold {title}"
+              case ["order", *titles]:              # *titles collects the rest
+                  return f"ordering {titles}"
+              case []:
+                  return "nothing typed"
+              case _:
+                  return "what?"
+
+
+      for command in ["sell Dune", "order Emma Ulysses It", "order", "", "sell two books"]:
+          print(repr(command), "->", till(command))
+
+  - kind: code
     title: A tiny adventure parser
     body: |
       Write `parse(text)`. Split the text into words, then:
@@ -126,6 +152,48 @@ steps:
       ```
 
       The pattern must match **and** the guard must be true. `int()` is a **class pattern** that checks the type.
+
+  - kind: code
+    title: "Try it: mapping patterns and guards"
+    body: |
+      Inkwell's orders arrive as dictionaries. Run it and notice:
+
+      - the extra `"gift"` key does not stop the Emma order matching.
+      - the guard `if q >= 10` sends big orders to the first case; small ones fall to the second.
+      - `{"qty": 3}` has no `"item"` key, so neither order case fits.
+      - in `sign`, `int()` only fits whole numbers, so the text `"7"` falls through.
+
+      Then try one change: swap the order of the two `{"item": ...}` cases and run again. The bulk case can never be reached now. Nothing is graded here.
+    code: |
+      def handle(order):
+          match order:
+              case {"item": item, "qty": q} if q >= 10:
+                  return f"bulk order: {q} x {item}"
+              case {"item": item, "qty": q}:
+                  return f"order: {q} x {item}"
+              case {"refund": amount}:
+                  return f"refund {amount}"
+              case _:
+                  return "unknown"
+
+
+      print(handle({"item": "Dune", "qty": 2}))
+      print(handle({"item": "Emma", "qty": 12, "gift": True}))
+      print(handle({"refund": 9.5}))
+      print(handle({"qty": 3}))
+
+
+      def sign(n):
+          match n:
+              case int() if n < 0:
+                  return "negative"
+              case int():
+                  return "non-negative"
+              case _:
+                  return "not a whole number"
+
+
+      print(sign(-4), sign(7), sign("7"))
 
   - kind: code
     title: Summarise events
@@ -198,6 +266,52 @@ steps:
       `Rect(width, height)` checks that `shape` is a `Rect` and binds its fields by position. You can also match by keyword: `Rect(width=w)`.
 
       **When does `match` beat `if/elif`?** When you are deciding by the *structure* of data (its type, length, or which keys it has) and want to unpack it in the same step. For simple comparisons of a single value, plain `if` is fine.
+
+  - kind: code
+    title: "Try it: class patterns"
+    body: |
+      Two dataclasses on Inkwell's shelves. Run it and notice:
+
+      - `Book(title, pages)` checks the type **and** unpacks both fields by position.
+      - a guard (`if pages > 500`) and a literal (`Magazine(name, 1)`) make a case more specific, so they go first.
+      - `Magazine(name=n)` matches by keyword instead of position.
+
+      Then try one change: add `print(shelf_label(Book("It", 1138)))` and predict the output before running. Nothing is graded here.
+    code: |
+      from dataclasses import dataclass
+
+
+      @dataclass
+      class Book:
+          title: str
+          pages: int
+
+
+      @dataclass
+      class Magazine:
+          name: str
+          issue: int
+
+
+      def shelf_label(item):
+          match item:
+              case Book(title, pages) if pages > 500:
+                  return f"{title}: a long read"
+              case Book(title, pages):
+                  return f"{title}: {pages} pages"
+              case Magazine(name, 1):
+                  return f"{name}: the first issue!"
+              case Magazine(name=n):
+                  return f"{n} magazine"
+              case _:
+                  return "not for the shelf"
+
+
+      print(shelf_label(Book("Dune", 412)))
+      print(shelf_label(Book("Middlemarch", 880)))
+      print(shelf_label(Magazine("Inkwell Monthly", 1)))
+      print(shelf_label(Magazine("Inkwell Monthly", 7)))
+      print(shelf_label("a mug"))
 
   - kind: code
     title: Shapes with match
@@ -349,6 +463,40 @@ steps:
       - Patterns are checked in order, so put specific cases before general ones and `_` last.
       - `match` needs Python 3.10 or newer.
       - Don't force `match` where a simple `if` or a dictionary lookup is clearer.
+
+  - kind: code
+    title: "Try it: capture or compare?"
+    body: |
+      `bad` means to compare with the name `RED`, but a bare name **captures** anything, so `bad("blue")` says `stop`. `good` uses the dotted name `Color.RED`, which really compares.
+
+      Then try one change: in `good`, call it with `Color.GREEN` as well.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      from enum import Enum
+
+      class Color(Enum):
+          RED = "red"
+          GREEN = "green"
+
+      RED = "red"
+
+      def bad(c):
+          match c:
+              case "green":
+                  return "go"
+              case RED:            # captures: matches anything
+                  return "stop"
+
+      def good(c):
+          match c:
+              case Color.RED:      # dotted name: compares
+                  return "stop"
+              case _:
+                  return "unknown"
+
+      print(bad("blue"))
+      print(good(Color.RED), good("blue"))
 
   - kind: why
     body: |

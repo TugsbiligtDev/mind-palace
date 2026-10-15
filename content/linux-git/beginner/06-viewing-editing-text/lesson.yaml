@@ -10,6 +10,34 @@ steps:
 
       ⚠️ On a Mac, **TextEdit** saves rich text by default. For code and settings files use **Format → Make Plain Text**, or better, a code editor like VS Code.
 
+      **Example.** `file` tells you what's inside a file, and a CSV of orders is just readable text:
+
+      ```
+      learner@inkwell:~/inkwell$ file notes/todo.txt
+      notes/todo.txt: ASCII text
+      learner@inkwell:~/inkwell$ head -3 orders/2026-08.csv
+      order_id,date,customer,book,price
+      1041,2026-08-03,Amara Okafor,Dune,9.99
+      1042,2026-08-04,Liam Chen,The Hobbit,8.50
+      ```
+
+      Commas between the columns, one order per line. Any program, and you, can read it.
+
+  - kind: shell
+    title: "Try it: is it plain text?"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `file notes/todo.txt`
+      2. `file orders/2026-08.csv`
+      3. `head -3 orders/2026-08.csv`
+
+      Then try `file` on a folder: `file logs`.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Reading files
     body: |
@@ -22,6 +50,53 @@ steps:
       | `head -n 3 file` | the first 3 lines (`tail -n 3` for the last 3) |
 
       `cat` can also join files: `cat a.txt b.txt` prints one after the other. That's where its name comes from: con**cat**enate.
+
+      <!-- page -->
+
+      Here they are on Inkwell's files. `cat` prints the whole to-do list; `head -n 3` gives the heading line and the first two August orders:
+
+      ```
+      learner@inkwell:~/inkwell$ cat notes/todo.txt
+      - reorder Dune (only 2 left)
+      - fix the broken link on the About page
+      - ask Marcus about the September refunds
+      learner@inkwell:~/inkwell$ head -n 3 orders/2026-08.csv
+      order_id,date,customer,book,price
+      1041,2026-08-03,Amara Okafor,Dune,9.99
+      1042,2026-08-04,Liam Chen,The Hobbit,8.50
+      ```
+
+      `tail -n 3` gives the last three lines of the list of books sold, and `cat` with two files prints them one after the other:
+
+      ```
+      learner@inkwell:~/inkwell$ tail -n 3 notes/books-sold.txt
+      Beloved
+      The Hobbit
+      Dune
+      learner@inkwell:~/inkwell$ cat old/price-list-OLD.txt notes/todo.txt
+      Dune 9.99
+      The Hobbit 8.50
+      - reorder Dune (only 2 left)
+      - fix the broken link on the About page
+      - ask Marcus about the September refunds
+      ```
+
+  - kind: shell
+    title: "Try it: cat, head, tail and less"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `cat notes/todo.txt`
+      2. `head -n 3 orders/2026-08.csv`
+      3. `tail -n 3 notes/books-sold.txt`
+      4. `head notes/books-sold.txt`: with no `-n`, you get 10 lines.
+      5. `less logs/access.log`: move with Space and **b**, then press **q** to leave.
+
+      Then change the `3` in step 3 to `5` and run it again.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Peek at the shop's log
@@ -45,17 +120,52 @@ steps:
 
       The practice terminal can't wait for new lines, so here `tail -f` shows the last lines and stops, with a note. On your Mac or a real server it keeps going.
 
+      **Example**, in the practice terminal:
+
+      ```
+      learner@inkwell:~/inkwell$ tail -f logs/shop.log
+      2026-10-05 08:00:01 INFO  shop started
+      2026-10-05 08:02:13 INFO  order 1050 paid
+      2026-10-05 09:15:40 WARN  stock low: Dune (2 left)
+      2026-10-05 10:21:07 ERROR payment failed for order 1051
+      2026-10-05 10:21:09 INFO  order 1051 retried
+      2026-10-05 11:42:55 INFO  order 1051 paid
+      2026-10-05 13:03:30 ERROR could not send email to customer 18
+      2026-10-05 14:30:00 INFO  backup finished
+      (tail -f would now keep waiting and print new lines as they're added, until you press Ctrl+C. The practice terminal stops here.)
+      ```
+
+  - kind: shell
+    title: "Try it: tail -f"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type `tail -f logs/shop.log` and read the note at the end. Then compare with `tail -3 logs/shop.log`, which shows just the last 3 lines.
+
+      On your Mac, try `tail -f` on any file that grows, and press **Ctrl+C** to stop it.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Counting with wc
     body: |
       `wc` (**w**ord **c**ount) counts a file's lines, words and bytes:
 
       ```
-      learner@inkwell:~$ wc notes/todo.txt
+      learner@inkwell:~/inkwell$ wc notes/todo.txt
         3  22 110 notes/todo.txt
       ```
 
       Usually you want just one number: `wc -l` counts **l**ines, `wc -w` words, `wc -c` bytes. Counting lines is surprisingly useful: how many orders, how many errors, how many users.
+
+      ```
+      learner@inkwell:~/inkwell$ wc -l notes/books-sold.txt
+      10 notes/books-sold.txt
+      learner@inkwell:~/inkwell$ wc -w notes/todo.txt
+      22 notes/todo.txt
+      ```
+
+      Ten books sold this week (one per line), and 22 words in the to-do list.
 
   - kind: shell
     title: How many lines?
@@ -98,6 +208,22 @@ steps:
       | **Ctrl+W** | search ("where is") |
 
       `nano newfile.txt` creates the file when you save.
+
+  - kind: shell
+    title: "Try it: nano"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Practise on a new file before you touch the real to-do list:
+
+      1. `nano notes/ideas.txt` opens an empty file (it's created when you save).
+      2. Type a line, like `- window display for Kindred`.
+      3. Press **Ctrl+O**, then Return, to save. Then **Ctrl+X** to leave.
+      4. `cat notes/ideas.txt` to see your line.
+
+      Then open it again with `nano notes/ideas.txt`, add a second line, and leave with **Ctrl+X** *without* saving first: nano asks, and **Y** then Return saves.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Add to the to-do list

@@ -49,6 +49,17 @@ steps:
 
       ⚠️ Don't make web pages in **TextEdit** unless you switch it to plain text. By default it saves rich text with hidden formatting, and the browser shows a mess. Use a code editor (Module 3).
 
+  - kind: choice
+    title: "Quick check: what kind of file?"
+    body: |
+      Finder shows a file called `index.html`, but with extensions turned on it's really `index.html.txt`. What will a browser do with it?
+    options:
+      - "Show it as a web page, because the name contains `html`"
+      - "Treat it as plain text, because the real extension is `.txt`"
+      - "Refuse to open it"
+    answer: 1
+    explanation: "Only the part after the **last** dot counts. `index.html.txt` is a text file, so the browser shows the code as plain text instead of a page."
+
   - kind: explain
     title: lowercase-with-dashes, always
     body: |
@@ -60,6 +71,27 @@ steps:
 
       `Cover Photo (final) v2.JPG` → `cover-photo-final.jpg`.
 
+      **Examples: renaming Inkwell's files.**
+
+      | Before | After | What changed |
+      |---|---|---|
+      | `About Us.html` | `about-us.html` | space → dash, lowercase |
+      | `Logo.PNG` | `logo.png` | lowercase, including the extension |
+      | `events_2026.html` | `events-2026.html` | underscore → dash (dashes are the web habit) |
+      | `café-menu.html` | `cafe-menu.html` | no accented letters |
+
+  - kind: choice
+    title: "Quick check: a good file name"
+    body: |
+      Which is the best name for a photo of the shop's front door?
+    options:
+      - "`Shop Front.JPG`"
+      - "`shop_front(1).jpg`"
+      - "`shop-front.jpg`"
+      - "`ShopFront.jpg`"
+    answer: 2
+    explanation: "Lowercase letters, numbers and dashes only: no spaces, no capitals, no brackets. `shop-front.jpg` works the same on your Mac and on every server."
+
   - kind: explain
     title: Absolute paths
     body: |
@@ -69,6 +101,25 @@ steps:
       - A **root-relative** path, starting with `/`: `/images/logo.svg` means "from the top folder of this website". It keeps working wherever the page is, but only once the site is on a server (or Live Server). Opened straight from Finder, `/` means the top of your whole disk.
 
       Use full URLs for *other* sites. For your own files, use relative paths.
+
+      **Example: three ways to point at the same logo.** Inkwell's site lives at `https://inkwellbooks.com`, and the page `books/dune.html` wants the logo stored at `images/logo.svg`:
+
+      | Written in `books/dune.html` | Kind | Works when |
+      |---|---|---|
+      | `https://inkwellbooks.com/images/logo.svg` | full URL | always, but it's hard-wired to that one domain |
+      | `/images/logo.svg` | root-relative | on a server or Live Server, from any folder |
+      | `../images/logo.svg` | relative | always: up out of `books/`, then into `images/` |
+
+  - kind: choice
+    title: "Quick check: which kind of path?"
+    body: |
+      Inkwell's page links to another site's map: `https://maps.example.com/inkwell`. What kind of path is that?
+    options:
+      - "A full URL, the right choice for another site"
+      - "A relative path"
+      - "A root-relative path"
+    answer: 0
+    explanation: "It names the scheme and the domain, so it's a full URL: it works from anywhere. That's what you use for other sites; for your own files, use relative paths."
 
   - kind: explain
     title: Relative paths
@@ -86,6 +137,38 @@ steps:
       From `inkwell/books/index.html`, the logo at `inkwell/images/logo.svg` is `../images/logo.svg`: up out of `books`, into `images`.
 
       Relative paths are the default for your own files, because the whole folder can move (to another computer, to a server) and every link still works.
+
+  - kind: web
+    title: "Try it: paths that find a file"
+    body: |
+      This preview page sits in a project's **top folder**, and that folder has an `images` folder with real pictures in it:
+
+      ```
+      (top folder)/
+      ├── index.html          ← this preview page
+      └── images/
+          ├── logo.svg
+          ├── cover-emma.svg
+          └── cover-dune.svg
+      ```
+
+      The `index.html` tab holds three images (`alt` is the text to show if a picture can't load; Module 7 covers it):
+
+      - `images/logo.svg`: go into `images`, then `logo.svg`. The Inkwell logo shows.
+      - `./images/cover-emma.svg`: `./` means "this folder", so it's the same kind of path. The pink cover of *Emma* shows.
+      - `logo.svg`: looks for `logo.svg` right here, next to the page. There's no such file, so the browser shows a broken-image icon with the words *Missing logo* instead.
+
+      Try this:
+
+      1. Fix the third path by putting `images/` in front. A second logo appears.
+      2. Change `cover-emma.svg` to `cover-dune.svg`. Now the cover of *Dune* shows.
+      3. Break the first one on purpose: change `images/` to `image/`. The logo turns into its alt text.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <img src="images/logo.svg" alt="Inkwell Books">
+      <img src="./images/cover-emma.svg" alt="Emma, cover">
+      <img src="logo.svg" alt="Missing logo">
 
   - kind: web
     title: Point to the right files
@@ -145,6 +228,30 @@ steps:
       3. **Computer paths.** `file:///Users/you/websites/inkwell/images/logo.svg` or `/Users/you/...` points at *your* disk. It works on your Mac and nowhere else.
 
       When an image or stylesheet silently doesn't load, check the path first. Module 3 shows how DevTools tells you exactly which file failed.
+
+      **Examples: each mistake, and its fix.** The file on disk is `images/logo.svg`:
+
+      ```html
+      <!-- Broken once it's online -->
+      <img src="images/Logo.svg" alt="Inkwell Books">
+      <img src="file:///Users/ada/websites/inkwell/images/logo.svg" alt="Inkwell Books">
+
+      <!-- Works everywhere -->
+      <img src="images/logo.svg" alt="Inkwell Books">
+      ```
+
+      The first works on your Mac only because it ignores capitals. The second works only on *Ada's* Mac. On the server, both show a broken-image icon.
+
+  - kind: choice
+    title: "Quick check: works here, breaks there"
+    body: |
+      The image file is `images/cover-dune.svg`. Which link works on your Mac but breaks once the site is on a server?
+    options:
+      - "`images/cover-dune.svg`"
+      - "`images/Cover-Dune.svg`"
+      - "`./images/cover-dune.svg`"
+    answer: 1
+    explanation: "Your Mac ignores capitals in names, so `Cover-Dune.svg` finds `cover-dune.svg` there. Most servers treat them as different files and answer 404. The other two paths match the file exactly."
 
   - kind: why
     body: |

@@ -61,6 +61,53 @@ steps:
       - `email IS NULL`: the value is missing
       - `email IS NOT NULL`: the value is present
 
+      <!-- page -->
+
+      Which customer has no birth date on file?
+
+      ```sql
+      SELECT first_name, birth_date
+      FROM customers
+      WHERE birth_date IS NULL;
+      ```
+
+      | first_name | birth_date |
+      |---|---|
+      | Sophia | NULL |
+
+      And the opposite: UK customers whose phone **is** known.
+
+      ```sql
+      SELECT first_name, phone
+      FROM customers
+      WHERE phone IS NOT NULL AND country = 'UK';
+      ```
+
+      | first_name | phone |
+      |---|---|
+      | Olivia | +44 20 7946 0958 |
+
+      (Liam and Zoe, the other two UK customers, have no phone.)
+
+  - kind: try
+    title: "Try it: IS NULL and IS NOT NULL"
+    body: |
+      Run both examples. Then:
+
+      - change `birth_date IS NULL` to `birth_date = NULL`: zero rows, and no error
+      - remove `AND country = 'UK'` to see every customer with a phone
+      - change `IS NOT NULL` to `IS NULL` to see who has none
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT first_name, birth_date
+      FROM customers
+      WHERE birth_date IS NULL;
+
+      SELECT first_name, phone
+      FROM customers
+      WHERE phone IS NOT NULL AND country = 'UK';
+
   - kind: try
     title: Find the missing email
     body: |
@@ -98,6 +145,37 @@ steps:
       | `NULL` vs `NULL` | unknown | **false** |
 
       Its opposite, **`IS NOT DISTINCT FROM`**, is an "equals" where two NULLs count as equal.
+
+      <!-- page -->
+
+      See it side by side:
+
+      ```sql
+      SELECT 'Mystery' <> NULL                AS not_equal,
+             'Mystery' IS DISTINCT FROM NULL  AS distinct_from,
+             NULL IS DISTINCT FROM NULL       AS both_null,
+             NULL IS NOT DISTINCT FROM NULL   AS same;
+      ```
+
+      returns:
+
+      | not_equal | distinct_from | both_null | same |
+      |---|---|---|---|
+      | NULL | t | f | t |
+
+      `<>` shrugs (NULL, unknown). `IS DISTINCT FROM` gives a real true or false every time.
+
+  - kind: try
+    title: "Try it: IS DISTINCT FROM"
+    body: |
+      Run it and match each answer to the table above. Then change `'Mystery'` to `NULL` in the first two columns, or replace a `NULL` with `'Mystery'`, and predict each answer before you run.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT 'Mystery' <> NULL                AS not_equal,
+             'Mystery' IS DISTINCT FROM NULL  AS distinct_from,
+             NULL IS DISTINCT FROM NULL       AS both_null,
+             NULL IS NOT DISTINCT FROM NULL   AS same;
 
   - kind: try
     title: Your turn with IS DISTINCT FROM
@@ -148,6 +226,43 @@ steps:
 
       This matters for "top N" questions. Sort descending on a column with missing values, and the NULLs quietly take the top spots.
 
+      <!-- page -->
+
+      The 3 youngest customers (latest birth date first). Sophia has no birth date, so she grabs first place:
+
+      ```sql
+      SELECT first_name, birth_date
+      FROM customers
+      ORDER BY birth_date DESC
+      LIMIT 3;
+      ```
+
+      | first_name | birth_date |
+      |---|---|
+      | Sophia | NULL |
+      | Zoe | 2003-05-05 |
+      | Ava | 2001-09-09 |
+
+      With `ORDER BY birth_date DESC NULLS LAST`, the real answer appears:
+
+      | first_name | birth_date |
+      |---|---|
+      | Zoe | 2003-05-05 |
+      | Ava | 2001-09-09 |
+      | Benjamin | 2000-12-12 |
+
+  - kind: try
+    title: "Try it: NULLS FIRST and NULLS LAST"
+    body: |
+      Run it and see Sophia on top. Then add `NULLS LAST` after `DESC` and run again. Also try removing `DESC` and adding `NULLS FIRST` instead.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT first_name, birth_date
+      FROM customers
+      ORDER BY birth_date DESC
+      LIMIT 3;
+
   - kind: try
     title: Your turn with NULLS LAST
     body: |
@@ -174,6 +289,36 @@ steps:
       ```
 
       Use it to show something friendly instead of a blank, or to treat missing numbers as 0 when that's truly what they mean: `COALESCE(discount, 0)`. Careful with that last one: sometimes "unknown" and "zero" really are different.
+
+      <!-- page -->
+
+      The query above, for the first 6 customers (`WHERE customer_id <= 6`):
+
+      | first_name | contact |
+      |---|---|
+      | Emma | emma.johnson@example.com |
+      | Liam | liam.smith@example.com |
+      | Olivia | OLIVIA.BROWN@EXAMPLE.COM |
+      | Noah | noah.garcia@example.com |
+      | Ava | no email on file |
+      | Lucas | lucas.mueller@example.com |
+
+      Everyone with an email keeps it. Ava's NULL is replaced by the friendly text.
+
+  - kind: try
+    title: "Try it: COALESCE"
+    body: |
+      Run it and find Ava's row. Then:
+
+      - change `'no email on file'` to `'ask at the till'`
+      - remove the `WHERE` line to see all 20 customers (Benjamin has no email either)
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT first_name,
+             COALESCE(email, 'no email on file') AS contact
+      FROM customers
+      WHERE customer_id <= 6;
 
   - kind: try
     title: Your turn with COALESCE

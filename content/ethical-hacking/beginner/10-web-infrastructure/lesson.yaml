@@ -4,6 +4,29 @@ steps:
     body: |
       A web page is the front of a building. Behind it is machinery: a program that serves pages, a store that holds the data, often an interface other programs talk to, and a layer of encryption around it all. Knowing those pieces tells you where the weaknesses tend to be — because a single visible form may touch every one of them.
 
+      **Example: one login form, four pieces of machinery.** You type your name and password into a shop's sign-in box and press the button:
+
+      | Piece | What it does with your login |
+      |---|---|
+      | **TLS** (the `s` in https) | encrypts it on the way |
+      | **Web server** (e.g. nginx) | receives the request and passes it to the app |
+      | **Application** (e.g. PHP code) | builds a question for the database from what you typed |
+      | **Database** | looks up your account and answers |
+
+      A mistake in any one of the four can break the whole login, which is why this module walks through them one at a time.
+
+  - kind: choice
+    title: "Quick check: how many pieces?"
+    body: |
+      Why does a tester care what is *behind* a single login form?
+    options:
+      - "Because the form may touch the web server, the app, the database and the encryption, and each can have its own weakness"
+      - "Because forms are the only part of a site that can be attacked"
+      - "Because you need to know the colours used on the page"
+    answer: 0
+    explanation: |
+      One visible form travels through several layers. Knowing them tells you where to look: the server's version, how the app uses your input, the database behind it, and the encryption on the way.
+
   - kind: explain
     title: The web server and the app
     body: |
@@ -12,7 +35,37 @@ steps:
       - A **web server** (nginx, Apache, Microsoft IIS) receives HTTP requests and serves responses. It handles the plumbing.
       - Behind it, an **application** written in a language like PHP, Python, Node.js or Java contains the actual logic — logging you in, fetching your orders, processing a payment.
 
+      **Example: two servers, two attitudes.** The `Server` header from two machines in a lab:
+
+      ```
+      kali@kali:~$ curl -sI http://192.168.56.101/ | grep Server
+      Server: Apache/2.2.8 (Ubuntu) DAV/2
+      kali@kali:~$ curl -sI http://192.168.56.105/ | grep Server
+      Server: nginx
+      ```
+
+      (`-s` just hides curl's progress meter; `grep` keeps the one line we want.) The first names its product, exact version and operating system. The second admits it is nginx and nothing more.
+
       Knowing *which* software is in use matters, because known vulnerabilities are tied to specific products and versions. A response header like `Server: Apache/2.4.49` is a gift: an attacker looks up exactly that version for known flaws (Module 17). Your defensive counterpart's advice: do not advertise versions you do not have to.
+
+  - kind: mac
+    title: "Try it: which server answered?"
+    body: |
+      Ask `example.com` for its headers and keep only the `Server` line. (`-i` makes `grep` ignore upper and lower case, because some servers write `server:`.) You'll see a product name with no version: the careful kind.
+    commands: |
+      curl -sI https://example.com | grep -i server
+
+  - kind: choice
+    title: "Quick check: who does what?"
+    body: |
+      A shop's order history page shows your past orders. Which layer actually decides *which* orders are yours and fetches them?
+    options:
+      - "The web server (nginx)"
+      - "The application (e.g. the PHP or Python code)"
+      - "TLS"
+    answer: 1
+    explanation: |
+      The web server only handles the plumbing of HTTP. The **application** holds the logic: who you are, which orders belong to you, and asking the database for them. TLS only encrypts the traffic.
 
   - kind: explain
     title: Databases and SQL
@@ -23,7 +76,33 @@ steps:
       SELECT * FROM users WHERE username = 'ada';
       ```
 
+      Run against a small `users` table, that query returns one row:
+
+      | id | username | email | role |
+      |---|---|---|---|
+      | 7 | ada | ada@shop.example.com | customer |
+
+      `SELECT *` means "every column", `FROM users` names the table, and `WHERE username = 'ada'` keeps only the matching row.
+
       Here is the crucial idea for security. When a website logs you in, it builds a SQL query using *your input*. If it glues your typed username straight into the query text without care, you may be able to change what the query *means* — the vulnerability called **SQL injection** (Module 21), one of the oldest and most damaging web flaws. You do not need to write SQL fluently yet; you need to grasp that user input can reach a database query, and that is dangerous when done carelessly.
+
+  - kind: choice
+    title: "Quick check: where's the danger?"
+    body: |
+      A site builds this query from what you type in the username box:
+
+      ```sql
+      SELECT * FROM users WHERE username = 'WHAT_YOU_TYPED';
+      ```
+
+      Why is that worrying?
+    options:
+      - "SQL is an old language"
+      - "Your typed text becomes part of the query itself, so carefully chosen input could change what the query means"
+      - "The query uses SELECT *, which is slow"
+    answer: 1
+    explanation: |
+      When input is glued straight into the query text, the database can't tell the developer's SQL from yours. That's the root of **SQL injection** (Module 21).
 
   - kind: explain
     title: APIs and REST
@@ -35,7 +114,36 @@ steps:
       POST /api/orders        → creates an order
       ```
 
+      **Example.** OWASP Juice Shop, a training target you can run in your lab (Module 13's capstone), has a REST API. Asking it for product 1 returns JSON (trimmed and spaced out here to read easily):
+
+      ```
+      kali@kali:~$ curl http://192.168.56.103:3000/api/Products/1
+      {
+        "status": "success",
+        "data": {
+          "id": 1,
+          "name": "Apple Juice (1000ml)",
+          "description": "The all time classic.",
+          "price": 1.99
+        }
+      }
+      ```
+
+      No page, no pictures: just the data, as `"name": value` pairs. `:3000` is the port the app listens on.
+
       The data comes back as **JSON**, a simple text format of names and values (you met its shape in other courses). Why testers care: APIs are a huge, sometimes less-guarded attack surface. The web page might hide a button, but the API endpoint behind it may still answer anyone who calls it directly — so access-control testing must cover the API, not just the pretty front end.
+
+  - kind: choice
+    title: "Quick check: the hidden button"
+    body: |
+      A shop hides its "Delete user" button from normal customers, but the button calls `DELETE /api/users/42`. What should a tester check?
+    options:
+      - "Nothing: if the button is hidden, customers can't use it"
+      - "Whether a normal customer can call DELETE /api/users/42 directly and have it work"
+      - "Whether the button has the right colour for admins"
+    answer: 1
+    explanation: |
+      Hiding a button changes only the page. The API endpoint may still answer anyone who sends the request directly, so access control has to be tested on the API itself.
 
   - kind: explain
     title: TLS and certificates — what HTTPS protects
@@ -45,7 +153,42 @@ steps:
       - **Confidentiality** — it encrypts the traffic, so the eavesdropper from the Wireshark lesson sees scrambled bytes, not your password.
       - **Authenticity** — a **certificate**, signed by a trusted authority, proves you are really talking to `example.com` and not an impostor.
 
+      **Example: the same login, without and with TLS.** In the Wireshark lesson, a plain-HTTP login showed `username=admin&password=password` in clear text. Here is a login to an HTTPS site in the same capture view:
+
+      ```
+      No.  Time      Source        Destination     Protocol Length Info
+      57   4.201337  192.168.1.23  104.20.23.154   TLSv1.3  571    Application Data
+      58   4.214902  104.20.23.154 192.168.1.23    TLSv1.3  1294   Application Data
+      ```
+
+      Wireshark can see *who* talked to *whom*, but the contents are only "Application Data": scrambled bytes. Clicking the padlock in your browser shows the **certificate** behind it: who it was issued to (the site's name), who issued it (the trusted authority) and until when it is valid.
+
       Be clear about what TLS does *not* do: it protects data **in transit**, between browser and server. It does nothing about a flaw *in* the application (SQL injection travels perfectly well over HTTPS) or about how data is stored on the server. HTTPS is necessary, not sufficient — a distinction you will correct people on often.
+
+  - kind: mac
+    title: "Try it: read a certificate"
+    body: |
+      `curl -v` prints curl's notes on the TLS connection (lines starting with `*`); `grep` keeps the certificate lines. Look for:
+
+      - `subject:` who the certificate was issued **to** (it should be `example.com`)
+      - `issuer:` the trusted authority that **signed** it
+      - `start date` and `expire date`: when it's valid
+
+      (`2>&1` sends curl's notes into the pipe so `grep` can see them.)
+    commands: |
+      curl -svI https://example.com 2>&1 | grep -E "subject:|issuer:|start date|expire date"
+
+  - kind: choice
+    title: "Quick check: is HTTPS enough?"
+    body: |
+      A client says: "Our site uses HTTPS, so it's secure." What's the honest answer?
+    options:
+      - "Correct: HTTPS blocks all web attacks"
+      - "HTTPS protects data on its way between browser and server, but not flaws inside the application, like SQL injection"
+      - "HTTPS only matters for sites that take payments"
+    answer: 1
+    explanation: |
+      TLS gives confidentiality and authenticity **in transit**. A malicious input travels inside the encrypted tunnel just as happily as a normal one, and the app still has to handle it safely.
 
   - kind: explain
     title: Your first toolkit — browser developer tools
@@ -58,6 +201,30 @@ steps:
       - **Application/Storage** — the cookies and local storage, including that session token.
 
       Before any specialist tool, dev tools let you see exactly what a site sends and stores. Much early web testing is just careful reading here.
+
+      **Example: what the Network tab shows** after you sign in to a practice app in your lab (one row per request; click a row to see its headers):
+
+      | Name | Status | Type | Method |
+      |---|---|---|---|
+      | login.php | 302 | document | POST |
+      | index.php | 200 | document | GET |
+      | main.css | 200 | stylesheet | GET |
+      | dvwa.js | 200 | script | GET |
+
+      Read it as the Module 9 conversation: a POST to log in, a 302 redirect, then the new page and its style and script files. Clicking `login.php` would show the form data you sent and the `Set-Cookie` header that came back.
+
+  - kind: choice
+    title: "Quick check: which tab?"
+    body: |
+      You want to see the session cookie a site stored in your browser after you signed in. Which developer-tools tab do you open?
+    options:
+      - "Console"
+      - "Elements / Inspector"
+      - "Application / Storage"
+      - "Nothing: cookies are invisible"
+    answer: 2
+    explanation: |
+      **Application** (Chrome) or **Storage** (Firefox, Safari) lists the cookies and local storage. The Network tab would also show the `Set-Cookie` header the moment it arrived.
 
   - kind: info
     title: "🔹 NoSQL exists too"

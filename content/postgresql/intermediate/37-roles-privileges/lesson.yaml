@@ -57,6 +57,53 @@ steps:
     expect_error: true
 
   - kind: explain
+    title: REVOKE, and checking privileges
+    body: |
+      `has_table_privilege(role, table, privilege)` answers *"may this role do this?"* with true or false, without switching roles. Give an `app` role four privileges, then take one back:
+
+      ```sql
+      CREATE ROLE app NOLOGIN;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON orders TO app;
+      REVOKE DELETE ON orders FROM app;
+
+      SELECT has_table_privilege('app', 'orders', 'INSERT') AS can_insert,
+             has_table_privilege('app', 'orders', 'DELETE') AS can_delete;
+      ```
+
+      | can_insert | can_delete |
+      |---|---|
+      | t | f |
+
+      The app can still add orders, but can no longer delete them.
+
+  - kind: try
+    title: "Try it: GRANT, REVOKE and group roles"
+    body: |
+      The first part is the REVOKE example. The second shows **inheritance**: `alice` was never granted anything directly, but she's a member of `readonly`, so she can read genres. Books were never granted to anyone, so the last query is denied.
+
+      Then add `GRANT SELECT ON books TO readonly;` before `SET ROLE alice;` and run again: now alice can count the books too. (Deleting the `REVOKE` line turns `can_delete` true.)
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE ROLE app NOLOGIN;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON orders TO app;
+      REVOKE DELETE ON orders FROM app;
+
+      SELECT has_table_privilege('app', 'orders', 'INSERT') AS can_insert,
+             
+             has_table_privilege('app', 'orders', 'DELETE') AS can_delete;
+
+      CREATE ROLE readonly NOLOGIN;
+      GRANT SELECT ON genres TO readonly;
+      CREATE ROLE alice LOGIN PASSWORD 'change-me';
+      GRANT readonly TO alice;
+
+      SET ROLE alice;
+      SELECT name FROM genres ORDER BY name;
+      SELECT count(*) FROM books;
+    broken_starter: true
+
+  - kind: explain
     title: Least privilege, and three roles
     body: |
       **Least privilege**: give each role the smallest set of rights that lets it do its job. If the app is hacked, the attacker gets only what the app had.
@@ -151,6 +198,26 @@ steps:
       SELECT first_name, last_name, city FROM customers LIMIT 5;
       SELECT email FROM customers;
     expect_error: true
+
+  - kind: try
+    title: "Try it: access through a view"
+    body: |
+      The second way. `support` gets SELECT on a **view** with two columns, and nothing on the table. Run it: the view works, and reading the same columns straight from `customers` is denied.
+
+      Then delete the last query and add `WHERE city = 'London'` to the view: support now sees only London customers. That's hiding rows, too.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE VIEW customer_cities AS
+      SELECT first_name, city FROM customers;
+
+      CREATE ROLE support NOLOGIN;
+      GRANT SELECT ON customer_cities TO support;
+
+      SET ROLE support;
+      SELECT * FROM customer_cities LIMIT 3;
+      SELECT first_name, city FROM customers LIMIT 3;
+    broken_starter: true
 
   - kind: explain
     title: The public schema (tightened in PostgreSQL 15)

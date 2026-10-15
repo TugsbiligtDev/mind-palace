@@ -40,6 +40,37 @@ steps:
 
       Why the middle step? So **you** choose what goes into each commit: you might have changed five files but want to save only the two that belong together.
 
+      **Example.** A tiny repository with two new files. `git status --short` is a compact status: `??` = untracked, `A` = added to the staging area:
+
+      ```
+      learner@inkwell:~/demo$ git status --short
+      ?? index.html
+      ?? style.css
+      learner@inkwell:~/demo$ git add index.html
+      learner@inkwell:~/demo$ git status --short
+      A  index.html
+      ?? style.css
+      learner@inkwell:~/demo$ git commit -q -m "Add the home page"
+      learner@inkwell:~/demo$ git status --short
+      ?? style.css
+      learner@inkwell:~/demo$ git log --oneline
+      c2eb5e8 (HEAD -> main) Add the home page
+      ```
+
+      After `add`, only `index.html` moved to the staging area. The commit saved just that file; `style.css` is still sitting untouched in the working folder.
+
+  - kind: choice
+    title: "Quick check: which place?"
+    body: |
+      You edited `style.css` and ran `git add style.css`, but haven't committed. Where is that change now?
+    options:
+      - "Only in the working folder"
+      - "In the repository's history"
+      - "On GitHub"
+      - "In the staging area, waiting for the next commit"
+    answer: 3
+    explanation: "`git add` copies the file's current state into the staging area. It reaches the history only with `git commit`."
+
   - kind: explain
     title: git status, your dashboard
     body: |
@@ -52,6 +83,44 @@ steps:
 
       It also tells you, in brackets, the command for each next step. Read those hints: they're good.
 
+      <!-- page -->
+
+      **Example: the full dashboard**, with one file staged and one still untracked:
+
+      ```
+      learner@inkwell:~/demo$ git add index.html
+      learner@inkwell:~/demo$ git status
+      On branch main
+
+      No commits yet
+
+      Changes to be committed:
+        (use "git rm --cached <file>..." to unstage)
+      	new file:   index.html
+
+      Untracked files:
+        (use "git add <file>..." to include in what will be committed)
+      	style.css
+      ```
+
+  - kind: shell
+    title: "Try it: read the dashboard"
+    fixture: git-identity
+    setup: |
+      mkdir -p ~/demo && cd ~/demo
+      git init -q
+      echo '<h1>Inkwell</h1>' > index.html
+      echo 'h1 { color: navy; }' > style.css
+    body: |
+      You're in a small repository with two new files. Type `git status` after each step and watch the groups change:
+
+      1. `git status`
+      2. `git add index.html`, then `git status`
+      3. `git commit -m "Add the home page"`, then `git status`
+      4. `echo 'p { margin: 0; }' >> style.css`, then `git status`
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: add and commit
     body: |
@@ -63,6 +132,24 @@ steps:
       ```
 
       `git commit -m "message"` gives the message on the command line. Without `-m`, Git opens your editor (nano) to write it. After the commit, `git status` says *working tree clean* and `git log` shows your new commit.
+
+      **Example.** Stage everything, commit, and look at the result:
+
+      ```
+      learner@inkwell:~/demo$ git add .
+      learner@inkwell:~/demo$ git commit -m "Add the home page"
+      [main (root-commit) 6e5e2ee] Add the home page
+       2 files changed, 2 insertions(+)
+       create mode 100644 index.html
+       create mode 100644 style.css
+      learner@inkwell:~/demo$ git status
+      On branch main
+      nothing to commit, working tree clean
+      learner@inkwell:~/demo$ git log --oneline
+      6e5e2ee (HEAD -> main) Add the home page
+      ```
+
+      Your commit's ID will be different: it includes the time you made it.
 
   - kind: shell
     title: Your first commit
@@ -108,6 +195,53 @@ steps:
 
       A changed line shows up as one line removed and one added. Long diffs open in the pager: **q** to leave.
 
+      <!-- page -->
+
+      **Example** in a repository where the home page is already committed. Change the colour, then look before and after staging:
+
+      ```
+      learner@inkwell:~/demo$ sed -i 's/navy/darkgreen/' style.css
+      learner@inkwell:~/demo$ git diff
+      diff --git a/style.css b/style.css
+      index bb5b0d6..2994841 100644
+      --- a/style.css
+      +++ b/style.css
+      @@ -1 +1 @@
+      -h1 { color: navy; }
+      +h1 { color: darkgreen; }
+      learner@inkwell:~/demo$ git add style.css
+      learner@inkwell:~/demo$ git diff
+      learner@inkwell:~/demo$ git diff --staged
+      diff --git a/style.css b/style.css
+      index bb5b0d6..2994841 100644
+      --- a/style.css
+      +++ b/style.css
+      @@ -1 +1 @@
+      -h1 { color: navy; }
+      +h1 { color: darkgreen; }
+      ```
+
+      Once the change was staged, plain `git diff` showed nothing (nothing left unstaged), and `git diff --staged` showed it instead.
+
+  - kind: shell
+    title: "Try it: diff before and after add"
+    fixture: git-identity
+    setup: |
+      mkdir -p ~/demo && cd ~/demo
+      git init -q
+      echo '<h1>Inkwell</h1>' > index.html
+      echo 'h1 { color: navy; }' > style.css
+      git add .
+      git commit -q -m 'Add the home page'
+    body: |
+      The home page is committed. Type these one at a time:
+
+      1. `sed -i 's/navy/darkgreen/' style.css` (changes the colour)
+      2. `git diff`
+      3. `git add style.css`, then `git diff` (empty now), then `git diff --staged`
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: Commit only what belongs together
     fixture: [backoffice, git-identity]
@@ -144,6 +278,33 @@ steps:
       - **Explain why** if it isn't obvious, in a paragraph after a blank line (that's easiest without `-m`, in the editor).
       - **One change per commit.** "Fix link and redesign header and update prices" should be three commits.
 
+      **Example: the same week of work, in two histories.**
+
+      ```
+      learner@inkwell:~/inkwell/site-repo$ git log --oneline
+      c41d9e2 stuff
+      8a0f3b7 fix
+      2e6c115 update
+      ```
+
+      ```
+      learner@inkwell:~/inkwell/site-repo$ git log --oneline
+      c41d9e2 Lower the price of Dune to £8.99
+      8a0f3b7 Fix the Home link on the about page
+      2e6c115 Add opening hours to the contact page
+      ```
+
+      Only the second tells you which commit to look at when the about page breaks.
+
+      And a message with a reason, written in the editor (a short first line, a blank line, then the why):
+
+      ```
+      Lower the price of Dune to £8.99
+
+      The publisher cut the wholesale price on 1 October. Priya asked
+      for the shop price to follow so we match the big online stores.
+      ```
+
   - kind: choice
     title: Pick the best message
     body: Which is the best message for a commit that corrects Dune's price on the book page?
@@ -166,12 +327,81 @@ steps:
       | `git log --oneline --graph` | adds a drawing of how branches split and join (Module 17) |
       | `git show` | the latest commit **and its diff** (`git show 7d2afa2` for another one) |
 
+      **Example** on Kenji's website repository:
+
+      ```
+      learner@inkwell:~/inkwell/site-repo$ git log --oneline
+      9a1efb0 (HEAD -> main) Lower the price of Dune
+      1594832 Add the Dune book page
+      7d2afa2 Add checkout settings
+      46280b5 Fix the Home link on the about page
+      7115b30 Add the about page
+      be23876 Add the home page
+      learner@inkwell:~/inkwell/site-repo$ git log -1
+      commit 9a1efb0f7edcfdeb390a91f4db4f4d2554be532c (HEAD -> main)
+      Author: Priya Shah <priya@inkwell.example>
+      Date:   Thu Oct 1 16:45:00 2026 +0000
+
+          Lower the price of Dune
+      learner@inkwell:~/inkwell/site-repo$ git show --stat 7d2afa2
+      commit 7d2afa203066a5330c3c0f4e55c0ecac63941f54
+      Author: Marcus Reed <marcus@inkwell.example>
+      Date:   Mon Sep 14 22:10:00 2026 +0000
+
+          Add checkout settings
+
+       .env        | 2 ++
+       checkout.js | 2 ++
+       2 files changed, 4 insertions(+)
+      ```
+
+  - kind: shell
+    title: "Try it: read the history"
+    fixture: [git-identity, website-repo]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      You're in Kenji's website repository. Type these one at a time:
+
+      1. `git log --oneline`
+      2. `git log -2`
+      3. `git show 1594832`: the commit that added the Dune page, with its diff. (Press **q** if it opens in a pager.)
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: "⚠️ Classic mistakes"
     body: |
       - **`git add .` without looking.** It stages *everything*, including that 200 MB backup, the `.env` with a password, or `.DS_Store` junk. Run `git status` first, every time. (Module 16 teaches Git to ignore such files.)
       - **Giant commits.** A week of work in one commit can't be understood or partly undone. Commit each finished step.
       - **Vague messages.** "update", "wip", "asdf". See above.
+
+      <!-- page -->
+
+      **Example of the first one.** A password file is sitting in the folder, and `git add .` stages it with everything else:
+
+      ```
+      learner@inkwell:~/demo$ git add .
+      learner@inkwell:~/demo$ git status --short
+      A  .env
+      A  index.html
+      A  style.css
+      ```
+
+      `A  .env`: the password would go into the very next commit, and into the history for good. Running `git status` **before** `git add .` would have shown `.env` sitting there, untracked.
+
+  - kind: shell
+    title: "Try it: look before you add"
+    fixture: git-identity
+    setup: |
+      mkdir -p ~/demo && cd ~/demo
+      git init -q
+      echo '<h1>Inkwell</h1>' > index.html
+      echo 'h1 { color: navy; }' > style.css
+      echo 'DB_PASSWORD=hunter2' > .env
+    body: |
+      Type `git status` first: spot the file that must never be committed. Then type `git add index.html style.css` to stage only the two that belong, and `git status` again.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: mac
     title: The loop on your Mac

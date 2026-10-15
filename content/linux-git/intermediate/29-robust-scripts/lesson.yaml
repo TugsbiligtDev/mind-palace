@@ -30,6 +30,44 @@ steps:
       | `-u` | using an **unset** variable is an error (no more silently empty `$dir`) |
       | `-o pipefail` | a pipeline fails if **any** command in it fails, not just the last |
 
+      <!-- page -->
+
+      **Example: both versions, given a folder that doesn't exist.** `cleanup.sh` is Kenji's script; `safe-cleanup.sh` adds `set -euo pipefail` and quotes:
+
+      ```
+      learner@inkwell:~/work$ ls
+      a.tmp  b.tmp  cleanup.sh  keep.txt  safe-cleanup.sh
+      learner@inkwell:~/work$ bash cleanup.sh /no/such/folder
+      cleaned /no/such/folder
+      bash: cd: /no/such/folder: No such file or directory
+      learner@inkwell:~/work$ ls
+      cleanup.sh  keep.txt  safe-cleanup.sh
+      learner@inkwell:~/work$ touch a.tmp b.tmp
+      learner@inkwell:~/work$ bash safe-cleanup.sh /no/such/folder
+      bash: cd: /no/such/folder: No such file or directory
+      learner@inkwell:~/work$ ls
+      a.tmp  b.tmp  cleanup.sh  keep.txt  safe-cleanup.sh
+      ```
+
+      Kenji's version deleted the `.tmp` files in `~/work`, where it happened to be, and even claimed success. The safe version stopped at the failed `cd`, so nothing was deleted. (The practice terminal prints errors after normal output; a real terminal shows the `cd` error first, the moment it happens.)
+
+  - kind: shell
+    title: "Try it: unsafe vs. safe"
+    fixture: backoffice
+    setup: |
+      mkdir -p ~/work && cd ~/work
+      touch a.tmp b.tmp keep.txt
+      printf 'dir=$1\ncd $dir\nrm -f *.tmp\necho "cleaned $dir"\n' > cleanup.sh
+      printf 'set -euo pipefail\ndir=$1\ncd "$dir"\nrm -f ./*.tmp\necho "cleaned $dir"\n' > safe-cleanup.sh
+    body: |
+      `~/work` holds two `.tmp` files, `keep.txt`, and both scripts. Type these one at a time:
+
+      1. `cat cleanup.sh`, then `cat safe-cleanup.sh`
+      2. `bash cleanup.sh /no/such/folder`, then `ls`: the `.tmp` files are gone.
+      3. `touch a.tmp b.tmp`, then `bash safe-cleanup.sh /no/such/folder`, then `ls`: still there.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Quote every variable
     body: |
@@ -42,6 +80,22 @@ steps:
       ```
 
       And a variable containing `*` would match every file. The rule is simple: **`"$var"`, `"$1"`, `"$@"`, `"$(cmd)"`, always in double quotes**, unless you have a specific reason not to. Inside `[[ ]]` and in plain assignments (`x=$y`) bash doesn't split, but quoting there does no harm.
+
+      <!-- page -->
+
+      **Example.** A file with a space in its name:
+
+      ```
+      learner@inkwell:~/work$ touch "old orders.csv"
+      learner@inkwell:~/work$ file="old orders.csv"
+      learner@inkwell:~/work$ rm $file
+      rm: cannot remove 'old': No such file or directory
+      rm: cannot remove 'orders.csv': No such file or directory
+      learner@inkwell:~/work$ rm "$file"
+      learner@inkwell:~/work$ ls
+      ```
+
+      Unquoted, `rm` was handed two names, `old` and `orders.csv`, and found neither. Quoted, it got the one real name.
 
   - kind: shell
     title: Make the clean-up safe
@@ -115,6 +169,26 @@ steps:
 
       Run a whole script with `bash -x script.sh`, or put `set -x` / `set +x` around just the part you're debugging.
 
+  - kind: choice
+    title: "Quick check: reading set -x"
+    body: |
+      `bash -x deploy.sh` prints:
+
+      ```
+      + dir=
+      + cd
+      + rm -f ./a.tmp ./b.tmp
+      ```
+
+      What went wrong?
+    options:
+      - "Nothing: it worked"
+      - "`rm` doesn't accept `-f`"
+      - "set -x deleted the files"
+      - "`dir` was empty, so `cd` went to the home folder and the files were removed there"
+    answer: 3
+    explanation: "Each `+` line is a command as bash really ran it. `dir=` shows an empty value, and plain `cd` means \"go home\". `set -u` and quoting would have stopped it."
+
   - kind: explain
     title: Here-documents
     body: |
@@ -130,6 +204,27 @@ steps:
       ```
 
       Variables and `$( )` are filled in. Quote the marker (`<<'EOF'`) to keep the text exactly as written, `$` and all. The closing `EOF` must be alone on its line.
+
+      <!-- page -->
+
+      **Example.** A tiny `make-conf.sh` that uses one, run with port 8080:
+
+      ```
+      learner@inkwell:~/work$ cat make-conf.sh
+      port=$1
+      cat > ~/shop.conf <<EOF
+      # written by make-conf.sh
+      port=$port
+      db=/var/lib/inkwell/shop.db
+      EOF
+      learner@inkwell:~/work$ bash make-conf.sh 8080
+      learner@inkwell:~/work$ cat ~/shop.conf
+      # written by make-conf.sh
+      port=8080
+      db=/var/lib/inkwell/shop.db
+      ```
+
+      `$port` became `8080` in the file. With `<<'EOF'`, the file would contain the text `port=$port` instead.
 
   - kind: shell
     title: Generate the shop's settings
@@ -164,6 +259,27 @@ steps:
       | `if [ $x == y ]` | `if [[ "$x" == y ]]` | `[` breaks when `$x` is empty |
 
       And know when to stop: once a script needs real data structures, maths with decimals, JSON handling beyond `jq`, or grows past a page or two, it has **outgrown bash**. That's the moment for Python. Bash is the best glue between programs; it's a poor language for everything else.
+
+      <!-- page -->
+
+      **Example of the pipe trap.** The same loop counts 3 lines, but the piped version forgets its count:
+
+      ```
+      learner@inkwell:~/work$ count=0; cat three.txt | while read -r line; do count=$((count + 1)); done; echo "count after the pipe: $count"
+      count after the pipe: 0
+      learner@inkwell:~/work$ count=0; while read -r line; do count=$((count + 1)); done < three.txt; echo "count with < file: $count"
+      count with < file: 3
+      ```
+
+      **And `${dir:?}`**, in real bash:
+
+      ```
+      $ dir=""
+      $ rm -rf "${dir:?}/"
+      bash: dir: parameter null or not set
+      ```
+
+      The script stops right there, instead of running `rm -rf /`.
 
   - kind: choice
     title: Bash or Python?

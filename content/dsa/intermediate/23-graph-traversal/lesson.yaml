@@ -11,6 +11,32 @@ steps:
 
       **The crucial rule: keep a `visited` set.** A graph can have cycles, and without it you would walk in circles forever. Mark a vertex visited the moment you **add it to the stack or queue** (not when you take it out), so it is never added twice.
 
+      <!-- page -->
+
+      **Example graph:** edges 0–1, 0–2, 1–3, 2–3, 3–4, starting at 0.
+
+      **DFS** with a stack (neighbours pushed in reverse, so the smallest comes out first):
+
+      | pop | order so far | push (not yet seen) | stack after |
+      |---|---|---|---|
+      | 0 | [0] | 2, 1 | [2, 1] |
+      | 1 | [0, 1] | 3 | [2, 3] |
+      | 3 | [0, 1, 3] | 4 | [2, 4] |
+      | 4 | [0, 1, 3, 4] | — | [2] |
+      | 2 | [0, 1, 3, 4, 2] | — | [] |
+
+      **BFS** with a queue:
+
+      | take | distance | add (not yet seen) | queue after |
+      |---|---|---|---|
+      | 0 | 0 | 1 (distance 1), 2 (distance 1) | [1, 2] |
+      | 1 | 1 | 3 (distance 2) | [2, 3] |
+      | 2 | 1 | — | [3] |
+      | 3 | 2 | 4 (distance 3) | [4] |
+      | 4 | 3 | — | [] |
+
+      When 2 is taken, 3 is already marked seen (it was added from 1), so it isn't added twice.
+
   - kind: code
     title: Depth-first order
     body: |
@@ -95,6 +121,20 @@ steps:
       - if it is not visited yet, it starts a **new component**: count it and DFS/BFS from it to mark its whole group visited.
 
       The same idea, run on a grid, counts **islands**.
+
+      **Example: 7 vertices with edges 0–1, 1–2 and 3–4.**
+
+      | vertex | visited already? | what happens | components |
+      |---|---|---|---|
+      | 0 | no | new group: 0, 1, 2 | 1 |
+      | 1 | yes | skip | 1 |
+      | 2 | yes | skip | 1 |
+      | 3 | no | new group: 3, 4 | 2 |
+      | 4 | yes | skip | 2 |
+      | 5 | no | new group: 5 | 3 |
+      | 6 | no | new group: 6 | 4 |
+
+      Four components: two lone vertices count as groups of one.
 
   - kind: code
     title: Count the components
@@ -269,6 +309,19 @@ steps:
 
       Reaching a **grey** vertex means you found a way back to something still in progress: a **cycle**. Reaching a black one is fine.
 
+      <!-- page -->
+
+      **Example: the directed graph A → B → C → A, plus C → D.**
+
+      ```
+      visit A: grey
+      visit B: grey
+      visit C: grey
+      C → A: A is grey, a cycle!
+      ```
+
+      A is still grey (its DFS hasn't finished), so the arrow back to it closes a loop. Without the C → A edge, D, C, B and A would each finish and turn black, and no cycle would be reported.
+
   - kind: code
     title: Cycle in a directed graph
     body: |
@@ -316,6 +369,11 @@ steps:
       A graph is **bipartite** if you can split its vertices into two groups so that every edge goes **between** the groups (never inside one). Like assigning players to two teams so that nobody is on the same team as someone they dislike.
 
       Test it by **colouring**: start at a vertex and give it colour 0. Give every neighbour the opposite colour, and so on (BFS or DFS). If you ever find an edge whose two ends have the **same** colour, it is not bipartite. Remember to try every component.
+
+      **Example: a square (0–1–2–3–0) and a triangle (0–1–2–0).**
+
+      - **Square:** 0 gets colour 0, its neighbours 1 and 3 get colour 1, then 2 gets colour 0. Every edge joins different colours: **bipartite** (teams {0, 2} and {1, 3}).
+      - **Triangle:** 0 gets 0, neighbours 1 and 2 both get 1, but 1–2 is an edge with both ends colour 1: **not bipartite**. Any odd-length loop makes it impossible.
 
   - kind: code
     title: Is the graph bipartite?

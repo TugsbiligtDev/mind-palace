@@ -12,6 +12,37 @@ steps:
 
       On screen, output and errors look the same. But they're separate streams, and the shell lets you send each one somewhere else: into a file, or into another command. That's what this lesson is about.
 
+      **Example.** One command, both kinds of text. `ls` lists `notes` (stdout) and complains about `nope` (stderr). Sending stream 2 to a file splits them apart:
+
+      ```
+      learner@inkwell:~/inkwell$ ls notes nope
+      notes:
+      books-sold.txt  meeting-2026-09-30.txt  todo.txt
+      ls: cannot access 'nope': No such file or directory
+      learner@inkwell:~/inkwell$ ls notes nope 2> errors.txt
+      notes:
+      books-sold.txt
+      meeting-2026-09-30.txt
+      todo.txt
+      learner@inkwell:~/inkwell$ cat errors.txt
+      ls: cannot access 'nope': No such file or directory
+      ```
+
+      With `2> errors.txt`, only the listing reached the screen. The complaint went into the file. (The next pages explain `>` and `2>`.)
+
+  - kind: shell
+    title: "Try it: two streams"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `ls notes nope`: a listing **and** an error, mixed together.
+      2. `ls notes nope 2> errors.txt`: only the listing now.
+      3. `cat errors.txt`: the error was saved.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Saving output with > and >>
     body: |
@@ -24,6 +55,38 @@ steps:
       ```
 
       Nothing appears on screen: it all went into the file. `cat` it to check.
+
+      <!-- page -->
+
+      Here's the same thing on Inkwell's server. The listing of `logs` goes into a new file, and one line is added to the end of the to-do list:
+
+      ```
+      learner@inkwell:~/inkwell$ ls logs > logs-list.txt
+      learner@inkwell:~/inkwell$ cat logs-list.txt
+      access.log
+      shop.log
+      learner@inkwell:~/inkwell$ echo "- call the printer" >> notes/todo.txt
+      learner@inkwell:~/inkwell$ tail -n 2 notes/todo.txt
+      - ask Marcus about the September refunds
+      - call the printer
+      ```
+
+      Notice that `ls` writes one name per line when its output goes into a file. The old last line of the to-do list is still there: `>>` only added.
+
+  - kind: shell
+    title: "Try it: > and >>"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `ls logs > logs-list.txt`, then `cat logs-list.txt`
+      2. `echo "- call the printer" >> notes/todo.txt`, then `tail -n 2 notes/todo.txt`
+      3. `echo "first line" > test.txt`, then `echo "second line" >> test.txt`, then `cat test.txt`
+
+      Then run `echo "oops" > test.txt` and `cat test.txt` again: see what a single `>` did to your two lines.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Save a listing, add a line
@@ -53,6 +116,31 @@ steps:
 
       Write to a new file instead (`sort names.txt > sorted.txt`), check it, then rename it with `mv` if you want.
 
+      **Example: sorting a file into itself.**
+
+      ```
+      learner@inkwell:~/inkwell$ printf "Kenji\nPriya\nAnu\n" > names.txt
+      learner@inkwell:~/inkwell$ sort names.txt > names.txt
+      learner@inkwell:~/inkwell$ cat names.txt
+      learner@inkwell:~/inkwell$ wc -c names.txt
+      0 names.txt
+      ```
+
+      Three names in, nothing out: `names.txt` now has 0 bytes.
+
+  - kind: shell
+    title: "Try it: the safe way"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `printf "Kenji\nPriya\nAnu\n" > names.txt`
+      2. `sort names.txt > names.txt`, then `cat names.txt`: empty.
+      3. Make the file again (step 1), then do it safely: `sort names.txt > sorted.txt`, `cat sorted.txt`, and `mv sorted.txt names.txt`.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Errors have their own stream
     body: |
@@ -70,6 +158,47 @@ steps:
       | `2> errors.txt` | only errors into a file |
       | `2> /dev/null` | errors into nowhere (`/dev/null` throws away whatever is written to it) |
       | `> all.txt 2>&1` | output into a file, and errors to the same place (`2>&1` = "errors go where output goes") |
+
+      <!-- page -->
+
+      Here's each one with the `logs` folder and a folder that doesn't exist:
+
+      ```
+      learner@inkwell:~/inkwell$ ls logs missing 2> problems.txt
+      logs:
+      access.log
+      shop.log
+      learner@inkwell:~/inkwell$ cat problems.txt
+      ls: cannot access 'missing': No such file or directory
+      learner@inkwell:~/inkwell$ ls logs missing 2> /dev/null
+      logs:
+      access.log
+      shop.log
+      learner@inkwell:~/inkwell$ ls logs missing > all.txt 2>&1
+      learner@inkwell:~/inkwell$ cat all.txt
+      logs:
+      access.log
+      shop.log
+      ls: cannot access 'missing': No such file or directory
+      ```
+
+      With `2>` the listing still reached the screen and only the error went to the file. With `2> /dev/null` the error vanished. With `> all.txt 2>&1` nothing reached the screen: both landed in `all.txt`.
+
+  - kind: shell
+    title: "Try it: 2> and /dev/null"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `ls logs missing`: the listing and the error both reach the screen.
+      2. `ls logs missing 2> problems.txt`, then `cat problems.txt`
+      3. `ls logs missing 2> /dev/null`
+      4. `ls logs missing > all.txt 2>&1`, then `cat all.txt`
+
+      Then try `ls logs missing > out.txt` and notice which part still shows on screen.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Keep only the error
@@ -113,6 +242,61 @@ steps:
 
       `<` is the opposite of `>`: `wc -l < file.txt` feeds the file into the command's input.
 
+      <!-- page -->
+
+      Counting with a pipe, and with `<`:
+
+      ```
+      learner@inkwell:~/inkwell$ ls /etc | wc -l
+      11
+      learner@inkwell:~/inkwell$ cat logs/shop.log | wc -l
+      8
+      learner@inkwell:~/inkwell$ wc -l < logs/shop.log
+      8
+      ```
+
+      Now `sort` and `uniq`. Here's a small file of who worked which shift, built with `>` and `>>`:
+
+      ```
+      learner@inkwell:~/inkwell$ echo Kenji > shifts.txt
+      learner@inkwell:~/inkwell$ echo Priya >> shifts.txt
+      learner@inkwell:~/inkwell$ echo Kenji >> shifts.txt
+      learner@inkwell:~/inkwell$ echo Marcus >> shifts.txt
+      learner@inkwell:~/inkwell$ uniq shifts.txt
+      Kenji
+      Priya
+      Kenji
+      Marcus
+      learner@inkwell:~/inkwell$ sort shifts.txt
+      Kenji
+      Kenji
+      Marcus
+      Priya
+      learner@inkwell:~/inkwell$ sort shifts.txt | uniq
+      Kenji
+      Marcus
+      Priya
+      ```
+
+      `uniq` on its own changed nothing: the two Kenjis weren't next to each other. After `sort` they were, and `uniq` kept one.
+
+  - kind: shell
+    title: "Try it: pipes, sort and uniq"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `ls /etc | wc -l`
+      2. `cat logs/shop.log | wc -l`
+      3. `echo Kenji > shifts.txt`, `echo Priya >> shifts.txt`, `echo Kenji >> shifts.txt`, `echo Marcus >> shifts.txt` (four commands).
+      4. `uniq shifts.txt`, then `sort shifts.txt`, then `sort shifts.txt | uniq`
+      5. `sort shifts.txt | uniq | wc -l`: three tools in a row.
+
+      Then try `sort -r shifts.txt` to sort backwards.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: Count with a pipe
     fixture: backoffice
@@ -150,6 +334,19 @@ steps:
 
       ```
       sort notes/books-sold.txt | uniq | tee books.txt
+      ```
+
+      Here it is with the shifts file from earlier:
+
+      ```
+      learner@inkwell:~/inkwell$ sort shifts.txt | uniq | tee staff.txt
+      Kenji
+      Marcus
+      Priya
+      learner@inkwell:~/inkwell$ cat staff.txt
+      Kenji
+      Marcus
+      Priya
       ```
 
       You see the result and keep a copy. `tee -a` appends instead of replacing. It's also how you write to a file that needs `sudo` (Module 10).

@@ -58,7 +58,8 @@ steps:
       4. Record the version in `schema_migrations`.
     sql: |
       CREATE TABLE schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
-      INSERT INTO schema_migrations (version) VALUES ('001_add_order_notes'), ('002_add_customer_phone');
+      INSERT INTO schema_migrations (version)
+      VALUES ('001_add_order_notes'), ('002_add_customer_phone');
 
       -- Write migration 003 below
     expect: |

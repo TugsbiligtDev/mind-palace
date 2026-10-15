@@ -22,7 +22,20 @@ steps:
       .note.urgent { color: firebrick; }  /* both classes at once (no space) */
       ```
 
+      The paragraph has both classes, so all three rules reach it: it shows **Closed Monday.** in bold firebrick red. (The `.note.urgent` color wins over `.note`'s gray because it's more precise; Module 14 explains how.) A `<p class="note">` without `urgent` would be plain dim gray.
+
       Ids work too, but they're too powerful for styling (Module 14 explains). Use classes for styling, ids for links and labels.
+
+  - kind: choice
+    title: "Quick check: which selector?"
+    body: |
+      You want to style every element that has `class="price"`. Which selector do you write?
+    options:
+      - "`price`"
+      - "`#price`"
+      - "`.price`"
+    answer: 2
+    explanation: "A dot means a class. `price` alone would look for a `<price>` element, and `#price` looks for `id=\"price\"`."
 
   - kind: explain
     title: Grouping and combinators
@@ -32,6 +45,8 @@ steps:
       ```css
       h1, h2, h3 { font-family: Georgia, serif; }
       ```
+
+      All `h1`, `h2` and `h3` headings switch to the Georgia font, from one rule instead of three.
 
       **Combinators** select elements by where they are:
 
@@ -43,6 +58,74 @@ steps:
       | `h2 ~ p` | every `p` **after** an `h2`, with the same parent (🔹 general sibling) |
 
       `nav a` is the one you'll use most: style the links in the menu differently from links in the text.
+
+      ```html
+      <footer>
+        <a href="privacy.html">Privacy</a>
+        <p>Read our <a href="returns.html">returns policy</a>.</p>
+      </footer>
+      ```
+
+      ```css
+      footer a   { color: gray; }
+      footer > a { font-weight: bold; }
+      ```
+
+      Both links are inside the footer, so both turn gray. Only *Privacy* is a **direct child** of the footer, so only *Privacy* is bold; *returns policy* sits inside a `p` first.
+
+  - kind: web
+    title: "Try it: class, id, grouping and combinators"
+    body: |
+      The `style.css` tab has one rule for each kind of selector. Match each rule to what it changes in the preview:
+
+      - `.author` (a class): both author names turn teal.
+      - `#welcome` (an id): only the first heading is dark red.
+      - `h1, h2` (grouping): both headings use the Georgia font.
+      - `footer a` (descendant): both footer links are gray, even the one inside a `p`.
+      - `footer > a` (direct child): only *Privacy* is bold.
+      - `h2 + p` (the next sibling): only the paragraph right after the `h2` is italic.
+
+      Try this:
+
+      1. Add the class to another element: `<p class="author">`. It turns teal too.
+      2. In `style.css`, change `footer a` to plain `a`. Now *every* link on the page is gray, not just the footer's.
+      3. Add `h3` to the group: `h1, h2, h3`. Then add an `<h3>` to the page to see it.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <h1 id="welcome">Staff favourites</h1>
+      <h2>Persuasion</h2>
+      <p>Picked by Moth.</p>
+      <p>By <span class="author">Jane Austen</span>. <a href="persuasion.html">Read more about Persuasion</a></p>
+      <p>Also loved: <span class="author">Homer</span>.</p>
+      <footer>
+        <a href="privacy.html">Privacy</a>
+        <p>Read our <a href="returns.html">returns policy</a>.</p>
+      </footer>
+    css: |
+      .author {
+        color: teal;
+      }
+
+      #welcome {
+        color: darkred;
+      }
+
+      h1, h2 {
+        font-family: Georgia, serif;
+      }
+
+      footer a {
+        color: gray;
+      }
+
+      footer > a {
+        font-weight: bold;
+      }
+
+      h2 + p {
+        font-style: italic;
+      }
 
   - kind: web
     title: Style by class and position
@@ -117,6 +200,23 @@ steps:
 
       Handy for forms (`input[type="checkbox"]`) and for marking links: `a[href$=".pdf"]::after { content: " (PDF)"; }`.
 
+      ```css
+      a[href^="https"] { color: purple; }
+      ```
+
+      Every link whose address starts with `https` (the ones going to other sites) turns purple. Links to your own pages, like `about.html`, keep the default blue.
+
+  - kind: choice
+    title: "Quick check: PDF links"
+    body: |
+      Which selector matches only the links whose address **ends with** `.pdf`?
+    options:
+      - "`a[href^=\".pdf\"]`"
+      - "`a[href$=\".pdf\"]`"
+      - "`a[href*=\"pdf\"]`"
+    answer: 1
+    explanation: "`$=` means \"ends with\". `^=` means \"starts with\", and `*=` means \"contains anywhere\" (so it would also match a page called `pdf-help.html`)."
+
   - kind: explain
     title: Pseudo-classes, for states and positions
     body: |
@@ -132,6 +232,73 @@ steps:
       | `li:not(.sold)` | every `li` **except** those with `class="sold"` |
 
       Always pair a `:hover` style with a `:focus-visible` one, so keyboard users get the same feedback as mouse users. And never remove the focus outline without replacing it: keyboard users would lose track of where they are.
+
+      ```css
+      li:first-child      { color: darkred; }
+      li:nth-child(even)  { background: #eef; }
+      button:hover        { background: gold; }
+      ```
+
+      In a list of four items: the first item is dark red, the 2nd and 4th have a pale blue background, and any button turns gold only while the mouse is over it.
+
+  - kind: web
+    title: "Try it: attributes, states and positions"
+    body: |
+      The `style.css` tab mixes attribute selectors and pseudo-classes. In the preview:
+
+      - `a[href^="https"]` makes the outside link purple; `a[href$=".pdf"]` makes the PDF link green.
+      - `li:first-child` makes *Moth* dark red; `li:nth-child(even)` gives the 2nd and 4th names a pale blue background.
+      - `li:not(.away)` underlines everyone except *Inspector Bold* (`text-decoration: underline` draws the line).
+      - Hover over the **Subscribe** button: `button:hover` turns it gold. Now press **Tab** a few times to move keyboard focus onto it: `button:focus-visible` draws a thick outline.
+
+      Try this:
+
+      1. Change `even` to `odd`, then to `3`. Watch which items get the background.
+      2. Change `li:not(.away)` to `li.away`. The underline flips to the one item that was left out.
+      3. Change `.pdf` to `.html` in the attribute selector. Now the green moves to `menu.html`.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p>
+        <a href="https://en.wikipedia.org/wiki/Bookselling">About bookselling</a> ·
+        <a href="catalogue.pdf">Our catalogue</a> ·
+        <a href="menu.html">Café menu</a>
+      </p>
+      <ul>
+        <li>Moth</li>
+        <li class="away">Inspector Bold</li>
+        <li>Ada</li>
+        <li>Ink the cat</li>
+      </ul>
+      <button type="button">Subscribe</button>
+    css: |
+      a[href^="https"] {
+        color: purple;
+      }
+
+      a[href$=".pdf"] {
+        color: green;
+      }
+
+      li:first-child {
+        color: darkred;
+      }
+
+      li:nth-child(even) {
+        background: #eef;
+      }
+
+      li:not(.away) {
+        text-decoration: underline;
+      }
+
+      button:hover {
+        background: gold;
+      }
+
+      button:focus-visible {
+        outline: 4px solid navy;
+      }
 
   - kind: web
     title: States and stripes
@@ -221,6 +388,57 @@ steps:
       ```
 
       Generated `content` is for decoration. Screen readers may read it, but it can't be selected or copied, so never put essential information there.
+
+      With that rule, `<p class="new">Beloved</p>` shows as **New:** Beloved, with *New:* in bold dark red, even though the HTML only says *Beloved*.
+
+  - kind: web
+    title: "Try it: pseudo-elements"
+    body: |
+      Each rule in `style.css` styles a *part* of an element. In the preview:
+
+      - `.sale::after` adds ` (20% off)` after each sale item, in red. It isn't in the HTML at all.
+      - `p::first-letter` makes the first letter of the paragraph big and dark red.
+      - `ol li::marker` makes the numbers teal.
+      - `textarea::placeholder` makes the hint text in the box dark gray.
+      - `::selection`: highlight some text with the mouse, and the highlight is gold.
+
+      Try this:
+
+      1. Change the `content` text to `" (sale!)"`. Then delete the whole `content` line: the extra text vanishes, because `::after` needs `content`.
+      2. Change `::first-letter` to `::first-line`. Now the whole first line of the paragraph is dark red (but the size change looks odd: set it back).
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p>Welcome to the Inkwell sale. Every week we pick a few books and mark them down until they find a home.</p>
+      <ol>
+        <li class="sale">Persuasion</li>
+        <li>Middlemarch</li>
+        <li class="sale">Ariel</li>
+      </ol>
+      <label for="wish">Your wish list</label>
+      <textarea id="wish" rows="2" placeholder="One title per line"></textarea>
+    css: |
+      .sale::after {
+        content: " (20% off)";
+        color: red;
+      }
+
+      p::first-letter {
+        font-size: 32px;
+        color: darkred;
+      }
+
+      ol li::marker {
+        color: teal;
+      }
+
+      textarea::placeholder {
+        color: #444;
+      }
+
+      ::selection {
+        background: gold;
+      }
 
   - kind: web
     title: Decorate with pseudo-elements

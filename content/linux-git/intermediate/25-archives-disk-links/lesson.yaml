@@ -19,6 +19,57 @@ steps:
 
       `gzip file` / `gunzip file.gz` compress and uncompress a single file (logs are often rotated into `.gz` files).
 
+      <!-- page -->
+
+      Here it is in `~/inkwell`, on the `orders` folder. Packing prints nothing; listing shows every path starts with `orders/`:
+
+      ```
+      learner@inkwell:~/inkwell$ tar -czf orders.tar.gz orders
+      learner@inkwell:~/inkwell$ tar -tzf orders.tar.gz
+      orders/
+      orders/2026-08.csv
+      orders/2026-09.csv
+      learner@inkwell:~/inkwell$ tar -czvf logs.tar.gz logs
+      logs/
+      logs/access.log
+      logs/shop.log
+      ```
+
+      Unpacking into a fresh folder:
+
+      ```
+      learner@inkwell:~/inkwell$ mkdir ~/unpacked
+      learner@inkwell:~/inkwell$ tar -xzf orders.tar.gz -C ~/unpacked
+      learner@inkwell:~/inkwell$ ls ~/unpacked/orders
+      2026-08.csv  2026-09.csv
+      ```
+
+      And one file squeezed with gzip, then back:
+
+      ```
+      learner@inkwell:~/inkwell$ gzip logs/shop.log
+      learner@inkwell:~/inkwell$ ls logs
+      access.log  shop.log.gz
+      learner@inkwell:~/inkwell$ gunzip logs/shop.log.gz
+      learner@inkwell:~/inkwell$ ls logs
+      access.log  shop.log
+      ```
+
+  - kind: shell
+    title: "Try it: tar and gzip"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `tar -czf orders.tar.gz orders` packs the folder.
+      2. `tar -tzf orders.tar.gz` lists what's inside.
+      3. `mkdir ~/unpacked`, then `tar -xzf orders.tar.gz -C ~/unpacked`
+      4. `ls ~/unpacked/orders` shows the unpacked files.
+      5. `gzip logs/shop.log`, `ls logs`, then `gunzip logs/shop.log.gz`
+
+      Then pack another folder with `v` added (`tar -czvf logs.tar.gz logs`) and watch the names go by. Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: Back up the notes
     fixture: backoffice
@@ -62,6 +113,45 @@ steps:
 
       Prefer tar between Linux machines (it keeps permissions and owners); use zip for people on other systems.
 
+      <!-- page -->
+
+      With the tools installed, on the `orders` folder:
+
+      ```
+      learner@inkwell:~/inkwell$ zip -r orders.zip orders
+        adding: orders/ (stored 0%)
+        adding: orders/2026-08.csv (stored 0%)
+        adding: orders/2026-09.csv (stored 0%)
+      learner@inkwell:~/inkwell$ unzip -l orders.zip
+      Archive:  orders.zip
+        Length      Date    Time    Name
+      ---------  ---------- -----   ----
+              0  2026-10-06 09:00   orders/
+            196  2026-10-06 09:00   orders/2026-08.csv
+            233  2026-10-06 09:00   orders/2026-09.csv
+      ---------                     -------
+            429                     3 files
+      learner@inkwell:~/inkwell$ unzip orders.zip -d ~/fromzip
+      Archive:  orders.zip
+         creating: /home/learner/fromzip/orders/
+       extracting: /home/learner/fromzip/orders/2026-08.csv
+       extracting: /home/learner/fromzip/orders/2026-09.csv
+      ```
+
+  - kind: shell
+    title: "Try it: zip and unzip"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `zip -r orders.zip orders` (it says *Command 'zip' not found*: the tools aren't installed yet).
+      2. `sudo apt install -y zip unzip`, then number 1 again.
+      3. `unzip -l orders.zip` lists the contents.
+      4. `unzip orders.zip -d ~/fromzip`, then `ls ~/fromzip`
+
+      Then zip the `notes` folder into `notes.zip` and list it. Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: A zip for the designer
     fixture: backoffice
@@ -91,6 +181,42 @@ steps:
 
       `sort -h` understands human sizes (`4K` < `2M` < `1G`), so `du -sh * | sort -h | tail -3` is the quick "what's eating my disk" question.
 
+      <!-- page -->
+
+      On this server. The main disk (`/`) is 28% full:
+
+      ```
+      learner@inkwell:~/inkwell$ df -h /
+      Filesystem       Size  Used Avail Use% Mounted on
+      /dev/sda1         29G  7.8G   21G  28% /
+      ```
+
+      Two folders measured, then the three **smallest** items in `~/inkwell` (`head` keeps the top of the sorted list):
+
+      ```
+      learner@inkwell:~/inkwell$ du -sh orders notes
+      12K	orders
+      16K	notes
+      learner@inkwell:~/inkwell$ du -sh * | sort -h | head -3
+      4K	README.txt
+      12K	logs
+      12K	old
+      ```
+
+  - kind: shell
+    title: "Try it: df and du"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `df -h` shows every filesystem; `df -h /` just the main disk.
+      2. `du -sh orders notes` measures two folders.
+      3. `du -sh *` measures everything here.
+      4. `du -sh * | sort -h | head -3` keeps the three smallest.
+
+      Then measure two other folders: `du -sh site old`. Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: What's taking the space?
     fixture: backoffice
@@ -119,6 +245,76 @@ steps:
       | `curl -s -o /dev/null -w '%{http_code}\n' URL` | just the status code |
 
       Status codes: **200** OK, **301/302** moved (follow with `-L`), **403** forbidden, **404** not found, **500** server error.
+
+      <!-- page -->
+
+      On Inkwell's shop website. The Dune page, printed:
+
+      ```
+      learner@inkwell:~$ curl https://inkwell.example/books/dune.html
+      <!DOCTYPE html>
+      <title>Dune</title>
+      <h1>Dune</h1>
+      <p class="price">8.99</p>
+      ```
+
+      The same page with `http://` instead gets a "moved" page, and `-L` follows it to the real one:
+
+      ```
+      learner@inkwell:~$ curl http://inkwell.example/books/dune.html
+      <html>
+      <head><title>301 Moved Permanently</title></head>
+      <body>
+      <center><h1>301 Moved Permanently</h1></center>
+      <hr><center>nginx/1.24.0 (Ubuntu)</center>
+      </body>
+      </html>
+      learner@inkwell:~$ curl -L http://inkwell.example/books/dune.html
+      <!DOCTYPE html>
+      <title>Dune</title>
+      <h1>Dune</h1>
+      <p class="price">8.99</p>
+      ```
+
+      <!-- page -->
+
+      Saving to a file shows a progress table instead of the page:
+
+      ```
+      learner@inkwell:~$ curl -o dune.html https://inkwell.example/books/dune.html
+        % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                       Dload  Upload   Total   Spent    Left  Speed
+      100     76  100     76    0     0   1520      0 --:--:-- --:--:-- --:--:--  1520
+      learner@inkwell:~$ ls
+      dune.html
+      ```
+
+      Only the headers of the home page, then only the status code of a page that doesn't exist:
+
+      ```
+      learner@inkwell:~$ curl -I https://inkwell.example/
+      HTTP/2 200 
+      server: nginx/1.24.0 (Ubuntu)
+      content-type: text/html
+      content-length: 112
+
+      learner@inkwell:~$ curl -s -o /dev/null -w '%{http_code}\n' https://inkwell.example/nope.html
+      404
+      ```
+
+  - kind: shell
+    title: "Try it: curl"
+    fixture: shop-server
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `curl https://inkwell.example/books/dune.html`
+      2. `curl http://inkwell.example/books/dune.html` (http: a 301 page), then the same with `-L`.
+      3. `curl -o dune.html https://inkwell.example/books/dune.html`, then `cat dune.html`
+      4. `curl -I https://inkwell.example/`
+      5. `curl -s -o /dev/null -w '%{http_code}\n' https://inkwell.example/nope.html`
+
+      Then change `nope.html` to `index.html` in number 5. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Download the catalogue
@@ -161,6 +357,37 @@ steps:
       - A relative target is relative to **where the link is**, not where you are.
       - Deleting the link (`rm latest.log`) leaves the target alone. Deleting the target leaves a **dangling** link that points nowhere.
       - Servers use links everywhere: `/etc/nginx/sites-enabled/` holds links to files in `sites-available/`, and `ln -sfn` swaps a `current` link to a new release in one step.
+
+      <!-- page -->
+
+      In `~/inkwell`, a link called `todo` that points to the to-do list. Reading the link reads the list, and deleting the link leaves the list where it was:
+
+      ```
+      learner@inkwell:~/inkwell$ ln -s notes/todo.txt todo
+      learner@inkwell:~/inkwell$ readlink todo
+      notes/todo.txt
+      learner@inkwell:~/inkwell$ cat todo
+      - reorder Dune (only 2 left)
+      - fix the broken link on the About page
+      - ask Marcus about the September refunds
+      learner@inkwell:~/inkwell$ rm todo
+      learner@inkwell:~/inkwell$ ls notes
+      books-sold.txt  meeting-2026-09-30.txt  todo.txt
+      ```
+
+  - kind: shell
+    title: "Try it: symbolic links"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `ln -s notes/todo.txt todo` makes the link.
+      2. `ls -l todo` shows the `l` and the `->`.
+      3. `readlink todo`, then `cat todo`
+      4. `rm todo`, then `ls notes`: the list is still there.
+
+      Then link to a folder: `ln -s orders o`, and `ls o`. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: A shortcut to the log

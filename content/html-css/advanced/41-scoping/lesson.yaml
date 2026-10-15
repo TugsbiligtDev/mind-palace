@@ -14,6 +14,38 @@ steps:
 
       Inside the block you can use **short, plain selectors** (`img`, `h3`) without worrying that they'll leak out to the rest of the page. `:scope` means the root element itself. Selectors inside a scope keep low specificity: `img` here is just (0,0,1).
 
+      In the page: each card gets padding and a thin border, and the images and headings inside cards are restyled. An `img` or `h3` outside every card looks exactly as before.
+
+  - kind: web
+    title: "Try it: @scope"
+    body: |
+      The rule `p { … }` here sits inside `@scope (.review)`, so only the paragraph **inside** the review is italic and brown. The paragraph above it is untouched. `:scope` gives the review box itself its left border.
+
+      Try:
+
+      1. Move the `p` rule out of the `@scope` block (to the very bottom). Now both paragraphs change: that's the leak `@scope` prevents.
+      2. Put it back, then add `strong { color: #15803d; }` inside the scope. Only the bold words in the review turn green.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <p>Our staff write a short <strong>review</strong> of every book they love.</p>
+      <blockquote class="review">
+        <p>Gripping from the first page. <strong>Five stars.</strong></p>
+      </blockquote>
+    css: |
+      @scope (.review) {
+        :scope {
+          margin: 1rem 0;
+          padding-left: 1rem;
+          border-left: 4px solid #7c2d12;
+        }
+
+        p {
+          font-style: italic;
+          color: #7c2d12;
+        }
+      }
+
   - kind: web
     title: Scope the card
     body: |
@@ -79,6 +111,38 @@ steps:
       ```
 
       …but links inside `.card__content` (where someone pastes a review that has its own link styles) are left alone. Typical uses: a component that contains **slots** for other components or user content, which shouldn't inherit its styles.
+
+  - kind: web
+    title: "Try it: a donut scope"
+    body: |
+      A gift box: `@scope (.gift) to (.gift-note)` makes `p` bold and centred, but **stops** at the handwritten note in the middle. So the label and the price are bold, and the note keeps its normal style.
+
+      Try:
+
+      1. Delete ` to (.gift-note)` from the first line of the scope. Now the note's paragraph turns bold and centred too.
+      2. Put it back and change the limit to `to (.gift-price)`. Now the note is styled and the price is left alone.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="gift">
+        <p>Gift wrapping</p>
+        <div class="gift-note">
+          <p>Dear Sam, happy birthday! Love, Ana</p>
+        </div>
+        <p class="gift-price">£2.00</p>
+      </div>
+    css: |
+      .gift {
+        padding: 1rem;
+        border: 2px dashed #7c2d12;
+      }
+
+      @scope (.gift) to (.gift-note) {
+        p {
+          font-weight: bold;
+          text-align: center;
+        }
+      }
 
   - kind: web
     title: Leave the content alone
@@ -168,6 +232,37 @@ steps:
       A `.light` box nested inside a `.dark` box gets black paragraphs, and a `.dark` box inside a `.light` one gets white paragraphs. Without scope, the later rule would win in both cases. This makes nested themes behave the way people expect.
 
   - kind: web
+    title: "Try it: the nearest scope wins"
+    body: |
+      Two scoped rules both style `strong`: `.calm` makes it green, `.sale` makes it red. A `.calm` box sits inside a `.sale` box. The inner words are **green**, because `.calm` is their nearest scope root, even though the `.sale` rule comes later in the file.
+
+      Try:
+
+      1. Swap the order of the two `@scope` blocks. Nothing changes: proximity, not order, decides.
+      2. Remove `class="calm"` from the inner `div`. Now the inner words turn red, because `.sale` is their only scope root.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="sale" style="padding:1rem;border:1px solid #e7e5e4">
+        <p><strong>Half price</strong> on all poetry.</p>
+        <div class="calm" style="padding:1rem;border:1px solid #e7e5e4">
+          <p><strong>Quiet hours</strong> every morning.</p>
+        </div>
+      </div>
+    css: |
+      @scope (.calm) {
+        strong {
+          color: #15803d;
+        }
+      }
+
+      @scope (.sale) {
+        strong {
+          color: #b91c1c;
+        }
+      }
+
+  - kind: web
     title: Nested themes
     body: |
       A light panel sits inside a dark section, and a dark panel inside a light one. With plain selectors, whichever rule is later wins everywhere.
@@ -222,6 +317,17 @@ steps:
       | **CSS Modules** | a build tool renames classes to unique ones (`card_title__x7f2`) | needs a bundler and a framework (React, Vue…); not covered here |
 
       `@scope` is worth it for components with **slots** (donut scopes), for **nested themes** (proximity), and when you want plain element selectors inside a component without leaking. For simple sites, BEM-style classes plus layers are often enough. They combine fine.
+
+  - kind: choice
+    title: "Quick check: pick an approach"
+    body: |
+      A small static site, plain HTML and CSS, no build tools. Which approach fits **least**?
+    options:
+      - "BEM-style class names with layers"
+      - "`@scope` for a few components"
+      - "CSS Modules"
+    answer: 2
+    explanation: "CSS Modules need a bundler and a framework to rename classes. BEM and `@scope` work in plain CSS, and they combine fine."
 
   - kind: why
     body: |

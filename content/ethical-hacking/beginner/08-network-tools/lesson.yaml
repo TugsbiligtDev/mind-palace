@@ -6,6 +6,28 @@ steps:
 
       These are **diagnostic** tools — the same ones network administrators use all day. Running them against your own machine, or doing a simple reachability check to a public host, is ordinary and harmless. Pointing them at someone else's network *in bulk* starts to look like scanning, which needs authorisation. We will stay firmly on the safe side here.
 
+      **Example: one question, one command.** The whole module in a table. Every row is something you'll run in this module, and every row is safe on your own machine:
+
+      | The question | The command | A typical answer |
+      |---|---|---|
+      | Is that machine alive? | `ping -c 3 example.com` | `3 packets transmitted, 3 received` |
+      | Which way does my traffic go? | `traceroute example.com` | a numbered list of routers |
+      | What is my own address? | `ifconfig` / `ip addr` | `inet 192.168.1.42` |
+      | What is my machine listening on? | `netstat -an` / `ss -tlnp` | `LISTEN ... :22` |
+      | What do the packets say? | Wireshark | a list of packets, one per row |
+
+  - kind: choice
+    title: "Quick check: where's the line?"
+    body: |
+      Which of these needs written **authorisation** first?
+    options:
+      - "Running ifconfig to see your own address"
+      - "Pinging example.com three times"
+      - "Sending probes to every address of a company's network to see what answers"
+    answer: 2
+    explanation: |
+      Looking at your own machine and a single reachability check to a public example host are ordinary diagnostics. Probing a whole network that isn't yours is **scanning**, and that needs permission.
+
   - kind: explain
     title: ping — is it alive?
     body: |
@@ -17,12 +39,81 @@ steps:
 
       `-c 3` sends just three and stops (otherwise it runs forever). A reply means the host is reachable and tells you the round-trip time in milliseconds. **No reply does not always mean "down"** — many machines are configured to ignore ping while still running services. That caveat is itself a lesson: absence of an answer is not proof of absence.
 
+      <!-- page -->
+
+      **Example: a target that answers.** From Kali to the lab target:
+
+      ```
+      kali@kali:~$ ping -c 3 192.168.56.101
+      PING 192.168.56.101 (192.168.56.101) 56(84) bytes of data.
+      64 bytes from 192.168.56.101: icmp_seq=1 ttl=64 time=0.412 ms
+      64 bytes from 192.168.56.101: icmp_seq=2 ttl=64 time=0.388 ms
+      64 bytes from 192.168.56.101: icmp_seq=3 ttl=64 time=0.401 ms
+
+      --- 192.168.56.101 ping statistics ---
+      3 packets transmitted, 3 received, 0% packet loss, time 2034ms
+      rtt min/avg/max/mdev = 0.388/0.400/0.412/0.010 ms
+      ```
+
+      Three replies, each in under half a millisecond (both machines live inside your laptop, so it is very fast).
+
+      **Example: a target that stays silent.** A second lab machine with its firewall set to ignore ping:
+
+      ```
+      kali@kali:~$ ping -c 3 192.168.56.104
+      PING 192.168.56.104 (192.168.56.104) 56(84) bytes of data.
+
+      --- 192.168.56.104 ping statistics ---
+      3 packets transmitted, 0 received, 100% packet loss, time 2051ms
+      ```
+
+      `100% packet loss` looks like "down", yet this machine is running and serving a website. Ping alone could not tell you that.
+
+  - kind: choice
+    title: "Quick check: 100% packet loss"
+    body: |
+      `ping -c 3 192.168.56.104` ends with `3 packets transmitted, 0 received, 100% packet loss`. What can you conclude?
+    options:
+      - "The machine is definitely switched off"
+      - "The machine didn't answer ping; it may be off, or may simply ignore ping"
+      - "The machine has no website"
+    answer: 1
+    explanation: |
+      No reply is not proof of "down". Many machines are set to ignore ping while still running services, like the lab machine in the example that serves a website.
+
   - kind: explain
     title: traceroute — the path taken
     body: |
       `traceroute example.com` shows every router (**hop**) your packets pass through on the way to a destination, with the time to each. You watch the journey leave your home router, cross your ISP, and travel the internet one hop at a time — exactly the router-to-router trip from Module 6, made visible.
 
       For a tester, traceroute hints at network structure: where a firewall sits, where traffic enters an organisation, which hops stop responding. It is reconnaissance you can do with a single, ordinary command.
+
+      **Example** from a Mac at home (the middle hops will be different for you, because they belong to your own provider):
+
+      ```
+      $ traceroute example.com
+      traceroute to example.com (104.20.23.154), 64 hops max, 40 byte packets
+       1  192.168.1.1 (192.168.1.1)  2.104 ms  1.873 ms  1.902 ms
+       2  10.20.0.1 (10.20.0.1)  9.511 ms  8.990 ms  9.204 ms
+       3  198.51.100.9 (198.51.100.9)  11.320 ms  10.987 ms  11.045 ms
+       4  * * *
+       5  203.0.113.14 (203.0.113.14)  13.442 ms  13.208 ms  13.517 ms
+       6  104.20.23.154 (104.20.23.154)  13.870 ms  13.602 ms  13.711 ms
+      ```
+
+      Hop 1 is your home router (a private address). Hop 2 is still private: your provider's own internal network. Each line has three times because traceroute tries each hop three times. Hop 4 shows `* * *`: that router did not answer, which is common and not an error. The last hop is the destination itself.
+
+  - kind: choice
+    title: "Quick check: reading a hop"
+    body: |
+      A traceroute line reads `4  * * *`. What does it mean?
+    options:
+      - "The trace failed and the destination can't be reached"
+      - "Hop 4 is your own computer"
+      - "The router at hop 4 didn't answer traceroute's probes; that's common and the trace carries on"
+    answer: 2
+    explanation: |
+      The three stars are three probes with no reply. Many routers are set not to answer, so the hop is shown as `* * *` and the following hops still appear. A failed trace would show only stars from that point to the end.
 
   - kind: explain
     title: Knowing your own machine — ip / ifconfig
@@ -34,6 +125,54 @@ steps:
 
       On an engagement, the very first network question after landing on a machine is "what network am I actually on, and what is my gateway?" — because that defines what else you can reach.
 
+      <!-- page -->
+
+      **Example: `ip addr` on Kali** (trimmed to the lab interface, `eth0`):
+
+      ```
+      kali@kali:~$ ip addr
+      2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+          link/ether 08:00:27:5c:1e:a2 brd ff:ff:ff:ff:ff:ff
+          inet 192.168.56.102/24 brd 192.168.56.255 scope global dynamic eth0
+             valid_lft 512sec preferred_lft 512sec
+      ```
+
+      `link/ether` is this machine's **MAC address**. `inet 192.168.56.102/24` is its **IP address** and its network size in CIDR (Module 6): Kali sits on `192.168.56.0/24`. `UP` means the interface is switched on.
+
+      **Example: the routing table, `netstat -rn` on a Mac** (first lines):
+
+      ```
+      $ netstat -rn
+      Routing tables
+
+      Internet:
+      Destination        Gateway            Flags               Netif Expire
+      default            192.168.1.1        UGScg                 en0
+      127                127.0.0.1          UCS                   lo0
+      ```
+
+      The `default` line is the one to find: anything not on the local network goes to `192.168.1.1`, the home router. That is the **default gateway**. On Linux, `ip route` says the same thing as `default via 192.168.1.1 dev eth0`.
+
+  - kind: choice
+    title: "Quick check: find the gateway"
+    body: |
+      `netstat -rn` on a lab machine shows:
+
+      ```
+      Destination        Gateway            Flags   Netif
+      default            10.10.5.1          UGScg   en0
+      10.10.5/24         link#6             UCS     en0
+      ```
+
+      What is the default gateway?
+    options:
+      - "10.10.5.1"
+      - "10.10.5/24"
+      - "en0"
+    answer: 0
+    explanation: |
+      Find the `default` line: anything not on the local network is sent to `10.10.5.1`. `10.10.5/24` is the local network itself, and `en0` is the network card.
+
   - kind: explain
     title: What am I connected to — netstat / ss
     body: |
@@ -43,6 +182,40 @@ steps:
       - `ss -tlnp` (Linux) — listening TCP ports and the program behind each
 
       This is how you answer "what services is *this* machine exposing, and what is it talking to?" During post-exploitation it reveals listening services you might pivot through and connections that hint at other machines — all from the inside.
+
+      **Example** on Kali, after starting SSH (Module 4). `sudo` is needed to see the program names in the last column:
+
+      ```
+      kali@kali:~$ sudo ss -tlnp
+      State   Recv-Q  Send-Q   Local Address:Port   Peer Address:Port  Process
+      LISTEN  0       128            0.0.0.0:22          0.0.0.0:*      users:(("sshd",pid=1342,fd=3))
+      LISTEN  0       128               [::]:22             [::]:*      users:(("sshd",pid=1342,fd=4))
+      ```
+
+      Both lines say the same thing: `sshd` is waiting (`LISTEN`) on port 22, on every IPv4 address (`0.0.0.0`) and every IPv6 address (`[::]`). The letters stand for **t**CP, **l**istening, **n**umbers (no names), and **p**rogram.
+
+  - kind: mac
+    title: "Try it: what is your Mac listening on?"
+    body: |
+      List the TCP ports your own Mac is listening on. `-an` shows every connection with numbers, and `grep LISTEN` keeps only the listening ones. Each line ends in an address and port such as `*.5000` (the `*` means "on every address"). You may see only a few lines, or none: a Mac exposes very little by default.
+    commands: |
+      netstat -an -p tcp | grep LISTEN
+
+  - kind: choice
+    title: "Quick check: read the ss line"
+    body: |
+      ```
+      LISTEN  0  128  0.0.0.0:3306  0.0.0.0:*  users:(("mysqld",pid=845,fd=21))
+      ```
+
+      What does this line tell you about the machine?
+    options:
+      - "It is connected to someone else's database on port 3306"
+      - "Its database program, mysqld, is waiting for connections on port 3306 on every IPv4 address"
+      - "Port 3306 is blocked"
+    answer: 1
+    explanation: |
+      `LISTEN` means waiting for connections, `0.0.0.0:3306` means port 3306 on every IPv4 address the machine has, and the last column names the program: `mysqld`, a database. Reachable from the network, it's worth a closer look.
 
   - kind: explain
     title: Asking DNS directly — dig / nslookup
@@ -54,6 +227,18 @@ steps:
       - `nslookup example.com` — a simpler, cross-platform equivalent
 
       Querying public DNS records is just reading what an organisation has chosen to publish, which is why it is the gentle opening move of reconnaissance.
+
+      **Examples** of the two record types that are new here:
+
+      ```
+      $ dig +short ns example.com
+      elliott.ns.cloudflare.com.
+      hera.ns.cloudflare.com.
+      $ dig +short mx example.com
+      0 .
+      ```
+
+      The name servers tell you who runs the domain's DNS (here, Cloudflare). The mail answer `0 .` is a special "null" record meaning *this domain accepts no email at all*. For a real organisation you would see lines like `10 mail.example.org.` instead, naming its mail servers.
 
   - kind: mac
     title: Run the whole kit on your own machine
@@ -75,12 +260,67 @@ steps:
       - **Filter**, so you see only what matters: type `http` to see web traffic, `dns` for lookups, `ip.addr == 192.168.1.10` for one machine, `tcp.port == 443` for one port.
       - **Follow a stream** (right-click a packet → Follow → TCP Stream) to reassemble a whole conversation into one readable window.
 
+      <!-- page -->
+
+      **Example: a filtered capture.** In the lab, Kali (`.102`) loads the training target's (`.101`) web login page. With the filter `ip.addr == 192.168.56.101` typed into the filter bar, the packet list shows only that machine's traffic:
+
+      ```
+      No.  Time      Source          Destination     Protocol Length Info
+      38   3.108811  192.168.56.102  192.168.56.101  TCP      74     51562 → 80 [SYN] Seq=0 Win=64240 Len=0
+      39   3.109203  192.168.56.101  192.168.56.102  TCP      74     80 → 51562 [SYN, ACK] Seq=0 Ack=1 Win=5792 Len=0
+      40   3.109240  192.168.56.102  192.168.56.101  TCP      66     51562 → 80 [ACK] Seq=1 Ack=1 Win=64256 Len=0
+      41   3.112408  192.168.56.102  192.168.56.101  HTTP     421    GET /dvwa/login.php HTTP/1.1
+      42   3.115902  192.168.56.101  192.168.56.102  HTTP     1592   HTTP/1.1 200 OK  (text/html)
+      ```
+
+      You can read Module 7's handshake in rows 38 to 40, then the page request and its answer. Change the filter to `http` and only rows 41 and 42 stay.
+
+  - kind: choice
+    title: "Quick check: pick the filter"
+    body: |
+      In Wireshark you only want to see the DNS lookups. What do you type in the filter bar?
+    options:
+      - "dns"
+      - "port 80"
+      - "ip.addr == dns"
+    answer: 0
+    explanation: |
+      The filter is the protocol name: `dns`. (For one machine you'd use `ip.addr == 192.168.1.10`, and for one port `tcp.port == 443`.)
+
   - kind: explain
     title: Why capturing is powerful — and sensitive
     body: |
-      Wireshark reveals a hard truth: traffic sent over **plain HTTP, FTP or Telnet travels in cleartext**. Capture it and you can read the usernames, passwords and pages directly. That single demonstration is the most persuasive argument for encryption you will ever give a client — and the reason HTTPS, SSH and VPNs exist.
+      Wireshark reveals a hard truth: traffic sent over **plain HTTP, FTP or Telnet travels in cleartext**. Capture it and you can read the usernames, passwords and pages directly.
+
+      **Example.** Following the TCP stream of the lab login above, after the practice user signs in, Wireshark shows the request as plain text (trimmed):
+
+      ```
+      POST /dvwa/login.php HTTP/1.1
+      Host: 192.168.56.101
+      Content-Type: application/x-www-form-urlencoded
+
+      username=admin&password=password&Login=Login
+      ```
+
+      The training app's default login, readable by anyone on the path. (On a real network this would be a real person's password.)
+
+      <!-- page -->
+
+      That kind of demonstration is the most persuasive argument for encryption you will ever give a client — and the reason HTTPS, SSH and VPNs exist.
 
       Because of that power, capturing is sensitive. On a shared or public network you may record other people's data, so you only capture on **networks you own or are explicitly authorised to monitor** — your own lab being the obvious safe choice. The tool is neutral; the permission is what makes its use legitimate.
+
+  - kind: choice
+    title: "Quick check: readable on the wire"
+    body: |
+      Capturing in your lab, which of these logins could you read in plain text?
+    options:
+      - "A login to an https:// website"
+      - "An SSH login"
+      - "A login to a plain http:// website"
+    answer: 2
+    explanation: |
+      Plain **HTTP** (like FTP and Telnet) sends everything as cleartext, password included. HTTPS and SSH encrypt the conversation, so a capture shows only scrambled bytes.
 
   - kind: info
     title: "🔹 tcpdump, the terminal twin"

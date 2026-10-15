@@ -19,6 +19,34 @@ steps:
 
       Instantly the items sit side by side, as tall as the tallest one. Only direct children are affected; grandchildren lay out normally inside their parent.
 
+  - kind: web
+    title: "Try it: display: flex"
+    body: |
+      The `nav` is a flex container, so its links sit side by side. The *Events* link has two lines of text; the others stretch to the same height (the cream backgrounds show it).
+
+      Try this:
+
+      1. Remove `display: flex;`. The links go back to normal inline flow, each only as tall as its own text.
+      2. Put it back, then wrap two links in a `<span>`. The span is the flex item now; the links inside it are grandchildren and lay out normally.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <nav class="nav">
+        <a href="/">Home</a>
+        <a href="/books">Books</a>
+        <a href="/events">Events<br>this month</a>
+      </nav>
+    css: |
+      .nav {
+        display: flex;
+        gap: 8px;
+      }
+
+      .nav a {
+        background: #fdf8f0;
+        padding: 8px 12px;
+      }
+
   - kind: explain
     title: Main axis and cross axis
     body: |
@@ -41,6 +69,38 @@ steps:
       - `align-items` → along the **cross** axis: `stretch` (the default), `flex-start`, `center`, `flex-end`, `baseline`.
 
       Switch to `flex-direction: column` and they swap roles: `justify-content` becomes vertical.
+
+  - kind: web
+    title: "Try it: justify-content and align-items"
+    body: |
+      The row has `justify-content: space-between` (along the main axis, left to right) and `align-items: center` (across it, top to bottom). The container is 160px tall so you can see the cross axis.
+
+      Try this:
+
+      1. Change `justify-content` to `center`, then `flex-end`, then `space-evenly`.
+      2. Change `align-items` to `flex-start`, then `stretch`.
+      3. Add `flex-direction: column;`. Now `justify-content` works top to bottom, and `align-items` left to right.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="row">
+        <div>A</div>
+        <div>B</div>
+        <div>C</div>
+      </div>
+    css: |
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 160px;
+        border: 2px dashed gray;
+      }
+
+      .row div {
+        background: #fde68a;
+        padding: 12px 20px;
+      }
 
   - kind: explain
     title: gap and wrap

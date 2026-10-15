@@ -30,6 +30,21 @@ steps:
 
       For numbers there's also `(( n > 3 ))`. You'll meet the older `[ … ]` (a single bracket) in other scripts: it works similarly but is fussier about quoting.
 
+      <!-- page -->
+
+      **Examples**, typed as one-liners at the prompt (`;` separates the parts a script would put on separate lines):
+
+      ```
+      learner@inkwell:~$ if grep -q "/admin/export" ~/logs/access.log; then echo "Someone exported data!"; else echo "All quiet"; fi
+      Someone exported data!
+      learner@inkwell:~$ f=~/inkwell/README.txt; if [[ -f $f ]]; then echo "a file"; elif [[ -d $f ]]; then echo "a folder"; fi
+      a file
+      learner@inkwell:~$ n=12; if [[ $n -gt 10 ]]; then echo "big"; fi
+      big
+      learner@inkwell:~$ if [[ "Dune Messiah" == Dune* ]]; then echo "a Dune book"; fi
+      a Dune book
+      ```
+
   - kind: shell
     title: What is this path?
     body: |
@@ -67,6 +82,39 @@ steps:
       ```
 
       The variable (`book`, `f`, `i`) takes each value in turn. Quote it when you use it (`"$f"`), because file names can contain spaces.
+
+      <!-- page -->
+
+      **Examples**, as one-liners:
+
+      ```
+      learner@inkwell:~$ for book in Dune Circe "The Hobbit"; do echo "Checking $book"; done
+      Checking Dune
+      Checking Circe
+      Checking The Hobbit
+      learner@inkwell:~$ for f in ~/inkwell/orders/*.csv; do echo "$f has $(wc -l < "$f") lines"; done
+      /home/learner/inkwell/orders/2026-08.csv has 5 lines
+      /home/learner/inkwell/orders/2026-09.csv has 6 lines
+      learner@inkwell:~$ for i in {1..5}; do echo -n "$i "; done; echo
+      1 2 3 4 5 
+      ```
+
+      `echo -n` doesn't end the line, so the numbers stay on one row; the final `echo` ends it.
+
+  - kind: shell
+    title: "Try it: for"
+    fixture: [backoffice, shop-logs]
+    setup: cd ~
+    body: |
+      Type these one at a time:
+
+      1. `for book in Dune Circe "The Hobbit"; do echo "Checking $book"; done`
+      2. `for f in ~/inkwell/orders/*.csv; do echo "$f has $(wc -l < "$f") lines"; done`
+      3. `for i in {1..5}; do echo "$i"; done`
+
+      Then remove the quotes around `The Hobbit` in the first one: it becomes two books, `The` and `Hobbit`.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Lines per old log
@@ -112,6 +160,25 @@ steps:
 
       `read` splits each line at the characters in `IFS` (here a comma) into the named variables; the last one gets the rest of the line. The file goes in at the **end**, with `< file` after `done`. `continue` skips to the next line, `break` leaves the loop.
 
+      <!-- page -->
+
+      **Examples**, as one-liners:
+
+      ```
+      learner@inkwell:~$ n=0; while [[ $n -lt 3 ]]; do n=$((n + 1)); echo "try $n"; done
+      try 1
+      try 2
+      try 3
+      learner@inkwell:~$ while IFS=, read -r id date customer book price; do echo "$customer bought $book"; done < ~/inkwell/orders/2026-08.csv
+      customer bought book
+      Amara Okafor bought Dune
+      Liam Chen bought The Hobbit
+      Sofia Rossi bought Beloved
+      Daniel Novak bought Dune
+      ```
+
+      The first line of output, *customer bought book*, is the CSV's **header** row. The next exercise asks you to skip it.
+
   - kind: shell
     title: Who bought what
     fixture: backoffice
@@ -143,6 +210,16 @@ steps:
       ```
 
       Each choice ends with `;;`. The first pattern that matches wins.
+
+      **Example**, trying four values in a loop:
+
+      ```
+      learner@inkwell:~$ for code in start halt 503 banana; do case "$code" in start) echo "$code: Starting" ;; stop|halt) echo "$code: Stopping" ;; 5??) echo "$code: A 5xx code" ;; *) echo "$code: Unknown" ;; esac; done
+      start: Starting
+      halt: Stopping
+      503: A 5xx code
+      banana: Unknown
+      ```
 
   - kind: shell
     title: Status codes in words
@@ -196,6 +273,18 @@ steps:
         echo "usage: $0 STATUS" >&2
         exit 2
       fi
+      ```
+
+      <!-- page -->
+
+      **Example**: the function above, defined and used on one line at the prompt (the practice terminal forgets functions between lines, so keep it on one):
+
+      ```
+      learner@inkwell:~$ count_status() { local code=$1; grep -c "\" $code " ~/logs/access.log; }; for c in 200 404 500; do echo "$c: $(count_status "$c")"; done; count_status 301
+      200: 20
+      404: 4
+      500: 2
+      1
       ```
 
   - kind: shell

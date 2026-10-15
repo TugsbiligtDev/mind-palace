@@ -10,11 +10,27 @@ steps:
       LANGUAGE sql
       STABLE
       AS $$
-          SELECT sum(quantity * unit_price) FROM order_items WHERE order_id = p_order_id;
+          SELECT sum(quantity * unit_price)
+          FROM order_items
+          WHERE order_id = p_order_id;
       $$;
 
-      SELECT order_id, order_total(order_id) FROM orders WHERE customer_id = 40;
+      SELECT order_id, order_total(order_id)
+      FROM orders
+      WHERE customer_id = 40;
       ```
+
+      Diego (customer 40) has 23 orders. The first three, by `order_id`:
+
+      | order_id | order_total |
+      |---|---|
+      | 2111 | 26.99 |
+      | 2158 | 20.99 |
+      | 6516 | 29.99 |
+
+      The function ran once per row, adding up that order's lines.
+
+      <!-- page -->
 
       - The **parameters** go in parentheses with their types. A `p_` prefix keeps them from being confused with column names.
       - **`RETURNS`** says what comes back.
@@ -33,7 +49,9 @@ steps:
       LANGUAGE sql
       STABLE
       AS $$
-          SELECT sum(quantity * unit_price) FROM order_items WHERE order_id = p_order_id;
+          SELECT sum(quantity * unit_price)
+          FROM order_items
+          WHERE order_id = p_order_id;
       $$;
 
       SELECT order_id, order_total(order_id) AS total
@@ -127,7 +145,9 @@ steps:
       END;
       $$;
 
-      SELECT discount(1200) AS big, discount(600) AS medium, discount(100) AS small;
+      SELECT discount(1200) AS big,
+             discount(600) AS medium,
+             discount(100) AS small;
 
   - kind: try
     title: Your turn with PL/pgSQL
@@ -179,6 +199,103 @@ steps:
 
       But **think in sets first**. One `UPDATE … WHERE` is far faster than a loop that updates one row at a time. Loops are for step-by-step work that truly can't be one statement, like processing in batches.
 
+      <!-- page -->
+
+      A number loop, counting down (`REVERSE` counts backwards):
+
+      ```sql
+      CREATE FUNCTION countdown(p_from integer)
+      RETURNS text
+      LANGUAGE plpgsql
+      IMMUTABLE
+      AS $$
+      DECLARE
+          v_text text := '';
+      BEGIN
+          FOR i IN REVERSE p_from..1 LOOP
+              v_text := v_text || i || '... ';
+          END LOOP;
+          RETURN v_text || 'liftoff!';
+      END;
+      $$;
+
+      SELECT countdown(5);
+      ```
+
+      | countdown |
+      |---|
+      | 5... 4... 3... 2... 1... liftoff! |
+
+      A loop over a query's rows. Each row arrives in the record variable `r`:
+
+      ```sql
+      CREATE FUNCTION status_report()
+      RETURNS text
+      LANGUAGE plpgsql
+      STABLE
+      AS $$
+      DECLARE
+          r       record;
+          v_text  text := '';
+      BEGIN
+          FOR r IN SELECT status, count(*) AS n FROM orders GROUP BY status ORDER BY status LOOP
+              v_text := v_text || r.status || ': ' || r.n || '; ';
+          END LOOP;
+          RETURN v_text;
+      END;
+      $$;
+
+      SELECT status_report();
+      ```
+
+      | status_report |
+      |---|
+      | cancelled: 2291; delivered: 34911; paid: 557; pending: 514; shipped: 1146; |
+
+  - kind: try
+    title: "Try it: loops"
+    body: |
+      Both functions from before. Run them and compare with the tables you just saw.
+
+      Then play: call `countdown(10)`, or drop the word `REVERSE` and change `p_from..1` to `1..p_from` to count up. In `status_report`, swap `orders` for `payments` and `status` for `method`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE FUNCTION countdown(p_from integer)
+      RETURNS text
+      LANGUAGE plpgsql
+      IMMUTABLE
+      AS $$
+      DECLARE
+          v_text text := '';
+      BEGIN
+          FOR i IN REVERSE p_from..1 LOOP
+              v_text := v_text || i || '... ';
+          END LOOP;
+          RETURN v_text || 'liftoff!';
+      END;
+      $$;
+
+      SELECT countdown(5);
+
+      CREATE FUNCTION status_report()
+      RETURNS text
+      LANGUAGE plpgsql
+      STABLE
+      AS $$
+      DECLARE
+          r       record;
+          v_text  text := '';
+      BEGIN
+          FOR r IN SELECT status, count(*) AS n FROM orders GROUP BY status ORDER BY status LOOP
+              v_text := v_text || r.status || ': ' || r.n || '; ';
+          END LOOP;
+          RETURN v_text;
+      END;
+      $$;
+
+      SELECT status_report();
+
   - kind: explain
     title: Procedures
     body: |
@@ -217,7 +334,9 @@ steps:
           FOR r IN SELECT payment_id FROM payments
                    WHERE paid_at < p_cutoff ORDER BY payment_id LOOP
               INSERT INTO payments_archive
-              SELECT * FROM payments WHERE payment_id = r.payment_id;
+              SELECT *
+              FROM payments
+              WHERE payment_id = r.payment_id;
               v_count := v_count + 1;
               IF v_count % 2 = 0 THEN
                   COMMIT;             -- a procedure may commit as it goes
@@ -245,6 +364,27 @@ steps:
       - Only **IMMUTABLE** functions can be used in **expression indexes** and generated columns.
       - The planner can call STABLE and IMMUTABLE functions fewer times, which is faster.
       - **Lying is dangerous.** Label a function that reads a table IMMUTABLE, and an index built on it silently returns wrong answers when the table changes. When unsure, leave the default.
+
+  - kind: try
+    title: "Try it: volatility and indexes"
+    body: |
+      A PL/pgSQL version of `with_tax` with **no** label, so it's VOLATILE. Run it: the index is refused with *functions in index expression must be marked IMMUTABLE*.
+
+      Then add the line `IMMUTABLE` under `LANGUAGE plpgsql` and run again: the index is built. (That label is honest here: the function only does maths.)
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE FUNCTION with_tax(p_price numeric)
+      RETURNS numeric
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+          RETURN round(p_price * 1.10, 2);
+      END;
+      $$;
+
+      CREATE INDEX books_with_tax_idx ON books (with_tax(price));
+    broken_starter: true
 
   - kind: explain
     title: Database logic or app logic?

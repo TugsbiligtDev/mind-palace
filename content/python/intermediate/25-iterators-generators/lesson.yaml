@@ -40,12 +40,46 @@ steps:
               n -= 1
 
       for x in countdown(3):
-          print(x)          # 3, 2, 1
+          print(x)
+      ```
+
+      prints:
+
+      ```
+      3
+      2
+      1
       ```
 
       Calling `countdown(3)` does **not** run the body. It returns a generator object. Each `next()` runs the function *until the next `yield`*, hands that value out, and **pauses right there**, remembering all its local variables. The next `next()` resumes where it stopped.
 
       Why bother? A generator produces values **lazily**, one at a time, *only when asked*. That is perfect for huge files, endless sequences, and pipelines, because you never hold everything in memory.
+
+  - kind: code
+    title: "Try it: watch a generator pause"
+    body: |
+      This `countdown` has extra `print` lines inside, so you can see exactly when its body runs. Run it and notice:
+
+      - `countdown(3)` prints nothing: it only makes a `generator` object.
+      - each `next(gen)` runs just up to the next `yield`, then stops.
+      - `list(gen)` collects whatever is left, and the body finishes.
+
+      Then try one change: start from `countdown(5)` and add a third `next(gen)` line. Nothing is graded here.
+    code: |
+      def countdown(n):
+          print("  (starting)")
+          while n > 0:
+              print(f"  (about to yield {n})")
+              yield n
+              n -= 1
+          print("  (finished)")
+
+
+      gen = countdown(3)
+      print(type(gen).__name__)
+      print("first:", next(gen))
+      print("second:", next(gen))
+      print("the rest:", list(gen))
 
   - kind: code
     title: Write a generator
@@ -124,6 +158,29 @@ steps:
       Rule of thumb: use a **list** when you need the items more than once or need indexes; use a **generator** when you only pass through them once.
 
   - kind: code
+    title: "Try it: generator expressions"
+    body: |
+      Some of Inkwell's titles, measured lazily. Run it and notice:
+
+      - printing the generator itself shows only `<generator object ...>`: nothing has been computed yet.
+      - `list(lengths)` works once; the second time it is `[]`, because the generator is used up.
+      - `sum`, `max` and `any` each take a generator expression directly, with no extra brackets.
+
+      Then try one change: use `min(len(t) for t in titles)` to find the shortest title length. Nothing is graded here.
+    code: |
+      titles = ["Dune", "Emma", "Ulysses", "It", "Middlemarch"]
+
+      lengths = (len(t) for t in titles)     # nothing computed yet
+      print(lengths)
+      print(list(lengths))
+      print(list(lengths))                   # used up!
+
+      print(sum(len(t) for t in titles))
+      print(max(len(t) for t in titles))
+      print(any(t.startswith("U") for t in titles))
+      print(list(t for t in titles if len(t) > 4))
+
+  - kind: code
     title: Lazy filtering
     body: |
       Write a generator `matching(lines, word)` that yields, one at a time, only the lines that contain `word`. It must be **lazy**: the checker feeds it an endless stream of lines and asks for just the first match, which only works if you do not build a list.
@@ -184,6 +241,24 @@ steps:
       - `islice(it, stop)` or `islice(it, start, stop)` slices any iterator (lists' `[a:b]` does not work on generators).
       - `product` gives every combination.
       - `groupby` groups **consecutive** equal items (so sort first if you want overall groups).
+
+  - kind: code
+    title: "Try it: itertools"
+    body: |
+      Each tool once, on new data. Run it and match each output line to its tool. `count(100)` counts 100, 101, 102... forever, so `islice` takes just the first 4.
+
+      `groupby` hands out `(key, group)` pairs; the group is itself an iterator, so `list(group)` shows what is inside.
+
+      Then try one change: give `groupby` the text `"xxyxx"` and notice you get **two** separate `x` groups. Nothing is graded here.
+    code: |
+      from itertools import chain, islice, groupby, product, count
+
+      print(list(chain(["Dune"], ["Emma", "Ulysses"])))
+      print(list(islice(count(100), 4)))
+      print(list(islice("abcdefg", 2, 5)))
+      print(list(product(["tea", "coffee"], ["small", "large"])))
+      for key, group in groupby("xxyzzz"):
+          print(key, list(group))
 
   - kind: code
     title: Run-length encoding
@@ -259,6 +334,37 @@ steps:
       ```
 
       You can also write an iterator as a **class** with `__iter__` (returns itself) and `__next__` (returns the next item, or raises `StopIteration`). Generators are simply a much shorter way to do the same thing.
+
+  - kind: code
+    title: "Try it: yield from and a class"
+    body: |
+      Both halves make values one at a time. `flatten` uses `yield from`; `Countdown` is the long-hand class version with `__iter__` and `__next__`.
+
+      Then try one change: write `countdown` as a generator (`def countdown(n):` with a `while` loop and `yield n`) and check it prints the same as the class.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      def flatten(rows):
+          for row in rows:
+              yield from row
+
+      print(list(flatten([[1, 2], [3], [4, 5]])))
+
+
+      class Countdown:
+          def __init__(self, start):
+              self.n = start
+
+          def __iter__(self):
+              return self
+
+          def __next__(self):
+              if self.n == 0:
+                  raise StopIteration
+              self.n -= 1
+              return self.n + 1
+
+      print(list(Countdown(3)))
 
   - kind: why
     body: |

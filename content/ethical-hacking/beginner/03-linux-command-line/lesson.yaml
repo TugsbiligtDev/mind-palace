@@ -8,6 +8,15 @@ steps:
 
       You will see a **prompt** waiting for you, ending in `$`. You type after it and press Return.
 
+      **Example.** On the Kali lab machine (the one you build in the capstone) the prompt shows *who* you are, the machine's name and *where* you are. Here `whoami` ("who am I logged in as?") is typed and the answer appears underneath:
+
+      ```
+      kali@kali:~$ whoami
+      kali
+      ```
+
+      Read the prompt as: user `kali`, on the machine called `kali`, in the folder `~` (your home). On your Mac the prompt looks a little different (something like `ada@MacBook ~ %`), but it works the same way.
+
   - kind: mac
     title: Open your terminal and look around
     body: |
@@ -18,6 +27,28 @@ steps:
       - `ls -la` → the same, but *long* and *all* (including hidden files that start with a dot)
 
       Hidden dot-files like `.ssh` or `.bash_history` are exactly where investigators look first, so always use `-a` when poking around.
+
+      **Example** from the Kali lab machine (your Mac will show your own folders):
+
+      ```
+      kali@kali:~$ pwd
+      /home/kali
+      kali@kali:~$ ls
+      Desktop  Documents  Downloads  recon
+      kali@kali:~$ ls -la
+      total 40
+      drwx------ 8 kali kali 4096 Oct 14 09:12 .
+      drwxr-xr-x 3 root root 4096 Sep  2 18:40 ..
+      -rw------- 1 kali kali  913 Oct 14 09:10 .bash_history
+      drwx------ 2 kali kali 4096 Sep  2 18:41 .ssh
+      -rw-r--r-- 1 kali kali 5551 Sep  2 18:40 .zshrc
+      drwxr-xr-x 2 kali kali 4096 Sep  2 18:41 Desktop
+      drwxr-xr-x 2 kali kali 4096 Sep  2 18:41 Documents
+      drwxr-xr-x 2 kali kali 4096 Oct 10 16:03 Downloads
+      drwxr-xr-x 2 kali kali 4096 Oct 14 09:05 recon
+      ```
+
+      Plain `ls` showed four folders. `ls -la` shows the hidden dot-files too (`.ssh`, `.bash_history`), plus details on each line. `.` means "this folder" and `..` means "the folder above".
     commands: |
       pwd
       ls
@@ -36,6 +67,29 @@ steps:
       | `cd -` | jump back to the folder you were just in |
 
       A **path** starting with `/` is **absolute** (the full address). A path with no leading slash is **relative** (from where you stand). Confusing the two is the single most common beginner mistake.
+
+      <!-- page -->
+
+      **Example: a short walk.** Watch the prompt and `pwd` change after each `cd`:
+
+      ```
+      kali@kali:~$ cd recon
+      kali@kali:~/recon$ pwd
+      /home/kali/recon
+      kali@kali:~/recon$ cd ..
+      kali@kali:~$ pwd
+      /home/kali
+      kali@kali:~$ cd /
+      kali@kali:/$ pwd
+      /
+      kali@kali:/$ cd -
+      /home/kali
+      kali@kali:~$ cd ~
+      kali@kali:~$ pwd
+      /home/kali
+      ```
+
+      `cd recon` is relative (it worked because `recon` is inside the folder we were in). `cd /` is absolute. `cd -` prints the folder it jumps back to. `cd` itself prints nothing when it works: silence means success.
 
   - kind: mac
     title: Walk the tree
@@ -61,6 +115,40 @@ steps:
 
       To an investigator, `cat /etc/passwd` (the account list) or `tail -f` on a log is daily bread.
 
+      <!-- page -->
+
+      **Examples** on two files in the Kali lab's `recon` folder: a short `notes.txt` and a longer `scan-log.txt`. Add `-n` and a number to `head` or `tail` to choose how many lines:
+
+      ```
+      kali@kali:~/recon$ cat notes.txt
+      target: 192.168.56.101
+      open ports: 22, 80
+      todo: look at the web page
+      kali@kali:~/recon$ head -n 2 scan-log.txt
+      09:01 scan started
+      09:01 192.168.56.101 is up
+      kali@kali:~/recon$ tail -n 2 scan-log.txt
+      09:04 port 80 open
+      09:05 scan finished
+      ```
+
+      `tail -f scan-log.txt` prints the last lines and then *waits*, adding each new line as it is written. Press **Ctrl-C** to stop following. `less scan-log.txt` fills the screen with the file instead; there is no output to copy, you just read and press `q`.
+
+  - kind: mac
+    title: "Try it: read files on your Mac"
+    body: |
+      Your Mac has the same reading commands. These read small system files that every Mac has; nothing is changed.
+
+      - `/etc/shells` lists the shells your Mac allows.
+      - `/etc/passwd` is the account list (the same file investigators read on Linux).
+
+      `less` fills the screen: press Space to move on and **`q` to quit**.
+    commands: |
+      cat /etc/shells
+      head -n 3 /etc/passwd
+      tail -n 2 /etc/passwd
+      less /etc/passwd
+
   - kind: explain
     title: Making and changing files
     body: |
@@ -75,6 +163,27 @@ steps:
       | `rm notes.txt` | **r**e**m**ove (delete) a file |
 
       Build the habit of making a fresh folder for each target or task. Tidy notes are what separate a professional from a mess.
+
+      <!-- page -->
+
+      **Example: set up a folder for a new lab target.** These commands print nothing when they work, so `ls` is run after them to see the result:
+
+      ```
+      kali@kali:~$ mkdir target-101
+      kali@kali:~$ cd target-101
+      kali@kali:~/target-101$ touch findings.txt
+      kali@kali:~/target-101$ cp findings.txt findings-backup.txt
+      kali@kali:~/target-101$ ls
+      findings-backup.txt  findings.txt
+      kali@kali:~/target-101$ mv findings-backup.txt old-findings.txt
+      kali@kali:~/target-101$ ls
+      findings.txt  old-findings.txt
+      kali@kali:~/target-101$ rm old-findings.txt
+      kali@kali:~/target-101$ ls
+      findings.txt
+      ```
+
+      `cp` made a second file, `mv` renamed it, and `rm` deleted it. No message, no Trash: it is simply gone.
 
   - kind: mac
     title: Build a practice folder
@@ -102,7 +211,41 @@ steps:
       2. Be certain where you are first (`pwd`), because a relative path deletes from *here*.
       3. On your own machine, `rm -i` asks before each delete. Use it while learning.
 
+      **Example of `rm -i`.** It asks first; type `y` to delete or `n` to keep the file:
+
+      ```
+      kali@kali:~/target-101$ rm -i findings.txt
+      rm: remove regular empty file 'findings.txt'? n
+      kali@kali:~/target-101$ ls
+      findings.txt
+      ```
+
+      The answer was `n`, so the file is still there.
+
       This caution is itself a security lesson: the same blind obedience that lets you automate also lets a careless command — or a malicious one — wreck everything.
+
+  - kind: mac
+    title: "Try it: rm -i asks first"
+    body: |
+      Use the practice folder you just built. `rm -i` asks before deleting: answer **`n`** the first time and check the file is still there with `ls`. Then run it again and answer `y`.
+    commands: |
+      cd ~/Desktop/hacking-practice
+      rm -i renamed.txt
+      ls
+      rm -i renamed.txt
+      ls
+
+  - kind: choice
+    title: "Quick check: before you press Return"
+    body: |
+      You want to delete the folder `old-scans` with `rm -rf old-scans`. What should you do **first**?
+    options:
+      - "Add sudo so it can't fail"
+      - "Run pwd to be sure which folder you are in, and reread the path"
+      - "Nothing: rm asks before deleting a folder"
+    answer: 1
+    explanation: |
+      `old-scans` is a relative path, so it deletes from wherever you are standing. `pwd` and a second read are what stop a disaster. `rm` never asks unless you add `-i`, and `sudo` only makes a mistake bigger.
 
   - kind: explain
     title: Finding things — find and grep
@@ -117,6 +260,34 @@ steps:
       Combine them with a **pipe** `|` (you will study pipes in Module 5) to search inside many files at once:
       `grep -r "api_key" .` searches the current folder and everything below it for `api_key`. Hunting config files for leaked secrets is often step one after you get access.
 
+      <!-- page -->
+
+      **Examples** inside a practice web app folder, `webapp`, copied into the Kali lab:
+
+      ```
+      kali@kali:~/webapp$ find . -name "*.conf"
+      ./config/site.conf
+      ./config/mail.conf
+      kali@kali:~/webapp$ grep "user" config/db.php
+      $db_user = "shop";
+      kali@kali:~/webapp$ grep -r "admin" .
+      ./config/site.conf:admin_email = admin@lab.local
+      ./templates/footer.html:<a href="/admin/">Staff area</a>
+      ```
+
+      `find` answered with file *names*. `grep` answered with the matching *lines*; with `-r` it also says which file each line came from, before the `:`.
+
+  - kind: mac
+    title: "Try it: find and grep on your Mac"
+    body: |
+      Search your own Mac. `find` lists the `.txt` files in your practice folder; `grep` shows the lines of the account list that mention `root`; `grep -r` searches every file under `/etc/ssh` for the word `Port` (the setting that says which port SSH uses).
+
+      If a line says *Permission denied*, that file isn't yours to read: `grep` skips it and carries on.
+    commands: |
+      find ~/Desktop/hacking-practice -name "*.txt"
+      grep "root" /etc/passwd
+      grep -r "Port" /etc/ssh
+
   - kind: explain
     title: When you are stuck — read the manual
     body: |
@@ -126,6 +297,29 @@ steps:
       - `ls --help` prints a shorter summary of its options.
 
       When a command misbehaves, the answer is almost always in `man` or `--help`. Reading documentation is not a failure — it is the skill.
+
+      **Example.** `--help` prints straight into the terminal. Its first lines for `ls` (the full list is much longer):
+
+      ```
+      kali@kali:~$ ls --help
+      Usage: ls [OPTION]... [FILE]...
+      List information about the FILEs (the current directory by default).
+      Sort entries alphabetically if none of -cftuvSUX nor --sort is specified.
+
+      Mandatory arguments to long options are mandatory for short options too.
+        -a, --all                  do not ignore entries starting with .
+      ```
+
+      There is the `-a` you have been using, explained in one line. `man ls` shows the same kind of information as a full page you scroll through, then `q` to quit.
+
+  - kind: mac
+    title: "Try it: read a manual"
+    body: |
+      Open the manual for `ls` and find the `-a` option. Space scrolls, **`/`** then a word searches (try `/-a` then Return), and **`q`** quits.
+
+      (On a Mac, `ls --help` gives an error: the Mac's `ls` only has a `man` page. On Linux both work.)
+    commands: |
+      man ls
 
   - kind: info
     title: "🔹 Tab-completion and history save you"

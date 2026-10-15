@@ -14,6 +14,23 @@ steps:
 
       Separated by spaces, that's: field 1 the address, field 4 the time, field 7 the path, field 9 the status code, field 10 the size. You'll build answers by chaining small tools: **look → pick → sort → count**.
 
+  - kind: choice
+    title: "Quick check: which field?"
+    body: |
+      ```
+      192.0.2.44 - - [05/Oct/2026:09:02:05 +0000] "GET /admin HTTP/1.1" 403 153 "-" "python-requests/2.31"
+      ```
+
+      Splitting this line by spaces, which field is the **status code** `403`?
+    options:
+      - "Field 1"
+      - "Field 7"
+      - "Field 9"
+      - "Field 10"
+    answer: 2
+    explanation: |
+      Count the spaces: 1 is the address, 4 the time, 6 `"GET`, 7 the path `/admin`, 8 `HTTP/1.1"`, **9 the status** `403`, and 10 the size `153`.
+
   - kind: explain
     title: Regular expressions
     body: |
@@ -36,6 +53,56 @@ steps:
       ```
 
       Always quote a regex (single quotes are safest), or the shell will try to interpret `*`, `|` and `$` itself.
+
+      <!-- page -->
+
+      Here they are on the real log. `^192\.0\.2\.` keeps the lines that **start with** those numbers (the backslashes make the dots plain dots):
+
+      ```
+      learner@inkwell:~/logs$ grep -E '^192\.0\.2\.' access.log
+      192.0.2.44 - - [05/Oct/2026:09:02:03 +0000] "GET /wp-login.php HTTP/1.1" 404 162 "-" "python-requests/2.31"
+      192.0.2.44 - - [05/Oct/2026:09:02:04 +0000] "GET /.env HTTP/1.1" 404 162 "-" "python-requests/2.31"
+      192.0.2.44 - - [05/Oct/2026:09:02:05 +0000] "GET /admin HTTP/1.1" 403 153 "-" "python-requests/2.31"
+      192.0.2.44 - - [05/Oct/2026:11:40:10 +0000] "GET /backup.zip HTTP/1.1" 404 162 "-" "python-requests/2.31"
+      192.0.2.10 - - [06/Oct/2026:02:13:40 +0000] "GET /admin/login HTTP/1.1" 200 640 "-" "curl/8.5.0"
+      192.0.2.10 - - [06/Oct/2026:02:13:44 +0000] "POST /admin/refund?order=1044 HTTP/1.1" 200 88 "-" "curl/8.5.0"
+      192.0.2.10 - - [06/Oct/2026:02:14:09 +0000] "POST /admin/refund?order=1046 HTTP/1.1" 200 88 "-" "curl/8.5.0"
+      192.0.2.10 - - [06/Oct/2026:02:15:31 +0000] "GET /admin/export?table=customers HTTP/1.1" 200 48211 "-" "curl/8.5.0"
+      192.0.2.44 - - [06/Oct/2026:09:15:00 +0000] "GET /phpmyadmin HTTP/1.1" 404 162 "-" "python-requests/2.31"
+      ```
+
+      `(circe|kindred)` means either word:
+
+      ```
+      learner@inkwell:~/logs$ grep -E '/books/(circe|kindred)' access.log
+      203.0.113.7 - - [05/Oct/2026:09:30:21 +0000] "GET /books/circe HTTP/1.1" 200 1987 "-" "Mozilla/5.0 (Macintosh)"
+      203.0.113.7 - - [05/Oct/2026:12:02:33 +0000] "GET /books/kindred HTTP/1.1" 200 1876 "-" "Mozilla/5.0 (Macintosh)"
+      203.0.113.90 - - [06/Oct/2026:08:41:12 +0000] "GET /books/circe HTTP/1.1" 200 1987 "-" "Mozilla/5.0 (Windows NT 10.0)"
+      ```
+
+      And `-o` prints only the matching part. `[0-9.]+` is "one or more digits or dots", so this pulls out curl's version number:
+
+      ```
+      learner@inkwell:~/logs$ grep -oE 'curl/[0-9.]+' access.log
+      curl/8.5.0
+      curl/8.5.0
+      curl/8.5.0
+      curl/8.5.0
+      ```
+
+  - kind: shell
+    title: "Try it: regular expressions"
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `grep -E '^192\.0\.2\.' access.log` keeps the lines that start with `192.0.2.`.
+      2. `grep -E '/books/(circe|kindred)' access.log` finds either book page.
+      3. `grep -oE 'curl/[0-9.]+' access.log` prints only the matching part.
+      4. `grep '05/Oct/2026:12:' access.log` is a plain search: every request from noon on 5 October.
+
+      Then change `(circe|kindred)` to `(dune|circe)` and run it again: more lines appear. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Server errors
@@ -84,6 +151,56 @@ steps:
 
       Build it **one step at a time**: run `cut` alone and look, add `| sort` and look, add `| uniq -c`, and so on. Each step's output is the next one's input, so you always see where it goes wrong.
 
+      <!-- page -->
+
+      Here's that, step by step, on field 6: the request method (`"GET` or `"POST`, with the opening quote, because the line was cut at spaces). First `cut` alone, trimmed to 4 lines with `head`:
+
+      ```
+      learner@inkwell:~/logs$ cut -d' ' -f6 access.log | head -4
+      "GET
+      "GET
+      "GET
+      "POST
+      ```
+
+      Then sort, and count the neighbours:
+
+      ```
+      learner@inkwell:~/logs$ cut -d' ' -f6 access.log | sort | uniq -c
+        20 "GET
+         8 "POST
+      ```
+
+      `sort -u` keeps one of each instead of counting, and `tr` swaps characters:
+
+      ```
+      learner@inkwell:~/logs$ cut -d' ' -f6 access.log | sort -u
+      "GET
+      "POST
+      learner@inkwell:~/logs$ cut -d' ' -f6 access.log | sort -u | tr -d '"'
+      GET
+      POST
+      learner@inkwell:~/logs$ echo 'dune,circe,kindred' | tr ',' '\n'
+      dune
+      circe
+      kindred
+      ```
+
+  - kind: shell
+    title: "Try it: cut, sort, uniq, tr"
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Build a pipeline one piece at a time. Type each line, press **Return**, and look before adding the next piece:
+
+      1. `cut -d' ' -f6 access.log`
+      2. `cut -d' ' -f6 access.log | sort`
+      3. `cut -d' ' -f6 access.log | sort | uniq -c`
+      4. `cut -d' ' -f6 access.log | sort -u | tr -d '"'`
+      5. `cut -d' ' -f7 access.log | sort | uniq -c | sort -rn | head -3`: the three most requested paths.
+
+      Then change `-f7` to `-f10` in the last one: which sizes come up most often? Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: Who visits most?
     fixture: shop-logs
@@ -115,6 +232,63 @@ steps:
       The pattern before `{ }` picks lines; the part inside says what to do. Without a pattern, every line; without `{ }`, print the line.
 
       Put awk programs in **single quotes**, so the shell leaves `$1` alone.
+
+      <!-- page -->
+
+      On the real log. Two fields from each line (trimmed with `head`):
+
+      ```
+      learner@inkwell:~/logs$ awk '{print $1, $9}' access.log | head -3
+      203.0.113.7 200
+      203.0.113.7 200
+      198.51.100.23 200
+      ```
+
+      A pattern alone prints the whole matching line. Here, the one request that got a 403 (forbidden):
+
+      ```
+      learner@inkwell:~/logs$ awk '$9 == 403' access.log
+      192.0.2.44 - - [05/Oct/2026:09:02:05 +0000] "GET /admin HTTP/1.1" 403 153 "-" "python-requests/2.31"
+      ```
+
+      A pattern plus `{print ...}`: the time of each 500 error (field 4):
+
+      ```
+      learner@inkwell:~/logs$ awk '$9 == 500 {print $4}' access.log
+      [05/Oct/2026:10:21:06
+      [06/Oct/2026:08:41:50
+      ```
+
+      A running total with `END`: here `n += 1` adds one per 500 line, so it counts them:
+
+      ```
+      learner@inkwell:~/logs$ awk '$9 == 500 {n += 1} END {print n}' access.log
+      2
+      ```
+
+      And `-F'"'` splits at quotes, which makes field 6 the browser:
+
+      ```
+      learner@inkwell:~/logs$ awk -F'"' '{print $6}' access.log | head -3
+      Mozilla/5.0 (Macintosh)
+      Mozilla/5.0 (Macintosh)
+      Mozilla/5.0 (iPhone)
+      ```
+
+  - kind: shell
+    title: "Try it: awk"
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `awk '{print $1, $9}' access.log` prints two fields per line.
+      2. `awk '$9 == 403' access.log` keeps only the 403 line.
+      3. `awk '$9 == 500 {print $4}' access.log` prints the time of each 500.
+      4. `awk '$9 == 500 {n += 1} END {print n}' access.log` counts them.
+      5. `awk -F'"' '{print $6}' access.log` prints each browser.
+
+      Then change `500` to `200` in number 4: how many requests went well? Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Status codes at a glance
@@ -165,6 +339,52 @@ steps:
 
       Without `-i`, sed prints the result and leaves the file alone, so try it that way first and add `-i` (or `> newfile`) once the output looks right.
 
+      <!-- page -->
+
+      On the real files. A plain swap, on the first two lines only (`head -2` feeds them in):
+
+      ```
+      learner@inkwell:~/logs$ head -2 access.log | sed 's/Mozilla/BROWSER/'
+      203.0.113.7 - - [05/Oct/2026:08:01:12 +0000] "GET / HTTP/1.1" 200 1256 "-" "BROWSER/5.0 (Macintosh)"
+      203.0.113.7 - - [05/Oct/2026:08:01:13 +0000] "GET /style.css HTTP/1.1" 200 812 "https://inkwell.example/" "BROWSER/5.0 (Macintosh)"
+      ```
+
+      A capture: `([0-9]+)` grabs the whole euros, and `\1` puts them back in front of the new cents. Dune's 9.99 becomes 9.95:
+
+      ```
+      learner@inkwell:~/logs$ sed -E 's/([0-9]+)\.99/\1.95/' orders.json | head -3
+      [
+        {"id": 1044, "customer": "Daniel Novak", "book": "Dune", "price": 9.95, "status": "refunded"},
+        {"id": 1045, "customer": "Amara Okafor", "book": "Kindred", "price": 10.50, "status": "delivered"},
+      ```
+
+      Printing lines 3 and 4 only, and deleting the bot's lines (28 lines minus the bot's 5):
+
+      ```
+      learner@inkwell:~/logs$ sed -n '3,4p' access.log
+      198.51.100.23 - - [05/Oct/2026:08:14:55 +0000] "GET /books/dune HTTP/1.1" 200 2048 "-" "Mozilla/5.0 (iPhone)"
+      198.51.100.23 - - [05/Oct/2026:08:15:40 +0000] "POST /cart HTTP/1.1" 200 312 "-" "Mozilla/5.0 (iPhone)"
+      learner@inkwell:~/logs$ sed '/python-requests/d' access.log | wc -l
+      23
+      ```
+
+      None of these changed the files: sed only printed the changed copy.
+
+  - kind: shell
+    title: "Try it: sed"
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `head -2 access.log | sed 's/Mozilla/BROWSER/'`
+      2. `sed -E 's/([0-9]+)\.99/\1.95/' orders.json`
+      3. `sed -n '3,4p' access.log`
+      4. `sed '/python-requests/d' access.log | wc -l`
+      5. `head -3 orders.json` shows the file itself is unchanged.
+
+      Then change `'3,4p'` to `'10,12p'` and run it again. Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: A log safe to share
     fixture: shop-logs
@@ -190,6 +410,46 @@ steps:
       ```
 
       Check the list first (run the left side alone) before you pipe it into `rm`.
+
+      <!-- page -->
+
+      On the old app logs. The left side alone, then the same list handed to `wc -l` as arguments:
+
+      ```
+      learner@inkwell:~/logs$ ls old/*.log
+      old/app-2026-09-01.log  old/app-2026-09-03.log
+      old/app-2026-09-02.log  old/app-2026-09-04.log
+      learner@inkwell:~/logs$ ls old/*.log | xargs wc -l
+        2 old/app-2026-09-01.log
+        1 old/app-2026-09-02.log
+        2 old/app-2026-09-03.log
+        1 old/app-2026-09-04.log
+        6 total
+      ```
+
+      `grep -l` prints only the **names** of the files that match. With `-n1`, `echo` runs once per name:
+
+      ```
+      learner@inkwell:~/logs$ grep -l INFO old/*.log | xargs -n1 echo checking
+      checking old/app-2026-09-01.log
+      checking old/app-2026-09-02.log
+      checking old/app-2026-09-03.log
+      checking old/app-2026-09-04.log
+      ```
+
+  - kind: shell
+    title: "Try it: xargs"
+    fixture: shop-logs
+    setup: cd ~/logs
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `ls old/*.log | xargs wc -l` counts the lines of every old log.
+      2. `grep -l INFO old/*.log` lists the files that mention INFO.
+      3. `grep -l INFO old/*.log | xargs -n1 echo checking`
+      4. `ls old | xargs -I{} echo old/{} is here` puts each name where `{}` is.
+
+      Then change `echo checking` to `head -1` in number 3. Nothing is graded here (and nothing is deleted): try them, then press **Continue**.
 
   - kind: shell
     title: Card numbers in old logs
@@ -221,6 +481,68 @@ steps:
       ```
 
       `|` inside jq works like the shell's pipe: the result of the left part goes into the right part.
+
+      <!-- page -->
+
+      On the shop's `orders.json`. The first order, pretty-printed:
+
+      ```
+      learner@inkwell:~/logs$ jq '.[0]' orders.json
+      {
+        "id": 1044,
+        "customer": "Daniel Novak",
+        "book": "Dune",
+        "price": 9.99,
+        "status": "refunded"
+      }
+      ```
+
+      One field from every order, first with quotes, then with `-r` (trimmed with `head`):
+
+      ```
+      learner@inkwell:~/logs$ jq '.[].customer' orders.json | head -3
+      "Daniel Novak"
+      "Amara Okafor"
+      "Kenji Mori"
+      learner@inkwell:~/logs$ jq -r '.[].customer' orders.json | head -3
+      Daniel Novak
+      Amara Okafor
+      Kenji Mori
+      ```
+
+      Keep some orders, then take one field. The customers whose orders are paid but not yet delivered:
+
+      ```
+      learner@inkwell:~/logs$ jq -r '.[] | select(.status == "paid") | .customer' orders.json
+      Sofia Rossi
+      Amara Okafor
+      ```
+
+      Counting and adding up:
+
+      ```
+      learner@inkwell:~/logs$ jq 'length' orders.json
+      7
+      learner@inkwell:~/logs$ jq '[.[].price] | add' orders.json
+      71.97
+      ```
+
+  - kind: shell
+    title: "Try it: jq"
+    fixture: shop-logs
+    setup: |
+      apt-get install -y -q jq > /dev/null
+      cd ~/logs
+    body: |
+      jq is already installed here. Type each of these and press **Return** after each one:
+
+      1. `jq . orders.json` pretty-prints the whole file.
+      2. `jq '.[0]' orders.json` shows the first order.
+      3. `jq -r '.[].customer' orders.json` lists every customer, without quotes.
+      4. `jq -r '.[] | select(.status == "paid") | .customer' orders.json`
+      5. `jq 'length' orders.json`, then `jq '[.[].price] | add' orders.json`
+
+      Then change `"paid"` to `"delivered"` in number 4. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Which books were refunded?

@@ -8,9 +8,22 @@ steps:
       <a href="about.html">About Inkwell</a>
       ```
 
+      In the page, this shows the words *About Inkwell* in blue and underlined (the browser's default look for links). Clicking them opens `about.html`.
+
       The text between the tags is what people click. An `<a>` without `href` isn't a link at all: it isn't clickable and keyboard users can't reach it.
 
       Links can wrap more than text. An image, or a whole card with a heading and a picture, can sit inside one `<a>`.
+
+  - kind: choice
+    title: "Quick check: a working link"
+    body: |
+      Which of these is a working link to the shop's events page?
+    options:
+      - "`<a>events.html</a>`"
+      - "`<a href=\"events.html\">Events</a>`"
+      - "`<link href=\"events.html\">Events</link>`"
+    answer: 1
+    explanation: "A link is an `<a>` **with** an `href`. Without `href` it isn't clickable, and `<link>` is a different element that connects files like stylesheets in the head."
 
   - kind: explain
     title: Where a link can go
@@ -26,6 +39,32 @@ steps:
       | `https://en.wikipedia.org/wiki/Dune_(novel)` | another website: always a **full URL** |
 
       ⚠️ Linking to another site without `https://` is a classic slip. `href="www.wikipedia.org"` is treated as a relative path, so the browser looks for a *file* called `www.wikipedia.org` in your folder.
+
+  - kind: web
+    title: "Try it: links"
+    body: |
+      The `index.html` tab holds four links. Click each one in the preview: the preview can't open other pages, so a note appears telling you **where the link goes**.
+
+      - `about.html`: a page in the same folder.
+      - `events/poetry.html`: into the `events` folder, then `poetry.html`.
+      - `https://en.wikipedia.org/wiki/Emma_(novel)`: another website, so a full URL.
+      - `www.wikipedia.org`: the classic slip. It has no `https://`, so it's treated as a file in your own folder.
+
+      Notice the third paragraph has no link at all: an `<a>` without `href` is plain text, and nothing happens when you click it.
+
+      Try this:
+
+      1. Fix the last link by putting `https://` in front of `www`.
+      2. Give the third paragraph's `<a>` an `href="about.html"`. It turns blue and clickable.
+      3. Change a link's text (between the tags) and see that only the words change, not where it goes.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p><a href="about.html">About Inkwell</a></p>
+      <p><a href="events/poetry.html">Poetry night</a></p>
+      <p><a>No href, no link</a></p>
+      <p><a href="https://en.wikipedia.org/wiki/Emma_(novel)">Emma on Wikipedia</a></p>
+      <p><a href="www.wikipedia.org">Wikipedia (broken)</a></p>
 
   - kind: web
     title: Build the navigation
@@ -79,9 +118,41 @@ steps:
       <h2 id="hours">Opening hours</h2>
       ```
 
+      Clicking *Opening hours* at the top scrolls the page down until the *Opening hours* heading is in view.
+
       Rules for `id`: it must be **unique** on the page, and it can't contain spaces (use dashes again). You can also jump into another page: `contact.html#map`.
 
       `href="#top"` or `href="#"` jumps back to the top of the page. Long pages often have a small table of contents built this way.
+
+  - kind: web
+    title: "Try it: jump links"
+    body: |
+      This page has two sections, *Opening hours* and *Find us*, with the ids `hours` and `find-us`. The links at the top point to them with `#hours` and `#find-us`, and a link at the bottom goes back up with a plain `#`.
+
+      Click the links in the preview and watch it scroll.
+
+      Try this:
+
+      1. Change `#find-us` in the link to `#findus`. Clicking it now does nothing: the `#` part must match an id exactly.
+      2. Put it back, then add a third section with its own id, and a link to it.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p><a href="#hours">Opening hours</a> · <a href="#find-us">Find us</a></p>
+      <p>Welcome to Inkwell Books, a second-hand bookshop by the harbour.</p>
+      <p>We buy and sell fiction, poetry, history and children's books.</p>
+      <p>Our shop cat, Ink, has her own armchair. Please let her keep it.</p>
+      <p>Every Thursday we host poetry night. Bring a poem, or just listen.</p>
+      <h2 id="hours">Opening hours</h2>
+      <p>Tuesday to Saturday, 9am to 6pm.</p>
+      <p>Sunday, 10am to 4pm.</p>
+      <p>Closed on Mondays.</p>
+      <p>Late opening until 8pm on the first Friday of the month.</p>
+      <h2 id="find-us">Find us</h2>
+      <p>12 Harbour Street, Bristol.</p>
+      <p>Five minutes' walk from the ferry stop.</p>
+      <p>Look for the blue door and the shelf of free books outside.</p>
+      <p><a href="#">Back to top</a></p>
 
   - kind: web
     title: A table of contents
@@ -151,6 +222,8 @@ steps:
 
       Use new tabs sparingly. People can open any link in a new tab themselves (⌘-click), and a surprise new tab confuses many users. When you do it, say so in the link text.
 
+      In the page, the link looks like any other: *Map (opens in a new tab)*. The difference only shows when you click it: the map opens in a new tab and your page stays open behind it.
+
       **Email and phone.** `mailto:` opens the visitor's email app, `tel:` offers to call (handy on phones):
 
       ```html
@@ -158,7 +231,28 @@ steps:
       <a href="tel:+441179460000">0117 946 0000</a>
       ```
 
+      Both show as ordinary links: *hello@inkwellbooks.com* and *0117 946 0000*. Clicking the first opens a new email to that address; tapping the second on a phone offers to call the number.
+
       Write `tel:` numbers with the country code and no spaces.
+
+  - kind: web
+    title: "Try it: email, phone and new-tab links"
+    body: |
+      Here are an email link, a phone link and a new-tab link for Inkwell's *orders* desk. Click each in the preview; the note shows where each goes (`mailto:…`, `tel:…`, the map address).
+
+      Read the third link's opening tag: `target="_blank"` asks for a new tab, `rel="noopener"` keeps your page safe from the new one, and the text warns people.
+
+      Try this:
+
+      1. Change the email address after `mailto:` to `events@inkwellbooks.com`. Change the visible text too: the two are separate.
+      2. Remove `target="_blank" rel="noopener"`. The link looks exactly the same, which is why the text has to say *(opens in a new tab)*.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <h2>Orders</h2>
+      <p>Email: <a href="mailto:orders@inkwellbooks.com">orders@inkwellbooks.com</a></p>
+      <p>Phone: <a href="tel:+441179460001">0117 946 0001</a></p>
+      <p><a href="https://maps.example.com/inkwell-warehouse" target="_blank" rel="noopener">Warehouse map (opens in a new tab)</a></p>
 
   - kind: web
     title: The contact links
@@ -207,6 +301,18 @@ steps:
       | <u>https://inkwellbooks.com/events/2026/october</u> | <u>October events</u> |
 
       It also helps everyone who skims (that is, everyone) and search engines, which treat link text as a description of the page it points to.
+
+  - kind: choice
+    title: "Quick check: good link text"
+    body: |
+      A screen reader lists every link on the page out of context. Which link text still makes sense there?
+    options:
+      - "Click <u>here</u> for our opening hours"
+      - "<u>Read more</u>"
+      - "See our <u>opening hours</u>"
+      - "<u>https://inkwellbooks.com/hours.html</u>"
+    answer: 2
+    explanation: "*Opening hours* says exactly where the link goes. *Here* and *Read more* mean nothing on their own, and a raw URL is long and hard to listen to."
 
   - kind: why
     body: |

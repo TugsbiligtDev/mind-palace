@@ -6,6 +6,27 @@ steps:
 
       Everything in this lesson happens **on the shop server**. Your key and a `shop` alias are already set up, so `ssh shop` gets you there (and `exit` back). Changing the system needs `sudo`, as on the practice computer.
 
+      **Example.** Hop over, check where you are, and come back:
+
+      ```
+      learner@inkwell:~$ ssh shop hostname
+      shop
+      learner@inkwell:~$ ssh shop whoami
+      learner
+      ```
+
+  - kind: choice
+    title: "Quick check: where are you?"
+    body: |
+      Your prompt reads `learner@inkwell:~$`. You want to create Kenji's account on the shop server. What do you do first?
+    options:
+      - "Run sudo adduser kenji straight away"
+      - "Run ssh shop, check the prompt says learner@shop, then create the account there"
+      - "Edit /etc/passwd on the practice computer"
+    answer: 1
+    explanation: |
+      The prompt says you're on `inkwell`, the practice computer. The account belongs on the shop server, so hop over with `ssh shop` first and let the prompt confirm where you are.
+
   - kind: explain
     title: Users and groups
     body: |
@@ -30,6 +51,24 @@ steps:
       ⚠️ `usermod -G group user` **without `-a` replaces** all of the user's other groups with that one. Always `-aG`.
 
       Group membership is read when someone **logs in**: after you add a user to a group, they need to log out and in again (the practice server applies it at once).
+
+      <!-- page -->
+
+      **Example on the shop server**: an account for Marcus, then a group added (with `-aG`):
+
+      ```
+      learner@shop:~$ sudo useradd -m -s /bin/bash marcus
+      [sudo] password for learner: (the practice computer doesn't ask for it)
+      learner@shop:~$ id marcus
+      uid=1001(marcus) gid=1001(marcus) groups=1001(marcus)
+      learner@shop:~$ sudo usermod -aG www-data marcus
+      learner@shop:~$ groups marcus
+      marcus : marcus www-data
+      learner@shop:~$ grep marcus /etc/passwd
+      marcus:x:1001:1001::/home/marcus:/bin/bash
+      ```
+
+      The `/etc/passwd` line reads: name, `x` (the password is in `/etc/shadow`), user ID 1001, group ID 1001, (no full name), home folder, shell.
 
   - kind: shell
     title: An account for Kenji
@@ -79,6 +118,54 @@ steps:
 
       In `status`, **Active:** says `active (running)`, `inactive (dead)` or `failed`, and **Loaded:** says whether it's `enabled` at boot. Each service is described by a **unit file** (`/etc/systemd/system/inkwell-shop.service`): what to run, as which user. Module 45 writes one.
 
+      <!-- page -->
+
+      **Example on the shop server** (your times will differ):
+
+      ```
+      learner@shop:~$ systemctl is-active nginx
+      active
+      learner@shop:~$ systemctl status nginx
+      ● nginx.service - A high performance web server and a reverse proxy server
+           Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)
+           Active: active (running) since Wed 2026-10-14 15:27:57 UTC; 0s ago
+             Docs: man:nginx(8)
+         Main PID: 603 (nginx)
+            Tasks: 2 (limit: 4558)
+           Memory: 6.9M (peak: 7.3M)
+              CPU: 41ms
+           CGroup: /system.slice/nginx.service
+                   ├─603 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"
+                   └─604 "nginx: worker process"
+
+      Oct 14 15:27:57 shop systemd[1]: Starting nginx.service - A high performance web server and a reverse proxy server...
+      Oct 14 15:27:57 shop systemd[1]: Started nginx.service - A high performance web server and a reverse proxy server.
+      learner@shop:~$ systemctl list-units --type=service --state=failed
+        UNIT LOAD   ACTIVE   SUB     DESCRIPTION
+
+      Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+              ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+              SUB    → The low-level unit activation state, values depend on unit type.
+
+      0 loaded units listed.
+      ```
+
+      `Loaded: … enabled` means it starts at boot; `Active: active (running)` means it's up now. No failed services today.
+
+  - kind: shell
+    title: "Try it: systemctl"
+    fixture: [shop-server, shop-access]
+    setup: cd ~
+    body: |
+      Connect with `ssh shop`, then type these one at a time:
+
+      1. `systemctl is-active nginx`
+      2. `systemctl status nginx`
+      3. `sudo systemctl restart nginx`, then `systemctl status nginx` again: look at the time after *since*.
+      4. `exit`
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: "Logs: journalctl and /var/log"
     body: |
@@ -97,6 +184,34 @@ steps:
       Many programs also write text files in **`/var/log`**: `syslog` (general), `auth.log` (logins and sudo), `nginx/access.log` and `error.log`. Reading them needs `sudo` or the `adm` group.
 
       When a service fails: **`systemctl status`** for the summary, **`journalctl -u`** for the details, then fix, then **restart**.
+
+      <!-- page -->
+
+      **Example on the shop server:**
+
+      ```
+      learner@shop:~$ journalctl -u nginx -n 3
+      Oct 14 15:28:11 shop systemd[1]: Starting nginx.service - A high performance web server and a reverse proxy server...
+      Oct 14 15:28:11 shop systemd[1]: Started nginx.service - A high performance web server and a reverse proxy server.
+      learner@shop:~$ sudo head -n 2 /var/log/auth.log
+      [sudo] password for learner: (the practice computer doesn't ask for it)
+      2026-10-05T23:41:02.551203+00:00 shop sshd[1184]: Failed password for root from 192.0.2.44 port 52114 ssh2
+      2026-10-05T23:41:05.112839+00:00 shop sshd[1184]: Failed password for root from 192.0.2.44 port 52114 ssh2
+      ```
+
+  - kind: shell
+    title: "Try it: read the logs"
+    fixture: [shop-server, shop-access]
+    setup: cd ~
+    body: |
+      Connect with `ssh shop`, then:
+
+      1. `journalctl -u nginx -n 5`
+      2. `journalctl -u inkwell-shop -n 5`
+      3. `sudo tail -n 5 /var/log/auth.log`
+      4. `exit`
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: The shop is down
@@ -169,6 +284,20 @@ steps:
 
       Things that trip people up: cron runs with a **tiny PATH** and no `~/.bashrc`, so use full paths; and its output goes nowhere useful unless you **redirect** it (`>> file 2>&1`). [crontab.guru](https://crontab.guru) translates the five fields into words. crontab refuses a line it can't understand (*bad minute*), and tells you which line.
 
+      <!-- page -->
+
+      **Example on the shop server.** A weekday report at 09:00. (`crontab -` reads the new table from the pipe instead of opening an editor.)
+
+      ```
+      learner@shop:~$ crontab -l
+      no crontab for learner
+      learner@shop:~$ echo "0 9 * * 1-5 /home/learner/bin/report.sh >> /home/learner/report.log 2>&1" | crontab -
+      learner@shop:~$ crontab -l
+      0 9 * * 1-5 /home/learner/bin/report.sh >> /home/learner/report.log 2>&1
+      ```
+
+      Full path to the script, and both output streams sent to a log file: the two habits from above.
+
   - kind: shell
     title: Nightly backups
     fixture: [shop-server, shop-access]
@@ -188,6 +317,18 @@ steps:
     title: "🔹 systemd timers"
     body: |
       systemd can also run jobs on a schedule, with **timers**: a `.timer` unit says when (`OnCalendar=*-*-* 02:30:00`) and a matching `.service` says what. They're more work to set up than a crontab line, but they log to the journal, can catch up on runs missed while the server was off (`Persistent=true`), and show up in `systemctl list-timers`. Many of Ubuntu's own housekeeping jobs are timers now. Module 45 builds one.
+
+  - kind: choice
+    title: "Quick check: cron or timer?"
+    body: |
+      The shop server is switched off every night by mistake, so a 02:30 backup job keeps being skipped. Which helps?
+    options:
+      - "A crontab line `30 2 * * *`"
+      - "A systemd timer with `Persistent=true`"
+      - "Running the backup by hand with sudo"
+      - "`@reboot` in the crontab"
+    answer: 1
+    explanation: "A persistent timer notices the missed run and does it as soon as the server is back. cron simply skips runs while the machine is off."
 
   - kind: mac
     title: Administer your lab VM

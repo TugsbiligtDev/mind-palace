@@ -6,6 +6,46 @@ steps:
 
       Example: making change with coins of 25, 10, 5 and 1. Take the biggest coin that fits, repeat. For 41 you take 25, 10, 5, 1: perfect. But with coins of 1, 3 and 4 and a target of 6, greedy takes 4 + 1 + 1 (three coins), while 3 + 3 (two coins) is better. **Greedy is not always right.**
 
+      **Example.** The coin example from above, run for real:
+
+      ```js
+      function greedyCoins(coins, amount) {
+        const used = [];
+        for (const c of coins) {           // biggest first
+          while (amount >= c) { used.push(c); amount -= c; }
+        }
+        return used;
+      }
+
+      console.log(greedyCoins([25, 10, 5, 1], 41));
+      console.log(greedyCoins([4, 3, 1], 6));
+      ```
+
+      prints:
+
+      ```
+      [ 25, 10, 5, 1 ]
+      [ 4, 1, 1 ]
+      ```
+
+  - kind: code
+    title: "Try it: when greedy fails"
+    body: |
+      Run it: perfect for 41, but `[4, 1, 1]` for 6, when `[3, 3]` is better. Then try `greedyCoins([4, 3, 1], 9)`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      function greedyCoins(coins, amount) {
+        const used = [];
+        for (const c of coins) {           // biggest first
+          while (amount >= c) { used.push(c); amount -= c; }
+        }
+        return used;
+      }
+
+      console.log(greedyCoins([25, 10, 5, 1], 41));
+      console.log(greedyCoins([4, 3, 1], 6));
+
   - kind: explain
     title: When is greedy valid?
     body: |
@@ -18,6 +58,13 @@ steps:
       3. If you cannot break it, and an exchange argument feels convincing, code it.
 
       Greedy solutions are usually **O(n)** or **O(n log n)** because of a sort.
+
+      **Example of step 2, "try to break it".** Rule: *for making change, always take the biggest coin that fits.*
+
+      - Coins 25, 10, 5, 1: try 30 → 25 + 5 (2 coins, best). Try 41 → 25 + 10 + 5 + 1 (4, best). Can't break it.
+      - Coins 4, 3, 1: try 6 → 4 + 1 + 1 (3 coins), but 3 + 3 is 2 coins. **Broken.** So for these coins, greedy is wrong, and you need a method that tries more options (dynamic programming, in the Advanced level).
+
+      A tiny counterexample like this is the fastest way to reject a greedy rule.
 
   - kind: code
     title: Maximum subarray (Kadane's algorithm)
@@ -175,6 +222,20 @@ steps:
       - **Merge overlapping intervals:** sort by start. Keep the last merged interval. If the next one starts before the last one ends, extend the end. Otherwise start a new one.
       - **Fewest to remove so none overlap:** sort by **end**. Always keep the interval that finishes earliest (it leaves the most room), and skip any that overlap it. (This "earliest finish" rule passes the exchange argument.)
       - **Minimum meeting rooms:** sort by start, and use a min-heap of end times, or count overlaps with two sorted lists.
+
+      <!-- page -->
+
+      **Example: merging `[1, 3], [8, 10], [2, 6], [15, 18], [9, 12]`.** Sorted by start, then one sweep:
+
+      | next interval | overlaps the last merged? | merged so far |
+      |---|---|---|
+      | [1, 3] | (first one) | [[1, 3]] |
+      | [2, 6] | yes (2 ≤ 3) | [[1, 6]] |
+      | [8, 10] | no (8 > 6) | [[1, 6], [8, 10]] |
+      | [9, 12] | yes (9 ≤ 10) | [[1, 6], [8, 12]] |
+      | [15, 18] | no (15 > 12) | [[1, 6], [8, 12], [15, 18]] |
+
+      Without the sort, `[2, 6]` would arrive after `[8, 10]` and the sweep would miss that it overlaps `[1, 3]`.
 
   - kind: code
     title: "Find the bug: unsorted intervals"

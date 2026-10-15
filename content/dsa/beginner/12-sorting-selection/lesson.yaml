@@ -8,6 +8,47 @@ steps:
       - **Simple sorts** (bubble, selection, insertion) are easy to write and take **O(n²)**.
       - **Fast sorts** (merge sort, quicksort) take **O(n log n)**, using divide and conquer.
 
+      **Example.** Once a list is sorted, several questions get easy. Duplicates end up next to each other, and the smallest and biggest sit at the ends:
+
+      ```js
+      const prices = [12, 5, 30, 5, 18, 12, 7];
+      const sorted = prices.toSorted((a, b) => a - b);
+      console.log(sorted);
+      console.log("cheapest:", sorted[0], "dearest:", sorted.at(-1));
+
+      const dups = [];
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === sorted[i - 1]) dups.push(sorted[i]);
+      }
+      console.log("repeated prices:", dups);
+      ```
+
+      prints:
+
+      ```
+      [ 5, 5, 7, 12, 12, 18, 30 ]
+      cheapest: 5 dearest: 30
+      repeated prices: [ 5, 12 ]
+      ```
+
+  - kind: code
+    title: "Try it: what sorting unlocks"
+    body: |
+      Run it and compare with the output above. Then add another `30` to `prices`: it shows up in the repeated prices.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const prices = [12, 5, 30, 5, 18, 12, 7];
+      const sorted = prices.toSorted((a, b) => a - b);
+      console.log(sorted);
+      console.log("cheapest:", sorted[0], "dearest:", sorted.at(-1));
+
+      const dups = [];
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === sorted[i - 1]) dups.push(sorted[i]);
+      }
+      console.log("repeated prices:", dups);
+
   - kind: explain
     title: The simple sorts, in a minute
     body: |
@@ -18,6 +59,17 @@ steps:
       - **Insertion sort**: keep the front of the array sorted. Take the next item and slide it left into place, like sorting playing cards in your hand.
 
       All three use two nested loops, so they are **O(n²)**. Insertion sort is quick on nearly-sorted data and is a real building block: good sorting libraries use it for small pieces.
+
+      <!-- page -->
+
+      **Example: insertion sort on `[5, 2, 4, 1]`.** Each row takes the next item and slides it left past every bigger one:
+
+      | take | array after sliding it into place |
+      |---|---|
+      | (start) | [5, 2, 4, 1] (the front `[5]` counts as sorted) |
+      | 2 | [2, 5, 4, 1] |
+      | 4 | [2, 4, 5, 1] |
+      | 1 | [1, 2, 4, 5] |
 
   - kind: code
     title: Insertion sort
@@ -68,6 +120,25 @@ steps:
       Merging: keep a pointer in each half, and repeatedly take the smaller front item. (You did exactly this with linked lists in Module 8.)
 
       The recursion is `log n` levels deep, and each level does `n` work in total, so **O(n log n)** time. It needs **O(n)** extra space for the merged arrays, and it is **stable**.
+
+      <!-- page -->
+
+      **Example: merge sort on `[5, 2, 4, 1]`.** Indented lines are the recursive calls:
+
+      ```
+      split [5, 2, 4, 1]
+        split [5, 2]
+          [5]
+          [2]
+        merge [5] + [2] → [2, 5]
+        split [4, 1]
+          [4]
+          [1]
+        merge [4] + [1] → [1, 4]
+      merge [2, 5] + [1, 4] → [1, 2, 4, 5]
+      ```
+
+      The last merge compares the fronts: 2 vs 1 → take 1; 2 vs 4 → take 2; 5 vs 4 → take 4; then 5 is left.
 
   - kind: code
     title: Merge sort
@@ -131,6 +202,26 @@ steps:
       return [...quickSort(smaller), ...equal, ...quickSort(larger)];
       ```
 
+      One partition step, run on a real array:
+
+      ```js
+      const nums = [5, 2, 4, 1, 7, 4];
+      const pivot = 4;
+      console.log(nums.filter((x) => x < pivot));
+      console.log(nums.filter((x) => x === pivot));
+      console.log(nums.filter((x) => x > pivot));
+      ```
+
+      prints:
+
+      ```
+      [ 2, 1 ]
+      [ 4, 4 ]
+      [ 5, 7 ]
+      ```
+
+      Both 4s are now in their final place. `[2, 1]` and `[5, 7]` still need sorting, which is the recursion.
+
   - kind: code
     title: Quicksort
     body: |
@@ -175,6 +266,18 @@ steps:
 
       Throwing away a whole side each time makes the total work about `n + n/2 + n/4 + … ≈ 2n`. A **random pivot** avoids the O(n²) worst case.
 
+      <!-- page -->
+
+      **Example: the 3rd smallest of `[7, 2, 9, 4, 1, 6]`** (pivot = the last item each time):
+
+      | array | pivot | smaller | equal | larger | k | go to |
+      |---|---|---|---|---|---|---|
+      | [7, 2, 9, 4, 1, 6] | 6 | [2, 4, 1] | [6] | [7, 9] | 3 | smaller part |
+      | [2, 4, 1] | 1 | [] | [1] | [2, 4] | 3 | larger part, k = 2 |
+      | [2, 4] | 4 | [2] | [4] | [] | 2 | answer: 4 |
+
+      Sorted, the array is `[1, 2, 4, 6, 7, 9]`, and 4 is indeed third. `[7, 9]` was never sorted at all.
+
   - kind: code
     title: The k-th smallest
     body: |
@@ -218,6 +321,27 @@ steps:
       - Quicksort is not.
 
       In real code and in interviews, **use the built-in `sort` with a comparator** unless the problem asks you to write a sort. It is well tested and O(n log n). Write your own only to learn or when told to.
+
+      **Example.** People already in name order, then sorted by age. Ana and Cy are both 30, and Ben and Dee both 25:
+
+      ```js
+      const people = [
+        { name: "Ana", age: 30 },
+        { name: "Ben", age: 25 },
+        { name: "Cy", age: 30 },
+        { name: "Dee", age: 25 },
+      ];
+      const byAge = people.toSorted((a, b) => a.age - b.age);
+      console.log(byAge.map((p) => `${p.age} ${p.name}`));
+      ```
+
+      prints:
+
+      ```
+      [ '25 Ben', '25 Dee', '30 Ana', '30 Cy' ]
+      ```
+
+      Within each age, the names stay in their original order (Ben before Dee, Ana before Cy). That's stability.
 
   - kind: code
     title: Sort people, stably

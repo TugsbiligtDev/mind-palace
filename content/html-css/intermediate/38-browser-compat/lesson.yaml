@@ -6,6 +6,27 @@ steps:
 
       So before using something new, ask: **can my visitors' browsers do this?** And if some can't, **what happens to them?**
 
+      **Example: one feature, three arrival dates.** The `:has()` selector ("a card *that has* an image") reached each engine at a different time:
+
+      | Engine | Browser | `:has()` arrived |
+      |---|---|---|
+      | WebKit | Safari 15.4 | March 2022 |
+      | Blink | Chrome 105 | August 2022 |
+      | Gecko | Firefox 121 | December 2023 |
+
+      For almost two years, a rule like `.card:has(img) { padding: 0; }` worked for Safari and Chrome users and was simply skipped by Firefox. The page still worked, just with the extra padding: that's the "what happens to them?" question.
+
+  - kind: choice
+    title: "Quick check: which engine?"
+    body: |
+      Which rendering engine does **every** browser on an iPhone use today?
+    options:
+      - "Blink"
+      - "Gecko"
+      - "WebKit"
+    answer: 2
+    explanation: "On iPhones, every browser (even Chrome) runs on WebKit, Safari's engine, so testing in Safari matters."
+
   - kind: explain
     title: Baseline and caniuse
     body: |
@@ -18,6 +39,33 @@ steps:
       - **caniuse.com** shows a version-by-version table and the share of real-world users who can use the feature.
 
       Everything taught up to Module 34 is Widely available, except a few newer pieces flagged along the way (`command`/`commandfor`, `light-dark()` on older devices). Advanced-level features like anchor positioning are newer still.
+
+      <!-- page -->
+
+      **Example: reading the badge over time.** `:has()` worked in all major browsers from December 2023, so MDN marked it **Newly available** then. Two and a half years later, in mid-2026, it became **Widely available**.
+
+      So the same rule got two different pieces of advice:
+
+      ```css
+      /* In 2024 (Newly available): add a fallback that works without it */
+      .card { padding: 1rem; }
+      .card:has(img) { padding: 0; }   /* an improvement for browsers that have it */
+
+      /* Today (Widely available): use it freely */
+      ```
+
+      `display: grid` has been Widely available for years, so it needs no fallback at all.
+
+  - kind: choice
+    title: "Quick check: read the badge"
+    body: |
+      MDN marks a feature **Baseline Newly available**. How should you use it?
+    options:
+      - "Freely, with no fallback"
+      - "Never: it isn't ready"
+      - "Use it, but with a fallback for people on older devices"
+    answer: 2
+    explanation: "Newly available means it works in all the latest browsers, but some visitors on older devices won't have it yet. Widely available features can be used freely."
 
   - kind: explain
     title: "@supports and progressive enhancement"

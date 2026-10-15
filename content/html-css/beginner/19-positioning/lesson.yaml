@@ -12,6 +12,53 @@ steps:
 
       The **offsets** `top`, `right`, `bottom`, `left` move a positioned box. `inset: 0` is shorthand for all four at 0.
 
+  - kind: web
+    title: "Try it: relative, absolute and fixed"
+    body: |
+      Box **B** has `position: relative; top: 20px; left: 40px;`. It moves, but a gap stays where it was: its ghost still takes up space. Box **D** is `absolute` inside the dashed container, so it's taken out of the flow and pinned to the container's bottom-right corner.
+
+      Try this:
+
+      1. Change B to `position: static;`. The offsets stop doing anything.
+      2. Change B to `position: absolute;`. Its gap closes up: C moves into its place.
+      3. Remove `position: relative` from `.container`. D now measures from the whole page instead.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="container">
+        <div class="box">A</div>
+        <div class="box b">B</div>
+        <div class="box">C</div>
+        <div class="box d">D</div>
+      </div>
+    css: |
+      .container {
+        position: relative;
+        height: 260px;
+        border: 2px dashed gray;
+      }
+
+      .box {
+        width: 60px;
+        padding: 8px;
+        margin: 4px;
+        background: #fde68a;
+      }
+
+      .b {
+        position: relative;
+        top: 20px;
+        left: 40px;
+        background: #fdba74;
+      }
+
+      .d {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        background: #86efac;
+      }
+
   - kind: explain
     title: relative + absolute, the classic pair
     body: |
@@ -30,12 +77,38 @@ steps:
 
       An absolutely positioned box looks up its ancestors for the nearest one whose `position` isn't `static`, and positions itself against that box. `position: relative` with no offsets is the standard way to say "measure from here" without moving anything.
 
+  - kind: choice
+    title: "Quick check: what to measure from"
+    body: |
+      A `.badge` has `position: absolute; top: 0; right: 0;`. It should sit in the corner of its `.card`. What must `.card` have?
+    options:
+      - "`position: relative`"
+      - "`z-index: 1`"
+      - "`display: block`"
+    answer: 0
+    explanation: "An absolute box measures from the nearest ancestor whose `position` isn't `static`. `position: relative` on the card makes it that box, without moving it."
+
   - kind: explain
     title: "Common mistake: the escaping badge"
     body: |
       Forget `position: relative` on the parent, and the badge keeps looking up… past the card, past the section, all the way to the page itself. It ends up in the top-right corner of the **whole page**, often overlapping the header.
 
       If an absolute element is in a strange place, inspect its ancestors: which one is positioned? DevTools' Computed tab shows `position` for each.
+
+      **Example: one missing line.**
+
+      ```css
+      .card  { border: 2px solid #7c2d12; }               /* no position here */
+      .badge { position: absolute; top: 10px; right: 10px; }
+      ```
+
+      The badge looks for the nearest **positioned** ancestor. The card isn't positioned, nor is `body`, so it measures from the page itself: 10px from the top-right corner of the whole page, on top of the header. Every card's badge lands in that same spot, stacked on top of each other.
+
+      ```css
+      .card  { border: 2px solid #7c2d12; position: relative; }   /* the fix */
+      ```
+
+      Now each badge measures from its own card.
 
   - kind: web
     title: Pin the sale badge
@@ -242,6 +315,34 @@ steps:
       2. A parent with a `z-index` (or `opacity` below 1, or a `transform`) creates a **stacking context**: a sealed group. Its children can't rise above things outside the group, however big their z-index. If `z-index: 9999` "doesn't work", a parent's stacking context is the usual reason (Module 51 goes deeper).
 
       Keep z-index values few and spaced out (1, 10, 100) so you know the order at a glance.
+
+  - kind: web
+    title: "Try it: z-index"
+    body: |
+      The three cards overlap. With no `z-index`, the one that comes **last** in the HTML (green) paints on top.
+
+      Try this:
+
+      1. Give `.red` a `z-index: 2;`. It jumps to the front.
+      2. Wrap the red card in `<div class="group">…</div>`, and add `.group { position: relative; z-index: 0; }`. The group is now a stacking context at level 0, so its red card drops behind the others again, however big its own `z-index` is.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="card red">Red</div>
+      <div class="card blue">Blue</div>
+      <div class="card green">Green</div>
+    css: |
+      .card {
+        position: relative;
+        width: 120px;
+        height: 80px;
+        padding: 8px;
+        color: white;
+      }
+
+      .red   { background: firebrick; }
+      .blue  { background: steelblue; top: -50px; left: 40px; }
+      .green { background: seagreen;  top: -100px; left: 80px; }
 
   - kind: why
     body: |

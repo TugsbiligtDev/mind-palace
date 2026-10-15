@@ -8,6 +8,31 @@ steps:
 
       When you visit a site, your browser asks that computer for the files, downloads them, and turns them into the page you see. That's the whole trick, repeated billions of times a day.
 
+      For example, the whole Inkwell Books site could be this one folder:
+
+      ```
+      inkwell/
+      ├── index.html        the home page
+      ├── about.html        the About page
+      ├── style.css         how every page looks
+      └── images/
+          ├── logo.svg
+          └── cover-dune.svg
+      ```
+
+      Visiting `inkwellbooks.com/about.html` simply asks for the file `about.html` from that folder.
+
+  - kind: choice
+    title: "Quick check: what a site is made of"
+    body: |
+      Which of these is the best description of a website?
+    options:
+      - "A special program that only web servers can run"
+      - "A folder of ordinary files (HTML, CSS, pictures) that a browser downloads and draws"
+      - "A single picture of a page, sent to your screen"
+    answer: 1
+    explanation: "A site is just files in a folder. The browser downloads them and turns them into the page you see."
+
   - kind: explain
     title: Browser, server and the internet
     body: |
@@ -20,6 +45,24 @@ steps:
       | **The internet** | The network of cables, Wi-Fi and routers that carries the request and the files | Your home router, undersea cables |
 
       The browser is the **client**: it asks. The server answers. One request, one response, over and over.
+
+      For example, when you open Inkwell's About page:
+
+      1. **Browser** (Safari, on your Mac): "Please send me `about.html`."
+      2. **The internet** carries that request through your Wi-Fi and router to the server.
+      3. **Server** (a computer at the host): finds `about.html` in the site's folder and sends it back.
+      4. Your browser draws the page.
+
+  - kind: choice
+    title: "Quick check: who does what?"
+    body: |
+      You open Inkwell's site in Chrome. Which player **stores the site's files and sends them out**?
+    options:
+      - "Chrome, the browser"
+      - "The internet"
+      - "The server"
+    answer: 2
+    explanation: "The server keeps the files and answers requests. The browser (Chrome) asks and draws; the internet only carries the messages between them."
 
   - kind: explain
     title: Reading a URL
@@ -38,6 +81,18 @@ steps:
       - **Fragment** (after `#`): a spot *inside* the page. The browser scrolls there. It is never sent to the server.
 
       If the path ends in a folder (`/books/`), the server usually sends that folder's `index.html`. That's why the home page of almost every site is a file called `index.html`.
+
+  - kind: choice
+    title: "Quick check: read the address"
+    body: |
+      In `https://www.inkwellbooks.com/events/poetry.html#tickets`, which part does the browser **never send** to the server?
+    options:
+      - "`https`"
+      - "`/events/poetry.html`"
+      - "`#tickets`"
+      - "`www.inkwellbooks.com`"
+    answer: 2
+    explanation: "The fragment after `#` is only for the browser: it scrolls to that spot in the page. The scheme, domain and path are all used to fetch the file."
 
   - kind: explain
     title: Three languages, three jobs
@@ -85,12 +140,59 @@ steps:
 
       One page usually needs many requests: the HTML first, then the browser reads it, finds the CSS, images and fonts it mentions, and asks for each of those too.
 
+      For example, here is the start of a real conversation, shortened. The browser asks:
+
+      ```
+      GET /about.html HTTP/1.1
+      Host: www.inkwellbooks.com
+      ```
+
+      and the server answers with a status code, then the file:
+
+      ```
+      HTTP/1.1 200 OK
+      Content-Type: text/html
+
+      <!DOCTYPE html>
+      <html lang="en"> …
+      ```
+
+      Ask for `/abuot.html` (a typo) and the answer starts `HTTP/1.1 404 Not Found` instead.
+
+  - kind: choice
+    title: "Quick check: status codes"
+    body: |
+      You click a link to `inkwellbooks.com/events.html` and the page says the file doesn't exist. Which status code did the server send?
+    options:
+      - "`404`"
+      - "`200`"
+      - "`500`"
+      - "`301`"
+    answer: 0
+    explanation: "`404 Not Found` means there is no file at that path. `200` means success, `301` means it moved, and `500` means the server itself broke."
+
   - kind: explain
     title: HTTPS, the padlock
     body: |
       Plain HTTP sends everything as readable text, so anyone on the same café Wi-Fi could read or even change it. **HTTPS** is HTTP inside an encrypted tunnel: only your browser and the server can read what passes between them, and the browser checks a certificate to prove the server really is `inkwellbooks.com`.
 
       Browsers now warn loudly about sites without HTTPS, and hosts like Vercel, Netlify and GitHub Pages give you HTTPS for free. You will never need to set it up by hand for this course.
+
+      For example, the same page at two addresses:
+
+      - `http://inkwellbooks.com/order.html`: anyone on the café Wi-Fi could read the order form as you type it in. Browsers mark it **Not Secure**.
+      - `https://inkwellbooks.com/order.html`: the same page, but sent encrypted. The browser shows a padlock (or no warning at all).
+
+  - kind: choice
+    title: "Quick check: what HTTPS protects"
+    body: |
+      You fill in a form on an `https://` page over café Wi-Fi. What does the S in HTTPS protect?
+    options:
+      - "It makes the page load faster"
+      - "It encrypts what passes between your browser and the server, and proves you're talking to the real site"
+      - "It checks the page has no mistakes in its HTML"
+    answer: 1
+    explanation: "HTTPS wraps HTTP in encryption, so others on the network can't read or change it, and the certificate proves the server really is that domain. It doesn't make pages faster or check their code."
 
   - kind: info
     title: "🔹 DNS: the internet's phone book"
@@ -99,12 +201,48 @@ steps:
 
       You only need to recognise the word for now. It matters when you connect your own domain to a host (Module 36).
 
+      For example, a lookup on a Mac (Terminal's `host` command asks DNS for you) answers with the number:
+
+      ```
+      % host inkwellbooks.com
+      inkwellbooks.com has address 76.76.21.21
+      ```
+
+      (Inkwell is a made-up shop, so on your Mac you'd try a real domain instead, like `host wikipedia.org`.)
+
+  - kind: choice
+    title: "Quick check: what DNS does"
+    body: |
+      What does DNS do when you type `inkwellbooks.com`?
+    options:
+      - "It downloads the site's files"
+      - "It turns the name into the server's IP address, like `76.76.21.21`"
+      - "It encrypts the connection"
+    answer: 1
+    explanation: "DNS only translates names into numbers. Downloading is HTTP's job, and encryption is HTTPS's job."
+
   - kind: explain
     title: Static sites and dynamic sites
     body: |
       A **static** site is exactly what we've described: the server hands out the same files to everyone. Blogs, portfolios, restaurant menus and documentation are often static. Everything you build in this course is static, and it can be hosted for free.
 
       A **dynamic** site builds pages on the fly for each visitor, often from a database (your bank, your email). Under the hood it still sends HTML, CSS and JavaScript to your browser. The browser doesn't care how the files were made, so everything you learn here applies to every website.
+
+      For example:
+
+      - **Static:** Inkwell's *Opening hours* page. Every visitor gets the same `hours.html` file.
+      - **Dynamic:** a *Your orders* page. The server looks up *your* orders in a database and builds a page just for you.
+
+  - kind: choice
+    title: "Quick check: static or dynamic?"
+    body: |
+      Which page has to be **dynamic**?
+    options:
+      - "A page showing the shop's address and opening hours"
+      - "A page listing the books *you* have ordered, after you sign in"
+      - "A page with photos of the shop"
+    answer: 1
+    explanation: "Your own order list is different for every visitor, so the server must build it from a database. The other pages are the same for everyone, so plain static files work."
 
   - kind: why
     body: |

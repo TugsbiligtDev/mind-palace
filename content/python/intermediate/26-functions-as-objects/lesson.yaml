@@ -52,13 +52,39 @@ steps:
       ```python
       words = ["banana", "fig", "cherry"]
       sorted(words, key=len)                      # ['fig', 'banana', 'cherry']
-      max(words, key=lambda w: w[-1])             # 'fig'   (largest last letter)
+      max(words, key=lambda w: w[-1])             # 'cherry'   (largest last letter: y)
 
       players = [{"name": "Ada", "score": 5}, {"name": "Bo", "score": 9}]
       sorted(players, key=lambda p: p["score"], reverse=True)
       ```
 
       To sort by several things, return a **tuple**: `key=lambda p: (-p["score"], p["name"])` means "highest score first, then name A to Z". If a lambda gets complicated, write a normal `def` with a name.
+
+  - kind: code
+    title: "Try it: lambda and key="
+    body: |
+      A few Inkwell books, sorted and searched in different ways. Run it and notice:
+
+      - `key=len` sorts the titles by length, not A to Z.
+      - `min(..., key=...)` returns the whole dict whose `"year"` is smallest.
+      - `reverse=True` flips the order, so the newest book comes first.
+      - a lambda can be stored in a variable and called like any function.
+
+      Then try one change: sort `books` by title instead, with `key=lambda b: b["title"]`. Nothing is graded here.
+    code: |
+      books = [
+          {"title": "Emma", "year": 1815},
+          {"title": "Dune", "year": 1965},
+          {"title": "Ulysses", "year": 1922},
+      ]
+
+      print(sorted(["Ulysses", "It", "Emma"], key=len))
+      print(min(books, key=lambda b: b["year"]))
+      newest_first = sorted(books, key=lambda b: b["year"], reverse=True)
+      print([b["title"] for b in newest_first])
+
+      shout = lambda text: text.upper() + "!"
+      print(shout("new stock"))
 
   - kind: code
     title: Leaderboard
@@ -123,6 +149,26 @@ steps:
 
       **Prefer the comprehension**: it reads more naturally and most Python programmers expect it. `map`/`filter` shine when you already have a named function (`map(int, texts)` is neat).
 
+  - kind: code
+    title: "Try it: map, filter or a comprehension"
+    body: |
+      Each pair of lines gives the same result. The last line shows where `map` reads well: you already have a named function, `int`.
+
+      Then try one change: keep only the words longer than 3 letters, once with `filter` and once with a comprehension.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      words = ["dune", "emma", "it"]
+      nums = [-1, 2, 3]
+
+      print(list(map(str.upper, words)))
+      print([w.upper() for w in words])
+
+      print(list(filter(lambda n: n > 0, nums)))
+      print([n for n in nums if n > 0])
+
+      print(list(map(int, ["7", "42"])))
+
   - kind: explain
     title: "Closures: functions that remember"
     body: |
@@ -151,6 +197,39 @@ steps:
               return count
           return bump
       ```
+
+  - kind: code
+    title: "Try it: closures"
+    body: |
+      Two closures. `make_greeter` only **reads** its remembered `greeting`. `make_till` **changes** its remembered `total`, so it needs `nonlocal`. Run it and notice that `till` keeps a running total between calls.
+
+      Then try one change: delete the `nonlocal total` line and run again. Read the error: without `nonlocal`, Python thinks `total` is a brand-new local variable. Nothing is graded here.
+    code: |
+      def make_greeter(greeting):
+          def greet(name):
+              return f"{greeting}, {name}!"      # 'greeting' is remembered
+          return greet
+
+
+      hello = make_greeter("Hello")
+      welcome = make_greeter("Welcome to Inkwell")
+      print(hello("Ada"))
+      print(welcome("Bo"))
+
+
+      def make_till():
+          total = 0
+          def ring_up(price):
+              nonlocal total                     # we change 'total', so nonlocal
+              total += price
+              return total
+          return ring_up
+
+
+      till = make_till()
+      print(till(12))
+      print(till(7))
+      print(till(30))
 
   - kind: code
     title: A counter factory
@@ -236,6 +315,39 @@ steps:
       Only cache functions that are **pure** (same input always gives the same output, no side effects). `lru_cache(maxsize=128)` keeps only the most recently used results.
 
   - kind: code
+    title: "Try it: partial and cache"
+    body: |
+      Run it and notice:
+
+      - `inkwell_label` is `label` with the shop already filled in, so you pass only the item.
+      - `slow_double` has a `print` inside its body. With `@cache`, the body runs **once** per different number; repeat calls skip it and return the remembered answer.
+
+      Then try one change: delete the `@cache` line and run again. Now the body runs on every call. Nothing is graded here.
+    code: |
+      from functools import partial, cache
+
+
+      def label(shop, item):
+          return f"[{shop}] {item}"
+
+
+      inkwell_label = partial(label, "Inkwell")
+      print(inkwell_label("Dune"))
+      print(inkwell_label("Emma"))
+
+
+      @cache
+      def slow_double(n):
+          print(f"  (working out {n} * 2)")   # shows when the body really runs
+          return n * 2
+
+
+      print(slow_double(4))
+      print(slow_double(4))
+      print(slow_double(5))
+      print(slow_double(4))
+
+  - kind: code
     title: Fix the slow Fibonacci
     body: |
       This recursive `fib` recomputes the same values again and again, so `fib(80)` would make about 10^16 calls and run for decades. Fix it with **one line**: `@cache` above the function.
@@ -315,6 +427,26 @@ steps:
       ```
 
       It is powerful but cryptic. For sums use `sum`, for products `math.prod`, and for anything else a plain `for` loop is usually clearer. Recognise it; rarely reach for it.
+
+  - kind: code
+    title: "Try it: reduce"
+    body: |
+      `reduce` and `math.prod` give the same 24. The last lines show the running result step by step, which is what `reduce` does inside.
+
+      Then try one change: start `reduce` at `10` instead of `1`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      import math
+      from functools import reduce
+
+      print(reduce(lambda a, b: a * b, [2, 3, 4], 1))
+      print(math.prod([2, 3, 4]))
+
+      running = 1
+      for b in [2, 3, 4]:
+          running = running * b
+          print("so far:", running)
 
   - kind: why
     body: |

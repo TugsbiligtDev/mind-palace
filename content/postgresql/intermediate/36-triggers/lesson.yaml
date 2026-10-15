@@ -16,6 +16,57 @@ steps:
       EXECUTE FUNCTION touch_updated_at();
       ```
 
+      <!-- page -->
+
+      **Example.** A trigger that tidies new genre names, so `'  graphic novel '` is saved as `Graphic Novel` (`initcap` capitalizes each word):
+
+      ```sql
+      CREATE FUNCTION tidy_genre() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+          NEW.name := initcap(trim(NEW.name));
+          RETURN NEW;
+      END;
+      $$;
+
+      CREATE TRIGGER genres_tidy
+      BEFORE INSERT ON genres
+      FOR EACH ROW
+      EXECUTE FUNCTION tidy_genre();
+
+      INSERT INTO genres (name)
+      VALUES ('  graphic novel ')
+      RETURNING genre_id, name;
+      ```
+
+      | genre_id | name |
+      |---|---|
+      | 10 | Graphic Novel |
+
+      The INSERT didn't ask for any tidying. The trigger did it anyway. (The next pages explain `NEW` and `BEFORE`.)
+
+  - kind: try
+    title: "Try it: your first trigger"
+    body: |
+      The example. Run it, then insert another messy name, like `'TRUE crime'`, before the `RETURNING`… line, or change `initcap` to `upper`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE FUNCTION tidy_genre() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+          NEW.name := initcap(trim(NEW.name));
+          RETURN NEW;
+      END;
+      $$;
+
+      CREATE TRIGGER genres_tidy
+      BEFORE INSERT ON genres
+      FOR EACH ROW
+      EXECUTE FUNCTION tidy_genre();
+
+      INSERT INTO genres (name)
+      VALUES ('  graphic novel ')
+      RETURNING genre_id, name;
+
   - kind: explain
     title: NEW, OLD, BEFORE and AFTER
     body: |
@@ -39,6 +90,44 @@ steps:
 
       - **`FOR EACH ROW`**: runs once **per row** changed.
       - **`FOR EACH STATEMENT`**: runs once **per statement**, even if it changed 10,000 rows (or none).
+
+  - kind: try
+    title: "Try it: row vs. statement"
+    body: |
+      Two AFTER UPDATE triggers on `genres`, one per row and one per statement, each writing a line to `trigger_log`. One UPDATE changes all 9 genres. Run it: the row trigger fired **9** times, the statement trigger **once**.
+
+      Then play: add `WHERE genre_id = 1` to the UPDATE (row: 1, statement: 1), or `WHERE genre_id = 99` (row: 0, statement: still 1).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE TABLE trigger_log (level text);
+
+      CREATE FUNCTION log_row() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+          INSERT INTO trigger_log (level) VALUES ('row');
+          RETURN NULL;
+      END;
+      $$;
+
+      CREATE FUNCTION log_statement() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+          INSERT INTO trigger_log (level) VALUES ('statement');
+          RETURN NULL;
+      END;
+      $$;
+
+      CREATE TRIGGER genres_each_row AFTER UPDATE ON genres
+      FOR EACH ROW EXECUTE FUNCTION log_row();
+
+      CREATE TRIGGER genres_each_statement AFTER UPDATE ON genres
+      FOR EACH STATEMENT EXECUTE FUNCTION log_statement();
+
+      UPDATE genres SET name = upper(name);
+
+      SELECT level, count(*) AS times
+      FROM trigger_log
+      GROUP BY level
+      ORDER BY level;
 
   - kind: explain
     title: The classic, auto-updating updated_at
@@ -87,16 +176,21 @@ steps:
       EXECUTE FUNCTION touch_updated_at();
 
       UPDATE orders SET status = 'cancelled' WHERE order_id = 28;
-      SELECT order_id, status, updated_at FROM orders WHERE order_id IN (27, 28);
+      SELECT order_id, status, updated_at
+      FROM orders
+      WHERE order_id IN (27, 28);
 
   - kind: try
     title: Your turn to clean on the way in
     body: |
       Messy emails keep arriving (Module 26). Write a **BEFORE INSERT OR UPDATE** row trigger on `customers` that stores every email **trimmed and lowercased**. Name the function `clean_email` and the trigger `customers_clean_email`. The INSERT and SELECT below will check it.
     sql: |
-      INSERT INTO customers (first_name, last_name, email) VALUES ('Nara', 'Nomad', '  Nara@Example.COM ');
+      INSERT INTO customers (first_name, last_name, email)
+      VALUES ('Nara', 'Nomad', '  Nara@Example.COM ');
 
-      SELECT first_name, email FROM customers WHERE last_name = 'Nomad';
+      SELECT first_name, email
+      FROM customers
+      WHERE last_name = 'Nomad';
     expect: |
       CREATE FUNCTION clean_email()
       RETURNS trigger
@@ -177,7 +271,9 @@ steps:
       UPDATE payments SET amount = -60.00 WHERE payment_id = 36615;
       DELETE FROM payments WHERE payment_id = 139;
 
-      SELECT operation, payment_id, old_amount, new_amount FROM payments_audit ORDER BY audit_id;
+      SELECT operation, payment_id, old_amount, new_amount
+      FROM payments_audit
+      ORDER BY audit_id;
 
   - kind: try
     title: Your turn to audit status changes
@@ -230,6 +326,61 @@ steps:
 
       Prefer **constraints** for rules (Module 12) and **generated columns** for derived values (Module 29). Reach for a trigger when those can't do the job: auditing, `updated_at`, syncing a summary table.
 
+      <!-- page -->
+
+      **Example of the TRUNCATE gap.** A trigger logs every deleted review. DELETE fires it 513 times; TRUNCATE removes the other 6,847 reviews without firing it at all:
+
+      ```sql
+      DELETE FROM reviews WHERE rating = 1;
+      SELECT count(*) AS logged_after_delete FROM deleted_log;
+      ```
+
+      | logged_after_delete |
+      |---|
+      | 513 |
+
+      ```sql
+      TRUNCATE reviews;
+      SELECT count(*) AS logged_after_truncate,
+             (SELECT count(*) FROM reviews) AS reviews_left
+      FROM deleted_log;
+      ```
+
+      | logged_after_truncate | reviews_left |
+      |---|---|
+      | 513 | 0 |
+
+      The table is empty, but the log only knows about 513 of the deletions.
+
+  - kind: try
+    title: "Try it: the TRUNCATE gap"
+    body: |
+      The full example, with the log table and trigger. Run it and compare with the tables you just saw. Then replace `TRUNCATE reviews;` with `DELETE FROM reviews;`: now all 7,360 deletions are logged.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE TABLE deleted_log (review_id integer);
+
+      CREATE FUNCTION log_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+          INSERT INTO deleted_log VALUES (OLD.review_id);
+          RETURN OLD;
+      END;
+      $$;
+
+      CREATE TRIGGER reviews_log_delete
+      BEFORE DELETE ON reviews
+      FOR EACH ROW
+      EXECUTE FUNCTION log_delete();
+
+      DELETE FROM reviews WHERE rating = 1;
+      SELECT count(*) AS logged_after_delete FROM deleted_log;
+
+      TRUNCATE reviews;
+      SELECT count(*) AS logged_after_truncate,
+             (SELECT count(*) FROM reviews) AS reviews_left
+      FROM deleted_log;
+
   - kind: info
     title: "🔹 Event triggers"
     body: |
@@ -256,7 +407,9 @@ steps:
 
       INSERT INTO customers (first_name, last_name, email)
       VALUES ('Nina', 'Park', '  Nina.Park@Example.com ');
-      SELECT first_name, email FROM customers WHERE last_name = 'Park' AND first_name = 'Nina';
+      SELECT first_name, email
+      FROM customers
+      WHERE last_name = 'Park' AND first_name = 'Nina';
     expect: |
       CREATE FUNCTION clean_email() RETURNS trigger
       LANGUAGE plpgsql

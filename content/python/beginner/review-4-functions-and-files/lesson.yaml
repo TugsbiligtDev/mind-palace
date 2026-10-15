@@ -191,6 +191,29 @@ steps:
 
       Each file imports the ones it needs. Only `main.py` has the `if __name__ == "__main__":` block.
 
+      **Example: how the three files connect.** `main.py` never parses or saves anything itself; it asks the other two files:
+
+      ```python
+      # main.py (part)
+      import book       # finds book.py in the same folder
+      import storage    # finds storage.py
+
+      contacts = storage.load()                       # storage.py's job
+      contacts.append(book.parse_contact("Ada Lovelace,555-0101"))   # book.py's job
+      print(book.names(contacts))
+      storage.save(contacts)
+      ```
+
+      Run with the typed commands on the next page, the program prints:
+
+      ```text
+      add / list / quit> name,phone> add / list / quit> name,phone> Could not add: bad line
+      add / list / quit> Ada Lovelace
+      add / list / quit> Saved
+      ```
+
+      The prompts run together on one line because `printf` typed the answers instead of you. Read it as: added Ada, refused `nonsense`, listed one name, saved.
+
   - kind: mac
     title: Assemble the project
     body: |

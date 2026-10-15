@@ -15,6 +15,71 @@ steps:
 
       Or back out completely: `git merge --abort`, `git rebase --abort`, `git cherry-pick --abort`.
 
+      <!-- page -->
+
+      **Example: different lines, then the same line.** On `sale` the price changed. First, `main` changes the opening hours (far away in the file), and the merge just works:
+
+      ```
+      learner@inkwell:~/demo$ git merge --no-edit sale
+      Auto-merging shop.txt
+      Merge made by the 'ort' strategy.
+       shop.txt | 2 +-
+       1 file changed, 1 insertion(+), 1 deletion(-)
+      learner@inkwell:~/demo$ cat shop.txt
+      title: Inkwell
+      price: 7.99
+      city: Ulaanbaatar
+      phone: 555-0101
+      email: hello@inkwell.example
+      hours: 9-6
+      ```
+
+      The same branches, but this time `main` also changed the **price**:
+
+      ```
+      learner@inkwell:~/demo$ git merge --no-edit sale
+      Auto-merging shop.txt
+      CONFLICT (content): Merge conflict in shop.txt
+      Automatic merge failed; fix conflicts and then commit the result.
+      learner@inkwell:~/demo$ cat shop.txt
+      title: Inkwell
+      <<<<<<< HEAD
+      price: 8.99
+      =======
+      price: 7.99
+      >>>>>>> sale
+      city: Ulaanbaatar
+      phone: 555-0101
+      email: hello@inkwell.example
+      hours: 9-5
+      ```
+
+      Both sides changed line 2 differently from the base (9.99), so Git stopped and asked.
+
+  - kind: shell
+    title: "Try it: same line or not?"
+    fixture: git-identity
+    setup: |
+      mkdir -p ~/demo && cd ~/demo
+      git init -q
+      printf 'title: Inkwell\nprice: 9.99\ncity: Ulaanbaatar\nphone: 555-0101\nemail: hello@inkwell.example\nhours: 9-5\n' > shop.txt
+      git add .
+      git commit -q -m Base
+      git switch -q -c sale
+      sed -i 's/9.99/7.99/' shop.txt
+      git commit -qam 'Sale price'
+      git switch -q main
+      sed -i 's/9.99/8.99/' shop.txt
+      git commit -qam 'New price'
+    body: |
+      `main` and `sale` both changed `shop.txt`. Type these one at a time:
+
+      1. `git diff main sale`: which lines differ?
+      2. `git merge sale`: does it conflict?
+      3. `git status`, then `git merge --abort`
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: See the base, too (zdiff3)
     body: |
@@ -153,10 +218,44 @@ steps:
       - **Don't mix** reformatting (re-indenting a whole file) with real changes, and agree on a formatter, so lines don't change for no reason.
       - **Talk**: if two people are about to rework the same file, decide who goes first.
 
+      **Example.** Priya's redesign branch lived for six weeks and touched 40 files; merging it back meant 23 conflicts. Since then, the team merges each part of a redesign within two days, and rebases daily. A typical merge now has no conflicts, or one small one.
+
+  - kind: choice
+    title: "Quick check: fewer conflicts"
+    body: |
+      You and Kenji will both rework `checkout.js` this week. What prevents the worst conflict?
+    options:
+      - "Agree who goes first; the other starts after that work is merged"
+      - "Each of you works on a long-lived branch and merges at the end of the month"
+      - "Reformat the whole file before starting"
+      - "Turn on rerere"
+    answer: 0
+    explanation: "Talking first is the cheapest fix. Long branches and whole-file reformatting make conflicts bigger, and rerere only helps with conflicts you've already resolved once."
+
   - kind: info
     title: "🔹 rerere: reuse recorded resolution"
     body: |
       If you resolve the *same* conflict again and again (while repeatedly rebasing a long branch, say), `git config --global rerere.enabled true` tells Git to **re**member how you **re**solved each conflict and **re**use it next time. It's handy, but a remembered resolution is applied quietly, so check the result before you commit.
+
+      **Example.** With rerere on, after you resolve a conflict once and rebase again later, Git prints:
+
+      ```
+      Resolved 'prices.txt' using previous resolution.
+      ```
+
+      and the file is already fixed. Check it (`git diff`) before you `git add` it.
+
+  - kind: choice
+    title: "Quick check: rerere"
+    body: |
+      What does `rerere.enabled true` change?
+    options:
+      - "Git never shows conflicts again"
+      - "Git picks `--ours` automatically"
+      - "Git reuses how you resolved the same conflict before"
+      - "Git rebases every branch daily"
+    answer: 2
+    explanation: "It remembers resolutions and replays them for identical conflicts. New conflicts still need you, and a remembered resolution is worth a quick check."
 
   - kind: mac
     title: The VS Code merge editor

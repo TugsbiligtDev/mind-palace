@@ -14,6 +14,36 @@ steps:
 
       The practice terminal can reach two servers: **`shop.inkwell.example`** (the web shop) and `backup.inkwell.example`. Your password on them is **`bookworm`**.
 
+      <!-- page -->
+
+      **Example: one command, run on the shop server**, with the answer printed here. (This computer's key is already on the server, so no password is asked; the next pages show how to set that up yourself.)
+
+      ```
+      learner@inkwell:~$ hostname
+      inkwell
+      learner@inkwell:~$ ssh learner@shop.inkwell.example hostname
+      shop
+      learner@inkwell:~$ ssh learner@shop.inkwell.example cat NOTES.txt
+      Shop server notes (Priya)
+      - website files: /var/www/inkwell
+      - shop settings: /etc/inkwell/shop.conf
+      - nightly backups go to ~/backups
+      ```
+
+      The first `hostname` ran here (`inkwell`), the second on the server (`shop`).
+
+  - kind: choice
+    title: "Quick check: where does it run?"
+    body: |
+      You type `ssh learner@shop.inkwell.example df -h`. Where does `df -h` run, and where do you see the result?
+    options:
+      - "Runs on the shop server, shown in your terminal"
+      - "Runs on your computer, shown on the server"
+      - "Runs on both"
+      - "Nowhere: ssh only logs in"
+    answer: 0
+    explanation: "A command after the host is run on the server; ssh carries its output back to your terminal and then disconnects."
+
   - kind: explain
     title: The first connection
     body: |
@@ -63,6 +93,21 @@ steps:
       ```
 
       SSH is strict about permissions: your private key must be `600` (only you), and on the server `~/.ssh` must be `700` and `authorized_keys` `600`. If they're more open, ssh refuses the key without saying much, and you're back to typing a password.
+
+      <!-- page -->
+
+      **Example: the permissions ssh expects**, on a computer whose key is set up (your dates will differ):
+
+      ```
+      learner@inkwell:~$ ls -l ~/.ssh
+      total 16
+      -rw------- 1 learner learner  61 Oct 14 23:27 config
+      -rw------- 1 learner learner 290 Oct 14 23:27 id_ed25519
+      -rw-r--r-- 1 learner learner  97 Oct 14 23:27 id_ed25519.pub
+      -rw-r--r-- 1 learner learner 102 Oct 14 23:27 known_hosts
+      ```
+
+      `id_ed25519` (private) is `-rw-------`: only you can read it. The `.pub` file can be read by anyone, which is fine.
 
   - kind: shell
     title: Log in with a key
@@ -177,6 +222,32 @@ steps:
 
       Watch the **trailing slash** on the source: `site/` copies what's *inside* `site`; `site` copies the folder itself (you'd get `site/site`). With `--delete`, a dry run first is wise.
 
+      <!-- page -->
+
+      **Example.** Send a report with `scp`, check it arrived, then a dry run of deploying the website with `rsync`:
+
+      ```
+      learner@inkwell:~$ echo "Monthly report" > report.txt
+      learner@inkwell:~$ scp report.txt learner@shop.inkwell.example:
+      report.txt                                     100%    15   0.1KB/s   00:00    
+      learner@inkwell:~$ ssh learner@shop.inkwell.example ls
+      backups
+      NOTES.txt
+      report.txt
+      learner@inkwell:~$ rsync -avn inkwell/site/ learner@shop.inkwell.example:site/
+      sending incremental file list
+      ./
+      images/
+      images/logo.png
+      index.html
+      style.css
+
+      sent 211 bytes  received 19 bytes  422.00 bytes/sec
+      total size is 91  speedup is 0.37 (DRY RUN)
+      ```
+
+      `(DRY RUN)` at the end: rsync listed what it **would** send, and sent nothing. Without `-n`, the same command copies those files.
+
   - kind: shell
     title: Send the report
     fixture: [shop-server, shop-access]
@@ -216,6 +287,18 @@ steps:
       **Port forwarding** carries other connections through your SSH connection. `ssh -L 8080:localhost:3000 shop` makes `http://localhost:8080` on *your* computer reach port 3000 *on the server*: handy for an admin page that's only open to the server itself.
 
       **Agent forwarding** (`ssh -A`) lets the server use the keys loaded in your local `ssh-agent`, so you can hop on to a third machine (or push to GitHub) from the server without copying your private key there. The risk: while you're connected, anyone with root on that server can use your agent too. Only forward to servers you trust, and prefer `ssh -J` (jump hosts) for hopping.
+
+  - kind: choice
+    title: "Quick check: forwarding"
+    body: |
+      After `ssh -L 8080:localhost:3000 shop`, you open `http://localhost:8080` in your Mac's browser. What do you reach?
+    options:
+      - "Port 8080 on the shop server"
+      - "Port 3000 on your Mac"
+      - "Port 3000 on the shop server, through the SSH connection"
+      - "Nothing: -L only works on Linux"
+    answer: 2
+    explanation: "`-L 8080:localhost:3000` means: listen on 8080 here, and send whatever arrives to `localhost:3000` as seen from the server."
 
   - kind: mac
     title: SSH into your lab VM

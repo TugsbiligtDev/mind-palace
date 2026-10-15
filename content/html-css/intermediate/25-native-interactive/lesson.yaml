@@ -13,6 +13,36 @@ steps:
 
       Use these before reaching for a library. (The lesson preview doesn't run JavaScript, and all three work without it.)
 
+      **Example: the same pop-up, home-made and native.**
+
+      ```html
+      <!-- Home-made: looks right, but Escape does nothing, Tab wanders behind it,
+           and a screen reader isn't told anything opened -->
+      <div class="popup">
+        <p>Sign up for our newsletter</p>
+        <span class="close">×</span>
+      </div>
+
+      <!-- Native: Escape closes it, focus moves inside and back, it's announced as a dialog -->
+      <dialog>
+        <p>Sign up for our newsletter</p>
+        <form method="dialog"><button>Close</button></form>
+      </dialog>
+      ```
+
+      The `<form method="dialog">` makes the button close the dialog with no JavaScript at all.
+
+  - kind: choice
+    title: "Quick check: what you get for free"
+    body: |
+      Which of these does `<dialog>` give you **without** any extra code, unlike a home-made `div` pop-up?
+    options:
+      - "Closing on Escape and putting focus back on the button that opened it"
+      - "Your shop's colours and fonts"
+      - "Saving what the visitor typed"
+    answer: 0
+    explanation: "Native widgets come with keyboard support, focus handling and screen reader announcements. Styling is still your job, and saving data needs a server."
+
   - kind: explain
     title: details and summary
     body: |
@@ -23,11 +53,38 @@ steps:
       </details>
       ```
 
+      In the page you see only the question, with a small ▶ triangle in front of it. Click it (or Tab to it and press Enter) and the triangle turns to ▼ and the answer appears underneath; click again to fold it away.
+
       The `<summary>` is the always-visible, clickable heading; everything else inside `<details>` shows when it's opened. Add the `open` attribute to start it open.
 
       **Exclusive accordions**: give several `<details>` the **same `name`**, and opening one closes the others, like radio buttons.
 
       Style the marker with `summary::marker` (or hide it with `summary { list-style: none; }` and draw your own), and the open state with `details[open]`.
+
+  - kind: web
+    title: "Try it: details and summary"
+    body: |
+      Two sections about Inkwell's opening hours, sharing the name `hours`. The first starts open.
+
+      1. Click *Weekend hours*: it opens and *Weekday hours* closes, because they share a `name`.
+      2. The open one's summary is dark red, thanks to `details[open] > summary`.
+      3. In `index.html`, delete `name="hours"` from **both** and try again: now both can be open at once.
+      4. Move the `open` attribute to the second `<details>`.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <details name="hours" open>
+        <summary>Weekday hours</summary>
+        <p>Monday to Friday, 9am to 6pm.</p>
+      </details>
+      <details name="hours">
+        <summary>Weekend hours</summary>
+        <p>Saturday 10am to 5pm. Closed on Sundays.</p>
+      </details>
+    css: |
+      details[open] > summary {
+        color: darkred;
+      }
 
   - kind: web
     title: The FAQ accordion
@@ -105,7 +162,20 @@ steps:
       </dialog>
       ```
 
+      When the page loads, only the *Join the book club* button shows: a closed dialog is hidden. Click it and a box with the heading and the Close button appears in the middle of the screen, with the page behind it greyed out. Click Close (or press Escape) and it disappears again.
+
       A `<form method="dialog">` inside a dialog also closes it when submitted. Style the dimmed background with `dialog::backdrop`.
+
+  - kind: choice
+    title: "Quick check: open it"
+    body: |
+      Which button opens `<dialog id="signup">` as a modal, without JavaScript?
+    options:
+      - "`<button commandfor=\"signup\" command=\"close\">`"
+      - "`<button href=\"#signup\">`"
+      - "`<button commandfor=\"signup\" command=\"show-modal\">`"
+    answer: 2
+    explanation: "`commandfor` names the dialog's id and `command=\"show-modal\"` opens it as a modal. `command=\"close\"` closes it, and buttons don't have an `href`."
 
   - kind: explain
     title: The JavaScript you'd see elsewhere
@@ -123,6 +193,37 @@ steps:
       ```
 
       `showModal()` opens it as a modal; `show()` opens it without the backdrop; `close()` closes it. This course doesn't teach JavaScript, so copy this as-is when you meet a browser that needs it (Module 38 covers checking support).
+
+  - kind: web
+    title: "Try it: a dialog"
+    body: |
+      A "Gift cards" dialog, opened as a modal by the first button.
+
+      1. Click **About gift cards**. The page behind goes reddish-dark, and you can't click anything behind the box.
+      2. Close it with its **Close** button. Open it again and close it with **Escape**.
+      3. In `index.html`, change `command="show-modal"` to `command="show"` and open it again: no backdrop, and the page behind stays clickable.
+      4. Change it back, and in `style.css` change `40%` to `80%`.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <button type="button" commandfor="gifts" command="show-modal">About gift cards</button>
+      <p>Gift cards come in £10, £20 and £50.</p>
+
+      <dialog id="gifts" aria-labelledby="gifts-title">
+        <h2 id="gifts-title">Gift cards</h2>
+        <p>They never expire and work in the shop and online.</p>
+        <button type="button" commandfor="gifts" command="close">Close</button>
+      </dialog>
+    css: |
+      dialog {
+        border: 0;
+        border-radius: 12px;
+        padding: 1.5rem;
+      }
+
+      dialog::backdrop {
+        background: rgb(124 45 18 / 40%);
+      }
 
   - kind: web
     title: The book club dialog
@@ -214,6 +315,34 @@ steps:
       - Opening one auto popover closes other auto popovers.
 
       Style it with `[popover]` and its open state with `:popover-open`. Positioning it next to its button is Module 45's anchor positioning; until then it appears centred.
+
+      When the page loads you see only the *Account* button: the two links are hidden. Click it and a box with *My orders* and *Log out* appears in the middle of the page, on top of everything. Click anywhere else and it closes.
+
+  - kind: web
+    title: "Try it: a popover"
+    body: |
+      A small help panel for the gift-wrap option.
+
+      1. Click **What is gift wrap?** The panel appears, with a pale yellow background from the `:popover-open` rule.
+      2. Click outside it, or press **Escape**: it closes. Click the button twice to open and close it.
+      3. In `index.html`, change `popover` to `popover="manual"`. Now clicking outside doesn't close it; only the button does.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <button type="button" popovertarget="wrap-help">What is gift wrap?</button>
+      <div id="wrap-help" popover>
+        <p>Brown paper, string and a handwritten tag. £2.</p>
+      </div>
+    css: |
+      #wrap-help {
+        padding: 1rem;
+        border: 1px solid #e7e5e4;
+        border-radius: 8px;
+      }
+
+      #wrap-help:popover-open {
+        background: #fef9c3;
+      }
 
   - kind: web
     title: The account menu

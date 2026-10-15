@@ -8,6 +8,33 @@ steps:
 
       A **transaction** groups statements into **one unit of work**: either **all** of them happen, or **none** do. Nobody else ever sees the half-done state.
 
+      **Example.** Accounts A (300) and B (200), with a rule that no balance may go below 0. A transfer of **400** from A to B, written as one UPDATE that changes both rows:
+
+      ```sql
+      UPDATE accounts
+      SET balance = balance + CASE name WHEN 'A' THEN -400 ELSE 400 END;
+      ```
+
+      ```text
+      ERROR:  new row for relation "accounts" violates check constraint "accounts_balance_check"
+      ```
+
+      A would drop to −100, so the statement fails, and **B doesn't get the 400 either**: both balances stay exactly as they were. A single statement is always all-or-nothing. A transaction gives you the same guarantee for **several** statements.
+
+  - kind: try
+    title: "Try it: all or nothing"
+    body: |
+      Run it and read the error. Then change `400` to `100` (both places) and add `SELECT * FROM accounts ORDER BY name;` at the end: A 200, B 300. Both rows changed together.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE TABLE accounts (name text PRIMARY KEY, balance numeric(8,2) NOT NULL CHECK (balance >= 0));
+      INSERT INTO accounts VALUES ('A', 300), ('B', 200);
+
+      UPDATE accounts
+      SET balance = balance + CASE name WHEN 'A' THEN -400 ELSE 400 END;
+    broken_starter: true
+
   - kind: explain
     title: ACID, in plain terms
     body: |
@@ -19,6 +46,24 @@ steps:
       | **C** | Consistency | Every rule (constraints, foreign keys) holds when it's done. |
       | **I** | Isolation | Transactions running at the same time don't see each other's half-done work (Module 31). |
       | **D** | Durability | Once committed, it survives a crash or power cut. |
+
+      **Example: the 100 transfer from A to B.**
+
+      - **Atomicity:** both UPDATEs happen, or neither. Never "taken from A, not given to B".
+      - **Consistency:** the rule `balance >= 0` still holds afterwards.
+      - **Isolation:** a report running at the same moment sees the balances before or after the transfer, never halfway.
+      - **Durability:** once you see `COMMIT`, a power cut a second later doesn't undo it.
+
+  - kind: choice
+    title: "Quick check: which letter?"
+    body: "The server loses power one second after a transfer was committed. When it starts again, the transfer is still there. Which ACID guarantee is that?"
+    options:
+      - "Durability"
+      - "Atomicity"
+      - "Consistency"
+      - "Isolation"
+    answer: 0
+    explanation: "Durability means committed changes survive crashes and power cuts. (Atomicity would be about a transfer cut off **before** commit: then none of it is kept.)"
 
   - kind: explain
     title: BEGIN, COMMIT, ROLLBACK
@@ -110,6 +155,62 @@ steps:
       ```
 
       Rolling back to a savepoint also **clears a failed state**, so it's how apps retry one step without losing the whole transaction.
+
+      <!-- page -->
+
+      A worked example. Accounts A (200) and B (300) exist. Inside one transaction, add account C, set a savepoint, then make a mistake (every balance becomes 0):
+
+      ```sql
+      BEGIN;
+      INSERT INTO accounts VALUES ('C', 50);
+      SAVEPOINT before_risky;
+      UPDATE accounts SET balance = 0;
+      SELECT * FROM accounts ORDER BY name;
+      ```
+
+      | name | balance |
+      |---|---|
+      | A | 0.00 |
+      | B | 0.00 |
+      | C | 0.00 |
+
+      Roll back to the bookmark and commit:
+
+      ```sql
+      ROLLBACK TO SAVEPOINT before_risky;
+      COMMIT;
+      SELECT * FROM accounts ORDER BY name;
+      ```
+
+      | name | balance |
+      |---|---|
+      | A | 200.00 |
+      | B | 300.00 |
+      | C | 50.00 |
+
+      The UPDATE is gone, but the INSERT from **before** the savepoint was kept: C is there with 50.
+
+  - kind: try
+    title: "Try it: SAVEPOINT"
+    body: |
+      The example from before, with the accounts table created first. Run it and compare with the tables you just saw.
+
+      Then play: change `ROLLBACK TO SAVEPOINT before_risky;` to plain `ROLLBACK;` (and delete the `COMMIT;`). Now C disappears too: a full ROLLBACK undoes the whole transaction.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE TABLE accounts (name text PRIMARY KEY, balance numeric(8,2) NOT NULL);
+      INSERT INTO accounts VALUES ('A', 200), ('B', 300);
+
+      BEGIN;
+      INSERT INTO accounts VALUES ('C', 50);
+      SAVEPOINT before_risky;
+      UPDATE accounts SET balance = 0;
+      SELECT * FROM accounts ORDER BY name;
+
+      ROLLBACK TO SAVEPOINT before_risky;
+      COMMIT;
+      SELECT * FROM accounts ORDER BY name;
 
   - kind: try
     title: Your turn with a savepoint

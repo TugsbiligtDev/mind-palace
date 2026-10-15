@@ -8,6 +8,29 @@ steps:
 
       One reminder before you begin: passive recon reads information people have *already published*. That is lawful almost everywhere. The moment you *interact* with the target (next module), you need to be inside your authorised scope.
 
+      **Example: an hour of passive recon on a made-up company, Example Ltd**, without sending one packet to its machines:
+
+      | Source | What it gave away |
+      |---|---|
+      | Its website's "About us" page | 40 staff, offices in two cities |
+      | Job advert for a developer | "We use Python, PostgreSQL and AWS" |
+      | Public DNS | `mail.`, `vpn.` and `staging.` subdomains exist |
+      | A developer's public code repository | an old config file mentioning `staging.example.com` |
+
+      The target's logs show nothing at all, yet you already know their technology and three hosts worth a look.
+
+  - kind: choice
+    title: "Quick check: passive means…"
+    body: |
+      Which of these is **passive** reconnaissance?
+    options:
+      - "Pinging the company's web server"
+      - "Reading the company's job adverts and public DNS records"
+      - "Trying to log in to their VPN with a guessed password"
+    answer: 1
+    explanation: |
+      Job adverts and public DNS are already published, and reading them never touches the target's machines. Pinging is active, and guessing passwords is an attack that needs authorisation.
+
   - kind: explain
     title: OSINT — open-source intelligence
     body: |
@@ -19,12 +42,61 @@ steps:
 
       A job posting that lists the exact tech stack is a gift: it tells an attacker what to prepare for before sending a single packet.
 
+      **Example: one job advert, read like a tester.**
+
+      > *"Junior DevOps engineer. You'll look after our Jenkins build server and Kubernetes clusters on AWS, and help move our old Windows Server 2012 systems to the cloud. Contact jane.doe@example.com."*
+
+      | Category | What it reveals |
+      |---|---|
+      | Technology | Jenkins, Kubernetes, AWS, and **Windows Server 2012** (long past its support date) |
+      | People | a real name and the email pattern `first.last@example.com` |
+      | Infrastructure | some systems are still on-premises, mid-migration |
+
+  - kind: choice
+    title: "Quick check: sort the clue"
+    body: |
+      A company's conference talk slides mention "our VPN runs on Fortinet". Which kind of OSINT is that?
+    options:
+      - "People"
+      - "Technology"
+      - "Infrastructure size"
+    answer: 1
+    explanation: |
+      It names a product they use: **technology**. Knowing the exact product tells an attacker which known weaknesses to look up.
+
   - kind: explain
     title: WHOIS — who owns this?
     body: |
       **WHOIS** looks up the registration record of a domain or IP: when it was registered, by whom (often redacted now for privacy), the registrar, and the name servers. For IP addresses, WHOIS tells you which organisation owns a block and its size.
 
       It is a pure public-records lookup — you query a registry database, not the target. For a tester it confirms ownership (am I even looking at the right organisation?) and reveals the size of an IP range you may later be scoped to test.
+
+      A trimmed WHOIS record looks like this:
+
+      ```
+      $ whois example.com
+      Domain Name: EXAMPLE.COM
+      Registrar: Example Registrar, Inc.
+      Creation Date: 2008-03-14T00:00:00Z
+      Registry Expiry Date: 2027-03-14T00:00:00Z
+      Registrant Organization: REDACTED FOR PRIVACY
+      Name Server: NS1.EXAMPLE.COM
+      Name Server: NS2.EXAMPLE.COM
+      ```
+
+      Even with the registrant redacted, you learn the registrar, the registration dates, and the two name servers, which are your next lead for DNS.
+
+  - kind: choice
+    title: "Quick check: read the WHOIS"
+    body: |
+      In the WHOIS record above, what is the most useful **next lead** for reconnaissance?
+    options:
+      - "The registrant organisation"
+      - "The name servers, NS1 and NS2.EXAMPLE.COM"
+      - "The expiry date"
+    answer: 1
+    explanation: |
+      The registrant is redacted, and the dates tell you little. The **name servers** are where the domain's DNS records live, which is where subdomain discovery starts.
 
   - kind: explain
     title: DNS and subdomain discovery
@@ -37,6 +109,29 @@ steps:
       - `admin.example.com` — the obvious one
 
       You discover these passively from public DNS data, certificate-transparency logs (every HTTPS certificate ever issued is logged publicly, subdomains and all), and search results. `dev` and `staging` subdomains are a recurring theme in real breaches: they are built fast, secured loosely, and forgotten. Mapping the full surface before you scan means you scan the *right* things.
+
+      A single `dig +short` asks the DNS system for the address behind one name:
+
+      ```
+      $ dig +short mail.example.com
+      203.0.113.25
+      $ dig +short dev.example.com
+      203.0.113.40
+      ```
+
+      Both answers came from public DNS, not from the target itself. The addresses are now hosts you might be scoped to scan later: `dev.example.com` is exactly the kind of soft lead to note.
+
+  - kind: choice
+    title: "Quick check: the soft target"
+    body: |
+      Subdomain discovery turns up `www`, `mail`, `staging` and `shop`. Which deserves a closer look first, and why?
+    options:
+      - "www, because it gets the most visitors"
+      - "mail, because email is always vulnerable"
+      - "staging, because test systems are often built fast, secured loosely and forgotten"
+    answer: 2
+    explanation: |
+      `staging` and `dev` hosts are a recurring theme in real breaches. They often run older code, weaker passwords and debug settings that the main site would never have.
 
   - kind: explain
     title: Google dorking
@@ -52,12 +147,35 @@ steps:
 
       The point is not trickery; it is that sensitive things — internal PDFs, backup files, login portals, even credentials in exposed files — get indexed when a site is misconfigured. The **Google Hacking Database (GHDB)** collects known-useful dorks. Defensively, this is why you tell clients to control what search engines can index and to never rely on "no one will find this URL."
 
+  - kind: choice
+    title: "Quick check: write the dork"
+    body: |
+      You want PDF documents that search engines have indexed on `example.com` only. Which search do you type?
+    options:
+      - "pdf example.com"
+      - "filetype:pdf site:example.com"
+      - "inurl:admin example.com"
+    answer: 1
+    explanation: |
+      `filetype:pdf` limits results to PDFs and `site:example.com` limits them to that domain. Plain words just search for pages mentioning them.
+
   - kind: explain
     title: Shodan — the search engine for devices
     body: |
       **Shodan** continuously scans the whole internet and indexes what it finds: open ports, service banners, device types, versions. You can search it like Google, but for *machines* — "all exposed databases in this country," "all cameras running this firmware," "everything on this organisation's IP range."
 
       For a tester, Shodan reveals a target's internet-facing footprint *without you scanning anything yourself* — Shodan already did, legally, at internet scale. It regularly turns up things organisations did not know were exposed: a forgotten server, a database with no password, an admin panel open to the world. That it exists at all is the strongest argument for knowing your own attack surface before an attacker does.
+
+      A Shodan host result reads like a summary card for one address:
+
+      ```
+      203.0.113.40   (dev.example.com)
+        22/tcp    OpenSSH 7.6p1
+        8080/tcp  Apache httpd 2.4.29
+        Last seen: 2026-09-30
+      ```
+
+      Nobody scanned the target to produce that: Shodan had already recorded the open ports and the software versions. For `dev.example.com` you now know, before sending a packet, that it runs an old Apache.
 
   - kind: mac
     title: Try passive lookups yourself
@@ -84,6 +202,27 @@ steps:
       - Train staff on what job ads, social posts and public repos quietly reveal.
 
       The strongest recon finding in a report is often "here is how much we learned about you before touching anything — and here is how to leak less."
+
+      **Example: turning recon into advice.** Each thing you learned becomes a fix in the report:
+
+      | What recon found | What you tell the client |
+      |---|---|
+      | `staging.example.com` is public and runs old software | put it behind the VPN, or retire it |
+      | Job ad names Windows Server 2012 | upgrade; until then, don't advertise it |
+      | Staff emails follow `first.last@` | expect phishing; train staff and filter mail |
+      | Internal PDFs found with `filetype:pdf` | remove them and stop them being indexed |
+
+  - kind: choice
+    title: "Quick check: the defender's version"
+    body: |
+      What is the best defensive habit this module suggests?
+    options:
+      - "Delete the company website"
+      - "Do OSINT on your own organisation regularly, so you find what leaks before an attacker does"
+      - "Use longer domain names"
+    answer: 1
+    explanation: |
+      The same research an attacker does is a cheap self-check. Find the forgotten subdomain or the leaky job advert yourself, and fix it first.
 
   - kind: why
     body: |

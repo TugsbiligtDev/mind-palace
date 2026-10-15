@@ -28,6 +28,17 @@ steps:
 
       Everything about the card lives in one block. Nesting is native CSS, supported in every current browser; no tools needed.
 
+  - kind: choice
+    title: "Quick check: what it means"
+    body: |
+      Inside `.card { … }` you nest `p { color: gray; }`. Which selector does that become?
+    options:
+      - "`p`"
+      - "`.card p`"
+      - "`.card.p`"
+    answer: 1
+    explanation: "A nested rule without `&` is a descendant of its parent: `.card p`, the paragraphs inside a card."
+
   - kind: explain
     title: "The & symbol"
     body: |
@@ -44,6 +55,65 @@ steps:
       | `& + & { }` | `.card + .card` |
 
       The rule of thumb: when the nested selector is **attached** to the parent (a pseudo-class, a pseudo-element, another class), you need `&`. When it's a **descendant**, you can leave it out.
+
+      <!-- page -->
+
+      Forgetting the `&` changes the meaning:
+
+      ```css
+      .event {
+        border: 2px solid #e7e5e4;
+
+        &.cancelled { border-color: crimson; }   /* = .event.cancelled */
+        .cancelled  { color: crimson; }          /* = .event .cancelled */
+      }
+      ```
+
+      With `<div class="event cancelled">`, the first nested rule gives the event box itself a crimson border. The second rule doesn't touch that box at all: it looks for something **inside** an event with the class `cancelled`, such as `<span class="cancelled">` in its text.
+
+  - kind: web
+    title: "Try it: nesting and &"
+    body: |
+      Two event boxes, styled by one nested `.event` rule.
+
+      1. Hover over each box: `&:hover` changes its background.
+      2. The second box also has the class `cancelled`, so `&.cancelled` gives it a crimson border. `&::after` adds a 🎟 at the end of **every** event.
+      3. In `style.css`, remove the `&` from `&.cancelled` (leaving `.cancelled`). The crimson border disappears: now it means "a `.cancelled` **inside** an event", and there isn't one.
+      4. Put the `&` back, and change `h3`'s color to `teal`.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="event">
+        <h3>Story hour</h3>
+        <p>Saturday, 10am</p>
+      </div>
+      <div class="event cancelled">
+        <h3>Author talk</h3>
+        <p>Postponed to next month</p>
+      </div>
+    css: |
+      .event {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 2px solid #e7e5e4;
+
+        h3 {
+          margin: 0;
+          color: #7c2d12;
+        }
+
+        &:hover {
+          background: #f5f0e8;
+        }
+
+        &.cancelled {
+          border-color: crimson;
+        }
+
+        &::after {
+          content: "🎟";
+        }
+      }
 
   - kind: web
     title: Nest the card
@@ -166,6 +236,41 @@ steps:
 
       Inside the nested `@media`, the declarations apply to the parent selector. No need to repeat `.books`.
 
+      On a phone the books sit in one column, one under the other. From 700px wide they line up three across. It behaves exactly like a separate `@media` block with `.books { … }` inside.
+
+  - kind: web
+    title: "Try it: a nested media query"
+    body: |
+      A row of opening-hours boxes, with its breakpoint nested inside `.hours`.
+
+      1. Use the width buttons above the preview: on **Phone** the boxes stack; on **Tablet** (768) and wider they sit two across.
+      2. In `style.css`, change `repeat(2, 1fr)` to `repeat(4, 1fr)`.
+      3. Change `600px` to `900px` and check **Tablet** again: it's back to one column.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="hours">
+        <div>Mon–Fri: 9–6</div>
+        <div>Sat: 10–5</div>
+        <div>Sun: closed</div>
+        <div>Holidays: 11–4</div>
+      </div>
+    css: |
+      .hours {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+
+        @media (width >= 600px) {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        div {
+          padding: 0.5rem;
+          background: #f5f0e8;
+        }
+      }
+
   - kind: web
     title: Nest the breakpoint
     body: |
@@ -218,10 +323,32 @@ steps:
       - If you're nesting deeper, the inner thing probably deserves its **own class** and its own rule.
       - Nested selectors still count specificity as if written out in full.
 
+  - kind: choice
+    title: "Quick check: too deep"
+    body: |
+      You find `.page { main { .content { .card { h3 { … } } } } }`. What's the better fix?
+    options:
+      - "Give the heading its own class, like `.card-title`, and style it in its own short rule"
+      - "Add `!important` to the heading's rule"
+      - "Nest it one level deeper"
+    answer: 0
+    explanation: "Deep nesting builds long, very specific selectors that break when the HTML changes. A class of its own keeps the selector short and easy to override."
+
   - kind: info
     title: "Nesting and Sass"
     body: |
       For about fifteen years, the main reason teams used **Sass** (a language that compiles to CSS) was nesting, plus variables. Native CSS now has both: nesting and custom properties, and custom properties are *more* powerful because they change live in the browser. Many new projects use plain CSS with no Sass at all. You'll still meet Sass in existing codebases (Module 50 shows how to recognise it).
+
+  - kind: choice
+    title: "Quick check: still need Sass?"
+    body: |
+      You start a new project and only want nesting and variables. Do you need Sass?
+    options:
+      - "Yes: plain CSS can't nest"
+      - "No: plain CSS now has nesting and custom properties"
+      - "Yes: custom properties only work inside Sass"
+    answer: 1
+    explanation: "Native CSS has both now, and custom properties can even change live in the browser, which Sass variables can't."
 
   - kind: why
     body: |

@@ -13,6 +13,20 @@ steps:
 
       Save the **recovery codes** GitHub gives you when you turn on 2FA, somewhere safe (a password manager). They're how you get back in if you lose your phone.
 
+      **Example.** Ada signs up as `ada-lovelace` with `ada@example.com`. Her repositories live at addresses like `github.com/ada-lovelace/notes`. She turns on 2FA with a passkey (Touch ID), and saves the ten recovery codes in her password manager, not in a text file on the desktop.
+
+  - kind: choice
+    title: "Quick check: lost phone"
+    body: |
+      You use an authenticator app for 2FA, and your phone is stolen. What gets you back into GitHub?
+    options:
+      - "The recovery codes you saved when you turned on 2FA"
+      - "Your password alone"
+      - "Your SSH key"
+      - "Making a new account with the same email"
+    answer: 0
+    explanation: "That's exactly what recovery codes are for. Your password alone isn't enough once 2FA is on, and an SSH key only works for Git, not for signing in."
+
   - kind: explain
     title: Two ways Git talks to GitHub
     body: |
@@ -24,6 +38,30 @@ steps:
       | **SSH** | `git@github.com:ada/notes.git` | an **SSH key** on your computer |
 
       Your GitHub **password never works** for Git in the terminal (that ended in 2021). Both ways are fine; many developers use SSH, and this course does.
+
+      **Example.** The same repository, cloned both ways. `git remote -v` shows which address each copy uses:
+
+      ```
+      $ git remote -v                                  # cloned with SSH
+      origin  git@github.com:ada/notes.git (fetch)
+      origin  git@github.com:ada/notes.git (push)
+
+      $ git remote -v                                  # cloned with HTTPS
+      origin  https://github.com/ada/notes.git (fetch)
+      origin  https://github.com/ada/notes.git (push)
+      ```
+
+  - kind: choice
+    title: "Quick check: which kind?"
+    body: |
+      Which address uses **SSH**?
+    options:
+      - "`https://github.com/inkwell/site.git`"
+      - "`github.com/inkwell/site`"
+      - "`git@github.com:inkwell/site.git`"
+      - "`ssh://inkwell.example`"
+    answer: 2
+    explanation: "SSH addresses look like `git@github.com:owner/repo.git`. The `https://` one uses a token instead, and the plain one is just the web page."
 
   - kind: explain
     title: SSH keys
@@ -77,6 +115,30 @@ steps:
 
       and add the key once with `ssh-add --apple-use-keychain ~/.ssh/id_ed25519`. (`--apple-use-keychain` exists only on a Mac.)
 
+      <!-- page -->
+
+      **Example** on the practice computer (a Linux server, so no Keychain part):
+
+      ```
+      learner@inkwell:~$ eval "$(ssh-agent -s)"
+      Agent pid 4243
+      learner@inkwell:~$ ssh-add ~/.ssh/id_ed25519
+      Identity added: /home/learner/.ssh/id_ed25519 (learner@inkwell.example)
+      ```
+
+  - kind: shell
+    title: "Try it: the agent"
+    fixture: [git-identity, github-account]
+    setup: cd ~
+    body: |
+      Type these one at a time:
+
+      1. `eval "$(ssh-agent -s)"`
+      2. `ssh-add ~/.ssh/id_ed25519`
+      3. `ssh-add -l`: lists the keys the agent is holding.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Give GitHub your public key
     body: |
@@ -97,6 +159,30 @@ steps:
       Hi ada! You've successfully authenticated, but GitHub does not provide shell access.
       ```
 
+      <!-- page -->
+
+      **Example.** On the practice computer, where the key is already on the practice GitHub account:
+
+      ```
+      learner@inkwell:~$ gh ssh-key list
+      laptop	ssh-ed25519 AAAAC3NzaC1lZDI1NTE5…	authentication
+      learner@inkwell:~$ ssh -T git@github.com
+      Hi learner! You've successfully authenticated, but GitHub does not provide shell access.
+      ```
+
+      The first line is the key's title on GitHub (`laptop`) and the start of the public key. The second is the success message.
+
+  - kind: shell
+    title: "Try it: is the key on GitHub?"
+    fixture: [git-identity, github-account]
+    setup: cd ~
+    body: |
+      Type `gh ssh-key list`, then `ssh -T git@github.com`.
+
+      Then compare with your own: `cat ~/.ssh/id_ed25519.pub` starts with the same `ssh-ed25519 AAAAC3…`.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: The GitHub CLI
     body: |
@@ -107,6 +193,18 @@ steps:
       ```
 
       It asks a few questions (GitHub.com; HTTPS or **SSH**; whether to upload your SSH key; log in with a web browser), shows a one-time code, and opens the browser for you to approve it. `gh auth status` shows that you're logged in.
+
+      **Example: checking you're logged in** (the practice computer is already logged in as `learner`):
+
+      ```
+      learner@inkwell:~$ gh auth status
+      github.com
+        ✓ Logged in to github.com account learner (/home/learner/.config/gh/hosts.yml)
+        - Active account: true
+        - Git operations protocol: ssh
+        - Token: gho_************************************
+        - Token scopes: 'gist', 'read:org', 'repo'
+      ```
 
   - kind: shell
     title: Log in and connect
@@ -150,6 +248,18 @@ steps:
     title: "🔹 Personal access tokens"
     body: |
       A **personal access token** (PAT) is a long password-like string you create in *Settings → Developer settings*. It's what HTTPS uses behind the scenes, and what scripts and other tools use to talk to GitHub. Prefer **fine-grained** tokens limited to the repositories and permissions they need, with an expiry date. Treat a token exactly like a password: never commit it.
+
+  - kind: choice
+    title: "Quick check: a token for a script"
+    body: |
+      A backup script needs to read **one** private repository. Which token is right?
+    options:
+      - "A classic token with every permission and no expiry"
+      - "A fine-grained token for that one repository, read-only, with an expiry date"
+      - "Your GitHub password"
+      - "Your SSH private key, pasted into the script"
+    answer: 1
+    explanation: "Give a token only what it needs, for a limited time. If it leaks, the damage is one repository, read-only, until it expires."
 
   - kind: mac
     title: Set it up for real

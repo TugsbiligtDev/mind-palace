@@ -20,6 +20,30 @@ steps:
 
       There are no drive letters like Windows' `C:`. Even extra disks and USB sticks appear somewhere inside this one tree.
 
+      **Example.** Look at the top of the tree, and at where `~` points:
+
+      ```
+      learner@inkwell:~$ ls /
+      bin  dev  etc  home  opt  proc  root  run  srv  tmp  usr  var
+      learner@inkwell:~$ echo ~
+      /home/learner
+      learner@inkwell:~$ ls ~
+      inkwell
+      ```
+
+  - kind: shell
+    title: "Try it: the root and your home"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Type these one at a time:
+
+      1. `ls /`: the folders at the top of the tree.
+      2. `echo ~`: where `~` points.
+      3. `ls /home`, then `ls ~`
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Absolute and relative paths
     body: |
@@ -37,6 +61,43 @@ steps:
 
       From `~/inkwell/notes`, `../orders` means "up to `inkwell`, then into `orders`".
 
+      <!-- page -->
+
+      **Example.** The same file read three ways from `~/inkwell/notes`: absolute, relative, and with `..`:
+
+      ```
+      learner@inkwell:~/inkwell/notes$ cat /home/learner/inkwell/notes/todo.txt
+      - reorder Dune (only 2 left)
+      - fix the broken link on the About page
+      - ask Marcus about the September refunds
+      learner@inkwell:~/inkwell/notes$ cat todo.txt
+      - reorder Dune (only 2 left)
+      - fix the broken link on the About page
+      - ask Marcus about the September refunds
+      learner@inkwell:~/inkwell/notes$ cat ../notes/todo.txt
+      - reorder Dune (only 2 left)
+      - fix the broken link on the About page
+      - ask Marcus about the September refunds
+      learner@inkwell:~/inkwell/notes$ ls ../orders
+      2026-08.csv  2026-09.csv
+      ```
+
+  - kind: shell
+    title: "Try it: absolute and relative"
+    fixture: backoffice
+    setup: cd ~/inkwell/notes
+    body: |
+      You're in `~/inkwell/notes`. Type these one at a time:
+
+      1. `cat /home/learner/inkwell/notes/todo.txt`
+      2. `cat todo.txt`
+      3. `cat ../notes/todo.txt`
+      4. `ls ../orders`
+
+      All three `cat`s print the same file. Then try `ls ../..`: two folders up.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Moving with cd
     body: |
@@ -52,6 +113,49 @@ steps:
       | `cd -` | back to where you were before |
 
       If you're ever lost: `pwd` says where you are, and `cd` alone takes you home.
+
+      <!-- page -->
+
+      Here's a walk around Inkwell's server. Watch the prompt: the part before `$` changes after every `cd`.
+
+      ```
+      learner@inkwell:~$ cd inkwell/logs
+      learner@inkwell:~/inkwell/logs$ pwd
+      /home/learner/inkwell/logs
+      learner@inkwell:~/inkwell/logs$ cd ..
+      learner@inkwell:~/inkwell$ cd ../..
+      learner@inkwell:/home$ cd /etc
+      learner@inkwell:/etc$ cd -
+      /home
+      learner@inkwell:/home$ cd
+      learner@inkwell:~$
+      ```
+
+      `cd` prints nothing when it works: the new prompt is the proof. (`cd -` is the exception: it prints where it took you.) One more, going sideways from `notes` to `old`, which sit side by side inside `inkwell`:
+
+      ```
+      learner@inkwell:~$ cd ~/inkwell/notes
+      learner@inkwell:~/inkwell/notes$ cd ../old
+      learner@inkwell:~/inkwell/old$ pwd
+      /home/learner/inkwell/old
+      ```
+
+  - kind: shell
+    title: "Try it: cd and pwd"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Walk around yourself. Type these one at a time and watch the prompt change:
+
+      1. `cd inkwell/logs`, then `pwd`
+      2. `cd ..`, then `pwd`
+      3. `cd /etc`, then `cd -`
+      4. `cd ~/inkwell/notes`, then `cd ../old`, then `pwd`
+      5. `cd` on its own, to come home.
+
+      Then change step 4: go from `notes` sideways into `site` instead of `old`.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Go to the orders folder
@@ -106,6 +210,36 @@ steps:
       └── type and permissions: d = folder, - = file (Module 10)
       ```
 
+      <!-- page -->
+
+      Here's `-l` on the `orders` folder, and `-lh` on `logs`:
+
+      ```
+      learner@inkwell:~/inkwell$ ls -l orders
+      total 8
+      -rw-r--r-- 1 learner learner 196 Oct 14 21:04 2026-08.csv
+      -rw-r--r-- 1 learner learner 233 Oct 14 21:04 2026-09.csv
+      learner@inkwell:~/inkwell$ ls -lh logs
+      total 8
+      -rw-r--r-- 1 learner learner 1012 Oct 14 21:04 access.log
+      -rw-r--r-- 1 learner learner  379 Oct 14 21:04 shop.log
+      ```
+
+      Ignore the `total` line. Each other line is one file. These files are small, so `-h` has nothing to shorten: it only starts writing `K` and `M` once a file passes 1024 bytes. (Your dates will be different: they show when the files were made.)
+
+  - kind: shell
+    title: "Try it: ls options"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `ls -l orders`
+      2. `ls -lh logs`
+      3. `ls -la`: the long list, with hidden files too.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Hidden files
     body: |
@@ -113,7 +247,36 @@ steps:
 
       `ls -a` also shows two entries in every folder: `.` (this folder) and `..` (its parent). They're the same `.` and `..` you use in paths.
 
+      Here's your home folder, first without `-a`, then with it:
+
+      ```
+      learner@inkwell:~$ ls
+      inkwell
+      learner@inkwell:~$ ls -a
+      .  ..  .bashrc  inkwell  .profile
+      ```
+
+      Two settings files, `.bashrc` and `.profile`, were there all along.
+
       Hidden doesn't mean secret or protected. Anyone who can list the folder can see them with `-a`. It just keeps clutter out of the way.
+
+  - kind: shell
+    title: "Try it: ls -l, -a and -h"
+    fixture: backoffice
+    setup: |
+      cd ~/inkwell
+      printf 'PAYMENT_KEY=pk-inkwell-7f3a-NOT-A-REAL-KEY\nSHOP_EMAIL=orders@inkwell.example\n' > site/.env
+    body: |
+      Try the three options on folders you already know. Type these one at a time:
+
+      1. `ls -l orders`: one line per file, with details.
+      2. `ls -lh logs`: the same, with readable sizes.
+      3. `ls ~`, then `ls -a ~`: notice the dotfiles that appear.
+      4. `ls -la ~`: long and all together.
+
+      Then try `ls -la notes` and spot the `.` and `..` lines at the top.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Something hidden in the website folder

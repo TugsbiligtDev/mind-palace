@@ -134,7 +134,60 @@ steps:
               return title in self._books
       ```
 
-      Now `len(shelf)`, `for b in shelf`, `"Dune" in shelf` and even `list(shelf)` all work. The single leading underscore in `_books` is a **convention** meaning "internal: please don't touch it from outside".
+      Now `len(shelf)`, `for b in shelf`, `"Dune" in shelf` and even `list(shelf)` all work:
+
+      ```python
+      shelf = Shelf(["Dune", "Emma", "Ulysses"])
+      print(len(shelf))
+      print("Dune" in shelf, "Zed" in shelf)
+      for book in shelf:
+          print("-", book)
+      ```
+
+      prints:
+
+      ```
+      3
+      True False
+      - Dune
+      - Emma
+      - Ulysses
+      ```
+
+      The single leading underscore in `_books` is a **convention** meaning "internal: please don't touch it from outside".
+
+  - kind: code
+    title: "Try it: a class that acts like a collection"
+    body: |
+      Inkwell keeps a `Waitlist` of people waiting for a popular book. Run it and notice which line uses which dunder method:
+
+      - `len(waiting)` calls `__len__`.
+      - `"Bo" in waiting` calls `__contains__`.
+      - the `for` loop and `list(waiting)` both call `__iter__`.
+
+      Then try one change: delete the whole `__len__` method and run again. Read the `TypeError`: Python no longer knows how big a waitlist is. Nothing is graded here.
+    code: |
+      class Waitlist:
+          def __init__(self, names):
+              self._names = list(names)
+
+          def __len__(self):
+              return len(self._names)
+
+          def __iter__(self):
+              return iter(self._names)
+
+          def __contains__(self, name):
+              return name in self._names
+
+
+      waiting = Waitlist(["Ada", "Bo", "Cy"])
+      print(len(waiting))
+      print("Bo" in waiting)
+      print("Zoe" in waiting)
+      for position, name in enumerate(waiting, start=1):
+          print(position, name)
+      print(list(waiting))
 
   - kind: code
     title: A shelf that acts like a list
@@ -208,7 +261,73 @@ steps:
               return self._celsius * 9 / 5 + 32
       ```
 
-      `t.celsius = 30` triggers the setter (with validation); `t.fahrenheit` looks like data but is calculated. Start with a plain attribute and switch to a property only when you need a rule: callers do not have to change.
+      `t.celsius = 30` triggers the setter (with validation); `t.fahrenheit` looks like data but is calculated:
+
+      ```python
+      t = Temperature(30)
+      print(t.celsius, t.fahrenheit)
+      t.celsius = 25
+      print(t.celsius, t.fahrenheit)
+      try:
+          t.celsius = -300
+      except ValueError as e:
+          print("ValueError:", e)
+      ```
+
+      prints:
+
+      ```
+      30 86.0
+      25 77.0
+      ValueError: below absolute zero
+      ```
+
+      Notice there are no brackets: `t.fahrenheit`, not `t.fahrenheit()`. Start with a plain attribute and switch to a property only when you need a rule: callers do not have to change.
+
+  - kind: code
+    title: "Try it: a property"
+    body: |
+      A `Price` that refuses to go below zero, and a computed `with_tax` (20% tax). Run it and notice:
+
+      - `p.amount = 25` runs the setter, so the check happens on every change.
+      - `p.with_tax` is recalculated each time you read it.
+      - Assigning to `with_tax` fails with `AttributeError`, because it has no setter.
+
+      Then try one change: set `p.amount = 0` and print `p.with_tax`. Nothing is graded here.
+    code: |
+      class Price:
+          def __init__(self, amount):
+              self.amount = amount              # goes through the setter
+
+          @property
+          def amount(self):
+              return self._amount
+
+          @amount.setter
+          def amount(self, value):
+              if value < 0:
+                  raise ValueError("price cannot be negative")
+              self._amount = value
+
+          @property
+          def with_tax(self):                   # computed, read-only
+              return round(self._amount * 1.2, 2)
+
+
+      p = Price(10)
+      print(p.amount, p.with_tax)
+      p.amount = 25
+      print(p.amount, p.with_tax)
+
+      try:
+          p.amount = -5
+      except ValueError as e:
+          print("ValueError:", e)
+
+      try:
+          p.with_tax = 99
+      except AttributeError as e:
+          print("AttributeError:", e)
 
   - kind: code
     title: A checked temperature
@@ -268,7 +387,25 @@ steps:
           tags: list[str] = field(default_factory=list)   # a fresh list per object!
       ```
 
-      You get `Item("pen", 2.5)`, a readable `repr`, and `==` comparing all fields.
+      You get `Item("pen", 2.5)`, a readable `repr`, and `==` comparing all fields:
+
+      ```python
+      pen = Item("pen", 2.5)
+      print(pen)
+      print(pen == Item("pen", 2.5))
+      pen.tags.append("office")
+      print(pen.tags, Item("ink", 4.0).tags)
+      ```
+
+      prints:
+
+      ```
+      Item(name='pen', price=2.5, tags=[])
+      True
+      ['office'] []
+      ```
+
+      The last line shows each item got its own `tags` list.
 
       Options worth knowing:
 
@@ -277,6 +414,49 @@ steps:
       - `field(default_factory=list)`: the safe way to give a mutable default (the same rule as Module 14).
 
       Fields with defaults must come after those without.
+
+  - kind: code
+    title: "Try it: dataclasses"
+    body: |
+      Two dataclasses: a library `Member` with defaults, and a `Size` that is frozen and ordered. Run it and notice:
+
+      - `print(ada)` shows every field without you writing `__repr__`.
+      - Adding a loan to Ada does not touch Bo's list (thanks to `default_factory`).
+      - `sorted` orders sizes by `width` first, then `height`.
+      - Changing a frozen object raises `FrozenInstanceError`.
+
+      Then try one change: remove `frozen=True` and run again. The last line no longer fails. Nothing is graded here.
+    code: |
+      from dataclasses import dataclass, field
+
+
+      @dataclass
+      class Member:
+          name: str
+          visits: int = 0
+          loans: list[str] = field(default_factory=list)
+
+
+      @dataclass(frozen=True, order=True)
+      class Size:
+          width: int
+          height: int
+
+
+      ada = Member("Ada")
+      bo = Member("Bo", 3)
+      print(ada)
+      print(bo)
+      ada.loans.append("Dune")
+      print(ada.loans, bo.loans)
+      print(Member("Ada") == Member("Ada"))
+
+      print(sorted([Size(2, 9), Size(1, 5), Size(2, 3)]))
+      small = Size(1, 1)
+      try:
+          small.width = 7
+      except Exception as e:
+          print(type(e).__name__, e)
 
   - kind: code
     title: A dataclass for books
@@ -372,6 +552,36 @@ steps:
       A typo like `Status.SHIPED` fails immediately with `AttributeError`, instead of quietly being a different string. You can loop over all options with `for s in Status`.
 
   - kind: code
+    title: "Try it: an Enum"
+    body: |
+      A `Format` enum for the books Inkwell sells. Run it and notice:
+
+      - printing a member shows `Format.EBOOK`; `.name` and `.value` give its two parts.
+      - `Format("audio")` looks a member up by its value.
+      - looping over `Format` visits the members in the order they were written, and `list(Format)` collects them.
+
+      Then try one change: print `Format.EBOK` (a typo) and read the error. Nothing is graded here.
+    code: |
+      from enum import Enum
+
+
+      class Format(Enum):
+          PAPERBACK = "paperback"
+          EBOOK = "ebook"
+          AUDIO = "audio"
+
+
+      fmt = Format.EBOOK
+      print(fmt, fmt.name, fmt.value)
+      print(Format("audio"))
+      print(fmt == Format.EBOOK)
+
+      for f in Format:
+          print(f.name, "->", f.value)
+
+      print(list(Format))
+
+  - kind: code
     title: Order status flow
     body: |
       Given the `Status` enum below, write `next_status(status)` returning the next step: `PENDING` → `SHIPPED` → `DELIVERED`. After `DELIVERED` there is no next step: return `None`.
@@ -430,6 +640,38 @@ steps:
 
       - **`__slots__`**: `class P: __slots__ = ("x", "y")` fixes the allowed attributes, so objects use less memory and cannot gain surprise attributes. Useful when you create millions of tiny objects.
       - **`collections.namedtuple`**: an older, lightweight way to make an immutable record: `Point = namedtuple("Point", "x y")`. Dataclasses (or `typing.NamedTuple`) are the modern equivalents and read better.
+
+  - kind: code
+    title: "Try it: __slots__ and namedtuple"
+    body: |
+      Run it and notice:
+
+      - `p.x` works, but setting `p.z` fails: `__slots__` allows only `x` and `y`. The error is caught and printed.
+      - the namedtuple `Book` reads like a dataclass and can be unpacked like a tuple, but can't be changed.
+
+      Then try one change: add `"z"` to `__slots__` and run again.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      from collections import namedtuple
+
+      class P:
+          __slots__ = ("x", "y")
+          def __init__(self, x, y):
+              self.x, self.y = x, y
+
+      p = P(1, 2)
+      print(p.x)
+      try:
+          p.z = 3
+      except AttributeError as e:
+          print("AttributeError:", e)
+
+      Book = namedtuple("Book", "title year")
+      dune = Book("Dune", 1965)
+      print(dune, dune.title)
+      title, year = dune
+      print(year)
 
   - kind: why
     body: |

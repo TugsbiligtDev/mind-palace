@@ -9,6 +9,30 @@ steps:
 
       With a fork, your clone has two remotes: **`origin`** (your fork, where you push) and **`upstream`** (the original, where you fetch from). `gh repo fork` sets that up for you.
 
+      **Example: the two remotes of a fork.** After `gh repo fork inkwell/site --clone`:
+
+      ```
+      $ git remote -v
+      origin    git@github.com:learner/site.git (fetch)
+      origin    git@github.com:learner/site.git (push)
+      upstream  git@github.com:inkwell/site.git (fetch)
+      upstream  git@github.com:inkwell/site.git (push)
+      ```
+
+      You push to `origin` (your fork) and fetch the project's news from `upstream`.
+
+  - kind: choice
+    title: "Quick check: branch or fork?"
+    body: |
+      You want to fix a typo in an open-source project where you have no write access. What do you do?
+    options:
+      - "Push a branch straight to the project"
+      - "Fork it, push a branch to your fork, and open a PR to the original"
+      - "Email the maintainers a zip file"
+      - "Clone it and push to main"
+    answer: 1
+    explanation: "Without write access you can't push to the project. A fork is your own copy you can push to, and the PR asks the original to take your change."
+
   - kind: shell
     title: Fork and clone
     fixture: [git-identity, website-repo, github-account, github-site]
@@ -190,10 +214,63 @@ steps:
 
       or rebase it (`git rebase upstream/main`, then `git push --force-with-lease`, Module 35). New commits pushed to the PR's branch appear in the PR automatically; reviewers see what changed since their last look.
 
+      <!-- page -->
+
+      **Example (no fork, so the remote is `origin`).** Your branch `fix-about` waits for review while Kenji's *Add Sunday hours* lands on `main`:
+
+      ```
+      learner@inkwell:~/site$ git fetch origin
+      remote: Enumerating objects: 3, done.
+      remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+      Unpacking objects: 100% (3/3), done.
+      From github.com:inkwell/site
+         9a1efb0..ddb785a  main       -> origin/main
+      learner@inkwell:~/site$ git log --oneline fix-about..origin/main
+      ddb785a (origin/main, origin/HEAD) Add Sunday hours
+      learner@inkwell:~/site$ git merge --no-edit origin/main
+      Auto-merging about.html
+      Merge made by the 'ort' strategy.
+       about.html | 1 +
+       1 file changed, 1 insertion(+)
+      learner@inkwell:~/site$ git log --oneline --graph -4
+      *   49819c3 (HEAD -> fix-about) Merge remote-tracking branch 'origin/main' into fix-about
+      |\
+      * | cee0634 Say four people on the about page
+      | * ddb785a (origin/main, origin/HEAD) Add Sunday hours
+      |/
+      * 9a1efb0 (main) Lower the price of Dune
+      ```
+
+      `fix-about` now contains Kenji's commit too. A `git push` would add the merge to the PR.
+
+  - kind: choice
+    title: "Quick check: update the PR branch"
+    body: |
+      You rebased your PR branch onto the new `main`. `git push` is refused. What now?
+    options:
+      - "`git push --force`"
+      - "Delete the PR and open a new one"
+      - "`git pull` and push again"
+      - "`git push --force-with-lease`"
+    answer: 3
+    explanation: "A rebase rewrote your branch's commits, so the push must replace the old ones. `--force-with-lease` does that safely; plain `--force` could wipe a reviewer's pushed fix."
+
   - kind: info
     title: "🔹 Stacked pull requests"
     body: |
       A big change can be split into a **stack**: PR 1 adds the data, PR 2 (based on PR 1's branch) adds the page, PR 3 the styling. Each is small and reviewed on its own, and they're merged in order. GitHub is rolling out built-in support for stacks (in public preview); tools like `gh-stack` and Graphite automate the rebasing. Until it's routine, keep PRs small instead.
+
+  - kind: choice
+    title: "Quick check: a stack"
+    body: |
+      PR 2 is based on PR 1's branch. In which order are they merged?
+    options:
+      - "PR 1 first, then PR 2"
+      - "PR 2 first, then PR 1"
+      - "Both at once"
+      - "Only PR 2: it contains PR 1"
+    answer: 0
+    explanation: "A stack is merged bottom-up: PR 1 lands on main first, then PR 2 (now based on main) follows."
 
   - kind: mac
     title: Fork and review on github.com

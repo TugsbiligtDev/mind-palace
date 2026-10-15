@@ -12,6 +12,28 @@ steps:
 
       Homebrew's `git` lands in `/opt/homebrew/bin`, which is **earlier on your PATH** than Apple's `/usr/bin`, so it wins. `which git` should print `/opt/homebrew/bin/git`, and `git --version` something like `git version 2.56.0`. Linux servers install Git with `sudo apt install git`.
 
+      **Example, on Inkwell's server**, where Git came from apt:
+
+      ```
+      learner@inkwell:~$ which git
+      /usr/bin/git
+      learner@inkwell:~$ git --version
+      git version 2.56.0
+      ```
+
+      On your Mac after `brew install git`, the first line should say `/opt/homebrew/bin/git` instead.
+
+  - kind: shell
+    title: "Try it: which Git?"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Type `which git`, then `git --version`.
+
+      Then do the same in your Mac's Terminal. If it says `/usr/bin/git`, you're using Apple's copy (Homebrew's isn't installed yet, or isn't on your PATH).
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Tell Git who you are
     body: |
@@ -27,6 +49,50 @@ steps:
 
       Without these, `git commit` stops with *"Author identity unknown — Please tell me who you are."*
 
+      <!-- page -->
+
+      **Example: a commit on a computer where Git doesn't know you yet**, then the fix:
+
+      ```
+      learner@inkwell:~/demo$ git init -q
+      learner@inkwell:~/demo$ echo hi > a.txt
+      learner@inkwell:~/demo$ git add a.txt
+      learner@inkwell:~/demo$ git commit -m "First"
+      Author identity unknown
+
+      *** Please tell me who you are.
+
+      Run
+
+        git config --global user.email "you@example.com"
+        git config --global user.name "Your Name"
+
+      to set your account's default identity.
+      Omit --global to set the identity only in this repository.
+
+      fatal: unable to auto-detect email address (got 'learner@inkwell.(none)')
+      learner@inkwell:~/demo$ git config --global user.name "Ada Lovelace"
+      learner@inkwell:~/demo$ git config --global user.email "ada@example.com"
+      learner@inkwell:~/demo$ git commit -m "First"
+      [master (root-commit) d215878] First
+       1 file changed, 1 insertion(+)
+       create mode 100644 a.txt
+      ```
+
+      The first `git commit` refused to save anything. After the two settings, the same command worked. (The ID after `root-commit` changes every time: it includes the time.)
+
+  - kind: choice
+    title: "Quick check: who are you?"
+    body: |
+      `git commit` stops with *Author identity unknown*. What fixes it for every repository on this computer?
+    options:
+      - "`git config user.name \"Ada\"` inside this repository only"
+      - "Running `git commit` with sudo"
+      - "`git config --global user.name` and `git config --global user.email`"
+      - "Logging in to GitHub"
+    answer: 2
+    explanation: "Git needs a name **and** an email, and `--global` saves them for all your repositories. Without `--global` they'd apply to this one only."
+
   - kind: explain
     title: main, and nano
     body: |
@@ -39,6 +105,38 @@ steps:
 
       - **init.defaultBranch**: a new repository's first branch (Module 17) is called `master` unless you say otherwise, and Git prints a long hint about it every time. GitHub and most teams use `main`.
       - **core.editor**: sometimes Git opens an editor so you can write a message. On a fresh computer that's vim (Module 6's escape route). nano is friendlier. (VS Code works too: `"code --wait"`.)
+
+      **Example: `git init` before and after the setting.** Without it, Git prints its long hint and names the branch `master`:
+
+      ```
+      learner@inkwell:~/demo$ git init
+      hint: Using 'master' as the name for the initial branch. This default branch name
+      hint: will change to "main" in Git 3.0. To configure the initial branch name
+      hint: to use in all of your new repositories, which will suppress this warning,
+      hint: call:
+      hint:
+      hint: 	git config --global init.defaultBranch <name>
+      hint:
+      hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+      hint: 'development'. The just-created branch can be renamed via this command:
+      hint:
+      hint: 	git branch -m <name>
+      hint:
+      hint: Disable this message with "git config set advice.defaultBranchName false"
+      Initialized empty Git repository in /home/learner/demo/.git/
+      learner@inkwell:~/demo$ git branch --show-current
+      master
+      ```
+
+      With the setting, in a fresh folder:
+
+      ```
+      learner@inkwell:~/demo2$ git config --global init.defaultBranch main
+      learner@inkwell:~/demo2$ git init
+      Initialized empty Git repository in /home/learner/demo2/.git/
+      learner@inkwell:~/demo2$ git branch --show-current
+      main
+      ```
 
   - kind: shell
     title: Configure Git
@@ -107,6 +205,18 @@ steps:
     title: "🔹 Git 3.0 and main"
     body: |
       Git 3.0, the next major release, will make `main` the default branch name, and the hint goes away for good. Until then, the `init.defaultBranch` setting is how you get there.
+
+  - kind: choice
+    title: "Quick check: before Git 3.0"
+    body: |
+      You're on Git 2.56 and want every new repository to start on `main`, with no hint. What do you run (once)?
+    options:
+      - "`git branch -m main` in every repository"
+      - "`git config --global init.defaultBranch main`"
+      - "Wait for Git 3.0"
+      - "`git init --main`"
+    answer: 1
+    explanation: "The global setting applies to every `git init` from now on. `git branch -m main` renames the branch of one existing repository."
 
   - kind: mac
     title: Set up Git on your Mac

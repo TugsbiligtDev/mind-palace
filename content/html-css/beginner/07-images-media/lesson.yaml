@@ -8,10 +8,23 @@ steps:
       <img src="images/cover-dune.svg" alt="Dune by Frank Herbert, cover">
       ```
 
+      In the page, this shows the orange cover of *Dune*. The alt text stays invisible while the picture loads fine. If the path were wrong, you'd see a broken-image icon and the words *Dune by Frank Herbert, cover* instead.
+
       - `src` (*source*) is the path to the image file, exactly like a link's `href`.
       - `alt` (*alternative text*) describes the image for anyone who can't see it: screen reader users, people whose images failed to load, and search engines.
 
       In these lessons, `images/…` paths point at a few sample pictures we've provided: `logo.svg`, `shop.jpg`, `icon-cart.svg`, and the covers `cover-dune.svg`, `cover-emma.svg`, `cover-beloved.svg` and `cover-odyssey.svg`.
+
+  - kind: choice
+    title: "Quick check: when alt shows"
+    body: |
+      When does a visitor with normal sight see an image's `alt` text on the page?
+    options:
+      - "Always, as a caption under the image"
+      - "Only when the image can't load, for example because the `src` path is wrong"
+      - "Only when they hover over the image"
+    answer: 1
+    explanation: "Alt text is hidden while the picture loads fine. It shows in place of a broken image, and screen readers read it aloud. A visible caption is a different element (`figcaption`)."
 
   - kind: explain
     title: Writing good alt text
@@ -27,6 +40,38 @@ steps:
 
       ⚠️ Empty is not the same as *missing*. With no `alt` at all, many screen readers read out the file name instead: "cover dash dune dot S V G".
 
+      <!-- page -->
+
+      **Examples: four images on Inkwell's book page.**
+
+      ```html
+      <!-- A book cover in the product listing: say what it is -->
+      <img src="images/cover-dune.svg" alt="Dune by Frank Herbert, paperback cover">
+
+      <!-- A picture of text: the alt is the text -->
+      <img src="images/sale-banner.png" alt="Summer sale: 20% off all poetry">
+
+      <!-- The logo, linking home: say where the link goes -->
+      <a href="index.html"><img src="images/logo.svg" alt="Inkwell Books home"></a>
+
+      <!-- A decorative flourish under a heading: empty alt, so it's skipped -->
+      <img src="images/flourish.svg" alt="">
+      ```
+
+      A screen reader says: "Dune by Frank Herbert, paperback cover, image", "Summer sale: 20% off all poetry, image", "link, Inkwell Books home", and nothing at all for the flourish.
+
+  - kind: choice
+    title: "Quick check: the logo link"
+    body: |
+      Inkwell's logo is a link to the home page. Which `alt` is best?
+    options:
+      - "`alt=\"Image of the Inkwell logo\"`"
+      - "`alt=\"\"`"
+      - "`alt=\"Inkwell Books home\"`"
+      - "`alt=\"logo.svg\"`"
+    answer: 2
+    explanation: "An image inside a link should say where the link goes. Don't start with \"Image of\" (screen readers already say it's an image), and an empty alt would leave the link with no name at all."
+
   - kind: explain
     title: width and height stop the jump
     body: |
@@ -38,7 +83,27 @@ steps:
       <img src="images/cover-dune.svg" alt="Dune, cover" width="300" height="450">
       ```
 
+      shows the same cover, 300 pixels wide and 450 tall, with that space held open even before the file arrives. Write `width="150" height="225"` and the cover shows at half size, same shape.
+
       The browser now reserves the right space from the start. CSS can still resize the image later (Module 22); the browser keeps the same proportions.
+
+  - kind: web
+    title: "Try it: images, alt and size"
+    body: |
+      The `index.html` tab shows the Inkwell logo and two covers, each with `src`, `alt`, `width` and `height`.
+
+      Try this:
+
+      1. Break the *Beloved* path: change `cover-beloved.svg` to `cover-belovd.svg`. The picture disappears and its alt text shows in its place. Put it back.
+      2. Change the *Odyssey* cover's `width="100" height="150"` to `width="200" height="300"`. It doubles in size, keeping its shape.
+      3. Change only the `width` to `300`. Now the shape is wrong: the cover gets stretched. That's why both numbers should match the real picture's proportions.
+      4. Break the logo's path too. Its alt is `""` (empty), so no words or icon show, only an empty gap: that's how decorative images behave.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p><img src="images/logo.svg" alt="" width="200" height="60"></p>
+      <img src="images/cover-beloved.svg" alt="Beloved by Toni Morrison, cover" width="100" height="150">
+      <img src="images/cover-odyssey.svg" alt="The Odyssey by Homer, cover" width="100" height="150">
 
   - kind: web
     title: Describe the shelf
@@ -95,6 +160,17 @@ steps:
 
       Also shrink photos to the size they're shown at. A 4000-pixel phone photo shown 400 pixels wide wastes 99% of its download.
 
+  - kind: choice
+    title: "Quick check: pick a format"
+    body: |
+      Which format suits the shop's **logo**, which must look sharp at any size?
+    options:
+      - "SVG"
+      - "JPEG"
+      - "GIF"
+    answer: 0
+    explanation: "SVG is drawn from shapes, so it stays sharp at any size and is tiny. JPEG is for photos, and GIF is best avoided."
+
   - kind: explain
     title: Figures and captions
     body: |
@@ -107,7 +183,27 @@ steps:
       </figure>
       ```
 
+      In the page, the photo shows with the caption as ordinary text right under it. A `figure` is indented from both sides by default, so the pair sits a little in from the page edge.
+
       This ties the caption to the image for screen readers and search engines. The caption is visible to everyone, so the `alt` doesn't have to repeat it.
+
+  - kind: web
+    title: "Try it: a figure with a caption"
+    body: |
+      Here the *Odyssey* cover and its caption sit together in a `<figure>`, with the caption in `<figcaption>`. Notice the indent the browser gives the whole figure.
+
+      Try this:
+
+      1. Move the `<figcaption>` line above the `<img>`. The caption now shows above the picture: both places are allowed.
+      2. Change the caption's words. The `alt` stays as it is, because the caption is already visible to everyone.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <h2>Book of the month</h2>
+      <figure>
+        <img src="images/cover-odyssey.svg" alt="The Odyssey by Homer, cover" width="150" height="225">
+        <figcaption>Our October pick: a sailor's long trip home.</figcaption>
+      </figure>
 
   - kind: web
     title: Caption the shop photo
@@ -149,10 +245,30 @@ steps:
       <audio src="reading.mp3" controls></audio>
       ```
 
+      In the page, the video shows as a 640 × 360 box with the poster picture and a row of controls (play, a timeline, volume, full screen); the audio shows as just a slim bar of controls. The sentence inside `<video>` only appears in a browser that can't play video at all.
+
       - `controls` shows play, pause and volume. Without it, the visitor has no way to start or stop the media.
       - `poster` is the picture shown before the video plays.
       - Autoplay with sound is blocked by browsers (and annoys everyone). If you must autoplay, add `muted` too.
       - Add captions for speech with a `<track kind="captions" src="tour.vtt">` inside the video. Deaf viewers, and anyone in a quiet carriage, will thank you.
+
+  - kind: web
+    title: "Try it: a video player"
+    body: |
+      There's no video file in these lessons, so this player can't actually play. It still shows what the HTML builds: a 320 × 180 box with the shop photo as its `poster`, and the browser's row of controls. Under it is a slim audio player.
+
+      Try this:
+
+      1. Remove `controls` from the `<video>`. The controls vanish, and a visitor would have no way to start it. Put it back.
+      2. Change `width="320" height="180"` to `width="480" height="270"`.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <video controls width="320" height="180" poster="images/shop.jpg">
+        Your browser can't play this video.
+      </video>
+
+      <audio controls></audio>
 
   - kind: explain
     title: Embedding with iframe
@@ -168,11 +284,24 @@ steps:
         allowfullscreen></iframe>
       ```
 
+      In the page, this shows a 560 × 315 box with YouTube's player inside it (with the real video's id in place of `VIDEO_ID`), just as if a small window onto YouTube were cut into your page.
+
       - Always give an iframe a `title`: screen readers announce it.
       - `loading="lazy"` waits to load it until the visitor scrolls near it, so a heavy embed doesn't slow down your page.
       - Each embed pulls in another site's code and often its tracking cookies. YouTube's `youtube-nocookie.com` address reduces that.
 
       (The preview in these lessons blocks embeds from other sites, so try this one on your Mac.)
+
+  - kind: choice
+    title: "Quick check: the iframe title"
+    body: |
+      Why should every `<iframe>` have a `title`?
+    options:
+      - "It is shown as a caption above the embed"
+      - "Screen readers announce it, so people know what the embedded frame is"
+      - "It makes the embed load faster"
+    answer: 1
+    explanation: "The `title` gives the frame a name for screen readers. It isn't shown on the page, and it's `loading=\"lazy\"` that helps speed."
 
   - kind: why
     body: |

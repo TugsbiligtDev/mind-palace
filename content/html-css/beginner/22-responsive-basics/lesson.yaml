@@ -12,6 +12,35 @@ steps:
 
       The last tool is the **media query**: CSS that applies only when the screen matches a condition.
 
+      **Example: one book list, three screens.** Same HTML everywhere; only the space changes:
+
+      ```css
+      .books {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+      }
+      ```
+
+      | Screen | Width | What the grid does by itself |
+      |---|---|---|
+      | Phone | 375px | 1 column of books |
+      | Tablet | 768px | 3 columns (4 don't fit: they'd need 792px) |
+      | Laptop | 1280px | 6 columns |
+
+      No phone version, no tablet version: one page that adapts. For changes the grid can't make by itself (hiding a sidebar, say), you'll add a media query.
+
+  - kind: choice
+    title: "Quick check: what responsive means"
+    body: |
+      What is **responsive design**?
+    options:
+      - "Building a separate site for phones"
+      - "One page whose CSS adapts its layout to the space available"
+      - "A page that loads quickly"
+    answer: 1
+    explanation: "Responsive design keeps one HTML page and lets the CSS adapt: relative units, max-width, wrapping layouts, and media queries."
+
   - kind: explain
     title: The viewport line, again
     body: |
@@ -22,6 +51,17 @@ steps:
       ```
 
       Without it, phones pretend to be about 980px wide and shrink the whole page. With it, a phone reports its real width (say, 390px), and your media queries see the true size. Responsive CSS doesn't work without this line.
+
+  - kind: choice
+    title: "Quick check: without the viewport line"
+    body: |
+      A page has no `<meta name="viewport">` line. What happens on a phone?
+    options:
+      - "Nothing changes: phones ignore it"
+      - "The phone pretends to be about 980px wide and shrinks the whole page, so media queries see the wrong width"
+      - "The page won't load"
+    answer: 1
+    explanation: "Without the viewport line, phones lay the page out about 980px wide and zoom it out. Tiny text, and your phone-sized media queries never kick in."
 
   - kind: explain
     title: Media queries
@@ -44,6 +84,43 @@ steps:
       `width` is the width of the viewport (the browser window, or the preview panel here). The **range syntax** (`width >= 768px`, `width < 500px`, `500px <= width < 900px`) is the modern way to write it, supported in every current browser.
 
       You'll often meet the older form in tutorials: `(min-width: 768px)` means the same as `(width >= 768px)`, and `(max-width: 767px)` roughly means `(width < 768px)`.
+
+  - kind: web
+    title: "Try it: a media query"
+    body: |
+      The book list is one column by default, and two columns when the preview is at least 768px wide. Use the **Phone**, **Tablet** and **Desktop** buttons above the preview to change its width and watch the layout switch.
+
+      Try this:
+
+      1. Change `768px` to `1000px`. Now **Tablet** shows one column too.
+      2. Add a second media query, `@media (width >= 1000px)`, that makes it three columns with `1fr 1fr 1fr`.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="books">
+        <div>Dune</div>
+        <div>Emma</div>
+        <div>Beloved</div>
+        <div>The Odyssey</div>
+      </div>
+    css: |
+      .books {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      @media (width >= 768px) {
+        .books {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .books div {
+        background: #fdf8f0;
+        border: 1px solid #d6c7ae;
+        padding: 12px;
+      }
 
   - kind: explain
     title: Mobile first
@@ -160,6 +237,19 @@ steps:
 
       And remember auto-fit grids and flex-wrap often need **no** breakpoint at all.
 
+      For example: Inkwell's book list is one column. You widen the window, and at about 720px each card is so wide that the covers look lost in empty space. So that's your breakpoint: `@media (width >= 720px)` switches to two columns. No phone model was consulted.
+
+  - kind: choice
+    title: "Quick check: choosing a breakpoint"
+    body: |
+      How should you decide where a breakpoint goes?
+    options:
+      - "Use the width of the newest iPhone"
+      - "Widen the window slowly and add one where the content starts to look wrong, like lines getting too long"
+      - "Add one every 100px to be safe"
+    answer: 1
+    explanation: "Breakpoints come from your content, not from device lists: there are thousands of screen sizes. Keep them few."
+
   - kind: explain
     title: Fluid images
     body: |
@@ -275,6 +365,17 @@ steps:
     title: "🔹 Floats for layout are legacy"
     body: |
       Older tutorials build columns with `float: left` and "clearfix" hacks. That was the only way before Flexbox and Grid. Today `float` has one proper job: letting text **wrap around** an image, like in a magazine. If you see floats used for page layout in old code, recognise them, and use Flexbox or Grid in your own.
+
+  - kind: choice
+    title: "Quick check: float's proper job"
+    body: |
+      What is `float` still the right tool for today?
+    options:
+      - "Letting text wrap around an image"
+      - "Building a three-column page layout"
+      - "Centring a box"
+    answer: 0
+    explanation: "Wrapping text around an image is float's one modern job. Columns and centring are done with Flexbox and Grid."
 
   - kind: why
     body: |

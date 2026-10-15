@@ -22,6 +22,20 @@ steps:
 
       Your Mac runs **macOS**. Most PCs run **Windows**. Most of the world's servers, and every Android phone, run **Linux**. Inkwell's server runs **Ubuntu**, a popular kind of Linux.
 
+      **Example: what happens when you open Safari.** You double-click it. The OS finds the Safari program on the disk, loads it into memory, gives it a share of the processor, and draws its window on the screen. When Safari saves a download, it asks the OS to write the file into your `Downloads` folder, and the OS checks that you're allowed to.
+
+  - kind: choice
+    title: "Quick check: the manager's jobs"
+    body: |
+      Which of these is a job of the **operating system**?
+    options:
+      - "Showing web pages"
+      - "Deciding which programs get the processor and memory"
+      - "Writing emails"
+      - "Storing your photos in the cloud"
+    answer: 1
+    explanation: "Showing pages and writing emails are what apps do. The OS sits underneath and shares out the processor, memory, disk and devices between them."
+
   - kind: explain
     title: Files and folders
     body: |
@@ -61,6 +75,20 @@ steps:
 
       For example, `ls` is a tiny program whose only job is to **l**i**s**t the files in a folder. It lives in a file called `/usr/bin/ls`, and typing `ls` runs it.
 
+      Here it is on Inkwell's server. The line starting `learner@inkwell` is where the command was typed; the line under it is what `ls` printed:
+
+      ```
+      learner@inkwell:~/inkwell$ ls
+      logs  notes  old  orders  README.txt  site
+      ```
+
+      Put a folder's name after it and it lists that folder instead:
+
+      ```
+      learner@inkwell:~/inkwell$ ls notes
+      books-sold.txt  meeting-2026-09-30.txt  todo.txt
+      ```
+
       Hundreds of small commands like this, each doing one thing well, are the heart of working in a terminal. Next lesson you'll meet the terminal properly; for now, try one.
 
   - kind: shell
@@ -76,6 +104,8 @@ steps:
       2. `tree` draws the folders as a tree, like the picture earlier.
       3. `ls orders` lists what's inside the `orders` folder.
 
+      Then swap `orders` for another folder from the list, like `ls logs` or `ls site`.
+
       Blue names are folders, white names are files. Nothing is graded here: look around, then press **Continue**.
 
   - kind: explain
@@ -88,6 +118,39 @@ steps:
       - **Windows** is the odd one out: a different family, with different commands.
 
       So your Mac and a Linux server are cousins. Folders are arranged the same way, the same commands do the same jobs, and the terminal works the same. **What you learn on your Mac's terminal works on Linux, and the other way round.** The differences are small, and this course points them out as they come up (🔹 marks a "good to know" difference).
+
+      **Example.** Ask Inkwell's server what it is. `uname -a` names the system, and `/etc/os-release` says which Linux:
+
+      ```
+      learner@inkwell:~$ uname -a
+      Linux inkwell 6.8.0-45-generic #45-Ubuntu SMP PREEMPT_DYNAMIC x86_64 x86_64 x86_64 GNU/Linux
+      learner@inkwell:~$ cat /etc/os-release
+      PRETTY_NAME="Ubuntu 24.04.3 LTS"
+      NAME="Ubuntu"
+      VERSION_ID="24.04"
+      VERSION="24.04.3 LTS (Noble Numbat)"
+      VERSION_CODENAME=noble
+      ID=ubuntu
+      ID_LIKE=debian
+      HOME_URL="https://www.ubuntu.com/"
+      ```
+
+      On your Mac, `uname -a` works too and starts with `Darwin`, the name of macOS's Unix core. Same command, same idea, different family member.
+
+  - kind: shell
+    title: "Try it: which system is this?"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Type these one at a time:
+
+      1. `uname`
+      2. `uname -a`
+      3. `cat /etc/os-release`
+
+      Then try `uname -a` in your Mac's Terminal and compare the first word.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: info
     title: "🔹 The small differences"

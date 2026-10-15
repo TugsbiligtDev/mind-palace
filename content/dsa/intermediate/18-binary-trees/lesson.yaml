@@ -25,6 +25,73 @@ steps:
 
       A tree is **recursive**: each child is itself the root of a smaller tree. That is why recursion (Module 10) fits so well.
 
+      <!-- page -->
+
+      **Example.** The tree in the picture, built from plain objects, then walked to count its nodes and leaves:
+
+      ```js
+      const tree = {
+        val: 1,
+        left: {
+          val: 2,
+          left: { val: 4, left: null, right: null },
+          right: { val: 5, left: null, right: null },
+        },
+        right: { val: 3, left: null, right: null },
+      };
+
+      function count(node) {
+        if (node === null) return 0;
+        return 1 + count(node.left) + count(node.right);
+      }
+
+      function leaves(node) {
+        if (node === null) return [];
+        if (node.left === null && node.right === null) return [node.val];
+        return [...leaves(node.left), ...leaves(node.right)];
+      }
+
+      console.log("nodes:", count(tree), "leaves:", leaves(tree));
+      ```
+
+      prints:
+
+      ```
+      nodes: 5 leaves: [ 4, 5, 3 ]
+      ```
+
+      `count` is recursive in exactly the way the vocabulary says: a tree is a root plus two smaller trees.
+
+  - kind: code
+    title: "Try it: count nodes and leaves"
+    body: |
+      Run it and compare with the output above. Then give node 3 a child: replace its `left: null` with `left: { val: 6, left: null, right: null }`. One more node, and the leaves change.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const tree = {
+        val: 1,
+        left: {
+          val: 2,
+          left: { val: 4, left: null, right: null },
+          right: { val: 5, left: null, right: null },
+        },
+        right: { val: 3, left: null, right: null },
+      };
+
+      function count(node) {
+        if (node === null) return 0;
+        return 1 + count(node.left) + count(node.right);
+      }
+
+      function leaves(node) {
+        if (node === null) return [];
+        if (node.left === null && node.right === null) return [node.val];
+        return [...leaves(node.left), ...leaves(node.right)];
+      }
+
+      console.log("nodes:", count(tree), "leaves:", leaves(tree));
+
   - kind: explain
     title: The TreeNode class, and testing helpers
     body: |
@@ -116,6 +183,18 @@ steps:
       ```
 
       **Height** is a perfect example: an empty tree has height 0, otherwise it is `1 + max(height of left, height of right)`.
+
+      **Example: the height of the tree `1, 2, 3, 4, 5`**, in the order the calls finish (children before their parent):
+
+      | node | height of left | height of right | height |
+      |---|---|---|---|
+      | 4 | 0 | 0 | 1 + max(0, 0) = 1 |
+      | 5 | 0 | 0 | 1 + max(0, 0) = 1 |
+      | 2 | 1 | 1 | 1 + max(1, 1) = 2 |
+      | 3 | 0 | 0 | 1 + max(0, 0) = 1 |
+      | 1 | 2 | 1 | 1 + max(2, 1) = 3 |
+
+      The root's answer, 3, is the height of the whole tree. Empty children (`null`) answered 0, the base case.
 
   - kind: code
     title: Maximum depth
@@ -483,6 +562,29 @@ steps:
       }
       ```
 
+      All three orders, run on the tree above. Only the position of the `push` changes:
+
+      ```js
+      const T = (val, left = null, right = null) => ({ val, left, right });
+      const root = T(1, T(2, T(4), T(5)), T(3));
+
+      function pre(n, out = []) { if (n) { out.push(n.val); pre(n.left, out); pre(n.right, out); } return out; }
+      function ino(n, out = []) { if (n) { ino(n.left, out); out.push(n.val); ino(n.right, out); } return out; }
+      function post(n, out = []) { if (n) { post(n.left, out); post(n.right, out); out.push(n.val); } return out; }
+
+      console.log("preorder: ", pre(root));
+      console.log("inorder:  ", ino(root));
+      console.log("postorder:", post(root));
+      ```
+
+      prints:
+
+      ```
+      preorder:  [ 1, 2, 4, 5, 3 ]
+      inorder:   [ 4, 2, 5, 1, 3 ]
+      postorder: [ 4, 5, 2, 3, 1 ]
+      ```
+
       Recursion can overflow on a very deep (chain-like) tree, so it helps to know the **iterative** version that uses your own stack (Module 10's idea).
 
   - kind: code
@@ -687,6 +789,16 @@ steps:
       ```
 
       To keep the levels apart, process **exactly the nodes that were in the queue when the level started**: take the queue's current size as the level's size.
+
+      **Example on the same tree.** At the start of each level, the queue holds exactly that level:
+
+      | level | queue at the start of the level | values |
+      |---|---|---|
+      | 0 | 1 node | 1 |
+      | 1 | 2 nodes | 2, 3 |
+      | 2 | 2 nodes | 4, 5 |
+
+      Handling level 1's two nodes pushes their children (4 and 5), which become level 2.
 
   - kind: code
     title: Level-order traversal
@@ -1062,6 +1174,18 @@ steps:
       Trick: at every node, the longest path **through that node** is `height(left) + height(right)`. While computing heights recursively, also keep a `best` variable and update it at each node.
 
       This is a common recursion pattern: the function **returns** one thing (the height, for its parent) and **records** another (the best diameter seen so far).
+
+      **Example on the same tree.** Each node returns its height and updates `best`:
+
+      | node | height left | height right | path through it | best so far | returns |
+      |---|---|---|---|---|---|
+      | 4 | 0 | 0 | 0 | 0 | 1 |
+      | 5 | 0 | 0 | 0 | 0 | 1 |
+      | 2 | 1 | 1 | 2 | 2 | 2 |
+      | 3 | 0 | 0 | 0 | 2 | 1 |
+      | 1 | 2 | 1 | 3 | 3 | 3 |
+
+      The diameter is 3: the path 4 → 2 → 1 → 3 has three edges.
 
   - kind: code
     title: Diameter of a binary tree

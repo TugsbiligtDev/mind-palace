@@ -20,6 +20,38 @@ steps:
 
       gh has no milestone command; create one on the website, or with the API: `gh api repos/{owner}/{repo}/milestones -f title="October release"`.
 
+      <!-- page -->
+
+      **Example.** The labels every repository starts with, then a bug filed with one and found again by it:
+
+      ```
+      learner@inkwell:~/site$ gh label list
+
+      Showing 9 of 9 labels in inkwell/site
+
+      NAME              DESCRIPTION                                 COLOR
+      bug               Something isn't working                     #d73a4a
+      documentation     Improvements or additions to documentation  #0075ca
+      duplicate         This issue or pull request already exists   #cfd3d7
+      enhancement       New feature or request                      #a2eeef
+      good first issue  Good for newcomers                          #7057ff
+      help wanted       Extra attention is needed                   #008672
+      invalid           This doesn't seem right                     #e4e669
+      question          Further information is requested            #d876e3
+      wontfix           This will not be worked on                  #ffffff
+      learner@inkwell:~/site$ gh issue create --title "Footer link is broken" --body "Points to /old-about" --label bug
+
+      Creating issue in inkwell/site
+
+      https://github.com/inkwell/site/issues/2
+      learner@inkwell:~/site$ gh issue list --label bug
+
+      Showing 1 of 1 open issue in inkwell/site
+
+      ID  TITLE                  LABELS
+      #2  Footer link is broken  bug
+      ```
+
   - kind: shell
     title: A label of our own
     fixture: [git-identity, website-repo, github-account, github-site, site-clone]
@@ -135,6 +167,18 @@ steps:
 
       If the tag doesn't exist yet, GitHub creates it on the default branch (or `--target branch`). `--draft` prepares it without publishing; `--prerelease` marks a test version.
 
+      <!-- page -->
+
+      **Example.** A release for the existing `v1.0` tag:
+
+      ```
+      learner@inkwell:~/site$ gh release create v1.0 --title "September release" --notes "Book pages for Dune."
+      https://github.com/inkwell/site/releases/tag/v1.0
+      learner@inkwell:~/site$ gh release list
+      TITLE              TYPE    TAG NAME  PUBLISHED
+      September release  Latest  v1.0      less than a minute ago
+      ```
+
   - kind: shell
     title: Publish the October release
     fixture: [git-identity, website-repo, github-account, github-site, site-clone]
@@ -153,10 +197,36 @@ steps:
     body: |
       For planning across many issues and PRs, GitHub **Projects** are boards and tables (columns like *Todo / In progress / Done*, custom fields like priority or size, filters, charts), linked to the repository's issues. They're used on the website, and `gh project` can script them. The practice terminal doesn't have them; try one on github.com (below).
 
+      **Example.** Inkwell's board *Website, autumn* has three columns: **Todo** (issues #4 and #6), **In progress** (#5, assigned to Priya, with its open PR linked), and **Done** (#2, #3). When Priya's PR merges with `Closes #5`, the card moves to *Done* by itself.
+
+  - kind: choice
+    title: "Quick check: board or labels?"
+    body: |
+      The team wants to see, at a glance, what everyone is working on **right now** across 30 issues. What fits best?
+    options:
+      - "A label called `in-progress` on each issue"
+      - "A long issue listing everything"
+      - "A Projects board with Todo / In progress / Done columns"
+      - "A milestone"
+    answer: 2
+    explanation: "A board shows status visually and across many issues at once. Labels and milestones sort issues, but don't give that overview."
+
   - kind: info
     title: "🔹 Discussions"
     body: |
       **Discussions** are a forum attached to a repository: questions, ideas and announcements that aren't work items. They keep "how do I…?" out of the issue list. Turn them on in the repository's settings.
+
+  - kind: choice
+    title: "Quick check: issue or discussion?"
+    body: |
+      A visitor asks *"Can I use your theme for my own bookshop's site?"* Where does that belong?
+    options:
+      - "A new issue labelled bug"
+      - "A Discussion (Q&A)"
+      - "A pull request"
+      - "A release note"
+    answer: 1
+    explanation: "It's a question, not a work item. Discussions keep questions and ideas out of the issue list."
 
   - kind: mac
     title: Organise a real repository

@@ -12,6 +12,17 @@ steps:
 
       Queries don't change at all. PostgreSQL decides by itself whether an index helps (Module 33 shows how to see its decision).
 
+  - kind: choice
+    title: "Quick check: what changes?"
+    body: "You add `CREATE INDEX orders_customer_id_idx ON orders (customer_id);`. What do you have to change in your queries to use it?"
+    options:
+      - "Add `USING orders_customer_id_idx` to every query"
+      - "Nothing: PostgreSQL decides by itself when to use it"
+      - "Query the index instead of the table"
+      - "Rename the column to customer_id_idx"
+    answer: 1
+    explanation: "Queries stay exactly the same. The planner sees the index and uses it when it helps. You'll watch it do that on the next pages."
+
   - kind: explain
     title: B-tree, the default
     body: |
@@ -49,6 +60,22 @@ steps:
 
       So: **index what your queries actually filter, join or sort on**, not every column "just in case". A table with 15 indexes can be painfully slow to write to. The built-in view `pg_stat_user_indexes` shows how often each index is used (`idx_scan`), so you can find the ones nobody uses.
 
+  - kind: try
+    title: "Try it: which indexes get used?"
+    body: |
+      Run it: one row per index on `orders` and `payments`, with how many times each was used. The primary keys have been used a lot (loading the data checked every foreign key against them).
+
+      Then play: run `SELECT * FROM payments WHERE payment_id = 5;` above the query and see `payments_pkey`'s count go up by one.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT relname AS table_name,
+             indexrelname AS index_name,
+             idx_scan
+      FROM pg_stat_user_indexes
+      WHERE relname IN ('orders', 'payments')
+      ORDER BY 1, 2;
+
   - kind: explain
     title: Multi-column indexes, and why order matters
     body: |
@@ -64,6 +91,50 @@ steps:
       - `WHERE paid_at >= '2026-02-01'` alone ✗, mostly (like finding every "John" in a phone book sorted by last name)
 
       **Rule of thumb:** put columns you test with **`=`** first, and the one you use for **ranges or sorting** last.
+
+      <!-- page -->
+
+      With that index in place, `EXPLAIN` (Module 33) shows PostgreSQL's plan for each query. One order's payments in time order uses it:
+
+      ```sql
+      EXPLAIN SELECT * FROM payments WHERE order_id = 174 ORDER BY paid_at;
+      ```
+
+      ```text
+      Index Scan using payments_order_paid_idx on payments  (cost=…)
+        Index Cond: (order_id = 174)
+      ```
+
+      No sort step is needed: the index already holds each order's payments in `paid_at` order. Filtering on `paid_at` **alone** can't use it:
+
+      ```sql
+      EXPLAIN SELECT * FROM payments WHERE paid_at >= '2026-02-01';
+      ```
+
+      ```text
+      Seq Scan on payments  (cost=…)
+        Filter: (paid_at >= '2026-02-01 00:00:00+00'::timestamp with time zone)
+      ```
+
+      *Seq Scan* means "read every row".
+
+  - kind: try
+    title: "Try it: column order in a plan"
+    body: |
+      The index and both plans. Run it and find *Index Scan* in the first plan and *Seq Scan* in the second.
+
+      Then play: add `AND paid_at >= '2023-05-01'` to the first query (still uses the index), or plan `WHERE order_id IN (174, 175)`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE INDEX payments_order_paid_idx ON payments (order_id, paid_at);
+
+      EXPLAIN SELECT *
+      FROM payments
+      WHERE order_id = 174
+      ORDER BY paid_at;
+
+      EXPLAIN SELECT * FROM payments WHERE paid_at >= '2026-02-01';
 
   - kind: try
     title: Your turn to create an index
@@ -94,7 +165,8 @@ steps:
       **Partial index**: indexes only rows matching a WHERE. Smaller and faster when you only ever search a slice:
 
       ```sql
-      CREATE INDEX orders_pending_idx ON orders (ordered_at) WHERE status = 'pending';
+      CREATE INDEX orders_pending_idx ON orders (ordered_at)
+      WHERE status = 'pending';
       ```
 
       A partial **unique** index is a neat trick: `CREATE UNIQUE INDEX ON orders (customer_id) WHERE status = 'pending'` would mean "at most one *pending* order per customer".
@@ -108,13 +180,50 @@ steps:
       ```
 
   - kind: try
-    title: An expression index in use
+    title: "Try it: a partial index"
     body: |
-      Messy data has cities in random capitals, so searches use `lower(city)`. Run it: the plan uses the expression index (*Bitmap Index Scan on customers_lower_city_idx*). Then change the WHERE to `city = 'Tokyo'` and see the index go unused: back to a *Seq Scan* over all 5,020 customers.
-    sql: |
-      CREATE INDEX customers_lower_city_idx ON customers (lower(city));
+      **Part 1**, the partial index. Run it: the pending query uses the small index (*Index Scan using orders_pending_idx*), with no sort step. The paid query can't: its WHERE doesn't match the index's WHERE, so it's a *Seq Scan* plus a *Sort*.
 
-      EXPLAIN SELECT first_name FROM customers WHERE lower(city) = 'tokyo';
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE INDEX orders_pending_idx ON orders (ordered_at)
+      WHERE status = 'pending';
+
+      EXPLAIN SELECT *
+      FROM orders
+      WHERE status = 'pending'
+      ORDER BY ordered_at;
+
+      EXPLAIN SELECT *
+      FROM orders
+      WHERE status = 'paid'
+      ORDER BY ordered_at;
+
+  - kind: try
+    title: "Try it: a partial unique index"
+    body: |
+      **Part 2**, the unique trick, on a small `carts` table: each customer may have **one open** cart, but any number of closed ones. Run it: the first INSERT is fine (customer 1 has one open and two closed carts), and the last is refused, because customer 1 already has an open cart.
+
+      Then change the last line's `'open'` to `'closed'`: accepted, since closed carts aren't in the index at all.
+
+      (On the real `orders` table this exact rule can't be added: some customers already have several pending orders, and a new unique index checks the existing rows first, like a new constraint in Module 15.)
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE TABLE carts (
+          cart_id      integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          customer_id  integer NOT NULL,
+          status       text NOT NULL
+      );
+      CREATE UNIQUE INDEX carts_one_open_idx ON carts (customer_id)
+      WHERE status = 'open';
+
+      INSERT INTO carts (customer_id, status)
+      VALUES (1, 'open'), (1, 'closed'), (1, 'closed'), (2, 'open');
+      SELECT * FROM carts ORDER BY cart_id;
+
+      INSERT INTO carts (customer_id, status) VALUES (1, 'open');
+    broken_starter: true
 
   - kind: explain
     title: Index your foreign keys
@@ -122,6 +231,31 @@ steps:
       Module 13 warned: PostgreSQL indexes primary keys automatically, but **not foreign key columns**. Joins and parent deletes then scan the whole child table.
 
       Inkwell's foreign keys (`orders.customer_id`, `order_items.book_id`, `payments.order_id`…) have no indexes yet, on purpose. On real data like this, you'd add one for each FK you join on or delete through.
+
+      **Example: one foreign key, before and after.** Finding every order line for book 42 means filtering on the foreign key `order_items.book_id`:
+
+      ```sql
+      EXPLAIN SELECT * FROM order_items WHERE book_id = 42;
+      ```
+
+      ```text
+      Seq Scan on order_items  (cost=0.00..1319.51 rows=273 width=18)
+        Filter: (book_id = 42)
+      ```
+
+      ```sql
+      CREATE INDEX order_items_book_id_idx ON order_items (book_id);
+      EXPLAIN SELECT * FROM order_items WHERE book_id = 42;
+      ```
+
+      ```text
+      Bitmap Heap Scan on order_items  (cost=6.41..417.52 rows=273 width=18)
+        Recheck Cond: (book_id = 42)
+        ->  Bitmap Index Scan on order_items_book_id_idx  (cost=0.00..6.34 rows=273 width=0)
+              Index Cond: (book_id = 42)
+      ```
+
+      Before: read all ~70,000 lines. After: the index finds the 273 matching lines directly, and the estimated cost drops from 1319 to 417. The same thing speeds up a join from `books` to `order_items`, and deleting a book.
 
   - kind: try
     title: Your turn to index a foreign key
@@ -153,6 +287,33 @@ steps:
 
       These speed up `@>`, `?`, `?|`, `?&` on jsonb (Module 28) and `@>`, `&&` on arrays (Module 29). GIN indexes are slower to update than B-trees, so again: only where you search.
 
+      With only 300 books, PostgreSQL decides reading the whole table is cheaper anyway, so the plan says *Seq Scan*. Forbidding sequential scans for a moment (`SET enable_seqscan = off`, a testing switch, never for real use) shows the index *can* serve the query:
+
+      ```text
+      Bitmap Heap Scan on books  (cost=…)
+        Recheck Cond: (tags @> '{signed-copy}'::text[])
+        ->  Bitmap Index Scan on books_tags_idx  (cost=…)
+              Index Cond: (tags @> '{signed-copy}'::text[])
+      ```
+
+      On a table with millions of rows, the planner would pick it without being pushed.
+
+  - kind: try
+    title: "Try it: a GIN index"
+    body: |
+      Run it: the first plan is a *Seq Scan* (the table is small), the second, with sequential scans switched off, uses `books_tags_idx`.
+
+      Then play: try a jsonb query with the same trick, after `CREATE INDEX books_details_idx ON books USING gin (details);` and `WHERE details @> '{"format": "ebook"}'`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE INDEX books_tags_idx ON books USING gin (tags);
+
+      EXPLAIN SELECT title FROM books WHERE tags @> '{signed-copy}';
+
+      SET enable_seqscan = off;
+      EXPLAIN SELECT title FROM books WHERE tags @> '{signed-copy}';
+
   - kind: explain
     title: CREATE INDEX CONCURRENTLY
     body: |
@@ -170,6 +331,22 @@ steps:
 
       **On production tables, always use CONCURRENTLY.**
 
+  - kind: try
+    title: "Try it: CONCURRENTLY"
+    body: |
+      Run it: the index is built, and the second query shows it. (With one session here, nothing is waiting to write, so you won't notice the difference in speed.)
+
+      Then put `BEGIN;` before the CREATE INDEX and run again: *CREATE INDEX CONCURRENTLY cannot run inside a transaction block*.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE INDEX CONCURRENTLY order_items_book_id_idx ON order_items (book_id);
+
+      SELECT indexname, indexdef
+      FROM pg_indexes
+      WHERE tablename = 'order_items'
+      ORDER BY indexname;
+
   - kind: info
     title: "🔹 GiST, BRIN and hash"
     body: |
@@ -184,7 +361,8 @@ steps:
     body: |
       The warehouse screen runs `SELECT * FROM orders WHERE status = 'pending' ORDER BY ordered_at;`. Someone created the small partial index below for it, but the plan still reads the whole table. Find the mistake and fix the index. Checked by planning that query.
     sql: |
-      CREATE INDEX orders_pending_idx ON orders (ordered_at) WHERE status = 'Pending';
+      CREATE INDEX orders_pending_idx ON orders (ordered_at)
+      WHERE status = 'Pending';
     expect: |
       CREATE INDEX orders_pending_idx ON orders (ordered_at) WHERE status = 'pending';
     state_query: |

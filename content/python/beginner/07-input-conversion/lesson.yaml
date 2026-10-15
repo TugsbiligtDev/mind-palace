@@ -41,6 +41,46 @@ steps:
 
       If the text cannot be converted, such as `int("hello")`, Python raises a **ValueError**. In Module 16 you will learn to catch that; for now, just know it exists.
 
+      <!-- page -->
+
+      Watch what changes once the text is converted:
+
+      ```python
+      print(int("30") + 1)
+      print(float("2.5") * 2)
+      print(str(30) + "!")
+      print("30" + "1")
+      print("7" * 3)
+      print(bool("hi"), bool(""))
+      ```
+
+      prints:
+
+      ```
+      31
+      5.0
+      30!
+      301
+      777
+      True False
+      ```
+
+      Without converting, `+` **glues** text (`"30" + "1"` is `"301"`) and `*` **repeats** it (`"7" * 3` is `"777"`).
+
+  - kind: code
+    title: "Try it: text and numbers"
+    body: |
+      Run this and compare each pair: converted numbers do maths, text gets glued or repeated. Then change `int("30")` to `int("thirty")` and read the `ValueError`, and change it back.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      print(int("30") + 1)
+      print(float("2.5") * 2)
+      print(str(30) + "!")
+      print("30" + "1")
+      print("7" * 3)
+      print(bool("hi"), bool(""))
+
   - kind: code
     title: Text in, number out
     body: |

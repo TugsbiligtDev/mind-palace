@@ -10,6 +10,26 @@ steps:
 
       So you open a terminal, it starts a shell, and you type commands on the command line. People say "open a terminal" or "on the command line" for all of it, and that's fine.
 
+      **Example.** You can ask the shell what it is. `$0` holds the name of the program that's reading your commands, and `$SHELL` your default shell:
+
+      ```
+      learner@inkwell:~$ echo $0
+      bash
+      learner@inkwell:~$ echo $SHELL
+      /bin/bash
+      ```
+
+      The window is the terminal. `bash`, the program answering, is the shell. The line where you typed `echo $0` is the command line.
+
+  - kind: shell
+    title: "Try it: ask the shell its name"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Type `echo $0`, then `echo $SHELL`. Then open your Mac's Terminal and type `echo $0` there: it says `-zsh`.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: zsh and bash
     body: |
@@ -21,6 +41,40 @@ steps:
       | **bash** | almost every Linux server, including Inkwell's | `$` |
 
       They're close relatives: everything in this level works in both. The practice terminal in these lessons runs **bash** on Linux, because that's what you'll find on servers. Where zsh does something differently, the lesson says so.
+
+      **Example: the same command in both.** On your Mac (zsh):
+
+      ```
+      ada@MacBook ~ % echo hello
+      hello
+      ```
+
+      On Inkwell's server (bash):
+
+      ```
+      learner@inkwell:~$ echo hello
+      hello
+      ```
+
+      Different prompt ending (`%` vs `$`), same command, same result.
+
+  - kind: choice
+    title: "Quick check: which shell?"
+    body: |
+      You see this prompt:
+
+      ```
+      priya@shop-web:~$
+      ```
+
+      Which shell is most likely running?
+    options:
+      - "zsh on a Mac"
+      - "Windows PowerShell"
+      - "It can't be a shell"
+      - "bash on a Linux server"
+    answer: 3
+    explanation: "A prompt ending in `$` with a `user@host` name is the classic bash prompt on a Linux server. The Mac's zsh prompt ends in `%`."
 
   - kind: explain
     title: Reading the prompt
@@ -41,6 +95,17 @@ steps:
       On your Mac, the same information looks like `ada@MacBook-Air ~ %`. If the prompt ever ends in `#` instead of `$`, you're the all-powerful **root** user. Be careful (Module 10).
 
       ⚠️ When a lesson shows a command, **don't type the prompt**. Only the part after it.
+
+      <!-- page -->
+
+      The `~` in the prompt is a short form. The command `pwd` prints the folder's **full** name. Here's what it printed when someone stood in Inkwell's `notes` folder (the prompt shows `~/inkwell/notes`: the `notes` folder, inside `inkwell`, inside home):
+
+      ```
+      learner@inkwell:~/inkwell/notes$ pwd
+      /home/learner/inkwell/notes
+      ```
+
+      The first line is the prompt plus what was typed. The second line is the answer. In a lesson, you type only `pwd`.
 
   - kind: shell
     title: Where am I?
@@ -70,6 +135,23 @@ steps:
       - **Arguments** say what to work on: a file, a folder, some text.
 
       Some commands need neither (`pwd`), some need an argument (`cd orders`), and most take options.
+
+      <!-- page -->
+
+      Three more small commands, with what each one printed on Inkwell's server:
+
+      ```
+      learner@inkwell:~$ whoami
+      learner
+      learner@inkwell:~$ date
+      Wed Oct 14 13:04:00 UTC 2026
+      learner@inkwell:~$ echo hi there
+      hi there
+      ```
+
+      - `whoami` needs nothing: it prints your username.
+      - `date` prints the server's date and time (yours will show the time you run it).
+      - `echo` takes arguments, `hi` and `there`, and prints them back, with one space between.
 
   - kind: shell
     title: Three more first commands
@@ -104,6 +186,19 @@ steps:
       ```
 
       Commands are almost always all lowercase. File names are case-sensitive too: on Linux, `Notes.txt` and `notes.txt` are two different files. (Your Mac's disk usually treats them as the same name, which is one of the few places Mac and Linux disagree.)
+
+  - kind: shell
+    title: "Try it: capitals count"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Type these one at a time:
+
+      1. `PWD`: read the error.
+      2. `pwd`
+      3. `ls inkwell`, then `ls Inkwell`: the second can't be found, because the folder's name is all lowercase.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: explain
     title: Stopping and clearing
@@ -140,7 +235,36 @@ steps:
       mkdir staff\ notes
       ```
 
-      Both make one folder called `staff notes`. Most people avoid spaces in file names on the command line for exactly this reason: `staff-notes` needs no quotes.
+      Both make one folder called `staff notes`. Here's the difference in Inkwell's `notes` folder, with `ls` after each one:
+
+      ```
+      learner@inkwell:~/inkwell/notes$ mkdir new hires
+      learner@inkwell:~/inkwell/notes$ ls
+      books-sold.txt  hires  meeting-2026-09-30.txt  new  todo.txt
+      learner@inkwell:~/inkwell/notes$ mkdir "new hires"
+      learner@inkwell:~/inkwell/notes$ ls
+      books-sold.txt  hires  meeting-2026-09-30.txt  new  'new hires'  todo.txt
+      ```
+
+      Without quotes you get two folders, `new` and `hires`. With quotes you get one, and `ls` shows it in single quotes so you can see the space belongs to the name.
+
+      Most people avoid spaces in file names on the command line for exactly this reason: `staff-notes` needs no quotes.
+
+  - kind: shell
+    title: "Try it: spaces in names"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      See the space problem for yourself. Type these one at a time:
+
+      1. `mkdir new hires` (no quotes)
+      2. `ls`: notice the two new folders, `new` and `hires`.
+      3. `mkdir "new hires"` (with quotes)
+      4. `ls` again: now there's one more folder, shown as `'new hires'`.
+
+      Then try the backslash way with a name of your own, like `mkdir book\ club`, and `ls` once more.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: One folder, not two

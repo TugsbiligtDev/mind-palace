@@ -14,6 +14,42 @@ steps:
       | `cd ..` | go up one folder | |
       | `cd ~` | go to your home folder | |
 
+      Here's what it looks like for a Mac user called `ada`. The text before `%` is zsh's prompt: it shows the folder you're in (`~` is home).
+
+      ```text
+      ada@MacBook ~ % pwd
+      /Users/ada
+      ada@MacBook ~ % ls
+      Desktop    Documents  Downloads  Library    Movies     Music      Pictures   Public
+      ada@MacBook ~ % cd Documents
+      ada@MacBook Documents % pwd
+      /Users/ada/Documents
+      ada@MacBook Documents % cd ..
+      ada@MacBook ~ % pwd
+      /Users/ada
+      ```
+
+      Your own folders will differ a little.
+
+  - kind: choice
+    title: "Quick check: where am I?"
+    body: |
+      Ada is in her `Documents` folder. She types:
+
+      ```text
+      ada@MacBook Documents % cd ..
+      ada@MacBook ~ % pwd
+      ```
+
+      What does `pwd` print?
+    options:
+      - "`/Users/ada`"
+      - "`/Users/ada/Documents`"
+      - "`Documents`"
+      - "`..`"
+    answer: 0
+    explanation: "`cd ..` goes up one folder, from `/Users/ada/Documents` to `/Users/ada`, her home folder. `pwd` prints the full path of where you are now."
+
   - kind: explain
     title: File paths
     body: |
@@ -24,6 +60,21 @@ steps:
       - `~` is short for your home folder, so `~/Documents` = `/Users/ada/Documents` for a Mac user called `ada`.
 
       Tip: dragging a file from Finder into the Terminal window types its full path for you.
+
+      **Example: one file, three ways to name it.** Ada's file is `/Users/ada/Documents/sql/setup.sql`:
+
+      ```text
+      ada@MacBook ~ % pwd
+      /Users/ada
+      ada@MacBook ~ % ls Documents/sql
+      setup.sql
+      ada@MacBook ~ % ls ~/Documents/sql/setup.sql
+      /Users/ada/Documents/sql/setup.sql
+      ada@MacBook ~ % ls /Users/ada/Documents/sql/setup.sql
+      /Users/ada/Documents/sql/setup.sql
+      ```
+
+      `Documents/sql` is relative (it worked because Ada was in her home folder), `~/Documents/...` uses the home shortcut, and `/Users/ada/...` is absolute. All three point at the same file.
 
   - kind: mac
     title: Find your way around
@@ -48,6 +99,31 @@ steps:
       - **Database**: *which database* to open, like `practice`.
 
       A **connection** is an open line between one client and the server, logged in as one user, to **one database**. To use a different database you open a new connection.
+
+      **Example.** All four pieces in one psql command (each flag is one piece):
+
+      ```text
+      psql -h localhost -p 5432 -U ada -d practice
+             └─ host ─┘  └port┘  └user┘  └database┘
+      ```
+
+      Because `localhost`, `5432` and your own username are the defaults on a Mac, you can usually leave them out and just type `psql practice`. To reach a server on another computer, you'd change the host: `psql -h db.example.com -d practice`.
+
+  - kind: choice
+    title: "Quick check: read a connection"
+    body: |
+      ```text
+      psql -h db.example.com -p 5433 -U liam -d bookstore
+      ```
+
+      Which **port** does this connect to?
+    options:
+      - "5432"
+      - "db.example.com"
+      - "5433"
+      - "bookstore"
+    answer: 2
+    explanation: "`-p` gives the port: 5433 here, not the usual 5432. `db.example.com` is the host, `liam` the user and `bookstore` the database."
 
   - kind: explain
     title: Starting psql
@@ -150,6 +226,30 @@ steps:
       | `\i file.sql` | Runs every statement in a **file**. Uses a file path, so `~/Documents/sql/setup.sql` works. |
       | `\q` | **Q**uits psql. |
 
+      <!-- page -->
+
+      Here's `\x` and `\timing` on a real Mac, with one sale from `practice`:
+
+      ```text
+      practice=# \x
+      Expanded display is on.
+      practice=# SELECT book_title, quantity, payment_method FROM sales WHERE sale_id = 1;
+      -[ RECORD 1 ]--+--------------------
+      book_title     | Pride and Prejudice
+      quantity       | 1
+      payment_method | card
+
+      practice=# \timing
+      Timing is on.
+      practice=# SELECT count(*) FROM books;
+      -[ RECORD 1 ]
+      count | 30
+
+      Time: 3.552 ms
+      ```
+
+      Each column now sits on its own line, and every query reports its time (yours will be a different number). Type `\x` again to switch expanded display off.
+
   - kind: mac
     title: Try them in Terminal
     body: |
@@ -178,6 +278,30 @@ steps:
       - it's what docs, tutorials and coworkers will assume you know
       - it runs `.sql` files (`\i`), which is how real projects set up databases
 
+      **Example.** The same question in both kinds of client. In pgAdmin you'd click through *Servers → Databases → practice → Schemas → Tables*, right-click `books` and choose *View/Edit Data*. In psql it's one line:
+
+      ```text
+      practice=# SELECT title, price FROM books LIMIT 2;
+              title        | price
+      ---------------------+-------
+       Pride and Prejudice |  9.99
+       Emma                |  8.99
+      (2 rows)
+      ```
+
+      And `\i setup.sql` runs a whole file of SQL in one go, which is how you'll load the course data.
+
+  - kind: choice
+    title: "Quick check: why psql?"
+    body: "You've set up pgAdmin and like it. Which is a **good reason** to learn psql as well?"
+    options:
+      - "pgAdmin can't run SQL queries"
+      - "psql is on every server, even ones with no screen"
+      - "psql shows data as charts"
+      - "pgAdmin only works with MySQL"
+    answer: 1
+    explanation: "Servers often have no screen or mouse, but psql is always there. pgAdmin can run SQL fine; it's just not available everywhere."
+
   - kind: explain
     title: "Common mistake: the missing semicolon"
     body: |
@@ -193,6 +317,25 @@ steps:
       `=#` became `-#`: *"I'm waiting for the rest."* Nothing is broken. Type `;` and press Enter, and the query runs.
 
       If you want to throw away what you typed instead, press **Ctrl + C**.
+
+  - kind: choice
+    title: "Quick check: the waiting prompt"
+    body: |
+      You type a query and press Enter. psql shows:
+
+      ```text
+      practice=# SELECT title FROM books
+      practice-#
+      ```
+
+      What should you do?
+    options:
+      - "Close Terminal: psql has crashed"
+      - "Type the whole query again"
+      - "Type `\\q`"
+      - "Type `;` and press Enter"
+    answer: 3
+    explanation: "`-#` means psql is waiting for the rest of the statement. A semicolon ends it, and the query runs. (Ctrl + C would throw it away instead.)"
 
   - kind: explain
     title: "Common mistake: the wrong database"

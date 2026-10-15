@@ -20,6 +20,35 @@ steps:
 
       *Never use `list.pop(0)` as a queue*: it shifts every item, so it is O(n). Use a `deque`.
 
+      For example, the waiting line from the second row, done with a `deque`:
+
+      ```python
+      from collections import deque
+
+      line = deque(["Ada", "Ben"])
+      line.append("Cy")          # joins at the back
+      print(line.popleft())      # served from the front
+      print(list(line))
+      ```
+
+      prints:
+
+      ```
+      Ada
+      ['Ben', 'Cy']
+      ```
+
+  - kind: choice
+    title: "Quick check: pick the tool"
+    body: |
+      Readers join a waiting list for a popular book and must be served in the order they joined. Which tool fits?
+    options:
+      - "A list, using `pop(0)` to serve the next reader"
+      - "`heapq`"
+      - "`collections.deque`, with `append` and `popleft`"
+    answer: 2
+    explanation: "First-in, first-out is a queue, and `deque` does both ends in O(1). `list.pop(0)` works but shifts every item, so it is O(n). `heapq` serves the smallest item, not the earliest."
+
   - kind: explain
     title: "Stacks: matching brackets"
     body: |

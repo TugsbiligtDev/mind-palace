@@ -101,6 +101,28 @@ steps:
 
       A good rule: if it does not fit comfortably on one line, or you need a second read to understand it, use a loop.
 
+  - kind: code
+    title: "Try it: the same job, two ways"
+    body: |
+      Here is the example above with real numbers: double the positive numbers, flip the sign of the rest, and skip every `5`. Both versions print the same list. Which one could you explain to a friend?
+
+      Then try one change: also skip `0`, in both versions.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      grid = [[3, -1, 5], [0, 5, 2]]
+
+      dense = [x * 2 if x > 0 else -x for row in grid for x in row if x != 5]
+      print(dense)
+
+      clear = []
+      for row in grid:
+          for x in row:
+              if x == 5:
+                  continue
+              clear.append(x * 2 if x > 0 else -x)
+      print(clear)
+
   - kind: explain
     title: Two names, one list
     body: |

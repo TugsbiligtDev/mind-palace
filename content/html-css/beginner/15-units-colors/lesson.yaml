@@ -21,6 +21,46 @@ steps:
 
       A CSS pixel isn't a screen dot. On a Retina screen, one CSS pixel is drawn with several physical pixels, so `16px` text looks the same size on every device.
 
+  - kind: web
+    title: "Try it: px, %, em and rem"
+    body: |
+      Four bars, each sized with a different unit. They start the same width, 320px:
+
+      - `px`: fixed at 320px.
+      - `%`: 80% of its parent, which is 400px wide.
+      - `em`: 20em, where 1em is that bar's own font size (16px).
+      - `rem`: 20rem, where 1rem is the root font size (16px).
+
+      Try this:
+
+      1. Change `.box`'s `width` from `400px` to `600px`. Only the `%` bar grows.
+      2. Give `.em` a `font-size: 20px;`. Only the `em` bar grows (20 × 20 = 400px): `em` follows the element's own font size.
+      3. Undo step 2, then add `html { font-size: 20px; }` at the top. Now the `rem` bar grows to 400px, and so does the `em` bar: its font size is inherited from `html`.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="box">
+        <p class="px">320px</p>
+        <p class="pct">80%</p>
+        <p class="em">20em</p>
+        <p class="rem">20rem</p>
+      </div>
+    css: |
+      .box {
+        width: 400px;
+        border: 1px dashed gray;
+      }
+
+      p {
+        background: #fde68a;
+        margin: 6px 0;
+      }
+
+      .px  { width: 320px; }
+      .pct { width: 80%; }
+      .em  { width: 20em; }
+      .rem { width: 20rem; }
+
   - kind: explain
     title: rem for text, and why
     body: |
@@ -118,6 +158,34 @@ steps:
       - `dvh`: **dynamic**, follows the toolbar as it moves.
 
       For "fill the screen", `min-height: 100svh` (or `100dvh`) is the modern choice. Width-based `vw` has a different catch: on desktops `100vw` includes the scrollbar, so `width: 100vw` can cause a small sideways scroll. Prefer `width: 100%`.
+
+      <!-- page -->
+
+      **Example: the same hero banner, two units.** Say a phone shows 660px of page while its toolbar is visible, and 750px once the toolbar slides away:
+
+      ```css
+      .hero { min-height: 100vh; }   /* 750px tall: the bottom 90px is hidden under the toolbar */
+      .hero { min-height: 100svh; }  /* 660px tall: fits exactly while the toolbar shows */
+      .hero { min-height: 100dvh; }  /* 660px, growing to 750px as the toolbar slides away */
+      ```
+
+      And the width trap on a desktop with a 15px scrollbar and a 1280px-wide window:
+
+      ```css
+      .strip { width: 100vw; }   /* 1280px: 15px wider than the space next to the scrollbar, so the page scrolls sideways */
+      .strip { width: 100%; }    /* 1265px: exactly the space available */
+      ```
+
+  - kind: choice
+    title: "Quick check: fill the screen"
+    body: |
+      You want a hero banner that fills a phone's screen without ending up taller than it while the toolbar is showing. Which height is the modern choice?
+    options:
+      - "`min-height: 100vh`"
+      - "`min-height: 100svh`"
+      - "`min-height: 100%`"
+    answer: 1
+    explanation: "`svh` uses the small viewport, the height with the toolbar showing, so the banner always fits. `100vh` uses the largest height, and `100%` depends on the parent's height."
 
   - kind: explain
     title: Colors

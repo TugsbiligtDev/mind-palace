@@ -51,6 +51,59 @@ steps:
 
       PostgreSQL checks the condition against **each row**. Rows where it's true are kept. Text and dates go in single quotes, and text comparisons are **exact**: `'Card'` would not match `'card'`.
 
+      <!-- page -->
+
+      Two examples on the `practice` data. Books with fewer than 5 copies in stock:
+
+      ```sql
+      SELECT title, stock
+      FROM books
+      WHERE stock < 5;
+      ```
+
+      returns:
+
+      | title | stock |
+      |---|---|
+      | Foundation | 0 |
+      | It | 4 |
+      | Wuthering Heights | 0 |
+      | Neuromancer | 3 |
+      | The Silent Garden | 0 |
+
+      Customers who live in the UK:
+
+      ```sql
+      SELECT first_name, city
+      FROM customers
+      WHERE country = 'UK';
+      ```
+
+      returns:
+
+      | first_name | city |
+      |---|---|
+      | Liam | London |
+      | Olivia | Manchester |
+      | Zoe | London |
+
+  - kind: try
+    title: "Try it: WHERE"
+    body: |
+      Both examples are here. Run them and compare with the tables you just saw.
+
+      Then play: change `< 5` to `>= 30`, or `'UK'` to `'USA'`. Try `'uk'` in lowercase too: no rows, because text comparisons are exact.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT title, stock
+      FROM books
+      WHERE stock < 5;
+
+      SELECT first_name, city
+      FROM customers
+      WHERE country = 'UK';
+
   - kind: try
     title: Your turn to filter
     body: |
@@ -71,6 +124,20 @@ steps:
       - `A AND B`: both must be true
       - `A OR B`: at least one must be true
       - `NOT A`: flips true and false
+
+      ```sql
+      SELECT title, genre
+      FROM books
+      WHERE author_name = 'Stephen King' AND NOT title = 'It';
+      ```
+
+      Inkwell has two Stephen King books. This keeps the one that isn't *It*:
+
+      | title | genre |
+      |---|---|
+      | The Shining | Horror |
+
+      <!-- page -->
 
       **`AND` is evaluated before `OR`**, the way × comes before + in maths. So
 
@@ -117,6 +184,53 @@ steps:
 
       Put `NOT` in front of any of them: `NOT IN`, `NOT BETWEEN`, `NOT LIKE`.
 
+      <!-- page -->
+
+      **IN**: customers in any of three countries.
+
+      ```sql
+      SELECT first_name, country
+      FROM customers
+      WHERE country IN ('Spain', 'Italy', 'France');
+      ```
+
+      | first_name | country |
+      |---|---|
+      | Noah | Spain |
+      | Sophia | Italy |
+      | Chloe | France |
+
+      **LIKE with `_`**: one character, then `une`.
+
+      ```sql
+      SELECT title FROM books WHERE title LIKE '_une';
+      ```
+
+      | title |
+      |---|
+      | Dune |
+
+      <!-- page -->
+
+      **LIKE vs. ILIKE**: titles containing *habits*. With `LIKE`, the small `h` must match exactly, so nothing comes back (both titles spell it *Habits*). `ILIKE` ignores case:
+
+      ```sql
+      SELECT title FROM books WHERE title LIKE '%habits%';
+      ```
+
+      returns **no rows** (0 rows).
+
+      ```sql
+      SELECT title FROM books WHERE title ILIKE '%habits%';
+      ```
+
+      | title |
+      |---|
+      | Atomic Habits |
+      | The 7 Habits of Highly Effective People |
+
+      The `%` on both sides means "anything may come before *and* after".
+
   - kind: try
     title: A range of years
     body: |
@@ -125,6 +239,25 @@ steps:
       SELECT title, published_year
       FROM books
       WHERE published_year BETWEEN 1900 AND 1950;
+
+  - kind: try
+    title: "Try it: IN, LIKE and ILIKE"
+    body: |
+      The three examples from before. Run them, then tweak:
+
+      - add `'Japan'` to the IN list
+      - change `'_une'` to `'D%'` (titles starting with D)
+      - change the ILIKE pattern to `'%the%'`: notice it finds *The* at the start and *the* in the middle
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT first_name, country
+      FROM customers
+      WHERE country IN ('Spain', 'Italy', 'France');
+
+      SELECT title FROM books WHERE title LIKE '_une';
+
+      SELECT title FROM books WHERE title ILIKE '%habits%';
 
   - kind: try
     title: Your turn with IN
@@ -167,6 +300,44 @@ steps:
       - `DESC` = descending (largest first, Z→A, newest first).
       - Add more columns as **tiebreakers**: `ORDER BY price, title` sorts by price, and among equal prices by title. Each column can have its own direction.
 
+      <!-- page -->
+
+      The Mystery shelf, most expensive first. Two books cost 10.99, so `title` breaks the tie (A before M):
+
+      ```sql
+      SELECT title, price
+      FROM books
+      WHERE genre = 'Mystery'
+      ORDER BY price DESC, title;
+      ```
+
+      returns:
+
+      | title | price |
+      |---|---|
+      | Rebecca | 11.50 |
+      | And Then There Were None | 10.99 |
+      | Murder on the Orient Express | 10.99 |
+      | The Hound of the Baskervilles | 6.99 |
+
+      Notice `WHERE` comes before `ORDER BY`.
+
+  - kind: try
+    title: "Try it: ORDER BY"
+    body: |
+      Run the Mystery example. Then try:
+
+      - remove `DESC`: cheapest first
+      - change `title` to `title DESC`: the two 10.99 books swap places
+      - sort by `published_year` instead of price (add it to the SELECT list too, so you can see it)
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT title, price
+      FROM books
+      WHERE genre = 'Mystery'
+      ORDER BY price DESC, title;
+
   - kind: try
     title: Your turn to sort
     body: |
@@ -190,6 +361,47 @@ steps:
 
       **Always pair them with `ORDER BY`.** "The first 3 rows" means nothing until you've said what order they're in.
 
+      <!-- page -->
+
+      The 3 longest books (`title` breaks the tie between the two 688-page books):
+
+      ```sql
+      SELECT title, pages
+      FROM books
+      ORDER BY pages DESC, title
+      LIMIT 3;
+      ```
+
+      | title | pages |
+      |---|---|
+      | It | 1138 |
+      | Dune | 688 |
+      | The Shining | 688 |
+
+      Add `OFFSET 3` after `LIMIT 3` to get the next "page", books 4 to 6:
+
+      | title | pages |
+      |---|---|
+      | The Name of the Wind | 662 |
+      | Mistborn: The Final Empire | 541 |
+      | Jane Eyre | 532 |
+
+  - kind: try
+    title: "Try it: LIMIT and OFFSET"
+    body: |
+      Run it to see the 3 longest books. Then:
+
+      - add `OFFSET 3` on a new line after `LIMIT 3` to see the next three
+      - change `LIMIT 3` to `LIMIT 5`
+      - remove `DESC`: now you get the shortest books
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT title, pages
+      FROM books
+      ORDER BY pages DESC, title
+      LIMIT 3;
+
   - kind: try
     title: Your turn for a top 3
     body: |
@@ -212,6 +424,37 @@ steps:
       `SELECT DISTINCT country FROM customers;` returns each **different** value once. Look closely and you'll see both `USA` and `usa`: DISTINCT compares values exactly, capitals included. (Module 9 shows how to clean that up.)
 
       DISTINCT applies to the **whole result row**, not just the first column. `SELECT DISTINCT genre, author_name …` removes rows only where *both* the genre *and* the author repeat.
+
+      <!-- page -->
+
+      The `sales` table has 30 sales, but only four ways to pay:
+
+      ```sql
+      SELECT DISTINCT payment_method
+      FROM sales;
+      ```
+
+      | payment_method |
+      |---|
+      | bank_transfer |
+      | upi |
+      | paypal |
+      | card |
+
+      The order is whatever PostgreSQL finds convenient. Add `ORDER BY payment_method` if you want them A to Z.
+
+  - kind: try
+    title: "Try it: DISTINCT"
+    body: |
+      Run it to see the four payment methods. Then:
+
+      - remove `DISTINCT`: all 30 rows come back, repeats included
+      - change the query to `SELECT DISTINCT country FROM customers;` and spot both `USA` and `usa`
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT DISTINCT payment_method
+      FROM sales;
 
   - kind: try
     title: Your turn with DISTINCT
@@ -240,6 +483,52 @@ steps:
       - **Whole-number division drops the remainder**: `7 / 2` is `3`. If either side has decimals (`7.0 / 2`), you get `3.5`.
       - `AS` is technically optional, which is why a **missing comma** silently turns the next column name into a label: `SELECT title price` returns *one* column labeled price. Always write `AS`.
       - Need spaces or capitals in a label? Use double quotes: `AS "Unit Price"`.
+
+      <!-- page -->
+
+      The example above, on the Horror shelf only:
+
+      ```sql
+      SELECT title AS book,
+             price * 2 AS price_for_two
+      FROM books
+      WHERE genre = 'Horror';
+      ```
+
+      | book | price_for_two |
+      |---|---|
+      | Frankenstein | 15.00 |
+      | Dracula | 16.50 |
+      | The Shining | 31.98 |
+      | It | 39.98 |
+
+      And the division rule in action:
+
+      ```sql
+      SELECT 7 / 2 AS whole, 7.0 / 2 AS exact;
+      ```
+
+      | whole | exact |
+      |---|---|
+      | 3 | 3.5000000000000000 |
+
+  - kind: try
+    title: "Try it: calculations and labels"
+    body: |
+      Run both queries. Then:
+
+      - change `price * 2` to `price + 1` or `price / 2`
+      - rename the label `book` to `"Horror Title"` (double quotes, because of the space and capitals)
+      - try `SELECT 10 / 3, 10.0 / 3;`
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT title AS book,
+             price * 2 AS price_for_two
+      FROM books
+      WHERE genre = 'Horror';
+
+      SELECT 7 / 2 AS whole, 7.0 / 2 AS exact;
 
   - kind: try
     title: Your turn to calculate

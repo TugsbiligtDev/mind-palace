@@ -13,6 +13,32 @@ steps:
 
       `echo` simply prints text. Save that as `hello.sh`, make it executable with `chmod +x hello.sh` (Module 4!), and run it with `./hello.sh`.
 
+      **Example**, including the most common first mistake (forgetting `chmod +x`):
+
+      ```
+      kali@kali:~/scripts$ ./hello.sh
+      bash: ./hello.sh: Permission denied
+      kali@kali:~/scripts$ chmod +x hello.sh
+      kali@kali:~/scripts$ ./hello.sh
+      Hello from a script
+      ```
+
+      The `./` in front means "the file right here in this folder". Without the execute permission, the shell refuses to run it.
+
+  - kind: mac
+    title: "Try it: your first script"
+    body: |
+      Make `hello.sh` in your practice folder and run it **before** `chmod +x`, so you see the mistake for yourself. Your Mac's shell words it as `zsh: permission denied: ./hello.sh`. Then add the execute permission and run it again.
+
+      (`printf` writes the two lines into the file; `\n` means "new line".)
+    commands: |
+      cd ~/Desktop/hacking-practice
+      printf '#!/bin/bash\necho "Hello from a script"\n' > hello.sh
+      cat hello.sh
+      ./hello.sh
+      chmod +x hello.sh
+      ./hello.sh
+
   - kind: explain
     title: Variables
     body: |
@@ -30,6 +56,44 @@ steps:
 
       Wrapping the value in double quotes (`"$target"`) keeps it as one piece even if it contains spaces — skipping the quotes is the number-one source of weird bugs.
 
+      **Example.** Run as a script, the two lines above print:
+
+      ```
+      Scanning scanme.nmap.org
+      ```
+
+      Here is what the "spaces around `=`" mistake looks like, in a script called `bad.sh` that says `target = "192.168.56.101"`:
+
+      ```
+      kali@kali:~/scripts$ ./bad.sh
+      ./bad.sh: line 2: target: command not found
+      Scanning
+      ```
+
+      Bash thought `target` was a *command* to run, so the variable was never set and `$target` came out empty.
+
+  - kind: mac
+    title: "Try it: variables in your terminal"
+    body: |
+      Variables work straight at the prompt too, no script needed. Set one, use it, then make the classic mistake on purpose: with spaces around `=`, your Mac says `zsh: command not found: target`.
+    commands: |
+      target="scanme.nmap.org"
+      echo "Scanning $target"
+      echo "Scanning target"
+      target = "example.com"
+
+  - kind: choice
+    title: "Quick check: $ or no $?"
+    body: |
+      Which line correctly sets a variable `port` to 80 and then prints it?
+    options:
+      - "$port=80; echo port"
+      - "port = 80; echo $port"
+      - "port=80; echo $port"
+    answer: 2
+    explanation: |
+      Set **without** `$` and **without** spaces (`port=80`), then read **with** `$` (`$port`). The first answer prints the word `port`; the second makes the shell look for a command called `port`.
+
   - kind: explain
     title: Arguments — input from the command line
     body: |
@@ -41,6 +105,41 @@ steps:
       ```
 
       Run it as `./look.sh example.com` and `$1` becomes `example.com`. This is how a real recon script is told *which* target to work on, instead of hard-coding one.
+
+      **Example** with a script `args.sh` that prints `$0`, `$1` and `$2` on separate lines:
+
+      ```
+      kali@kali:~/scripts$ cat args.sh
+      #!/bin/bash
+      echo "Script name: $0"
+      echo "First: $1"
+      echo "Second: $2"
+      kali@kali:~/scripts$ ./args.sh 192.168.56.101 fast
+      Script name: ./args.sh
+      First: 192.168.56.101
+      Second: fast
+      ```
+
+      Each word after the script's name lands in the next numbered box.
+
+  - kind: choice
+    title: "Quick check: which box?"
+    body: |
+      `args.sh` (from the example) is run like this:
+
+      ```
+      ./args.sh scanme.nmap.org quick notes.txt
+      ```
+
+      What is in `$2`?
+    options:
+      - "scanme.nmap.org"
+      - "quick"
+      - "notes.txt"
+      - "./args.sh"
+    answer: 1
+    explanation: |
+      `$0` is the script's own name (`./args.sh`), `$1` is the first word after it (`scanme.nmap.org`), so `$2` is the second: `quick`. `notes.txt` would be `$3`.
 
   - kind: explain
     title: Making decisions — if
@@ -56,6 +155,33 @@ steps:
       ```
 
       Read it as: *if* the first argument is empty, print how to use the script and stop (`exit 1` means "stopped with an error"). The spaces inside `[ ]` are required — `["$1"=""]` without them is an error. Checking that the user actually gave you input is the mark of a script you can trust.
+
+      **Example:** the script above saved as `look.sh`, run once without a target and once with one:
+
+      ```
+      kali@kali:~/scripts$ ./look.sh
+      Usage: ./look.sh <target>
+      kali@kali:~/scripts$ ./look.sh 192.168.56.101
+      Looking at 192.168.56.101
+      ```
+
+      And the missing-spaces mistake, `if ["$1"=""]; then`, gives this baffling message:
+
+      ```
+      ./look.sh: line 2: [=]: command not found
+      ```
+
+  - kind: choice
+    title: "Quick check: spot the bug"
+    body: |
+      Which `if` line is written correctly?
+    options:
+      - "if [ \"$1\" = \"\" ]; then"
+      - "if [\"$1\" = \"\"]; then"
+      - "if [ \"$1\"=\"\" ]; then"
+    answer: 0
+    explanation: |
+      Bash needs a space after `[`, before `]`, and on both sides of `=`. The second line is missing the spaces inside the brackets, and the third is missing them around `=`.
 
   - kind: explain
     title: Repeating work — loops
@@ -78,6 +204,36 @@ steps:
 
       That shape — read a list of targets you are *authorised* to test, do the same thing to each — is behind countless recon scripts.
 
+      <!-- page -->
+
+      **Example.** The first loop prints one line per address:
+
+      ```
+      Would check 10.0.0.1
+      Would check 10.0.0.2
+      Would check 10.0.0.3
+      ```
+
+      The second loop, with a `hosts.txt` listing your two lab machines:
+
+      ```
+      kali@kali:~/scripts$ cat hosts.txt
+      192.168.56.101
+      192.168.56.103
+      kali@kali:~/scripts$ for host in $(cat hosts.txt); do echo "Checking $host"; done
+      Checking 192.168.56.101
+      Checking 192.168.56.103
+      ```
+
+      Notice a loop can also be typed on one line, with `;` where the line breaks were. Add a third address to `hosts.txt` and the loop does a third round, with no change to the loop itself.
+
+  - kind: mac
+    title: "Try it: a loop on one line"
+    body: |
+      Type the loop on one line, the way you will often use it. Then change the list (add `10.0.0.4`, or put your own words) and run it again: the loop does one round per item.
+    commands: |
+      for host in 10.0.0.1 10.0.0.2 10.0.0.3; do echo "Would check $host"; done
+
   - kind: explain
     title: Pipes and redirection — the real superpower
     body: |
@@ -90,6 +246,31 @@ steps:
       | `>>` | **append** output to a file | `echo "done" >> log.txt` |
 
       So `ps aux | grep ssh` lists processes and keeps only the lines about ssh. `nmap ... > scan.txt` saves a scan's output for your notes. The pipe is the idea that makes the whole toolkit multiply: each tool's output becomes the next tool's input.
+
+      <!-- page -->
+
+      **Examples of all three**, in the Kali `recon` folder:
+
+      ```
+      kali@kali:~/recon$ cat scan-log.txt | grep "open"
+      09:03 port 22 open
+      09:04 port 80 open
+      kali@kali:~/recon$ ls > files.txt
+      kali@kali:~/recon$ cat files.txt
+      files.txt
+      notes.txt
+      scan-log.txt
+      kali@kali:~/recon$ echo "10:15 checked the web page" >> notes.txt
+      kali@kali:~/recon$ cat notes.txt
+      target: 192.168.56.101
+      open ports: 22, 80
+      todo: look at the web page
+      10:15 checked the web page
+      ```
+
+      - The pipe kept only the 2 lines of the log that contain `open`.
+      - `>` printed nothing on screen: the list went into `files.txt` instead. (When writing to a file, `ls` puts one name per line.)
+      - `>>` added one line to the *end* of `notes.txt`. With a single `>` the three old lines would have been wiped.
 
   - kind: mac
     title: Write and run a tiny script

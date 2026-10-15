@@ -6,6 +6,17 @@ steps:
 
       **Pivoting** is using that compromised host as a relay to reach those internal systems. It is how a breach of one exposed server turns into access across a whole internal network — and understanding it is what makes the case for segmenting networks so persuasive.
 
+      Checking the compromised host's own routes shows the problem at a glance:
+
+      ```
+      $ ip route
+      default via 10.10.50.1 dev eth0
+      10.10.50.0/24 dev eth0   scope link
+      10.10.60.0/24 dev eth1   scope link
+      ```
+
+      From outside you only ever saw this host on `10.10.50.0/24`. But it has a second network card on `10.10.60.0/24`, an internal range you could not reach directly. That second route is the door pivoting walks through.
+
   - kind: explain
     title: Why the internal network is softer
     body: |

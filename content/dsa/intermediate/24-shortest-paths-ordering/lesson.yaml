@@ -6,6 +6,8 @@ steps:
 
       To measure the distance, keep it with each queue entry (or process level by level and count the levels).
 
+      **Example:** in the graph 0–1, 0–2, 1–3, 2–3, 3–4, BFS from 0 reaches 1 and 2 at distance 1, then 3 at distance 2, then 4 at distance 3. So the shortest path from 0 to 4 has 3 steps, for example 0 → 1 → 3 → 4. (The full queue trace is in Module 23.)
+
   - kind: code
     title: Shortest path between two vertices
     body: |
@@ -50,6 +52,15 @@ steps:
       What if many places start at once? *A fire starts in several rooms at the same time. When does it reach everything?* Put **all the sources into the queue at the start** with distance 0, then run BFS as usual. The rings spread out from every source together, so each cell gets the distance to its **nearest** source.
 
       This turns "for each cell, find the nearest X" from O(n²) into a single O(V + E) pass.
+
+      **Example: a corridor of 6 rooms with fires in rooms 0 and 4** (`.` = not reached yet).
+
+      ```
+      start:     0 . . . 0 .
+      finished:  0 1 2 1 0 1
+      ```
+
+      Room 2 is 2 steps from either fire, room 3 is 1 step from the fire in room 4, and room 5 is 1 step away too. One BFS gave every room its distance to the **nearest** fire.
 
   - kind: code
     title: Rotting oranges
@@ -171,6 +182,20 @@ steps:
       2. Take one out and add it to the order. For each vertex it points to, **reduce its in-degree by 1**. If that reaches 0, add it to the queue.
       3. If the order ends up shorter than the number of vertices, some vertices were stuck in a **cycle**.
 
+      <!-- page -->
+
+      **Example:** A → C, B → C, C → D, B → E. A and B have no prerequisites, so they start in the queue.
+
+      | take | order | in-degrees after | queue |
+      |---|---|---|---|
+      | A | A | A:0 B:0 C:1 D:1 E:1 | [B] |
+      | B | A B | A:0 B:0 C:0 D:1 E:0 | [C, E] |
+      | C | A B C | A:0 B:0 C:0 D:0 E:0 | [E, D] |
+      | E | A B C E | A:0 B:0 C:0 D:0 E:0 | [D] |
+      | D | A B C E D | A:0 B:0 C:0 D:0 E:0 | [] |
+
+      All 5 vertices made it into the order, so there's no cycle. C only joined the queue once **both** A and B were taken.
+
   - kind: code
     title: "Find the bug: cycles slip through"
     body: |
@@ -276,6 +301,21 @@ steps:
       4. When the heap is empty, `dist` holds the shortest distance to every vertex.
 
       Time: **O((V + E) log V)**. It requires **no negative weights**.
+
+      <!-- page -->
+
+      **Example:** A → B (4), A → C (1), C → B (2), C → D (5), B → D (1), from A.
+
+      | pop | stale? | updates | dist after |
+      |---|---|---|---|
+      | A (0) | no | B = 0+4 = 4, C = 0+1 = 1 | A:0 B:4 C:1 D:∞ |
+      | C (1) | no | B = 1+2 = 3, D = 1+5 = 6 | A:0 B:3 C:1 D:6 |
+      | B (3) | no | D = 3+1 = 4 | A:0 B:3 C:1 D:4 |
+      | B (4) | yes, skip | — | A:0 B:3 C:1 D:4 |
+      | D (4) | no | — | A:0 B:3 C:1 D:4 |
+      | D (6) | yes, skip | — | A:0 B:3 C:1 D:4 |
+
+      The cheapest way to D costs 4 (A → C → B → D), even though it uses three edges. The old entries `B (4)` and `D (6)` were left in the heap and skipped as stale.
 
   - kind: code
     title: Network delay time
@@ -467,6 +507,47 @@ steps:
       **Bellman-Ford** handles graphs with **negative** edge weights (Dijkstra cannot). It relaxes every edge `V - 1` times, in O(V × E), and can also detect a negative cycle. It is slower, so use it only when negative weights really exist.
 
       **0-1 BFS** solves shortest paths when every edge weighs 0 or 1, in O(V + E), using a **deque**: push weight-0 neighbours to the **front** and weight-1 neighbours to the **back**.
+
+      **Example: Bellman-Ford** on a small graph with one negative edge (a refund on the B → C trip). It relaxes every edge V − 1 times:
+
+      ```js
+      const V = 4;
+      // each edge is [from, to, weight]
+      const edges = [[0, 1, 4], [0, 2, 5], [1, 2, -3], [2, 3, 2]];
+
+      const dist = [0, Infinity, Infinity, Infinity];
+      for (let round = 1; round < V; round++) {
+        for (const [u, v, w] of edges) {
+          if (dist[u] + w < dist[v]) dist[v] = dist[u] + w;
+        }
+      }
+      console.log(dist);
+      ```
+
+      prints:
+
+      ```
+      [ 0, 4, 1, 3 ]
+      ```
+
+  - kind: code
+    title: "Try it: Bellman-Ford"
+    body: |
+      Run it: the best way to 2 costs 1 (4 − 3 through node 1), cheaper than the direct 5. Dijkstra could miss that, because it finalizes node 2 too early. Then change `-3` to `3` and run again.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const V = 4;
+      // each edge is [from, to, weight]
+      const edges = [[0, 1, 4], [0, 2, 5], [1, 2, -3], [2, 3, 2]];
+
+      const dist = [0, Infinity, Infinity, Infinity];
+      for (let round = 1; round < V; round++) {
+        for (const [u, v, w] of edges) {
+          if (dist[u] + w < dist[v]) dist[v] = dist[u] + w;
+        }
+      }
+      console.log(dist);
 
   - kind: why
     body: |

@@ -16,6 +16,50 @@ steps:
       | `ps aux --sort=-%cpu` | biggest CPU users first |
       | `pgrep name` / `pgrep -a name` | just the PIDs (or PIDs and commands) whose name matches |
 
+      <!-- page -->
+
+      On this server. Your shell's own PID, then the processes started from this terminal (the shell, and `ps` itself while it runs):
+
+      ```
+      learner@inkwell:~$ echo $$
+      1001
+      learner@inkwell:~$ ps
+          PID TTY          TIME CMD
+         1001 pts/0    00:00:00 bash
+         4201 pts/0    00:00:00 ps
+      ```
+
+      Every process, trimmed to the first few with `head`. PID 1 is the first one the kernel started:
+
+      ```
+      learner@inkwell:~$ ps aux | head -3
+      USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+      root           1  0.0  0.3  22336 12856 ?        Ss   Oct03   0:04 /sbin/init
+      root           2  0.0  0.0      0     0 ?        S    Oct03   0:00 [kthreadd]
+      ```
+
+      `pgrep` finds by name. Here the SSH server, `sshd`: first just its PID, then with `-a` its whole command too:
+
+      ```
+      learner@inkwell:~$ pgrep sshd
+      602
+      learner@inkwell:~$ pgrep -a ssh
+      602 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+      ```
+
+  - kind: shell
+    title: "Try it: ps and pgrep"
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `echo $$` prints your shell's PID.
+      2. `ps` lists what this terminal started.
+      3. `ps aux | head -5` shows the first few of every process.
+      4. `ps -ef | head -4` shows them again, with the parent's PID (PPID).
+      5. `pgrep sshd`, then `pgrep -a ssh`
+
+      Then try `pgrep -a systemd`: several processes match. Nothing is graded here: try them, then press **Continue**.
+
   - kind: shell
     title: Find a process
     body: |
@@ -44,6 +88,35 @@ steps:
       **Load average** is how many processes wanted the CPU, averaged over 1, 5 and 15 minutes; compare it with the number of CPUs (`nproc`). `S` is the state: **R** running, **S** sleeping (waiting for something), **T** stopped, **Z** zombie (finished, not yet collected by its parent).
 
       In top: **q** quits, **P** sorts by CPU, **M** by memory, **k** asks for a PID to kill. **htop** (`sudo apt install htop`) is a friendlier, colourful version with a mouse and arrow keys.
+
+      <!-- page -->
+
+      Once you know a PID, `kill PID` asks that process to stop (the next page explains how it works). Here `sleep 400 &` starts a harmless process that just waits, `pgrep -a` finds its PID, and `kill` stops it:
+
+      ```
+      learner@inkwell:~$ sleep 400 &
+      [1] 4201
+      learner@inkwell:~$ pgrep -a sleep
+      4201 sleep 400
+      learner@inkwell:~$ kill 4201
+      [1]+  Terminated              sleep 400
+      learner@inkwell:~$ pgrep -a sleep
+      ```
+
+      The last `pgrep` prints nothing: the process is gone. (`&` is new too: it starts a command and gives the prompt straight back. More on that later in this lesson.)
+
+  - kind: shell
+    title: "Try it: top and kill"
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `top`, look at the header and the list, then press **q** to leave.
+      2. `ps aux --sort=-%cpu | head -3` shows the biggest CPU users first.
+      3. `sleep 400 &` starts a harmless waiting process.
+      4. `pgrep -a sleep` shows its PID.
+      5. `kill` followed by that PID, then `pgrep -a sleep` again: nothing left.
+
+      Then start two (`sleep 400 &` twice) and look at `pgrep -a sleep`. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Why is the server slow?
@@ -76,6 +149,38 @@ steps:
       A well-behaved program cleans up on `TERM` (saves its work, deletes temporary files) and exits. A stuck or badly written one may ignore it. **`kill -9` is the last resort**: the process gets no chance to clean up, so files it was writing may be left half-done. Always try plain `kill` first and give it a few seconds.
 
       `kill -l` lists every signal. `pkill name` and `killall name` signal processes by name instead of PID.
+
+      ```
+      learner@inkwell:~$ kill -l | head -3
+       1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+       6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
+      11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
+      ```
+
+      Plain `kill` ends with *Terminated*; `kill -9` with *Killed*. `pkill` needs only the name:
+
+      ```
+      learner@inkwell:~$ sleep 900 &
+      [1] 4201
+      learner@inkwell:~$ kill -9 4201
+      [1]+  Killed                  sleep 900
+      learner@inkwell:~$ sleep 400 &
+      [1] 4202
+      learner@inkwell:~$ pkill sleep
+      [1]+  Terminated              sleep 400
+      ```
+
+  - kind: shell
+    title: "Try it: signals"
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `kill -l` lists every signal with its number.
+      2. `sleep 900 &`, then `pgrep -a sleep` for its PID.
+      3. `kill -9` followed by that PID. It says *Killed*, not *Terminated*.
+      4. `sleep 400 &`, then `pkill sleep`: stopped by name.
+
+      Then try `kill -TERM` instead of `kill -9` on a new `sleep`: same as plain `kill`. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: A stubborn export
@@ -121,6 +226,36 @@ steps:
       | `kill %1` | send TERM to job 1 (`%` means "job number", not PID) |
 
       Background jobs belong to this terminal. Close it, and they usually get `HUP` and end too.
+
+      <!-- page -->
+
+      Two jobs at once, then stop the second by its job number:
+
+      ```
+      learner@inkwell:~$ sleep 400 &
+      [1] 4201
+      learner@inkwell:~$ sleep 500 &
+      [2] 4202
+      learner@inkwell:~$ jobs
+      [1]-  Running                 sleep 400 &
+      [2]+  Running                 sleep 500 &
+      learner@inkwell:~$ kill %2
+      [2]+  Terminated              sleep 500
+      learner@inkwell:~$ jobs
+      [1]+  Running                 sleep 400 &
+      ```
+
+  - kind: shell
+    title: "Try it: jobs"
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `sleep 400 &` and then `sleep 500 &`
+      2. `jobs` lists both, with job numbers 1 and 2.
+      3. `kill %2` stops job 2.
+      4. `jobs` again: only job 1 is left.
+
+      Then start a third with `sleep 700 &` and look at the number `jobs` gives it. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Juggle two jobs
@@ -175,6 +310,44 @@ steps:
       | `a \|\| b` | only if `a` failed |
 
       `mkdir backup && cp notes/* backup/` copies only if the folder was made. `cd /data || exit` stops a script when the folder is missing. `test && echo yes || echo no` prints one or the other.
+
+      <!-- page -->
+
+      In action, with the shop logs in `~/logs`. A word grep can't find gives exit code 1; a command that doesn't exist gives 127:
+
+      ```
+      learner@inkwell:~$ grep -q zebra logs/access.log; echo $?
+      1
+      learner@inkwell:~$ nosuchcommand; echo $?
+      bash: nosuchcommand: command not found
+      127
+      ```
+
+      `&&` runs the second part only after a success, `||` only after a failure:
+
+      ```
+      learner@inkwell:~$ cd nope || echo "no such folder"
+      bash: cd: nope: No such file or directory
+      no such folder
+      learner@inkwell:~$ cd logs && pwd
+      /home/learner/logs
+      learner@inkwell:~/logs$ grep -q zebra access.log && echo yes || echo no
+      no
+      ```
+
+  - kind: shell
+    title: "Try it: exit codes"
+    fixture: shop-logs
+    body: |
+      Type each of these and press **Return** after each one:
+
+      1. `grep -q admin logs/access.log; echo $?` prints 0: found.
+      2. `grep -q zebra logs/access.log; echo $?` prints 1: not found.
+      3. `nosuchcommand; echo $?` prints 127.
+      4. `cd nope || echo "no such folder"`
+      5. `grep -q zebra logs/access.log && echo yes || echo no`
+
+      Then change `zebra` to `dune` in number 5. Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: A one-line alarm

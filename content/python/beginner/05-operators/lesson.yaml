@@ -75,6 +75,51 @@ steps:
 
       Python allows **chained comparisons** the way you write them in maths: `1 <= x <= 10` means "x is between 1 and 10".
 
+      <!-- page -->
+
+      Here they are on one value, a reader who is 15:
+
+      ```python
+      age = 15
+      print(age == 15)
+      print(age != 15)
+      print(age >= 18)
+      print(age > 12 and age < 20)
+      print(age < 5 or age > 60)
+      print(not age > 12)
+      print(13 <= age <= 19)
+      ```
+
+      prints:
+
+      ```
+      True
+      False
+      False
+      True
+      False
+      False
+      True
+      ```
+
+      Line by line: 15 equals 15; it is not "not equal"; it is not 18 or more; it is both over 12 *and* under 20; it is neither under 5 *nor* over 60; `not` flips the true `age > 12` to `False`; and it sits between 13 and 19.
+
+  - kind: code
+    title: "Try it: comparisons and logic"
+    body: |
+      Run this and match each line with the explanation. Then change `age = 15` to `age = 70` and predict every answer before you run it again.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      age = 15
+      print(age == 15)
+      print(age != 15)
+      print(age >= 18)
+      print(age > 12 and age < 20)
+      print(age < 5 or age > 60)
+      print(not age > 12)
+      print(13 <= age <= 19)
+
   - kind: code
     title: Is it in range?
     body: |
@@ -138,6 +183,52 @@ steps:
 
       A shortcut for updating a variable: `total += 5` means `total = total + 5`. The same works for `-=`, `*=`, `/=` and the others.
 
+      <!-- page -->
+
+      ```python
+      print(2 + 3 * 4)
+      print((2 + 3) * 4)
+      print(10 - 4 / 2)
+      print((10 - 4) / 2)
+      total = 10
+      total += 5
+      print(total)
+      total *= 2
+      print(total)
+      ```
+
+      prints:
+
+      ```
+      14
+      20
+      8.0
+      3.0
+      15
+      30
+      ```
+
+      `10 - 4 / 2` divides first (`4 / 2` is `2.0`), then subtracts. The brackets in `(10 - 4) / 2` force the subtraction first. And `total` goes 10, then 15 (`+= 5`), then 30 (`*= 2`).
+
+  - kind: code
+    title: "Try it: precedence and +="
+    body: |
+      Run this. Then change the third line to `print(10 - (4 / 2))`: the answer stays `8.0`, because that is already the order Python uses. Finally change `total -= 3` to `total //= 4` and predict the result before you run it.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      print(2 + 3 * 4)
+      print((2 + 3) * 4)
+      print(10 - 4 / 2)
+      print((10 - 4) / 2)
+      total = 10
+      total += 5
+      print(total)
+      total *= 2
+      print(total)
+      total -= 3
+      print(total)
+
   - kind: code
     title: Fix the average
     body: |
@@ -193,6 +284,22 @@ steps:
       ```
 
       It saves computing something twice. It is handy, but never necessary, so recognise it and move on. Beginners are better off with a plain `n = len(...)` on its own line.
+
+  - kind: code
+    title: "Try it: the walrus"
+    body: |
+      Both halves print the same thing: the first with `:=`, the second the beginner-friendly way.
+
+      Then try one change: replace `"detective"` with a short word like `"spy"` in both halves. Neither prints anything now.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      if (n := len("detective")) > 5:
+          print("long word, length", n)
+
+      n = len("detective")
+      if n > 5:
+          print("long word, length", n)
 
   - kind: why
     body: |

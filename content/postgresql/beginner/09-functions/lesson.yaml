@@ -11,6 +11,51 @@ steps:
 
       Used in a SELECT, a function runs **once per row**, just like the calculated columns in Module 6. Functions can be nested, with the inner one running first: `upper(trim('  dune '))` gives `'DUNE'`.
 
+      **Example.** Those three, as a real query:
+
+      ```sql
+      SELECT upper('dune') AS a,
+             round(136.6667, 2) AS b,
+             upper(trim('  dune ')) AS c;
+      ```
+
+      | a | b | c |
+      |---|---|---|
+      | DUNE | 136.67 | DUNE |
+
+      And once per row, on a table:
+
+      ```sql
+      SELECT title, upper(title) AS shouting, length(title) AS letters
+      FROM books
+      ORDER BY book_id
+      LIMIT 3;
+      ```
+
+      | title | shouting | letters |
+      |---|---|---|
+      | Pride and Prejudice | PRIDE AND PREJUDICE | 19 |
+      | Emma | EMMA | 4 |
+      | 1984 | 1984 | 4 |
+
+  - kind: try
+    title: "Try it: call some functions"
+    body: |
+      Both examples. Run them, then try `lower(title)` or `round(price)` (no decimals) in the second query.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT upper('dune') AS a,
+             round(136.6667, 2) AS b,
+             upper(trim('  dune ')) AS c;
+
+      SELECT title,
+             upper(title) AS shouting,
+             length(title) AS letters
+      FROM books
+      ORDER BY book_id
+      LIMIT 3;
+
   - kind: explain
     title: Text functions
     body: |
@@ -70,6 +115,49 @@ steps:
 
       Rounding for **display** is fine. Keep the full precision in stored data, and round at the end.
 
+      <!-- page -->
+
+      The Horror shelf, each price split three ways, then rounded up and down:
+
+      ```sql
+      SELECT title, price,
+             price / 3           AS raw_third,
+             round(price / 3, 2) AS third,
+             ceil(price)         AS up,
+             floor(price)        AS down
+      FROM books
+      WHERE genre = 'Horror';
+      ```
+
+      returns:
+
+      | title | price | raw_third | third | up | down |
+      |---|---|---|---|---|---|
+      | Frankenstein | 7.50 | 2.5000000000000000 | 2.50 | 8 | 7 |
+      | Dracula | 8.25 | 2.7500000000000000 | 2.75 | 9 | 8 |
+      | The Shining | 15.99 | 5.3300000000000000 | 5.33 | 16 | 15 |
+      | It | 19.99 | 6.6633333333333333 | 6.66 | 20 | 19 |
+
+      See the long tail in `raw_third`? `round(…, 2)` tidies it to 2 places.
+
+  - kind: try
+    title: "Try it: round, ceil and floor"
+    body: |
+      Run it and compare each column with the price. Then:
+
+      - change `round(price / 3, 2)` to `round(price / 3, 1)`, then to `round(price / 3)`
+      - add a column `abs(price - 20) AS gap_to_20`
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT title, price,
+             price / 3           AS raw_third,
+             round(price / 3, 2) AS third,
+             ceil(price)         AS up,
+             floor(price)        AS down
+      FROM books
+      WHERE genre = 'Horror';
+
   - kind: try
     title: Your turn to round
     body: |
@@ -93,6 +181,24 @@ steps:
       | `EXTRACT(field FROM x)` | pulls out one part as a number: `YEAR`, `MONTH`, `DAY`, `DOW` (day of week)… |
 
       **Interval arithmetic** moves dates around: `sold_at + interval '1 month'`, `now() - interval '7 days'`.
+
+      ```sql
+      SELECT sale_id, sold_at,
+             sold_at + interval '1 year'            AS one_year_later,
+             (sold_at + interval '2 weeks')::date   AS two_weeks_on
+      FROM sales
+      WHERE sale_id <= 3;
+      ```
+
+      returns:
+
+      | sale_id | sold_at | one_year_later | two_weeks_on |
+      |---|---|---|---|
+      | 1 | 2024-02-03 10:05:00+00 | 2025-02-03 10:05:00+00 | 2024-02-17 |
+      | 2 | 2024-02-03 10:05:00+00 | 2025-02-03 10:05:00+00 | 2024-02-17 |
+      | 3 | 2024-02-20 17:30:00+00 | 2025-02-20 17:30:00+00 | 2024-03-05 |
+
+      Adding an interval keeps the clock time. The `::date` at the end (Module 4's cast) drops it, leaving just the day.
 
       `date_trunc` is how you group things "per month" (Module 10). `EXTRACT` is how you ask "which year?" or "which weekday?".
 
@@ -138,6 +244,50 @@ steps:
 
       PostgreSQL checks the `WHEN`s **top to bottom** and uses the **first** one that's true. With no `ELSE`, unmatched rows get NULL.
 
+      <!-- page -->
+
+      That CASE on the Science Fiction shelf:
+
+      ```sql
+      SELECT title, stock,
+             CASE
+               WHEN stock = 0  THEN 'sold out'
+               WHEN stock < 10 THEN 'low'
+               ELSE 'in stock'
+             END AS shelf_status
+      FROM books
+      WHERE genre = 'Science Fiction';
+      ```
+
+      returns:
+
+      | title | stock | shelf_status |
+      |---|---|---|
+      | 1984 | 40 | in stock |
+      | Dune | 22 | in stock |
+      | Foundation | 0 | sold out |
+      | I, Robot | 7 | low |
+      | Neuromancer | 3 | low |
+      | Brave New World | 15 | in stock |
+
+      *Foundation*'s 0 is also under 10, but the first true `WHEN` wins, so it says `sold out`.
+
+      And `NULLIF` turning zero points into NULL (first 4 customers):
+
+      ```sql
+      SELECT first_name, loyalty_points,
+             NULLIF(loyalty_points, 0) AS points_or_null
+      FROM customers
+      WHERE customer_id <= 4;
+      ```
+
+      | first_name | loyalty_points | points_or_null |
+      |---|---|---|
+      | Emma | 120 | 120 |
+      | Liam | 45 | 45 |
+      | Olivia | 0 | NULL |
+      | Noah | 310 | 310 |
+
   - kind: try
     title: A default for missing values
     body: |
@@ -146,6 +296,26 @@ steps:
       SELECT first_name,
              COALESCE(email, 'no email on file') AS contact
       FROM customers;
+
+  - kind: try
+    title: "Try it: CASE"
+    body: |
+      The shelf-status example. Run it, then:
+
+      - swap the two `WHEN` lines and run again: *Foundation* now says `low`, because the first true branch wins
+      - delete the `ELSE` line: the well-stocked books get NULL
+      - change `'Science Fiction'` to `'Fantasy'`
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT title, stock,
+             CASE
+               WHEN stock = 0  THEN 'sold out'
+               WHEN stock < 10 THEN 'low'
+               ELSE 'in stock'
+             END AS shelf_status
+      FROM books
+      WHERE genre = 'Science Fiction';
 
   - kind: try
     title: Your turn with CASE
@@ -166,6 +336,23 @@ steps:
                ELSE 'premium'
              END AS price_band
       FROM books;
+
+  - kind: try
+    title: "Try it: interval arithmetic"
+    body: |
+      The interval example. Run it, then:
+
+      - change `'2 weeks'` to `'3 months'`
+      - change `+` to `-` to go back in time
+      - remove `::date` (and the parentheses) to see the full timestamp again
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT sale_id, sold_at,
+             sold_at + interval '1 year'            AS one_year_later,
+             (sold_at + interval '2 weeks')::date   AS two_weeks_on
+      FROM sales
+      WHERE sale_id <= 3;
 
   - kind: try
     title: Your turn with interval arithmetic

@@ -12,6 +12,49 @@ steps:
       - **O(1) on average** for `get`, `set`, `has`, `delete`,
       - **O(n) in the worst case** (every key collides), which you will essentially never see with a good hash.
 
+      **Example.** A toy hash function: add up the character codes and keep the remainder after dividing by 8, the number of buckets:
+
+      ```js
+      function hash(key, buckets) {
+        let sum = 0;
+        for (const ch of key) sum += ch.charCodeAt(0);
+        return sum % buckets;
+      }
+
+      for (const key of ["apple", "pear", "fig", "lime", "plum"]) {
+        console.log(key, "→ bucket", hash(key, 8));
+      }
+      ```
+
+      prints:
+
+      ```
+      apple → bucket 2
+      pear → bucket 0
+      fig → bucket 6
+      lime → bucket 7
+      plum → bucket 6
+      ```
+
+      The same key always lands in the same bucket, so finding it again is one calculation. Two keys that land in the same bucket are a collision. Real hash functions mix the bits far better, so collisions stay rare.
+
+  - kind: code
+    title: "Try it: a toy hash"
+    body: |
+      Run it and look for keys that share a bucket. Then change `8` to `16` buckets: fewer collisions.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      function hash(key, buckets) {
+        let sum = 0;
+        for (const ch of key) sum += ch.charCodeAt(0);
+        return sum % buckets;
+      }
+
+      for (const key of ["apple", "pear", "fig", "lime", "plum"]) {
+        console.log(key, "→ bucket", hash(key, 8));
+      }
+
   - kind: explain
     title: Four jobs a hash map does
     body: |
@@ -23,6 +66,27 @@ steps:
       4. **Look up a complement**: while scanning, ask "have I already seen the partner of this value?" (Two Sum).
 
       Learn to spot which job a problem is asking for, and the code almost writes itself.
+
+      **Example: naming the job.** Four problems, one per job:
+
+      | Problem | Job | What the map or set holds |
+      |---|---|---|
+      | *How many times was each book sold?* | 1. count | book → number of sales |
+      | *Does any customer email appear twice?* | 2. seen before | the emails read so far |
+      | *Put the orders into piles by city.* | 3. group | city → list of orders |
+      | *Which two prices add up to exactly 50?* | 4. complement | each price seen so far, so you can ask "have I seen 50 − this one?" |
+
+  - kind: choice
+    title: "Quick check: which job?"
+    body: |
+      *"Given a list of words, find the first word that appears a second time."* Which job is that?
+    options:
+      - "Have I seen this before?"
+      - "Count things"
+      - "Group things"
+      - "Look up a complement"
+    answer: 0
+    explanation: "Scan the words and keep a Set of the ones already read. The first word that's already in the Set is the answer. Counting would work too, but it does more than the problem needs."
 
   - kind: code
     title: "Job 2: have I seen this?"
@@ -100,13 +164,22 @@ steps:
       Anagrams share one thing: sorted letters. `"eat"`, `"tea"` and `"ate"` all sort to `"aet"`. So the sorted word is the key:
 
       ```js
+      const words = ["eat", "tea", "tan", "ate", "nat", "bat"];
       const groups = new Map();
       for (const w of words) {
         const key = w.split("").sort().join("");
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(w);
       }
-      return [...groups.values()];
+      console.log(groups);
+      console.log([...groups.values()]);
+      ```
+
+      prints:
+
+      ```
+      Map(3) { 'aet' => [ 'eat', 'tea', 'ate' ], 'ant' => [ 'tan', 'nat' ], 'abt' => [ 'bat' ] }
+      [ [ 'eat', 'tea', 'ate' ], [ 'tan', 'nat' ], [ 'bat' ] ]
       ```
 
       Note `groups.get(key).push(w)`: the bucket is created once and then reused, which is not the shared-reference bug because each key gets its own new array.
@@ -147,14 +220,32 @@ steps:
       Frequency counting is the most common job:
 
       ```js
+      const nums = [4, 1, 4, 2, 4, 1];
       const counts = new Map();
       for (const x of nums) counts.set(x, (counts.get(x) || 0) + 1);
+      console.log(counts);
+      ```
+
+      prints:
+
+      ```
+      Map(3) { 4 => 3, 1 => 2, 2 => 1 }
       ```
 
       To find the **most frequent** items, turn the map into an array of `[value, count]` pairs and sort it by count:
 
       ```js
+      const counts = new Map([[4, 3], [1, 2], [2, 1]]);
       const pairs = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+      console.log(pairs);
+      console.log("most frequent:", pairs[0][0]);
+      ```
+
+      prints:
+
+      ```
+      [ [ 4, 3 ], [ 1, 2 ], [ 2, 1 ] ]
+      most frequent: 4
       ```
 
       Sorting costs O(n log n). In Module 20 you will learn a faster way with a heap.
@@ -196,14 +287,29 @@ steps:
       ```js
       const seen = new Set();
       seen.add([1, 2]);
-      seen.has([1, 2]);   // false!  a different array object
+      console.log(seen.has([1, 2]));   // a different array object!
+      ```
+
+      prints:
+
+      ```
+      false
       ```
 
       The fix is to turn the value into a **string key** with the same content:
 
       ```js
+      const seen = new Set();
       seen.add("1,2");
-      seen.has("1,2");    // true
+      console.log(seen.has("1,2"));
+      console.log(`${1},${2}`, JSON.stringify([1, 2]));
+      ```
+
+      prints:
+
+      ```
+      true
+      1,2 [1,2]
       ```
 
       (`JSON.stringify([1, 2])` or `${x},${y}` both work.)
@@ -298,6 +404,38 @@ steps:
       ```
 
       Some older environments and interview sites do not support them yet, so know the manual way first.
+
+      Run for real:
+
+      ```js
+      const words = ["fig", "pear", "kiwi", "plum", "apple"];
+      console.log(Object.groupBy(words, (w) => w.length));
+
+      const a = new Set([1, 2, 3]);
+      const b = new Set([2, 3, 4]);
+      console.log(a.union(b), a.intersection(b), a.difference(b));
+      ```
+
+      prints:
+
+      ```
+      { 3: [ 'fig' ], 4: [ 'pear', 'kiwi', 'plum' ], 5: [ 'apple' ] }
+      Set(4) { 1, 2, 3, 4 } Set(2) { 2, 3 } Set(1) { 1 }
+      ```
+
+  - kind: code
+    title: "Try it: groupBy and set methods"
+    body: |
+      Run it and compare with the output above. Then group the words by their first letter: `(w) => w[0]`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const words = ["fig", "pear", "kiwi", "plum", "apple"];
+      console.log(Object.groupBy(words, (w) => w.length));
+
+      const a = new Set([1, 2, 3]);
+      const b = new Set([2, 3, 4]);
+      console.log(a.union(b), a.intersection(b), a.difference(b));
 
   - kind: why
     body: |

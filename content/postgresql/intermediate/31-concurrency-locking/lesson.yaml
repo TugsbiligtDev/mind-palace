@@ -11,6 +11,19 @@ steps:
 
       This page's sandbox is a single session, so this module uses **timelines** (who does what, when) and a Mac exercise with two Terminal windows.
 
+      **Example of the second question.** At 10:00:00, the website and a cashier both try to change order 28: the website sets it to `paid`, the cashier to `cancelled`. Only one can go first. The other has to **wait**, then its change applies on top. Whoever writes last decides the final status. This module shows how PostgreSQL handles that, and how to make sure the right one wins.
+
+  - kind: choice
+    title: "Quick check: a session"
+    body: "Which of these counts as a separate **session** on Inkwell's database?"
+    options:
+      - "Each table in the database"
+      - "Each row being changed"
+      - "Each open connection: the website's, the report's, your psql window"
+      - "Each schema"
+    answer: 2
+    explanation: "A session is one connection to the server, from one client. Many sessions run at once and can touch the same tables and rows."
+
   - kind: explain
     title: "MVCC: versions, not overwrites"
     body: |
@@ -79,6 +92,33 @@ steps:
 
       Two bookmarks sold, but the count says 4, not 3. B's write **silently erased** A's. No error, just wrong stock. This is a **lost update**, and Read Committed doesn't prevent it by itself.
 
+  - kind: try
+    title: "Try it: lose an update"
+    body: |
+      The timeline above, played in one session: both cashiers read 5, both write 4. Run it: after two sales, the table says **4**.
+
+      Then change both UPDATEs to `SET qty = qty - 1` and run again: **3**, correct. (That's fix 1, on the next page.)
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL);
+      INSERT INTO stock VALUES ('bookmark', 5);
+
+      SELECT qty
+      FROM stock
+      WHERE item = 'bookmark';    -- cashier A reads 5
+      SELECT qty
+      FROM stock
+      WHERE item = 'bookmark';    -- cashier B reads 5
+      UPDATE stock SET qty = 4
+      WHERE item = 'bookmark'; -- A writes 5 - 1
+      UPDATE stock SET qty = 4
+      WHERE item = 'bookmark'; -- B writes 5 - 1
+
+      SELECT qty AS after_two_sales
+      FROM stock
+      WHERE item = 'bookmark';
+
   - kind: explain
     title: Three fixes
     body: |
@@ -94,7 +134,9 @@ steps:
 
       ```sql
       BEGIN;
-      SELECT qty FROM stock WHERE item = 'bookmark' FOR UPDATE;   -- locks this row
+      SELECT qty
+      FROM stock
+      WHERE item = 'bookmark' FOR UPDATE;   -- locks this row
       -- app checks, decides...
       UPDATE stock SET qty = 4 WHERE item = 'bookmark';
       COMMIT;                                                -- lock released
@@ -105,16 +147,40 @@ steps:
       **3. Use Serializable (or Repeatable Read) and retry** when PostgreSQL reports a conflict.
 
   - kind: try
+    title: "Try it: SELECT … FOR UPDATE"
+    body: |
+      Fix 2 in one session. Run it: the locked read returns 5, the UPDATE writes 4, and COMMIT releases the lock. With only one session nothing has to wait, but the commands are exactly what Cashier A would run.
+
+      Then play: add `SELECT locktype, mode FROM pg_locks WHERE relation = 'stock'::regclass;` right after the `FOR UPDATE` line to see the lock PostgreSQL is holding (`RowShareLock`).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL CHECK (qty >= 0));
+      INSERT INTO stock VALUES ('bookmark', 5);
+
+      BEGIN;
+      SELECT qty FROM stock WHERE item = 'bookmark' FOR UPDATE;
+      UPDATE stock SET qty = 4 WHERE item = 'bookmark';
+      COMMIT;
+
+      SELECT * FROM stock;
+
+  - kind: try
     title: Your turn for the safe decrement
     body: |
       You read the stock (5) and a customer wants **2** bookmarks. Before your UPDATE runs, another cashier sells one (the starter plays that part). The starter's UPDATE writes the 3 you worked out from your old reading, and loses their sale. Fix it so the database subtracts 2 from whatever the value is **now**. Return the new `qty`.
     sql: |
       CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL CHECK (qty >= 0));
       INSERT INTO stock VALUES ('bookmark', 5);
-      SELECT qty FROM stock WHERE item = 'bookmark';          -- you read 5
-      UPDATE stock SET qty = qty - 1 WHERE item = 'bookmark';  -- meanwhile, another cashier sells 1
+      SELECT qty
+      FROM stock
+      WHERE item = 'bookmark';          -- you read 5
+      UPDATE stock SET qty = qty - 1
+      WHERE item = 'bookmark';  -- meanwhile, another cashier sells 1
 
-      UPDATE stock SET qty = 3 WHERE item = 'bookmark' RETURNING qty;
+      UPDATE stock SET qty = 3
+      WHERE item = 'bookmark'
+      RETURNING qty;
     expect: |
       CREATE TABLE stock (item text PRIMARY KEY, qty integer NOT NULL CHECK (qty >= 0));
       INSERT INTO stock VALUES ('bookmark', 5);
@@ -149,7 +215,8 @@ steps:
       In this single-session sandbox, the first pending job is taken. With several workers running this at once, each would get a different job. Run it.
     sql: |
       CREATE TABLE jobs (job_id integer PRIMARY KEY, task text, status text DEFAULT 'pending');
-      INSERT INTO jobs (job_id, task) VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report');
+      INSERT INTO jobs (job_id, task)
+      VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report');
 
       BEGIN;
       SELECT job_id, task
@@ -203,12 +270,31 @@ steps:
       PostgreSQL doesn't attach any meaning to them. Your code agrees on what 42 stands for.
 
   - kind: try
+    title: "Try it: an advisory lock"
+    body: |
+      Run it: you get lock 42 (`t`), `pg_locks` shows it, you release it (`t`), and a second release says `f`, because you no longer hold it.
+
+      In a second psql window on your Mac, `pg_try_advisory_lock(42)` would return `f` while this session held it.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT pg_try_advisory_lock(42) AS got_it;
+
+      SELECT locktype, objid, granted
+      FROM pg_locks
+      WHERE locktype = 'advisory';
+
+      SELECT pg_advisory_unlock(42) AS released;
+      SELECT pg_advisory_unlock(42) AS released_again;
+
+  - kind: try
     title: "Find the bug: one worker takes every job"
     body: |
       The queue below has three pending jobs. A worker should claim **one**, the oldest, and skip rows other workers have locked. This UPDATE claims them **all**. Fix it. Keep the first two lines.
     sql: |
       CREATE TABLE jobs (job_id integer PRIMARY KEY, task text, status text DEFAULT 'pending');
-      INSERT INTO jobs (job_id, task) VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report');
+      INSERT INTO jobs (job_id, task)
+      VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report');
 
       UPDATE jobs SET status = 'running' WHERE status = 'pending';
     expect: |
@@ -249,7 +335,8 @@ steps:
       A faster worker claims **two** jobs at a time: the two oldest pending ones, skipping locked rows. Set their status to **running**. Keep the first two lines.
     sql: |
       CREATE TABLE jobs (job_id integer PRIMARY KEY, task text, status text DEFAULT 'pending');
-      INSERT INTO jobs (job_id, task) VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report'), (4, 'backup');
+      INSERT INTO jobs (job_id, task)
+      VALUES (1, 'email Emma'), (2, 'email Liam'), (3, 'monthly report'), (4, 'backup');
       UPDATE jobs SET status = 'done' WHERE job_id = 1;
     expect: |
       CREATE TABLE jobs (job_id integer PRIMARY KEY, task text, status text DEFAULT 'pending');

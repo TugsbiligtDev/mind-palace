@@ -11,6 +11,59 @@ steps:
       - **Time complexity**: how many steps the code takes.
       - **Space complexity**: how much extra memory the code uses.
 
+      **Example.** Two ways to add up 1 to n. Instead of timing them, count the steps:
+
+      ```js
+      function sumLoop(n) {
+        let steps = 0, total = 0;
+        for (let i = 1; i <= n; i++) { total += i; steps++; }
+        return steps;
+      }
+
+      function sumFormula(n) {
+        const total = (n * (n + 1)) / 2;   // one calculation, whatever n is
+        return 1;
+      }
+
+      for (const n of [10, 1000, 100000]) {
+        console.log("n =", n, "loop:", sumLoop(n), "steps,",
+                    "formula:", sumFormula(n), "step");
+      }
+      ```
+
+      prints:
+
+      ```
+      n = 10 loop: 10 steps, formula: 1 step
+      n = 1000 loop: 1000 steps, formula: 1 step
+      n = 100000 loop: 100000 steps, formula: 1 step
+      ```
+
+      The loop's work grows with `n`: O(n). The formula's stays the same: O(1).
+
+  - kind: code
+    title: "Try it: loop vs. formula"
+    body: |
+      Run it and compare with the output above. Then add `1000000` to the list of sizes.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      function sumLoop(n) {
+        let steps = 0, total = 0;
+        for (let i = 1; i <= n; i++) { total += i; steps++; }
+        return steps;
+      }
+
+      function sumFormula(n) {
+        const total = (n * (n + 1)) / 2;
+        return 1;
+      }
+
+      for (const n of [10, 1000, 100000]) {
+        console.log("n =", n, "loop:", sumLoop(n), "steps,",
+                    "formula:", sumFormula(n), "step");
+      }
+
   - kind: explain
     title: The common classes
     body: |
@@ -28,6 +81,39 @@ steps:
 
       The first four are usually fine. O(n²) is fine for small inputs only. The last two only work for tiny `n`.
 
+      **Example.** The same table, worked out by code for three sizes (rounded):
+
+      ```js
+      for (const n of [10, 100, 1000]) {
+        const log = Math.round(Math.log2(n));
+        console.log(`n=${n}: log n=${log}, n=${n},`,
+                    `n log n=${n * log}, n²=${n * n}`);
+      }
+      ```
+
+      prints:
+
+      ```
+      n=10: log n=3, n=10, n log n=30, n²=100
+      n=100: log n=7, n=100, n log n=700, n²=10000
+      n=1000: log n=10, n=1000, n log n=10000, n²=1000000
+      ```
+
+      Each time `n` grows ten times, `n²` grows a hundred times. That is why O(n²) stops being fine as inputs grow.
+
+  - kind: code
+    title: "Try it: watch the classes grow"
+    body: |
+      Run it, then add `1000000` to the sizes and look at the last column.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      for (const n of [10, 100, 1000]) {
+        const log = Math.round(Math.log2(n));
+        console.log(`n=${n}: log n=${log}, n=${n},`,
+                    `n log n=${n * log}, n²=${n * n}`);
+      }
+
   - kind: explain
     title: Counting work in loops
     body: |
@@ -39,7 +125,68 @@ steps:
 
       **A loop that halves** (`while (n > 1) n = n / 2`) → log₂ n steps → **O(log n)**.
 
+      You can make the computer count for you. Add 1 to a counter on the line that does the work, then print it. A loop inside a loop with `n = 4`:
+
+      ```js
+      const n = 4;
+      let steps = 0;
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          steps++;
+        }
+      }
+      console.log(steps);
+      ```
+
+      prints:
+
+      ```
+      16
+      ```
+
+      That is 4 × 4, so n².
+
       **Drop constants and small terms.** `3n + 10` is O(n). `n² + n` is O(n²). We only care about the part that dominates when `n` gets large.
+
+  - kind: code
+    title: "Try it: count the steps"
+    body: |
+      Each loop shape from "Counting work in loops" gets its own counter here, all with `n = 8`. Run it and check each count: 8, then 8 + 8, then 8 × 8, then the number of halvings from 8 down to 1.
+
+      The last part shows a trick the next step needs: a function can hand back **two answers at once** by returning them inside an array.
+
+      Now change `n` to `16` and run again. Which count grew the most? Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const n = 8;
+
+      // One loop over n items
+      let one = 0;
+      for (let i = 0; i < n; i++) one++;
+      console.log("one loop:", one);
+
+      // Two loops, one after the other
+      let twoInRow = 0;
+      for (let i = 0; i < n; i++) twoInRow++;
+      for (let i = 0; i < n; i++) twoInRow++;
+      console.log("two loops in a row:", twoInRow);
+
+      // A loop inside a loop
+      let nested = 0;
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) nested++;
+      }
+      console.log("loop inside a loop:", nested);
+
+      // A loop that halves
+      let halving = 0;
+      for (let k = n; k > 1; k = Math.floor(k / 2)) halving++;
+      console.log("halving loop:", halving);
+
+      // A function can hand back two answers at once inside an array
+      function firstAndLast(nums) {
+        return [nums[0], nums[nums.length - 1]];
+      }
+      console.log(firstAndLast([4, 9, 2]));
 
   - kind: code
     title: Instrument a loop
@@ -127,12 +274,74 @@ steps:
 
       Unless told otherwise, Big-O means the **worst case**. It is the promise that it will never be worse than this.
 
+      **Example.** A search that counts how many items it looked at:
+
+      ```js
+      function findSteps(arr, x) {
+        let steps = 0;
+        for (const item of arr) {
+          steps++;
+          if (item === x) return steps;
+        }
+        return steps;   // not found: looked at all of them
+      }
+
+      const arr = [7, 3, 9, 1, 5, 8, 2, 6];
+      console.log("best (first item):", findSteps(arr, 7));
+      console.log("middle:", findSteps(arr, 5));
+      console.log("worst (missing):", findSteps(arr, 4));
+      ```
+
+      prints:
+
+      ```
+      best (first item): 1
+      middle: 5
+      worst (missing): 8
+      ```
+
+  - kind: code
+    title: "Try it: best and worst"
+    body: |
+      Run it and compare with the output above. Then search for the last item, `6`: also the worst case.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      function findSteps(arr, x) {
+        let steps = 0;
+        for (const item of arr) {
+          steps++;
+          if (item === x) return steps;
+        }
+        return steps;
+      }
+
+      const arr = [7, 3, 9, 1, 5, 8, 2, 6];
+      console.log("best (first item):", findSteps(arr, 7));
+      console.log("middle:", findSteps(arr, 5));
+      console.log("worst (missing):", findSteps(arr, 4));
+
   - kind: explain
     title: Amortized cost, why push is O(1)
     body: |
       A JavaScript array grows as you `push`. Sometimes there is room, and the push takes one step. Sometimes the array is full, so the engine allocates a bigger block (about double) and **copies every item**, which costs `n` steps.
 
       Copies are rare. If the size doubles each time, the total copying over `n` pushes is about `1 + 2 + 4 + … + n ≈ 2n`. Spread over `n` pushes, that is a constant few steps each. We say `push` is **amortized O(1)**: an occasional expensive step averaged over many cheap ones.
+
+      To simulate doubling in code, `capacity *= 2` is short for `capacity = capacity * 2`:
+
+      ```js
+      let capacity = 1;
+      capacity *= 2;
+      capacity *= 2;
+      console.log(capacity);
+      ```
+
+      prints:
+
+      ```
+      4
+      ```
 
   - kind: code
     title: Watch the doubling
@@ -183,6 +392,58 @@ steps:
       - A few variables → **O(1)** space.
       - Building a new array of `n` items → **O(n)** space.
       - **Recursion uses the call stack.** A function that calls itself `n` levels deep holds `n` unfinished calls in memory, so it costs **O(n)** space even if it creates no arrays. You will see this in Module 10.
+
+      **Example.** Three functions, three space costs. The recursive one keeps track of how deep it went:
+
+      ```js
+      function total(arr) {              // O(1) extra: one variable
+        let t = 0;
+        for (const x of arr) t += x;
+        return t;
+      }
+
+      function doubled(arr) {            // O(n) extra: a new array of n items
+        return arr.map((x) => x * 2);
+      }
+
+      let deepest = 0;
+      function countDown(n, depth = 1) { // O(n) extra: n calls waiting on the stack
+        deepest = Math.max(deepest, depth);
+        if (n === 0) return;
+        countDown(n - 1, depth + 1);
+      }
+
+      console.log(total([1, 2, 3]), doubled([1, 2, 3]));
+      countDown(500);
+      console.log("calls on the stack at once:", deepest);
+      ```
+
+      prints:
+
+      ```
+      6 [ 2, 4, 6 ]
+      calls on the stack at once: 501
+      ```
+
+  - kind: choice
+    title: "Quick check: how much space?"
+    body: |
+      ```js
+      function reversed(arr) {
+        const out = [];
+        for (let i = arr.length - 1; i >= 0; i--) out.push(arr[i]);
+        return out;
+      }
+      ```
+
+      How much **extra** space does `reversed` use for an array of `n` items?
+    options:
+      - "O(1)"
+      - "O(n)"
+      - "O(n²)"
+      - "O(log n)"
+    answer: 1
+    explanation: "It builds `out`, a new array that ends up with all `n` items. One loop variable on top doesn't change that: O(n)."
 
   - kind: explain
     title: Let the constraints tell you the target
@@ -253,6 +514,20 @@ steps:
       - **Big-Θ** (theta) says both: "exactly this growth".
 
       In everyday practice people say "Big-O" and mean the tight worst case. You only need to recognize the other two when you read them.
+
+      **Example: linear search.** In the worst case it looks at every item, so its worst case is **Θ(n)**: never worse than n steps (O), and for a missing item never better either (Ω). Its best case is 1 step, so across *all* inputs you'd only say it's **Ω(1)** and **O(n)**.
+
+  - kind: choice
+    title: "Quick check: which bound?"
+    body: |
+      A writer says: "this sort is **Ω(n)**". What does that promise?
+    options:
+      - "It never takes more than n steps"
+      - "It takes exactly n steps"
+      - "It uses n bytes of memory"
+      - "It always takes at least about n steps"
+    answer: 3
+    explanation: "Ω is a lower bound: no better than n. That makes sense for any sort, since it has to look at every item at least once."
 
   - kind: why
     body: |

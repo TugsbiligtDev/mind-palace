@@ -12,14 +12,56 @@ steps:
 
       Like everything that changes structure, it's permanent on a real database. Try it here first.
 
+      **Example.** Add a column to a table that already has 20 customers. Nobody is lost:
+
+      ```sql
+      SELECT count(*) AS customers_before FROM customers;
+      ALTER TABLE customers ADD COLUMN phone text;
+      SELECT count(*) AS customers_after, count(phone) AS with_phone
+      FROM customers;
+      ```
+
+      | customers_before |
+      |---|
+      | 20 |
+
+      | customers_after | with_phone |
+      |---|---|
+      | 20 | 0 |
+
+      Still 20 rows. The new column is just empty (no phone numbers yet).
+
+  - kind: try
+    title: "Try it: change a table, keep the rows"
+    body: |
+      Run it and compare with the tables you just saw. Then add `\d customers` at the end to see `phone` in the list of columns.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT count(*) AS customers_before FROM customers;
+      ALTER TABLE customers ADD COLUMN phone text;
+      SELECT count(*) AS customers_after, count(phone) AS with_phone
+      FROM customers;
+
   - kind: explain
     title: Adding a column
     body: |
       ```sql
       ALTER TABLE customers ADD COLUMN birth_date date;
+      SELECT first_name, birth_date FROM customers;
       ```
 
-      Existing rows get **NULL** in the new column. Give it a **DEFAULT** and existing rows get that value instead:
+      Existing rows get **NULL** in the new column (first three rows):
+
+      | first_name | birth_date |
+      |---|---|
+      | Emma | NULL |
+      | Liam | NULL |
+      | Olivia | NULL |
+
+      <!-- page -->
+
+       Give it a **DEFAULT** and existing rows get that value instead:
 
       ```sql
       ALTER TABLE customers
@@ -61,6 +103,40 @@ steps:
       - **DROP COLUMN** deletes every value in that column. There's no undo.
       - **RENAME** is instant and keeps the data, but every query, report and app that used the old name **breaks**. Rename early in a project, rarely after.
 
+      After renaming the table, the same rows are there under the new name:
+
+      ```sql
+      ALTER TABLE order_items RENAME TO order_lines;
+      SELECT order_id, book_id, quantity
+      FROM order_lines
+      ORDER BY order_id, book_id;
+      ```
+
+      | order_id | book_id | quantity |
+      |---|---|---|
+      | 1 | 1 | 1 |
+      | 1 | 5 | 1 |
+      | 2 | 3 | 2 |
+
+      (First three rows.)
+
+  - kind: try
+    title: "Try it: DROP COLUMN and RENAME TO"
+    body: |
+      Run it: a `phone` column is added, then dropped again, and `order_items` gets its new name.
+
+      Then play: add `SELECT phone FROM customers;` at the end (an error: the column is gone), or change `order_lines` in the SELECT back to `order_items` (also an error: the old name no longer exists).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      ALTER TABLE customers ADD COLUMN phone text;
+      ALTER TABLE customers DROP COLUMN phone;
+
+      ALTER TABLE order_items RENAME TO order_lines;
+      SELECT order_id, book_id, quantity
+      FROM order_lines
+      ORDER BY order_id, book_id;
+
   - kind: try
     title: Rename, then use the new name
     body: |
@@ -93,7 +169,8 @@ steps:
       Then add a row `('free')` to the INSERT and run it again. One bad value blocks the whole conversion.
     sql: |
       CREATE TABLE imports (item text, price text);
-      INSERT INTO imports VALUES ('bookmark', '4.50'), ('tote bag', '19.99');
+      INSERT INTO imports
+      VALUES ('bookmark', '4.50'), ('tote bag', '19.99');
 
       ALTER TABLE imports
         ALTER COLUMN price TYPE numeric(8,2) USING price::numeric(8,2);
@@ -106,7 +183,8 @@ steps:
       Constraints (Module 12) can be added and removed later:
 
       ```sql
-      ALTER TABLE books ADD CONSTRAINT books_stock_limit CHECK (stock <= 1000);
+      ALTER TABLE books
+      ADD CONSTRAINT books_stock_limit CHECK (stock <= 1000);
       ALTER TABLE books DROP CONSTRAINT books_stock_limit;
 
       ALTER TABLE customers ALTER COLUMN city SET NOT NULL;
@@ -121,6 +199,59 @@ steps:
 
       This is where naming your constraints pays off: dropping one needs its name.
 
+      <!-- page -->
+
+      Two of these in action. A new stock limit, then a book that breaks it:
+
+      ```sql
+      ALTER TABLE books
+      ADD CONSTRAINT books_stock_limit CHECK (stock <= 1000);
+      INSERT INTO books (title, genre_id, price, stock)
+      VALUES ('Too Many', 1, 5, 5000);
+      ```
+
+      ```text
+      ERROR:  new row for relation "books" violates check constraint "books_stock_limit"
+      ```
+
+      A new default for `orders.status` (it was `'pending'`):
+
+      ```sql
+      ALTER TABLE orders ALTER COLUMN status SET DEFAULT 'paid';
+      INSERT INTO orders (customer_id)
+      VALUES (17)
+      RETURNING order_id, customer_id, status;
+      ```
+
+      | order_id | customer_id | status |
+      |---|---|---|
+      | 31 | 17 | paid |
+
+  - kind: try
+    title: "Try it: add and drop a rule"
+    body: |
+      Run it and read the error. Then add `ALTER TABLE books DROP CONSTRAINT books_stock_limit;` between the two lines and run again: the rule is gone, so the book goes in.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      ALTER TABLE books
+      ADD CONSTRAINT books_stock_limit CHECK (stock <= 1000);
+      INSERT INTO books (title, genre_id, price, stock)
+      VALUES ('Too Many', 1, 5, 5000);
+    broken_starter: true
+
+  - kind: try
+    title: "Try it: set and drop a default"
+    body: |
+      Run it: the new order gets `paid`. Then change `SET DEFAULT 'paid'` to `DROP DEFAULT` and run again: now the INSERT fails, because `status` is NOT NULL and nothing fills it in.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      ALTER TABLE orders ALTER COLUMN status SET DEFAULT 'paid';
+      INSERT INTO orders (customer_id)
+      VALUES (17)
+      RETURNING order_id, customer_id, status;
+
   - kind: explain
     title: Rules vs. data that's already there
     body: |
@@ -132,6 +263,22 @@ steps:
 
       The fix is always the same: **clean the data first, then add the rule.** Find the bad rows with a SELECT, fix them with UPDATE (or DELETE), then run the ALTER again.
 
+      For example, a limit of 10 copies per book fails at once, because some books already have more:
+
+      ```sql
+      ALTER TABLE books ADD CONSTRAINT books_stock_small CHECK (stock <= 10);
+      ```
+
+      ```text
+      ERROR:  check constraint "books_stock_small" of relation "books" is violated by some row
+      ```
+
+      The SELECT that finds the rows to fix:
+
+      ```sql
+      SELECT title, stock FROM books WHERE stock > 10;
+      ```
+
   - kind: try
     title: Your turn to clean, then enforce
     body: |
@@ -141,7 +288,9 @@ steps:
     sql: |
       ALTER TABLE customer_profiles ALTER COLUMN bio SET NOT NULL;
 
-      SELECT customer_id, bio FROM customer_profiles ORDER BY customer_id;
+      SELECT customer_id, bio
+      FROM customer_profiles
+      ORDER BY customer_id;
     broken_starter: true
     expect: |
       UPDATE customer_profiles SET bio = 'No bio yet.' WHERE bio IS NULL;

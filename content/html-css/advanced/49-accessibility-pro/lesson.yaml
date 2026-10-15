@@ -17,6 +17,82 @@ steps:
 
       **New in 2.2** (AA): **Focus Not Obscured** (a focused element mustn't be hidden behind sticky headers or banners), **Target Size (Minimum)** (click/tap targets at least **24 × 24 px**, or spaced out), **Dragging Movements** (anything done by dragging also works with a simple click), **Consistent Help** (help links in the same place on every page), **Redundant Entry** (don't make people type the same thing twice) and **Accessible Authentication** (no memory puzzles to log in; allow paste and password managers).
 
+      <!-- page -->
+
+      Two of these you can fix with CSS alone.
+
+      **Target size**: `min-width` and `min-height` win over `width` and `height`, so a small button can be made bigger without touching its other rules:
+
+      ```css
+      .close {
+        width: 14px;
+        height: 14px;
+        min-width: 24px;
+        min-height: 24px;
+      }
+      ```
+
+      In the page: the close button is 24 × 24 px, not 14 × 14.
+
+      **Focus not obscured**: `scroll-padding-top` on `html` tells the browser to keep that much space free at the top whenever it scrolls something into view (a jump to `#hours`, or keyboard focus moving down the page):
+
+      ```css
+      html {
+        scroll-padding-top: 80px;
+      }
+      ```
+
+      In the page: with an 80px sticky header, clicking a link to `#hours` scrolls the *Opening hours* heading to just below the header, instead of hiding it underneath.
+
+  - kind: web
+    title: "Try it: target size and scroll padding"
+    body: |
+      A page with an 80px sticky header. The two little star buttons are 12px wide and tall, but `min-width`/`min-height` make them 24 × 24. And `scroll-padding-top: 80px` keeps jumped-to headings out from under the header.
+
+      Try:
+
+      1. Click *Opening hours* in the header. The heading lands just below the header.
+      2. Scroll back up, delete the `scroll-padding-top` line, and click the link again. Now the heading hides under the header.
+      3. Delete the `min-width` and `min-height` lines: the buttons shrink to 12px, too small to tap reliably.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <header class="top">Inkwell Books <a href="#hours">Opening hours</a></header>
+      <p>Rate this page:
+        <button class="star" type="button" aria-label="Like">★</button>
+        <button class="star" type="button" aria-label="Dislike">☆</button>
+      </p>
+      <div style="height: 900px"></div>
+      <h2 id="hours">Opening hours</h2>
+      <p>Mon–Sat 9–6, Sun 11–4.</p>
+      <div style="height: 600px"></div>
+    css: |
+      html {
+        scroll-padding-top: 80px;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      .top {
+        position: sticky;
+        top: 0;
+        height: 80px;
+        background: white;
+        border-bottom: 1px solid #e7e5e4;
+      }
+
+      .star {
+        width: 12px;
+        height: 12px;
+        min-width: 24px;
+        min-height: 24px;
+        padding: 0;
+        line-height: 1;
+      }
+
+
   - kind: web
     title: Big enough, never hidden
     body: |
@@ -105,6 +181,41 @@ steps:
 
       The markup and styling are HTML and CSS; the arrow-key handling and switching need a small script (the APG page provides one). Before building tabs, ask whether simple headings or `<details>` would do: often they would.
 
+      In the page: two buttons in a row and one visible panel (the Reviews panel is `hidden`). The roles change nothing you can see, but a screen reader now says something like *"Description, tab, selected, 1 of 2"*. And a CSS rule such as `[role="tab"][aria-selected="true"] { font-weight: bold; }` styles the selected tab by its **state**, so the look always matches what screen readers hear.
+
+  - kind: web
+    title: "Try it: style the state"
+    body: |
+      A two-tab set for Inkwell's shelves, marked up with the APG pattern. The CSS styles `[aria-selected="true"]`, so the *Fiction* tab is bold with a green underline.
+
+      Pretend to be the script that switches tabs, by hand, in `index.html`:
+
+      1. Swap the `aria-selected` values (`false` on Fiction, `true` on Poetry). The underline moves to Poetry, with no class changed.
+      2. Move `hidden` from the Poetry panel to the Fiction panel. Now the Poetry text shows.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="tabs" role="tablist" aria-label="Shelves">
+        <button type="button" role="tab" id="tab-fic" aria-controls="panel-fic" aria-selected="true">Fiction</button>
+        <button type="button" role="tab" id="tab-poe" aria-controls="panel-poe" aria-selected="false" tabindex="-1">Poetry</button>
+      </div>
+      <div role="tabpanel" id="panel-fic" aria-labelledby="tab-fic">Novels and short stories, ground floor.</div>
+      <div role="tabpanel" id="panel-poe" aria-labelledby="tab-poe" hidden>Poems old and new, first floor.</div>
+    css: |
+      .tabs button {
+        padding: 0.5rem 1rem;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        background: none;
+        font: inherit;
+      }
+
+      [role="tab"][aria-selected="true"] {
+        font-weight: bold;
+        border-bottom-color: #15803d;
+      }
+
+
   - kind: web
     title: Mark up the tabs
     body: |
@@ -168,6 +279,37 @@ steps:
 
       To make a non-interactive element (a heading, a summary box) able to receive focus from a script, give it `tabindex="-1"`: focusable by script, but not added to the Tab order. **Never** use positive `tabindex` values (`tabindex="3"`): they scramble the Tab order for everyone.
 
+      <!-- page -->
+
+      **Example: an error summary that receives focus.**
+
+      ```html
+      <div class="error-summary" tabindex="-1" role="alert">
+        <h2>There are 2 problems</h2>
+        <ul>
+          <li><a href="#email">Enter an email address</a></li>
+          <li><a href="#postcode">Enter a postcode</a></li>
+        </ul>
+      </div>
+      ```
+
+      ```js
+      document.querySelector(".error-summary").focus();
+      ```
+
+      After a failed submit, the script moves focus to the box, so a screen reader reads "There are 2 problems" at once, and a keyboard user's next Tab goes to the first link. Because of `tabindex="-1"`, the box itself never appears in the normal Tab order.
+
+  - kind: choice
+    title: "Quick check: focus by script only"
+    body: |
+      After a failed submit, a script should move focus to the error summary box, but the box shouldn't join the Tab order. What do you give it?
+    options:
+      - "`tabindex=\"0\"`"
+      - "`tabindex=\"-1\"`"
+      - "`tabindex=\"1\"`"
+    answer: 1
+    explanation: "`tabindex=\"-1\"` makes an element focusable by script without adding it to the Tab order. `0` adds it to the Tab order, and positive values scramble the order for everyone."
+
   - kind: explain
     title: Forced colors (High Contrast mode)
     body: |
@@ -188,6 +330,8 @@ steps:
       ```
 
       Chrome DevTools can emulate it: Rendering → *Emulate CSS media feature forced-colors*.
+
+      In the page, normally: the badge looks exactly as before, because the media query doesn't match. With forced colors on: the badge's background is gone, but it now has a thin border in the user's text color, so it still looks like a badge. In the same way, a `border: 2px solid transparent` is invisible normally and shows as a real border in forced colors.
 
   - kind: web
     title: Survive High Contrast

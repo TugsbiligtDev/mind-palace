@@ -10,6 +10,40 @@ steps:
       - **what you can do**: you can add numbers and subtract dates, but you can't multiply text
       - **how values sort and compare**: `'10'` sorts before `'9'` as text, but after it as a number
 
+      **Example.** The same values, compared as text and as numbers:
+
+      ```sql
+      SELECT '10' < '9' AS as_text, 10 < 9 AS as_numbers;
+      ```
+
+      | as_text | as_numbers |
+      |---|---|
+      | t | f |
+
+      As text, `'10'` comes first because `1` comes before `9`, like in a dictionary. As numbers, 10 is bigger. (`t` and `f` are true and false.)
+
+      And the type decides what's allowed: `stock` is an `integer` column, so
+
+      ```sql
+      INSERT INTO books (title, stock) VALUES ('Test', 'hello');
+      ```
+
+      ```text
+      ERROR:  invalid input syntax for type integer: "hello"
+      ```
+
+  - kind: try
+    title: "Try it: types decide"
+    body: |
+      Both examples. Run it: the comparison, then the refused INSERT. Change `'hello'` to `7` and run again: now it goes in.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      SELECT '10' < '9' AS as_text, 10 < 9 AS as_numbers;
+
+      INSERT INTO books (title, stock) VALUES ('Test', 'hello');
+    broken_starter: true
+
   - kind: explain
     title: Whole numbers and exact decimals
     body: |
@@ -21,10 +55,64 @@ steps:
 
       `numeric(6,2)` allows up to 6 digits, 2 of them after the point, so the biggest value is `9999.99`. Values are rounded to 2 places when stored, and a value that's too big raises an error instead of being silently changed.
 
+      **Example.** `::` turns a value into a type (explained fully later in this module). Watch `numeric(6,2)` round, then refuse:
+
+      ```sql
+      SELECT 9999.99::numeric(6,2) AS biggest,
+             12.345::numeric(6,2) AS rounded;
+      ```
+
+      | biggest | rounded |
+      |---|---|
+      | 9999.99 | 12.35 |
+
+      ```sql
+      SELECT 10000::numeric(6,2);
+      ```
+
+      ```text
+      ERROR:  numeric field overflow
+      ```
+
+      10000 needs 5 digits before the point, but `numeric(6,2)` only has room for 4.
+
+  - kind: try
+    title: "Try it: numeric(6,2)"
+    body: |
+      Run it: the rounding first, then the overflow. Change `10000` to `999.5` and run again: it fits.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      SELECT 9999.99::numeric(6,2) AS biggest,
+             12.345::numeric(6,2) AS rounded;
+
+      SELECT 10000::numeric(6,2);
+    broken_starter: true
+
   - kind: info
     title: "🔹 smallint"
     body: |
       `smallint` holds whole numbers from −32,768 to 32,767. It saves a little space, but the savings rarely matter and the low limit bites later. Use `integer` unless you have millions of rows and a column that can truly never grow.
+
+      ```sql
+      SELECT 32767::smallint AS ok;   -- fine
+      SELECT 32768::smallint;         -- one more is too many
+      ```
+
+      ```text
+      ERROR:  smallint out of range
+      ```
+
+  - kind: try
+    title: "Try it: the smallint limit"
+    body: |
+      Run it, then change `smallint` to `integer` in the second line: no error, because integer goes up to about 2.1 billion.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      SELECT 32767::smallint AS ok;
+      SELECT 32768::smallint;
+    broken_starter: true
 
   - kind: explain
     title: Floating point, and why money is never a float
@@ -41,6 +129,7 @@ steps:
       The same sum, 0.1 + 0.2, computed two ways. `::` means "convert to this type" (more on that below).
     sql: |
       SELECT 0.1::double precision + 0.2::double precision AS float_sum,
+             
              0.1::numeric + 0.2::numeric AS numeric_sum;
 
   - kind: try
@@ -60,6 +149,32 @@ steps:
       - **`varchar(n)`** holds text up to *n* characters. Longer values raise an error.
 
       In PostgreSQL both are stored the same way, and there's **no meaningful performance difference**. Use `text`, and reach for `varchar(n)` only when a maximum length is a real business rule, like a 2-letter country code.
+
+      **Example.** A 2-letter country code is a real length rule:
+
+      ```sql
+      CREATE TABLE countries (code varchar(2), name text);
+      INSERT INTO countries VALUES ('UK', 'United Kingdom');    -- fine
+      INSERT INTO countries VALUES ('USA', 'United States');    -- 3 letters
+      ```
+
+      ```text
+      ERROR:  value too long for type character varying(2)
+      ```
+
+      The `name` column is `text`, so any length is fine there.
+
+  - kind: try
+    title: "Try it: varchar(2)"
+    body: |
+      Run it and read the error. Then change `'USA'` to `'US'` and run again.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE TABLE countries (code varchar(2), name text);
+      INSERT INTO countries VALUES ('UK', 'United Kingdom');
+      INSERT INTO countries VALUES ('USA', 'United States');
+    broken_starter: true
 
   - kind: explain
     title: "char(n): the one to avoid"
@@ -97,6 +212,17 @@ steps:
       - `date - date` gives a number of **days** (an integer)
       - `date + 7` is a week later
       - `timestamptz - timestamptz` gives an **interval**
+
+      ```sql
+      SELECT '2026-03-01'::date - '2026-02-01'::date AS days_between,
+             '2026-02-01'::date + 7 AS week_later;
+      ```
+
+      returns (February 2026 has 28 days):
+
+      | days_between | week_later |
+      |---|---|
+      | 28 | 2026-02-08 |
 
   - kind: try
     title: True, false, unknown
@@ -157,6 +283,43 @@ steps:
       You need it when data arrives as the wrong type, typically numbers or dates stored as text. A cast succeeds only if the value makes sense: `'42'::integer` works, and `'forty-two'::integer` is an error.
 
       A cast in a query doesn't change the stored data. It converts the value for that query only.
+
+      <!-- page -->
+
+      Once `'42'` is a real number, you can do maths with it:
+
+      ```sql
+      SELECT '42'::integer + 8 AS plus_eight,
+             CAST('42' AS integer) * 2 AS doubled;
+      ```
+
+      returns:
+
+      | plus_eight | doubled |
+      |---|---|
+      | 50 | 84 |
+
+      And a value that doesn't make sense fails:
+
+      ```sql
+      SELECT 'forty-two'::integer;
+      ```
+
+      ```text
+      ERROR: invalid input syntax for type integer: "forty-two"
+      ```
+
+  - kind: try
+    title: "Try it: casting"
+    body: |
+      Run it and check the two numbers. Both spellings, `::` and `CAST(… AS …)`, do the same job.
+
+      Then try a change: cast `'7.5'` to `numeric` instead and multiply it by 2. What happens if you cast `'7.5'` to `integer`?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT '42'::integer + 8 AS plus_eight,
+             CAST('42' AS integer) * 2 AS doubled;
 
   - kind: try
     title: Your turn to cast

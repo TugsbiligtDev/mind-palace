@@ -26,6 +26,17 @@ steps:
 
       **Finding it (in your lab):** the first sign is that a single quote or an unusual character in an input changes the response or produces a database error. A **500 error** or a changed result after injecting a quote is the classic tell. Testers confirm carefully and minimally; the automated tool **sqlmap** can detect and demonstrate it, but understanding the manual signal matters more than running the tool.
 
+      On the lab app, adding one quote to a parameter turns a normal page into a database error:
+
+      ```
+      $ curl -i "http://10.10.50.30/product?id=5'"
+      HTTP/1.1 500 Internal Server Error
+      ...
+      You have an error in your SQL syntax near "'" at line 1
+      ```
+
+      You injected nothing clever, just a single `'`, and the server leaked a SQL error. That tells you your input reached the query unescaped: the signal to confirm carefully, in scope, and then write it up.
+
   - kind: explain
     title: How to stop SQL injection (the important part)
     body: |
@@ -54,6 +65,15 @@ steps:
       - **Stored XSS:** the input is *saved* by the app (a comment, a profile field, a message) and served to *everyone* who views that page later. This is more dangerous because it needs no special link and can hit many victims — even administrators viewing the content.
 
       A `<script>` tag that survives into the page unescaped is the simplest demonstration; real testing confirms whether input is reflected or stored and whether it executes.
+
+      The diagnostic on the lab app is to search for a harmless marker and read it back in the page source:
+
+      ```
+      $ curl -s "http://10.10.50.30/search?q=<b>mp-test</b>" | grep mp-test
+      <p>No results for <b>mp-test</b></p>
+      ```
+
+      The `<b>` tags came back as real markup, not as the text `&lt;b&gt;`. If plain bold tags survive unescaped, so would a `<script>` tag, which is the condition for XSS. The fix is output encoding so the page shows them as inert text.
 
   - kind: explain
     title: How to stop XSS

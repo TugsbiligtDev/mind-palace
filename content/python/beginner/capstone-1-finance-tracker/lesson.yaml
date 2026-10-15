@@ -254,6 +254,30 @@ steps:
 
       Then you will make it a **`uv` project**, commit it in small steps, and push it to **GitHub** with a README. (The commands below write small versions of the files; replace them with your own code from the steps above as you improve it.)
 
+      <!-- page -->
+
+      **Example: one transaction's trip through the three files.**
+
+      ```python
+      line = "2026-09-30,Groceries,-42.60,food"           # typed at main.py's prompt
+      t = ledger.parse_transaction(line)                    # ledger.py: checks and converts
+      # t == {"date": "2026-09-30", "description": "Groceries",
+      #       "cents": -4260, "category": "food"}
+      entries.append(t)
+      storage.save(entries)                                 # storage.py: writes ledger.json
+      ```
+
+      With the small versions on the next page, a salary, some groceries and one bad line give:
+
+      ```text
+      add / summary / quit> date,description,amount,category> add / summary / quit> date,description,amount,category> add / summary / quit> date,description,amount,category> Could not add: expected date,description,amount,category
+      add / summary / quit> balance 1957.40
+        food 42.60
+      add / summary / quit>
+      ```
+
+      (The prompts run together because `printf` typed the answers.) 2000.00 in, 42.60 out, so the balance is 1957.40, and the bad line was refused instead of crashing the program.
+
   - kind: mac
     title: Build and run the tracker
     body: |

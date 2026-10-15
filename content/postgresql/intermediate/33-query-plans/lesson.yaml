@@ -16,6 +16,21 @@ steps:
     sql: |
       EXPLAIN SELECT * FROM orders WHERE status = 'pending';
 
+  - kind: try
+    title: "Try it: EXPLAIN ANALYZE a DELETE, safely"
+    body: |
+      The ⚠️ pattern from before. Run it: the plan shows the DELETE really ran (the Seq Scan found `rows=513.00` 1-star reviews and *Rows Removed by Filter: 6847* others), then ROLLBACK undid it, and the last query proves all 513 are still there.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      BEGIN;
+      EXPLAIN ANALYZE DELETE FROM reviews WHERE rating = 1;
+      ROLLBACK;
+
+      SELECT count(*) AS one_star_reviews
+      FROM reviews
+      WHERE rating = 1;
+
   - kind: explain
     title: Reading a plan
     body: |
@@ -40,6 +55,17 @@ steps:
 
       With `ANALYZE` you also get **`actual time=…`** (in milliseconds), **actual `rows`**, and **`loops`** (how many times the step ran).
 
+  - kind: try
+    title: "Try it: read a join plan"
+    body: |
+      The join from before. Run `EXPLAIN` and match the result to the plan you just read, line by line. Then put `ANALYZE` after `EXPLAIN` and find the `actual time`, `rows` and `loops` on each line.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      EXPLAIN SELECT o.order_id, c.first_name
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id;
+
   - kind: explain
     title: Scan types
     body: |
@@ -52,6 +78,43 @@ steps:
 
       A Seq Scan isn't automatically bad. Reading a small table start to finish is often the fastest option. It's bad when a big table is scanned to find a handful of rows.
 
+      <!-- page -->
+
+      Two of them on `orders`, using its primary-key index. One order, every column:
+
+      ```text
+      EXPLAIN SELECT * FROM orders WHERE order_id = 500;
+
+      Index Scan using orders_pkey on orders  (cost=…)
+        Index Cond: (order_id = 500)
+      ```
+
+      Only `order_id`, which the index itself holds, so the table is never touched:
+
+      ```text
+      EXPLAIN SELECT order_id FROM orders WHERE order_id < 100;
+
+      Index Only Scan using orders_pkey on orders  (cost=…)
+        Index Cond: (order_id < 100)
+      ```
+
+      You saw a *Bitmap Index Scan* in Module 32, for customer 42's orders.
+
+  - kind: try
+    title: "Try it: scan types"
+    body: |
+      The two plans from before, plus the Seq Scan from your first plan. Run them and name the scan in each.
+
+      Then play: change `SELECT order_id` to `SELECT *` in the second query. The *Only* disappears, because the other columns live in the table.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      EXPLAIN SELECT * FROM orders WHERE order_id = 500;
+
+      EXPLAIN SELECT order_id FROM orders WHERE order_id < 100;
+
+      EXPLAIN SELECT * FROM orders WHERE status = 'pending';
+
   - kind: explain
     title: Join methods
     body: |
@@ -62,6 +125,36 @@ steps:
       | **Merge Join** | walk two inputs already sorted on the join key, side by side | both sides sorted (for example by indexes) |
 
       You don't choose. The planner does, based on its row estimates. That's why estimates matter so much.
+
+      The join from before used a **Hash Join**, because it joins all 39,419 orders. Ask for **one** order and the planner switches to a **Nested Loop**: find the order, then look up its one customer by index:
+
+      ```text
+      EXPLAIN SELECT o.order_id, c.first_name
+      FROM orders o JOIN customers c ON c.customer_id = o.customer_id
+      WHERE o.order_id = 500;
+
+      Nested Loop  (cost=…)
+        ->  Index Scan using orders_pkey on orders o  (cost=…)
+              Index Cond: (order_id = 500)
+        ->  Index Scan using customers_pkey on customers c  (cost=…)
+              Index Cond: (customer_id = o.customer_id)
+      ```
+
+  - kind: try
+    title: "Try it: Hash Join or Nested Loop?"
+    body: |
+      The same join twice: all orders, then one order. Run it and find *Hash Join* in the first plan and *Nested Loop* in the second.
+
+      Then play: change `= 500` to `< 100`. Already a Hash Join again: for about 100 orders, hashing the 5,020 customers once is cheaper than 100 separate index lookups. Try `< 5` and `< 20` to find where it switches.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      EXPLAIN SELECT o.order_id, c.first_name
+      FROM orders o JOIN customers c ON c.customer_id = o.customer_id;
+
+      EXPLAIN SELECT o.order_id, c.first_name
+      FROM orders o JOIN customers c ON c.customer_id = o.customer_id
+      WHERE o.order_id = 500;
 
   - kind: explain
     title: Estimated vs. actual rows
@@ -96,6 +189,31 @@ steps:
       - **read**: pages fetched from disk or the OS cache (slower)
 
       Fewer pages touched = less work. Buffers are often a better signal than time, because times vary with how busy the machine is.
+
+      **Example.** Counting every order (`COSTS OFF, TIMING OFF` just hides the numbers that change from run to run):
+
+      ```sql
+      EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF) SELECT count(*) FROM orders;
+      ```
+
+      ```text
+      Aggregate (actual rows=1.00 loops=1)
+        Buffers: shared hit=295
+        ->  Seq Scan on orders (actual rows=39419.00 loops=1)
+              Buffers: shared hit=295
+      ```
+
+      Reading all 39,419 orders touched **295 pages**, all found in memory (`hit`).
+
+  - kind: try
+    title: "Try it: count the pages"
+    body: |
+      Run it and find the `Buffers` lines. Then add `WHERE order_id = 500` before the `;` and run again: with the primary-key index, only a handful of pages are touched.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF) SELECT count(*)
+      FROM orders;
 
   - kind: explain
     title: "Slow pattern 1: a function on an indexed column"
@@ -136,6 +254,39 @@ steps:
       **Leading-wildcard LIKE.** `WHERE title LIKE '%river%'` can't use a B-tree (Module 26). The fix is a trigram index (the `pg_trgm` extension).
 
       **N+1 queries.** An app loads 50 orders with one query, then runs **one more query per order** to get its customer: 1 + 50 = 51 round trips to the database. Each is fast, but together they're slow, and the plan of any single query looks fine. The fix: get everything in **one** query with a JOIN, or with `WHERE customer_id IN (…)`. You'll see where this comes from (ORMs) in Module 38.
+
+      <!-- page -->
+
+      **Example of the N+1 fix.** Instead of three queries, one per order, ask for all three at once:
+
+      ```sql
+      SELECT o.order_id, c.first_name
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE o.order_id IN (1, 2, 3)
+      ORDER BY o.order_id;
+      ```
+
+      | order_id | first_name |
+      |---|---|
+      | 1 | Emma |
+      | 2 | Liam |
+      | 3 | Noah |
+
+      One round trip instead of four (1 for the orders + 3 for the customers).
+
+  - kind: try
+    title: "Try it: one query instead of many"
+    body: |
+      The example. Run it, then add more IDs to the list: `IN (1, 2, 3, 4, 5, 6)`. Still one query, however many orders.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT o.order_id, c.first_name
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE o.order_id IN (1, 2, 3)
+      ORDER BY o.order_id;
 
   - kind: explain
     title: "Slow pattern 4: deep OFFSET"

@@ -13,6 +13,30 @@ steps:
 
       Around one in six people has a significant disability, and everyone is temporarily impaired sometimes: a broken arm, bright sunlight on a phone, a noisy train. In many countries it's also the **law**: the European Accessibility Act (in force since June 2025), the US ADA and the UK Equality Act all apply to websites. The shared yardstick is **WCAG** (Web Content Accessibility Guidelines); level **AA** is what laws and contracts usually require.
 
+      <!-- page -->
+
+      **Example: one task, four ways.** Buying *Dune* on Inkwell's site:
+
+      | Visitor | How they do it | What the page must get right |
+      |---|---|---|
+      | Ana, blind | a screen reader reads the page aloud; she jumps between headings | headings, alt text, labelled fields, a real `<button>` |
+      | Tom, tremor in his hands | keyboard only: **Tab** to move, **Enter** to press | everything reachable by Tab, with a visible focus outline |
+      | Mei, low vision | zooms the page to 300% | text that reflows instead of running off the side |
+      | Raj, on a sunny platform | squints at his phone | enough colour contrast to read |
+
+      Every row is someone Inkwell wants as a customer.
+
+  - kind: choice
+    title: "Quick check: who benefits?"
+    body: |
+      Inkwell's checkout can only be used with a mouse. Who is shut out?
+    options:
+      - "Only blind visitors"
+      - "Anyone who relies on a keyboard, a switch or voice control, such as many people with motor impairments"
+      - "Nobody: every visitor has a mouse or a touchscreen"
+    answer: 1
+    explanation: "Many people can't use a mouse at all. They move through pages with a keyboard or a device that acts like one, so every control must work without a mouse."
+
   - kind: explain
     title: The keyboard test
     body: |
@@ -25,6 +49,52 @@ steps:
       - **Visual order differing from HTML order** (Module 20's `order`, absolute positioning).
 
       The fix for the first: style `:focus-visible` with a clear outline. The fix for the second: use real `<button>` and `<a>` elements, which are keyboard-ready for free.
+
+      <!-- page -->
+
+      `:focus-visible` matches an element that has focus **when the browser thinks a keyboard user needs to see it**. `outline` draws a line around the element without changing its size, and `outline-offset` sets the gap between the element and that line:
+
+      ```css
+      a:focus-visible {
+        outline: 3px dashed darkred;
+        outline-offset: 4px;
+      }
+      ```
+
+      ```html
+      <p>Opening hours are on <a href="hours.html">the hours page</a>.</p>
+      ```
+
+      Press Tab until the link has focus: a dashed dark red line appears around it, 4px away from the text. Click the link with the mouse instead and no line appears, because mouse users already know where they clicked.
+
+  - kind: web
+    title: "Try it: focus you can see"
+    body: |
+      Here's a link, a real button and a fake button made from a `div`.
+
+      1. Click on an empty part of the preview, then press **Tab** a few times. Focus goes to the link, then the button, and gets a dashed outline each time.
+      2. Notice that Tab **skips** the fake button completely: a keyboard user could never press it.
+      3. In `style.css`, change `dashed` to `dotted` and `4px` to `0`, then Tab through again.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <p>Opening hours are on <a href="hours.html">the hours page</a>.</p>
+      <button type="button" class="reserve">Reserve a book</button>
+      <div class="reserve">Fake button</div>
+    css: |
+      a:focus-visible, button:focus-visible {
+        outline: 3px dashed darkred;
+        outline-offset: 4px;
+      }
+
+      .reserve {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #1d4ed8;
+        color: white;
+        border: 0;
+        font: inherit;
+      }
 
   - kind: web
     title: Bring back the focus ring
@@ -105,6 +175,30 @@ steps:
 
       Before reaching for anything fancy, check these. They fix most real-world problems.
 
+      **Example: what a screen reader user "sees" first.** Most screen readers can list a page's headings and landmarks. For a well-built Inkwell home page:
+
+      ```text
+      Landmarks:  banner · navigation · main · contentinfo (footer)
+      Headings:
+        h1  Welcome to Inkwell
+          h2  New arrivals
+          h2  Events this month
+          h2  Opening hours
+      ```
+
+      In two seconds they know the page's shape and can jump straight to *Opening hours*. A page built entirely from `div`s with big bold text shows an empty list: nothing to jump to, so they have to listen from the top.
+
+  - kind: choice
+    title: "Quick check: the most common route"
+    body: |
+      What is the most common way screen reader users explore a new page?
+    options:
+      - "Listening to the whole page from top to bottom"
+      - "Jumping from heading to heading"
+      - "Reading the alt text of every image"
+    answer: 1
+    explanation: "Headings work like a table of contents, so a clear heading outline is the most valuable structure you can give them."
+
   - kind: explain
     title: Color contrast
     body: |
@@ -119,6 +213,46 @@ steps:
       Pale grey on white is the classic failure: `#999` on white is only 2.85:1. `#767676` is the lightest grey that passes on white (4.54:1).
 
       Check contrast with DevTools (inspect text, click the color swatch in Styles: it shows the ratio and AA/AAA ticks) or webaim.org/resources/contrastchecker. And **never use color alone** to carry meaning ("fields in red are required"): add text or an icon too, for colour-blind visitors.
+
+      <!-- page -->
+
+      The same small text in four greys, on a white page:
+
+      ```css
+      .faint  { color: #bbbbbb; }   /* 1.92 : 1  fails */
+      .pale   { color: #999999; }   /* 2.85 : 1  fails */
+      .ok     { color: #767676; }   /* 4.54 : 1  passes AA */
+      .strong { color: #444444; }   /* 9.74 : 1  passes easily */
+      ```
+
+      In the page, the first two lines look washed out and are hard to read; the last two are clearly readable. Darker text on a light background (or lighter text on a dark one) raises the ratio.
+
+  - kind: web
+    title: "Try it: contrast"
+    body: |
+      Four lines of the same text in four greys, with their ratios on white.
+
+      1. Compare them in the preview. Which ones would you struggle with on a phone in sunlight?
+      2. Change `.pale`'s color to `#666666` and see it become readable.
+      3. If you're on a Mac with Chrome: right-click a line in the preview → **Inspect**, then click the little color square next to `color` in the Styles panel. It shows the contrast ratio, and updates as you drag the color.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <p class="faint">Faint: 1.92 to 1 (fails)</p>
+      <p class="pale">Pale: 2.85 to 1 (fails)</p>
+      <p class="ok">OK: 4.54 to 1 (passes AA)</p>
+      <p class="strong">Strong: 9.74 to 1 (passes easily)</p>
+    css: |
+      body {
+        background: white;
+        font-family: system-ui, sans-serif;
+        font-size: 0.875rem;
+      }
+
+      .faint  { color: #bbbbbb; }
+      .pale   { color: #999999; }
+      .ok     { color: #767676; }
+      .strong { color: #444444; }
 
   - kind: web
     title: Pass the contrast check
@@ -235,7 +369,23 @@ steps:
       <main id="main">…</main>
       ```
 
-      It's hidden off-screen until it receives focus, then slides into view. Mouse users never see it; keyboard users get it first.
+      It's hidden off-screen until it receives focus, then slides into view. Mouse users never see it; keyboard users get it first. The CSS uses absolute positioning (Module 19) with a negative `top` to park it above the page, and `:focus` to bring it back:
+
+      ```css
+      .skip-link {
+        position: absolute;
+        left: 0;
+        top: -80px;          /* above the top edge: out of sight */
+      }
+
+      .skip-link:focus {
+        top: 0;              /* back at the top of the page */
+      }
+      ```
+
+      When the page loads you can't see the link at all. Press Tab once and it appears in the top-left corner; press Enter and the page jumps to `<main>`.
+
+      <!-- page -->
 
       Sometimes text should exist for screen readers only: a label for a search box whose purpose is visually obvious, or "(opens in a new tab)". The standard **visually hidden** class keeps text in the accessibility tree while hiding it on screen:
 
@@ -251,6 +401,46 @@ steps:
       ```
 
       Never use `display: none` for this: it hides the text from screen readers too.
+
+      ```html
+      <button type="button">🔍<span class="visually-hidden">Search the shop</span></button>
+      ```
+
+      On screen the button shows only the magnifying glass. A screen reader announces "Search the shop, button".
+
+  - kind: web
+    title: "Try it: a working skip link"
+    body: |
+      This events page already has a skip link that works.
+
+      1. Look at the preview: no skip link in sight.
+      2. Click on an empty part of the preview, then press **Tab** once. "Jump to the events" appears at the top. Press **Enter** to jump to the main content.
+      3. In `style.css`, change `top: 0` in the `:focus` rule to `top: 2rem` and try again. Then change `top: -80px` to `top: 0` in the first rule: now everyone sees it all the time.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <a class="skip-link" href="#events">Jump to the events</a>
+      <nav>
+        <a href="books.html">Books</a>
+        <a href="about.html">About</a>
+      </nav>
+      <main id="events">
+        <h1>Events this month</h1>
+        <p>Children's story hour, Saturday at 10am.</p>
+      </main>
+    css: |
+      .skip-link {
+        position: absolute;
+        left: 0;
+        top: -80px;
+        background: darkred;
+        color: white;
+        padding: 0.5rem 1rem;
+      }
+
+      .skip-link:focus {
+        top: 0;
+      }
 
   - kind: web
     title: Add a skip link
@@ -321,6 +511,17 @@ steps:
       - `aria-label="…"` gives an element a name when it has no visible text, like an icon-only button: `<button aria-label="Close">✕</button>`.
       - `aria-hidden="true"` hides decoration from screen readers (an icon next to text that already says the same thing).
       - `aria-expanded="true|false"` on a button that opens and closes something (a menu), so screen readers announce "collapsed" or "expanded".
+
+      All three together, on a "Close" button and a "Filters" button whose panel is currently open:
+
+      ```html
+      <button type="button" aria-label="Close"><span aria-hidden="true">✕</span></button>
+      <button type="button" aria-label="Filters" aria-expanded="true"><span aria-hidden="true">⚙️</span></button>
+      ```
+
+      The page looks exactly the same as without the ARIA: two small buttons showing ✕ and ⚙️. The difference is only in what a screen reader says: "Close, button" and "Filters, button, expanded", instead of trying to read out the symbols.
+
+      <!-- page -->
 
       And the most important rule: **no ARIA is better than bad ARIA**. The first rule of ARIA is *don't use it if a native HTML element does the job*. A `<button>` beats `<div role="button" tabindex="0">` (which still needs JavaScript for the keyboard). ARIA changes what's *announced*, never what an element *does*. Pages with ARIA average more accessibility errors than pages without it, because it's so easy to get wrong.
 

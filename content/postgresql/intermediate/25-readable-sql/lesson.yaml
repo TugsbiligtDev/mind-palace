@@ -6,13 +6,53 @@ steps:
 
       This module is about two habits: **writing SQL that's easy to read**, and **checking that the answer is actually right**.
 
+      **Example of a quiet wrong answer.** *"How many orders has Diego (customer 40) placed?"*
+
+      ```sql
+      SELECT count(*) AS wrong
+      FROM orders o
+      JOIN order_items oi ON oi.order_id = o.order_id
+      WHERE o.customer_id = 40;
+      ```
+
+      | wrong |
+      |---|
+      | 36 |
+
+      No error, a plausible number, and wrong: the join made one row per order **line** (the fan-out from Module 14). Diego has 23 orders:
+
+      ```sql
+      SELECT count(*) AS orders FROM orders WHERE customer_id = 40;
+      ```
+
+      | orders |
+      |---|
+      | 23 |
+
+  - kind: try
+    title: "Try it: right or just running?"
+    body: |
+      Both queries. Run them: 36 vs. 23. Then change the first to `count(DISTINCT o.order_id)` and it agrees with the second.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT count(*) AS wrong
+      FROM orders o
+      JOIN order_items oi ON oi.order_id = o.order_id
+      WHERE o.customer_id = 40;
+
+      SELECT count(*) AS orders FROM orders WHERE customer_id = 40;
+
   - kind: explain
     title: Formatting conventions
     body: |
       Compare:
 
       ```sql
-      select b.title,g.name,sum(oi.quantity) from books b join genres g on g.genre_id=b.genre_id join order_items oi on oi.book_id=b.book_id group by b.title,g.name order by 3 desc
+      select b.title,
+             g.name,
+             sum(oi.quantity) from books b join genres g on g.genre_id=b.genre_id join order_items oi on oi.book_id=b.book_id group by b.title,
+             g.name order by 3 desc
       ```
 
       ```sql
@@ -34,14 +74,49 @@ steps:
       - **Label every calculated column** with AS.
       - Spaces around `=` and after commas.
 
+      Both give exactly the same result. The first three rows (with `LIMIT 3` added):
+
+      | title | genre | copies_sold |
+      |---|---|---|
+      | Pride and Prejudice | Classic | 1391 |
+      | Emma | Classic | 855 |
+      | 1984 | Science Fiction | 764 |
+
+      Only the second one tells you what each column is.
+
+      <!-- page -->
+
       **The comma debate:** some teams put commas at the **start** of lines (`, g.name`) so you can comment out any column except the first without breaking the query. Others find trailing commas more natural. Either is fine. **Consistency within a project matters more than which you pick.**
+
+  - kind: try
+    title: "Try it: one query, two layouts"
+    body: |
+      Both queries are the same, written two ways. Run it and compare the two results: identical, except the first one's last column is just called `sum` instead of `copies_sold`.
+
+      Then try commenting out the `g.name AS genre,` line in the tidy version with `--` at its start (and remove `g.name` from its GROUP BY too). Nothing is graded here.
+    sql: |
+      select b.title,
+             g.name,
+             sum(oi.quantity) from books b join genres g on g.genre_id=b.genre_id join order_items oi on oi.book_id=b.book_id group by b.title,
+             g.name order by 3 desc limit 3;
+
+      SELECT b.title,
+             g.name AS genre,
+             sum(oi.quantity) AS copies_sold
+      FROM books b
+      JOIN genres g       ON g.genre_id = b.genre_id
+      JOIN order_items oi ON oi.book_id = b.book_id
+      GROUP BY b.title, g.name
+      ORDER BY copies_sold DESC
+      LIMIT 3;
 
   - kind: try
     title: Your turn to tidy up
     body: |
       This query works but is hard to read. Reformat it using the conventions above, give the count a label, **books**, and sort the genres **most books first**, then by name. The result is checked, so keep the rest of the logic the same.
     sql: |
-      select g.name,count(b.book_id) from genres g join books b on b.genre_id=g.genre_id group by g.name
+      select g.name,
+             count(b.book_id) from genres g join books b on b.genre_id=g.genre_id group by g.name
     expect: |
       SELECT g.name,
              count(b.book_id) AS books
@@ -67,6 +142,38 @@ steps:
 
       The same goes for CTE names: `per_city`, `monthly_totals`, `latest_payment` say what they hold. `x`, `temp` and `cte1` don't.
 
+      **Example.** The same query twice. Both run and give the same answer, but only one can be read at a glance:
+
+      ```sql
+      -- Hard to read
+      SELECT b.first_name, count(*) AS orders
+      FROM orders a
+      JOIN customers b ON b.customer_id = a.customer_id
+      WHERE b.customer_id IN (40, 41, 42)
+      GROUP BY b.customer_id, b.first_name;
+
+      -- Easy to read
+      SELECT c.first_name, count(*) AS orders
+      FROM orders o
+      JOIN customers c ON c.customer_id = o.customer_id
+      WHERE c.customer_id IN (40, 41, 42)
+      GROUP BY c.customer_id, c.first_name;
+      ```
+
+  - kind: try
+    title: "Try it: rename the aliases"
+    body: |
+      The hard-to-read version. Run it, then rename `a` to `o` and `b` to `c` everywhere (5 places for `b`, 1 for `a`). Run again: same answer, easier to read.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT b.first_name, count(*) AS orders
+      FROM orders a
+      JOIN customers b ON b.customer_id = a.customer_id
+      WHERE b.customer_id IN (40, 41, 42)
+      GROUP BY b.customer_id, b.first_name
+      ORDER BY b.customer_id;
+
   - kind: explain
     title: Break the problem into steps
     body: |
@@ -79,6 +186,40 @@ steps:
       3. **Final**: each city's total, its share as a percentage, biggest first.
 
       Run each step on its own before adding the next. When something looks wrong, you'll know exactly which step to look at.
+
+      <!-- page -->
+
+      **Worked example, on a different question:** *"Which genres sell the most copies, and what share of all copies is that?"*
+
+      1. **per_genre**: copies sold per genre (order_items → books → genres).
+      2. **all_copies**: the total of all copies sold.
+      3. **Final**: each genre, its copies, its share, biggest first.
+
+      ```sql
+      WITH per_genre AS (
+          SELECT g.name AS genre, sum(oi.quantity) AS copies
+          FROM order_items oi
+          JOIN books b  ON b.book_id = oi.book_id
+          JOIN genres g ON g.genre_id = b.genre_id
+          GROUP BY g.name
+      ),
+      all_copies AS (
+          SELECT sum(quantity) AS total FROM order_items
+      )
+      SELECT genre, copies,
+             round(100.0 * copies / total, 1) AS pct
+      FROM per_genre, all_copies
+      ORDER BY copies DESC
+      LIMIT 3;
+      ```
+
+      | genre | copies | pct |
+      |---|---|---|
+      | Classic | 13109 | 16.3 |
+      | Science Fiction | 12790 | 15.9 |
+      | Fantasy | 11708 | 14.6 |
+
+      Each CTE is one plain-English step, and each can be run on its own (`SELECT * FROM per_genre`) while you build it. `all_copies` has a single row, so joining it with a comma just puts the total next to every genre.
 
   - kind: try
     title: Your turn, step by step
@@ -137,10 +278,55 @@ steps:
       The usual suspects:
 
       - **An inner join silently drops rows.** Customers without orders, genres without books: gone. Use LEFT JOIN when "none" is a valid answer.
-      - **A WHERE on the right side of a LEFT JOIN turns it back into an inner join.** `LEFT JOIN books b … WHERE b.price > 29` removes every unmatched row, because their `b.price` is NULL. Put conditions about the right-hand table in the **ON** clause instead.
+      - **A WHERE on the right side of a LEFT JOIN turns it back into an inner join.** `LEFT JOIN books b … WHERE b.price > 29` removes every unmatched row, because their `b.price` is NULL. Put conditions about the right-hand table in the **ON** clause instead. (Example on the next page.)
       - **Averages over the wrong grain.** `avg(quantity * unit_price)` from order_items is the average **order line**, not the average **order**. Decide what one row represents first (Module 18).
       - **Fan-out inflates sums and counts** (Module 14).
       - **`count(*)` vs. `count(col)`** after a LEFT JOIN (Module 14).
+
+      <!-- page -->
+
+      *"Every publisher, with its books under 7.50, if it has any."* With the condition in **WHERE**:
+
+      ```sql
+      SELECT p.name, b.title, b.price
+      FROM publishers p
+      LEFT JOIN books b ON b.publisher_id = p.publisher_id
+      WHERE b.price < 7.50;
+      ```
+
+      Returns 10 rows, all cheap books like `| Bloomsbury | The Golden Crown | 6.99 |`. Blue Owl Press, with no books, is missing: its `b.price` is NULL, and WHERE threw it away.
+
+      With the condition moved into **ON**:
+
+      ```sql
+      SELECT p.name, b.title, b.price
+      FROM publishers p
+      LEFT JOIN books b ON b.publisher_id = p.publisher_id
+                       AND b.price < 7.50;
+      ```
+
+      Returns the same 10 rows, plus:
+
+      | name | title | price |
+      |---|---|---|
+      | Blue Owl Press | NULL | NULL |
+
+  - kind: try
+    title: "Try it: WHERE vs. ON"
+    body: |
+      Both versions are here. Run it and compare the row counts: 10, then 11. Find Blue Owl Press at the bottom of the second result.
+
+      Then change `7.50` to `6.99` in both (no book is that cheap): the WHERE version returns nothing at all, while the ON version still lists all 6 publishers, with NULLs. Nothing is graded here.
+    sql: |
+      SELECT p.name, b.title, b.price
+      FROM publishers p
+      LEFT JOIN books b ON b.publisher_id = p.publisher_id
+      WHERE b.price < 7.50;
+
+      SELECT p.name, b.title, b.price
+      FROM publishers p
+      LEFT JOIN books b ON b.publisher_id = p.publisher_id
+                       AND b.price < 7.50;
 
   - kind: try
     title: Your turn to fix a LEFT JOIN
@@ -182,6 +368,23 @@ steps:
       ```
 
       Good places for a comment: a business rule ("refunds are negative amounts"), a surprising choice ("LEFT JOIN: customers without orders must still appear"), or a known limitation ("assumes one currency").
+
+  - kind: choice
+    title: "Quick check: a useful comment"
+    body: |
+      ```sql
+      SELECT sum(amount) FROM payments
+      WHERE kind IN ('payment', 'refund');   -- ???
+      ```
+
+      Which comment is most useful here?
+    options:
+      - "`-- sum the amount`"
+      - "`-- refunds are negative, so including them gives the net amount received`"
+      - "`-- filter on kind`"
+      - "`-- payments table`"
+    answer: 1
+    explanation: "The SQL already says it sums amounts, filtered on kind, from payments. Only the comment about negative refunds explains **why** refunds are included, which a reader couldn't guess."
 
   - kind: info
     title: "🔹 Formatters and linters"

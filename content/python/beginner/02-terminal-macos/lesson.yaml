@@ -13,6 +13,28 @@ steps:
 
       Lines in this lesson labelled *Terminal* are for your Mac's terminal, not for this page. The exercises on the right run Python and check your understanding.
 
+      For example, here Ada types `whoami` ("who am I?") and `date` at her prompt. Each command prints its answer on the next line, then the prompt comes back, waiting for more:
+
+      ```
+      ada@mac ~ % whoami
+      ada
+      ada@mac ~ % date
+      Thu Oct 15 09:12:44 +08 2026
+      ```
+
+      Your own name, Mac and date will differ.
+
+  - kind: choice
+    title: "Quick check: terminal or shell?"
+    body: |
+      Ada opens the Terminal app and types `whoami`. Which part **reads and carries out** that command?
+    options:
+      - "The terminal window"
+      - "The shell (zsh) running inside the window"
+      - "Python"
+    answer: 1
+    explanation: "The terminal is only the window you type into. The shell (zsh on a Mac) is the program inside it that reads each command and runs it. Python is not involved until you start it."
+
   - kind: explain
     title: Where am I? Paths
     body: |
@@ -31,6 +53,23 @@ steps:
       | `.` | The current folder |
       | `..` | The folder one level **up** |
       | `/` | The top of the disk (the *root*) |
+
+      <!-- page -->
+
+      Here is what that looks like in Ada's terminal (her home folder is `/Users/ada`). The part before `%` shows the folder she is standing in, `pwd` prints the full path, and `cd` moves her:
+
+      ```
+      ada@mac ~ % pwd
+      /Users/ada
+      ada@mac ~ % cd Documents
+      ada@mac Documents % pwd
+      /Users/ada/Documents
+      ada@mac Documents % cd ..
+      ada@mac ~ % pwd
+      /Users/ada
+      ```
+
+      `cd` and `cd ..` print nothing: they just move you. Your own prompt shows your own name and Mac, and the next step lets you try these yourself.
 
   - kind: mac
     title: Look around
@@ -76,6 +115,27 @@ steps:
       | `cp` | copy | `cp notes.txt backup.txt` |
       | `mv` | move **or rename** | `mv backup.txt old-notes.txt` |
       | `rm` | remove (delete) | `rm old-notes.txt` |
+
+      Here they are in a row, in a practice folder. `ls` after each one shows what changed (the commands that make, copy, move or delete print nothing when they work):
+
+      ```
+      ada@mac ~ % mkdir case-notes
+      ada@mac ~ % cd case-notes
+      ada@mac case-notes % touch clues.txt
+      ada@mac case-notes % ls
+      clues.txt
+      ada@mac case-notes % cp clues.txt backup.txt
+      ada@mac case-notes % ls
+      backup.txt      clues.txt
+      ada@mac case-notes % mv backup.txt old-clues.txt
+      ada@mac case-notes % ls
+      clues.txt       old-clues.txt
+      ada@mac case-notes % rm old-clues.txt
+      ada@mac case-notes % ls
+      clues.txt
+      ```
+
+      <!-- page -->
 
       Two comforts: press **Tab** and the terminal completes a name for you (`cd Desk` + Tab becomes `cd Desktop`). Press the **↑ (up arrow)** to bring back your previous commands, which is called your *history*.
 
@@ -146,6 +206,16 @@ steps:
       3. Delete single files, not folders, until you are confident.
       4. Never paste a command from the internet that you do not understand.
 
+      Here is how quietly it happens. Ada removes a folder with everything inside it: no question, no message, and it is not in the Trash afterwards:
+
+      ```
+      ada@mac python-practice % ls
+      draft.txt   old-notes
+      ada@mac python-practice % rm -r old-notes
+      ada@mac python-practice % ls
+      draft.txt
+      ```
+
   - kind: choice
     title: A safety check
     body: |
@@ -164,6 +234,48 @@ steps:
       When a command says `No such file or directory`, the file usually exists, just **not in the folder you are standing in**. Before anything else, run `pwd` and `ls`. You will do this for the rest of your career.
 
       This matters for Python too: a script that opens `data.txt` looks for it in the folder where you *ran* it, not the folder where the script is saved. Module 17 comes back to this.
+
+      Here the file is saved inside a folder called `case`, but the program asks for it from the folder it is standing in:
+
+      ```python
+      import os
+
+      os.makedirs("case", exist_ok=True)
+      with open("case/data.txt", "w") as f:
+          f.write("3 clues")
+
+      print("standing in a folder that contains:", os.listdir())
+      open("data.txt")
+      ```
+
+      prints:
+
+      ```
+      standing in a folder that contains: ['case']
+      FileNotFoundError: [Errno 44] No such file or directory: 'data.txt'
+      ```
+
+      `data.txt` really exists, just one folder down, in `case`.
+
+  - kind: code
+    title: "Try it: find the file"
+    body: |
+      Run it: the same `FileNotFoundError`. `os.listdir()` shows what is in the current folder, and `os.listdir("case")` what is inside `case`.
+
+      Fix the last line so it opens the file where it really is: `open("case/data.txt")`.
+
+      To continue, make it run without an error: the change above does it.
+    broken_starter: true
+    code: |
+      import os
+
+      os.makedirs("case", exist_ok=True)
+      with open("case/data.txt", "w") as f:
+          f.write("3 clues")
+
+      print(os.listdir())
+      print(os.listdir("case"))
+      print(open("data.txt").read())
 
   - kind: why
     body: |

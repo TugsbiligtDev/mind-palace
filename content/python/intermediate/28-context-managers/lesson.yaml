@@ -27,6 +27,30 @@ steps:
       You can open several in one statement: `with open("a") as a, open("b", "w") as b:`.
 
   - kind: code
+    title: "Try it: with and files"
+    body: |
+      Run it and notice:
+
+      - after the first `with` block ends, `f.closed` is `True`: Python closed the file for you.
+      - the second `with` opens **two** files at once, one to read and one to write, separated by a comma.
+
+      Then try one change: add a fourth title to `shelf.txt` and run again. Nothing is graded here.
+    code: |
+      with open("shelf.txt", "w", encoding="utf-8") as f:
+          f.write("Dune\nEmma\nUlysses\n")
+      print(f.closed)                     # True: closed when the block ended
+
+      with (
+          open("shelf.txt", encoding="utf-8") as src,
+          open("count.txt", "w", encoding="utf-8") as dst,
+      ):
+          titles = src.read().splitlines()
+          dst.write(f"{len(titles)} titles")
+
+      with open("count.txt", encoding="utf-8") as f:
+          print(f.read())
+
+  - kind: code
     title: Two files in one with
     body: |
       Write `copy_upper(src, dst)`: read the text of the file `src`, and write it, in **upper case**, to the file `dst`. Use **one `with` statement** that opens both files. Use UTF-8.
@@ -71,6 +95,43 @@ steps:
       - `__enter__` runs at the start of the `with` block; whatever it returns is bound by `as`.
       - `__exit__` runs at the end, **always**, even if the block raised. It is told about the exception (`exc_type`, `exc`, `traceback`; all `None` if there was none).
       - If `__exit__` returns **`True`**, the exception is **swallowed** (suppressed). Return `False` (or `None`) to let it propagate.
+
+  - kind: code
+    title: "Try it: __enter__ and __exit__"
+    body: |
+      A `Spotlight` prints when it switches on and off. It runs three times. Read the output and notice:
+
+      - `as place` receives what `__enter__` returned (`"the stage"`).
+      - `__exit__` runs every time, and is told the error type (`None` when there was no error).
+      - the second error reaches the `except` outside, but with `swallow=True` the third error vanishes and the program carries on.
+
+      Then try one change: make the first block raise an error too, and see what `__exit__` reports. Nothing is graded here.
+    code: |
+      class Spotlight:
+          def __init__(self, swallow=False):
+              self.swallow = swallow
+
+          def __enter__(self):
+              print("lights on")
+              return "the stage"                   # this is what 'as' receives
+
+          def __exit__(self, exc_type, exc, traceback):
+              print("lights off, error was:", exc_type)
+              return self.swallow                  # True would hide the error
+
+
+      with Spotlight() as place:
+          print("performing on", place)
+
+      try:
+          with Spotlight():
+              raise ValueError("fell off")
+      except ValueError as e:
+          print("caught outside:", e)
+
+      with Spotlight(swallow=True):
+          raise ValueError("hidden")
+      print("carried on")
 
   - kind: code
     title: A recording context manager
@@ -169,7 +230,53 @@ steps:
 
       The `try/finally` around `yield` is the important part: it guarantees the clean-up runs even if the block raises.
 
-      Used like: `with temporary_value(config, "debug", True): ...`
+      Used like this:
+
+      ```python
+      config = {"debug": False}
+      with temporary_value(config, "debug", True):
+          print("inside:", config)
+      print("after:", config)
+      ```
+
+      prints:
+
+      ```
+      inside: {'debug': True}
+      after: {'debug': False}
+      ```
+
+  - kind: code
+    title: "Try it: @contextmanager"
+    body: |
+      A tiny generator-based context manager. Run it and notice:
+
+      - `start:` prints before the block, `done:` after it.
+      - `as name` receives what was yielded (the task in capitals).
+      - when the block raises, `done:` still prints, because it sits in `finally`.
+
+      Then try one change: remove the `try:` and `finally:` lines (keep the `print` lines, un-indented) and run again. The second `done:` disappears. Nothing is graded here.
+    code: |
+      from contextlib import contextmanager
+
+
+      @contextmanager
+      def announce(task):
+          print(f"start: {task}")            # set-up
+          try:
+              yield task.upper()             # the 'as' value
+          finally:
+              print(f"done: {task}")         # tear-down, always runs
+
+
+      with announce("stocktake") as name:
+          print("working on", name)
+
+      try:
+          with announce("delivery"):
+              raise RuntimeError("van broke down")
+      except RuntimeError as e:
+          print("caught:", e)
 
   - kind: code
     title: A temporary setting
@@ -302,6 +409,42 @@ steps:
       - **Mocks:** `with patch(...):` swaps something out for the length of the block.
 
       Whenever you write "do X, then clean up Y, even on error", ask whether it should be a context manager.
+
+  - kind: code
+    title: "Try it: a temporary folder and a timer"
+    body: |
+      Two `with` blocks from the list above:
+
+      - `TemporaryDirectory` makes a folder and deletes it with everything in it when the block ends, so `exists` turns `False`.
+      - `timer` is a small home-made context manager that reports how long its block took.
+
+      Then try one change: make the timer's block do more work, for example `range(1_000_000)`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      import os
+      import tempfile
+      import time
+      from contextlib import contextmanager
+
+      with tempfile.TemporaryDirectory() as folder:
+          path = os.path.join(folder, "notes.txt")
+          with open(path, "w") as f:
+              f.write("draft")
+          print("inside:", os.path.exists(path))
+      print("after:", os.path.exists(path))
+
+      @contextmanager
+      def timer(label):
+          start = time.perf_counter()
+          try:
+              yield
+          finally:
+              print(f"{label} took {time.perf_counter() - start:.4f} s")
+
+      with timer("summing"):
+          total = sum(range(100_000))
+      print(total)
 
   - kind: why
     body: |

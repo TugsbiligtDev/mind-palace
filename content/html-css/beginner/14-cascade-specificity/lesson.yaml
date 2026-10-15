@@ -21,6 +21,17 @@ steps:
 
       Here `.note` is more specific than `p`, so the text is dark red, wherever the rules appear in the file.
 
+  - kind: choice
+    title: "Quick check: which color wins?"
+    body: |
+      The stylesheet has `.note { color: darkred; }` first and `p { color: gray; }` **after** it. What color is `<p class="note">`?
+    options:
+      - "Gray, because that rule comes later"
+      - "Dark red, because `.note` is more specific"
+      - "Black: the two rules cancel out"
+    answer: 1
+    explanation: "Specificity is compared before order. A class beats a type selector wherever they are in the file, so order would only decide between equally specific selectors."
+
   - kind: explain
     title: Calculating specificity
     body: |
@@ -48,6 +59,59 @@ steps:
       Compare the first number; only if it ties, compare the second, and so on. So **one id beats any number of classes**, and one class beats any number of types: `.note` (0,1,0) beats `body main article p` (0,0,4).
 
       `*` (everything) and combinators (`>`, `+`, space) add nothing. Inline `style=""` beats every selector.
+
+      An example with the same element hit by three rules:
+
+      ```html
+      <p class="notice" id="hours">Closed Monday.</p>
+      ```
+
+      ```css
+      #hours       { color: green; }    /* 1, 0, 0 */
+      p.notice     { color: darkred; }  /* 0, 1, 1 */
+      .notice      { color: blue; }     /* 0, 1, 0 */
+      ```
+
+      The text is **green**: the id wins, even though it comes first. Delete the `#hours` rule and it turns **dark red**: `p.notice` (0,1,1) beats `.notice` (0,1,0) by one type. Make the last two both `.notice` and the **later** one, blue, wins on order.
+
+  - kind: web
+    title: "Try it: which rule wins?"
+    body: |
+      One paragraph, four rules fighting over its color. The comments in `style.css` show each selector's score. The preview shows **green**, because `#hours` has an id.
+
+      Try this, one change at a time, and predict the color *before* you look:
+
+      1. Delete the `#hours` rule. → dark red: `p.notice` (0,1,1) beats `.notice` (0,1,0).
+      2. Delete `p.notice` too. → purple: the two `.notice` rules tie on (0,1,0), so the **later** one wins.
+      3. Swap the order of the two `.notice` rules. → blue.
+      4. Add `style="color: orange;"` to the `<p>` in `index.html`. → orange: inline beats every selector.
+
+      The second paragraph only has `p { color: gray; }` aimed at it, so it stays gray throughout.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p class="notice" id="hours">Closed Monday.</p>
+      <p>Open Tuesday to Sunday.</p>
+    css: |
+      p {               /* 0, 0, 1 */
+        color: gray;
+      }
+
+      #hours {          /* 1, 0, 0 */
+        color: green;
+      }
+
+      p.notice {        /* 0, 1, 1 */
+        color: darkred;
+      }
+
+      .notice {         /* 0, 1, 0 */
+        color: blue;
+      }
+
+      .notice {         /* 0, 1, 0, but later */
+        color: purple;
+      }
 
   - kind: web
     title: Win without cheating
@@ -127,6 +191,29 @@ steps:
 
       Module 40 (cascade layers) shows the modern way to keep large stylesheets peaceful.
 
+  - kind: web
+    title: "Try it: the escalation"
+    body: |
+      The paragraph has `id="intro"` **and** `class="note"`. The id rule wins, so the text is gray, even though `.note` comes later.
+
+      Try this:
+
+      1. Try to make it dark red **without** changing the HTML. Changing `.note` to `p.note` or `.intro .note` won't do it: only another id, or `!important`, can beat `#intro`.
+      2. Add `!important` to the `.note` color. It turns dark red. Now any rule that wants to change this color later needs `!important` too: that's the escalation.
+      3. The calm fix: delete the whole `#intro` rule, and remove the `!important` from `.note`. It's still dark red, and now only the class styles it.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p id="intro" class="note">Second-hand books, carefully chosen.</p>
+    css: |
+      #intro {
+        color: gray;
+      }
+
+      .note {
+        color: darkred;
+      }
+
   - kind: explain
     title: Inheritance
     body: |
@@ -137,6 +224,20 @@ steps:
 
       An inherited value is the **weakest** thing there is: any rule that targets the element directly beats it, even a plain type selector.
 
+      ```css
+      article { color: navy; border: 2px solid navy; }
+      h3      { color: darkred; }
+      ```
+
+      ```html
+      <article>
+        <h3>Poetry night</h3>
+        <p>Thursday at <strong>7pm</strong>.</p>
+      </article>
+      ```
+
+      The paragraph and the bold *7pm* inside it come out navy: they inherit the color. The heading is dark red, because its own `h3` rule beats the inherited value. Only the article gets a border: the `p` and `strong` don't each draw one, because `border` isn't inherited.
+
       <!-- page -->
 
       Gotcha: form controls (`button`, `input`, `select`, `textarea`) **don't inherit fonts** by default. Browsers give them their own small system font. Fix it once:
@@ -146,6 +247,17 @@ steps:
         font: inherit;
       }
       ```
+
+  - kind: choice
+    title: "Quick check: what passes down?"
+    body: |
+      You set `section { color: navy; border: 1px solid navy; }`. Which of these do the paragraphs **inside** the section get from it?
+    options:
+      - "Both the navy text and a navy border of their own"
+      - "Only the navy border"
+      - "Only the navy text color"
+    answer: 2
+    explanation: "`color` is a text property, so it is inherited. `border` is a box property, so it isn't: only the section itself gets the border."
 
   - kind: explain
     title: inherit, initial and unset
@@ -159,6 +271,58 @@ steps:
       | `unset` | inherit if the property normally inherits, otherwise `initial` |
 
       `inherit` is the useful one day to day: `color: inherit` on links makes them match the surrounding text. `initial` surprises people: `display: initial` turns a `div` *inline*, because the spec default is inline, not "the browser's default for divs".
+
+      ```css
+      p { color: green; }
+      a { color: inherit; }
+      ```
+
+      A link inside one of those paragraphs is green like the words around it, instead of the browser's link blue. (It keeps its underline, so people can still spot it.)
+
+  - kind: web
+    title: "Try it: inheritance"
+    body: |
+      Here an `article` sets a color, a font and a border. In the preview:
+
+      - The paragraph and the list inherit the navy color and the Georgia font: no rules aim at them.
+      - The `h3` is dark red, because its own rule beats anything inherited.
+      - Only the article has a border: `border` doesn't inherit.
+      - The link uses `color: inherit`, so it's navy too, not blue.
+      - The **first** button has the small system font. The **second** has `font: inherit` and matches the article's font.
+
+      Try this:
+
+      1. Delete the `h3` rule. The heading turns navy: now it just inherits.
+      2. Delete `color: inherit` from the link rule. The link goes back to blue.
+      3. Change `font: inherit` to `font: initial`. The second button's text changes to the browser's plain default font.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <article>
+        <h3>Poetry night</h3>
+        <p>Thursday at 7pm. <a href="events.html">All events</a></p>
+        <ul><li>Bring a poem</li><li>Or just listen</li></ul>
+        <button type="button">Remind me</button>
+        <button type="button" class="match">Remind me</button>
+      </article>
+    css: |
+      article {
+        color: navy;
+        font-family: Georgia, serif;
+        border: 2px solid navy;
+      }
+
+      h3 {
+        color: darkred;
+      }
+
+      article a {
+        color: inherit;
+      }
+
+      .match {
+        font: inherit;
+      }
 
   - kind: web
     title: Let it flow down
@@ -221,6 +385,19 @@ steps:
       - The **Computed** tab shows the final value of every property. Click the arrow beside one to see which rule it came from, or "inherited from body".
 
       If your rule isn't in the list at all, the **selector doesn't match** the element: check spelling, the class in the HTML, and the combinator.
+
+      **Example: what the Styles pane shows** for `<p class="note">` when both `p { color: gray; }` and `.note { color: darkred; }` match it:
+
+      ```text
+      .note {                       style.css:5
+        color: darkred;
+      }
+      p {                           style.css:1
+        color: gray;                ← drawn crossed out
+      }
+      ```
+
+      `.note` is listed first because it's more specific, and the losing `color: gray` is struck through. In the **Computed** tab, `color` shows `rgb(139, 0, 0)` (that's `darkred`), and expanding it points to `.note … style.css:5`.
 
   - kind: mac
     title: Watch a rule lose

@@ -16,6 +16,29 @@ steps:
 
       **System fonts** are already on the visitor's device: no download, instant. `system-ui` means "the operating system's interface font" (San Francisco on a Mac and iPhone, Segoe UI on Windows). A popular stack for clean interfaces is simply `font-family: system-ui, sans-serif;`.
 
+  - kind: web
+    title: "Try it: a fallback stack"
+    body: |
+      The first font in each stack, `"Inkwell Display"`, doesn't exist anywhere, so the browser falls back to the next one it has: Georgia for the heading, the system's interface font for the text.
+
+      Try this:
+
+      1. Remove `Georgia,` from the `h1` stack. The heading falls back again, to the generic `serif`.
+      2. Change the paragraph's stack to `monospace`, and then to `system-ui, sans-serif`.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <h1>Inkwell Books</h1>
+      <p>Second-hand books, carefully chosen.</p>
+    css: |
+      h1 {
+        font-family: "Inkwell Display", Georgia, serif;
+      }
+
+      p {
+        font-family: "Inkwell Display", system-ui, sans-serif;
+      }
+
   - kind: explain
     title: Web fonts
     body: |
@@ -41,6 +64,17 @@ steps:
       ```
 
       Use the **WOFF2** format: it's compressed and supported everywhere. And only load the weights you use: each one is a separate download.
+
+  - kind: choice
+    title: "Quick check: the font file"
+    body: |
+      You self-host a font with `@font-face`. Which file format should you use?
+    options:
+      - "`.woff2`"
+      - "`.ttf`"
+      - "`.png`"
+    answer: 0
+    explanation: "WOFF2 is compressed and works in every current browser. TTF files are much bigger, and PNG is an image, not a font."
 
   - kind: explain
     title: font-display
@@ -94,6 +128,33 @@ steps:
 
       Body text reads best with a line height of about **1.5–1.7**; headings can be tighter, around 1.1–1.3.
 
+  - kind: web
+    title: "Try it: size, weight and line height"
+    body: |
+      The paragraph uses `font-size: 1.125rem` (18px) and `line-height: 1.6`.
+
+      Try this:
+
+      1. Change `line-height` to `1` and then to `2.2`. At `1`, the lines nearly touch; 1.5–1.7 is the comfortable range.
+      2. Give `h2` a `font-weight: 400;`. It loses its bold.
+      3. Add `letter-spacing: 0.1em;` and `font-size: 0.75rem;` to the `.label` rule, a typical small label.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p class="label">Staff pick</p>
+      <h2>Persuasion</h2>
+      <p>Anne Elliot was persuaded, years ago, to give up the man she loved. Now he is back, a rich naval captain, and seems to have forgotten her entirely.</p>
+    css: |
+      p {
+        font-size: 1.125rem;
+        line-height: 1.6;
+        max-width: 32rem;
+      }
+
+      .label {
+        text-transform: uppercase;
+      }
+
   - kind: explain
     title: Alignment, decoration and case
     body: |
@@ -101,6 +162,39 @@ steps:
       - `text-decoration`: `underline`, `line-through` (crossed out, nice for old prices), `none`. Removing link underlines makes links harder to spot; if you do, give them another clear signal.
       - `text-transform`: `uppercase`, `lowercase`, `capitalize`. Better than typing in capitals: the HTML keeps normal text (screen readers sometimes spell out all-caps words letter by letter), and you can change your mind in CSS.
       - `font-style: italic`.
+
+  - kind: web
+    title: "Try it: alignment, decoration and case"
+    body: |
+      The old price is crossed out with `line-through`, the heading is centred, and the label is turned into capitals by CSS, though the HTML says *new arrival*.
+
+      Try this:
+
+      1. Change `text-transform` to `capitalize`: *New Arrival*.
+      2. Give the paragraph `text-align: justify;` and look at the uneven gaps between words.
+      3. Add `font-style: italic;` to `.old`.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p class="label">new arrival</p>
+      <h2>The Odyssey</h2>
+      <p>Was <span class="old">£12.00</span>, now £8.50. A fine hardback with a few pencil notes in the margins, from an earlier reader.</p>
+    css: |
+      h2 {
+        text-align: center;
+      }
+
+      .old {
+        text-decoration: line-through;
+      }
+
+      .label {
+        text-transform: uppercase;
+      }
+
+      p {
+        max-width: 24rem;
+      }
 
   - kind: explain
     title: Comfortable line length
@@ -198,6 +292,17 @@ steps:
     title: "🔹 Variable fonts"
     body: |
       A **variable font** is one file that contains a whole range of weights (and sometimes widths or slants). Instead of separate files for 400 and 700, you load one and use any weight in between, like `font-weight: 550`. Many Google Fonts are variable: their URL looks like `wght@200..900`. Fewer files, more freedom.
+
+  - kind: choice
+    title: "Quick check: a weight in between"
+    body: |
+      With a **variable** font loaded, which of these can you use?
+    options:
+      - "Only `font-weight: 400` and `700`"
+      - "Any weight in its range, such as `font-weight: 550`"
+      - "Only the weights you list in separate `@font-face` rules"
+    answer: 1
+    explanation: "One variable font file covers a whole range of weights, so in-between values like 550 work. With ordinary fonts you'd need a separate file for each weight."
 
   - kind: why
     body: |

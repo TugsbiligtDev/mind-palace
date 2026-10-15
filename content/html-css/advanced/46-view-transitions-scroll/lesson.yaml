@@ -11,6 +11,35 @@ steps:
 
       Without any extra CSS, you get a smooth cross-fade of the whole page. The CSS in this lesson customises it.
 
+      **Example: switching both kinds on.**
+
+      ```css
+      /* Cross-document: in the CSS of BOTH pages (e.g. index.html and about.html) */
+      @view-transition {
+        navigation: auto;
+      }
+      ```
+
+      ```js
+      // Same-document: wrap the change to the page in one call
+      document.startViewTransition(() => {
+        list.classList.toggle("grid-view");
+      });
+      ```
+
+      With only the CSS rule above, clicking from Inkwell's home page to *About* cross-fades between the two pages instead of flashing white. The rest of this lesson shapes that animation.
+
+  - kind: choice
+    title: "Quick check: which kind?"
+    body: |
+      Clicking a link from Inkwell's home page to its About page, with a cross-fade. Which kind of view transition is that?
+    options:
+      - "Same-document, started with `document.startViewTransition()`"
+      - "Cross-document, turned on in CSS"
+      - "A keyframe animation"
+    answer: 1
+    explanation: "Moving between two pages of the same site is a cross-document transition, and it's turned on purely in CSS. Same-document transitions change one page's content and are started by JavaScript."
+
   - kind: explain
     title: Cross-document transitions
     body: |
@@ -24,7 +53,20 @@ steps:
 
       Now same-site navigations (clicking a link, back and forward) cross-fade instead of flashing white. Browsers without support just navigate normally: **free progressive enhancement**.
 
+      In the browser: you click *About us* on Inkwell's home page, and instead of a blank white flash, the home page fades out while the About page fades in, in about a quarter of a second.
+
       Supported in Chrome, Edge and Safari; Firefox is catching up. It only applies between pages on the **same origin** (your own site).
+
+  - kind: choice
+    title: "Quick check: where it goes"
+    body: |
+      Where must `@view-transition { navigation: auto; }` go for the cross-fade to work?
+    options:
+      - "In the CSS of both the old and the new page"
+      - "Only on the page you're leaving"
+      - "In the HTML `<head>` as a meta tag"
+    answer: 0
+    explanation: "Both pages must opt in, which is why it usually goes in the shared stylesheet that every page links."
 
   - kind: explain
     title: Morphing named elements
@@ -43,6 +85,19 @@ steps:
       - Each name must be **unique on the page at the moment of the transition**. Two visible elements with the same name cancel the transition.
       - `view-transition-name: none` opts an element out.
       - `view-transition-name: match-element` gives every element in a list its own automatic name, handy for animating reordered lists.
+
+      In the browser: on the list page you click Dune's small cover. On the detail page, the big cover doesn't just appear: it **grows out of** the small cover's spot and slides into place, while everything else cross-fades.
+
+  - kind: choice
+    title: "Quick check: names must be unique"
+    body: |
+      On the list page, two visible covers both have `view-transition-name: cover-dune`. What happens when you navigate?
+    options:
+      - "Both covers morph into the big cover"
+      - "The first cover morphs; the second fades"
+      - "The transition is cancelled, because each name must be unique on the page"
+    answer: 2
+    explanation: "Each `view-transition-name` must be unique on the page at the moment of the transition. Duplicates cancel it, so the page just navigates."
 
   - kind: explain
     title: Styling the animation
@@ -76,6 +131,10 @@ steps:
         ::view-transition-group(*) { animation: none; }
       }
       ```
+
+      In the browser: with these rules, the cover's glide takes 400ms and starts and ends gently, and the rest of the page cross-fades faster, in 200ms. With Reduce motion turned on, the cover no longer glides across the screen.
+
+      The preview on this site can't move between pages, so you can't watch a transition here: you'll set up the CSS in the next step, then watch it play on your Mac in the step after.
 
   - kind: web
     title: Set up the transition CSS
@@ -169,6 +228,50 @@ steps:
 
       It works with touch, trackpads, the mouse wheel and the keyboard, with no JavaScript.
 
+      In the page: scroll the shelf sideways and let go between two covers: the shelf slides on by itself until the nearest cover's left edge sits 1rem from the shelf's left edge.
+
+  - kind: web
+    title: "Try it: scroll snap"
+    body: |
+      A strip of staff names you can scroll sideways (trackpad, or Shift + mouse wheel). It uses `scroll-snap-type: x mandatory` and `scroll-snap-align: center`, so whenever you stop, one name settles in the **middle** of the strip.
+
+      Try:
+
+      1. Scroll and let go halfway between two names: watch it settle.
+      2. Change `center` to `end`. Now names settle against the right edge.
+      3. Change `mandatory` to `proximity`. Stop far from any name: it stays where you left it.
+      4. Delete the `scroll-snap-type` line: no snapping at all.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="staff">
+        <p>Ada</p>
+        <p>Moth</p>
+        <p>Inspector Bold</p>
+        <p>Sam</p>
+        <p>Ana</p>
+        <p>Theo</p>
+      </div>
+    css: |
+      .staff {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+      }
+
+      .staff > p {
+        flex: none;
+        width: 160px;
+        margin: 0;
+        padding: 2rem 0;
+        text-align: center;
+        background: #f5f0e8;
+        scroll-snap-align: center;
+      }
+    widths: [500]
+
   - kind: web
     title: A snapping shelf
     body: |
@@ -241,6 +344,45 @@ steps:
       ```
 
       `scroll()` follows a scroll container's position; `view()` follows an element's journey through the visible area. Great for reading-progress bars and reveal effects, with no scroll listeners. It's supported in Chrome and Safari and still being made consistent across browsers, so use it as an enhancement inside `@supports (animation-timeline: scroll())`, and turn it off for Reduce motion.
+
+  - kind: web
+    title: "Try it: a reading-progress bar"
+    body: |
+      Scroll the preview. The brown bar at the top grows from nothing to full width as you go down: its animation is driven by `scroll()`, not by time. (You need a current Chrome, Edge or Safari.)
+
+      Try this:
+
+      1. Change `scale: 0 1` to `scale: 1 0`, and `transform-origin` to `top`. Now the bar shrinks away as you scroll.
+      2. Add `background: linear-gradient(to right, #7c2d12, #fdba74);` to the bar.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="reading-progress"></div>
+      <h1>Poetry night</h1>
+      <p>Scroll down this page.</p>
+      <p class="tall">The bar at the top tracks how far you've read.</p>
+      <p>The end.</p>
+    css: |
+      @keyframes grow {
+        from { scale: 0 1; }
+        to   { scale: 1 1; }
+      }
+
+      .reading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 8px;
+        background: #7c2d12;
+        transform-origin: left;
+        animation: grow linear;
+        animation-timeline: scroll();
+      }
+
+      .tall {
+        height: 1200px;
+      }
 
   - kind: why
     body: |

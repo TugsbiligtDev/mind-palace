@@ -154,6 +154,44 @@ steps:
 
       `width: fit-content` with `margin-inline: auto` centres a block that's only as wide as its content.
 
+  - kind: web
+    title: "Try it: min-content, max-content and fit-content"
+    body: |
+      The same tag is sized four ways. Compare the yellow boxes:
+
+      - no width: a block, full width.
+      - `min-content`: as narrow as its longest word.
+      - `max-content`: one long line, even past the edge of the 200px container.
+      - `fit-content`: hugs its text, but wraps when the container is too narrow.
+
+      Try this:
+
+      1. Change `.box` to `width: 600px`. Now `fit-content` and `max-content` look the same.
+      2. Add `margin-inline: auto;` to `.fit`. It centres, while staying only as wide as its text.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="box">
+        <p>Signed first edition, collect in store</p>
+        <p class="min">Signed first edition, collect in store</p>
+        <p class="max">Signed first edition, collect in store</p>
+        <p class="fit">Signed first edition, collect in store</p>
+      </div>
+    css: |
+      .box {
+        width: 200px;
+        border: 2px dashed gray;
+      }
+
+      p {
+        background: #fde68a;
+        padding: 4px 8px;
+      }
+
+      .min { width: min-content; }
+      .max { width: max-content; }
+      .fit { width: fit-content; }
+
   - kind: explain
     title: Logical properties
     body: |

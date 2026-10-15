@@ -10,6 +10,34 @@ steps:
 
       **SEO** (search engine optimisation) is making pages easy for search engines to understand and show. Most of it is honest basics, not tricks.
 
+      **Example: one head, three readers.** Part of the `<head>` of Inkwell's Dune page:
+
+      ```html
+      <title>Dune by Frank Herbert · Inkwell Books</title>
+      <meta name="description" content="Paperback, £9.99. In stock at our Harbour Street shop.">
+      <meta property="og:image" content="https://inkwellbooks.com/images/dune-share.jpg">
+      <link rel="icon" href="/favicon.svg">
+      ```
+
+      | Reader | What it uses |
+      |---|---|
+      | A search engine | the title as the blue headline, the description as the grey text under it |
+      | WhatsApp or Slack | the title, description and `og:image` for the preview card |
+      | The browser | the icon in the tab and bookmarks |
+
+      None of it appears on the page itself. This lesson covers each of these tags.
+
+  - kind: choice
+    title: "Quick check: who reads the head?"
+    body: |
+      You paste a link to Inkwell's Dune page into WhatsApp. Where does the preview card's text come from?
+    options:
+      - "From the page's `<head>`"
+      - "From the first paragraph on the page, always"
+      - "WhatsApp's staff write it"
+    answer: 0
+    explanation: "Messengers and social apps build link previews from the head's metadata: the title, the description and Open Graph tags."
+
   - kind: explain
     title: Title and meta description
     body: |
@@ -21,7 +49,28 @@ steps:
       - **Title**: unique per page, the specific thing first and the site name last, roughly 50–60 characters before search results cut it off.
       - **Description**: one or two sentences, about 150–160 characters, written for **people** deciding whether to click. Search engines may rewrite it, but a good one is often used as-is.
 
+      Neither shows on the page itself. The title appears on the browser tab and as the blue headline in search results; the description is usually the grey text under it. A search result built from those two lines looks roughly like this:
+
+      ```
+      Dune by Frank Herbert · Inkwell Books
+      inkwellbooks.com › books › dune.html
+      A second-hand paperback of Dune in very good condition. £8.99, posted
+      within two days from Bristol.
+      ```
+
       Don't stuff keywords ("books cheap books buy books Bristol books"). Search engines ignore it at best, penalise it at worst.
+
+  - kind: choice
+    title: "Quick check: a good title"
+    body: |
+      Which `<title>` is best for the page that sells *Emma*?
+    options:
+      - "`Inkwell Books`"
+      - "`Home`"
+      - "`Emma by Jane Austen · Inkwell Books`"
+      - "`books cheap books Emma books Bristol`"
+    answer: 2
+    explanation: "Each page gets its own title, with the specific thing first and the site name last. A title shared by every page says nothing, and stuffed keywords can be penalised."
 
   - kind: explain
     title: Open Graph, for link previews
@@ -40,6 +89,8 @@ steps:
       - Note `property=` (not `name=`) for `og:` tags.
       - `og:image` must be a **full URL**. 1200 × 630 pixels is the common size.
       - `twitter:card` with `summary_large_image` asks X/Twitter (and some others) for a big image card; they fall back to the `og:` tags for the rest.
+
+      Again nothing changes on the page. Paste `https://inkwellbooks.com/books/dune.html` into WhatsApp or Slack, though, and instead of a bare link you get a card: the `og-dune.jpg` picture across the top, **Dune by Frank Herbert** in bold under it, then *A second-hand paperback in very good condition.* and the site's address.
 
   - kind: web
     title: Make the page shareable
@@ -124,7 +175,20 @@ steps:
       - An **SVG** icon stays sharp at every size; browsers that support it prefer it.
       - `apple-touch-icon` (180 × 180 PNG) is used when someone adds your site to their iPhone home screen.
 
+      With these lines, the browser tab shows Inkwell's little icon to the left of the page title instead of a blank page symbol, and the same icon appears in bookmarks and the history list. On an iPhone, *Share → Add to Home Screen* uses the 180 × 180 picture as the app-style icon.
+
       Bigger app-style setups add a `manifest.webmanifest` file with more icon sizes, for installable web apps.
+
+  - kind: choice
+    title: "Quick check: the iPhone home screen"
+    body: |
+      Someone adds Inkwell to their iPhone home screen. Which line provides the icon they see?
+    options:
+      - "`<link rel=\"icon\" href=\"/favicon.ico\">`"
+      - "`<link rel=\"apple-touch-icon\" href=\"/apple-touch-icon.png\">`"
+      - "`<meta name=\"description\">`"
+    answer: 1
+    explanation: "iPhones use the 180 × 180 `apple-touch-icon` picture for home-screen icons. The favicon is for browser tabs."
 
   - kind: explain
     title: Canonical URLs
@@ -138,6 +202,8 @@ steps:
       ```
 
       Put it on every page, pointing at itself (its clean, preferred URL). Use a full URL.
+
+      Visitors never see it. With it in place, a search engine that finds `https://www.inkwellbooks.com/books/dune.html?utm_source=newsletter` will usually treat it as the same page as `https://inkwellbooks.com/books/dune.html`, and show only the clean address in its results.
 
   - kind: web
     title: Icons and the canonical address
@@ -193,6 +259,35 @@ steps:
       - **Fast pages** (Module 26) and **mobile-friendly** layouts (Module 22) are ranking factors in their own right.
 
       Good, accessible HTML and good SEO are mostly the same work.
+
+      **Example: the same section, before and after.**
+
+      ```html
+      <!-- Before: nothing says what matters -->
+      <div class="big">Dune</div>
+      <div>A desert planet, a noble family… <a href="dune.html">Read more</a></div>
+      <img src="dune.jpg">
+
+      <!-- After: a heading, an article, descriptive link text and alt text -->
+      <article>
+        <h2>Dune</h2>
+        <p>A desert planet, a noble family… <a href="dune.html">Read the full Dune review</a></p>
+        <img src="dune.jpg" alt="Dune by Frank Herbert, paperback cover">
+      </article>
+      ```
+
+      A search engine now knows the section is about *Dune*, what the link leads to, and what the image shows. A screen reader user gets exactly the same help.
+
+  - kind: choice
+    title: "Quick check: SEO and accessibility"
+    body: |
+      Which change helps **both** search engines and screen reader users?
+    options:
+      - "Repeating keywords in hidden text"
+      - "Replacing *Read more* links with descriptive link text"
+      - "Adding more `<div>`s around the content"
+    answer: 1
+    explanation: "Descriptive link text tells both a screen reader user and a search engine what the linked page is about. Hidden keyword text can be penalised, and divs carry no meaning."
 
   - kind: info
     title: "🔹 Structured data (JSON-LD)"

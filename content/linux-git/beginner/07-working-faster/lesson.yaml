@@ -8,6 +8,21 @@ steps:
       - `history` prints the whole list, numbered. `!42` runs command number 42 again.
       - **Ctrl+R** searches it: press Ctrl+R and start typing any part of an old command. The newest match appears; **Ctrl+R** again goes further back. **Return** runs it, **Esc** puts it on the line to edit, **Ctrl+G** gives up.
 
+      Here's `history` after two commands. Each line has its number, which is what `!` uses:
+
+      ```
+      learner@inkwell:~/inkwell$ wc -l orders/2026-08.csv
+      5 orders/2026-08.csv
+      learner@inkwell:~/inkwell$ ls
+      logs  notes  old  orders  README.txt  site
+      learner@inkwell:~/inkwell$ history
+          1  wc -l orders/2026-08.csv
+          2  ls
+          3  history
+      ```
+
+      Typing `!1` here would run `wc -l orders/2026-08.csv` again.
+
       Experienced people rarely type a long command twice.
 
   - kind: shell
@@ -64,11 +79,42 @@ steps:
       cat: /etc/shadow: Permission denied
       learner@inkwell:~$ sudo !!
       sudo cat /etc/shadow
+      root:*:20000:0:99999:7:::
+      daemon:*:20000:0:99999:7:::
+      …
       ```
 
       It's mostly used like that, to rerun something with `sudo` in front (Module 10). `!$` means just the **last word** of the previous command: `mkdir reports` then `cd !$`.
 
+      Here are both on Inkwell's server. Each time, the shell first prints the command it built, then runs it:
+
+      ```
+      learner@inkwell:~/inkwell$ mkdir reports
+      learner@inkwell:~/inkwell$ cd !$
+      cd reports
+      learner@inkwell:~/inkwell/reports$ cd ..
+      learner@inkwell:~/inkwell$ ls notes
+      books-sold.txt  meeting-2026-09-30.txt  todo.txt
+      learner@inkwell:~/inkwell$ !!
+      ls notes
+      books-sold.txt  meeting-2026-09-30.txt  todo.txt
+      ```
+
       ⚠️ The shell runs the expansion straight away, so be sure what the last command was.
+
+  - kind: shell
+    title: "Try it: !! and !$"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `mkdir reports`, then `cd !$`: the shell prints `cd reports` and moves you there.
+      2. `cd ..`
+      3. `ls notes`, then `!!`
+      4. `cat /etc/shadow` (denied), then `sudo !!`
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: explain
     title: Aliases
@@ -86,6 +132,45 @@ steps:
       - An alias typed like this lasts until you close the terminal. Module 11 makes them permanent.
 
       Pick names that aren't already commands, or you'll hide the real one.
+
+      <!-- page -->
+
+      Here's `ll` being made, used, listed and removed:
+
+      ```
+      learner@inkwell:~/inkwell$ alias ll='ls -lah'
+      learner@inkwell:~/inkwell$ ll notes
+      total 20
+      drwxr-xr-x 2 learner learner 4.0K Oct 14 21:07 .
+      drwxr-xr-x 2 learner learner 4.0K Oct 14 21:07 ..
+      -rw-r--r-- 1 learner learner   70 Oct 14 21:07 books-sold.txt
+      -rw-r--r-- 1 learner learner  230 Oct 14 21:07 meeting-2026-09-30.txt
+      -rw-r--r-- 1 learner learner  110 Oct 14 21:07 todo.txt
+      learner@inkwell:~/inkwell$ alias
+      alias ll='ls -lah'
+      learner@inkwell:~/inkwell$ unalias ll
+      learner@inkwell:~/inkwell$ ll notes
+      bash: ll: command not found
+      ```
+
+      `ll notes` ran `ls -lah notes`: anything you type after an alias is added to the end of its command.
+
+  - kind: shell
+    title: "Try it: aliases, !! and !$"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `alias ll='ls -lah'`
+      2. `ll notes`, then `ll logs`
+      3. `alias` to list your aliases.
+      4. `mkdir reports`, then `cd !$`, then `pwd`.
+      5. `cd ..`, then `!!`: notice what it repeats.
+
+      Then make an alias of your own, like `alias todo='cat ~/inkwell/notes/todo.txt'`, and run `todo`.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: A shortcut for the shop log

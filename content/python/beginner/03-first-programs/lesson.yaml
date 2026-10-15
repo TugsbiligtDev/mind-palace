@@ -31,6 +31,20 @@ steps:
 
       Good comments say **why**, not what. `# add 1 to count` is noise. `# skip the header row` is useful. And you can "comment out" a line to switch it off for a moment.
 
+  - kind: code
+    title: "Try it: comments"
+    body: |
+      Run it: only two lines print, because Python skips everything after a `#`.
+
+      Then "comment out" the second `print` by putting `#` in front of it, and run again.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      # Greet the visitor, then show the case number
+      print("Welcome")      # shown first
+      print("Case 42")
+      # print("This line is switched off")
+
   - kind: explain
     title: "How the exercises are written: def, return and pass"
     body: |
@@ -46,6 +60,53 @@ steps:
       - **`pass`** means "nothing here yet". It is a placeholder in an empty block, and you replace it with your own lines.
 
       Your job in each exercise is the indented part inside. Keep the `def` line exactly as it is, because that is the name the checker calls. If an exercise says "prints", use `print()`; if it says "returns", use `return`.
+
+      <!-- page -->
+
+      Defining a function does nothing on its own. It runs when something **calls** it by name with brackets:
+
+      ```python
+      def double(n):
+          return n * 2
+
+
+      def say_hi():
+          print("Hi from inside a function")
+
+
+      print(double(4))
+      print(double(10))
+      say_hi()
+      ```
+
+      prints:
+
+      ```
+      8
+      20
+      Hi from inside a function
+      ```
+
+      `double` *returns* its answer, so we print it to see it. `say_hi` *prints* by itself, so calling it is enough.
+
+  - kind: code
+    title: "Try it: def and return"
+    body: |
+      Run this and match each output line with the call that made it. Then change `double(10)` to `double(7)`, and add a second `print(...)` line inside `say_hi`. Run it again.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      def double(n):
+          return n * 2
+
+
+      def say_hi():
+          print("Hi from inside a function")
+
+
+      print(double(4))
+      print(double(10))
+      say_hi()
 
   - kind: code
     title: An about-me card
@@ -164,6 +225,42 @@ steps:
       | Effect | **Nothing** runs | Everything *before* the failing line already ran |
 
       A SyntaxError points at the place Python got confused, and the real mistake is often on that line or the one just above it (a bracket you forgot to close).
+
+      <!-- page -->
+
+      See the difference. This file has a **runtime error** on line 2:
+
+      ```python
+      print("This line runs first")
+      print(10 / 0)
+      print("This line never runs")
+      ```
+
+      It prints `This line runs first`, then stops with `ZeroDivisionError: division by zero`. Line 1 already ran; line 3 never did.
+
+      This file has a **SyntaxError** on line 2 (the bracket is never closed):
+
+      ```python
+      print("This line runs first")
+      print("hi"
+      ```
+
+      It prints **nothing** and stops with `SyntaxError: '(' was never closed`. Even line 1 did not run, because Python checks the whole file first.
+
+  - kind: code
+    title: "Try it: two kinds of error"
+    body: |
+      Run this and read the error at the bottom: line 1 runs, line 2 stops the program. Then:
+
+      1. Change `10 / 0` to `10 / 2` and run it: all three lines print.
+      2. Delete the last `)` on line 3 and run it: now nothing prints, and the error is a `SyntaxError`.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      print("This line runs first")
+      print(10 / 0)
+      print("This line never runs")
+    broken_starter: true
 
   - kind: code
     title: Fix the syntax

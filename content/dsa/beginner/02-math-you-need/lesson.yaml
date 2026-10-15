@@ -4,6 +4,16 @@ steps:
     body: |
       An **exponent** says "multiply this many times". `2³ = 2 × 2 × 2 = 8`. In JavaScript you write it `2 ** 3`.
 
+      ```js
+      console.log(2 ** 3, 2 ** 10, 10 ** 2);
+      ```
+
+      prints:
+
+      ```
+      8 1024 100
+      ```
+
       Exponents matter in this course because they describe how fast things blow up. Each extra item doubles the work of trying every yes/no combination: 10 items give `2¹⁰ = 1 024` combinations, but 40 items give over a trillion.
 
   - kind: code
@@ -28,6 +38,49 @@ steps:
       | 1 000 000 | about 20 halvings | ≈ 20 |
 
       That last row is the magic: a million items need only about **20** halvings. Anything that halves its work at each step (like binary search in Module 11) is incredibly fast. `Math.log2(n)` computes it.
+
+      Halving an odd number gives a decimal, so we usually round down with `Math.floor`, which drops everything after the point:
+
+      ```js
+      console.log(Math.log2(8), Math.log2(1024), Math.log2(1000000));
+      console.log(Math.floor(7 / 2), Math.floor(9.99));
+      ```
+
+      prints:
+
+      ```
+      3 10 19.931568569324174
+      3 9
+      ```
+
+  - kind: code
+    title: "Try it: Math.floor and while loops"
+    body: |
+      Press **Run** and read the output from top to bottom:
+
+      - `Math.floor` rounds down, and `Math.log2` counts halvings (with decimals when `n` is not a power of 2).
+      - The `while` loop doubles `n` until it passes 50, printing every round. It stops by itself, because the condition `n <= 50` becomes false.
+
+      Then change `let n = 3;` to `let n = 1;` and run again: how many rounds now? Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      // Math.floor rounds down to a whole number
+      console.log(Math.floor(9 / 2));
+      console.log(Math.floor(4.8));
+
+      // Math.log2 counts halvings (it can give decimals)
+      console.log(Math.log2(64));
+      console.log(Math.log2(100));
+
+      // A while loop: keep going while the condition is true.
+      // Here: double a number until it passes 50, and count the rounds.
+      let n = 3;
+      let rounds = 0;
+      while (n <= 50) {
+        n = n * 2;
+        rounds++;
+        console.log("round", rounds, "n is now", n);
+      }
+      console.log("finished after", rounds, "rounds");
 
   - kind: code
     title: Count the halvings
@@ -88,7 +141,20 @@ steps:
 
       **1 + 2 + … + n = n × (n + 1) / 2**
 
-      For `n = 100` that is `100 × 101 / 2 = 5 050`, with no loop at all.
+      For `n = 100` that is `100 × 101 / 2 = 5 050`, with no loop at all. For `n = 10`:
+
+      ```js
+      const n = 10;
+      console.log(n * (n + 1) / 2);
+      ```
+
+      prints:
+
+      ```
+      55
+      ```
+
+      which is exactly `1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10`.
 
   - kind: code
     title: Use the formula
@@ -123,11 +189,41 @@ steps:
       **The JavaScript trap:** with negative numbers, `%` keeps the sign of the *left* side.
 
       ```js
-      -1 % 5    // -1   (not 4!)
-      7 % 5     // 2
+      console.log(17 % 5, 7 % 5, -1 % 5);
       ```
 
-      To get a result that is always between `0` and `n - 1`, use `((a % n) + n) % n`.
+      prints:
+
+      ```
+      2 2 -1
+      ```
+
+      That last one is `-1`, not `4`! To get a result that is always between `0` and `n - 1`, use `((a % n) + n) % n`:
+
+      ```js
+      console.log(((-1 % 5) + 5) % 5);
+      ```
+
+      prints:
+
+      ```
+      4
+      ```
+
+  - kind: code
+    title: "Try it: remainders"
+    body: |
+      Run this and check each line against its comment. Notice that `-7 % 3` keeps the minus sign, and the lifting trick turns it into a number from `0` to `2`.
+
+      Then change the clock line to `(11 + 5) % 12` and predict the answer before you run it. Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      console.log(17 % 5);    // 17 = 3 * 5 + 2
+      console.log(23 % 10);   // the last digit
+      console.log(-7 % 3);    // keeps the minus sign
+      console.log(((-7 % 3) + 3) % 3);  // lifted back into 0..2
+
+      // Wrapping around a clock: 3 hours after 11 o'clock
+      console.log((11 + 3) % 12);
 
   - kind: code
     title: A modulo that never goes negative
@@ -165,7 +261,32 @@ steps:
       | `Math.trunc` (cut the decimals off) | 3 | **-3** |
       | `Math.round` (nearest) | 4 | -4 |
 
+      ```js
+      console.log(Math.floor(3.7), Math.trunc(3.7), Math.round(3.7));
+      console.log(Math.floor(-3.7), Math.trunc(-3.7), Math.round(-3.7));
+      ```
+
+      prints:
+
+      ```
+      3 3 4
+      -4 -3 -4
+      ```
+
       They agree for positive numbers and differ for negative ones. When a problem says "integer division" or "round toward zero", you want **`Math.trunc`**. When you want the halves of a positive index (binary search), `Math.floor` is fine.
+
+  - kind: code
+    title: "Try it: floor, trunc and round"
+    body: |
+      Run this to see the three rounding tools disagree on `-2.5`. The last line shows JavaScript's division giving a decimal, and `Math.trunc` dropping it.
+
+      Then change `x` to `2.5` and run again: which ones agree now? Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const x = -2.5;
+      console.log("floor:", Math.floor(x));
+      console.log("trunc:", Math.trunc(x));
+      console.log("round:", Math.round(x));
+      console.log("7 / 2 =", 7 / 2, "and Math.trunc(7 / 2) =", Math.trunc(7 / 2));
 
   - kind: code
     title: Chop off the decimals
@@ -199,6 +320,20 @@ steps:
       **Integers are exact only up to `Number.MAX_SAFE_INTEGER`**, which is `9 007 199 254 740 991` (2⁵³ − 1). Beyond that, neighbouring integers become indistinguishable.
 
       **Decimals are stored in binary**, and many simple decimals cannot be stored exactly. So `0.1 + 0.2` is `0.30000000000000004`, and `0.1 + 0.2 === 0.3` is `false`. Never compare decimals with `===`. Check that they are *close enough*.
+
+      To measure "how far apart" two numbers are, use `Math.abs`, which drops the minus sign:
+
+      ```js
+      console.log(Math.abs(-3), Math.abs(3));
+      console.log(Math.abs(0.5 - 0.75));
+      ```
+
+      prints:
+
+      ```
+      3 3
+      0.25
+      ```
 
   - kind: code
     title: See the traps
@@ -244,12 +379,33 @@ steps:
       When a problem needs integers beyond 2⁵³, JavaScript has `BigInt`: write `123n`, and do maths on other BigInts.
 
       ```js
-      2n ** 64n              // 18446744073709551616n
-      Number.MAX_SAFE_INTEGER + 2   // wrong, rounded
-      BigInt(Number.MAX_SAFE_INTEGER) + 2n   // exact
+      console.log(2n ** 64n);
+      console.log(Number.MAX_SAFE_INTEGER + 2);
+      console.log(BigInt(Number.MAX_SAFE_INTEGER) + 2n);
       ```
 
+      prints:
+
+      ```
+      18446744073709551616n
+      9007199254740992
+      9007199254740993n
+      ```
+
+      The middle line is wrong (it should end in `993`): a normal number lost the last digit. The BigInt line is exact.
+
       You cannot mix BigInt and normal numbers in one expression (`1n + 1` is an error), and BigInt is slower. Use it only when a problem's numbers really go past 2⁵³.
+
+  - kind: code
+    title: "Try it: BigInt"
+    body: |
+      The example from above. Run it, then try `2n ** 100n`, or `1n + 1` to see the mixing error.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      console.log(2n ** 64n);
+      console.log(Number.MAX_SAFE_INTEGER + 2);
+      console.log(BigInt(Number.MAX_SAFE_INTEGER) + 2n);
 
   - kind: why
     body: |

@@ -31,10 +31,35 @@ steps:
       ```sql
       SELECT title, genre_id, price,
              round(avg(price) OVER (PARTITION BY genre_id), 2) AS genre_avg
-      FROM books;
+      FROM books
+      ORDER BY book_id
+      LIMIT 5;
       ```
 
-      It's like GROUP BY, except the rows **don't collapse**: all 300 books stay, each next to its own genre's average price. It's the same kind of answer as the correlated subquery in Module 18, usually faster and always shorter.
+      Returns:
+
+      | title | genre_id | price | genre_avg |
+      |---|---|---|---|
+      | Pride and Prejudice | 1 | 9.99 | 18.48 |
+      | Emma | 1 | 8.99 | 18.48 |
+      | 1984 | 2 | 12.50 | 17.89 |
+      | Animal Farm | 1 | 7.99 | 18.48 |
+      | The Hobbit | 3 | 14.99 | 17.89 |
+
+      Every genre 1 book shows the same 18.48: the average of its own genre. It's like GROUP BY, except the rows **don't collapse**: all 300 books stay, each next to its own genre's average price. It's the same kind of answer as the correlated subquery in Module 18, usually faster and always shorter.
+
+  - kind: try
+    title: "Try it: PARTITION BY"
+    body: |
+      Run it. Then change `PARTITION BY genre_id` to `PARTITION BY publisher_id`: now each book sits next to its publisher's average instead.
+
+      Then try `max(price)` in place of `avg(price)`. Nothing is graded here.
+    sql: |
+      SELECT title, genre_id, price,
+             round(avg(price) OVER (PARTITION BY genre_id), 2) AS genre_avg
+      FROM books
+      ORDER BY book_id
+      LIMIT 5;
 
   - kind: try
     title: Your turn with PARTITION BY
@@ -93,17 +118,47 @@ steps:
     body: |
       You can't filter on a window function in WHERE: window functions run **after** WHERE (they're computed with SELECT). So rank in a CTE, then filter:
 
+      Here are the two priciest books from each **publisher**:
+
       ```sql
       WITH ranked AS (
-          SELECT title, genre_id, price,
-                 row_number() OVER (PARTITION BY genre_id
+          SELECT title, publisher_id, price,
+                 row_number() OVER (PARTITION BY publisher_id
                                     ORDER BY price DESC, title) AS rn
           FROM books
       )
       SELECT * FROM ranked WHERE rn <= 2;
       ```
 
+      The first rows it returns:
+
+      | title | publisher_id | price | rn |
+      |---|---|---|---|
+      | The Forgotten Storm, Book 2 | 1 | 29.99 | 1 |
+      | The Golden Signal | 1 | 29.99 | 2 |
+      | The Bright Library, Book 2 | 2 | 29.99 | 1 |
+      | The Burning Mirror, Book 2 | 2 | 29.99 | 2 |
+      | The Bright Promise, Book 2 | 3 | 29.99 | 1 |
+      | The Last Kingdom | 3 | 28.99 | 2 |
+
+      (10 rows in all: 2 for each of the 5 publishers with books.)
+
       Choose the function by what "top 2" should mean with ties: `row_number` gives exactly 2 per group, `rank`/`dense_rank` include everyone tied. With `row_number`, add a tiebreaker (here `title`) so the same books win every time.
+
+  - kind: try
+    title: "Try it: top N per group"
+    body: |
+      Run it. Then change `rn <= 2` to `rn <= 3` for the top three per publisher.
+
+      Then change `row_number()` to `rank()` and remove `, title` from the ORDER BY inside OVER: publishers with several books at 29.99 now return more rows, because tied books share a rank. Nothing is graded here.
+    sql: |
+      WITH ranked AS (
+          SELECT title, publisher_id, price,
+                 row_number() OVER (PARTITION BY publisher_id
+                                    ORDER BY price DESC, title) AS rn
+          FROM books
+      )
+      SELECT * FROM ranked WHERE rn <= 2;
 
   - kind: try
     title: Your turn for the priciest book
@@ -227,10 +282,36 @@ steps:
              sum(amount) FILTER (WHERE kind = 'payment') AS paid_in,
              sum(amount) FILTER (WHERE kind = 'refund')  AS paid_back
       FROM payments
-      GROUP BY method;
+      GROUP BY method
+      ORDER BY method;
       ```
 
+      Returns:
+
+      | method | paid_in | paid_back |
+      |---|---|---|
+      | bank_transfer | 187614.37 | -4360.15 |
+      | card | 561196.24 | -11783.42 |
+      | gift_card | 182801.70 | -4593.06 |
+      | paypal | 374747.37 | -8108.67 |
+
+      Both sums look at the same rows, but each one only adds up the rows its FILTER lets through.
+
       It works with ordinary GROUP BY aggregates **and** with window aggregates. You'll use it again for pivot-style reports in Module 23.
+
+  - kind: try
+    title: "Try it: FILTER"
+    body: |
+      Run it. Then add a third column, `sum(amount) AS net`, with no FILTER: it should equal `paid_in` plus `paid_back`.
+
+      Then try `max(amount) FILTER (WHERE kind = 'payment')` to find each method's biggest single payment. Nothing is graded here.
+    sql: |
+      SELECT method,
+             sum(amount) FILTER (WHERE kind = 'payment') AS paid_in,
+             sum(amount) FILTER (WHERE kind = 'refund')  AS paid_back
+      FROM payments
+      GROUP BY method
+      ORDER BY method;
 
   - kind: try
     title: Your turn with FILTER
@@ -251,6 +332,24 @@ steps:
     title: "🔹 NTILE"
     body: |
       `ntile(n) OVER (ORDER BY …)` splits the rows into **n roughly equal buckets** and numbers them 1 to n. `ntile(4)` gives quartiles: top 25%, next 25%, and so on. Handy for "which price band is each book in?"
+
+      ```sql
+      SELECT title, price, ntile(4) OVER (ORDER BY price DESC) AS band
+      FROM books
+      WHERE genre_id = 7
+      ORDER BY price DESC, title
+      LIMIT 3;
+      ```
+
+      Returns:
+
+      | title | price | band |
+      |---|---|---|
+      | The Bright Library, Book 2 | 29.99 | 1 |
+      | The Bright Promise, Book 2 | 29.99 | 1 |
+      | The Hidden Library | 28.99 | 1 |
+
+      The priciest quarter of the Self-Help books get band 1, the cheapest quarter band 4.
 
   - kind: try
     title: "Find the bug: gaps between whose orders?"

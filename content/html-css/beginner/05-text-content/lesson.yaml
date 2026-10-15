@@ -12,11 +12,32 @@ steps:
         <h2>Visit us</h2>
       ```
 
+      In the page, *Inkwell Books* is the biggest, *New arrivals* and *Visit us* a size smaller, *Fiction* and *Poetry* smaller again: all bold, each on its own line. (The `←` notes are just labels for you here, not part of the code.)
+
       Rules of thumb:
 
       - **One `<h1>`** per page, saying what the page is about.
       - **Don't skip levels** going down: after an `h2` comes an `h3`, not an `h5`.
       - **Never pick a heading for its size.** Want small bold text? That's CSS's job. Screen reader users jump around a page by its headings, so a wrong level misleads them.
+
+  - kind: web
+    title: "Try it: heading levels"
+    body: |
+      The `index.html` tab has a small outline for Inkwell's *About* page: one `h1`, two `h2` sections, and an `h3` inside the first. In the preview, each level is a little smaller than the one above it.
+
+      Try this:
+
+      1. Change the `h3` to an `h4` (both the opening and the closing tag). It shrinks, but the outline now skips a level, which is exactly what not to do.
+      2. Add a second `h3` under *Our story*, such as `<h3>The cat</h3>`.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <h1>About Inkwell</h1>
+      <h2>Our story</h2>
+      <h3>The first shop</h3>
+      <p>We opened in 1998 with three shelves and a kettle.</p>
+      <h2>Our team</h2>
+      <p>Four booksellers and one cat.</p>
 
   - kind: web
     title: Fix the outline
@@ -78,7 +99,22 @@ steps:
       Bristol</p>
       ```
 
+      shows one paragraph on three short lines: *Inkwell Books*, then *12 Harbour Street*, then *Bristol*.
+
+      Without the `<br>`s, the same code shows one line: *Inkwell Books 12 Harbour Street Bristol*, because the new lines in the file collapse into spaces.
+
       Don't use `<br><br>` to make space between paragraphs. Use separate `<p>` elements, and CSS for the spacing.
+
+  - kind: choice
+    title: "Quick check: Enter in the code"
+    body: |
+      In your file you type `<p>Open daily.` then press Enter and type `Closed on holidays.</p>`. How does the page show it?
+    options:
+      - "On one line: *Open daily. Closed on holidays.*"
+      - "On two lines, like in the file"
+      - "As two separate paragraphs"
+    answer: 0
+    explanation: "The browser collapses the new line into a single space. To break the line inside a paragraph, write `<br>`; for a new paragraph, use a second `<p>`."
 
   - kind: explain
     title: strong, em, b and i
@@ -95,6 +131,27 @@ steps:
       "Do **not** feed the shop cat" → `<strong>`. "I *said* Tuesday" → `<em>` (the stress changes the meaning). Screen readers may change their tone for `strong` and `em`.
 
       When in doubt, `<strong>` and `<em>` are the usual choice.
+
+      ```html
+      <p>Do <strong>not</strong> feed the shop cat.</p>
+      <p>I <em>said</em> Tuesday.</p>
+      <p>Our tote bags come in <b>Ink Blue</b>.</p>
+      <p>We just got a copy of <i>Persuasion</i>.</p>
+      ```
+
+      shows: Do **not** feed the shop cat. / I *said* Tuesday. / Our tote bags come in **Ink Blue**. / We just got a copy of *Persuasion*. The looks match in pairs; the meaning is what differs.
+
+  - kind: choice
+    title: "Quick check: pick the element"
+    body: |
+      A sign on the page says: *Do **not** leave bags by the door.* The word *not* is a serious warning. Which element should wrap it?
+    options:
+      - "`<b>`"
+      - "`<i>`"
+      - "`<em>`"
+      - "`<strong>`"
+    answer: 3
+    explanation: "A serious warning is **importance**, which is `<strong>`. `<b>` only draws attention without importance, `<em>` is spoken stress, and `<i>` is a different voice such as a book title."
 
   - kind: explain
     title: Lists
@@ -117,7 +174,57 @@ steps:
       </ul>
       ```
 
+      shows two bullets, *Fiction* and *Poetry*, with a second, more indented bullet list (*Mystery*, *Science fiction*) tucked under *Fiction*. The inner bullets usually have a different shape (a hollow circle).
+
       `<ol>` has handy attributes: `start="5"` begins at 5, `reversed` counts down.
+
+      ```html
+      <ol reversed>
+        <li>Emma</li>
+        <li>Dune</li>
+        <li>Beloved</li>
+      </ol>
+      ```
+
+      shows a countdown: 3. Emma, 2. Dune, 1. Beloved.
+
+  - kind: web
+    title: "Try it: text and lists"
+    body: |
+      The `index.html` tab has a little bit of everything so far: a `<br>` line break, `strong`/`em`/`b`/`i`, an ordered list counting down, and a bulleted list with a list nested inside one item.
+
+      Look at how the nested list sits *inside* the *Gifts* `<li>`, after the word *Gifts* and before its `</li>`.
+
+      Try this:
+
+      1. Remove `reversed` from the `<ol>`. The numbers now count up: 1, 2, 3.
+      2. Add `start="5"` to the `<ol>`. It begins at 5.
+      3. Change the outer `<ul>` (and its closing tag) to `<ol>`. The bullets turn into numbers.
+      4. Add a third card to the nested list: `<li>Gift cards</li>`.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <p>Inkwell Books<br>12 Harbour Street</p>
+      <p>Do <strong>not</strong> feed the cat. I <em>said</em> Tuesday.</p>
+      <p>Try our <b>Ink Blue</b> tote, or read <i>Persuasion</i>.</p>
+
+      <h2>Top three this week</h2>
+      <ol reversed>
+        <li>Emma</li>
+        <li>Dune</li>
+        <li>Beloved</li>
+      </ol>
+
+      <h2>In the shop</h2>
+      <ul>
+        <li>Books</li>
+        <li>Gifts
+          <ul>
+            <li>Bookmarks</li>
+            <li>Tote bags</li>
+          </ul>
+        </li>
+      </ul>
 
   - kind: web
     title: Build the shop's lists
@@ -198,6 +305,26 @@ steps:
       <p>— Cicero</p>
       ```
 
+      shows the quotation as its own indented block, with *— Cicero* as an ordinary paragraph below it.
+
+      ```html
+      <p>The sign says <q>Mind the cat</q>.</p>
+      <p>Set <code>lang</code> on the html element.</p>
+      ```
+
+      shows: The sign says “Mind the cat”. (the browser adds the curly quotes) and Set `lang` on the html element. (with *lang* in a typewriter-style font).
+
+  - kind: choice
+    title: "Quick check: keep the spaces"
+    body: |
+      You want to show a short poem with its line breaks and indents exactly as typed. Which element keeps every space and new line?
+    options:
+      - "`<blockquote>`"
+      - "`<pre>`"
+      - "`<q>`"
+    answer: 1
+    explanation: "`<pre>` (preformatted) keeps whitespace exactly as written. `<blockquote>` and `<q>` are for quotations and collapse spaces like normal text."
+
   - kind: explain
     title: HTML entities
     body: |
@@ -215,6 +342,39 @@ steps:
       Since your file is UTF-8, you can type characters like é, — or © directly. Entities are only *needed* for `<` and `&`.
 
       `&nbsp;` keeps two words together, as in `10&nbsp;am` or `Mr.&nbsp;Reed`, so a line never breaks between them. Don't use runs of `&nbsp;` for spacing; that's CSS's job.
+
+      ```html
+      <p>Every paragraph starts with &lt;p&gt;.</p>
+      <p>&copy; 2026 Inkwell Books</p>
+      ```
+
+      shows: Every paragraph starts with `<p>`. and *© 2026 Inkwell Books*. The entities turn into the characters, and no tag is created.
+
+  - kind: web
+    title: "Try it: quotes, code and entities"
+    body: |
+      The `index.html` tab has a `blockquote`, a short `q`, a `<pre><code>` block and a few entities. Compare the code with the preview:
+
+      - The `blockquote` is indented; the `q` gets quotation marks from the browser.
+      - Inside `<pre>`, the line breaks and the extra spaces stay exactly as typed.
+      - `&lt;p&gt;` shows as `<p>`, and `&copy;` as ©.
+
+      Try this:
+
+      1. In the last paragraph, replace `&lt;p&gt;` with a plain `<p>`. The text after it jumps to a new paragraph, because the browser now reads a real tag. Change it back.
+      2. Add some extra spaces between words in an ordinary `<p>`, then inside the `<pre>`. Only the `<pre>` keeps them.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <blockquote>
+        <p>A room without books is like a body without a soul.</p>
+      </blockquote>
+      <p>The sign says <q>Mind the cat</q>.</p>
+      <pre><code>Opening hours
+        Tue–Sat   9am–6pm
+        Sun      10am–4pm</code></pre>
+      <p>Every paragraph starts with &lt;p&gt; and ends with &lt;/p&gt;.</p>
+      <p>&copy; 2026 Inkwell Books</p>
 
   - kind: web
     title: Show the code, not run it
@@ -256,6 +416,25 @@ steps:
       ```
 
       `<dt>` is the term, `<dd>` the description. Recognise it when you see it; you'll use it occasionally.
+
+  - kind: web
+    title: "Try it: a description list"
+    body: |
+      This is the example above. In the preview each `dt` term sits on its own line, and its `dd` description is indented below it.
+
+      Try this:
+
+      1. Add another pair: `<dt>Price</dt>` and `<dd>£8.99</dd>`.
+      2. A term can have two descriptions: add a second `<dd>` under *Condition*, such as `<dd>Signed by a previous owner</dd>`.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <dl>
+        <dt>Author</dt>
+        <dd>Frank Herbert</dd>
+        <dt>Condition</dt>
+        <dd>Very good, light shelf wear</dd>
+      </dl>
 
   - kind: why
     body: |

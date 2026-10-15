@@ -10,6 +10,40 @@ steps:
 
       Big ones (GOV.UK, Shopify Polaris, GitHub Primer) are public; reading them is a great way to learn. Inkwell needs a small one.
 
+      **Example: Inkwell's button, from token to component.**
+
+      ```css
+      /* Tokens: the decisions, named once */
+      :root {
+        --color-brand: #7c2d12;
+        --color-on-brand: #fff;
+        --space-2: 0.5rem;
+        --space-3: 1rem;
+        --radius-2: 6px;
+      }
+
+      /* Component: built only from tokens */
+      .button {
+        background: var(--color-brand);
+        color: var(--color-on-brand);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-2);
+      }
+      ```
+
+      Change `--color-brand` once and every button, link and badge that uses it follows. The documentation page then shows the button and says when to use it.
+
+  - kind: choice
+    title: "Quick check: the parts"
+    body: |
+      Which of these is a **token** in a design system?
+    options:
+      - "`--space-3: 1rem`"
+      - "A `.card` component"
+      - "The showcase page that documents the buttons"
+    answer: 0
+    explanation: "Tokens are the raw named decisions, like a spacing value. Components are built from tokens, and the showcase is the documentation."
+
   - kind: explain
     title: Three tiers of tokens
     body: |
@@ -34,6 +68,45 @@ steps:
       ```
 
       Components use **only** component or semantic tokens, never primitives or raw values. Then a rebrand changes primitives, a dark theme changes semantic tokens, and a one-off button tweak changes a component token. Each change happens in exactly one place.
+
+      In the page: a button with `background: var(--button-bg)` is dark brown (`#7c2d12`), because the chain `--button-bg` → `--color-action` → `--brown-700` ends at that color. Change `--brown-700` and every button and link that uses `--color-action` changes with it.
+
+  - kind: web
+    title: "Try it: follow the token chain"
+    body: |
+      A "Signed copy" badge built from three tiers: `--green-700` (primitive) → `--color-success` (semantic) → `--badge-bg` (component). The badge is dark green.
+
+      Try:
+
+      1. Change the primitive `--green-700` to `#7c3aed`. The badge turns purple: a rebrand happens at the bottom tier.
+      2. Undo that, then point the semantic token somewhere else: `--color-success: var(--blue-700);`. The badge turns blue without touching `.badge`.
+      3. Change only the component token: `--badge-bg: var(--blue-700);`. Same result, but only for badges.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <p>Dune <span class="badge">Signed copy</span></p>
+    css: |
+      :root {
+        /* primitive */
+        --green-700: #15803d;
+        --blue-700: #1d4ed8;
+        --white: #ffffff;
+
+        /* semantic */
+        --color-success: var(--green-700);
+        --color-on-success: var(--white);
+
+        /* component */
+        --badge-bg: var(--color-success);
+        --badge-text: var(--color-on-success);
+      }
+
+      .badge {
+        padding: 0.125rem 0.5rem;
+        border-radius: 999px;
+        background: var(--badge-bg);
+        color: var(--badge-text);
+      }
 
   - kind: web
     title: Tier the button tokens
@@ -112,6 +185,45 @@ steps:
 
       Spacing works the same way (`--space-xs` to `--space-xl`), often on a simple 4px or 8px grid. Combine with `clamp()` (Module 31) and every step can be fluid: tools like *Utopia* (utopia.fyi) generate fluid scales for you.
 
+      In the page (with the usual 16px root size): body text is 16px, `h3` is 20px, `h2` is 25px and `h1` is about 31px. Each heading is a quarter bigger than the one below it.
+
+  - kind: web
+    title: "Try it: a scale with a ratio"
+    body: |
+      A book page whose three text sizes come from one scale. `--ratio` sits in a variable, so the whole scale can change at once. With `1.25`, the blurb is 16px, the author line 20px and the title 25px.
+
+      Try:
+
+      1. Change `--ratio` to `1.5`. The steps spread apart: 16px, 24px, 36px.
+      2. Change it to `1.1`. The sizes nearly match: a calm, quiet page.
+      3. Change `--step-0` to `1.125rem`. Every step grows, because each one is built from the step below.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <p class="title">The Hobbit</p>
+      <p class="byline">J. R. R. Tolkien</p>
+      <p class="blurb">A small adventure that grew into a legend.</p>
+    css: |
+      :root {
+        --ratio: 1.25;
+        --step-0: 1rem;
+        --step-1: calc(var(--step-0) * var(--ratio));
+        --step-2: calc(var(--step-1) * var(--ratio));
+      }
+
+      .blurb {
+        font-size: var(--step-0);
+      }
+
+      .byline {
+        font-size: var(--step-1);
+      }
+
+      .title {
+        font-size: var(--step-2);
+        font-weight: bold;
+      }
+
   - kind: web
     title: A modular type scale
     body: |
@@ -183,6 +295,47 @@ steps:
       ```
 
       A wrinkle: component tokens defined on `:root` were already resolved there. If `--button-bg: var(--color-action)` sits on `:root`, a dark section inherits the *already computed* light value. The fix: declare component tokens on the **component** (`.button { --button-bg: var(--color-action); }`), so they're resolved where the theme applies.
+
+      In the page: inside an element with `data-theme="dark"`, anything using `--color-surface` or `--color-text` turns dark with light text, while the rest of the page stays light.
+
+  - kind: web
+    title: "Try it: themes and the wrinkle"
+    body: |
+      Two notes, the second inside `data-theme="sepia"`. The theme remaps `--color-note`, and the note **text** follows it. But the badge doesn't: `--badge-bg` sits on `:root`, so it was resolved there, with the light value.
+
+      Try:
+
+      1. Cut the `--badge-bg: var(--color-note);` line from `:root` and paste it inside the `.badge` rule. Now the sepia badge turns brown too, because the token is resolved on the badge, inside the theme.
+      2. In the `[data-theme="sepia"]` rule, change `--color-note` to `#15803d`. Only the second note changes.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="note">
+        <p>Staff note <span class="badge">new</span></p>
+      </div>
+      <div class="note" data-theme="sepia">
+        <p>Staff note <span class="badge">new</span></p>
+      </div>
+    css: |
+      :root {
+        --color-note: #1d4ed8;
+        --badge-bg: var(--color-note);
+      }
+
+      [data-theme="sepia"] {
+        --color-note: #7c2d12;
+      }
+
+      .note {
+        padding: 1rem;
+        color: var(--color-note);
+      }
+
+      .badge {
+        padding: 0 0.5rem;
+        color: white;
+        background: var(--badge-bg);
+      }
 
   - kind: web
     title: A dark section
@@ -275,6 +428,38 @@ steps:
       - The **HTML** to copy.
 
       Tools like **Storybook** automate this for big teams; a hand-written `showcase.html` works perfectly for a small site, and it's what the Advanced capstone builds.
+
+      <!-- page -->
+
+      **Example: one entry from a `showcase.html` page.**
+
+      ```html
+      <section id="button">
+        <h2>Button</h2>
+        <p>Use for actions (Add to basket, Send). For going to another page, use a link.</p>
+
+        <button class="button">Default</button>
+        <button class="button" disabled>Disabled</button>
+        <button class="button button--secondary">Secondary</button>
+        <button class="button" aria-label="Close">×</button>
+
+        <p>Icon-only buttons need an <code>aria-label</code>.</p>
+        <pre><code>&lt;button class="button"&gt;Add to basket&lt;/button&gt;</code></pre>
+      </section>
+      ```
+
+      Because it uses the real stylesheet, the buttons on this page are always exactly what the site shows. Hover and focus states are seen by hovering and tabbing to them.
+
+  - kind: choice
+    title: "Quick check: what a showcase shows"
+    body: |
+      Your showcase page shows each button only in its default state. What is it missing?
+    options:
+      - "Nothing: one state is enough"
+      - "Its other states and variants (hover, focus, disabled, error), plus usage notes and the HTML to copy"
+      - "A screenshot of the Figma file"
+    answer: 1
+    explanation: "A showcase renders every component in all its variants and states from the real CSS, with notes on when (and when not) to use it."
 
   - kind: why
     body: |

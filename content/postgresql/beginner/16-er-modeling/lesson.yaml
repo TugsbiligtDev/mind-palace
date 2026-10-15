@@ -6,6 +6,25 @@ steps:
 
       An **entity-relationship (ER) model** is a sketch of the data **before** any CREATE TABLE. It's cheap to change on paper and very expensive to change once millions of rows exist.
 
+      **Example.** A first sketch for a book club can be three boxes and two lines, on paper:
+
+      ```text
+      [ hosts ] ──leads──< [ clubs ] >──has members──< [ customers ]
+      ```
+
+      Spotting a mistake here (*"wait, can a club have two hosts?"*) costs an eraser. Spotting it after a year of data means changing tables, moving rows and fixing every app.
+
+  - kind: choice
+    title: "Quick check: when to change a design"
+    body: When is it **cheapest** to change how the data is organized?
+    options:
+      - "Right after the tables are created"
+      - "Once the app is live and has users"
+      - "On paper, before any CREATE TABLE"
+      - "It costs the same at any time"
+    answer: 2
+    explanation: "On paper a change is free. Once tables hold data and apps depend on them, every change means migrating rows and updating code."
+
   - kind: explain
     title: Entities, attributes, relationships
     body: |
@@ -18,6 +37,26 @@ steps:
       | **Relationship** | how things are *connected* | a customer *places* orders | a **foreign key** (or junction table) |
 
       A handy trick when reading requirements: **nouns** are usually entities or attributes, and **verbs** are usually relationships.
+
+      **Example.** Inkwell's real `books` table, read with these words:
+
+      - **Entity:** *book* → the `books` table
+      - **Attributes:** title, price, pages → the columns `title`, `price`, `pages`
+      - **Relationship:** a book *is published by* a publisher → the foreign key `books.publisher_id`
+
+  - kind: choice
+    title: "Quick check: find the relationship"
+    body: |
+      *"A **customer** writes **reviews** of **books**, with a **rating**."*
+
+      Which word describes a **relationship**?
+    options:
+      - "customer"
+      - "writes"
+      - "rating"
+      - "books"
+    answer: 1
+    explanation: "Verbs are usually relationships: a customer *writes* a review. Customer, review and book are entities (things), and rating is an attribute (a fact about a review)."
 
   - kind: explain
     title: From requirements to a model
@@ -34,6 +73,31 @@ steps:
 
       "Copies" isn't a fact about the customer or the club alone. It's a fact about **one membership**, a customer + club pair. Facts like that live on the relationship itself.
 
+      <!-- page -->
+
+      **Example: the sorted requirements as a first sketch.** Each entity becomes a table, each attribute a column, and the relationships become the links between them:
+
+      | Table | Columns so far | Comes from |
+      |---|---|---|
+      | `hosts` | name | the entity *host* |
+      | `languages` | name | the entity *language* |
+      | `clubs` | name, first_meeting | the entity *club* |
+      | `customers` | name, email | the entity *customer* |
+      | `memberships` | customer, club, **copies** | the relationship *customer joins club*, with its own fact |
+
+      `host leads club` and `host speaks language` don't have their own facts, so how they're stored depends on how many are on each side: that's the next page.
+
+  - kind: choice
+    title: "Quick check: where does a fact live?"
+    body: "In the book-club model, where does the number of **copies** a member pre-ordered belong?"
+    options:
+      - "On the customer"
+      - "On the club"
+      - "On the host"
+      - "On the membership (the customer + club pair)"
+    answer: 3
+    explanation: "Emma might pre-order 2 copies for one club and 1 for another. The number depends on both the customer **and** the club, so it's a fact about the membership."
+
   - kind: explain
     title: Cardinality and optionality
     body: |
@@ -48,6 +112,40 @@ steps:
       - A host leads **zero or more** clubs (many, optional: a new host has none yet).
 
       So it's **one-to-many**. And "required" on the club side means the FK column `clubs.host_id` is **NOT NULL**.
+
+      **Example: the rule, enforced by the database.** "A club is led by exactly one host" becomes a required foreign key:
+
+      ```sql
+      CREATE TABLE hosts (host_id int PRIMARY KEY, name text NOT NULL);
+      CREATE TABLE clubs (
+          club_id   int PRIMARY KEY,
+          name      text NOT NULL,
+          host_id   int NOT NULL REFERENCES hosts (host_id)
+      );
+      INSERT INTO hosts VALUES (1, 'Priya');
+      INSERT INTO clubs VALUES (10, 'Crime Wednesdays', 1);
+      INSERT INTO clubs VALUES (11, 'Poetry Night', NULL);
+      ```
+
+      ```text
+      ERROR:  null value in column "host_id" of relation "clubs" violates not-null constraint
+      ```
+
+      The club led by Priya goes in; the club with no host is refused. "A host leads zero or more clubs" needs nothing extra: a host with no clubs simply has no rows pointing at it.
+
+  - kind: choice
+    title: "Quick check: required or optional?"
+    body: |
+      *"Every order line belongs to **exactly one** order. An order has **one or more** lines."*
+
+      Which foreign key column must be **NOT NULL**?
+    options:
+      - "`order_items.order_id`"
+      - "`orders.order_item_id`"
+      - "Neither: foreign keys may always be NULL"
+      - "`orders.customer_id`"
+    answer: 0
+    explanation: "The FK goes on the many side (order lines), and \"exactly one\" means required, so `order_items.order_id` is NOT NULL. Orders don't hold a line ID at all."
 
   - kind: explain
     title: "Crow's-foot diagrams"
@@ -108,6 +206,59 @@ steps:
       );
       ```
 
+      <!-- page -->
+
+      With a simple `clubs` table, two clubs and three memberships, a join reads the model back in plain words:
+
+      ```sql
+      SELECT c.first_name, cl.name AS club, m.copies
+      FROM memberships m
+      JOIN customers c ON c.customer_id = m.customer_id
+      JOIN clubs cl    ON cl.club_id = m.club_id
+      ORDER BY c.first_name, cl.name;
+      ```
+
+      | first_name | club | copies |
+      |---|---|---|
+      | Emma | Classics Circle | 2 |
+      | Emma | Sci-Fi Night | 1 |
+      | Liam | Classics Circle | 1 |
+
+      Emma is in two clubs (many-to-many), and `copies` sits on each membership, not on the customer or the club.
+
+  - kind: try
+    title: "Try it: a junction table"
+    body: |
+      Run it and compare with the table you just saw. The last line tries to add Emma to *Classics Circle* a second time, and the composite primary key refuses it.
+
+      Then play: change the last line to `(3, 2, 1)` (Olivia joins *Sci-Fi Night*), or try `copies` of `0` to see the CHECK refuse it.
+
+      To continue, make it run without an error: the change above does it.
+    sql: |
+      CREATE TABLE clubs (
+          club_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          name     text NOT NULL
+      );
+      CREATE TABLE memberships (
+          customer_id  integer NOT NULL REFERENCES customers (customer_id),
+          club_id      integer NOT NULL REFERENCES clubs (club_id),
+          copies       integer NOT NULL CHECK (copies > 0),
+          PRIMARY KEY (customer_id, club_id)
+      );
+      INSERT INTO clubs (name)
+      VALUES ('Classics Circle'), ('Sci-Fi Night');
+      INSERT INTO memberships
+      VALUES (1, 1, 2), (1, 2, 1), (2, 1, 1);
+
+      SELECT c.first_name, cl.name AS club, m.copies
+      FROM memberships m
+      JOIN customers c ON c.customer_id = m.customer_id
+      JOIN clubs cl    ON cl.club_id = m.club_id
+      ORDER BY c.first_name, cl.name;
+
+      INSERT INTO memberships VALUES (1, 1, 3);
+    broken_starter: true
+
   - kind: try
     title: Your turn to build from the model
     body: |
@@ -165,6 +316,17 @@ steps:
       ```
 
       Same for self-references: `manager_id`, not `employee_id_2`.
+
+  - kind: choice
+    title: "Quick check: name the columns"
+    body: "Each order is **packed by** one employee and **checked by** another employee. Both columns point at `employees`. What should they be called?"
+    options:
+      - "`employee_id` and `employee_id_2`"
+      - "`employee_id` for both"
+      - "`packed_by_id` and `checked_by_id`"
+      - "`emp1` and `emp2`"
+    answer: 2
+    explanation: "When two columns point at the same parent, name them by their **role**. `employee_id_2` says nothing about what the second employee did, and two columns can't share a name."
 
   - kind: explain
     title: Diagram tools

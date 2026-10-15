@@ -14,6 +14,17 @@ steps:
 
       **Normalization** is a step-by-step method for splitting a table like this so that **each fact is stored exactly once**.
 
+  - kind: choice
+    title: "Quick check: spot the repeat"
+    body: In the sheet above, how many times is **Tor Books' phone number** written down?
+    options:
+      - "1 time"
+      - "2 times"
+      - "3 times"
+      - "0 times"
+    answer: 1
+    explanation: "It's on sale 1 and sale 2, the two Dune sales. With a thousand Dune sales it would be written a thousand times, and changing it would mean changing every one."
+
   - kind: explain
     title: Three anomalies
     body: |
@@ -42,9 +53,12 @@ steps:
         (2, 'Liam', 'Dune',    1965, 'Tor Books',     '555-0110', 2),
         (3, 'Noah', 'Sapiens', 2011, 'HarperCollins', '555-0199', 3);
 
-      UPDATE sales_sheet SET publisher_phone = '555-0000' WHERE sale_no = 1;
+      UPDATE sales_sheet SET publisher_phone = '555-0000'
+      WHERE sale_no = 1;
 
-      SELECT DISTINCT publisher, publisher_phone FROM sales_sheet ORDER BY publisher;
+      SELECT DISTINCT publisher, publisher_phone
+      FROM sales_sheet
+      ORDER BY publisher;
 
   - kind: explain
     title: "Functional dependency, in plain English"
@@ -56,6 +70,19 @@ steps:
       - `sale → customer, book, copies`: the sale number determines everything about the sale.
 
       Normalization boils down to one idea: **every fact should be stored in the table whose key determines it.** The publisher's phone is determined by the publisher, not by the sale, so it belongs in a `publishers` table.
+
+      **Example from the sheet:** every row with `Dune` says `1965` and `Tor Books`. Know the book, and you know its year and publisher: `book → published, publisher`. But knowing the book does **not** tell you the customer (Dune was bought by Emma *and* by Liam), so there's no `book → customer`.
+
+  - kind: choice
+    title: "Quick check: which one determines?"
+    body: In the sales sheet, which of these is a true functional dependency?
+    options:
+      - "`book → customer`"
+      - "`copies → book`"
+      - "`publisher_phone → sale`"
+      - "`publisher → publisher_phone`"
+    answer: 3
+    explanation: "Each publisher has exactly one phone. A book is bought by many customers, the same number of copies appears on different books, and one phone appears on many sales."
 
   - kind: explain
     title: "First normal form (1NF): one value per cell"
@@ -84,7 +111,8 @@ steps:
       In a `shelf_books` table this would simply be a `DELETE` of one row.
     sql: |
       CREATE TABLE books_flat (book text, shelves text);
-      INSERT INTO books_flat VALUES ('Good Omens', 'Staff picks, Comedy');
+      INSERT INTO books_flat
+      VALUES ('Good Omens', 'Staff picks, Comedy');
 
       UPDATE books_flat
       SET shelves = replace(shelves, 'Comedy, ', '')
@@ -107,6 +135,23 @@ steps:
 
       **The fix:** keep `book_title` only in the `books` table, where `book_id` is the whole key. That's why Inkwell's real `order_items` has no title column.
 
+  - kind: choice
+    title: "Quick check: break 2NF"
+    body: |
+      ```text
+      seat_assignments (flight_no, seat, passenger, departure_time)
+                        └──── primary key ───┘
+      ```
+
+      Which column breaks **2NF**?
+    options:
+      - "`departure_time`: it depends on `flight_no` alone"
+      - "`passenger`: it depends on the whole key"
+      - "`seat`: it's part of the key"
+      - "None: the table is fine"
+    answer: 0
+    explanation: "Every seat on flight MN301 departs at the same time, so `departure_time` depends on only part of the key and repeats on every seat. It belongs in a `flights` table. `passenger` really does depend on flight **and** seat."
+
   - kind: explain
     title: "Third normal form (3NF): nothing but the key"
     body: |
@@ -121,6 +166,58 @@ steps:
       **The fix:** `publisher_phone` moves to `publishers`.
 
       The classic summary of all three: *every non-key column must depend on **the key** (1NF), **the whole key** (2NF), and **nothing but the key** (3NF).*
+
+      <!-- page -->
+
+      Inkwell's real tables follow both rules. `order_items` has no title, so a join fetches it from `books`, where it's stored once. The two order lines for *Dune* (book 7):
+
+      ```sql
+      SELECT oi.order_id, oi.book_id, oi.quantity, b.title
+      FROM order_items oi
+      JOIN books b ON b.book_id = oi.book_id
+      WHERE oi.book_id = 7;
+      ```
+
+      | order_id | book_id | quantity | title |
+      |---|---|---|---|
+      | 3 | 7 | 1 | Dune |
+      | 18 | 7 | 1 | Dune |
+
+      And `books` has no publisher country. It lives once in `publishers`:
+
+      ```sql
+      SELECT b.title, p.name AS publisher, p.country
+      FROM books b
+      JOIN publishers p ON p.publisher_id = b.publisher_id
+      WHERE p.name = 'Tor Books';
+      ```
+
+      | title | publisher | country |
+      |---|---|---|
+      | Dune | Tor Books | USA |
+      | Mistborn: The Final Empire | Tor Books | USA |
+      | The Way of Kings | Tor Books | USA |
+
+      "USA" shows three times in the **result**, but it's stored in **one** row. Change it there, and every query sees the change.
+
+  - kind: try
+    title: "Try it: facts stored once"
+    body: |
+      Both examples are here. Run them, then try another book (`WHERE oi.book_id = 1`) or another publisher (`'Penguin Classics'`).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    sql: |
+      SELECT oi.order_id, oi.book_id, oi.quantity, b.title
+      FROM order_items oi
+      JOIN books b ON b.book_id = oi.book_id
+      WHERE oi.book_id = 7
+      ORDER BY oi.order_id;
+
+      SELECT b.title, p.name AS publisher, p.country
+      FROM books b
+      JOIN publishers p ON p.publisher_id = b.publisher_id
+      WHERE p.name = 'Tor Books'
+      ORDER BY b.title;
 
   - kind: explain
     title: The sales sheet, normalized
@@ -151,10 +248,14 @@ steps:
                                 publisher_id integer NOT NULL REFERENCES publishers2);
       CREATE TABLE sales       (sale_id integer PRIMARY KEY, customer_id integer REFERENCES customers2,
                                 book_id integer REFERENCES books2, copies integer NOT NULL);
-      INSERT INTO customers2 VALUES (1, 'Emma'), (2, 'Liam'), (3, 'Noah');
-      INSERT INTO publishers2 VALUES (1, 'Tor Books', '555-0110'), (2, 'HarperCollins', '555-0199');
-      INSERT INTO books2 VALUES (1, 'Dune', 1965, 1), (2, 'Sapiens', 2011, 2);
-      INSERT INTO sales VALUES (1, 1, 1, 1), (2, 2, 1, 2), (3, 3, 2, 3);
+      INSERT INTO customers2
+      VALUES (1, 'Emma'), (2, 'Liam'), (3, 'Noah');
+      INSERT INTO publishers2
+      VALUES (1, 'Tor Books', '555-0110'), (2, 'HarperCollins', '555-0199');
+      INSERT INTO books2
+      VALUES (1, 'Dune', 1965, 1), (2, 'Sapiens', 2011, 2);
+      INSERT INTO sales
+      VALUES (1, 1, 1, 1), (2, 2, 1, 2), (3, 3, 2, 3);
 
       SELECT * FROM sales;
     expect: |
@@ -246,9 +347,12 @@ steps:
         (2, 'Liam', 'Dune',    1965, 'Tor Books',     '555-0110', 2),
         (3, 'Noah', 'Sapiens', 2011, 'HarperCollins', '555-0199', 3);
 
-      UPDATE sales_sheet SET publisher_phone = '555-0000' WHERE sale_no = 1;
+      UPDATE sales_sheet SET publisher_phone = '555-0000'
+      WHERE sale_no = 1;
 
-      SELECT DISTINCT publisher, publisher_phone FROM sales_sheet ORDER BY publisher;
+      SELECT DISTINCT publisher, publisher_phone
+      FROM sales_sheet
+      ORDER BY publisher;
     expect: |
       CREATE TABLE sales_sheet (
           sale_no          integer PRIMARY KEY,

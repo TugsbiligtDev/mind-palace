@@ -21,6 +21,19 @@ steps:
       <footer>© 2026 Inkwell Books</footer>
       ```
 
+      In the page, this looks exactly like plain blocks stacked from top to bottom: the logo, then the menu, the main content and the copyright line. These elements have **no special look** of their own. What they add is meaning, which browsers, screen readers and search engines can read.
+
+  - kind: choice
+    title: "Quick check: how many main?"
+    body: |
+      How many `<main>` elements should a page have?
+    options:
+      - "As many as it has sections"
+      - "Exactly one"
+      - "None: `<main>` is optional decoration"
+    answer: 1
+    explanation: "Each page has exactly one `<main>`, holding its main content. Screen reader users can jump straight to it."
+
   - kind: explain
     title: section and article
     body: |
@@ -33,6 +46,31 @@ steps:
 
       Articles can contain sections (a long review with "Plot" and "Verdict"), and sections can contain articles (a "Reviews" section holding several review articles).
 
+      ```html
+      <main>
+        <section>
+          <h2>Events this month</h2>
+          <article>
+            <h3>Poetry night</h3>
+            <p>Thursday 7pm. Bring a poem, or just listen.</p>
+          </article>
+        </section>
+      </main>
+      ```
+
+      In the page, this shows only the heading *Events this month*, the smaller heading *Poetry night* and the paragraph, one under the other. The `main`, `section` and `article` themselves are invisible: they're labels on the content, not decoration.
+
+  - kind: choice
+    title: "Quick check: article or section?"
+    body: |
+      On the home page, one book review that could be shared on its own with a link. Which element fits it best?
+    options:
+      - "`<section>`"
+      - "`<article>`"
+      - "`<aside>`"
+    answer: 1
+    explanation: "Something self-contained that makes sense on its own is an `<article>`. A `<section>` is a chapter of the page, like the whole *Reviews* area that holds the review articles."
+
   - kind: explain
     title: div and span, the generic boxes
     body: |
@@ -43,7 +81,20 @@ steps:
       <p>Price: <span class="price">£8.99</span></p>
       ```
 
+      In the page, the `div` adds nothing you can see, and the second line reads simply *Price: £8.99*, all on one line: a `span` never breaks the line, while a `div` always starts on a new one.
+
       That's fine and normal. The problem is using `div` *instead of* an element that does have a meaning.
+
+  - kind: choice
+    title: "Quick check: div or span?"
+    body: |
+      You want to colour just the price inside the sentence *Price: £8.99*, without breaking the line. Which element wraps `£8.99`?
+    options:
+      - "`<span class=\"price\">`"
+      - "`<div class=\"price\">`"
+      - "`<section class=\"price\">`"
+    answer: 0
+    explanation: "A `span` sits inside a line of text. A `div` (and a `section`) is a block that starts on a new line, and a `section` would also give the price a meaning it doesn't have."
 
   - kind: explain
     title: "Common mistake: div soup"
@@ -66,6 +117,71 @@ steps:
       - **Keyboard users** can't skip the menu to reach the main content.
       - **Search engines** and reading modes (Safari's Reader, for example) can't tell the article from the clutter.
       - **Developers** reading the code have to decode class names.
+
+  - kind: web
+    title: "Try it: see the regions"
+    body: |
+      Semantic elements have no look of their own, so this page's `style.css` draws a **dashed outline** around each one and writes its name in the corner. (You'll learn to write CSS like this from Module 12; just read the preview for now.)
+
+      Find each region in the preview: `header` with a `nav` inside it, `main` holding a `section` that holds two `article`s, an `aside` under it (CSS could move it to the side later), and a `footer`.
+
+      Try this:
+
+      1. Change the first `<article>` (and its closing tag) to `<div>`. It still shows, but its label now says *div*: same look, no meaning.
+      2. Wrap the two articles in a second `<section>` with its own `<h2>`, and watch the outlines nest.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <header>
+        <h1>Inkwell Events</h1>
+        <nav>
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+        </nav>
+      </header>
+      <main>
+        <section>
+          <h2>This month</h2>
+          <article>
+            <h3>Poetry night</h3>
+            <p>Thursday 7pm.</p>
+          </article>
+          <article>
+            <h3>Story hour</h3>
+            <p>Saturday 10am.</p>
+          </article>
+        </section>
+      </main>
+      <aside>
+        <p>Tip: events are free.</p>
+      </aside>
+      <footer>
+        <p>© 2026 Inkwell Books</p>
+      </footer>
+    css: |
+      header, nav, main, section, article, aside, footer, div {
+        display: block;
+        outline: 1px dashed gray;
+        margin: 8px;
+        padding: 14px 8px 4px;
+        position: relative;
+      }
+      header::before, nav::before, main::before, section::before,
+      article::before, aside::before, footer::before, div::before {
+        position: absolute;
+        top: 0;
+        left: 4px;
+        font: 11px monospace;
+        color: gray;
+      }
+      header::before { content: "header"; }
+      nav::before { content: "nav"; }
+      main::before { content: "main"; }
+      section::before { content: "section"; }
+      article::before { content: "article"; }
+      aside::before { content: "aside"; }
+      footer::before { content: "footer"; }
+      div::before { content: "div"; }
 
   - kind: web
     title: Drain the div soup
@@ -177,6 +293,30 @@ steps:
       - `<header>` and `<footer>` can also appear **inside** an `article` or `section`, for that piece's own intro and closing (a review's author and date, say). Only the top-level ones are the page's banner and footer landmarks.
       - Use `<nav>` for **major** navigation blocks (the main menu, a table of contents), not every group of links. A footer's three small links don't need one.
       - Don't skip the heading because the element "already says it's a section". Sections and articles should still have headings.
+
+      <!-- page -->
+
+      **Example: all four rules on one page.**
+
+      ```html
+      <header>…logo and the main <nav>…</header>   <!-- the page's banner -->
+      <main>                                       <!-- only one -->
+        <h1>Reviews</h1>
+        <article>
+          <header>                                 <!-- this review's own intro -->
+            <h2>Dune, reviewed</h2>
+            <p>By Sam, 3 March</p>
+          </header>
+          <p>A desert, a family, a war over spice…</p>
+          <footer><p>Filed under: science fiction</p></footer>
+        </article>
+      </main>
+      <footer>                                     <!-- the page's footer -->
+        <a href="privacy.html">Privacy</a> · <a href="contact.html">Contact</a>
+      </footer>
+      ```
+
+      The `header` and `footer` inside the `article` belong to that review only. The footer's two small links don't need a `nav`, and the `article` still has its own heading.
 
   - kind: web
     title: Section the home page

@@ -9,6 +9,31 @@ steps:
 
       That's why a page with no CSS still reads top to bottom sensibly. Good layout starts from normal flow and changes only what it must.
 
+  - kind: web
+    title: "Try it: block and inline"
+    body: |
+      No layout CSS here, only outlines so you can see each box. The `h2`, `p` and `div` are **block** boxes: each starts on its own line and stretches the full width. The `a`, `strong` and `span` are **inline**: they stay in the line of text.
+
+      Try this:
+
+      1. Add a long sentence inside the `span`. It wraps onto the next line like ordinary words.
+      2. Add a new rule `p { display: inline; }` at the end. The two paragraphs now sit in one line, like words, while the `h2` and the `div` stay blocks.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <h2>Opening hours</h2>
+      <p>Open <strong>Tuesday to Sunday</strong>, <a href="hours.html">see all hours</a>.</p>
+      <p>Closed on <span>Mondays</span>.</p>
+      <div>A div is a block too.</div>
+    css: |
+      h2, p, div {
+        outline: 2px dashed steelblue;
+      }
+
+      a, strong, span {
+        outline: 2px solid orange;
+      }
+
   - kind: explain
     title: block, inline and inline-block
     body: |
@@ -164,6 +189,38 @@ steps:
 
       Background images are **decoration**: they have no alt text. If an image carries meaning, use an `<img>`.
 
+  - kind: web
+    title: "Try it: a background image"
+    body: |
+      The `.hero` box uses the shop photo as its background, with `cover` and `center`.
+
+      Try this:
+
+      1. Change `background-size: cover` to `contain`. The whole photo shows, and the cream `background-color` fills the gaps.
+      2. Change `background-position: center` to `top`.
+      3. Break the image path (`shop.jpgg`). Only the cream color is left, which is why you always set one.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="hero">
+        <h1>Inkwell Books</h1>
+      </div>
+    css: |
+      .hero {
+        height: 220px;
+        background-color: #fdf8f0;
+        background-image: url("images/shop.jpg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+
+      h1 {
+        margin: 0;
+        padding: 16px;
+        color: white;
+      }
+
   - kind: explain
     title: Gradients
     body: |
@@ -181,6 +238,43 @@ steps:
       ```css
       background: linear-gradient(rgb(0 0 0 / 50%), rgb(0 0 0 / 50%)), url("images/shop.jpg") center / cover;
       ```
+
+  - kind: web
+    title: "Try it: gradients"
+    body: |
+      Three boxes, each with a different gradient from the examples above. The last one darkens the shop photo so the white text stays readable.
+
+      Try this:
+
+      1. Change the first gradient's direction to `to right`, then to `45deg`.
+      2. Add a third color to the second gradient: `linear-gradient(135deg, #7c2d12 0%, #fdba74 50%, white 100%)`.
+      3. In the last box, change `50%` to `80%` in both colors. The photo gets much darker.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="one">linear</div>
+      <div class="two">135deg</div>
+      <div class="three">Poetry night, Thursday 7pm</div>
+    css: |
+      div {
+        height: 90px;
+        margin-bottom: 8px;
+        padding: 12px;
+        color: white;
+        font-weight: bold;
+      }
+
+      .one {
+        background: linear-gradient(#7c2d12, #c2410c);
+      }
+
+      .two {
+        background: linear-gradient(135deg, #7c2d12 0%, #fdba74 100%);
+      }
+
+      .three {
+        background: linear-gradient(rgb(0 0 0 / 50%), rgb(0 0 0 / 50%)), url("images/shop.jpg") center / cover;
+      }
 
   - kind: explain
     title: Rounded corners and shadows

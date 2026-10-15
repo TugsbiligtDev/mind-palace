@@ -68,6 +68,32 @@ steps:
 
       Never let a domain expire: someone else can buy it and put anything on your old address.
 
+      **Example: pointing `inkwellbooks.com` at GitHub Pages.** At the registrar, the DNS records GitHub asks for look like this:
+
+      | Type | Name | Value |
+      |---|---|---|
+      | A | `@` (the bare domain) | `185.199.108.153` |
+      | A | `@` | `185.199.109.153` |
+      | A | `@` | `185.199.110.153` |
+      | A | `@` | `185.199.111.153` |
+      | CNAME | `www` | `inkwell.github.io` |
+
+      Once DNS has updated, you can check from Terminal:
+
+      ```text
+      $ dig +short inkwellbooks.com
+      185.199.108.153
+      185.199.109.153
+      185.199.110.153
+      185.199.111.153
+      $ dig +short www.inkwellbooks.com
+      inkwell.github.io.
+      185.199.108.153
+      …
+      ```
+
+      Both names now lead to GitHub's servers, and you can tick **Enforce HTTPS**.
+
   - kind: mac
     title: Check it on your phone
     body: |

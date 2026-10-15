@@ -14,6 +14,54 @@ steps:
 
       Things that used to need JavaScript (add a class to the parent when…) are now one selector. Its specificity is that of its most specific argument.
 
+      <!-- page -->
+
+      A small example on Inkwell's events list:
+
+      ```html
+      <ul>
+        <li>Story hour <span class="full">Full</span></li>
+        <li>Poetry night</li>
+      </ul>
+      ```
+
+      ```css
+      li:has(.full) {
+        opacity: 0.5;
+        text-decoration: line-through;
+      }
+      ```
+
+      In the page, *Story hour Full* is faded and crossed out, because that `li` contains something with the class `full`. *Poetry night* contains nothing like that, so it stays normal. No class was added to the `li` itself.
+
+  - kind: web
+    title: "Try it: :has()"
+    body: |
+      An events list and a newsletter checkbox, styled only with `:has()`.
+
+      1. *Story hour* is faded because its `li` **has** a `.full` badge.
+      2. Tick the checkbox: the whole label gets a yellow background, because the label **has** a checked input.
+      3. In `index.html`, move `<span class="full">Full</span>` from *Story hour* to *Poetry night*.
+      4. In `style.css`, change `li:has(.full)` to `li:has(.cancelled)`. Nothing is faded now, because no item contains a `.cancelled` element. Add `<span class="cancelled">Cancelled</span>` to one item.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <ul>
+        <li>Story hour <span class="full">Full</span></li>
+        <li>Poetry night</li>
+        <li>Author talk</li>
+      </ul>
+      <label><input type="checkbox"> Email me about new events</label>
+    css: |
+      li:has(.full) {
+        opacity: 0.5;
+        text-decoration: line-through;
+      }
+
+      label:has(input:checked) {
+        background: #fef9c3;
+      }
+
   - kind: web
     title: Cards that know what they contain
     body: |
@@ -98,6 +146,52 @@ steps:
       :where(ul, ol)[role="list"] { list-style: none; padding: 0; }   /* (0,0,0): any class beats it */
       ```
 
+      <!-- page -->
+
+      Here's the difference in action. Two rules want to color the same link, `<a class="sale" href="sale.html">` inside `<footer id="footer">`:
+
+      ```css
+      footer a  { color: gray; }    /* specificity 0,0,2 */
+      .sale     { color: crimson; }  /* specificity 0,1,0: wins */
+      ```
+
+      The link is crimson: one class beats two element names. Now make the first rule stronger with `:is(#footer)`, or weaker with `:where()`:
+
+      ```css
+      :is(#footer) a     { color: gray; }  /* 1,0,1: beats .sale, the link turns gray */
+      :where(footer a)   { color: gray; }  /* 0,0,0: .sale wins easily, the link stays crimson */
+      ```
+
+  - kind: web
+    title: "Try it: :is() and :where()"
+    body: |
+      The footer link has the class `sale`, and two rules fight over its color.
+
+      1. Right now it's **gray**: `:is(#footer) a` counts as an id, which beats the `.sale` class.
+      2. In `style.css`, change `:is(#footer) a` to `:where(#footer a)`. The link turns **crimson**: `:where()` has zero specificity, so `.sale` wins.
+      3. Look at the headings rule: one `:is(h2, h3)` styles both headings. Add `p` to the list: `:is(h2, h3, p)`.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <h2>Sale</h2>
+      <h3>This weekend only</h3>
+      <footer id="footer">
+        <p>Don't miss <a class="sale" href="sale.html">the half-price shelf</a>.</p>
+      </footer>
+    css: |
+      :is(#footer) a {
+        color: gray;
+      }
+
+      .sale {
+        color: crimson;
+      }
+
+      :is(h2, h3) {
+        font-family: Georgia, serif;
+        color: #7c2d12;
+      }
+
   - kind: web
     title: Easy-to-override defaults
     body: |
@@ -180,6 +274,19 @@ steps:
 
       It's the keyboard-friendly partner of `:hover` for groups.
 
+      With the first rule, a search bar made of a text box and a Go button looks plain until you click into the text box (or Tab to the button). Then a blue outline appears around the **whole** bar, not just the part you're in, and disappears when focus leaves it.
+
+  - kind: choice
+    title: "Quick check: whole-bar outline"
+    body: |
+      The search bar is `<form class="search">` with a text box and a Go button inside. With `.search:focus-within { outline: 3px solid blue; }`, when is the blue outline drawn?
+    options:
+      - "Only while the mouse is over the bar"
+      - "While the text box **or** the button has focus"
+      - "Only after the form is submitted"
+    answer: 1
+    explanation: "`:focus-within` matches the form whenever it, or anything inside it, has focus, so the outline is drawn round the whole bar whichever part you're in."
+
   - kind: explain
     title: ":nth-child(… of S)"
     body: |
@@ -193,6 +300,45 @@ steps:
       ```
 
       Compare `:nth-of-type()`, which counts only by element type (all `li`s), not by class or state.
+
+      In a list of five books where the 2nd and 4th have the class `featured`, `li:nth-child(1 of .featured)` puts the gold border on the **2nd** item: it's the first one that is featured. Plain `li:nth-child(1)` would pick the 1st item, featured or not.
+
+  - kind: web
+    title: "Try it: :focus-within and nth-child(… of S)"
+    body: |
+      A newsletter box and a list of books, some marked `.in-stock`.
+
+      1. Click into the email field: the whole box gets a green outline. Click outside: it goes.
+      2. In the list, only the books with `class="in-stock"` are counted. The 1st and 3rd **in-stock** books (Dune and Middlemarch) get the beige stripe; Persuasion and Beloved aren't counted at all.
+      3. In `style.css`, change `odd of .in-stock` to plain `odd` and compare: now Dune, Persuasion and Beloved are striped, in stock or not.
+      4. Change it back, and add `class="in-stock"` to Persuasion: the stripes move.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <form class="newsletter">
+        <label for="news">Email</label>
+        <input id="news" type="email">
+        <button type="submit">Sign up</button>
+      </form>
+      <ul>
+        <li class="in-stock">Dune</li>
+        <li class="in-stock">Emma</li>
+        <li>Persuasion</li>
+        <li class="in-stock">Middlemarch</li>
+        <li>Beloved</li>
+      </ul>
+    css: |
+      .newsletter {
+        padding: 0.5rem;
+      }
+
+      .newsletter:focus-within {
+        outline: 3px solid green;
+      }
+
+      li:nth-child(odd of .in-stock) {
+        background: #f5f0e8;
+      }
 
   - kind: web
     title: Focus groups and filtered stripes

@@ -35,7 +35,32 @@ steps:
       |---|---|---|---|---|---|---|
       | Binary | 0 | 1 | 10 | 11 | 100 | 101 |
 
-      Python can show you any whole number in binary with `format(number, "b")`. For example, `format(5, "b")` gives `'101'`.
+      Python can show you any whole number in binary with `format(number, "b")`:
+
+      ```python
+      print(format(5, "b"))
+      print(format(6, "b"))
+      print(format(10, "b"))
+      ```
+
+      prints:
+
+      ```
+      101
+      110
+      1010
+      ```
+
+  - kind: code
+    title: "Try it: numbers in binary"
+    body: |
+      Run this and compare each answer with the table above. Then change `10` to `4` and predict the answer before you run it (look at the table).
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      print(format(5, "b"))
+      print(format(6, "b"))
+      print(format(10, "b"))
 
   - kind: code
     title: Write a number in binary
@@ -74,6 +99,36 @@ steps:
       | 1 TB (terabyte) | 1,000 GB |
 
       This is real arithmetic, and Python is happy to do it: `*` multiplies and `//` divides and throws away any leftover, so `7 // 2` is `3`. It is how you ask "how many *whole* things fit?".
+
+      ```python
+      print(7 // 2)
+      print(7 / 2)
+      print(3 * 1000)
+      print(3 * 1000 // 4)
+      ```
+
+      prints:
+
+      ```
+      3
+      3.5
+      3000
+      750
+      ```
+
+      Plain `/` keeps the leftover as a decimal (`3.5`). The last line asks "how many whole 4 MB photos fit in 3 GB (3000 MB)?": `750`.
+
+  - kind: code
+    title: "Try it: multiply and divide"
+    body: |
+      Run this and check each line against the example above. Then change the `4` on the last line to `7` and run it again: how many 7 MB photos fit in 3 GB?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      print(7 // 2)
+      print(7 / 2)
+      print(3 * 1000)
+      print(3 * 1000 // 4)
 
   - kind: code
     title: How many photos fit?
@@ -139,12 +194,65 @@ steps:
 
       One detail you'll meet in Module 3: before running anything, Python first reads the **whole file** to check its grammar. A typo such as a missing bracket stops the program before even line 1 runs. Mistakes that only show up while running (like dividing by zero) stop it at that line.
 
+      Here is the second kind of mistake. Line 1 runs, then line 2 stops the program:
+
+      ```python
+      print("line 1 runs")
+      print(10 / 0)
+      print("never reached")
+      ```
+
+      prints:
+
+      ```
+      line 1 runs
+      ZeroDivisionError: division by zero
+      ```
+
+  - kind: choice
+    title: "Quick check: when does Python stop?"
+    body: |
+      A file has `print("A")` on line 1, `print("B")` on line 2, and a **missing closing bracket** on line 3. What do you see when you run it?
+    options:
+      - "`A` and `B`, then an error about line 3"
+      - "Only `A`, then an error"
+      - "No `A` or `B` at all: just a SyntaxError about line 3"
+    answer: 2
+    explanation: "Python checks the grammar of the whole file before running line 1. A missing bracket is a grammar (syntax) mistake, so nothing runs. Only mistakes that happen while running, like dividing by zero, let the earlier lines print first."
+
   - kind: info
     title: "🔹 Python 2 is dead"
     body: |
       You will find old tutorials online that write `print "hello"` (no brackets). That is **Python 2**, which stopped being supported in **2020**. Modern Python 3 needs `print("hello")`.
 
       If a tutorial uses `print` without brackets, or `raw_input`, or `xrange`, close it and find a newer one. This course teaches **Python 3.14**.
+
+      This is what happens when you paste a Python 2 line into Python 3. It is stopped before anything runs:
+
+      ```python
+      print("hello")
+      print "hello"
+      ```
+
+      prints:
+
+      ```
+      SyntaxError: Missing parentheses in call to 'print'. Did you mean print(...)? (main.py, line 2)
+      ```
+
+      The error even suggests the fix: add the brackets.
+
+  - kind: choice
+    title: "Quick check: spot the old tutorial"
+    body: |
+      Which line tells you a tutorial was written for **Python 2**?
+    options:
+      - "`print(\"Total:\", total)`"
+      - "`name = input(\"Name? \")`"
+      - "`print \"Total:\", total`"
+      - "`for i in range(10):`"
+    answer: 2
+    explanation: "`print` without brackets only worked in Python 2, which has been unsupported since 2020. The other three lines are normal Python 3."
 
   - kind: explain
     title: What "3.14" means

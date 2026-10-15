@@ -6,6 +6,27 @@ steps:
 
       This module builds that shape step by step with Inkwell's `payments` table: bucket by time, fill in the missing buckets, spread categories into columns, and add totals.
 
+      **Example of the shape**, which you'll build in this module (payments per method, by quarter):
+
+      | quarter | card | paypal | bank_transfer | gift_card |
+      |---|---|---|---|---|
+      | 2023-01-01 | 1153.17 | 861.16 | 405.64 | 506.11 |
+      | 2023-04-01 | 4214.67 | 2602.99 | 1583.66 | 1357.28 |
+      | 2023-07-01 | 6605.72 | 5737.76 | 2878.55 | 1894.03 |
+
+      Time down the side (one row per quarter), categories across the top (one column per method), totals in the cells.
+
+  - kind: choice
+    title: "Quick check: the report shape"
+    body: "In the report above, what does **one row** stand for?"
+    options:
+      - "One payment"
+      - "One payment method"
+      - "One quarter of a year"
+      - "One customer"
+    answer: 2
+    explanation: "Time buckets go down the side, so each row is a quarter. The methods are the columns, and each cell adds up many payments."
+
   - kind: explain
     title: Buckets with date_trunc
     body: |
@@ -19,6 +40,14 @@ steps:
       GROUP BY 1
       ORDER BY 1;
       ```
+
+      The first rows it returns:
+
+      | month | payments | received |
+      |---|---|---|
+      | 2023-01-01 | 9 | 172.88 |
+      | 2023-02-01 | 21 | 847.13 |
+      | 2023-03-01 | 50 | 1906.07 |
 
       `GROUP BY 1` and `ORDER BY 1` mean "the first SELECT column". It's a handy shortcut in reports, where the expression is long.
 
@@ -67,7 +96,21 @@ steps:
       ORDER BY 1;
       ```
 
-      It jumps from May to August, and from September to November. Months with **no payments** have no rows, so they simply vanish. On a chart, that's a lie: the line goes straight from May to August as if Diego kept spending. A report should show those months with **0**.
+      Returns:
+
+      | month | spent |
+      |---|---|
+      | 2025-01-01 | 23.99 |
+      | 2025-02-01 | 9.89 |
+      | 2025-03-01 | 12.99 |
+      | 2025-04-01 | 15.29 |
+      | 2025-05-01 | 42.97 |
+      | 2025-08-01 | 23.98 |
+      | 2025-09-01 | 75.96 |
+      | 2025-11-01 | 109.82 |
+      | 2025-12-01 | 21.98 |
+
+      Only 9 rows for 12 months. It jumps from May to August, and from September to November. Months with **no payments** have no rows, so they simply vanish. On a chart, that's a lie: the line goes straight from May to August as if Diego kept spending. A report should show those months with **0**.
 
       The fix: generate every month yourself with **`generate_series`**, then LEFT JOIN the data onto it:
 
@@ -157,6 +200,16 @@ steps:
       ORDER BY 1;
       ```
 
+      The first rows it returns:
+
+      | quarter | card | paypal | bank_transfer | gift_card |
+      |---|---|---|---|---|
+      | 2023-01-01 | 1153.17 | 861.16 | 405.64 | 506.11 |
+      | 2023-04-01 | 4214.67 | 2602.99 | 1583.66 | 1357.28 |
+      | 2023-07-01 | 6605.72 | 5737.76 | 2878.55 | 1894.03 |
+
+      Each FILTER picks out one method's rows, so each method gets its own column.
+
       You'll also see the older spelling, which works in every database:
 
       ```sql
@@ -166,11 +219,29 @@ steps:
       The catch: you must **know the categories** in advance and write one column for each. SQL can't invent columns from the data.
 
   - kind: try
+    title: "Try it: a pivot"
+    body: |
+      Run it and read across a row: one quarter, four methods.
+
+      Then change `'quarter'` to `'year'` for one row per year. Then try the older spelling for one column: replace the `card` line with `sum(CASE WHEN method = 'card' THEN amount END) AS card,` and check you get the same numbers. Nothing is graded here.
+    sql: |
+      SELECT date_trunc('quarter', paid_at)::date AS quarter,
+             sum(amount) FILTER (WHERE method = 'card')          AS card,
+             sum(amount) FILTER (WHERE method = 'paypal')        AS paypal,
+             sum(amount) FILTER (WHERE method = 'bank_transfer') AS bank_transfer,
+             sum(amount) FILTER (WHERE method = 'gift_card')     AS gift_card
+      FROM payments
+      GROUP BY 1
+      ORDER BY 1;
+
+  - kind: try
     title: Your turn to pivot
     body: |
       One row per **quarter** (as a date, labeled **quarter**), with the **number** of rows paid by `card` and by `paypal` as two columns, **card** and **paypal**. Order by quarter.
     sql: |
-      SELECT date_trunc('quarter', paid_at)::date AS quarter, method, count(*)
+      SELECT date_trunc('quarter', paid_at)::date AS quarter,
+             method,
+             count(*)
       FROM payments
       GROUP BY 1, 2
       ORDER BY 1, 2;

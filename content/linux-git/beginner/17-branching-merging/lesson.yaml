@@ -6,6 +6,36 @@ steps:
 
       A **branch** is a separate line of work. You make one, commit to it as much as you like, and the main line (`main`) is untouched until you **merge** the work back in. Teams use a branch for every change.
 
+      **Example.** Kenji's repository already has a second branch, where Priya is trying a new design:
+
+      ```
+      learner@inkwell:~/inkwell/site-repo$ git branch
+      * main
+        new-design
+      learner@inkwell:~/inkwell/site-repo$ git log --oneline --graph --all -6
+      * 2721cea (HEAD -> main) Add the Kindred book page
+      * dc44b37 Add analytics
+      | * c9ce561 (new-design) Narrow the page
+      | * eba7e81 Use a serif font for headings
+      * | b81b3f0 Add opening hours to the about page
+      |/
+      * 9a1efb0 (tag: v1.0) Lower the price of Dune
+      ```
+
+      `main` (the live site) and `new-design` split apart: Priya's two commits sit on her branch and haven't touched `main`.
+
+  - kind: choice
+    title: "Quick check: when to branch"
+    body: |
+      You're halfway through a redesign when a price on the live site must be fixed **now**. What's the branch-friendly way?
+    options:
+      - "Fix the price on your redesign branch"
+      - "Delete the redesign and start again"
+      - "Switch to `main`, fix the price, commit; your redesign waits on its own branch"
+      - "Wait until the redesign is finished"
+    answer: 2
+    explanation: "Each line of work lives on its own branch. The urgent fix goes on `main` at once, and the redesign isn't affected."
+
   - kind: explain
     title: A branch is just a pointer
     body: |
@@ -32,6 +62,37 @@ steps:
 
       Making a branch is instant and costs nothing: no files are copied.
 
+      <!-- page -->
+
+      **Example.** Make `sale`, commit twice on it, and look at where the names point:
+
+      ```
+      learner@inkwell:~/demo$ git switch -c sale
+      Switched to a new branch 'sale'
+      learner@inkwell:~/demo$ echo '<p>Sale!</p>' >> index.html
+      learner@inkwell:~/demo$ git commit -qam "Announce the sale"
+      learner@inkwell:~/demo$ echo '<p>20% off</p>' >> index.html
+      learner@inkwell:~/demo$ git commit -qam "Add the discount"
+      learner@inkwell:~/demo$ git log --oneline --graph --all
+      * 989ca91 (HEAD -> sale) Add the discount
+      * 669b3ef Announce the sale
+      * a6112a2 (main) Add the home page
+      ```
+
+      `main` still points at the first commit. `sale` (and `HEAD`) moved forward with each commit, exactly like the drawing.
+
+  - kind: choice
+    title: "Quick check: which pointer moved?"
+    body: |
+      On `main`, you run `git switch -c sale`, then make two commits. Where does `main` point now?
+    options:
+      - "At the second new commit"
+      - "At the commit it was on before you made `sale`"
+      - "Nowhere: it was replaced by `sale`"
+      - "At the first new commit"
+    answer: 1
+    explanation: "Only the branch you're on (HEAD's branch, `sale`) moves when you commit. `main` stays where it was until you merge."
+
   - kind: explain
     title: Branch commands
     body: |
@@ -44,6 +105,24 @@ steps:
       | `git branch name` | create a branch without switching |
 
       Switching changes the files in your folder to that branch's version. If you have uncommitted changes that would be overwritten, Git refuses and tells you: commit them first.
+
+      **Example.** Create, list, switch back and forth:
+
+      ```
+      learner@inkwell:~/demo$ git branch draft
+      learner@inkwell:~/demo$ git switch -c new-arrivals
+      Switched to a new branch 'new-arrivals'
+      learner@inkwell:~/demo$ git branch
+        draft
+        main
+      * new-arrivals
+      learner@inkwell:~/demo$ git switch -
+      Switched to branch 'main'
+      learner@inkwell:~/demo$ git branch
+        draft
+      * main
+        new-arrivals
+      ```
 
   - kind: shell
     title: Start a branch
@@ -74,6 +153,29 @@ steps:
       - **Merge commit**: both branches have new commits. Git combines them and makes a new commit with **two parents**. It opens your editor with a ready-made message (`Merge branch 'new-arrivals'`): just save and exit. `git merge --no-edit` skips the editor.
 
       Afterwards, delete the merged branch with `git branch -d new-arrivals`. Its commits stay; only the name goes.
+
+      <!-- page -->
+
+      **Example: a fast-forward.** `main` didn't move while `new-arrivals` got a commit, so the merge just slides `main` forward:
+
+      ```
+      learner@inkwell:~/demo$ git switch -c new-arrivals
+      Switched to a new branch 'new-arrivals'
+      learner@inkwell:~/demo$ echo '<h2>New arrivals</h2>' >> index.html
+      learner@inkwell:~/demo$ git commit -qam "Add a new arrivals heading"
+      learner@inkwell:~/demo$ git switch main
+      Switched to branch 'main'
+      learner@inkwell:~/demo$ git merge new-arrivals
+      Updating a6112a2..24bbf3f
+      Fast-forward
+       index.html | 1 +
+       1 file changed, 1 insertion(+)
+      learner@inkwell:~/demo$ git branch -d new-arrivals
+      Deleted branch new-arrivals (was 24bbf3f).
+      learner@inkwell:~/demo$ git log --oneline
+      24bbf3f (HEAD -> main) Add a new arrivals heading
+      a6112a2 Add the home page
+      ```
 
   - kind: shell
     title: A branch, start to finish
@@ -161,6 +263,45 @@ steps:
       - Between `<<<<<<< HEAD` and `=======`: your branch's version (the one you're merging **into**).
       - Between `=======` and `>>>>>>> price-fix`: the other branch's version.
 
+      <!-- page -->
+
+      **Example: a real one.** On `price-fix` the price went up to 8.49; meanwhile on `main` it went down to 6.99. Same line, two answers:
+
+      ```
+      learner@inkwell:~/demo$ git merge price-fix
+      Auto-merging dune.html
+      CONFLICT (content): Merge conflict in dune.html
+      Automatic merge failed; fix conflicts and then commit the result.
+      learner@inkwell:~/demo$ cat dune.html
+      <<<<<<< HEAD
+      <p class="price">6.99</p>
+      =======
+      <p class="price">8.49</p>
+      >>>>>>> price-fix
+      ```
+
+  - kind: choice
+    title: "Quick check: read the markers"
+    body: |
+      You're on `main` and ran `git merge price-fix`:
+
+      ```
+      <<<<<<< HEAD
+      <p class="price">6.99</p>
+      =======
+      <p class="price">8.49</p>
+      >>>>>>> price-fix
+      ```
+
+      Which price is `main`'s version?
+    options:
+      - "8.49"
+      - "Neither: Git deleted both"
+      - "Both: Git added them together"
+      - "6.99"
+    answer: 3
+    explanation: "The part between `<<<<<<< HEAD` and `=======` is the branch you're on (HEAD), which is `main`: 6.99. The other half came from `price-fix`."
+
   - kind: explain
     title: Resolving a conflict
     body: |
@@ -170,6 +311,28 @@ steps:
       4. `git commit` finishes the merge (nano opens with the message ready; save and exit).
 
       Changed your mind? **`git merge --abort`** puts everything back as it was before the merge.
+
+      <!-- page -->
+
+      **Example: finishing that merge.** Keep the sale price, remove the markers, stage, commit:
+
+      ```
+      learner@inkwell:~/demo$ git status --short
+      UU dune.html
+      learner@inkwell:~/demo$ echo '<p class="price">6.99</p>' > dune.html
+      learner@inkwell:~/demo$ git add dune.html
+      learner@inkwell:~/demo$ git commit --no-edit
+      [main 056a55e] Merge branch 'price-fix'
+      learner@inkwell:~/demo$ git log --oneline --graph
+      *   056a55e (HEAD -> main) Merge branch 'price-fix'
+      |\
+      * | e804c87 Sale price for Dune
+      | * d128ca8 (price-fix) Raise the Dune price
+      |/
+      * 5359103 Add Dune
+      ```
+
+      `UU` = conflicted (both sides changed it). Writing the file with one clean line removed all three markers in one go; in real life you'd edit it in nano.
 
   - kind: shell
     title: Your first conflict
@@ -240,6 +403,24 @@ steps:
       | `git checkout -- file.txt` | `git restore file.txt` |
 
       It still works. `switch` and `restore` exist because one command doing two unrelated jobs confused people.
+
+  - kind: shell
+    title: "Try it: the old spellings"
+    fixture: git-identity
+    setup: |
+      mkdir -p ~/demo && cd ~/demo
+      git init -q
+      echo '<h1>Inkwell</h1>' > index.html
+      git add .
+      git commit -q -m 'Add the home page'
+    body: |
+      Type these one at a time:
+
+      1. `git checkout -b old-style`: same as `git switch -c old-style`.
+      2. `git branch`
+      3. `git checkout main`, then `git branch` again.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: mac
     title: Branch and merge on your Mac

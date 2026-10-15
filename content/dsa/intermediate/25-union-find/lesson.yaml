@@ -6,6 +6,58 @@ steps:
 
       Traversal (Module 23) answers this for a fixed graph, but redoing a search after every new fact is slow. **Union-Find** (also called **Disjoint Set Union**) keeps the groups up to date and answers each question in almost **O(1)**.
 
+      **Example: the slow way.** Keep a group label per person, and on every new friendship relabel one whole group (O(n) each time):
+
+      ```js
+      const group = {
+        Ana: "Ana", Ben: "Ben", Cy: "Cy", Dee: "Dee", Eve: "Eve",
+      };
+
+      function befriend(a, b) {
+        const from = group[b], to = group[a];
+        for (const p in group) {           // touches everyone
+          if (group[p] === from) group[p] = to;
+        }
+      }
+
+      befriend("Ana", "Ben");
+      befriend("Cy", "Dee");
+      befriend("Ben", "Dee");
+      console.log(group.Ana === group.Cy, group.Ana === group.Eve);
+      console.log("groups:", new Set(Object.values(group)).size);
+      ```
+
+      prints:
+
+      ```
+      true false
+      groups: 2
+      ```
+
+  - kind: code
+    title: "Try it: merging groups"
+    body: |
+      Run it: Ana and Cy are now in one group, Eve is alone, 2 groups in all. Then add `befriend("Eve", "Ana");`. Union-Find answers the same questions without touching every person.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const group = {
+        Ana: "Ana", Ben: "Ben", Cy: "Cy", Dee: "Dee", Eve: "Eve",
+      };
+
+      function befriend(a, b) {
+        const from = group[b], to = group[a];
+        for (const p in group) {           // touches everyone
+          if (group[p] === from) group[p] = to;
+        }
+      }
+
+      befriend("Ana", "Ben");
+      befriend("Cy", "Dee");
+      befriend("Ben", "Dee");
+      console.log(group.Ana === group.Cy, group.Ana === group.Eve);
+      console.log("groups:", new Set(Object.values(group)).size);
+
   - kind: explain
     title: The parent array
     body: |
@@ -21,6 +73,20 @@ steps:
       - **Union by size:** attach the **smaller** tree under the **bigger** one, so trees stay shallow.
 
       Together, each operation is effectively **O(1)** (technically O(α(n)), which is below 5 for any input you will ever see).
+
+      <!-- page -->
+
+      **Example: 5 people, numbered 0–4** (without the upgrades, to keep it simple). At the start, `parent = [0, 1, 2, 3, 4]`.
+
+      | operation | roots found | parent array after |
+      |---|---|---|
+      | union(0, 1) | 0 and 1 | [0, 0, 2, 3, 4] |
+      | union(2, 3) | 2 and 3 | [0, 0, 2, 2, 4] |
+      | union(1, 3) | 0 and 2 | [0, 0, 0, 2, 4] |
+      | same group 0, 3? | 0 and 0 | yes |
+      | same group 0, 4? | 0 and 4 | no |
+
+      `find(3)` follows 3 → 2 → 0. With path compression, that walk would also set `parent[3] = 0`, so the next `find(3)` takes one step.
 
   - kind: code
     title: "Find the bug: linking items instead of roots"
@@ -155,6 +221,16 @@ steps:
       - **Checking whether a graph is a tree** (`n - 1` edges and no redundant edge),
       - **Kruskal's minimum spanning tree**, coming next.
 
+      **Example: adding edges 1 — 2, 2 — 3, then 1 — 3.**
+
+      | edge | roots | union returns | |
+      |---|---|---|---|
+      | 1 — 2 | 1 and 2 | true | joined |
+      | 2 — 3 | 1 and 3 | true | joined |
+      | 1 — 3 | 1 and 1 | false | already connected: redundant |
+
+      1 and 3 were already linked through 2, so the third edge closes the loop 1 → 2 → 3 → 1.
+
   - kind: code
     title: Redundant connection
     body: |
@@ -205,6 +281,20 @@ steps:
       3. Stop when `V − 1` edges are taken.
 
       Time: **O(E log E)**, mostly the sort. 🔹 **Prim's algorithm** builds the tree from one vertex outwards with a heap, and gives the same weight.
+
+      <!-- page -->
+
+      **Example: 4 towns.** Cables A–B (4), A–C (1), B–C (2), B–D (5), C–D (8). Sorted, cheapest first:
+
+      | edge (cheapest first) | same group already? | take it? | total |
+      |---|---|---|---|
+      | A–C (1) | no | yes | 1 |
+      | B–C (2) | no | yes | 3 |
+      | A–B (4) | yes | no, it would close a cycle | 3 |
+      | B–D (5) | no | yes | 8 |
+      | C–D (8) | — | stop: 3 edges taken | 8 |
+
+      Every town is connected for a total of 8. A–B was skipped because A and B were already joined through C.
 
   - kind: code
     title: Minimum spanning tree weight

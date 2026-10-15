@@ -41,6 +41,33 @@ steps:
 
       All with one folder and one set of file names. No more `-final-v2`.
 
+      **Example: one snapshot in Kenji's repository.** `git show --stat` prints a commit's details and which files it changed:
+
+      ```
+      learner@inkwell:~/inkwell/site-repo$ git show --stat HEAD
+      commit 9a1efb0f7edcfdeb390a91f4db4f4d2554be532c (HEAD -> main)
+      Author: Priya Shah <priya@inkwell.example>
+      Date:   Thu Oct 1 16:45:00 2026 +0000
+
+          Lower the price of Dune
+
+       books/dune.html | 2 +-
+       1 file changed, 1 insertion(+), 1 deletion(-)
+      ```
+
+      Message (*Lower the price of Dune*), who (Priya) and when, the ID (`9a1efb0…`), and the change itself: one line in `books/dune.html`.
+
+  - kind: shell
+    title: "Try it: look at a snapshot"
+    fixture: [git-identity, website-repo]
+    setup: cd ~/inkwell/site-repo
+    body: |
+      You're in Kenji's repository. Type `git show --stat HEAD`.
+
+      Then look at the snapshot before it: `git show --stat HEAD~1`.
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: Git and GitHub
     body: |
@@ -55,6 +82,20 @@ steps:
 
       Git works entirely on your own computer. GitHub (and alternatives like GitLab and Bitbucket) is where you put a copy so it's backed up, shareable, and others can work on it. Part 4 is Git; Part 5 is GitHub.
 
+      **Example.** Kenji's repository on the server is **Git**: he can commit, browse history and undo with no internet at all. When he runs `git push`, a copy goes to **GitHub**, at an address like `github.com/inkwell/site`, where Priya can see it in her browser and pull it onto her laptop.
+
+  - kind: choice
+    title: "Quick check: Git or GitHub?"
+    body: |
+      Kenji is on a train with no internet. Which can he still do?
+    options:
+      - "Push his commits to GitHub"
+      - "Commit his changes and look through the project's history with Git"
+      - "Open the repository's page on github.com"
+    answer: 1
+    explanation: |
+      **Git** runs entirely on his own computer, so committing and browsing history work offline. Anything involving **GitHub** (pushing, the website) needs the internet.
+
   - kind: explain
     title: The words
     body: |
@@ -67,6 +108,19 @@ steps:
       | **remote** | a copy of the repository somewhere else, usually GitHub |
 
       A commit's ID is a long code like `7d2afa203066a5330c3c0f4e55c0ecac63941f54`, usually shortened to the first seven characters: `7d2afa2`.
+
+      **Example: the words on a real commit.** In Kenji's **repository**, the newest **commit** in the **history**:
+
+      ```
+      learner@inkwell:~/inkwell/site-repo$ git log -1
+      commit 9a1efb0f7edcfdeb390a91f4db4f4d2554be532c (HEAD -> main)
+      Author: Priya Shah <priya@inkwell.example>
+      Date:   Thu Oct 1 16:45:00 2026 +0000
+
+          Lower the price of Dune
+      ```
+
+      `9a1efb0f7e…` is the commit's ID; its short form is `9a1efb0`. All of this is **local**: it's in `.git`, on this computer.
 
   - kind: shell
     title: A repository with history

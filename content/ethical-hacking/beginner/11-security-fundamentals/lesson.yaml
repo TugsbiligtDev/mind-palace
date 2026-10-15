@@ -4,6 +4,26 @@ steps:
     body: |
       Up to now you have learned *systems*. This module is about *security* itself — the handful of ideas that let professionals talk precisely. Reports, certifications and job interviews all assume this vocabulary. Getting it exactly right is part of sounding, and thinking, like a professional rather than a tinkerer.
 
+      **Example: the same finding, said two ways.** Both testers found the same problem:
+
+      > **Tinkerer:** "I hacked the site, you can see other people's stuff, it's really bad."
+      >
+      > **Professional:** "Any signed-in customer can read other customers' orders by changing a number in the URL. This is an **authorization** failure that puts **confidentiality** at **high risk**: every order's name and address is exposed."
+
+      The second one tells the client exactly what is wrong, what it affects and how much it matters. Each bold word is defined in this module.
+
+  - kind: choice
+    title: "Quick check: why the vocabulary?"
+    body: |
+      Why do professionals insist on precise words like *authorization* and *confidentiality*?
+    options:
+      - "To sound clever in meetings"
+      - "Because reports, clients and colleagues rely on them to understand exactly what is wrong and how serious it is"
+      - "Because the law requires certain words in every report"
+    answer: 1
+    explanation: |
+      A precise word carries a precise meaning. "Authorization failure, confidentiality at risk" tells a client what broke and what is exposed; "it's really bad" tells them nothing they can act on.
+
   - kind: explain
     title: The CIA triad
     body: |
@@ -17,6 +37,18 @@ steps:
 
       Every attack and every defence maps to one or more of these. When you write a finding, you will say *which* property is at risk — "this exposes customer data (confidentiality)" — because that is how impact is judged.
 
+  - kind: choice
+    title: "Quick check: which letter?"
+    body: |
+      An attacker changes the prices in a shop's database so everything costs 1 cent. Which property of the CIA triad is broken?
+    options:
+      - "Confidentiality"
+      - "Integrity"
+      - "Availability"
+    answer: 1
+    explanation: |
+      The data is no longer correct: **integrity**. Nothing was read by the wrong people (confidentiality) and the shop is still up (availability).
+
   - kind: explain
     title: Vulnerability, threat, risk
     body: |
@@ -28,6 +60,26 @@ steps:
 
       A tester *finds vulnerabilities*. The value to the client is helping them judge **risk**, so they fix the dangerous windows first. "You have 400 issues" is noise; "these three could expose every customer record" is the message.
 
+      **Example: one shop, three words.**
+
+      - **Vulnerability:** the admin login page accepts the default password `admin` / `admin`.
+      - **Threat:** automated bots that try default passwords on every website they find, all day long.
+      - **Risk:** **high**. Bots will certainly find the page (likely), and the admin account can change every price and read every order (bad).
+
+      Now change one fact: the same weak login is only reachable from inside the office network. The vulnerability is identical, but internet bots can't reach it, so the risk drops to medium.
+
+  - kind: choice
+    title: "Quick check: name it"
+    body: |
+      "The web server runs a version with a known, public flaw" is an example of what?
+    options:
+      - "A threat"
+      - "A risk"
+      - "A vulnerability"
+    answer: 2
+    explanation: |
+      It's a **weakness**, so it's a vulnerability. The threat would be whoever might exploit it, and the risk is how likely and how bad that would be.
+
   - kind: explain
     title: Authentication vs. authorization
     body: |
@@ -37,6 +89,28 @@ steps:
       - **Authorization** (authz) — *what are you allowed to do?* Your permissions once your identity is known.
 
       You can pass one and fail the other. Logging in correctly (authenticated) and then reaching the admin panel you should not see (authorization failure) is a whole class of bug — **broken access control** (Module 22). Keep the two ideas in separate boxes and these flaws become easy to spot.
+
+      **Example: one shop, two checks.** Ada signs in at an online shop:
+
+      | Ada does | The site asks | Answer |
+      |---|---|---|
+      | types her email and password | **Authentication:** is this really Ada? | Yes, password correct |
+      | opens `/account/orders` | **Authorization:** may Ada see her orders? | Yes, they're hers |
+      | opens `/admin/refunds` | **Authorization:** may Ada issue refunds? | Should be **no**: she's a customer |
+
+      If the last row says yes, Ada was correctly *authenticated* but the site failed at *authorization*: broken access control.
+
+  - kind: choice
+    title: "Quick check: authn or authz?"
+    body: |
+      A site asks for a one-time code from your phone after your password. Which is it strengthening?
+    options:
+      - "Authentication: proving who you are"
+      - "Authorization: what you're allowed to do"
+      - "Availability"
+    answer: 0
+    explanation: |
+      The code is a second proof of **identity**, so it strengthens authentication. It doesn't change what you may do once signed in.
 
   - kind: explain
     title: Hashing vs. encryption vs. encoding
@@ -55,6 +129,33 @@ steps:
       - **Passwords should be hashed, not encrypted.** A site never needs to turn your password back into text; it only checks whether your input hashes to the same value. A database of *encrypted* passwords (reversible) is a far worse design than *hashed* ones.
       - Hashes are also how we fingerprint files and verify integrity.
 
+  - kind: mac
+    title: "Try it: encode, then hash"
+    body: |
+      See the difference on your own Mac.
+
+      1. Base64-**encode** `secret`, then decode it back: anyone can reverse it, no key needed.
+      2. **Hash** `password` with SHA-256, then hash `Password` (capital P). The two fingerprints are completely different, and there is no command to turn either back into the word.
+
+      (`echo -n` prints the text without a new line at the end, so only the word itself is encoded or hashed.)
+    commands: |
+      echo -n "secret" | base64
+      echo "c2VjcmV0" | base64 -d
+      echo -n "password" | shasum -a 256
+      echo -n "Password" | shasum -a 256
+
+  - kind: choice
+    title: "Quick check: is it protected?"
+    body: |
+      You find `cGFzc3dvcmQxMjM=` stored where a password should be. A colleague says "good, it's encrypted." What is it really?
+    options:
+      - "Base64 encoding, which anyone can reverse: no protection at all"
+      - "A secure password hash"
+      - "Encryption that needs a key to read"
+    answer: 0
+    explanation: |
+      The letters-and-digits look and the `=` at the end are typical of **Base64**. `base64 -d` turns it straight back into `password123`. Encoding is formatting, not security.
+
   - kind: explain
     title: The major categories of attack
     body: |
@@ -68,6 +169,31 @@ steps:
       - **Misconfiguration** — not a clever exploit at all, but a default password, an open share, a 777 file. In the real world, this quietly causes more breaches than exotic hacks.
 
       A theme worth absorbing early: the flashy exploits get the headlines, but **misconfigurations and reused passwords** cause most actual breaches. Good testing looks for the boring stuff first.
+
+      <!-- page -->
+
+      **Example: one attack from each category**, all against the same small company:
+
+      | Category | Example |
+      |---|---|
+      | Network | an old file-sharing service left open to the internet |
+      | Web application | the shop's search box passes text straight into a SQL query |
+      | Credentials | an employee reuses their password from a site that was breached |
+      | Social engineering | an email "from IT" asks staff to log in on a fake page |
+      | Physical | a visitor plugs a USB stick into an unattended office PC |
+      | Misconfiguration | the router still uses its factory password `admin` |
+
+  - kind: choice
+    title: "Quick check: the boring cause"
+    body: |
+      What causes the most real-world breaches?
+    options:
+      - "Rare, never-seen-before exploits"
+      - "Misconfigurations and reused passwords"
+      - "Physical break-ins"
+    answer: 1
+    explanation: |
+      The dull problems: a default password, an open share, a reused login. That's why good testing checks the boring stuff first.
 
   - kind: info
     title: "🔹 Salting, briefly"

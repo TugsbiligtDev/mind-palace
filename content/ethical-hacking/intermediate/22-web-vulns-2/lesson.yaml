@@ -28,6 +28,18 @@ steps:
 
       It needs no clever payload, just incrementing a number, which is exactly why it is so common and so often missed. **Fix:** the server must enforce an authorization check on *every* request — "does the logged-in user own or have rights to this object?" — not merely hide the link or trust the ID.
 
+      On the lab app, logged in as your own account, you request your invoice and then change one digit:
+
+      ```
+      $ curl -s -b "session=<yours>" "http://10.10.50.30/invoice?id=1001"
+      Invoice 1001  —  account: you@example.com   total: 42.00
+
+      $ curl -s -b "session=<yours>" "http://10.10.50.30/invoice?id=1002"
+      Invoice 1002  —  account: someone.else@example.com   total: 88.50
+      ```
+
+      Invoice `1002` belongs to another customer, yet the server returned it to you. That is IDOR: it used your `id` to pick the record but never checked you were allowed to see it.
+
   - kind: explain
     title: Insecure file upload
     body: |

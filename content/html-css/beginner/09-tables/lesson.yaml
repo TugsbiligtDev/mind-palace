@@ -24,6 +24,19 @@ steps:
 
       Every row should have the same number of cells (unless cells are merged, which comes later).
 
+      In the page, that example shows two lines lined up in two columns: **Title** and **Price** in bold, then *Dune* under Title and *£8.99* under Price. A plain table has no borders or lines; CSS adds those later.
+
+  - kind: choice
+    title: "Quick check: build a row"
+    body: |
+      How is a table built?
+    options:
+      - "Column by column, with `<td>` holding a whole column"
+      - "Row by row: each `<tr>` holds that row's `<th>` or `<td>` cells"
+      - "With one `<td>` per table, and line breaks inside it"
+    answer: 1
+    explanation: "HTML tables go row by row. A `<tr>` is a row, and the cells inside it are `<th>` (headers) or `<td>` (data)."
+
   - kind: explain
     title: Caption, thead and tbody
     body: |
@@ -42,8 +55,21 @@ steps:
       </table>
       ```
 
+      In the page, the caption *Books in stock, October* sits centred above the table, then the bold header row, then the two books. `thead` and `tbody` change nothing you can see; they label which rows are which.
+
       - `<caption>` is the table's title. It goes **first**, right after `<table>`. Screen readers announce it so people know what the table is about before diving in.
       - `<thead>` holds the header row(s), `<tbody>` the data rows. (A `<tfoot>` for totals also exists.) They make it easy to style the header differently, and long tables can repeat the header when printed.
+
+  - kind: choice
+    title: "Quick check: where the caption goes"
+    body: |
+      Where does `<caption>` go?
+    options:
+      - "First, right after the opening `<table>` tag"
+      - "Inside the first `<th>`"
+      - "After the closing `</table>` tag"
+    answer: 0
+    explanation: "The caption is the table's title and must be its first child. It shows centred above the table, and screen readers announce it first."
 
   - kind: explain
     title: scope connects headers to cells
@@ -64,6 +90,39 @@ steps:
       ```
 
       Now, reading "£5.50", a screen reader can say "Emma, Price, £5.50". The first cell of each data row is often a row header like this.
+
+      On screen, the only visible change is that *Emma* is now bold, like the other headers. `scope` itself is invisible: it's there for screen readers.
+
+  - kind: web
+    title: "Try it: a small table"
+    body: |
+      Here's Inkwell's events table, using everything so far: a `caption`, a `thead` row of column headers with `scope="col"`, and a `tbody` where each row starts with a row header (`scope="row"`).
+
+      The `style.css` tab adds thin borders so you can see every cell (plain tables have none).
+
+      Try this:
+
+      1. Add a third event row: `<tr><th scope="row">Book club</th><td>Sunday</td><td>4pm</td></tr>`.
+      2. Change one `<th scope="row">` to a `<td>`. It loses its bold: it's now ordinary data, not a label.
+      3. Delete one `<td>` from a row. That row comes up short and the table looks ragged, which is why every row needs the same number of cells.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <table>
+        <caption>Events this month</caption>
+        <thead>
+          <tr><th scope="col">Event</th><th scope="col">Day</th><th scope="col">Time</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Poetry night</th><td>Thursday</td><td>7pm</td></tr>
+          <tr><th scope="row">Story hour</th><td>Saturday</td><td>10am</td></tr>
+        </tbody>
+      </table>
+    css: |
+      th, td {
+        border: 1px solid gray;
+        padding: 4px 8px;
+      }
 
   - kind: web
     title: Build the stock table
@@ -148,9 +207,38 @@ steps:
       </tr>
       ```
 
+      In the page, *Saturday* is the row header, and *Closed for stocktake* fills one wide cell that stretches under two columns.
+
       That cell takes the place of **two** cells, so its row has one `<td>` fewer. `rowspan="2"` does the same downwards: the next row leaves out the cell it covers.
 
       Keep merging to a minimum. Heavily merged tables are hard to follow, for screen reader users most of all. Often two simple tables beat one clever one.
+
+  - kind: web
+    title: "Try it: colspan and rowspan"
+    body: |
+      This little price table merges cells both ways (the borders in `style.css` let you see it):
+
+      - *Out of stock* has `colspan="2"`, so it covers both the *Paperback* and *Hardback* columns. Its row has one `<td>` fewer.
+      - *Poetry* has `rowspan="2"`, so it covers two rows. The row under it leaves out its first cell.
+
+      Try this:
+
+      1. Change `colspan="2"` to `colspan="1"`. A gap appears at the end of that row, because now a cell is missing.
+      2. Remove `rowspan="2"`. The second Poetry row slides left and its cells no longer line up.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <table>
+        <tr><th scope="col">Shelf</th><th scope="col">Book</th><th scope="col">Paperback</th><th scope="col">Hardback</th></tr>
+        <tr><th scope="row" rowspan="2">Poetry</th><td>Leaves of Grass</td><td>£4</td><td>£12</td></tr>
+        <tr><td>Ariel</td><td>£5</td><td>£11</td></tr>
+        <tr><th scope="row">Fiction</th><td>Persuasion</td><td colspan="2">Out of stock</td></tr>
+      </table>
+    css: |
+      th, td {
+        border: 1px solid gray;
+        padding: 4px 8px;
+      }
 
   - kind: web
     title: Merge the closed day
@@ -200,6 +288,40 @@ steps:
       - It mixes appearance into the HTML, which is CSS's job.
 
       **Use a table when the content is a grid of data**: something you'd put in a spreadsheet, where each cell relates to a row heading *and* a column heading. For page layout, use CSS Flexbox and Grid (Modules 20 and 21).
+
+      <!-- page -->
+
+      **Example: the wrong use and the right use.**
+
+      ```html
+      <!-- ✗ Layout table: a sidebar and content side by side -->
+      <table>
+        <tr>
+          <td><a href="index.html">Home</a><br><a href="events.html">Events</a></td>
+          <td><h1>Welcome to Inkwell</h1><p>Books, coffee and a cat.</p></td>
+        </tr>
+      </table>
+
+      <!-- ✓ Data table: each cell belongs to a book (row) and a property (column) -->
+      <table>
+        <tr><th>Title</th><th>Author</th><th>Price</th></tr>
+        <tr><td>Dune</td><td>Frank Herbert</td><td>£9.99</td></tr>
+        <tr><td>Emma</td><td>Jane Austen</td><td>£6.50</td></tr>
+      </table>
+      ```
+
+      Ask of each cell: "what is this the *Author* of?" In the second table there's always an answer (Dune, Emma). In the first, the question makes no sense, so it isn't data.
+
+  - kind: choice
+    title: "Quick check: table or not?"
+    body: |
+      Which content belongs in a `<table>`?
+    options:
+      - "The page's header, sidebar and main content side by side"
+      - "Three book covers in a row"
+      - "Each book's title, author and price, for 20 books"
+    answer: 2
+    explanation: "Titles, authors and prices form a grid of data: each cell relates to a row (the book) and a column (what it is). Layout, like columns of covers or page regions, is CSS's job (Flexbox and Grid)."
 
   - kind: why
     body: |

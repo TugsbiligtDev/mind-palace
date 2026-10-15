@@ -14,6 +14,14 @@ steps:
         if (n === 0) return 1;            // base case
         return n * factorial(n - 1);      // recursive case
       }
+
+      console.log(factorial(3), factorial(5), factorial(0));
+      ```
+
+      prints:
+
+      ```
+      6 120 1
       ```
 
       `factorial(3)` is `3 × factorial(2)`, which is `3 × 2 × factorial(1)`, and so on down to the base case.
@@ -164,7 +172,17 @@ steps:
       - if it is an **array**, it is a smaller version of the same problem, so recurse into it.
 
       ```js
-      Array.isArray(item)   // tells the two cases apart
+      for (const item of [1, [2, [3, 4]], 5]) {
+        console.log(item, Array.isArray(item) ? "→ an array: recurse" : "→ a number: add it");
+      }
+      ```
+
+      prints:
+
+      ```
+      1 → a number: add it
+      [ 2, [ 3, 4 ] ] → an array: recurse
+      5 → a number: add it
       ```
 
   - kind: code
@@ -213,6 +231,23 @@ steps:
         // handle item; push any smaller pieces onto the stack
       }
       ```
+
+      <!-- page -->
+
+      **Example: summing `[1, [2, [3, 4]], 5]` with your own stack.** Pop an item; a number gets added, an array gets its items pushed:
+
+      | pop | what it is | total | stack after |
+      |---|---|---|---|
+      | [1, [2, [3, 4]], 5] | an array: push its items | 0 | [1, [2, [3, 4]], 5] |
+      | 5 | a number: add it | 5 | [1, [2, [3, 4]]] |
+      | [2, [3, 4]] | an array: push its items | 5 | [1, 2, [3, 4]] |
+      | [3, 4] | an array: push its items | 5 | [1, 2, 3, 4] |
+      | 4 | a number: add it | 9 | [1, 2, 3] |
+      | 3 | a number: add it | 12 | [1, 2] |
+      | 2 | a number: add it | 14 | [1] |
+      | 1 | a number: add it | 15 | [] |
+
+      The stack is empty, and the total is 15. No function ever called itself.
 
   - kind: code
     title: Sum a nested array without recursion

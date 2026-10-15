@@ -6,6 +6,20 @@ steps:
 
       Even working alone, PRs are worth it: you review your own diff once more on a clean page before it reaches `main`, the PR records **why** a change was made, and it's the habit every team expects.
 
+      **Example.** Kenji opens PR **#2**, *Add Sunday opening hours*, to merge his branch `hours-update` into `main`. The page shows his one commit, the diff (one new line in `about.html`), a comment from Priya ("Do we open at 10 on Sundays too?"), his reply, a green tick from the automatic checks, and the **Merge pull request** button.
+
+  - kind: choice
+    title: "Quick check: what a PR is"
+    body: |
+      What does a pull request ask for?
+    options:
+      - "Permission to download a repository"
+      - "A copy of someone's repository"
+      - "That a branch's changes be merged into another branch, usually main"
+      - "A bug fix from the maintainers"
+    answer: 2
+    explanation: "A PR is a proposal: *please merge my branch*. The page around it is where that change gets read, discussed and checked first."
+
   - kind: explain
     title: GitHub Flow
     body: |
@@ -19,6 +33,37 @@ steps:
       6. **Clean up**: delete the branch, switch to `main`, `git pull`.
 
       `main` only ever receives finished, reviewed work, so it's always ready to publish.
+
+      <!-- page -->
+
+      **Example: one change, all six steps.** Priya wants the opening hours on the about page updated:
+
+      ```
+      git switch main && git pull            # start from an up-to-date main
+      git switch -c about-hours              # 1. branch
+      nano about.html                        #    (edit the hours)
+      git add about.html
+      git commit -m "Update opening hours on the about page"   # 2. commit
+      git push -u origin about-hours         # 3. push the branch
+      gh pr create --title "Update opening hours" --body "New winter hours."   # 4. open a pull request
+      gh pr merge 3 --merge                  # 5. after review: merge it (3 is the PR number gh printed)
+      git switch main && git pull            # 6. clean up: back to main, with the merge
+      git branch -d about-hours              #    and delete the finished branch
+      ```
+
+      Until step 5, `main` on GitHub never changed: the half-finished work lived only on `about-hours`.
+
+  - kind: choice
+    title: "Quick check: the order"
+    body: |
+      You've committed on your branch `about-update`. What's the next GitHub Flow step?
+    options:
+      - "Merge it into main on your computer"
+      - "Push the branch, then open a pull request"
+      - "Delete the branch"
+      - "Open a pull request without pushing"
+    answer: 1
+    explanation: "GitHub can only show a PR for a branch it has, so push first (`git push -u origin about-update`), then `gh pr create`."
 
   - kind: explain
     title: Opening a pull request with gh
@@ -34,6 +79,36 @@ steps:
       - `--fill` uses your commit message as title and body; `--draft` opens it as a draft (not ready to merge yet).
 
       gh prints the PR's address: `https://github.com/inkwell/site/pull/2`. On a Mac, `gh pr view --web` opens it.
+
+      <!-- page -->
+
+      **Example: GitHub Flow, steps 1 to 4**, on a branch for the opening hours:
+
+      ```
+      learner@inkwell:~/site$ git switch -c hours-update
+      Switched to a new branch 'hours-update'
+      learner@inkwell:~/site$ echo '<p>Open on Sundays</p>' >> about.html
+      learner@inkwell:~/site$ git commit -qam "Add Sunday opening hours"
+      learner@inkwell:~/site$ git push -u origin hours-update
+      Enumerating objects: 3, done.
+      Counting objects: 100% (3/3), done.
+      Writing objects: 100% (3/3), done.
+      Total 3 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+      remote:
+      remote: Create a pull request for 'hours-update' on GitHub by visiting:
+      remote:      https://github.com/inkwell/site/pull/new/hours-update
+      remote:
+      To github.com:inkwell/site.git
+       * [new branch]      hours-update
+      branch 'hours-update' set up to track 'origin/hours-update'.
+      learner@inkwell:~/site$ gh pr create --title "Add Sunday opening hours" --body "We now open on Sundays."
+
+      Creating pull request for hours-update into main in inkwell/site
+
+      https://github.com/inkwell/site/pull/2
+      ```
+
+      Notice the push even suggested a PR link. The PR became **#2** (issue #1 already took number 1: issues and PRs share numbers).
 
   - kind: shell
     title: Branch, push, open a PR
@@ -78,6 +153,42 @@ steps:
 
       `--merge` makes a merge commit (`Merge pull request #2 from …`); `--delete-branch` deletes the branch on GitHub and on your computer, switches you to `main`, and pulls the merge. Then `git log --oneline --graph` shows the branch joining `main`.
 
+      <!-- page -->
+
+      **Example**, continuing with PR #2 from the last page:
+
+      ```
+      learner@inkwell:~/site$ gh pr view 2
+      Add Sunday opening hours inkwell/site#2
+      Open • learner wants to merge 1 commit into main from hours-update
+      +1 -0
+
+        We now open on Sundays.
+
+      View this pull request on GitHub: https://github.com/inkwell/site/pull/2
+      learner@inkwell:~/site$ gh pr diff 2
+      diff --git a/about.html b/about.html
+      index d36b108..10f3791 100644
+      --- a/about.html
+      +++ b/about.html
+      @@ -3,3 +3,4 @@
+       <h1>About us</h1>
+       <p>Three people, a lot of books.</p>
+       <a href="index.html">Home</a>
+      +<p>Open on Sundays</p>
+      learner@inkwell:~/site$ gh pr merge 2 --merge --delete-branch
+      ✓ Merged pull request inkwell/site#2 (Add Sunday opening hours)
+      ✓ Deleted local branch hours-update and switched to branch main
+      ✓ Deleted remote branch hours-update
+      learner@inkwell:~/site$ git log --oneline --graph -4
+      *   441d01b (HEAD -> main, origin/main, origin/HEAD) Merge pull request #2 from inkwell/hours-update
+      |\
+      | * c5356a3 Add Sunday opening hours
+      |/
+      * 9a1efb0 Lower the price of Dune
+      * 1594832 Add the Dune book page
+      ```
+
   - kind: shell
     title: Merge and clean up
     fixture: [git-identity, website-repo, github-account, github-site, site-clone]
@@ -111,6 +222,18 @@ steps:
       - **Rebase and merge**: replays the branch's commits onto `main` one by one, without a merge commit.
 
       Module 38 compares them properly. `gh pr merge --squash` and `--rebase` choose them from the terminal.
+
+  - kind: choice
+    title: "Quick check: squash"
+    body: |
+      A branch has 6 small commits ("wip", "fix typo", …). Which button puts **one** tidy commit on `main`?
+    options:
+      - "Create a merge commit"
+      - "Rebase and merge"
+      - "None of them"
+      - "Squash and merge"
+    answer: 3
+    explanation: "Squash combines the branch's commits into a single new commit. A merge commit keeps all six (plus the merge), and rebase replays all six."
 
   - kind: choice
     title: Why bother, alone?

@@ -19,6 +19,45 @@ steps:
 
       Change one line, and every use updates.
 
+      In the page, the heading text and the button's background are both Inkwell brown. Change `#7c2d12` to `navy` on the `:root` line, and **both** turn navy at once.
+
+  - kind: web
+    title: "Try it: custom properties"
+    body: |
+      An events notice that reads two custom properties: `--color-accent` (used three times) and `--space` (used twice).
+
+      1. Look at the preview: the heading, the left border and the date are all teal.
+      2. In `style.css`, change `teal` to `purple` on the `:root` line. All three change together.
+      3. Change `--space` from `1rem` to `2rem`: the padding and the gap under the heading both grow.
+      4. Misspell one use, for example `var(--colour-accent)`, and watch that one part lose its color.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <section class="event">
+        <h2>Story hour</h2>
+        <p>Every Saturday at <span class="date">10am</span>, in the children's corner.</p>
+      </section>
+    css: |
+      :root {
+        --color-accent: teal;
+        --space: 1rem;
+      }
+
+      .event {
+        padding: var(--space);
+        border-left: 6px solid var(--color-accent);
+      }
+
+      h2 {
+        color: var(--color-accent);
+        margin: 0 0 var(--space);
+      }
+
+      .date {
+        color: var(--color-accent);
+        font-weight: bold;
+      }
+
   - kind: web
     title: Extract the brand colors
     body: |
@@ -112,6 +151,50 @@ steps:
 
       Custom properties are live: change one in DevTools and every use updates instantly.
 
+      With the rules above, an ordinary `.card` is white with near-black text, and a `<div class="card dark">` next to it is near-black with off-white text: the same `.card` rule, fed different values. And with `color: var(--color-accent, teal);`, if no `--color-accent` exists anywhere, the text is simply teal.
+
+  - kind: web
+    title: "Try it: themes and fallbacks"
+    body: |
+      Two cards share the `.card` rule. The second one only redefines `--surface` and `--ink`.
+
+      1. Compare the cards: same padding and border, different colors.
+      2. In `style.css`, change the `.card.dark` values to `--surface: #fef3c7` and `--ink: #7c2d12` for a cream card.
+      3. The price uses `var(--price-color, #c2410c)`. Nothing defines `--price-color`, so it falls back to orange `#c2410c`. Add `--price-color: crimson;` inside `:root` and watch both prices change.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="card">
+        <h3>Persuasion</h3>
+        <p class="price">£4.00</p>
+      </div>
+      <div class="card dark">
+        <h3>The Odyssey</h3>
+        <p class="price">£7.50</p>
+      </div>
+    css: |
+      :root {
+        --surface: white;
+        --ink: #1c1917;
+      }
+
+      .card {
+        background: var(--surface);
+        color: var(--ink);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e7e5e4;
+      }
+
+      .card.dark {
+        --surface: #1c1917;
+        --ink: #fafaf9;
+      }
+
+      .price {
+        color: var(--price-color, #c2410c);
+      }
+
   - kind: web
     title: A themed card
     body: |
@@ -201,7 +284,73 @@ steps:
       }
       ```
 
+      Components then use only tokens:
+
+      ```css
+      .notice {
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--text-sm);
+        color: var(--color-muted);
+      }
+      ```
+
+      That gives a notice with 1rem of padding above and below, 1.5rem at the sides, and small grey-brown text. Every other component using `--space-3` gets exactly the same 1rem.
+
       With a **scale**, you choose from a few sizes instead of inventing new ones (`13px` here, `14.5px` there). Pages look consistent, and redesigns become a matter of adjusting tokens. Module 42 builds a full token system.
+
+  - kind: web
+    title: "Try it: tokens"
+    body: |
+      The notice and the card use only tokens from `:root`, so they share the same spacing and colours.
+
+      Try this:
+
+      1. Change `--space-3` to `2rem`. Both boxes get more padding at once.
+      2. Change `--color-brand` to `teal`. The card's border and the notice's heading both follow.
+      3. Change the notice's `font-size` to `var(--text-lg)`, a step up the type scale.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <div class="notice">
+        <h3>Closed Monday</h3>
+        <p>Back on Tuesday at 10.</p>
+      </div>
+      <div class="card">
+        <h3>Dune</h3>
+        <p>£8.99, very good condition.</p>
+      </div>
+    css: |
+      :root {
+        --color-brand: #7c2d12;
+        --color-muted: #57534e;
+        --space-2: 0.5rem;
+        --space-3: 1rem;
+        --space-4: 1.5rem;
+        --text-sm: 0.875rem;
+        --text-lg: 1.25rem;
+      }
+
+      .notice {
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--text-sm);
+        color: var(--color-muted);
+        background: #fdf8f0;
+        margin-bottom: var(--space-3);
+      }
+
+      .notice h3 {
+        color: var(--color-brand);
+        margin: 0 0 var(--space-2);
+      }
+
+      .card {
+        padding: var(--space-3);
+        border: 2px solid var(--color-brand);
+      }
+
+      .card h3 {
+        margin: 0;
+      }
 
   - kind: explain
     title: Light and dark mode
@@ -229,6 +378,37 @@ steps:
       ```
 
       Both follow the visitor's setting automatically. Dark mode isn't just inverted colors: avoid pure black backgrounds and pure white text (too harsh), and re-check contrast in both themes.
+
+      With either version and `body { background: var(--bg); color: var(--text); }`, a Mac in Light mode shows the page off-white with near-black text. Switch the Mac to Dark and the same page turns deep navy with light grey text, without reloading.
+
+  - kind: web
+    title: "Try it: light and dark"
+    body: |
+      A notice board that uses `light-dark()` for its colors: cream and brown in light mode, dark brown and cream in dark mode.
+
+      1. Look at the preview, then open **System Settings → Appearance** on your Mac and switch between **Light** and **Dark**. The preview follows.
+      2. In `style.css`, change the dark half of `--board` (the second color) to `#0b0f19` and switch again.
+      3. Delete the `color-scheme: light dark;` line. Now `light-dark()` always uses the first (light) color, whatever your Mac says.
+
+      Nothing is graded here: try it, then press **Continue**.
+    html: |
+      <div class="board">
+        <h2>This week</h2>
+        <p>New poetry shelf by the window.</p>
+      </div>
+    css: |
+      :root {
+        color-scheme: light dark;
+        --board: light-dark(#fef3c7, #292524);
+        --ink: light-dark(#7c2d12, #fef3c7);
+      }
+
+      .board {
+        background: var(--board);
+        color: var(--ink);
+        padding: 1rem;
+        border-radius: 8px;
+      }
 
   - kind: web
     title: Follow the visitor's theme

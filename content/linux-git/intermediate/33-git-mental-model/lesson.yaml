@@ -6,6 +6,36 @@ steps:
 
       Every Git command in the next lessons (reset, rebase, cherry-pick, reflog) only *moves pointers* around a graph of snapshots. Once you can picture that graph, they stop being magic spells and become obvious. This lesson is the picture.
 
+      **Example: a "scary" command, seen as a pointer move.** Before:
+
+      ```
+      a21e3c9 ← 545a7a8 ← 995f99c
+                            ↑
+                           main
+      ```
+
+      After `git reset --hard 545a7a8`:
+
+      ```
+      a21e3c9 ← 545a7a8 ← 995f99c     (still there, just nothing points at it)
+                  ↑
+                 main
+      ```
+
+      No commit was destroyed: the `main` label moved back one step. That's why `995f99c` can still be found and brought back (with `git reflog`, in the next lesson).
+
+  - kind: choice
+    title: "Quick check: what moved?"
+    body: |
+      In the example, what did `git reset --hard 545a7a8` change?
+    options:
+      - "It deleted commit 995f99c for good"
+      - "It moved the main label back to 545a7a8; 995f99c still exists"
+      - "It rewrote all three commits with new IDs"
+    answer: 1
+    explanation: |
+      Commands like reset move **pointers**. The snapshot `995f99c` is still in the repository, only no branch points at it any more.
+
   - kind: explain
     title: Commits are snapshots with parents
     body: |
@@ -23,6 +53,19 @@ steps:
       ```
 
       `git log --oneline --graph --all` draws it.
+
+      <!-- page -->
+
+      **Example.** Three commits in a small repository, each shown with its parent's ID (`%p`):
+
+      ```
+      learner@inkwell:~/demo$ git log --format='%h  parent: %p  %s'
+      995f99c  parent: 545a7a8  Third
+      545a7a8  parent: a21e3c9  Second
+      a21e3c9  parent:   First
+      ```
+
+      Each commit points back to the one before; *First* has no parent. Your IDs will differ, because they include the time.
 
   - kind: shell
     title: See the whole graph
@@ -121,6 +164,23 @@ steps:
       - "Your branch is ahead of 'origin/main' by 2 commits" compares exactly those two pointers.
       - They can be out of date: someone may have pushed since your last fetch.
 
+      <!-- page -->
+
+      **Example.** In a fresh clone, commit once locally. `git branch -vv` shows each branch, its commit, and how it compares with its remote-tracking branch:
+
+      ```
+      learner@inkwell:~/site$ git branch -vv
+      * main 9a1efb0 [origin/main] Lower the price of Dune
+      learner@inkwell:~/site$ echo '<p>New hours</p>' >> about.html
+      learner@inkwell:~/site$ git commit -qam "Update the hours"
+      learner@inkwell:~/site$ git branch -vv
+      * main 1bb7429 [origin/main: ahead 1] Update the hours
+      learner@inkwell:~/site$ git log --oneline -1 origin/main
+      9a1efb0 (origin/main, origin/HEAD) Lower the price of Dune
+      ```
+
+      `origin/main` didn't move: it still points at `9a1efb0`, where GitHub's `main` was at the clone.
+
   - kind: shell
     title: Where is GitHub's main?
     fixture: [git-identity, website-repo, github-account, github-site, site-clone]
@@ -135,6 +195,18 @@ steps:
     title: "🔹 SHA-1 today, SHA-256 tomorrow"
     body: |
       Git's hashes are SHA-1, designed in the 1990s and now known to be breakable with enough effort (Git added defences years ago). Git already supports **SHA-256** repositories (`git init --object-format=sha256`), with 64-character hashes, and **Git 3.0 makes SHA-256 the default for new repositories**. Day to day nothing changes for you: hashes get longer, and short hashes still work.
+
+  - kind: choice
+    title: "Quick check: longer hashes"
+    body: |
+      Your team moves to a SHA-256 repository. What changes in your daily work?
+    options:
+      - "Every command has a new name"
+      - "You can no longer use `git log`"
+      - "Hashes get longer (64 characters); short hashes still work as before"
+      - "Commits can now be edited"
+    answer: 2
+    explanation: "Only the hash algorithm changes. Commands, branches and short IDs like `7d2afa2` work the same."
 
   - kind: mac
     title: Look inside a real repository

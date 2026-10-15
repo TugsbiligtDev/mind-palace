@@ -38,14 +38,47 @@ steps:
         SET country = EXCLUDED.country;
       ```
 
-      **`EXCLUDED`** is the row you *tried* to insert. The table's own name refers to the row already there. So you can combine them:
+      **`EXCLUDED`** is the row you *tried* to insert. The table's own name refers to the row already there. So you can combine them. Here a small table counts visits to Inkwell's web pages, and new counts are **added** to the old ones:
 
       ```sql
-      ON CONFLICT (item) DO UPDATE
-        SET qty = stock.qty + EXCLUDED.qty     -- add to the existing count
+      CREATE TABLE page_views (page text PRIMARY KEY, views integer NOT NULL);
+      INSERT INTO page_views VALUES ('home', 100);
+
+      INSERT INTO page_views (page, views)
+      VALUES ('home', 7), ('events', 2)
+      ON CONFLICT (page) DO UPDATE
+        SET views = page_views.views + EXCLUDED.views;
+
+      SELECT * FROM page_views ORDER BY page;
       ```
 
+      Returns:
+
+      | page | views |
+      |---|---|
+      | events | 2 |
+      | home | 107 |
+
+      `home` already had 100, so it became 100 + 7. `events` was new, so it was simply inserted with 2.
+
       You can also add a WHERE to update only sometimes: `… DO UPDATE SET price = EXCLUDED.price WHERE EXCLUDED.price <> books.price`.
+
+  - kind: try
+    title: "Try it: add to what's already there"
+    body: |
+      Run it and check that `home` went from 100 to 107.
+
+      Then change `page_views.views + EXCLUDED.views` to just `EXCLUDED.views` and run again: now `home` is **replaced** with 7 instead of added to. Nothing is graded here.
+    sql: |
+      CREATE TABLE page_views (page text PRIMARY KEY, views integer NOT NULL);
+      INSERT INTO page_views VALUES ('home', 100);
+
+      INSERT INTO page_views (page, views)
+      VALUES ('home', 7), ('events', 2)
+      ON CONFLICT (page) DO UPDATE
+        SET views = page_views.views + EXCLUDED.views;
+
+      SELECT * FROM page_views ORDER BY page;
 
   - kind: try
     title: Update on conflict
@@ -190,6 +223,27 @@ steps:
 
       The professional pattern: **load into a staging table where every column is `text`** (it can't fail), then clean and convert with `INSERT … SELECT` into the real table. Bad rows can then be found with a query instead of stopping the load.
 
+      <!-- page -->
+
+      Two functions do most of that converting:
+
+      - **`to_date(text, pattern)`** reads a date written in a pattern you describe. `DD` is the day, `MM` the month, `YYYY` the year.
+      - **`NULLIF(a, b)`** gives NULL when `a` equals `b`, otherwise `a` (Module 10). `NULLIF(price, '')` turns empty text into NULL before you convert it to a number.
+
+      ```sql
+      SELECT to_date('25/12/2025', 'DD/MM/YYYY') AS christmas,
+             NULLIF('', '')::numeric      AS empty_price,
+             NULLIF('7.25', '')::numeric  AS real_price;
+      ```
+
+      Returns:
+
+      | christmas | empty_price | real_price |
+      |---|---|---|
+      | 2025-12-25 | NULL | 7.25 |
+
+      A plain `'25/12/2025'::date` fails instead: *date/time field value out of range*, because PostgreSQL can't guess there's no month 25.
+
   - kind: try
     title: A real staging table
     body: |
@@ -203,6 +257,17 @@ steps:
       LIMIT 15;
 
   - kind: try
+    title: "Try it: to_date and NULLIF"
+    body: |
+      Run it. Then change the date to `'01/02/2026'` and see which month you get: with `'DD/MM/YYYY'` it's February. Change the pattern to `'MM/DD/YYYY'` and it becomes January 2.
+
+      Then run `SELECT '25/12/2025'::date;` on its own to see the error that to_date avoids. Nothing is graded here.
+    sql: |
+      SELECT to_date('25/12/2025', 'DD/MM/YYYY') AS christmas,
+             NULLIF('', '')::numeric      AS empty_price,
+             NULLIF('7.25', '')::numeric  AS real_price;
+
+  - kind: try
     title: Your turn to convert a staging table
     body: |
       The raw rows are in `staging` as text. Dates are `DD/MM/YYYY`, and an **empty** price means unknown. Insert them into `clean` with real types, then run the SELECT.
@@ -210,7 +275,8 @@ steps:
       You'll need `to_date(sold_on, 'DD/MM/YYYY')` and `NULLIF(price, '')::numeric`.
     sql: |
       CREATE TABLE staging (item text, sold_on text, price text);
-      INSERT INTO staging VALUES ('bookmark', '15/03/2026', '4.50'), ('tote bag', '02/04/2026', '');
+      INSERT INTO staging
+      VALUES ('bookmark', '15/03/2026', '4.50'), ('tote bag', '02/04/2026', '');
 
       CREATE TABLE clean (item text, sold_on date, price numeric(8,2));
       INSERT INTO clean

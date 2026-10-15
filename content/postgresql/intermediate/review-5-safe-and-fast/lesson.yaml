@@ -103,7 +103,8 @@ steps:
       Keep the starter's two statements, and add yours after them.
     sql: |
       CREATE TABLE print_jobs (job_id integer PRIMARY KEY, status text NOT NULL, doc text NOT NULL);
-      INSERT INTO print_jobs VALUES (1, 'done', 'invoice 1'), (2, 'queued', 'invoice 2'), (3, 'queued', 'label 7'), (4, 'queued', 'invoice 3');
+      INSERT INTO print_jobs
+      VALUES (1, 'done', 'invoice 1'), (2, 'queued', 'invoice 2'), (3, 'queued', 'label 7'), (4, 'queued', 'invoice 3');
 
       -- Claim the oldest queued job here
     expect: |
@@ -180,7 +181,11 @@ steps:
       The account page runs this for whoever is signed in:
 
       ```sql
-      SELECT * FROM orders WHERE customer_id = 42 ORDER BY ordered_at DESC LIMIT 5;
+      SELECT *
+      FROM orders
+      WHERE customer_id = 42
+      ORDER BY ordered_at DESC
+      LIMIT 5;
       ```
 
       Right now it reads all 39,000 orders. Create an index that lets PostgreSQL jump straight to customer 42's orders. (Checked by looking for `customer_id` in the plan's **Index Cond** line.)

@@ -6,6 +6,79 @@ steps:
 
       Recognising the pattern is most of the work. This module has two of them, and both replace a slow nested loop (O(n²)) with a single pass (O(n)).
 
+      **Example of the payoff.** *Is there a pair in this sorted array that adds up to 14?* The nested loop and the two-pointer pass (explained on the next page) give the same answer. Count the checks:
+
+      ```js
+      const nums = [1, 3, 4, 6, 8, 11];
+      const target = 14;
+
+      let checks = 0;
+      for (let i = 0; i < nums.length; i++)
+        for (let j = i + 1; j < nums.length; j++) {
+          checks++;
+          if (nums[i] + nums[j] === target) {
+            console.log("nested:", nums[i], nums[j]);
+          }
+        }
+      console.log("nested loop checks:", checks);
+
+      checks = 0;
+      let left = 0, right = nums.length - 1;
+      while (left < right) {
+        checks++;
+        const sum = nums[left] + nums[right];
+        if (sum === target) {
+          console.log("two pointers:", nums[left], nums[right]);
+          break;
+        }
+        if (sum < target) left++; else right--;
+      }
+      console.log("two pointer checks:", checks);
+      ```
+
+      prints:
+
+      ```
+      nested: 3 11
+      nested: 6 8
+      nested loop checks: 15
+      two pointers: 3 11
+      two pointer checks: 2
+      ```
+
+  - kind: code
+    title: "Try it: nested loop vs. one pass"
+    body: |
+      Run it and compare the two counts. Then change `target` to `20` (no pair adds up to it): the nested loop checks every pair, the pointers still stop quickly.
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const nums = [1, 3, 4, 6, 8, 11];
+      const target = 14;
+
+      let checks = 0;
+      for (let i = 0; i < nums.length; i++)
+        for (let j = i + 1; j < nums.length; j++) {
+          checks++;
+          if (nums[i] + nums[j] === target) {
+            console.log("nested:", nums[i], nums[j]);
+          }
+        }
+      console.log("nested loop checks:", checks);
+
+      checks = 0;
+      let left = 0, right = nums.length - 1;
+      while (left < right) {
+        checks++;
+        const sum = nums[left] + nums[right];
+        if (sum === target) {
+          console.log("two pointers:", nums[left], nums[right]);
+          break;
+        }
+        if (sum < target) left++; else right--;
+      }
+      console.log("two pointer checks:", checks);
+
   - kind: explain
     title: Pattern 1a, pointers at both ends
     body: |
@@ -18,6 +91,64 @@ steps:
       - If it matches, done.
 
       Each step throws away one candidate for good, so it takes at most `n` steps: **O(n) time, O(1) space**.
+
+      <!-- page -->
+
+      A worked example: `nums = [1, 3, 4, 6, 9]` and `target = 13`.
+
+      | Step | left | right | Sum | What to do |
+      |---|---|---|---|---|
+      | 1 | 0 (1) | 4 (9) | 10 | too small, move `left` |
+      | 2 | 1 (3) | 4 (9) | 12 | too small, move `left` |
+      | 3 | 2 (4) | 4 (9) | 13 | match: the answer is `[2, 4]` |
+
+      The same "start at both ends, walk inwards" shape checks whether a word reads the same backwards. This prints the two letters it compares at each step:
+
+      ```js
+      const word = "racecar";
+      let left = 0;
+      let right = word.length - 1;
+      let same = true;
+      while (left < right) {
+        console.log(left, right, word[left], word[right]);
+        if (word[left] !== word[right]) same = false;
+        left++;
+        right--;
+      }
+      console.log(same);
+      ```
+
+      It prints:
+
+      ```
+      0 6 r r
+      1 5 a a
+      2 4 c c
+      true
+      ```
+
+      The middle letter `e` (index 3) is never compared: when `left` and `right` meet, there is nothing left to check.
+
+  - kind: code
+    title: "Try it: pointers at both ends"
+    body: |
+      Press **Run** and read the trace: each line shows the two positions and the two letters being compared.
+
+      Then change `"racecar"` to `"rocket"` and run again. Which line shows the first mismatch, and what does the last line say now?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const word = "racecar";
+      let left = 0;
+      let right = word.length - 1;
+      let same = true;
+      while (left < right) {
+        console.log(left, right, word[left], word[right]);
+        if (word[left] !== word[right]) same = false;
+        left++;
+        right--;
+      }
+      console.log(same);
 
   - kind: code
     title: "Find the bug: the same number twice"
@@ -116,6 +247,52 @@ steps:
 
       Classic uses: "move every 0 to the end, keeping the other values in order", and the example below. It edits an array **in place** in one pass. Removing duplicates from a *sorted* array is the classic example: copy an element forward only if it differs from the last kept one.
 
+      <!-- page -->
+
+      A worked example: keep only the numbers that are not negative, in place, and count them.
+
+      ```js
+      const nums = [3, -1, 4, -5, 9];
+      let write = 0;
+      for (let read = 0; read < nums.length; read++) {
+        if (nums[read] >= 0) {
+          nums[write] = nums[read];
+          write++;
+        }
+      }
+      console.log(write);
+      console.log(nums.slice(0, write));
+      ```
+
+      It prints:
+
+      ```
+      3
+      [ 3, 4, 9 ]
+      ```
+
+      `read` visits all five numbers. `write` only moves when a number is kept, so at the end it equals the count of kept numbers, and the first `write` positions hold them in their original order.
+
+  - kind: code
+    title: "Try it: read and write pointers"
+    body: |
+      Run this and check the two printed lines.
+
+      Then change the rule `nums[read] >= 0` to `nums[read] !== 4` (keep everything except 4) and run again. What is `write` now?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const nums = [3, -1, 4, -5, 9];
+      let write = 0;
+      for (let read = 0; read < nums.length; read++) {
+        if (nums[read] >= 0) {
+          nums[write] = nums[read];
+          write++;
+        }
+      }
+      console.log(write);
+      console.log(nums.slice(0, write));
+
   - kind: code
     title: Remove duplicates in place
     body: |
@@ -165,6 +342,18 @@ steps:
 
       At `mid`: a `0` swaps to `low` (both move up), a `1` just moves `mid`, a `2` swaps to `high` (only `high` moves down, because the swapped-in value is still unknown).
 
+      <!-- page -->
+
+      A worked example by hand, on `[2, 0, 1]`. At the start `low = 0`, `mid = 0`, `high = 2`.
+
+      | Step | Value at `mid` | Action | Array after | low, mid, high |
+      |---|---|---|---|---|
+      | 1 | 2 | swap with `high`, `high` moves down | `[1, 0, 2]` | 0, 0, 1 |
+      | 2 | 1 | just move `mid` | `[1, 0, 2]` | 0, 1, 1 |
+      | 3 | 0 | swap with `low`, both move up | `[0, 1, 2]` | 1, 2, 1 |
+
+      Now `mid` is past `high`, so the unknown middle is empty and the array is sorted. Notice step 1: after the swap, `mid` stayed at 0, because the `1` that arrived there had not been looked at yet.
+
   - kind: code
     title: Sort the colours
     body: |
@@ -213,6 +402,31 @@ steps:
 
       - skip `i` if `nums[i] === nums[i - 1]`,
       - after finding a triple, move `left` and `right` past their duplicates too.
+
+      <!-- page -->
+
+      A worked example of "sort, then skip repeats". `[...nums]` makes a copy, so the original array is not changed, and `(a, b) => a - b` sorts numbers from small to big:
+
+      ```js
+      const nums = [2, -1, 2, 0, -1];
+      const sorted = [...nums].sort((a, b) => a - b);
+      console.log(sorted);
+      for (let i = 0; i < sorted.length; i++) {
+        if (i > 0 && sorted[i] === sorted[i - 1]) continue;
+        console.log("first number:", sorted[i]);
+      }
+      ```
+
+      It prints:
+
+      ```
+      [ -1, -1, 0, 2, 2 ]
+      first number: -1
+      first number: 0
+      first number: 2
+      ```
+
+      Each value is used as the first number only once, even though `-1` and `2` appear twice. That is exactly how 3Sum avoids reporting the same triple twice.
 
   - kind: code
     title: 3Sum
@@ -292,6 +506,57 @@ steps:
       ```
 
       Every swap puts one value home for good, so it is **O(n) time and O(1) space**. Afterwards, any position `i` where `nums[i] !== i + 1` reveals a **missing** number (`i + 1`) and a **duplicate** (`nums[i]`).
+
+      <!-- page -->
+
+      A worked example on `[3, 1, 4, 1]`, with a `console.log` after every swap:
+
+      ```js
+      const nums = [3, 1, 4, 1];
+      let i = 0;
+      while (i < nums.length) {
+        const home = nums[i] - 1;
+        if (nums[i] >= 1 && nums[i] <= nums.length && nums[i] !== nums[home]) {
+          [nums[i], nums[home]] = [nums[home], nums[i]];
+          console.log(nums);
+        } else {
+          i++;
+        }
+      }
+      console.log("done:", nums);
+      ```
+
+      It prints:
+
+      ```
+      [ 4, 1, 3, 1 ]
+      [ 1, 1, 3, 4 ]
+      done: [ 1, 1, 3, 4 ]
+      ```
+
+      The `3` went home to index 2, then the `4` to index 3, then the `1` to index 0. The second `1` has nowhere to go (its home already holds a `1`), so it stays at index 1. Index 1 should hold `2`: so `2` is missing and `1` is the duplicate.
+
+  - kind: code
+    title: "Try it: cyclic sort"
+    body: |
+      Run this and follow the swaps line by line.
+
+      Then change the array to `[2, 3, 3, 1]` and run again. Which position ends up holding the wrong value, and which number is missing?
+
+      Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
+    code: |
+      const nums = [3, 1, 4, 1];
+      let i = 0;
+      while (i < nums.length) {
+        const home = nums[i] - 1;
+        if (nums[i] >= 1 && nums[i] <= nums.length && nums[i] !== nums[home]) {
+          [nums[i], nums[home]] = [nums[home], nums[i]];
+          console.log(nums);
+        } else {
+          i++;
+        }
+      }
+      console.log("done:", nums);
 
   - kind: code
     title: Find all missing numbers

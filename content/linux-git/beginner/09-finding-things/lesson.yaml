@@ -7,6 +7,34 @@ steps:
       - **`grep`** searches **inside** files for lines containing some text.
       - **`find`** searches the folder tree for **files** by name, type, size or age.
 
+      **Example: one question each.** Which files mention *Dune*? And where are the CSV files?
+
+      ```
+      learner@inkwell:~/inkwell$ grep -rl Dune .
+      logs/shop.log
+      notes/books-sold.txt
+      notes/todo.txt
+      old/price-list-OLD.txt
+      orders/2026-08.csv
+      orders/2026-09.csv
+      learner@inkwell:~/inkwell$ find . -name "*.csv"
+      ./orders/2026-08.csv
+      ./orders/2026-09.csv
+      ```
+
+      `grep` looked **inside** every file. `find` only looked at **names**. The next pages explain the options.
+
+  - kind: shell
+    title: "Try it: grep and find"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type `grep -rl Dune .`, then `find . -name "*.csv"`.
+
+      Then ask your own: which files mention `refund`? And where is the file called `todo.txt`?
+
+      Nothing is graded here: try them, then press **Continue**.
+
   - kind: explain
     title: grep
     body: |
@@ -15,6 +43,17 @@ steps:
       ```
       grep ERROR logs/shop.log
       ```
+
+      Here's the same idea with the word `WARN` (warnings), and with two words in quotes:
+
+      ```
+      learner@inkwell:~/inkwell$ grep WARN logs/shop.log
+      2026-10-05 09:15:40 WARN  stock low: Dune (2 left)
+      learner@inkwell:~/inkwell$ grep "payment failed" logs/shop.log
+      2026-10-05 10:21:07 ERROR payment failed for order 1051
+      ```
+
+      Out of eight lines in the log, grep printed only the ones that contain the pattern.
 
       <!-- page -->
 
@@ -30,6 +69,61 @@ steps:
       | `-l` | only **l**ist the names of files that match |
 
       Put the pattern in quotes when it has spaces: `grep "payment failed" logs/shop.log`. grep also reads from a pipe: `ls | grep csv`.
+
+      <!-- page -->
+
+      Each option in action. `-i`, `-n`, `-c` and `-v` on one file:
+
+      ```
+      learner@inkwell:~/inkwell$ grep -i dune notes/todo.txt
+      - reorder Dune (only 2 left)
+      learner@inkwell:~/inkwell$ grep -n Hobbit notes/books-sold.txt
+      2:The Hobbit
+      9:The Hobbit
+      learner@inkwell:~/inkwell$ grep -c 404 logs/access.log
+      2
+      learner@inkwell:~/inkwell$ grep -v Dune notes/books-sold.txt
+      The Hobbit
+      Circe
+      Kindred
+      Circe
+      Beloved
+      The Hobbit
+      ```
+
+      `-r` on a whole folder, `-l` for just the file names, and grep at the end of a pipe:
+
+      ```
+      learner@inkwell:~/inkwell$ grep -r Kenji notes
+      notes/meeting-2026-09-30.txt:Present: Kenji, Priya, Marcus
+      notes/meeting-2026-09-30.txt:- Refunds: two refunds nobody remembers approving. Kenji to check.
+      learner@inkwell:~/inkwell$ grep -rl Kenji .
+      README.txt
+      notes/meeting-2026-09-30.txt
+      orders/2026-09.csv
+      learner@inkwell:~/inkwell$ ls notes | grep meeting
+      meeting-2026-09-30.txt
+      ```
+
+      Options combine like `ls`'s do: `grep -ri marcus notes` is `-r` and `-i` together.
+
+  - kind: shell
+    title: "Try it: grep and its options"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `grep WARN logs/shop.log`
+      2. `grep -i dune notes/todo.txt`
+      3. `grep -n Hobbit notes/books-sold.txt`
+      4. `grep -c 404 logs/access.log`
+      5. `grep -v Dune notes/books-sold.txt`
+      6. `grep -r Kenji notes`, then `grep -rl Kenji .`
+
+      Then change step 4 to count `403` instead of `404`, and step 6 to search for `Priya`.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: What went wrong in the shop?
@@ -83,6 +177,44 @@ steps:
       | `-size +10M` | bigger than 10 MB |
 
       Tests combine: `find ~/inkwell -type f -name "*.log"`. Searching from `/` looks through the whole computer, which is slow and prints many "Permission denied" errors (`2> /dev/null` hides them).
+
+      <!-- page -->
+
+      Here's `find` run from `~/inkwell`. Every path starts with `./`, because the search started at `.`:
+
+      ```
+      learner@inkwell:~/inkwell$ find . -name "*.csv"
+      ./orders/2026-08.csv
+      ./orders/2026-09.csv
+      learner@inkwell:~/inkwell$ find . -type d
+      .
+      ./logs
+      ./notes
+      ./old
+      ./orders
+      ./site
+      ./site/images
+      learner@inkwell:~/inkwell$ find . -iname "readme*"
+      ./README.txt
+      ```
+
+      The first found every CSV file at any depth, the second every folder (including `.` itself), and the third matched `README.txt` even though the pattern was lowercase.
+
+  - kind: shell
+    title: "Try it: find"
+    fixture: backoffice
+    setup: cd ~/inkwell
+    body: |
+      Type these one at a time:
+
+      1. `find . -name "*.csv"`
+      2. `find . -type d`
+      3. `find . -type f -name "*.log"`
+      4. `find . -iname "readme*"`
+
+      Then change step 1 to look for `"*.html"`, and try it from your home folder too: `find ~ -name "*.csv"`.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: shell
     title: Where are the text files?
@@ -142,6 +274,22 @@ steps:
       - `type` is more honest: it also knows about **aliases** and **built-ins** (commands inside the shell itself, like `cd`).
 
       Useful when "the wrong version" of something runs, or to check that something is installed.
+
+  - kind: shell
+    title: "Try it: which and type"
+    fixture: backoffice
+    setup: cd ~
+    body: |
+      Type these one at a time:
+
+      1. `which git`
+      2. `which ls`
+      3. `type cd`
+      4. `type ls`
+
+      Then try `which cd`: it prints nothing, because `cd` isn't a file at all.
+
+      Nothing is graded here: try them, then press **Continue**.
 
   - kind: info
     title: "🔹 Faster file search: mdfind and locate"

@@ -25,6 +25,37 @@ steps:
       - **easing**: how speed changes. `ease` (the default), `ease-out` (fast start, gentle stop, good for things appearing), `ease-in`, `linear`, or a custom `cubic-bezier()`.
       - **delay**: wait before starting.
 
+  - kind: web
+    title: "Try it: a transition"
+    body: |
+      Hover over each button. The first changes colour instantly; the second glides, because it has `transition: background-color 200ms ease`.
+
+      Try this:
+
+      1. Change `200ms` to `1s`, to see the glide clearly.
+      2. Add a new rule `.glide:hover { }` at the end and move the `transition` line from `.glide` into it. It now glides **in** but jumps back **out**: that's why it belongs on the normal state.
+
+      Nothing is graded here: try things, then press **Continue**.
+    html: |
+      <button class="jump">Instant</button>
+      <button class="glide">Gradual</button>
+    css: |
+      button {
+        background: #7c2d12;
+        color: white;
+        border: 0;
+        padding: 12px 20px;
+        font: inherit;
+      }
+
+      button:hover {
+        background: #ea580c;
+      }
+
+      .glide {
+        transition: background-color 200ms ease;
+      }
+
   - kind: explain
     title: Transforms
     body: |

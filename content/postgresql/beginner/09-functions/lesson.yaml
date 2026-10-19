@@ -2,6 +2,8 @@ steps:
   - kind: explain
     title: What a function is
     body: |
+      This lesson is a toolbox: you'll meet about twenty functions, but you don't need to memorize them. Learn what *kinds* of things functions can do, and come back to the recap when you need one.
+
       A **function** takes some input values (its *arguments*, in parentheses) and returns a value:
 
       ```sql
@@ -202,6 +204,8 @@ steps:
 
       `date_trunc` is how you group things "per month" (Module 10). `EXTRACT` is how you ask "which year?" or "which weekday?".
 
+      Intervals can be compared like numbers: `age('2025-01-01'::date, birth_date) < interval '30 years'` is true for anyone who was under 30 on New Year's Day 2025.
+
   - kind: try
     title: Take dates apart
     body: |
@@ -210,7 +214,7 @@ steps:
       SELECT first_name, birth_date,
              EXTRACT(MONTH FROM birth_date) AS month_no,
              date_trunc('month', birth_date)::date AS month_start,
-             age(date '2025-01-01', birth_date) AS age_on_new_year
+             age('2025-01-01'::date, birth_date) AS age_on_new_year
       FROM customers;
 
   - kind: try

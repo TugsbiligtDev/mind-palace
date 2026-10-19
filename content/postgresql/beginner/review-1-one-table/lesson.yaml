@@ -146,11 +146,11 @@ steps:
       SELECT first_name,
              CASE
                WHEN birth_date IS NULL THEN 'unknown'
-               WHEN age(date '2025-01-01', birth_date) < interval '30 years' THEN 'under 30'
+               WHEN age('2025-01-01'::date, birth_date) < interval '30 years' THEN 'under 30'
                ELSE '30 and over'
              END AS age_group
       FROM customers;
-    hint: "CASE picks a label per row. `age(later_date, earlier_date)` gives an interval you can compare with `interval '30 years'`. Handle the NULL case first."
+    hint: "CASE picks a label per row. `age('2025-01-01'::date, birth_date)` gives an interval, and you can compare it with `< interval '30 years'` (Module 9). Handle the NULL case first."
 
   - kind: try
     title: "11. Sales per month"

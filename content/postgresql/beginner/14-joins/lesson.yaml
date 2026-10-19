@@ -2,6 +2,8 @@ steps:
   - kind: explain
     title: Split apart, joined back
     body: |
+      *This is one of the longer lessons. It's fine to stop halfway: your place is saved, and you'll pick up where you left off.*
+
       In Module 13 you split data into tables linked by foreign keys: orders store a `customer_id`, not a name. That keeps each fact in one place. But when you *ask a question*, you usually want the pieces side by side: the order **and** the customer's name.
 
       A **join** does that. It matches rows from two tables using a condition, usually "this FK equals that PK", and glues each matching pair into one wider row.
@@ -147,7 +149,7 @@ steps:
       LEFT JOIN reviews r ON r.book_id = b.book_id
       WHERE r.review_id IS NULL;
 
-  - kind: explain
+  - kind: info
     title: FULL OUTER JOIN
     body: |
       **`FULL JOIN`** (short for FULL OUTER JOIN) keeps **every row from both sides**. Matched rows are paired up, and unmatched rows from either side get NULLs on the other side.

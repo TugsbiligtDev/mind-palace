@@ -2,7 +2,9 @@ steps:
   - kind: explain
     title: Every column has a type
     body: |
-      When a table is created, each column gets a **data type**: the kind of value it may hold. You saw them in `\d`: `integer`, `text`, `numeric(6,2)`, `date`, `jsonb`.
+      When a table is created, each column gets a **data type**: the kind of value it may hold. You saw some in `\d`: `integer`, `text`, `numeric(6,2)`, `date`.
+
+      This lesson is a reference: you don't need to memorize every type. The ones you'll use most are `integer`, `numeric`, `text`, `boolean`, `date` and `timestamptz`, and the recap at the end lists them all.
 
       Types matter because they decide:
 
@@ -228,6 +230,8 @@ steps:
     title: True, false, unknown
     body: |
       Comparisons produce booleans. Run it: `t` means true and `f` means false.
+
+      The comparison signs: `=` equal, `<` less than, `>` more than, `<=` "or less" (less than or equal), `>=` "or more". So `price <= 10` means "10 or less".
 
       Look at the `under_8` column: which books cost less than 8?
 

@@ -2,6 +2,8 @@ steps:
   - kind: explain
     title: The shape of a question
     body: |
+      *This is one of the longer lessons. It's fine to stop halfway: your place is saved, and you'll pick up where you left off.*
+
       Almost every question you ask a database starts like this:
 
       ```sql

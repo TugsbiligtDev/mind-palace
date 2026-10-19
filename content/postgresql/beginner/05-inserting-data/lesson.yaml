@@ -77,9 +77,7 @@ steps:
     body: |
       This small wishlist table has a generated ID and a default status. The INSERT gives only the title. Run it and look at the new row's `wish_id` and `status`.
 
-      Then change the INSERT to fill in the status column too, with `'bought'`, and run it again.
-
-      Then add a second INSERT, before the SELECT, for **Circe** with the status **bought**. Which columns do you need to list this time? (The step is checked once your changed version has run.)
+      Then leave Dune's INSERT as it is, and add a second INSERT below it (before the SELECT) for **Circe** with the status **bought**. Which columns do you need to list this time? Dune should still say `wanted`, and Circe `bought`. (The step is checked once your changed version has run.)
     sql: |
       CREATE TABLE wishlist (
           wish_id  integer GENERATED ALWAYS AS IDENTITY,

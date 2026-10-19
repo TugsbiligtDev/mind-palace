@@ -9,6 +9,8 @@ import { gradeSql } from "@/lib/sql/client";
 import type { RunOutput } from "@/lib/sql/core";
 import { StepFeedback, useStepFeedback } from "./step-feedback";
 
+const same = (a: string, b: string) => a.replace(/\s+/g, " ").trim() === b.replace(/\s+/g, " ").trim();
+
 // A PostgreSQL "try" step. Run executes the query; when the step has an expected answer, Run
 // also grades it against that answer on a fresh copy of the database.
 export function SqlPanel({
@@ -25,7 +27,7 @@ export function SqlPanel({
   onDone: () => void;
 }) {
   const p = useProgress();
-  const { feedback, setFeedback, misses, pass, miss } = useStepFeedback(slot, onDone);
+  const { feedback, setFeedback, misses, pass, miss, note } = useStepFeedback(slot, onDone);
 
   const onRan = useCallback(
     async (input: string, out: RunOutput) => {
@@ -39,6 +41,16 @@ export function SqlPanel({
         return;
       }
       const check = tryStepCheck(step);
+      // Running the untouched starter (most tasks begin with "Run it, then change…") or an
+      // editor with only notes in it isn't a wrong answer, so say what to do next instead.
+      if (check && !out.blocks.length) {
+        note("Nothing ran yet: the editor only has notes in it (lines starting with -- are notes). Write your SQL, then press Run.");
+        return;
+      }
+      if (check && same(input, step.sql)) {
+        note("That's the starting code, so you can see what it does. Now make the change the task asks for, and run it again.");
+        return;
+      }
       if (!check) {
         onDone();
         setFeedback(null);
@@ -48,7 +60,7 @@ export function SqlPanel({
       if (v.correct) pass("Correct! That's exactly the result we were after.");
       else miss(v.message);
     },
-    [step, engine, onDone, pass, miss, setFeedback],
+    [step, engine, onDone, pass, miss, note, setFeedback],
   );
 
   return (

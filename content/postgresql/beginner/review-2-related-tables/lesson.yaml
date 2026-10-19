@@ -197,7 +197,9 @@ steps:
     expect: |
       ALTER TABLE books ADD COLUMN format text NOT NULL DEFAULT 'paperback';
     state_query: |
-      SELECT column_name, data_type, is_nullable, column_default
+      SELECT column_name AS "column", data_type AS type,
+             CASE is_nullable WHEN 'YES' THEN 'yes' ELSE 'no' END AS empty_allowed,
+             split_part(column_default, '::', 1) AS default_value
       FROM information_schema.columns
       WHERE table_name = 'books' AND column_name = 'format';
     hint: One ALTER TABLE … ADD COLUMN can include both NOT NULL and a DEFAULT, and the default fills in the existing rows.

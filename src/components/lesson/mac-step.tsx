@@ -56,7 +56,7 @@ export function MacCommands({ commands }: { commands: string }) {
       </div>
       <pre className="overflow-x-auto rounded-xl bg-[#0b0f19] p-4 font-mono text-[0.82rem] leading-relaxed text-[#e5e7eb]">{commands}</pre>
       <p className="mt-2 text-xs text-muted">
-        On Windows or a phone? Skip this step: everything else in the course works in your browser.
+        Optional. Haven&apos;t installed anything, or not on a Mac? Press Skip for now: everything else in the course works in your browser, and you can come back later.
       </p>
     </div>
   );

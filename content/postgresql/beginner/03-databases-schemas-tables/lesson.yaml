@@ -65,7 +65,7 @@ steps:
 
       Run it. `\dt archive.*` lists only the tables in `archive`.
 
-      Then add a second table, **archive.old_orders**, with one column `order_id` of type `integer`, before the `\dt` line. (The step is checked once your changed version has run.)
+      Then add a second table, **archive.old_orders**, with one column `order_id` of type `integer`, before the `\dt` line. You haven't learned CREATE TABLE properly yet (that's in a few steps), so copy the `CREATE TABLE archive.old_notes` line and change the names and the type. (The step is checked once your changed version has run.)
     sql: |
       CREATE SCHEMA archive;
       CREATE TABLE archive.old_notes (note text);

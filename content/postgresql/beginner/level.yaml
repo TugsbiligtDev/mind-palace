@@ -3,9 +3,9 @@ title: Beginner
 season: 1
 season_title: The Inkwell Files
 season_pitch: |
-  Someone has been rewriting Inkwell Books' records and signing their work **~E**. Learn how a
-  database works, how to ask it questions, how to build tables that protect their data, and
-  how to design a database from scratch, one case at a time.
+  Inkwell Books, a small online bookstore, keeps everything in a database: its books, customers
+  and sales. Learn how a database works, how to ask it questions, how to build tables that protect
+  their data, and how to design a database from scratch.
 status: open
 dataset: bookstore
 topics:

@@ -36,7 +36,7 @@ export default async function TrackPage({ params }: PageProps<"/courses/[track]"
         </div>
         {bundle.setup && (
           <Link href={`/courses/${trackId}/setup`} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-subtle">
-            💻 Take it to your computer (optional)
+            💻 Take it to your Mac (optional)
           </Link>
         )}
       </div>

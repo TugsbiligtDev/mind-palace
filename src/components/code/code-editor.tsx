@@ -72,7 +72,9 @@ export function CodeEditor({
         extensions={extensions}
         theme="none"
         minHeight={minHeight}
-        basicSetup={{ foldGutter: false, highlightActiveLineGutter: true, autocompletion: false }}
+        // No automatic closing brackets in SQL: beginners type CREATE TABLE line by line, and the
+        // auto-inserted ")" ends up as a stray bracket after the real one.
+        basicSetup={{ foldGutter: false, highlightActiveLineGutter: true, autocompletion: false, closeBrackets: language !== "sql" }}
       />
     </div>
   );

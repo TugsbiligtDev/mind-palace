@@ -166,7 +166,7 @@ steps:
   - kind: try
     title: A delete with a receipt
     body: |
-      Delete the sales paid by PayPal. RETURNING lists what's gone. Then change the SQL to `SELECT` first, the way you would on your Mac.
+      Delete the sales paid by PayPal. RETURNING lists what's gone. Then rewrite it as a `SELECT` with the same WHERE (`SELECT * FROM sales WHERE payment_method = 'paypal';`): that's the check you'd run *before* a real delete, to see exactly which rows it will remove.
     sql: |
       DELETE FROM sales
       WHERE payment_method = 'paypal'
@@ -240,7 +240,7 @@ steps:
     state_query: |
       SELECT book_id, stock FROM books ORDER BY book_id;
     hint: |
-      Run `SELECT book_id, '[' || title || ']' FROM books WHERE title ILIKE '%fellowship%';` The brackets show extra spaces. Matching on the book's ID is the safest fix.
+      Find the book with `SELECT book_id, title FROM books WHERE title ILIKE '%fellowship%';` (ILIKE, from Module 6, finds it whatever the spacing). Its stored title has extra spaces at the start and end, so `=` with the clean title never matches. Matching on the book's ID is the safest fix.
 
   - kind: try
     title: "Your turn to delete"

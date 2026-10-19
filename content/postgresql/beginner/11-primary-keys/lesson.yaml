@@ -83,7 +83,7 @@ steps:
       - **UNIQUE**: no two rows can have the same key.
       - **NOT NULL**: every row must have a key. An unknown ID identifies nothing.
 
-      A table can have **only one** primary key. PostgreSQL also builds an *index* on it automatically, which makes looking rows up by key very fast (Module 32).
+      A table can have **only one** primary key. PostgreSQL also builds an *index* on it automatically. An index works like the index at the back of a book: it lets PostgreSQL jump straight to a row instead of reading the whole table, so looking rows up by key is very fast (Module 32).
 
   - kind: try
     title: The key says no
@@ -215,7 +215,7 @@ steps:
       CREATE TABLE cases (case_id serial PRIMARY KEY, …);
       ```
 
-      `serial` was the pre-2017 way to auto-number a column. It still works, but it has quirks (it lets you type your own IDs by accident, and its permissions are handled separately). Recognize it. For new tables, use `GENERATED ALWAYS AS IDENTITY`.
+      `serial` was the pre-2017 way to auto-number a column. It still works, but it has quirks (for one, it lets you type your own IDs by accident). Recognize it. For new tables, use `GENERATED ALWAYS AS IDENTITY`.
 
       **Example of the quirk.** With `serial`, someone can type an ID by hand, and the counter doesn't notice:
 
@@ -254,14 +254,14 @@ steps:
   - kind: explain
     title: UUID keys
     body: |
-      A **UUID** is a 128-bit ID written like `0199a3b2-7c1e-7d40-9f8a-3c2b1e0d4a57`. It's so random that two computers can generate them independently and never clash.
+      A **UUID** is a long random ID written like `0199a3b2-7c1e-7d40-9f8a-3c2b1e0d4a57`. It's so random that two computers can make them separately and never produce the same one.
 
-      - `gen_random_uuid()` makes a completely random one (version 4).
-      - `uuidv7()` (**new in PostgreSQL 18**) starts with a timestamp, so new IDs sort roughly in creation order. That keeps indexes efficient, so prefer it for keys.
+      - `gen_random_uuid()` makes a completely random one.
+      - `uuidv7()` (**new in PostgreSQL 18**) starts with the current time, so newer IDs sort after older ones. That keeps lookups fast, so prefer it for keys.
 
       **Choose UUIDs when** IDs are created in many places (phones, several servers), when merging data from different systems, or when you don't want IDs to be guessable in URLs (`/orders/1043` invites trying `/orders/1044`).
 
-      **Stick with identity numbers** otherwise: they're smaller (4 or 8 bytes vs. 16), faster, and easy to read aloud.
+      **Stick with identity numbers** otherwise: they take less space, they're faster, and they're easy to read aloud.
 
   - kind: try
     title: Make some UUIDs

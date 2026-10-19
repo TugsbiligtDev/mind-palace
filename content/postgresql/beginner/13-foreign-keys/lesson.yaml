@@ -2,6 +2,8 @@ steps:
   - kind: explain
     title: A column that points at another table
     body: |
+      *This is one of the longer lessons. It's fine to stop halfway: your place is saved, and you'll pick up where you left off.*
+
       Each order belongs to a customer. The `orders` table doesn't copy the customer's name. It stores `customer_id`, which **points at** a row in `customers`:
 
       ```sql
@@ -229,7 +231,7 @@ steps:
     body: |
       Inkwell wants themed **shelves** on its website (*Staff picks*, *Summer reads*…), and a book can sit on many shelves. The `shelves` table is ready. Create **shelf_books** with two columns, `shelf_id` and `book_id`, each a foreign key to its table, and a composite primary key on both. (Don't name the constraints; let PostgreSQL do it.)
 
-      The last query counts the table's key constraints: `f` = foreign key, `p` = primary key.
+      The last query is a ready-made helper that counts the table's keys, so you can check your work.
     sql: |
       CREATE TABLE shelves (
           shelf_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -241,7 +243,8 @@ steps:
           book_id   integer
       );
 
-      SELECT contype, count(*)
+      -- A ready-made helper that lists the table's rules. You don't need to understand how it works.
+      SELECT CASE contype WHEN 'c' THEN 'check' WHEN 'f' THEN 'foreign key' WHEN 'n' THEN 'not null' WHEN 'p' THEN 'primary key' WHEN 'u' THEN 'unique' END AS kind, count(*) AS rules
       FROM pg_constraint
       WHERE conrelid = 'shelf_books'::regclass AND contype IN ('f', 'p')
       GROUP BY contype
@@ -258,7 +261,8 @@ steps:
           PRIMARY KEY (shelf_id, book_id)
       );
 
-      SELECT contype, count(*)
+      -- A ready-made helper that lists the table's rules. You don't need to understand how it works.
+      SELECT CASE contype WHEN 'c' THEN 'check' WHEN 'f' THEN 'foreign key' WHEN 'n' THEN 'not null' WHEN 'p' THEN 'primary key' WHEN 'u' THEN 'unique' END AS kind, count(*) AS rules
       FROM pg_constraint
       WHERE conrelid = 'shelf_books'::regclass AND contype IN ('f', 'p')
       GROUP BY contype
@@ -432,7 +436,7 @@ steps:
       VALUES (21)
       RETURNING order_id, customer_id, status;
 
-  - kind: explain
+  - kind: info
     title: "Common mistake: FK columns aren't indexed"
     body: |
       PostgreSQL automatically indexes every **primary key**, but **not** foreign key columns. An index is like the index at the back of a book: it lets PostgreSQL find rows without reading the whole table (Module 32).

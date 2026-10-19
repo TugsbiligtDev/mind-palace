@@ -8,7 +8,7 @@ questions:
       - Twenty-one of Inkwell's thirty sales were paid by card
       - "`card`, the payment method recorded on a single sale"
     answer: 2
-    explanation: The first, second and fourth are single stored facts. "Twenty-one of thirty sales were paid by card" answers a question, so it's information.
+    explanation: A date, a title and a payment method are each a single stored fact. "Twenty-one of thirty sales were paid by card" answers a question, so it's information.
 
   - type: mcq
     prompt: A customer's address is copied into every one of their order rows in a spreadsheet. They move house. What's the risk?

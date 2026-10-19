@@ -2,7 +2,8 @@
 import { useCallback, useState } from "react";
 import { Markdown } from "@/components/markdown";
 
-type Feedback = { ok: boolean; text: string } | null;
+// `note` is a neutral message (not a wrong attempt): it doesn't count towards the hint or answer.
+type Feedback = { ok: boolean; text: string; note?: boolean } | null;
 
 // The grading state every exercise shares: the message under the editor and how many wrong
 // attempts there were (a hint shows after the first, an answer after the third). A run that ends
@@ -46,9 +47,10 @@ export function useStepFeedback(slot: string, onDone: () => void) {
     },
     [setMisses],
   );
+  const note = useCallback((text: string) => setFeedback({ ok: false, text, note: true }), []);
   // A wrong attempt that already shows its own message (a terminal command that failed).
   const stumble = useCallback(() => setMisses((m) => m + 1), [setMisses]);
-  return { feedback, setFeedback, misses, pass, miss, stumble };
+  return { feedback, setFeedback, misses, pass, miss, note, stumble };
 }
 
 export function StepFeedback({
@@ -69,7 +71,7 @@ export function StepFeedback({
   return (
     <>
       {feedback && (
-        <p className={`rounded-lg px-3 py-2 text-sm ${feedback.ok ? "bg-success/10 text-success" : "bg-xp/10 text-text"}`}>
+        <p className={`rounded-lg px-3 py-2 text-sm ${feedback.ok ? "bg-success/10 text-success" : feedback.note ? "bg-subtle text-text" : "bg-xp/10 text-text"}`}>
           {feedback.ok ? "✓ " : ""}
           {feedback.text}
         </p>

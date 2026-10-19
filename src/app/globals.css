@@ -94,6 +94,18 @@ body {
   color: var(--text);
 }
 
+/* JetBrains Mono joins characters by default (!= shows as ≠, <= as ⩽, || as one glyph).
+   Learners must see the exact keys to type, so code never uses ligatures. */
+code,
+pre,
+kbd,
+samp,
+.font-mono,
+.cm-editor {
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
 /* Lesson / story prose */
 .prose-mp {
   line-height: 1.7;
@@ -150,6 +162,11 @@ body {
   border: 1px solid var(--border);
   padding: 0.35rem 0.6rem;
   text-align: left;
+}
+.prose-mp img {
+  max-width: 100%;
+  height: auto;
+  margin: 0.5rem 0;
 }
 .prose-mp blockquote {
   border-left: 3px solid var(--brand);

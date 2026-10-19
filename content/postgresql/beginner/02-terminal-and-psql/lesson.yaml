@@ -2,6 +2,8 @@ steps:
   - kind: explain
     title: Terminal and zsh
     body: |
+      **Nothing to install.** This lesson shows how people use PostgreSQL on their own computer, so you'll recognise it later. Everything you need to *do* happens here in the browser. Steps marked **On your Mac** are optional extras: press **Skip for now** to move on.
+
       **Terminal** is the Mac app where you type commands instead of clicking. Inside it runs a **shell**, the program that reads what you type and runs it. On macOS the shell is **zsh**.
 
       You'll use Terminal for one main thing in this course: starting **psql**, the command-line client for PostgreSQL. But a few basic commands make everything easier:
@@ -95,12 +97,12 @@ steps:
 
       - **Host**: *which computer* the server is on. `localhost` means "this same computer". A server elsewhere has an address like `db.example.com`.
       - **Port**: *which door* on that computer. A computer runs many services, and each listens on a numbered port. PostgreSQL's standard port is **5432**.
-      - **User**: *who you are*. On a Mac set up with Homebrew, it's the same as your Mac username (run `whoami` to see it).
+      - **User**: *who you are*. On your own Mac it's usually your Mac username (run `whoami` in Terminal to see it).
       - **Database**: *which database* to open, like `practice`.
 
       A **connection** is an open line between one client and the server, logged in as one user, to **one database**. To use a different database you open a new connection.
 
-      **Example.** All four pieces in one psql command (each flag is one piece):
+      **Example.** All four pieces in one psql command (each *flag*, a dash and a letter like `-h`, introduces one piece):
 
       ```text
       psql -h localhost -p 5432 -U ada -d practice

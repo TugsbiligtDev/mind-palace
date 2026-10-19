@@ -11,7 +11,9 @@ steps:
   - kind: try
     title: Raw data
     body: |
-      This is Inkwell Books' sales log, exactly as stored in its first, simple database, `practice`. Press **Run** (or **⌘ + Enter**).
+      Your first exercise. They all work the same way: the code on the right is ready to run, you press **Run** (or **⌘ + Enter**) to see what it does, and then you change it the way the task asks. **Continue** unlocks once your version is right. If you get stuck, a hint appears after your first try, and one working answer after your third.
+
+      This is Inkwell Books' sales log, exactly as stored in its first, simple database, `practice`. Press **Run**.
 
       It's all facts, no answers yet. You don't need to understand the SQL yet; you'll learn it in the next modules.
 
@@ -193,11 +195,11 @@ steps:
     body: You type a query in **psql** on your Mac and press Enter. Which program **holds the data and runs the query**?
     options:
       - "psql"
-      - "Terminal"
-      - "zsh"
+      - "The SQL language"
+      - "Your Mac's keyboard"
       - "The PostgreSQL server"
     answer: 3
-    explanation: "psql is only the client: it sends your SQL and shows the answer. The server, running in the background, holds the data and does the work. Terminal and zsh are just where you typed."
+    explanation: "psql is only the client: it sends your SQL and shows the answer. The server, running in the background, holds the data and does the work. SQL is the language you wrote the question in."
 
   - kind: explain
     title: Where PostgreSQL fits
@@ -225,7 +227,9 @@ steps:
   - kind: try
     title: "Try it: which version?"
     body: |
-      Run it to ask the server for its version. Then try `SELECT now();` to ask it for the current time.
+      Run it to ask the server for its version. The answer is one long line: the part that matters is **PostgreSQL 18.3** at the start. Everything after it is technical detail about how this copy was built, and you can ignore it.
+
+      Then try `SELECT now();` to ask it for the current time.
 
       Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
     sql: |

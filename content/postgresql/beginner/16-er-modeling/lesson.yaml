@@ -150,29 +150,21 @@ steps:
   - kind: explain
     title: "Crow's-foot diagrams"
     body: |
-      ER diagrams draw each entity as a box and each relationship as a line. The line ends show cardinality and optionality. The fork that looks like a bird's foot means **many**:
+      ER diagrams draw each entity as a box and each relationship as a line. The line ends show cardinality and optionality. The fork that looks like a bird's foot means **many**, a bar means **one**, and a circle means **zero**:
 
-      | Line end | Read it as |
-      |---|---|
-      | `\|\|` | exactly one |
-      | `o\|` | zero or one |
-      | `\|<` | one or more |
-      | `o<` | zero or more |
+      ![The four line ends: two bars is exactly one, circle and bar is zero or one, bar and foot is one or more, circle and foot is zero or more](/course-assets/postgresql/crows-foot-ends.svg)
 
       The symbol **next to a box** describes how many of *that* box take part. Our book-club model:
 
-      ```text
-      hosts ||--------o< clubs           a host leads zero or more clubs;
-                                         a club has exactly one host
+      ![The book-club model: hosts lead clubs, hosts speak languages, customers join clubs through memberships, which hold copies](/course-assets/postgresql/book-club-erd.svg)
 
-      hosts >o--------|< languages       a host speaks one or more languages;
-                                         a language is spoken by zero or more hosts
-                                         (many-to-many: needs a junction table)
+      Read each line from one box to the other:
 
-      customers ||----o< memberships >o----|| clubs
-      ```
+      - **hosts → clubs**: two bars next to hosts, so a club has exactly one host. Circle and foot next to clubs, so a host leads zero or more clubs.
+      - **hosts → languages**: a host speaks one or more languages (bar and foot next to languages), and a language is spoken by zero or more hosts (circle and foot next to hosts). Many on both sides: that's many-to-many, which needs a junction table.
+      - **customers → memberships → clubs**: `memberships` is the junction between customers and clubs, and it carries the `copies` attribute.
 
-      `memberships` is the junction between customers and clubs, and it carries the `copies` attribute.
+      In text (in notes or tools like dbdiagram.io) the same ends are often typed as `||` (exactly one), `o|` (zero or one), `|<` (one or more) and `o<` (zero or more).
 
   - kind: try
     title: Inkwell's relationships
@@ -269,7 +261,7 @@ steps:
       - `first_meeting`: date, required
       - `host_id`: the host who leads it. Every club has **exactly one**, so it's required, and it must reference `hosts`.
 
-      The last query summarizes the table's rules: `f` = foreign key, `n` = not null, `p` = primary key.
+      The last query is a ready-made helper that counts the table's rules by kind, so you can check your work.
     sql: |
       CREATE TABLE hosts (
           host_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -278,7 +270,8 @@ steps:
 
       -- Create clubs here.
 
-      SELECT contype, count(*)
+      -- A ready-made helper that lists the table's rules. You don't need to understand how it works.
+      SELECT CASE contype WHEN 'c' THEN 'check' WHEN 'f' THEN 'foreign key' WHEN 'n' THEN 'not null' WHEN 'p' THEN 'primary key' WHEN 'u' THEN 'unique' END AS kind, count(*) AS rules
       FROM pg_constraint
       WHERE conrelid = 'clubs'::regclass
       GROUP BY contype
@@ -297,7 +290,8 @@ steps:
           host_id        integer NOT NULL REFERENCES hosts (host_id)
       );
 
-      SELECT contype, count(*)
+      -- A ready-made helper that lists the table's rules. You don't need to understand how it works.
+      SELECT CASE contype WHEN 'c' THEN 'check' WHEN 'f' THEN 'foreign key' WHEN 'n' THEN 'not null' WHEN 'p' THEN 'primary key' WHEN 'u' THEN 'unique' END AS kind, count(*) AS rules
       FROM pg_constraint
       WHERE conrelid = 'clubs'::regclass
       GROUP BY contype

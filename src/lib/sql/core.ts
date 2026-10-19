@@ -194,8 +194,8 @@ export function lastRows(out: RunOutput): Extract<Block, { kind: "rows" }> | und
 // Two result sets match when they have the same number of columns and the same rows
 // (column names are ignored; order only matters when `ordered` is set).
 function sameRows(
-  a: Extract<Block, { kind: "rows" }> | undefined,
-  b: Extract<Block, { kind: "rows" }> | undefined,
+  a: Rows | undefined,
+  b: Rows | undefined,
   ordered: boolean,
 ): boolean {
   if (!a || !b || a.columns.length !== b.columns.length || a.rows.length !== b.rows.length) return false;
@@ -243,7 +243,7 @@ export async function grade(fresh: () => Promise<PGliteInterface>, input: string
     return {
       correct: ok,
       output,
-      message: ok ? "The evidence checks out." : wrongRowsMessage(lastRows(output), lastRows(refOut)),
+      message: ok ? "The evidence checks out." : wrongRowsMessage(lastRows(output), lastRows(refOut), output),
     };
   }
   const myState = lastRows(await runInput(mine, check.state_query));
@@ -256,20 +256,65 @@ export async function grade(fresh: () => Promise<PGliteInterface>, input: string
   };
 }
 
-// Point at the first row that differs, so the learner knows where to look.
-function wrongStateMessage(mine: Extract<Block, { kind: "rows" }> | undefined, ref: Extract<Block, { kind: "rows" }> | undefined) {
-  const base = "The database doesn't look right yet.";
-  if (!mine || !ref) return `${base} Check which rows you changed.`;
-  const line = (r: (string | null)[] | undefined) => (r ? r.map((v) => v ?? "NULL").join(" | ") : "nothing");
-  for (let i = 0; i < Math.max(mine.rows.length, ref.rows.length); i++) {
-    const [a, b] = [line(mine.rows[i]), line(ref.rows[i])];
-    if (a !== b) return `${base} First difference: expected "${b}", but found "${a}".`;
+type Rows = Extract<Block, { kind: "rows" }>;
+
+// Explain, in plain words, what the check found in the database after the learner's SQL ran.
+// Two kinds of check exist: "tests" (a list of rows the check tried to insert, each accepted
+// or rejected) and plain data (the rows of the table the task changes).
+function wrongStateMessage(mine: Rows | undefined, ref: Rows | undefined) {
+  const base = "Not yet.";
+  if (!ref) return `${base} Check which rows you changed.`;
+  if (!mine) return `${base} The check couldn't read the table it needs. Make sure it exists, with the table and column names the task gives.`;
+  if (ref.columns.join() === "test,result") return wrongTestMessage(mine, ref);
+
+  // Describe a row with its column names: "book_id 6, stock 9" instead of "6 | 9".
+  const describe = (cols: string[], r: (string | null)[]) => r.map((v, i) => `${cols[i]} ${v ?? "NULL"}`).join(", ");
+  const key = (r: (string | null)[]) => JSON.stringify(r.map(normalizeNumber));
+  const mineKeys = new Set(mine.rows.map(key));
+  const refKeys = new Set(ref.rows.map(key));
+  const missing = ref.rows.filter((r) => !mineKeys.has(key(r)));
+  const extra = mine.rows.filter((r) => !refKeys.has(key(r)));
+
+  // The same row (same first value) with a different value somewhere else.
+  const changed = extra.map((r) => [r, missing.find((m) => m[0] === r[0])] as const).find(([, m]) => m);
+  if (changed) {
+    const [found, expected] = changed;
+    const diffs = found.flatMap((v, i) => (v !== expected![i] ? [`${ref.columns[i]} should be ${expected![i] ?? "NULL"}, but it's ${v ?? "NULL"}`] : []));
+    return `${base} In the row with ${ref.columns[0]} ${found[0]}: ${diffs.join("; ")}.`;
   }
-  return `${base} Check which rows you changed.`;
+  if (extra.length > 0 && missing.length === 0)
+    return `${base} This row is still there, but it shouldn't be after your change: ${describe(mine.columns, extra[0])}.`;
+  if (missing.length > 0 && extra.length === 0)
+    return `${base} This row should be there after your change, but it isn't: ${describe(ref.columns, missing[0])}.`;
+  if (missing.length > 0)
+    return `${base} After your change, this row should still be there, but it's gone: ${describe(ref.columns, missing[0])}. And this one is still there, but it shouldn't be: ${describe(mine.columns, extra[0])}.`;
+  return `${base} The right rows are there, but in a different order than expected. Check which rows you changed.`;
 }
 
-function wrongRowsMessage(mine: Extract<Block, { kind: "rows" }> | undefined, ref: Extract<Block, { kind: "rows" }> | undefined) {
-  if (!mine) return "Your query didn't return any rows to check. The last statement should be a SELECT.";
+// For "checked by trying some rows" steps: say which try came out wrong, and what that means.
+function wrongTestMessage(mine: Rows, ref: Rows) {
+  for (const [i, [test, expected]] of ref.rows.entries()) {
+    const found = mine.rows[i]?.[1] ?? "";
+    if (found === expected) continue;
+    if (found.startsWith("missing table or column"))
+      return `Not yet. The check couldn't find the table or one of its columns. Create it first, with the exact table and column names the task gives.`;
+    if (expected === "rejected" && found === "accepted")
+      return `Not yet. The check tried this, and your table allowed it, but it should refuse it: ${test}. Which rule would stop it?`;
+    if (expected === "accepted" && found.startsWith("rejected"))
+      return `Not yet. The check tried this, and your table refused it, but it should allow it: ${test}. One of your rules is too strict.`;
+    return `Not yet. The check tried this, and it didn't come out right: ${test}.`;
+  }
+  return "Not yet. Check the rules on your table.";
+}
+
+function wrongRowsMessage(mine: Rows | undefined, ref: Rows | undefined, output: RunOutput) {
+  if (!mine) {
+    const last = output.blocks.at(-1);
+    if (!last) return "Nothing ran yet: the editor only has notes in it (lines starting with -- are notes). Write your query, then press Run.";
+    if (last.kind === "status" && /^(INSERT|UPDATE|DELETE)\b/.test(last.text))
+      return "Your SQL changed the data, but it didn't show any rows, so there's nothing to check yet. Add the RETURNING (or the SELECT) the task asks for.";
+    return "Your SQL ran, but it didn't show any rows, so there's nothing to check yet. Make sure the query the task asks for is the last thing in the editor.";
+  }
   if (ref && mine.columns.length !== ref.columns.length)
     return `Not quite: the answer needs ${ref.columns.length} column${ref.columns.length === 1 ? "" : "s"}, and you returned ${mine.columns.length}.`;
   if (ref && mine.rows.length !== ref.rows.length)

@@ -262,7 +262,7 @@ steps:
       - **`promotions_percent_positive`**: percent_off must be greater than 0
       - **`promotions_dates_in_order`**: ends_on must be after starts_on
 
-      The last line lists the table's constraints so you can check your work: `c` = check, `p` = primary key, `n` = not null. (Since PostgreSQL 18, NOT NULL rules get names too.)
+      The last query is a ready-made helper that lists the table's rules and their kind, so you can check your work. (Since PostgreSQL 18, NOT NULL rules get names too, so they're listed as well.)
     sql: |
       CREATE TABLE promotions (
           promo_id     integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -271,7 +271,8 @@ steps:
           ends_on      date NOT NULL
       );
 
-      SELECT conname, contype
+      -- A ready-made helper that lists the table's rules. You don't need to understand how it works.
+      SELECT conname AS rule, CASE contype WHEN 'c' THEN 'check' WHEN 'f' THEN 'foreign key' WHEN 'n' THEN 'not null' WHEN 'p' THEN 'primary key' WHEN 'u' THEN 'unique' END AS kind
       FROM pg_constraint
       WHERE conrelid = 'promotions'::regclass
       ORDER BY conname;
@@ -285,7 +286,8 @@ steps:
           CONSTRAINT promotions_dates_in_order    CHECK (ends_on > starts_on)
       );
 
-      SELECT conname, contype
+      -- A ready-made helper that lists the table's rules. You don't need to understand how it works.
+      SELECT conname AS rule, CASE contype WHEN 'c' THEN 'check' WHEN 'f' THEN 'foreign key' WHEN 'n' THEN 'not null' WHEN 'p' THEN 'primary key' WHEN 'u' THEN 'unique' END AS kind
       FROM pg_constraint
       WHERE conrelid = 'promotions'::regclass
       ORDER BY conname;

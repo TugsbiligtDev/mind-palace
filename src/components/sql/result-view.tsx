@@ -3,14 +3,17 @@ import type { Block, RunOutput } from "@/lib/sql/core";
 // Drawing tens of thousands of rows freezes the page (the Intermediate dataset has 39,000
 // orders), so only the first rows are shown. Grading always uses the full result.
 const SHOWN_ROWS = 200;
+// Long results scroll inside a box of about 12 rows, so the feedback and Continue button under
+// them stay on screen. Wide results scroll sideways, and say so (the scrollbar is easy to miss).
+const WIDE_COLUMNS = 6;
 
 function RowsTable({ block }: { block: Extract<Block, { kind: "rows" }> }) {
   return (
     <div>
       {block.title && <p className="mb-1.5 text-center font-mono text-xs text-muted">{block.title}</p>}
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="max-h-80 overflow-auto rounded-lg border border-border">
         <table className="w-full border-collapse font-mono text-[0.8rem]">
-          <thead className="bg-subtle">
+          <thead className="sticky top-0 bg-subtle">
             <tr>
               {block.columns.map((c, i) => (
                 <th key={i} className="border-b border-border px-3 py-1.5 text-left font-medium whitespace-nowrap">
@@ -36,6 +39,8 @@ function RowsTable({ block }: { block: Extract<Block, { kind: "rows" }> }) {
         <p className="mt-1 font-mono text-xs text-muted">
           ({block.rows.length} row{block.rows.length === 1 ? "" : "s"}
           {block.rows.length > SHOWN_ROWS && `, showing the first ${SHOWN_ROWS}. Add LIMIT, WHERE or GROUP BY to see less`})
+          {block.rows.length > 12 && " Scroll inside the table to see every row."}
+          {block.columns.length >= WIDE_COLUMNS && ` ${block.columns.length} columns: scroll sideways to see them all.`}
         </p>
       )}
     </div>

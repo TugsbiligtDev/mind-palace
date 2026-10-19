@@ -286,7 +286,7 @@ steps:
 
       Calculate it in the query instead: `copies * unit_price AS line_total`. Same goes for ages (store the birth date, not the age) and counts (count the rows, don't store "number_of_orders").
 
-      There are good reasons to store a calculated value sometimes, for speed on huge tables. That's **deliberate denormalization**: a choice you make on purpose, for a measured reason, never by accident. (Module 29's *generated columns* also let PostgreSQL keep one in sync for you.)
+      There are good reasons to store a calculated value sometimes, for speed on huge tables. That's **deliberate denormalization** (undoing normalization a little, on purpose): a choice you make for a measured reason, never by accident. (Module 29's *generated columns* also let PostgreSQL keep one in sync for you.)
 
   - kind: try
     title: A total that went stale
@@ -326,7 +326,7 @@ steps:
   - kind: info
     title: "🔹 BCNF"
     body: |
-      **Boyce-Codd normal form** is a slightly stricter 3NF: *every* column that determines another must be a candidate key. The tables where 3NF and BCNF differ are rare (usually ones with several overlapping composite keys). If your tables are in 3NF, you're in good shape. Just recognize the name.
+      **Boyce-Codd normal form** is a slightly stricter 3NF: *every* column that determines another must be a candidate key (a column, or set of columns, that could serve as the primary key because it's unique for every row). The tables where 3NF and BCNF differ are rare (usually ones with several overlapping composite keys). If your tables are in 3NF, you're in good shape. Just recognize the name.
 
   - kind: try
     title: "Find the bug: half an update"

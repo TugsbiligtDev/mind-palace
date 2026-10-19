@@ -176,7 +176,7 @@ steps:
 
       EXPLAIN SELECT * FROM orders_copy WHERE status = 'pending';
 
-  - kind: explain
+  - kind: info
     title: Buffers
     body: |
       Since PostgreSQL 18, `EXPLAIN ANALYZE` also shows **buffers** by default: how many 8 kB **pages** each step touched.

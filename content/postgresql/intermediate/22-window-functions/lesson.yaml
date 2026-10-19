@@ -257,7 +257,7 @@ steps:
 
       Useful pieces: `UNBOUNDED PRECEDING` (from the start), `n PRECEDING`, `CURRENT ROW`, `n FOLLOWING`, `UNBOUNDED FOLLOWING`.
 
-      The default frame with ORDER BY is "from the start up to the current row, **including rows tied with it**" (that's `RANGE`). With exact ties in the ORDER BY column, a running total jumps by both at once. Writing `ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` counts strictly row by row.
+      One detail, only if you ever see a running total jump by two rows at once: with ORDER BY and no frame, rows with exactly the same value count as one step. Writing `ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` makes it count strictly one row at a time.
 
   - kind: try
     title: A moving average

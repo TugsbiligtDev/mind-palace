@@ -259,7 +259,7 @@ steps:
   - kind: explain
     title: Keep transactions short
     body: |
-      While a transaction is open, it **holds locks** on the rows it changed (other sessions wanting them must wait, Module 31) and stops PostgreSQL from cleaning up old row versions (VACUUM can't remove anything an open transaction might still need).
+      While a transaction is open, it **holds locks** on the rows it changed (other sessions wanting them must wait, Module 31) and stops PostgreSQL's background clean-up of old, replaced rows (Module 31 explains those), because an open transaction might still need them.
 
       So:
 
@@ -313,5 +313,5 @@ steps:
       - `BEGIN` … `COMMIT` keeps the changes, `ROLLBACK` discards them. Without BEGIN, each statement autocommits.
       - After an error inside a transaction, everything is refused ("current transaction is aborted") until `ROLLBACK`.
       - `SAVEPOINT name` / `ROLLBACK TO SAVEPOINT name` undoes part of the work.
-      - In PostgreSQL, DDL (CREATE, ALTER, DROP) can be rolled back too.
+      - In PostgreSQL, changes to structure (CREATE, ALTER, DROP, often called *DDL*) can be rolled back too.
       - Keep transactions short. Never leave a session *idle in transaction*.

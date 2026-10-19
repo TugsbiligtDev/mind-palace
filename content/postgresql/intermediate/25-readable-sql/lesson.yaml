@@ -279,7 +279,7 @@ steps:
 
       - **An inner join silently drops rows.** Customers without orders, genres without books: gone. Use LEFT JOIN when "none" is a valid answer.
       - **A WHERE on the right side of a LEFT JOIN turns it back into an inner join.** `LEFT JOIN books b … WHERE b.price > 29` removes every unmatched row, because their `b.price` is NULL. Put conditions about the right-hand table in the **ON** clause instead. (Example on the next page.)
-      - **Averages over the wrong grain.** `avg(quantity * unit_price)` from order_items is the average **order line**, not the average **order**. Decide what one row represents first (Module 18).
+      - **Averages over the wrong grain** (the *grain* is what one row stands for). `avg(quantity * unit_price)` from order_items is the average **order line**, not the average **order**. Decide what one row represents first (Module 18).
       - **Fan-out inflates sums and counts** (Module 14).
       - **`count(*)` vs. `count(col)`** after a LEFT JOIN (Module 14).
 
@@ -394,7 +394,7 @@ steps:
       - **pgFormatter**: reformats PostgreSQL queries consistently. There's a web version, and it's built into some editors.
       - **SQLFluff**: a *linter* that checks style rules (and some likely bugs) and can fix many automatically. Teams often run it on every change.
 
-      Useful once you're working on a shared codebase.
+      Useful once you're writing SQL in a team, where everyone's queries live together in one project.
 
   - kind: try
     title: "Find the bug: the average order that isn't"

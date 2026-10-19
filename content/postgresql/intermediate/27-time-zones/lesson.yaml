@@ -171,7 +171,7 @@ steps:
       Avoid fixed offsets like `'+01'`:
 
       - **An offset doesn't know about daylight saving.** Rome is `+01` in winter and `+02` in summer. The name `Europe/Rome` knows which applies on each date, and `+01` is simply wrong half the year.
-      - **Offset spellings are a trap.** `SET TimeZone = 'UTC+8'` means 8 hours **behind** UTC, not ahead (an old POSIX rule). Names never have this problem.
+      - **Offset spellings are a trap.** `SET TimeZone = 'UTC+8'` means 8 hours **behind** UTC, not ahead (an old rule from early computer systems that PostgreSQL still follows). Names never have this problem.
 
       Full list: `SELECT name FROM pg_timezone_names;`
 

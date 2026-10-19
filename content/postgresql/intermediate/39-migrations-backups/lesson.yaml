@@ -2,7 +2,7 @@ steps:
   - kind: explain
     title: Schema changes need a history
     body: |
-      Your database exists in several places: your laptop, a teammate's laptop, a test server, production. When you add a column on your laptop, how do the others get **exactly** the same change, in the right order, exactly once?
+      Your database exists in several places: your laptop, a teammate's laptop, a test server, and *production* (the real, live copy the shop and its customers use). When you add a column on your laptop, how do the others get **exactly** the same change, in the right order, exactly once?
 
       Typing ALTER TABLE by hand in each place doesn't scale: someone forgets a step, or runs it twice.
 
@@ -15,11 +15,11 @@ steps:
         003_add_customer_phone.sql
       ```
 
-      Migrations live in **Git** next to the app code. A tool applies the ones a database hasn't had yet, **in order**, and records each in a table (often `schema_migrations`). Any database can be brought up to date by running what's missing.
+      Migrations live in **Git** (a tool that keeps the full history of a project's files, so a team can share changes) next to the app code. A tool applies the ones a database hasn't had yet, **in order**, and records each in a table (often `schema_migrations`). Any database can be brought up to date by running what's missing.
 
   - kind: choice
     title: "Quick check: which migrations run?"
-    body: "Production has run migrations 001 and 002. Your branch adds 003 and 004. What does the migration tool run when you deploy?"
+    body: "Production has run migrations 001 and 002. Your new work adds 003 and 004. What does the migration tool run when you *deploy* (put the new version live)?"
     options:
       - "003, then 004"
       - "001, 002, 003 and 004"
@@ -33,7 +33,7 @@ steps:
     body: |
       - **Never edit a migration that has already run somewhere.** Other databases won't rerun it, so your edit reaches nobody. Write a **new** migration instead.
       - **One change per migration**, with a descriptive name.
-      - **Run each one in a transaction** where possible (PostgreSQL can roll back DDL, Module 30), so a failure leaves nothing half-done. (Exception: `CREATE INDEX CONCURRENTLY` can't run inside a transaction.)
+      - **Run each one in a transaction** where possible (PostgreSQL can roll back changes to structure, Module 30), so a failure leaves nothing half-done. (Exception: `CREATE INDEX CONCURRENTLY` can't run inside a transaction.)
       - Some tools support **down** migrations (undo steps). Many teams only move **forward**: to undo, write another migration.
       - On big production tables, some changes lock the table. Test those on a copy first and run them at a quiet time.
 
@@ -125,7 +125,7 @@ steps:
 
       What `pg_dump` **doesn't** include: **roles and passwords**, which belong to the whole cluster. Back those up with `pg_dumpall --globals-only`.
 
-      pg_dump is great for small and medium databases and for moving data. Big production systems add **physical** backups and point-in-time recovery (`pg_basebackup` plus WAL archiving, or your cloud provider's backups).
+      pg_dump is great for small and medium databases and for moving data. Big production systems add **physical** backups (a copy of the database's files) that can restore to any moment in time. Recognize the names `pg_basebackup` and *point-in-time recovery*; cloud providers usually set this up for you.
 
   - kind: choice
     title: "Quick check: what's in the dump?"

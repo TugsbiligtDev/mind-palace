@@ -33,11 +33,16 @@ export function SqlPanel({
     async (input: string, out: RunOutput) => {
       if (step.expect_error) {
         if (out.error) pass("That's the error we wanted to see. Read it carefully: the ERROR line says what went wrong, and LINE points to where.");
-        else miss("No error this time. Run the broken version to see the message.");
+        // Many of these steps go on to say "then fix it", so a run without an error after the
+        // error was seen is the fix working, not a wrong answer.
+        else if (done) note("No error this time: your change fixed it.");
+        else note("No error this time. Press Reset and run the original code first, to see the error message this step is about.");
         return;
       }
       if (out.error) {
-        miss("An error. Read the message, fix the query, and run it again.");
+        // The untouched starter stopping with an error is part of the task, not a wrong attempt.
+        if (same(input, step.sql)) note("That's the starting code, and it stops with an error on purpose. Read the message: it tells you what to change. Then run it again.");
+        else miss("An error. Read the message, fix the query, and run it again.");
         return;
       }
       const check = tryStepCheck(step);
@@ -60,7 +65,7 @@ export function SqlPanel({
       if (v.correct) pass("Correct! That's exactly the result we were after.");
       else miss(v.message);
     },
-    [step, engine, onDone, pass, miss, note, setFeedback],
+    [step, engine, done, onDone, pass, miss, note, setFeedback],
   );
 
   return (

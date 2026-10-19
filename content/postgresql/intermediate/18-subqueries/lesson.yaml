@@ -338,6 +338,14 @@ steps:
       What customers paid should match what they bought. The starter totals the **payments** per order (refunds are negative). Add a second derived table that totals **quantity × unit_price** per order from `order_items`, join them on `order_id`, and return only orders where the two **don't match**.
 
       Return `order_id`, `paid` and `bought`. You should get 997 orders: every one of them was refunded, some fully and some partly.
+
+      Take it one piece at a time:
+
+      1. Write the second derived table on its own first and run it: `SELECT order_id, sum(quantity * unit_price) AS bought FROM order_items GROUP BY order_id`.
+      2. Put it in parentheses after the first one, with `JOIN (…) AS t ON t.order_id = p.order_id`.
+      3. Add `t.bought` to the SELECT, then a WHERE that keeps the rows where `paid` and `bought` differ.
+    hint: |
+      Two derived tables, each with its own alias (`p` and `t`), joined on `order_id`. "Don't match" is `<>`.
     sql: |
       SELECT p.order_id, p.paid
       FROM (SELECT order_id, sum(amount) AS paid

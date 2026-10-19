@@ -254,7 +254,7 @@ steps:
       FROM raw_customer_import r
       JOIN customers c ON c.email = r.email;
 
-  - kind: explain
+  - kind: info
     title: "Performance warning: patterns are slow"
     body: |
       A normal index (Module 32) works like a phone book: great for "names starting with Sm…", useless for "names containing …ith". So:

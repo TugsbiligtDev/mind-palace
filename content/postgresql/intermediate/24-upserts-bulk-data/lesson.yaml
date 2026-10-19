@@ -214,7 +214,7 @@ steps:
 
       | Problem | Symptom | Fix |
       |---|---|---|
-      | **Encoding** | `invalid byte sequence for encoding "UTF8"` | The file isn't UTF-8 (often Excel's Latin-1). Add `ENCODING 'LATIN1'`, or re-save as UTF-8. |
+      | **Encoding** | `invalid byte sequence for encoding "UTF8"` | The file's *encoding* (how its letters are stored) isn't UTF-8, the usual one. Excel often saves Latin-1 instead. Add `ENCODING 'LATIN1'`, or re-save as UTF-8. |
       | **Date formats** | `date/time field value out of range: "15/03/2026"` | Is it day/month or month/day? Load as text, then convert with `to_date(col, 'DD/MM/YYYY')`. |
       | **Empty vs. NULL** | Empty strings where you expected NULL, or the reverse | In CSV, an unquoted empty field is NULL and `""` is empty text. `NULL 'N/A'` treats N/A as NULL. |
       | **Stray text in numbers** | `invalid input syntax for type numeric: "$19.99"` | Load as text, then clean (Module 26). |
@@ -228,7 +228,7 @@ steps:
       Two functions do most of that converting:
 
       - **`to_date(text, pattern)`** reads a date written in a pattern you describe. `DD` is the day, `MM` the month, `YYYY` the year.
-      - **`NULLIF(a, b)`** gives NULL when `a` equals `b`, otherwise `a` (Module 10). `NULLIF(price, '')` turns empty text into NULL before you convert it to a number.
+      - **`NULLIF(a, b)`** gives NULL when `a` equals `b`, otherwise `a` (Module 9). `NULLIF(price, '')` turns empty text into NULL before you convert it to a number.
 
       ```sql
       SELECT to_date('25/12/2025', 'DD/MM/YYYY') AS christmas,

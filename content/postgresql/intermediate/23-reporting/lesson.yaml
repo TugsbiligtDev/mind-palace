@@ -152,8 +152,8 @@ steps:
     title: Your turn to fill the gaps
     body: |
       Make the same 2025 calendar for Diego, but show the **number of payments** per month labeled **payments**, with **0** for empty months. Columns: `month` (as a date) and `payments`, ordered by month.
-
-      Careful: `count(*)` would count an empty month's single NULL-filled row as 1. Count a column from `d` instead.
+    hint: |
+      `count(*)` would count an empty month's single NULL-filled row as 1. Count a column from `d` instead (Module 14).
     sql: |
       WITH diego AS (
           SELECT p.*

@@ -10,7 +10,7 @@ steps:
 
       | | `json` | `jsonb` |
       |---|---|---|
-      | Stored as | the exact text you gave | a parsed binary form |
+      | Stored as | the exact text you gave | already taken apart into keys and values |
       | Duplicate keys | kept | last one wins |
       | Key order, spaces | kept | normalized |
       | Speed to query | re-parsed every time | fast |
@@ -118,7 +118,7 @@ steps:
   - kind: explain
     title: Containment and key checks
     body: |
-      Two operators search documents, and both can use a GIN index:
+      Two operators search documents, and both can use a special kind of index for searching inside documents (a GIN index, Module 32):
 
       - **`@>`** "contains": `details @> '{"format": "ebook"}'` is true when details has `format` set to `"ebook"`. It works with nested objects and arrays too: `details @> '{"awards": ["Hugo Award"]}'`.
       - **`?`** "has this key (or array element)": `details ? 'dimensions_cm'`. Also `?|` (any of these keys) and `?&` (all of them).
@@ -349,7 +349,7 @@ steps:
       JSONB is great for:
 
       - data whose shape **varies**: product attributes (a shirt has sizes, a book has pages, an ebook has no dimensions)
-      - storing a payload **as received** (API responses, webhooks) to process later
+      - storing data **exactly as another system sent it** (for example, a payment provider's message about a payment) to process later
       - optional, rarely queried extras
 
       It's the **wrong** choice when it hides data that belongs in columns:

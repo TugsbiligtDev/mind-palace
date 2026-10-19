@@ -90,9 +90,9 @@ steps:
   - kind: try
     title: Play with an array
     body: |
-      Books tagged as award winners. Run it. Then change the WHERE to find the signed copies (`'signed-copy'`), or books with **both** `staff-pick` and `book-club` using `@>`.
+      Books tagged as award winners. Run it. Then change it to find the **signed copies** (`'signed-copy'`) and run it again. (The step is checked once that version has run.)
 
-      Change it to find the **signed copies** (`'signed-copy'`). (The step is checked once your changed version has run.)
+      After that, play if you like: books with **both** `staff-pick` and `book-club`, using `@>`.
     sql: |
       SELECT title, tags, tags[1] AS first_tag,
              array_length(tags, 1) AS how_many

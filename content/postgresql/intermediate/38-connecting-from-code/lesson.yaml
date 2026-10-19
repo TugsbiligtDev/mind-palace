@@ -6,6 +6,8 @@ steps:
 
       This module covers what you need to connect an app **safely**. The code itself runs on your Mac, but the SQL ideas can be tried right here.
 
+      **You don't need to know Python or JavaScript.** The short code examples are there so you can recognize the pattern: where the SQL goes, and where the values go. Read them for that shape, not line by line.
+
       **Example.** The same question from three clients:
 
       - in psql: `SELECT count(*) FROM orders;`

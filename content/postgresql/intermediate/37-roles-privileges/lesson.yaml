@@ -112,8 +112,8 @@ steps:
 
       | Role | Can | Used by |
       |---|---|---|
-      | **owner / admin** | own the tables, run migrations (CREATE, ALTER, DROP) | deploy scripts, a DBA |
-      | **app** | SELECT, INSERT, UPDATE, DELETE on its tables. No DDL. | the web app |
+      | **owner / admin** | own the tables, change their structure (CREATE, ALTER, DROP) | deploy scripts, a database administrator |
+      | **app** | SELECT, INSERT, UPDATE, DELETE on its tables. No changes to table structure. | the web app |
       | **readonly** | SELECT only | analysts, dashboards |
 
       Grant privileges to **group roles**, then add people to groups. When Alice leaves, you drop one login role, not dozens of individual grants.

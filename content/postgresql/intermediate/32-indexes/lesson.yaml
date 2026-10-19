@@ -21,7 +21,7 @@ steps:
       - "Query the index instead of the table"
       - "Rename the column to customer_id_idx"
     answer: 1
-    explanation: "Queries stay exactly the same. The planner sees the index and uses it when it helps. You'll watch it do that on the next pages."
+    explanation: "Queries stay exactly the same. The *planner* (the part of PostgreSQL that decides how to run each query) sees the index and uses it when it helps. You'll watch it do that on the next pages."
 
   - kind: explain
     title: B-tree, the default
@@ -40,7 +40,7 @@ steps:
   - kind: try
     title: Feel the difference
     body: |
-      The same query on the 39,419 orders, before and after creating an index. Run it and compare the **Execution Time** of the two plans. The first reads every row (*Seq Scan*: "Rows Removed by Filter: 39400") to find customer 42's 19 orders. The second jumps straight to them through the index (*Bitmap Index Scan*), and is many times faster. You'll learn to read plans properly in Module 33.
+      The same query on the 39,419 orders, before and after creating an index. `EXPLAIN ANALYZE` (Module 33 covers it fully) shows *how* PostgreSQL ran a query. For now, look for just two things: the first word of the plan (*Seq Scan* means it read every row, *Index Scan* or *Bitmap Index Scan* means it used an index), and the **Execution Time** on the last line. Run it and compare the **Execution Time** of the two plans. The first reads every row (*Seq Scan*: "Rows Removed by Filter: 39400") to find customer 42's 19 orders. The second jumps straight to them through the index (*Bitmap Index Scan*), and is many times faster. You'll learn to read plans properly in Module 33.
     sql: |
       EXPLAIN ANALYZE SELECT * FROM orders WHERE customer_id = 42;
 

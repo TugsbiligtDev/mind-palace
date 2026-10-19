@@ -307,7 +307,7 @@ steps:
     body: |
       Both examples. Run them and compare with the tables you just saw.
 
-      Then play: change `depth < 5` to `depth < 2`, or remove the `CYCLE …` line from the second query (and run it on your Mac only if you like waiting: here it would stop with an error after running out of memory).
+      Then play: change `depth < 5` to `depth < 2` in the first query. (Don't remove the `CYCLE …` line from the second one: without it the loop never ends, and this page would run out of memory.)
 
       Nothing is graded here: run it at least once (that unlocks **Continue**), experiment, then press **Continue**.
     sql: |

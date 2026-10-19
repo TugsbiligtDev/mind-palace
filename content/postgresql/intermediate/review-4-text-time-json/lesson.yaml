@@ -22,6 +22,8 @@ steps:
     title: "2. Phone numbers, digits only"
     body: |
       Phones in the import are written in many styles: `(203) 555-0147`, `203.555.0147`, `+1 203 555 0147`… Show `row_no` and each phone reduced to its **last 10 digits** (labeled **phone**). Leave out rows where the phone is missing or empty.
+
+      New here: `right(text, n)` keeps the last *n* characters, so `right('15550147', 4)` gives `0147`.
     sql: |
       -- Write your query here
     expect: |
@@ -49,6 +51,8 @@ steps:
     title: "4. Four date formats"
     body: |
       `signup_date` is text in four formats: `2025-07-22`, `2025/07/17`, `22/07/2025` (day first) and `July 10, 2025`, and sometimes it's empty. Show `row_no` and the real date (labeled **signup**), or NULL when it's empty.
+
+      New here: in a `to_date` pattern, `FMMonth` reads a month written as a word, so `to_date('July 10, 2025', 'FMMonth DD, YYYY')` gives 2025-07-10.
     sql: |
       -- Write your query here
     expect: |

@@ -24,7 +24,7 @@ steps:
     answer: 2
     explanation: "A session is one connection to the server, from one client. Many sessions run at once and can touch the same tables and rows."
 
-  - kind: explain
+  - kind: info
     title: "MVCC: versions, not overwrites"
     body: |
       PostgreSQL uses **MVCC** (multi-version concurrency control). An UPDATE doesn't overwrite a row in place. It writes a **new version** of the row and marks the old one as expired.

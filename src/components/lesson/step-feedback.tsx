@@ -76,7 +76,8 @@ export function StepFeedback({
           {feedback.text}
         </p>
       )}
-      {done && !feedback && <p className="text-sm text-success">✓ Step complete</p>}
+      {/* A neutral note never hides that a finished step is finished. */}
+      {done && (!feedback || feedback.note) && <p className="text-sm text-success">✓ Step complete</p>}
       {!done && <HelpPanel hint={hint} answer={answer} answerLabel={answerLabel} misses={misses} />}
     </>
   );

@@ -99,7 +99,7 @@ function splitInput(input: string): Piece[] {
   return pieces;
 }
 
-const stripComments = (sql: string) => sql.replace(/--[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+export const stripComments = (sql: string) => sql.replace(/--[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
 
 function commandTag(sql: string, affected: number): string {
   const word = stripComments(sql).trim().split(/\s+/)[0]?.toUpperCase() ?? "";
@@ -258,34 +258,55 @@ export async function grade(fresh: () => Promise<PGliteInterface>, input: string
 
 type Rows = Extract<Block, { kind: "rows" }>;
 
+// Shown when the editor holds only notes. The lesson panel uses it too, before grading.
+export const NOTHING_RAN = "Nothing ran yet: the editor only has notes in it (lines starting with -- are notes). Write your SQL, then press Run.";
+
 // Explain, in plain words, what the check found in the database after the learner's SQL ran.
-// Two kinds of check exist: "tests" (a list of rows the check tried to insert, each accepted
-// or rejected) and plain data (the rows of the table the task changes).
+// Three kinds of check exist: "tests" (rows the check tried to insert, each accepted or
+// rejected), single-row probes (one row of facts, like "does the rule exist"), and plain data
+// (the rows of the table the task changes).
 function wrongStateMessage(mine: Rows | undefined, ref: Rows | undefined) {
   const base = "Not yet.";
   if (!ref) return `${base} Check which rows you changed.`;
   if (!mine) return `${base} The check couldn't read the table it needs. Make sure it exists, with the table and column names the task gives.`;
   if (ref.columns.join() === "test,result") return wrongTestMessage(mine, ref);
 
+  const norm = (v: string | null) => normalizeNumber(v) ?? "NULL";
+  // "price should be 14, but it's 9" for every column that really differs.
+  const diffs = (found: (string | null)[], expected: (string | null)[]) =>
+    found.flatMap((v, i) => (norm(v) !== norm(expected[i]) ? [`${ref.columns[i]} should be ${expected[i] ?? "NULL"}, but it's ${v ?? "NULL"}`] : []));
+
+  // A single-row probe: there's no table of rows to talk about, just facts that differ.
+  if (ref.rows.length === 1 && mine.rows.length === 1)
+    return `${base} The check found: ${diffs(mine.rows[0], ref.rows[0]).join("; ")}.`;
+
   // Describe a row with its column names: "book_id 6, stock 9" instead of "6 | 9".
   const describe = (cols: string[], r: (string | null)[]) => r.map((v, i) => `${cols[i]} ${v ?? "NULL"}`).join(", ");
   const key = (r: (string | null)[]) => JSON.stringify(r.map(normalizeNumber));
-  const mineKeys = new Set(mine.rows.map(key));
-  const refKeys = new Set(ref.rows.map(key));
-  const missing = ref.rows.filter((r) => !mineKeys.has(key(r)));
-  const extra = mine.rows.filter((r) => !refKeys.has(key(r)));
+  // Count rows, so a duplicate row counts as extra (or missing) too.
+  const left = new Map<string, number>();
+  for (const r of mine.rows) left.set(key(r), (left.get(key(r)) ?? 0) + 1);
+  const missing = ref.rows.filter((r) => {
+    const n = left.get(key(r)) ?? 0;
+    if (n > 0) left.set(key(r), n - 1);
+    return n === 0;
+  });
+  const extra = mine.rows.filter((r) => {
+    const n = left.get(key(r)) ?? 0;
+    if (n > 0) left.set(key(r), n - 1);
+    return n > 0;
+  });
 
   // The same row (same first value) with a different value somewhere else.
-  const changed = extra.map((r) => [r, missing.find((m) => m[0] === r[0])] as const).find(([, m]) => m);
+  const changed = extra.map((r) => [r, missing.find((m) => norm(m[0]) === norm(r[0]))] as const).find(([, m]) => m);
   if (changed) {
     const [found, expected] = changed;
-    const diffs = found.flatMap((v, i) => (v !== expected![i] ? [`${ref.columns[i]} should be ${expected![i] ?? "NULL"}, but it's ${v ?? "NULL"}`] : []));
-    return `${base} In the row with ${ref.columns[0]} ${found[0]}: ${diffs.join("; ")}.`;
+    return `${base} In the row with ${ref.columns[0]} ${found[0]}: ${diffs(found, expected!).join("; ")}.`;
   }
   if (extra.length > 0 && missing.length === 0)
-    return `${base} This row is still there, but it shouldn't be after your change: ${describe(mine.columns, extra[0])}.`;
+    return `${base} This row is there, but it shouldn't be after your change (or it's there once too often): ${describe(mine.columns, extra[0])}.`;
   if (missing.length > 0 && extra.length === 0)
-    return `${base} This row should be there after your change, but it isn't: ${describe(ref.columns, missing[0])}.`;
+    return `${base} This row should be there after your change, but it isn't (or not as many times as it should be): ${describe(ref.columns, missing[0])}.`;
   if (missing.length > 0)
     return `${base} After your change, this row should still be there, but it's gone: ${describe(ref.columns, missing[0])}. And this one is still there, but it shouldn't be: ${describe(mine.columns, extra[0])}.`;
   return `${base} The right rows are there, but in a different order than expected. Check which rows you changed.`;
@@ -310,7 +331,7 @@ function wrongTestMessage(mine: Rows, ref: Rows) {
 function wrongRowsMessage(mine: Rows | undefined, ref: Rows | undefined, output: RunOutput) {
   if (!mine) {
     const last = output.blocks.at(-1);
-    if (!last) return "Nothing ran yet: the editor only has notes in it (lines starting with -- are notes). Write your query, then press Run.";
+    if (!last) return NOTHING_RAN;
     if (last.kind === "status" && /^(INSERT|UPDATE|DELETE)\b/.test(last.text))
       return "Your SQL changed the data, but it didn't show any rows, so there's nothing to check yet. Add the RETURNING (or the SELECT) the task asks for.";
     return "Your SQL ran, but it didn't show any rows, so there's nothing to check yet. Make sure the query the task asks for is the last thing in the editor.";

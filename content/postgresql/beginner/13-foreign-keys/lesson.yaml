@@ -231,7 +231,7 @@ steps:
     body: |
       Inkwell wants themed **shelves** on its website (*Staff picks*, *Summer reads*…), and a book can sit on many shelves. The `shelves` table is ready. Create **shelf_books** with two columns, `shelf_id` and `book_id`, each a foreign key to its table, and a composite primary key on both. (Don't name the constraints; let PostgreSQL do it.)
 
-      The last query is a ready-made helper that counts the table's keys, so you can check your work.
+      The last query is a ready-made helper that counts the table's keys, so you can check your work. Each kind is shown as one letter: `f` is a foreign key, `p` the primary key.
     sql: |
       CREATE TABLE shelves (
           shelf_id  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -244,7 +244,7 @@ steps:
       );
 
       -- A ready-made helper that lists the table's rules. You don't need to understand how it works.
-      SELECT CASE contype WHEN 'c' THEN 'check' WHEN 'f' THEN 'foreign key' WHEN 'n' THEN 'not null' WHEN 'p' THEN 'primary key' WHEN 'u' THEN 'unique' END AS kind, count(*) AS rules
+      SELECT contype, count(*)
       FROM pg_constraint
       WHERE conrelid = 'shelf_books'::regclass AND contype IN ('f', 'p')
       GROUP BY contype
@@ -262,7 +262,7 @@ steps:
       );
 
       -- A ready-made helper that lists the table's rules. You don't need to understand how it works.
-      SELECT CASE contype WHEN 'c' THEN 'check' WHEN 'f' THEN 'foreign key' WHEN 'n' THEN 'not null' WHEN 'p' THEN 'primary key' WHEN 'u' THEN 'unique' END AS kind, count(*) AS rules
+      SELECT contype, count(*)
       FROM pg_constraint
       WHERE conrelid = 'shelf_books'::regclass AND contype IN ('f', 'p')
       GROUP BY contype

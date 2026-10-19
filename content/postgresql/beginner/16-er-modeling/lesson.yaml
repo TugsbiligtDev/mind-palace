@@ -261,7 +261,7 @@ steps:
       - `first_meeting`: date, required
       - `host_id`: the host who leads it. Every club has **exactly one**, so it's required, and it must reference `hosts`.
 
-      The last query is a ready-made helper that counts the table's rules by kind, so you can check your work.
+      The last query is a ready-made helper that counts the table's rules by kind, so you can check your work. Each kind is shown as one letter: `f` is a foreign key, `n` a not-null rule, `p` the primary key.
     sql: |
       CREATE TABLE hosts (
           host_id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -271,7 +271,7 @@ steps:
       -- Create clubs here.
 
       -- A ready-made helper that lists the table's rules. You don't need to understand how it works.
-      SELECT CASE contype WHEN 'c' THEN 'check' WHEN 'f' THEN 'foreign key' WHEN 'n' THEN 'not null' WHEN 'p' THEN 'primary key' WHEN 'u' THEN 'unique' END AS kind, count(*) AS rules
+      SELECT contype, count(*)
       FROM pg_constraint
       WHERE conrelid = 'clubs'::regclass
       GROUP BY contype
@@ -291,7 +291,7 @@ steps:
       );
 
       -- A ready-made helper that lists the table's rules. You don't need to understand how it works.
-      SELECT CASE contype WHEN 'c' THEN 'check' WHEN 'f' THEN 'foreign key' WHEN 'n' THEN 'not null' WHEN 'p' THEN 'primary key' WHEN 'u' THEN 'unique' END AS kind, count(*) AS rules
+      SELECT contype, count(*)
       FROM pg_constraint
       WHERE conrelid = 'clubs'::regclass
       GROUP BY contype

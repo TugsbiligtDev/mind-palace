@@ -6,10 +6,12 @@ import type { Step } from "@/lib/content/schema";
 import { tryStepCheck } from "@/lib/content/step-check";
 import { useProgress } from "@/lib/progress";
 import { gradeSql } from "@/lib/sql/client";
-import type { RunOutput } from "@/lib/sql/core";
+import { NOTHING_RAN, stripComments, type RunOutput } from "@/lib/sql/core";
 import { StepFeedback, useStepFeedback } from "./step-feedback";
 
-const same = (a: string, b: string) => a.replace(/\s+/g, " ").trim() === b.replace(/\s+/g, " ").trim();
+// Is this the untouched starter? Notes (comments), spacing and a final ";" don't count as a change.
+const plain = (sql: string) => stripComments(sql).replace(/\s+/g, " ").trim().replace(/;$/, "");
+const same = (a: string, b: string) => plain(a) === plain(b);
 
 // A PostgreSQL "try" step. Run executes the query; when the step has an expected answer, Run
 // also grades it against that answer on a fresh copy of the database.
@@ -34,9 +36,10 @@ export function SqlPanel({
       if (step.expect_error) {
         if (out.error) pass("That's the error we wanted to see. Read it carefully: the ERROR line says what went wrong, and LINE points to where.");
         // Many of these steps go on to say "then fix it", so a run without an error after the
-        // error was seen is the fix working, not a wrong answer.
+        // error was seen is the fix working, not a wrong answer. Before that, it still counts as a
+        // try, so a stuck learner gets the hint and the answer.
         else if (done) note("No error this time: your change fixed it.");
-        else note("No error this time. Press Reset and run the original code first, to see the error message this step is about.");
+        else miss("No error this time. Press Reset and run the original code first, to see the error message this step is about.");
         return;
       }
       if (out.error) {
@@ -48,12 +51,15 @@ export function SqlPanel({
       const check = tryStepCheck(step);
       // Running the untouched starter (most tasks begin with "Run it, then change…") or an
       // editor with only notes in it isn't a wrong answer, so say what to do next instead.
+      // (The content check guarantees no graded starter already passes, so nothing is lost.)
       if (check && !out.blocks.length) {
-        note("Nothing ran yet: the editor only has notes in it (lines starting with -- are notes). Write your SQL, then press Run.");
+        note(NOTHING_RAN);
         return;
       }
       if (check && same(input, step.sql)) {
-        note("That's the starting code, so you can see what it does. Now make the change the task asks for, and run it again.");
+        // On a finished step, rerunning the starter needs no instructions: "✓ Step complete" stays.
+        if (done) setFeedback(null);
+        else note("That's the starting code, so you can see what it does. Now make the change the task asks for, and run it again.");
         return;
       }
       if (!check) {

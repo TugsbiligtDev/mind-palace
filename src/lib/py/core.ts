@@ -63,6 +63,15 @@ def _mp_limit_off():
         sys.monitoring.set_events(_MP_TOOL, 0)
         sys.monitoring.free_tool_id(_MP_TOOL)
 
+# The last line of the learner's code (main.py) in a traceback, or None.
+def _mp_user_line(tb):
+    line = None
+    while tb is not None:
+        if tb.tb_frame.f_code.co_filename == "main.py":
+            line = tb.tb_lineno
+        tb = tb.tb_next
+    return line
+
 class _MpNoResult:
     def __repr__(self):
         return "nothing (the check expected an error, and none was raised)"
@@ -175,13 +184,7 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
                 tb = tb.tb_next
             line = e.lineno if isinstance(e, SyntaxError) and e.filename == "main.py" else None
             if line is None:
-                last = None
-                t = tb
-                while t is not None:
-                    if t.tb_frame.f_code.co_filename == "main.py":
-                        last = t.tb_lineno
-                    t = t.tb_next
-                line = last
+                line = _mp_user_line(tb)
             text = "".join(traceback.format_exception(type(e), e, tb if not isinstance(e, SyntaxError) else None))
             # Frames inside Python's own library files (/lib/python...) are noise for a learner:
             # keep the learner's lines and the final error.
@@ -203,6 +206,8 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
                         value = eval(compiled, ns)
                     else:
                         local = dict(ns)
+                        # The learner's own top-level "result" must not stand in for the check's.
+                        local.pop("result", None)
                         exec(compile(t, "<test>", "exec"), local)
                         # A check like "try: f() except ValueError as e: result = str(e)" never
                         # sets result when no error comes; say that instead of a KeyError.
@@ -221,14 +226,8 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
                     name = type(e).__name__
                     # The error's own message and the line of the learner's code it happened on, so
                     # feedback can show what Python said (the traceback a learner is taught to read).
-                    line = None
-                    tb = e.__traceback__
-                    while tb is not None:
-                        if tb.tb_frame.f_code.co_filename == "main.py":
-                            line = tb.tb_lineno
-                        tb = tb.tb_next
                     detail = name + (": " + str(e) if str(e) else "")
-                    out["results"].append({"call": t, "value": name, "key": name, "threw": True, "detail": detail, "line": line})
+                    out["results"].append({"call": t, "value": name, "key": name, "threw": True, "detail": detail, "line": _mp_user_line(e.__traceback__)})
     finally:
         _mp_limit_off()
         sys.stdout, sys.stderr = old_out, old_err
@@ -310,8 +309,22 @@ export async function gradePy(py: PyodideLike, code: string, check: PyCheck, lim
 export function testLabel(call: string): string | undefined {
   const lines = call.split("\n");
   if (lines.length > 1) return /^#\s*(.+)$/.exec(lines[0].trim())?.[1];
-  const at = call.lastIndexOf("  # ");
-  return at >= 0 ? call.slice(at + 4).trim() : undefined;
+  const at = commentStart(call);
+  return at >= 0 && call.startsWith("  # ", at - 2) ? call.slice(at + 2).trim() : undefined;
+}
+
+// Where a "#" comment starts in one line of Python, ignoring a "#" inside a string literal; -1 if none.
+function commentStart(line: string) {
+  let quote = "";
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (quote) {
+      if (ch === "\\") i++;
+      else if (ch === quote) quote = "";
+    } else if (ch === "'" || ch === '"') quote = ch;
+    else if (ch === "#") return i;
+  }
+  return -1;
 }
 
 // "given_input(['3', '4'], add_two)" reads as "add_two() with the typed answers "3", "4"".
@@ -319,7 +332,7 @@ function givenInputCall(call: string): string | undefined {
   const m = /^given_input\(\[(.*?)\],\s*(?:lambda:\s*)?(.+)\)$/.exec(call.trim());
   if (!m) return undefined;
   const fn = /^[A-Za-z_]\w*$/.test(m[2]) ? `${m[2]}()` : m[2];
-  return m[1].trim() ? `${fn} with the typed answers ${m[1].replace(/'/g, '"')}` : fn;
+  return m[1].trim() ? `${fn} with the typed answers ${m[1]}` : fn;
 }
 
 function printedLines(text: string) {
@@ -334,14 +347,14 @@ const MAX_SHOWN_LINES = 12;
 function checkCode(call: string) {
   const lines = call.split("\n");
   const shown = lines.length > MAX_SHOWN_LINES ? [...lines.slice(0, MAX_SHOWN_LINES), "…"] : lines;
-  const note = /\bresult\s*=/.test(call) ? "\n(`result` is the value the check looks at.)" : "";
+  const note = /\bresult\s*=(?!=)/.test(call) ? "\n(`result` is the value the check looks at.)" : "";
   return `the check\n${shown.map((l) => `    ${l}`).join("\n")}${note}\n`;
 }
 
 // The sentence after "First miss:" for one failed test.
 function describeMiss(mine: CallResult, want: CallResult): string {
   const label = testLabel(mine.call);
-  const statements = mine.call.includes("\n") || /^\s*result\s*=/.test(mine.call);
+  const statements = mine.call.includes("\n") || /^\s*result\s*=(?!=)/.test(mine.call);
   const what = label ?? givenInputCall(mine.call) ?? (statements ? checkCode(mine.call) : mine.call);
   if (mine.threw && !want.threw) {
     const where = mine.line ? ` on line ${mine.line} of your code` : "";

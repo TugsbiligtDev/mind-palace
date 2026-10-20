@@ -166,8 +166,9 @@ steps:
           book = []
           skipped = 0
           for row in rows:
-              name = row["name"].strip()
-              digits = row["phone"].replace(" ", "").replace("-", "")
+              # A short row has None for a missing value, so fall back to "".
+              name = (row.get("name") or "").strip()
+              digits = (row.get("phone") or "").replace(" ", "").replace("-", "")
               if name and digits.isdigit() and 7 <= len(digits) <= 15:
                   book.append({"name": name, "phone": digits})
               else:

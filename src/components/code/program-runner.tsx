@@ -23,7 +23,7 @@ export function ProgramRunner({
   initial: string;
   starter: string;
   slot?: string;
-  onRan?: (code: string, out: ProgramOutput) => void;
+  onRan?: (code: string, out: ProgramOutput) => void | Promise<void>; // awaited: Run stays blocked while it grades
   stdin?: string[]; // typed answers handed to Python's input()
   minHeight?: string;
   // A graded exercise: the checker calls the learner's function, so a run that prints nothing

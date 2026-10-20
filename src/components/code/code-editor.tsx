@@ -48,9 +48,9 @@ export function CodeEditor({
   const extensions = useMemo(
     () => [
       LANGUAGE[language](),
-      // Four spaces, as the lessons teach (CodeMirror's default is two): the automatic indent
-      // after a ":" and the Tab key then match the code shown in the lesson.
-      indentUnit.of("    "),
+      // Python lessons indent by four spaces (CodeMirror's default is two, which the JavaScript
+      // lessons use): the automatic indent after a ":" and the Tab key then match the lesson.
+      ...(language === "python" ? [indentUnit.of("    ")] : []),
       codeHighlighting,
       Prec.highest(
         keymap.of([

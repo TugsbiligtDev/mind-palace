@@ -184,7 +184,7 @@ steps:
     body: |
       Finish `dependency_names(toml_text)`: read the project file text with `tomllib` and return a **sorted list of the package names** only, with the version rules removed. For `["rich>=14.0", "httpx"]` return `["httpx", "rich"]`. If there are no dependencies, return `[]`.
 
-      A name ends at the first of the characters `< > = ! ~ [ ;` or a space. `re.split(r"[<>=!~\[; ]", spec)[0]` cuts it off.
+      A name ends at the first of the characters `< > = ! ~ [ ;` or a space. `re.split(r"[<>=!~\[; ]", spec)[0]` cuts it off. (`re` is Python's pattern-matching module, covered in Intermediate. Here the pattern in square brackets simply lists the characters to cut at; copy it as it is.)
     code: |
       import re
       import tomllib

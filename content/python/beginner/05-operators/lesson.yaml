@@ -20,6 +20,8 @@ steps:
     title: Try the operators
     body: |
       Run this and compare each line with the table. Then change the numbers and predict the output *before* you run it.
+
+      The last line may surprise you: `-7 // 2` is `-4`, not `-3`. `//` always rounds **down**, and for negative numbers "down" means further from zero.
     code: |
       print(7 + 2)
       print(7 / 2)

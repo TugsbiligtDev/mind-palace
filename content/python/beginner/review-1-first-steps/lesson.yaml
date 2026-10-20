@@ -2,7 +2,7 @@ steps:
   - kind: explain
     title: The first case files
     body: |
-      This review covers Modules 1 to 3. Each editor starts nearly empty, and the question never tells you which tool to use. Think about what you learned: binary, paths, `Path`, `split`, `int`, `print`, and reading error messages. When a case needs something new, its description shows it.
+      This review covers Modules 1 to 5. Each editor starts nearly empty, and the question never tells you which tool to use. Think about what you learned: binary, paths, `Path`, `split`, `int`, `print`, variables, comparisons such as `==` and `>=`, `and`/`or`/`not`, and reading error messages. When a case needs something new, its description shows it.
 
       For each case:
 

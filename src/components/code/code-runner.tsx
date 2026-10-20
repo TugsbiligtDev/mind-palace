@@ -22,16 +22,18 @@ export function CodeRunner<Output>({
   starter: string;
   slot?: string; // where typed code is remembered
   run: (code: string) => Promise<Output>;
-  renderOutput: (output: Output) => ReactNode;
-  onRan?: (code: string, out: Output) => void;
+  renderOutput: (output: Output) => ReactNode; // null shows no output box
+  onRan?: (code: string, out: Output) => void | Promise<void>; // awaited, so Run stays blocked while it grades
   notice?: ReactNode; // shown between the editor and the buttons
   status?: ReactNode; // shown at the right of the buttons
   minHeight?: string;
 }) {
   const [code, setCode] = useState(initial);
   const [output, setOutput] = useState<Output | null>(null);
-  const [running, setRunning] = useState(false);
+  // "run" while the code runs, then "check" while onRan grades it (that can take several seconds).
+  const [busy, setBusy] = useState<"run" | "check" | null>(null);
   const codeRef = useRef(code);
+  const busyRef = useRef(false);
 
   const change = (v: string) => {
     setCode(v);
@@ -40,13 +42,22 @@ export function CodeRunner<Output>({
   };
 
   const run = useCallback(async () => {
+    // ⌘ + Enter can fire while a run or check is still going; starting another would restart the runner.
+    if (busyRef.current) return;
+    busyRef.current = true;
     const input = codeRef.current;
-    setRunning(true);
-    const out = await runCode(input);
-    setOutput(out);
-    setRunning(false);
-    onRan?.(input, out);
+    setBusy("run");
+    try {
+      const out = await runCode(input);
+      setOutput(out);
+      setBusy("check");
+      await onRan?.(input, out);
+    } finally {
+      busyRef.current = false;
+      setBusy(null);
+    }
   }, [runCode, onRan]);
+  const shown = output && renderOutput(output);
 
   return (
     <div className="space-y-3">
@@ -55,10 +66,10 @@ export function CodeRunner<Output>({
       <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={run}
-          disabled={running}
+          disabled={busy !== null}
           className="rounded-lg bg-text px-3.5 py-1.5 text-sm font-medium text-bg transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {running ? "Running…" : "Run"}
+          {busy === "run" ? "Running…" : busy === "check" ? "Checking…" : "Run"}
         </button>
         <button
           onClick={() => {
@@ -71,7 +82,7 @@ export function CodeRunner<Output>({
         </button>
         <span className="ml-auto text-xs text-muted">{status}</span>
       </div>
-      {output && <div className="rounded-xl border border-border bg-card p-3">{renderOutput(output)}</div>}
+      {shown && <div className="rounded-xl border border-border bg-card p-3">{shown}</div>}
     </div>
   );
 }

@@ -12,7 +12,9 @@ export type PyCheck = { tests: string[]; solution: string; unordered?: boolean; 
 
 export type PyError = { message: string; line?: number; trace?: string };
 
-export type CallResult = { call: string; value: string; key: string; threw: boolean };
+// `printed` is the text a given_input(...) test printed; `detail` and `line` describe an error
+// (Python's message, and the line of the learner's code it happened on).
+export type CallResult = { call: string; value: string; key: string; threw: boolean; printed?: string; detail?: string; line?: number | null };
 
 export type PyRunOutput = { logs: string[]; error?: PyError; results: CallResult[] };
 
@@ -185,15 +187,28 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
                         local = dict(ns)
                         exec(compile(t, "<test>", "exec"), local)
                         value = local["result"]
-                    out["results"].append({
+                    r = {
                         "call": t,
                         "value": _mp_fmt(value, unordered),
                         "key": _mp_fmt(value, unordered, canon=True),
                         "threw": False,
-                    })
+                    }
+                    # What a given_input(...) test printed, as text, so feedback can show the lines.
+                    if t.startswith("given_input(") and isinstance(value, str):
+                        r["printed"] = value
+                    out["results"].append(r)
                 except BaseException as e:
                     name = type(e).__name__
-                    out["results"].append({"call": t, "value": name, "key": name, "threw": True})
+                    # The error's own message and the line of the learner's code it happened on, so
+                    # feedback can show what Python said (the traceback a learner is taught to read).
+                    line = None
+                    tb = e.__traceback__
+                    while tb is not None:
+                        if tb.tb_frame.f_code.co_filename == "main.py":
+                            line = tb.tb_lineno
+                        tb = tb.tb_next
+                    detail = name + (": " + str(e) if str(e) else "")
+                    out["results"].append({"call": t, "value": name, "key": name, "threw": True, "detail": detail, "line": line})
     finally:
         _mp_limit_off()
         sys.stdout, sys.stderr = old_out, old_err
@@ -266,17 +281,46 @@ export async function gradePy(py: PyodideLike, code: string, check: PyCheck, lim
   const bad = output.results.findIndex((r, i) => !same(r, i));
   const passed = output.results.filter((r, i) => same(r, i)).length;
   if (bad < 0) return { correct: true, output, passed, total, message: `All ${total} tests pass.` };
-  const mine = output.results[bad];
-  const want = ref.results[bad];
+  return { correct: false, output, passed, total, message: `${passed} of ${total} tests pass. First miss: ${describeMiss(output.results[bad], ref.results[bad])}` };
+}
+
+// A test can carry a plain-English description, so feedback never shows test machinery
+// (lambdas, tuple tricks, try blocks): a comment after two spaces ("expr  # what it checks"),
+// or a first line "# what it checks" in a multi-line test.
+export function testLabel(call: string): string | undefined {
+  const lines = call.split("\n");
+  if (lines.length > 1) return /^#\s*(.+)$/.exec(lines[0].trim())?.[1];
+  const at = call.lastIndexOf("  # ");
+  return at >= 0 ? call.slice(at + 4).trim() : undefined;
+}
+
+// "given_input(['3', '4'], add_two)" reads as "add_two() with the typed answers "3", "4"".
+function givenInputCall(call: string): string | undefined {
+  const m = /^given_input\(\[(.*?)\],\s*(?:lambda:\s*)?(.+)\)$/.exec(call.trim());
+  if (!m) return undefined;
+  const fn = /^[A-Za-z_]\w*$/.test(m[2]) ? `${m[2]}()` : m[2];
+  return m[1].trim() ? `${fn} with the typed answers ${m[1].replace(/'/g, '"')}` : fn;
+}
+
+function printedLines(text: string) {
+  const lines = text.replace(/\n$/, "").split("\n");
+  return text ? lines.map((l) => `    ${l}`).join("\n") : "    (nothing)";
+}
+
+// The sentence after "First miss:" for one failed test.
+function describeMiss(mine: CallResult, want: CallResult): string {
+  const label = testLabel(mine.call);
+  const what = label ?? givenInputCall(mine.call) ?? (mine.call.includes("\n") ? "one of the checks" : mine.call);
+  if (mine.threw && !want.threw) {
+    const where = mine.line ? ` on line ${mine.line} of your code` : "";
+    return `${what} stopped with an error${where}:\n    ${mine.detail ?? mine.value}`;
+  }
+  if (want.printed !== undefined && mine.printed !== undefined) {
+    return `${what} should print:\n${printedLines(want.printed)}\nbut it printed:\n${printedLines(mine.printed)}`;
+  }
   const show = (r: CallResult) => (r.threw ? `an error (${r.value})` : r.value);
-  const first = mine.call.includes("\n") ? "a multi-line test" : mine.call;
-  return {
-    correct: false,
-    output,
-    passed,
-    total,
-    message: `${passed} of ${total} tests pass. First miss: ${first} should give ${show(want)}, but gave ${show(mine)}.`,
-  };
+  if (label) return `${label}. Expected ${show(want)}, but got ${show(mine)}.`;
+  return `${what} should give ${show(want)}, but gave ${show(mine)}.`;
 }
 
 // Text form of a run used by "predict the output" questions: everything the program printed.

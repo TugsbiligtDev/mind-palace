@@ -70,7 +70,7 @@ steps:
       - "greet('Ada')"
       - "greet('Ada', 'Welcome')"
       - "greet(name='Moth', greeting='Hi')"
-      - "bool(greet.__doc__)"
+      - "bool(greet.__doc__)  # Whether greet has a docstring (it must)"
     solution: |
       def greet(name, greeting="Hello"):
           """Return a greeting for the given name."""
@@ -191,7 +191,7 @@ steps:
       - "discounted([10, 20], 50)"
       - "discounted([], 10)"
       - "discounted([9.99], 10)"
-      - "(lambda p: (discounted(p, 50), p))([10, 20])"
+      - "(lambda p: (discounted(p, 50), p))([10, 20])  # discounted([10, 20], 50), then the original list (it must still be [10, 20])"
     solution: |
       def discounted(prices, percent):
           return [round(p * (1 - percent / 100), 2) for p in prices]
@@ -236,7 +236,7 @@ steps:
       - "add_clue('a')"
       - "add_clue('a')"
       - "add_clue('b', ['x'])"
-      - "[add_clue('one'), add_clue('two')]"
+      - "[add_clue('one'), add_clue('two')]  # add_clue('one') and then add_clue('two'): each call must start a fresh list"
     solution: |
       def add_clue(clue, clues=None):
           if clues is None:
@@ -257,7 +257,7 @@ steps:
       - "circle_area(1)"
       - "circle_area(2)"
       - "circle_area(0)"
-      - "len(circle_area.__doc__ or '') > 10"
+      - "len(circle_area.__doc__ or '') > 10  # Whether circle_area has a docstring of more than 10 characters (it must)"
     solution: |
       def circle_area(radius):
           """Return the area of a circle with the given radius."""

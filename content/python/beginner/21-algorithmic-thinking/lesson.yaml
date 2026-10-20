@@ -233,7 +233,7 @@ steps:
       - "selection_sort([])"
       - "selection_sort([3, 3, 1, 2, 2])"
       - "selection_sort(['pear', 'apple', 'fig'])"
-      - "(lambda x: (selection_sort(x), x))([3, 1, 2])"
+      - "(lambda x: (selection_sort(x), x))([3, 1, 2])  # selection_sort([3, 1, 2]), then the original list (it must still be [3, 1, 2])"
     solution: |
       def selection_sort(items):
           items = list(items)

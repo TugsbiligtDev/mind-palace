@@ -11,9 +11,9 @@ topics:
   - 01-how-computers-work
   - 02-terminal-macos
   - 03-first-programs
-  - review-1-first-steps
   - 04-variables-types
   - 05-operators
+  - review-1-first-steps
   - 06-strings
   - 07-input-conversion
   - 08-conditionals

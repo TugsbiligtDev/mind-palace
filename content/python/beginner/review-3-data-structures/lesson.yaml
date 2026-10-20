@@ -73,7 +73,7 @@ steps:
           # your code
           pass
     tests:
-      - "(lambda b: (update_phone(b, 'ada', '9'), b))([{'name': 'Ada', 'phone': '1'}])"
+      - "(lambda b: (update_phone(b, 'ada', '9'), b))([{'name': 'Ada', 'phone': '1'}])  # update_phone(book, 'ada', '9') on a book holding Ada with phone 1, then the book"
       - "update_phone([{'name': 'Ada', 'phone': '1'}], 'Bold', '9')"
       - "update_phone([], 'Ada', '9')"
     solution: |
@@ -100,9 +100,9 @@ steps:
           # your code
           pass
     tests:
-      - "(lambda b: (delete_contact(b, 'ADA'), b))([{'name': 'Ada', 'phone': '1'}, {'name': 'Bold', 'phone': '2'}])"
+      - "(lambda b: (delete_contact(b, 'ADA'), b))([{'name': 'Ada', 'phone': '1'}, {'name': 'Bold', 'phone': '2'}])  # delete_contact(book, 'ADA') on a book holding Ada and Bold, then the book"
       - "delete_contact([{'name': 'Ada', 'phone': '1'}], 'Reed')"
-      - "(lambda b: (delete_contact(b, 'a'), b))([{'name': 'a', 'phone': '1'}, {'name': 'a', 'phone': '2'}])"
+      - "(lambda b: (delete_contact(b, 'a'), b))([{'name': 'a', 'phone': '1'}, {'name': 'a', 'phone': '2'}])  # delete_contact(book, 'a') on a book holding two contacts named a, then the book (only the first may go)"
     solution: |
       def delete_contact(book, name):
           for i, contact in enumerate(book):
@@ -130,7 +130,7 @@ steps:
     tests:
       - "sorted_names([{'name': 'bold', 'phone': '2'}, {'name': 'Ada', 'phone': '1'}, {'name': 'Cole', 'phone': '3'}])"
       - "sorted_names([])"
-      - "(lambda b: (sorted_names(b), b))([{'name': 'z', 'phone': '1'}, {'name': 'a', 'phone': '2'}])"
+      - "(lambda b: (sorted_names(b), b))([{'name': 'z', 'phone': '1'}, {'name': 'a', 'phone': '2'}])  # sorted_names(book) on a book holding z then a, then the book (its order must not change)"
     solution: |
       def sorted_names(book):
           names = [contact["name"] for contact in book]
@@ -173,7 +173,7 @@ steps:
     tests:
       - "unique_by_phone([{'name': 'Ada', 'phone': '1'}, {'name': 'Ada2', 'phone': '1'}, {'name': 'Bold', 'phone': '2'}])"
       - "unique_by_phone([])"
-      - "(lambda b: (unique_by_phone(b), len(b)))([{'name': 'a', 'phone': '1'}, {'name': 'b', 'phone': '1'}])"
+      - "(lambda b: (unique_by_phone(b), len(b)))([{'name': 'a', 'phone': '1'}, {'name': 'b', 'phone': '1'}])  # unique_by_phone(book) on two contacts sharing phone 1, then how many contacts the original book still has (must be 2)"
     solution: |
       def unique_by_phone(book):
           seen = set()

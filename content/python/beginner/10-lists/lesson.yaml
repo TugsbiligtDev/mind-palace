@@ -71,7 +71,7 @@ steps:
       - "sort_desc([3, 9, 1])"
       - "sort_desc([])"
       - "sort_desc([5, 5, 2])"
-      - "(lambda nums: (sort_desc(nums), nums))([2, 8, 4])"
+      - "(lambda nums: (sort_desc(nums), nums))([2, 8, 4])  # sort_desc([2, 8, 4]), then the original list (it must still be [2, 8, 4])"
     solution: |
       def sort_desc(numbers):
           return sorted(numbers, reverse=True)

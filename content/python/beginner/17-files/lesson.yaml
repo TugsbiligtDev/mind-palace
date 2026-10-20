@@ -29,7 +29,7 @@ steps:
   - kind: code
     title: Write then read
     body: |
-      Run this. Notice `f.write` does **not** add a new line for you, so `\n` does. Then try changing `"w"` to `"a"` and running twice.
+      Run this. Notice `f.write` does **not** add a new line for you, so `\n` does. (`repr(...)` in the last loop shows text *with* its quotes, so you can see exactly where each line starts and ends.) Then try changing `"w"` to `"a"` and running twice.
     code: |
       with open("notes.txt", "w", encoding="utf-8") as f:
           f.write("first line\n")
@@ -59,9 +59,9 @@ steps:
       def load_lines(path):
           return []
     tests:
-      - "(save_lines('a.txt', ['x', 'y']), load_lines('a.txt'))[1]"
-      - "(save_lines('b.txt', []), load_lines('b.txt'))[1]"
-      - "(save_lines('c.txt', ['café', 'naïve']), load_lines('c.txt'))[1]"
+      - "(save_lines('a.txt', ['x', 'y']), load_lines('a.txt'))[1]  # save_lines('a.txt', ['x', 'y']), then load_lines('a.txt')"
+      - "(save_lines('b.txt', []), load_lines('b.txt'))[1]  # save_lines('b.txt', []), then load_lines('b.txt')"
+      - "(save_lines('c.txt', ['café', 'naïve']), load_lines('c.txt'))[1]  # save_lines('c.txt', ['café', 'naïve']), then load_lines('c.txt')"
     solution: |
       def save_lines(path, lines):
           with open(path, "w", encoding="utf-8") as f:
@@ -92,8 +92,8 @@ steps:
           with open(path, "w", encoding="utf-8") as f:
               f.write(message + "\n")
     tests:
-      - "(log_event('log.txt', 'a'), log_event('log.txt', 'b'), open('log.txt').read())[2]"
-      - "(log_event('l2.txt', 'x'), open('l2.txt').read())[1]"
+      - "(log_event('log.txt', 'a'), log_event('log.txt', 'b'), open('log.txt').read())[2]  # The text of log.txt after log_event('log.txt', 'a') and then log_event('log.txt', 'b')"
+      - "(log_event('l2.txt', 'x'), open('l2.txt').read())[1]  # The text of l2.txt after log_event('l2.txt', 'x')"
     solution: |
       def log_event(path, message):
           with open(path, "a", encoding="utf-8") as f:
@@ -132,7 +132,7 @@ steps:
           return Path(path).read_text(encoding="utf-8")
     tests:
       - "read_or_default('nothing-here.txt', 'empty')"
-      - "(Path('x.txt').write_text('hi', encoding='utf-8'), read_or_default('x.txt', 'empty'))[1]"
+      - "(Path('x.txt').write_text('hi', encoding='utf-8'), read_or_default('x.txt', 'empty'))[1]  # read_or_default('x.txt', 'empty') when x.txt exists and contains hi"
     solution: |
       from pathlib import Path
 
@@ -179,9 +179,9 @@ steps:
       def sum_column(path, column):
           return 0.0
     tests:
-      - "(open('p.csv', 'w').write('name,price\\nDune,12.5\\nEmma,8\\n'), sum_column('p.csv', 'price'))[1]"
-      - "(open('q.csv', 'w').write('a,b\\n1,2\\n3,4\\n'), sum_column('q.csv', 'b'))[1]"
-      - "(open('r.csv', 'w').write('x\\n'), sum_column('r.csv', 'x'))[1]"
+      - "(open('p.csv', 'w').write('name,price\\nDune,12.5\\nEmma,8\\n'), sum_column('p.csv', 'price'))[1]  # sum_column('p.csv', 'price') for a file with the prices 12.5 and 8"
+      - "(open('q.csv', 'w').write('a,b\\n1,2\\n3,4\\n'), sum_column('q.csv', 'b'))[1]  # sum_column('q.csv', 'b') for a file whose column b holds 2 and 4"
+      - "(open('r.csv', 'w').write('x\\n'), sum_column('r.csv', 'x'))[1]  # sum_column('r.csv', 'x') for a file with a header and no rows"
     solution: |
       import csv
 
@@ -238,10 +238,10 @@ steps:
       def load_json(path, default):
           return default
     tests:
-      - "(save_json('a.json', {'name': 'Ada', 'clues': [1, 2]}), load_json('a.json', {}))[1]"
+      - "(save_json('a.json', {'name': 'Ada', 'clues': [1, 2]}), load_json('a.json', {}))[1]  # save_json('a.json', {'name': 'Ada', 'clues': [1, 2]}), then load_json('a.json', {})"
       - "load_json('missing.json', [])"
-      - "(open('bad.json', 'w').write('{oops'), load_json('bad.json', 'fallback'))[1]"
-      - "(save_json('t.json', [1, 'two', None, True]), load_json('t.json', 0))[1]"
+      - "(open('bad.json', 'w').write('{oops'), load_json('bad.json', 'fallback'))[1]  # load_json('bad.json', 'fallback') for a file containing the broken text {oops"
+      - "(save_json('t.json', [1, 'two', None, True]), load_json('t.json', 0))[1]  # save_json('t.json', [1, 'two', None, True]), then load_json('t.json', 0)"
     solution: |
       import json
 

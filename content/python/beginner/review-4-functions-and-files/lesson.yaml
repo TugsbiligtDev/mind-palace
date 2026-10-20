@@ -19,9 +19,9 @@ steps:
     tests:
       - "parse_contact('Ada Lovelace,555-0101')"
       - "parse_contact('  Bold , 555-0102 ')"
-      - "try:\n    parse_contact('only one part')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
-      - "try:\n    parse_contact('a,b,c')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
-      - "try:\n    parse_contact(' ,555')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+      - "# The error message from parse_contact('only one part') (it must raise ValueError('bad line'))\ntry:\n    parse_contact('only one part')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+      - "# The error message from parse_contact('a,b,c') (it must raise ValueError('bad line'))\ntry:\n    parse_contact('a,b,c')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+      - "# The error message from parse_contact(' ,555') (it must raise ValueError('bad line'))\ntry:\n    parse_contact(' ,555')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
     solution: |
       def parse_contact(line):
           parts = [p.strip() for p in line.split(",")]
@@ -46,10 +46,10 @@ steps:
     tests:
       - "clean_phone('555-0101')"
       - "clean_phone(' 555 0101 ')"
-      - "try:\n    clean_phone('12-3')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
-      - "try:\n    clean_phone('555-01a1')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+      - "# The error message from clean_phone('12-3') (it must raise ValueError('bad phone'): too few digits)\ntry:\n    clean_phone('12-3')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+      - "# The error message from clean_phone('555-01a1') (it must raise ValueError('bad phone'): not only digits)\ntry:\n    clean_phone('555-01a1')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
       - "clean_phone('123456789012345')"
-      - "try:\n    clean_phone('1234567890123456')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
+      - "# The error message from clean_phone('1234567890123456') (it must raise ValueError('bad phone'): 16 digits is too many)\ntry:\n    clean_phone('1234567890123456')\nexcept ValueError as e:\n    result = str(e)\nelse:\n    result = 'no error'"
     solution: |
       def clean_phone(text):
           digits = text.replace(" ", "").replace("-", "")
@@ -66,6 +66,8 @@ steps:
     title: "3. Save and load the book"
     body: |
       Write `save_book(path, book)` and `load_book(path)` using JSON. `load_book` must return an **empty list** if the file is missing **or** damaged, and must return a list (if the file holds anything other than a list, also return `[]`).
+
+      One new tool: `isinstance(value, kind)` asks "is this value of that type?". `isinstance([1, 2], list)` is `True` and `isinstance({"a": 1}, list)` is `False`. Use it after loading to check you really got a list.
     code: |
       def save_book(path, book):
           # your code
@@ -76,10 +78,10 @@ steps:
           # your code
           pass
     tests:
-      - "(save_book('b.json', [{'name': 'Ada', 'phone': '1'}]), load_book('b.json'))[1]"
+      - "(save_book('b.json', [{'name': 'Ada', 'phone': '1'}]), load_book('b.json'))[1]  # save_book('b.json', a book holding Ada), then load_book('b.json')"
       - "load_book('nope.json')"
-      - "(open('bad.json', 'w').write('{{{'), load_book('bad.json'))[1]"
-      - "(open('obj.json', 'w').write('{\"a\": 1}'), load_book('obj.json'))[1]"
+      - "(open('bad.json', 'w').write('{{{'), load_book('bad.json'))[1]  # load_book('bad.json') for a file containing the broken text {{{"
+      - "(open('obj.json', 'w').write('{\"a\": 1}'), load_book('obj.json'))[1]  # load_book('obj.json') for a file holding a dictionary instead of a list"
     solution: |
       import json
 
@@ -148,30 +150,30 @@ steps:
           # your code
           pass
     tests:
-      - "(open('c.csv', 'w').write('name,phone\\nAda,555-0101\\nBold,12\\nCole,5550103\\n'), import_csv('c.csv'))[1]"
+      - "(open('c.csv', 'w').write('name,phone\\nAda,555-0101\\nBold,12\\nCole,5550103\\n'), import_csv('c.csv'))[1]  # import_csv('c.csv') for rows Ada,555-0101 / Bold,12 / Cole,5550103"
       - "import_csv('missing.csv')"
-      - "(open('d.csv', 'w').write('name,phone\\n,5550101\\n'), import_csv('d.csv'))[1]"
+      - "(open('d.csv', 'w').write('name,phone\\n,5550101\\n'), import_csv('d.csv'))[1]  # import_csv('d.csv') for one row with an empty name"
     solution: |
       import csv
 
 
       def import_csv(path):
-          book = []
-          skipped = 0
           try:
-              f = open(path, newline="", encoding="utf-8")
+              with open(path, newline="", encoding="utf-8") as f:
+                  rows = list(csv.DictReader(f))
           except FileNotFoundError:
               return ([], 0)
-          with f:
-              for row in csv.DictReader(f):
-                  name = (row.get("name") or "").strip()
-                  digits = (row.get("phone") or "").replace(" ", "").replace("-", "")
-                  if name and digits.isdigit() and 7 <= len(digits) <= 15:
-                      book.append({"name": name, "phone": digits})
-                  else:
-                      skipped += 1
+          book = []
+          skipped = 0
+          for row in rows:
+              name = row["name"].strip()
+              digits = row["phone"].replace(" ", "").replace("-", "")
+              if name and digits.isdigit() and 7 <= len(digits) <= 15:
+                  book.append({"name": name, "phone": digits})
+              else:
+                  skipped += 1
           return (book, skipped)
-    hint: "Count the rows that fail: an empty name, or a phone that is not 7 to 15 digits. Use `try` around the `open`."
+    hint: "Put the `with open(...)` inside a `try`, and `return ([], 0)` in `except FileNotFoundError`. Then loop over the rows: keep a row when the name is not empty and the phone passes the case 2 rule, otherwise add 1 to `skipped`."
     reject:
       - |
         import csv

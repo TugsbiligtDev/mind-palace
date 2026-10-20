@@ -149,7 +149,9 @@ steps:
       print("Done")         # not indented: outside greet
       ```
 
-      Get it wrong and Python stops with an **IndentationError**. Your editor adds the spaces when you press Tab. Never mix tabs and spaces.
+      Get it wrong and Python stops with an **IndentationError**.
+
+      **How the editor helps.** When you press Enter after a line that ends in `:`, the editor indents the next line by four spaces **for you**, and each new line keeps the same indent. So don't type the spaces yourself on top of that: just type the code. To move a line back out (to end the block), press **Backspace** once. **Tab** adds four spaces if you need them.
 
   - kind: code
     title: Fix the indentation

@@ -17,6 +17,7 @@ export function ProgramRunner({
   onRan,
   stdin = [],
   minHeight,
+  graded = false,
 }: {
   language: "python" | "javascript";
   initial: string;
@@ -25,6 +26,9 @@ export function ProgramRunner({
   onRan?: (code: string, out: ProgramOutput) => void;
   stdin?: string[]; // typed answers handed to Python's input()
   minHeight?: string;
+  // A graded exercise: the checker calls the learner's function, so a run that prints nothing
+  // is normal and gets no "No output" note (that note would suggest adding print).
+  graded?: boolean;
 }) {
   const python = language === "python";
 
@@ -45,7 +49,7 @@ export function ProgramRunner({
       starter={starter}
       slot={slot}
       run={run}
-      renderOutput={(out) => <Output output={out} python={python} />}
+      renderOutput={(out) => (graded && !out.logs.length && !out.error ? null : <Output output={out} python={python} />)}
       onRan={onRan}
       minHeight={minHeight}
       notice={

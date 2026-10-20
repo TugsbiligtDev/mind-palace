@@ -23,7 +23,7 @@ steps:
   - kind: code
     title: "Try it: test the strange example"
     body: |
-      This first try passes the normal examples, then crashes on the strange one, the empty list. That is exactly why step 1 asks you to write one down.
+      This first try passes the normal examples, then crashes on the strange one, the empty list. (`max(words, key=len)` means "the biggest word, measured by `len`", so the longest one.) That is exactly why step 1 asks you to write one down.
 
       Fix it: inside `longest`, before the `return`, add `if not words: return None` (on two lines, indented). Then all three lines print.
 
@@ -152,14 +152,16 @@ steps:
       A pipeline of steps turns a value along the way. `first_bad_step(steps, value, is_ok)` runs each function in `steps` on the value in turn (the output of one step is the input of the next). After each step, call `is_ok(value)`. Return the **1-based number** of the first step whose output is not ok, or `0` if every step was fine.
 
       Example: with steps `[add_one, double, negate]`, starting from `1`, values go `2, 4, -4`. If `is_ok` is "value > 0", step 3 is the first bad one, so the answer is `3`.
+
+      New here: a function can be handed to another function like any other value. `steps` is a **list of functions** and `is_ok` is a function, so inside your code `step(value)` runs one step and `is_ok(value)` asks the question. You only call them; you never write them.
     code: |
       def first_bad_step(steps, value, is_ok):
           return 0
     tests:
-      - "first_bad_step([lambda x: x + 1, lambda x: x * 2, lambda x: -x], 1, lambda v: v > 0)"
-      - "first_bad_step([lambda x: x + 1, lambda x: x * 2], 1, lambda v: v > 0)"
-      - "first_bad_step([], 5, lambda v: v > 0)"
-      - "first_bad_step([lambda x: x - 10], 5, lambda v: v > 0)"
+      - "first_bad_step([lambda x: x + 1, lambda x: x * 2, lambda x: -x], 1, lambda v: v > 0)  # Steps add one, double, flip the sign, starting from 1, where ok means above 0"
+      - "first_bad_step([lambda x: x + 1, lambda x: x * 2], 1, lambda v: v > 0)  # Steps add one, double, starting from 1, where ok means above 0"
+      - "first_bad_step([], 5, lambda v: v > 0)  # No steps at all, starting from 5"
+      - "first_bad_step([lambda x: x - 10], 5, lambda v: v > 0)  # One step that takes away 10, starting from 5, where ok means above 0"
     solution: |
       def first_bad_step(steps, value, is_ok):
           for number, step in enumerate(steps, start=1):
@@ -231,10 +233,10 @@ steps:
       def doc_summary(func):
           return ""
     tests:
-      - "(lambda: (lambda f: doc_summary(f))(eval('lambda x: x')))()"
-      - "doc_summary(len) != '(no documentation)'"
-      - "doc_summary(str.upper) != ''"
-      - "(lambda ns: (exec('def f():\\n    \"\"\"Add stuff.\\n\\n    More detail.\\n    \"\"\"', ns), doc_summary(ns['f']))[1])({})"
+      - "(lambda: (lambda f: doc_summary(f))(eval('lambda x: x')))()  # doc_summary of a function that has no docstring"
+      - "doc_summary(len) != '(no documentation)'  # Whether doc_summary(len) finds len's docstring (it must)"
+      - "doc_summary(str.upper) != ''  # Whether doc_summary(str.upper) gives some text (it must)"
+      - "(lambda ns: (exec('def f():\\n    \"\"\"Add stuff.\\n\\n    More detail.\\n    \"\"\"', ns), doc_summary(ns['f']))[1])({})  # doc_summary of a function whose docstring is Add stuff. followed by more lines"
     solution: |
       def doc_summary(func):
           doc = func.__doc__

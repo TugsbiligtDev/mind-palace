@@ -1,5 +1,5 @@
 title: "First steps"
-module: 3
+module: 5
 kind: review
-summary: "Six small cases that mix Modules 1 to 3: binary, paths, safety checks, version numbers, printing and fixing broken code. Only the function name is given."
+summary: "Six small cases that mix Modules 1 to 5: binary, paths, safety checks, version numbers, printing and fixing broken code. Only the function name is given."
 minutes: 35

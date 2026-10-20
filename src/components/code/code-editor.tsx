@@ -2,7 +2,7 @@
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { PostgreSQL, sql } from "@codemirror/lang-sql";
-import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { HighlightStyle, indentUnit, syntaxHighlighting } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
 import { keymap } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
@@ -48,6 +48,9 @@ export function CodeEditor({
   const extensions = useMemo(
     () => [
       LANGUAGE[language](),
+      // Four spaces, as the lessons teach (CodeMirror's default is two): the automatic indent
+      // after a ":" and the Tab key then match the code shown in the lesson.
+      indentUnit.of("    "),
       codeHighlighting,
       Prec.highest(
         keymap.of([

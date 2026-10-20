@@ -71,7 +71,8 @@ export function StepFeedback({
   return (
     <>
       {feedback && (
-        <p className={`rounded-lg px-3 py-2 text-sm ${feedback.ok ? "bg-success/10 text-success" : feedback.note ? "bg-subtle text-text" : "bg-xp/10 text-text"}`}>
+        // pre-wrap: Python feedback puts printed lines and error messages on lines of their own.
+        <p className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${feedback.ok ? "bg-success/10 text-success" : feedback.note ? "bg-subtle text-text" : "bg-xp/10 text-text"}`}>
           {feedback.ok ? "✓ " : ""}
           {feedback.text}
         </p>

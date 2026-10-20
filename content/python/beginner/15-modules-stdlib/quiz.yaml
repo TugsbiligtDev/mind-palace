@@ -26,7 +26,7 @@ questions:
     answer: 0
     explanation: When a file is imported, `__name__` is the module's name instead of `"__main__"`, so the block is skipped.
   - type: mcq
-    prompt: Why do programmers use `random.seed(...)` (or `random.Random(seed)`) in tests?
+    prompt: Why do programmers use `random.Random(seed)` in tests?
     options:
       - The same seed gives the same numbers every time, so results can be checked
       - It makes the numbers more random, so tests cover more unusual cases

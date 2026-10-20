@@ -8,7 +8,7 @@ const LOAD_TIMEOUT_MS = 90000;
 const stopped = `Stopped: your code ran longer than ${TIMEOUT_MS / 1000} seconds. Is there a loop that never ends?`;
 // Grading runs the model answer and then yours, on every test, so it gets twice as long.
 const GRADE_TIMEOUT_MS = TIMEOUT_MS * 2;
-const gradeStopped = `Stopped: checking your code took longer than ${GRADE_TIMEOUT_MS / 1000} seconds. Is there a loop that never ends?`;
+const gradeStopped = `Stopped: checking your code took longer than ${GRADE_TIMEOUT_MS / 1000} seconds. Either a loop never ends, or the code is much too slow for the bigger tests.`;
 
 let warmed: Promise<unknown> | null = null;
 

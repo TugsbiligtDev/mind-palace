@@ -19,6 +19,8 @@ steps:
       del book["author"]        # delete a key
       ```
 
+      `del` crashes with a `KeyError` if the key isn't there. To delete a key **only if it exists**, use `.pop(key, None)`: `book.pop("isbn", None)` removes `"isbn"` when present and quietly does nothing otherwise.
+
       Dictionaries remember the **order you inserted** keys (guaranteed since Python 3.7).
 
   - kind: code

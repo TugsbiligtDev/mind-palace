@@ -44,10 +44,10 @@ steps:
       - "parse_transaction('2026-09-30,Groceries,-42.50,food')"
       - "parse_transaction(' 2026-10-01 , Salary , 2000 , Income ')"
       - "parse_transaction('2026-01-05,Coffee,-3.10,food')"
-      - "try:\n    parse_transaction('2026-09-30,Groceries,-42.50')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
-      - "try:\n    parse_transaction('2026-13-40,Rent,-900,home')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
-      - "try:\n    parse_transaction('2026-09-30,Rent,lots,home')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
-      - "try:\n    parse_transaction('2026-09-30,,-5,home')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "# Whether parse_transaction('2026-09-30,Groceries,-42.50') raises a ValueError (it must: only 3 parts)\ntry:\n    parse_transaction('2026-09-30,Groceries,-42.50')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "# Whether parse_transaction('2026-13-40,Rent,-900,home') raises a ValueError (it must: there is no month 13)\ntry:\n    parse_transaction('2026-13-40,Rent,-900,home')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "# Whether parse_transaction('2026-09-30,Rent,lots,home') raises a ValueError (it must: lots is not a number)\ntry:\n    parse_transaction('2026-09-30,Rent,lots,home')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "# Whether parse_transaction('2026-09-30,,-5,home') raises a ValueError (it must: the description is empty)\ntry:\n    parse_transaction('2026-09-30,,-5,home')\nexcept ValueError:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
     solution: |
       from datetime import date
 
@@ -77,7 +77,11 @@ steps:
     body: |
       Write `format_cents(cents)`: show whole cents as dollars with two decimals and a sign only for negatives. `4250` is `"42.50"`, `-4250` is `"-42.50"`, `5` is `"0.05"`, `0` is `"0.00"`.
 
-      Use `divmod(abs(cents), 100)` (it returns dollars and remaining cents) and an f-string with `:02d`.
+      Stay with whole numbers (the house rule): no dividing into a float. Three small tools help:
+
+      - `divmod(a, b)` gives two answers at once, `a // b` and `a % b`: `divmod(4250, 100)` is `(42, 50)`, so `dollars, rest = divmod(abs(cents), 100)`.
+      - `:02d` in an f-string shows a whole number with at least 2 digits, adding a `0` in front: `f"{5:02d}"` is `"05"`.
+      - `"-" if cents < 0 else ""` is an `if` that fits inside one line: it gives `"-"` when the condition is true and `""` otherwise.
     code: |
       def format_cents(cents):
           # your code
@@ -89,6 +93,7 @@ steps:
       - "format_cents(0)"
       - "format_cents(-1)"
       - "format_cents(123456789)"
+      - "format_cents(100000000000000001)  # A huge amount, where a float would lose the last cent"
     solution: |
       def format_cents(cents):
           dollars, rest = divmod(abs(cents), 100)
@@ -142,7 +147,7 @@ steps:
           pass
     tests:
       - "spending_by_category([{'category': 'food', 'cents': -500}, {'category': 'home', 'cents': -90000}, {'category': 'food', 'cents': -250}, {'category': 'pay', 'cents': 5000}])"
-      - "list(spending_by_category([{'category': 'a', 'cents': -1}, {'category': 'b', 'cents': -5}, {'category': 'c', 'cents': -5}]).items())"
+      - "list(spending_by_category([{'category': 'a', 'cents': -1}, {'category': 'b', 'cents': -5}, {'category': 'c', 'cents': -5}]).items())  # The order of the categories for spends a 1, b 5 and c 5 (biggest first, ties alphabetical)"
       - "spending_by_category([])"
     solution: |
       def spending_by_category(ledger):
@@ -176,9 +181,12 @@ steps:
       def index_by_category(ledger):
           index = {}
           for tx in ledger:
-              index.setdefault(tx["category"], []).append(tx)
+              category = tx["category"]
+              if category not in index:
+                  index[category] = []
+              index[category].append(tx)
           return index
-    hint: "`index.setdefault(category, [])` gives the list (creating it if new), and you can `.append` to it."
+    hint: "The same pattern as *Group by length* in Module 12: if the category is not a key yet, start it with an empty list; then `append` the transaction."
     reject:
       - |
         def index_by_category(ledger):
@@ -200,20 +208,29 @@ steps:
           # your code
           pass
     tests:
-      - "(save_ledger('l.json', [{'date': '2026-01-01', 'description': 'x', 'cents': -5, 'category': 'a'}]), load_ledger('l.json'))[1]"
+      - "(save_ledger('l.json', [{'date': '2026-01-01', 'description': 'x', 'cents': -5, 'category': 'a'}]), load_ledger('l.json'))[1]  # save_ledger('l.json', one transaction), then load_ledger('l.json')"
       - "load_ledger('missing.json')"
-      - "(open('bad.json', 'w').write('nope'), load_ledger('bad.json'))[1]"
-      - "(open('mix.json', 'w').write('[1, {\"date\": \"d\", \"description\": \"x\", \"cents\": 5, \"category\": \"a\"}, {\"cents\": \"5\"}]'), load_ledger('mix.json'))[1]"
-      - "(open('obj.json', 'w').write('{}'), load_ledger('obj.json'))[1]"
+      - "(open('bad.json', 'w').write('nope'), load_ledger('bad.json'))[1]  # load_ledger('bad.json') for a file containing the broken text nope"
+      - "(open('mix.json', 'w').write('[1, {\"date\": \"d\", \"description\": \"x\", \"cents\": 5, \"category\": \"a\"}, {\"cents\": \"5\"}]'), load_ledger('mix.json'))[1]  # load_ledger('mix.json') for a list holding the number 1, one good transaction, and a dictionary with only cents (as text)"
+      - "(open('obj.json', 'w').write('{}'), load_ledger('obj.json'))[1]  # load_ledger('obj.json') for a file holding a dictionary instead of a list"
     solution: |
       import json
 
-      KEYS = ("date", "description", "cents", "category")
+      KEYS = ["date", "description", "cents", "category"]
 
 
       def save_ledger(path, ledger):
           with open(path, "w", encoding="utf-8") as f:
               json.dump(ledger, f, indent=2)
+
+
+      def is_transaction(tx):
+          if not isinstance(tx, dict):
+              return False
+          for key in KEYS:
+              if key not in tx:
+                  return False
+          return isinstance(tx["cents"], int)
 
 
       def load_ledger(path):
@@ -224,11 +241,8 @@ steps:
               return []
           if not isinstance(data, list):
               return []
-          return [
-              tx for tx in data
-              if isinstance(tx, dict) and all(k in tx for k in KEYS) and isinstance(tx["cents"], int)
-          ]
-    hint: "After loading, filter with a comprehension: `isinstance(tx, dict)`, all four keys present, and `isinstance(tx[\"cents\"], int)`."
+          return [tx for tx in data if is_transaction(tx)]
+    hint: "Write a small helper `is_transaction(tx)` with guard clauses (Module 8): not a dict → `False`; any of the four keys missing → `False`; otherwise whether `tx[\"cents\"]` is an `int`. Then keep `[tx for tx in data if is_transaction(tx)]`."
     reject:
       - |
         import json

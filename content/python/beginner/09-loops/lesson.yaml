@@ -263,7 +263,7 @@ steps:
       - "keep_positive([3, -1, 0, 8])"
       - "keep_positive([])"
       - "keep_positive([-5, -6])"
-      - "(lambda nums: (keep_positive(nums), nums))([1, -1])"
+      - "(lambda nums: (keep_positive(nums), nums))([1, -1])  # keep_positive([1, -1]), then the original list (it must still be [1, -1])"
     solution: |
       def keep_positive(numbers):
           result = []

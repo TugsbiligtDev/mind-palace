@@ -67,7 +67,7 @@ steps:
     body: |
       Finish `to_binary(n)`. It should return the number `n` written in binary, as text. `to_binary(5)` is `"101"`, and `to_binary(8)` is `"1000"`.
 
-      A **function** is a named recipe: `def to_binary(n):` starts it, and `return` hands back the answer. You will learn functions properly in Module 14. For now, just replace the placeholder line.
+      A **function** is a named recipe: `def to_binary(n):` starts it, and `return` hands back the answer. `n` is a name for **whatever number the checker hands in**: when it tries `to_binary(8)`, `n` is `8`. So write `n`, not a fixed number like `5`. You will learn functions properly in Module 3 and Module 14. For now, just replace the placeholder line `return ""`.
     code: |
       def to_binary(n):
           return ""
@@ -135,7 +135,7 @@ steps:
     body: |
       Finish `photos_that_fit(storage_gb, photo_mb)`: how many **whole** photos of `photo_mb` megabytes fit in `storage_gb` gigabytes? Use 1 GB = 1000 MB.
 
-      A 64 GB phone can hold `photos_that_fit(64, 5)`, which is `12800` five-megabyte photos.
+      A 64 GB phone can hold `photos_that_fit(64, 5)`, which is `12800` five-megabyte photos. (If the checker says you gave `12800.0`, that `.0` means a decimal number: you used `/` where `//` was needed.)
     code: |
       def photos_that_fit(storage_gb, photo_mb):
           return 0

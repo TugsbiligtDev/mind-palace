@@ -113,7 +113,7 @@ steps:
       ```
 
       - **`else`** holds the code that should run only if the `try` succeeded. It keeps the `try` block short.
-      - **`finally`** always runs, even if there was an error or a `return`. It is for **clean-up** like closing a file. (Module 28's `with` does this for you.)
+      - **`finally`** always runs, even if there was an error or a `return`. It is for **clean-up** like closing a file. (For files, the `with` you met in Module 2 does this for you; Module 17 explains it.)
 
   - kind: code
     title: The order things happen
@@ -173,9 +173,9 @@ steps:
       - "parse_age('34')"
       - "parse_age('0')"
       - "parse_age('130')"
-      - "try:\n    parse_age('-5')\nexcept ValueError as e:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
-      - "try:\n    parse_age('200')\nexcept ValueError as e:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
-      - "try:\n    parse_age('abc')\nexcept ValueError as e:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "# Whether parse_age('-5') raises a ValueError (it must)\ntry:\n    parse_age('-5')\nexcept ValueError as e:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "# Whether parse_age('200') raises a ValueError (it must)\ntry:\n    parse_age('200')\nexcept ValueError as e:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
+      - "# Whether parse_age('abc') raises a ValueError (it must)\ntry:\n    parse_age('abc')\nexcept ValueError as e:\n    result = 'ValueError'\nelse:\n    result = 'no error'"
     solution: |
       def parse_age(text):
           age = int(text)

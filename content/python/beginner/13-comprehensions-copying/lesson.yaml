@@ -84,7 +84,9 @@ steps:
   - kind: explain
     title: When a comprehension is too much
     body: |
-      Comprehensions are for **simple** "transform and/or filter" jobs. If it needs two conditions, a nested loop, and a clever trick, a normal `for` loop is kinder to the next reader (that is you).
+      Comprehensions are for **simple** "transform and/or filter" jobs.
+
+      (The examples below use an `if` that fits inside one line: `x * 2 if x > 0 else -x` means "`x * 2` when `x > 0` is true, otherwise `-x`". `f` and `g` stand for any two functions.) If it needs two conditions, a nested loop, and a clever trick, a normal `for` loop is kinder to the next reader (that is you).
 
       ```python
       # Too dense: hard to read
@@ -152,7 +154,7 @@ steps:
     tests:
       - "with_clue(['a', 'b'], 'c')"
       - "with_clue([], 'x')"
-      - "(lambda c: (with_clue(c, 'z'), c))(['a'])"
+      - "(lambda c: (with_clue(c, 'z'), c))(['a'])  # with_clue(['a'], 'z'), then the original list (it must still be ['a'])"
     solution: |
       def with_clue(clues, new_clue):
           return clues + [new_clue]
@@ -195,8 +197,8 @@ steps:
           return grid.copy()
     tests:
       - "copy_grid([[1, 2], [3, 4]])"
-      - "(lambda g: (copy_grid(g)[0].append(99), g)[1])([[1], [2]])"
-      - "(lambda g: copy_grid(g) is g)([[1]])"
+      - "(lambda g: (copy_grid(g)[0].append(99), g)[1])([[1], [2]])  # The original grid after adding 99 to the first row of the copy (it must still be [[1], [2]])"
+      - "(lambda g: copy_grid(g) is g)([[1]])  # Whether the copy is the very same list as the original (it must not be)"
     solution: |
       import copy
 
@@ -234,7 +236,7 @@ steps:
           return [[0] * cols] * rows
     tests:
       - "make_grid(2, 3)"
-      - "(lambda g: (g[0].__setitem__(0, 9), g)[1])(make_grid(3, 2))"
+      - "(lambda g: (g[0].__setitem__(0, 9), g)[1])(make_grid(3, 2))  # make_grid(3, 2) after setting the first cell of row 0 to 9 (only row 0 may change)"
       - "make_grid(0, 5)"
     solution: |
       def make_grid(rows, cols):

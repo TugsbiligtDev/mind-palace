@@ -55,9 +55,9 @@ steps:
       #     assert slugify("a b") == "a-b"
       '''
     tests:
-      - "run = lambda impl: pytest_run({'shop.py': impl, 'test_shop.py': TESTS})\nresult = run(GOOD).endswith('passed') and 'failed' not in run(GOOD)"
-      - "result = 'failed' in pytest_run({'shop.py': BUG_CASE, 'test_shop.py': TESTS})"
-      - "result = 'failed' in pytest_run({'shop.py': BUG_STRIP, 'test_shop.py': TESTS})"
+      - "# Your tests must all pass on GOOD, the correct code\nrun = lambda impl: pytest_run({'shop.py': impl, 'test_shop.py': TESTS})\nresult = run(GOOD).endswith('passed') and 'failed' not in run(GOOD)"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_CASE, 'test_shop.py': TESTS})  # Your tests must catch BUG_CASE: at least one test has to fail on it"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_STRIP, 'test_shop.py': TESTS})  # Your tests must catch BUG_STRIP: at least one test has to fail on it"
     solution: |
       GOOD = '''
       def slugify(title):
@@ -146,9 +146,9 @@ steps:
       # write a fixture named cart and tests that use it
       '''
     tests:
-      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})"
-      - "result = 'failed' in pytest_run({'shop.py': BUG_SHARED, 'test_shop.py': TESTS})"
-      - "result = '@pytest.fixture' in TESTS"
+      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})  # Your tests must all pass on GOOD, the correct code"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_SHARED, 'test_shop.py': TESTS})  # Your tests must catch BUG_SHARED: at least one test has to fail on it"
+      - "result = '@pytest.fixture' in TESTS  # Your tests must use a fixture (@pytest.fixture)"
     solution: |
       GOOD = '''
       class Cart:
@@ -239,10 +239,10 @@ steps:
       # write a parametrized test here
       '''
     tests:
-      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})"
-      - "result = 'failed' in pytest_run({'shop.py': BUG_A, 'test_shop.py': TESTS})"
-      - "result = 'failed' in pytest_run({'shop.py': BUG_B, 'test_shop.py': TESTS})"
-      - "result = 'parametrize' in TESTS"
+      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})  # Your tests must all pass on GOOD, the correct code"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_A, 'test_shop.py': TESTS})  # Your tests must catch BUG_A: at least one test has to fail on it"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_B, 'test_shop.py': TESTS})  # Your tests must catch BUG_B: at least one test has to fail on it"
+      - "result = 'parametrize' in TESTS  # Your tests must use @pytest.mark.parametrize"
     solution: |
       GOOD = '''
       def is_leap(year):
@@ -317,9 +317,9 @@ steps:
       # write tests here
       '''
     tests:
-      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})"
-      - "result = 'failed' in pytest_run({'shop.py': BUG_NORAISE, 'test_shop.py': TESTS})"
-      - "result = 'pytest.raises' in TESTS"
+      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})  # Your tests must all pass on GOOD, the correct code"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_NORAISE, 'test_shop.py': TESTS})  # Your tests must catch BUG_NORAISE: at least one test has to fail on it"
+      - "result = 'pytest.raises' in TESTS  # Your tests must use pytest.raises"
     solution: |
       GOOD = '''
       def withdraw(balance, amount):
@@ -402,9 +402,9 @@ steps:
       # write tests here
       '''
     tests:
-      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})"
-      - "result = 'failed' in pytest_run({'shop.py': BUG_SUM, 'test_shop.py': TESTS})"
-      - "result = 'failed' in pytest_run({'shop.py': BUG_TWICE, 'test_shop.py': TESTS})"
+      - "result = pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS}).endswith('passed') and 'failed' not in pytest_run({'shop.py': GOOD, 'test_shop.py': TESTS})  # Your tests must all pass on GOOD, the correct code"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_SUM, 'test_shop.py': TESTS})  # Your tests must catch BUG_SUM: at least one test has to fail on it"
+      - "result = 'failed' in pytest_run({'shop.py': BUG_TWICE, 'test_shop.py': TESTS})  # Your tests must catch BUG_TWICE: at least one test has to fail on it"
     solution: |
       GOOD = '''
       def average_temp(client):
@@ -468,7 +468,7 @@ steps:
       def price_after_discount(price, percent):
           return price
     tests:
-      - "pytest_run({'test_price.py': 'import pytest\\nfrom price import price_after_discount\\n\\ndef test_zero():\\n    assert price_after_discount(50, 0) == 50\\n\\ndef test_quarter():\\n    assert price_after_discount(200, 25) == 150.0\\n\\ndef test_rounding():\\n    assert price_after_discount(9.99, 15) == 8.49\\n\\n@pytest.mark.parametrize(\"bad\", [-1, 101])\\ndef test_bad_percent(bad):\\n    with pytest.raises(ValueError):\\n        price_after_discount(10, bad)\\n'}, source_as='price.py')"
+      - "pytest_run({'test_price.py': 'import pytest\\nfrom price import price_after_discount\\n\\ndef test_zero():\\n    assert price_after_discount(50, 0) == 50\\n\\ndef test_quarter():\\n    assert price_after_discount(200, 25) == 150.0\\n\\ndef test_rounding():\\n    assert price_after_discount(9.99, 15) == 8.49\\n\\n@pytest.mark.parametrize(\"bad\", [-1, 101])\\ndef test_bad_percent(bad):\\n    with pytest.raises(ValueError):\\n        price_after_discount(10, bad)\\n'}, source_as='price.py')  # The hidden pytest tests for price_after_discount (all 5 must pass)"
     solution: |
       def price_after_discount(price, percent):
           if percent < 0 or percent > 100:

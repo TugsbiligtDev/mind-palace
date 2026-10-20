@@ -63,6 +63,12 @@ def _mp_limit_off():
         sys.monitoring.set_events(_MP_TOOL, 0)
         sys.monitoring.free_tool_id(_MP_TOOL)
 
+class _MpNoResult:
+    def __repr__(self):
+        return "nothing (the check expected an error, and none was raised)"
+
+_MP_NO_RESULT = _MpNoResult()
+
 def _mp_fmt(v, unordered=False, depth=0, canon=False):
     # canon=True gives the form used for comparing results: dictionaries are compared like
     # Python's ==, which ignores the order keys were added in.
@@ -133,7 +139,13 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
         for name in files:
             sys.modules.pop(name.removesuffix(".py"), None)
         lines = [ln for ln in sink.getvalue().splitlines() if ln.strip()]
-        return re.sub(r" in [0-9.]+s.*", "", lines[-1]) if lines else "no output"
+        if not lines:
+            return "no output"
+        summary = re.sub(r" in [0-9.]+s.*", "", lines[-1])
+        # Name the tests that failed (pytest's "FAILED file::test - reason" lines), so feedback
+        # can say which one. A run where everything passes stays just "5 passed".
+        failed = [ln.removeprefix("FAILED ") for ln in lines if ln.startswith("FAILED ")]
+        return summary + ("; failed: " + "; ".join(failed) if failed else "")
 
     workdir = tempfile.mkdtemp()
     old_cwd = os.getcwd()
@@ -171,6 +183,12 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
                     t = t.tb_next
                 line = last
             text = "".join(traceback.format_exception(type(e), e, tb if not isinstance(e, SyntaxError) else None))
+            # Frames inside Python's own library files (/lib/python...) are noise for a learner:
+            # keep the learner's lines and the final error.
+            frames = traceback.extract_tb(tb) if not isinstance(e, SyntaxError) else []
+            mine = [f for f in frames if not f.filename.startswith("/lib/python")]
+            if mine and len(mine) < len(frames) and e.__cause__ is None and e.__context__ is None:
+                text = "Traceback (most recent call last):\n" + "".join(traceback.format_list(mine)) + "".join(traceback.format_exception_only(type(e), e))
             out["error"] = {"message": type(e).__name__ + (": " + str(e) if str(e) else ""), "line": line, "trace": text.strip()}
         else:
             ns["given_input"] = given_input
@@ -186,7 +204,9 @@ def _mp_run(code, tests, unordered, stdin, limit, max_lines, max_chars):
                     else:
                         local = dict(ns)
                         exec(compile(t, "<test>", "exec"), local)
-                        value = local["result"]
+                        # A check like "try: f() except ValueError as e: result = str(e)" never
+                        # sets result when no error comes; say that instead of a KeyError.
+                        value = local["result"] if "result" in local else _MP_NO_RESULT
                     r = {
                         "call": t,
                         "value": _mp_fmt(value, unordered),
@@ -307,10 +327,22 @@ function printedLines(text: string) {
   return text ? lines.map((l) => `    ${l}`).join("\n") : "    (nothing)";
 }
 
+const MAX_SHOWN_LINES = 12;
+
+// A check written as statements ("a = Account('Ada')\nresult = a.summary()") is shown as its
+// code, so the learner can see which case it was; `result` is the value it looks at.
+function checkCode(call: string) {
+  const lines = call.split("\n");
+  const shown = lines.length > MAX_SHOWN_LINES ? [...lines.slice(0, MAX_SHOWN_LINES), "…"] : lines;
+  const note = /\bresult\s*=/.test(call) ? "\n(`result` is the value the check looks at.)" : "";
+  return `the check\n${shown.map((l) => `    ${l}`).join("\n")}${note}\n`;
+}
+
 // The sentence after "First miss:" for one failed test.
 function describeMiss(mine: CallResult, want: CallResult): string {
   const label = testLabel(mine.call);
-  const what = label ?? givenInputCall(mine.call) ?? (mine.call.includes("\n") ? "one of the checks" : mine.call);
+  const statements = mine.call.includes("\n") || /^\s*result\s*=/.test(mine.call);
+  const what = label ?? givenInputCall(mine.call) ?? (statements ? checkCode(mine.call) : mine.call);
   if (mine.threw && !want.threw) {
     const where = mine.line ? ` on line ${mine.line} of your code` : "";
     return `${what} stopped with an error${where}:\n    ${mine.detail ?? mine.value}`;
@@ -319,6 +351,8 @@ function describeMiss(mine: CallResult, want: CallResult): string {
     return `${what} should print:\n${printedLines(want.printed)}\nbut it printed:\n${printedLines(mine.printed)}`;
   }
   const show = (r: CallResult) => (r.threw ? `an error (${r.value})` : r.value);
+  // A yes/no requirement ("some test must fail on BUG_X") reads best as just the requirement.
+  if (label && want.value === "True" && mine.value === "False") return `${label}: not met yet.`;
   if (label) return `${label}. Expected ${show(want)}, but got ${show(mine)}.`;
   return `${what} should give ${show(want)}, but gave ${show(mine)}.`;
 }

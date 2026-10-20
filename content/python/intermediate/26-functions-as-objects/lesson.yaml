@@ -23,6 +23,8 @@ steps:
     title: Pass a function in
     body: |
       Write `apply_n(func, value, times)`: call `func` on `value`, then on that result, and so on, `times` times, and return the final value. `apply_n(lambda x: x * 2, 1, 3)` is `8`. With `times=0` return `value` unchanged.
+
+      (`lambda x: x * 2` is a one-line function with no name: "given `x`, give back `x * 2`". The next step explains it properly; here you only pass it along.)
     code: |
       def apply_n(func, value, times):
           return value
@@ -351,6 +353,8 @@ steps:
     title: Fix the slow Fibonacci
     body: |
       This recursive `fib` recomputes the same values again and again, so `fib(80)` would make about 10^16 calls and run for decades. Fix it with **one line**: `@cache` above the function.
+
+      Pressing **Run** on the starting code takes about 16 seconds and then stops: that slowness is the problem this step is about.
     code: |
       from functools import cache
 

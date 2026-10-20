@@ -67,7 +67,7 @@ steps:
   - kind: code
     title: Grid paths, fast
     body: |
-      Finish `paths(rows, cols)`: the number of ways to go from the top-left to the bottom-right of a `rows × cols` grid, moving only right or down. A grid with one row or one column has exactly one path. The starter is correct but far too slow for a `18 × 18` grid. Make it fast with **one decorator**.
+      Finish `paths(rows, cols)`: the number of ways to go from the top-left to the bottom-right of a `rows × cols` grid, moving only right or down. A grid with one row or one column has exactly one path. The starter is correct but far too slow for a `18 × 18` grid. Make it fast with **one decorator**. (Pressing **Run** on the starting code takes about 16 seconds and then stops: that is the slowness to fix.)
     code: |
       from functools import cache
 

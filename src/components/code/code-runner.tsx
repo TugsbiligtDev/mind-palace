@@ -3,6 +3,8 @@ import { useCallback, useRef, useState, type ReactNode } from "react";
 import { saveCode } from "@/lib/progress";
 import { CodeEditor, type EditorLanguage } from "./code-editor";
 
+const SLOW_MS = 3000;
+
 // An editor with Run and Reset buttons and a result panel. `run` does the work for the
 // course's language; `renderOutput` shows its result.
 export function CodeRunner<Output>({
@@ -34,6 +36,7 @@ export function CodeRunner<Output>({
   const [busy, setBusy] = useState<"run" | "check" | null>(null);
   const codeRef = useRef(code);
   const busyRef = useRef(false);
+  const [slow, setSlow] = useState(false);
 
   const change = (v: string) => {
     setCode(v);
@@ -47,14 +50,18 @@ export function CodeRunner<Output>({
     busyRef.current = true;
     const input = codeRef.current;
     setBusy("run");
+    // A long wait with no sign of life looks like a freeze, so say it's still working.
+    const slowTimer = setTimeout(() => setSlow(true), SLOW_MS);
     try {
       const out = await runCode(input);
       setOutput(out);
       setBusy("check");
       await onRan?.(input, out);
     } finally {
+      clearTimeout(slowTimer);
       busyRef.current = false;
       setBusy(null);
+      setSlow(false);
     }
   }, [runCode, onRan]);
   const shown = output && renderOutput(output);
@@ -80,6 +87,7 @@ export function CodeRunner<Output>({
         >
           Reset
         </button>
+        {slow && <span className="text-xs text-muted">Still working…</span>}
         <span className="ml-auto text-xs text-muted">{status}</span>
       </div>
       {shown && <div className="rounded-xl border border-border bg-card p-3">{shown}</div>}

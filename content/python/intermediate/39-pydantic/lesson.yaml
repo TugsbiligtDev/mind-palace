@@ -113,7 +113,7 @@ steps:
           tags: list[str] = Field(default_factory=list)
       ```
 
-      Common options: `gt`, `ge`, `lt`, `le` (number bounds), `min_length`, `max_length` (text or lists), `pattern` (regex), `default`, `default_factory` (for mutable defaults, as in dataclasses), `alias` (a different name in the input data).
+      Common options: `gt`, `ge`, `lt`, `le` (number bounds), `min_length`, `max_length` (text or lists), `pattern` (regex), `default`, `default_factory` (a default built fresh for each object; Pydantic also copies a plain `= []` default safely, but `default_factory` says so clearly and works the same in dataclasses), `alias` (a different name in the input data).
 
       Then a whole class of bad input is rejected the moment the object is created, so the rest of your program can rely on it being valid.
 

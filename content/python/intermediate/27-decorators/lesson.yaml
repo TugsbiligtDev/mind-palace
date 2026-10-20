@@ -365,6 +365,8 @@ steps:
     title: Build your own cache
     body: |
       `@cache` from `functools` remembers results. Write your own version to see how simple it is: `memoize` keeps a dictionary from the arguments (a tuple) to the result, and only calls the function on a **miss**. Assume all arguments are hashable and there are no keyword arguments.
+
+      Pressing **Run** on the starting code takes about 16 seconds and then stops, because the second check asks for `fib(90)` without any caching. Your `memoize` makes it instant.
     code: |
       from functools import wraps
 

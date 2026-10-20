@@ -177,11 +177,11 @@ steps:
       # write a fixture named lib, and tests (use parametrize for fine)
       '''
     tests:
-      - "run = lambda impl: pytest_run({'library.py': impl, 'test_library.py': TESTS})\nresult = 'failed' not in run(GOOD) and 'passed' in run(GOOD)"
-      - "result = 'failed' in pytest_run({'library.py': BUG_LIMIT, 'test_library.py': TESTS})"
-      - "result = 'failed' in pytest_run({'library.py': BUG_FINE, 'test_library.py': TESTS})"
-      - "result = 'failed' in pytest_run({'library.py': BUG_RETURN, 'test_library.py': TESTS})"
-      - "result = ('@pytest.fixture' in TESTS, 'parametrize' in TESTS)"
+      - "# Your tests must all pass on GOOD, the correct code\nrun = lambda impl: pytest_run({'library.py': impl, 'test_library.py': TESTS})\nresult = 'failed' not in run(GOOD) and 'passed' in run(GOOD)"
+      - "result = 'failed' in pytest_run({'library.py': BUG_LIMIT, 'test_library.py': TESTS})  # Your tests must catch BUG_LIMIT: at least one test has to fail on it"
+      - "result = 'failed' in pytest_run({'library.py': BUG_FINE, 'test_library.py': TESTS})  # Your tests must catch BUG_FINE: at least one test has to fail on it"
+      - "result = 'failed' in pytest_run({'library.py': BUG_RETURN, 'test_library.py': TESTS})  # Your tests must catch BUG_RETURN: at least one test has to fail on it"
+      - "result = ('@pytest.fixture' in TESTS, 'parametrize' in TESTS)  # Your tests must use both a fixture and parametrize"
     solution: |
       GOOD = '''
       LIMIT = 3
@@ -328,11 +328,11 @@ steps:
       # write tests using pytest.raises
       '''
     tests:
-      - "run = lambda impl: pytest_run({'library.py': impl, 'test_library.py': TESTS})\nresult = 'failed' not in run(GOOD) and 'passed' in run(GOOD)"
-      - "result = 'failed' in pytest_run({'library.py': BUG_DUP, 'test_library.py': TESTS})"
-      - "result = 'failed' in pytest_run({'library.py': BUG_STOCK, 'test_library.py': TESTS})"
-      - "result = 'failed' in pytest_run({'library.py': BUG_ORDER, 'test_library.py': TESTS})"
-      - "result = BUG_ORDER != GOOD"
+      - "# Your tests must all pass on GOOD, the correct code\nrun = lambda impl: pytest_run({'library.py': impl, 'test_library.py': TESTS})\nresult = 'failed' not in run(GOOD) and 'passed' in run(GOOD)"
+      - "result = 'failed' in pytest_run({'library.py': BUG_DUP, 'test_library.py': TESTS})  # Your tests must catch BUG_DUP: at least one test has to fail on it"
+      - "result = 'failed' in pytest_run({'library.py': BUG_STOCK, 'test_library.py': TESTS})  # Your tests must catch BUG_STOCK: at least one test has to fail on it"
+      - "result = 'failed' in pytest_run({'library.py': BUG_ORDER, 'test_library.py': TESTS})  # Your tests must catch BUG_ORDER: at least one test has to fail on it"
+      - "result = BUG_ORDER != GOOD  # The BUG copies must still differ from GOOD (leave the GOOD and BUG lines as they are)"
     solution: |
       GOOD = '''
       LIMIT = 3

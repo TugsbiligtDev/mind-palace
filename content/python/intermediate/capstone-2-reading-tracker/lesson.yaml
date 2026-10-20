@@ -429,12 +429,12 @@ steps:
       # write a mock_client helper/fixture, a db fixture, and your tests
       '''
     tests:
-      - "run = lambda impl: pytest_run({'tracker.py': impl, 'test_tracker.py': TESTS})\nresult = 'failed' not in run(GOOD) and 'passed' in run(GOOD)"
-      - "result = BUG_PARAMS != GOOD and BUG_SKIP != GOOD and BUG_STATUS != GOOD"
-      - "result = 'failed' in pytest_run({'tracker.py': BUG_PARAMS, 'test_tracker.py': TESTS})"
-      - "result = 'failed' in pytest_run({'tracker.py': BUG_SKIP, 'test_tracker.py': TESTS})"
-      - "result = 'failed' in pytest_run({'tracker.py': BUG_STATUS, 'test_tracker.py': TESTS})"
-      - "result = ('MockTransport' in TESTS, 'parametrize' in TESTS)"
+      - "# Your tests must all pass on GOOD, the correct code\nrun = lambda impl: pytest_run({'tracker.py': impl, 'test_tracker.py': TESTS})\nresult = 'failed' not in run(GOOD) and 'passed' in run(GOOD)"
+      - "result = BUG_PARAMS != GOOD and BUG_SKIP != GOOD and BUG_STATUS != GOOD  # The BUG copies must still differ from GOOD (leave the GOOD and BUG lines as they are)"
+      - "result = 'failed' in pytest_run({'tracker.py': BUG_PARAMS, 'test_tracker.py': TESTS})  # Your tests must catch BUG_PARAMS: at least one test has to fail on it"
+      - "result = 'failed' in pytest_run({'tracker.py': BUG_SKIP, 'test_tracker.py': TESTS})  # Your tests must catch BUG_SKIP: at least one test has to fail on it"
+      - "result = 'failed' in pytest_run({'tracker.py': BUG_STATUS, 'test_tracker.py': TESTS})  # Your tests must catch BUG_STATUS: at least one test has to fail on it"
+      - "result = ('MockTransport' in TESTS, 'parametrize' in TESTS)  # Your tests must use httpx.MockTransport and parametrize"
     solution: |
       GOOD = '''
       import httpx

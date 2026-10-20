@@ -15,7 +15,7 @@ steps:
 
       <!-- page -->
 
-      You talk to it in **SQL**. Python ships with **SQLite**, a complete database that lives in a single file (or in memory), through the `sqlite3` module. It is perfect for learning and for many real applications. (If you followed the PostgreSQL course, SQL here will look familiar. The dialect differs slightly, but the ideas are the same.)
+      You talk to it in **SQL**. Python ships with **SQLite**, a complete database that lives in a single file (or in memory), through the `sqlite3` module. It is perfect for learning and for many real applications. (If you followed the PostgreSQL course, SQL here will look familiar. The dialect differs slightly, but the ideas are the same. If SQL is new to you, this lesson moves fast: the PostgreSQL course's Beginner modules teach each statement slowly, with many exercises.)
 
       In this lesson, the databases live in memory inside your browser, and each exercise gets a fresh, empty one.
 
@@ -61,6 +61,34 @@ steps:
       - `UPDATE` and `DELETE` **without `WHERE` change every row.** Run the matching `SELECT` first.
       - After writing, call **`conn.commit()`** to save (or use the `with conn:` block).
       - `cursor.fetchall()` gives a list of tuples; `fetchone()` one row; iterating a cursor streams rows. `cursor.lastrowid` is the new row's id; `cursor.rowcount` is how many rows changed.
+
+  - kind: code
+    title: "Try it: JOIN and GROUP BY"
+    body: |
+      Two small tables, `authors` and `books`, and three queries. Run it and notice:
+
+      - the `JOIN` pairs each book with its author's name by matching `books.author_id` to `authors.id`.
+      - `GROUP BY` makes one row per author, and `COUNT(*)` counts the rows in each group.
+      - Woolf has no books here, so she is missing from the plain `JOIN`, but the `LEFT JOIN` keeps her with a count of `0` (`COUNT(books.id)` counts only real matches).
+
+      Then try one change: add a book for Woolf (`INSERT INTO books (title, author_id) VALUES ('Orlando', 3)`) before the queries, and run again. Nothing is graded here.
+    code: |
+      import sqlite3
+
+      conn = sqlite3.connect(":memory:")
+      conn.executescript("""
+      CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT);
+      CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, author_id INTEGER);
+      INSERT INTO authors (name) VALUES ('Herbert'), ('Austen'), ('Woolf');
+      INSERT INTO books (title, author_id) VALUES ('Dune', 1), ('Emma', 2), ('Persuasion', 2);
+      """)
+
+      for row in conn.execute("SELECT books.title, authors.name FROM books JOIN authors ON books.author_id = authors.id"):
+          print(row)
+
+      print(conn.execute("SELECT authors.name, COUNT(*) FROM books JOIN authors ON books.author_id = authors.id GROUP BY authors.name").fetchall())
+
+      print(conn.execute("SELECT authors.name, COUNT(books.id) FROM authors LEFT JOIN books ON books.author_id = authors.id GROUP BY authors.id ORDER BY authors.name").fetchall())
 
   - kind: code
     title: Query with a parameter

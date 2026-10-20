@@ -619,6 +619,17 @@ steps:
                   raise LibraryError("no copies left")
               member.borrowed.append(isbn)
               self._loans[isbn] = self._loans.get(isbn, 0) + 1
+
+          @staticmethod
+          def fine(days_late):
+              return min(max(days_late, 0) * 25, 1000)
+
+          def return_book(self, member, isbn, days_late=0):
+              if isbn not in member.borrowed:
+                  raise LibraryError("not borrowed")
+              member.borrowed.remove(isbn)
+              self._loans[isbn] -= 1
+              return self.fine(days_late)
     tests:
       - "str(Book('1', 'Dune', 'Herbert'))"
       - "m = Member('Ada')\nm.borrowed = ['1', '2']\nresult = str(m)"
@@ -698,7 +709,7 @@ steps:
               return "\n".join(
                   f"{b.title} ({self.available(b.isbn)}/{b.copies} available)" for b in books
               )
-    hint: "Add `__str__` to `Book` and `Member`, and `__len__` and `__str__` to `Library`. Sort with `sorted(self._books.values(), key=lambda b: b.title)`."
+    hint: "Add `__str__` to `Book` and `Member`, and `__len__` and `__str__` to `Library`. Sort with `sorted(self._books.values(), key=lambda b: b.title)`: `key=` says what to sort by, and `lambda b: b.title` is a one-line function giving each book's title (Module 26 explains it)."
     reject:
       - |
         from dataclasses import dataclass

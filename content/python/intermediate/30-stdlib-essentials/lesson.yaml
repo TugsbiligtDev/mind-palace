@@ -218,6 +218,27 @@ steps:
       Write patterns as **raw strings** `r"..."` so backslashes are left alone. `match` checks from the *start*; `search` looks *anywhere*; `fullmatch` needs the whole text to fit. If a regex is getting longer than a line or two, consider whether plain `split()` and `startswith()` would be clearer.
 
   - kind: code
+    title: "Try it: regular expressions"
+    body: |
+      The examples from the explanation, on Inkwell order notes. Run it and match each line to its pattern:
+
+      - `\d+` finds a run of digits; `findall` returns every run.
+      - the brackets in the date pattern make **groups**, and `groups()` hands them back.
+      - `fullmatch` only succeeds when the **whole** text fits, so the last line gives `None`.
+
+      Then try one change: make the last line use `re.search` instead of `re.fullmatch`, and see what it finds. Nothing is graded here.
+    code: |
+      import re
+
+      print(re.search(r"\d+", "order 66 shipped").group())
+      print(re.findall(r"\d+", "a1 b22 c333"))
+      m = re.match(r"(\d{4})-(\d{2})-(\d{2})", "2026-09-30")
+      print(m.groups())
+      print(re.sub(r"\s+", " ", "Dune    by   Herbert"))
+      print(re.fullmatch(r"[A-Z]+", "ERROR"))
+      print(re.fullmatch(r"[A-Z]+", "ERROR 42"))
+
+  - kind: code
     title: Parse a log line
     body: |
       Log lines look like `"2026-09-30 12:01:02 ERROR db: connection timeout"`: date, time, level (upper-case letters), a source name followed by a colon, then the message. Write `parse_line(line)` returning a dictionary with keys `date`, `time`, `level`, `source`, `message`. If the line does not fit the pattern, return `None`.
@@ -277,6 +298,28 @@ steps:
       ```
 
       Then `args.name`, `args.times`, `args.shout`. `vars(args)` turns the result into a dict. Run as `python greet.py Ada --times 2 --shout`.
+
+  - kind: code
+    title: "Try it: argparse"
+    body: |
+      The parser from the explanation. In a real program `parse_args()` reads what was typed in the terminal; here we hand it lists of words instead. Run it and notice:
+
+      - `--times 2` arrives as the **number** 2, because of `type=int`.
+      - `--shout` is `False` unless the flag is there.
+      - `vars(args)` turns the result into a plain dictionary.
+
+      Then try one change: pass `["Ada", "--times", "two"]` and read the error argparse prints (it then stops with `SystemExit`). Nothing is graded here.
+    code: |
+      import argparse
+
+      parser = argparse.ArgumentParser(description="Greet someone")
+      parser.add_argument("name")
+      parser.add_argument("--times", type=int, default=1)
+      parser.add_argument("--shout", action="store_true")
+
+      args = parser.parse_args(["Ada", "--times", "2"])
+      print(args.name, args.times, args.shout)
+      print(vars(parser.parse_args(["Bo", "--shout"])))
 
   - kind: code
     title: Build a parser
@@ -339,6 +382,33 @@ steps:
       ```
 
       Create one logger per module with `getLogger(__name__)`. Do not call `basicConfig` in libraries, only in the program's entry point.
+
+  - kind: code
+    title: "Try it: logging"
+    body: |
+      A logger that writes into a `StringIO` (text kept in memory) instead of the screen, so you can print what it collected. Run it and notice:
+
+      - the level is `INFO`, so the `debug` line is left out.
+      - each line follows the format `LEVEL: message`.
+
+      Then try one change: set the level to `logging.WARNING` and run again. Now only the warning appears. Nothing is graded here.
+    code: |
+      import io
+      import logging
+
+      stream = io.StringIO()
+      log = logging.getLogger("shop")
+      log.handlers.clear()
+      handler = logging.StreamHandler(stream)
+      handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+      log.addHandler(handler)
+      log.setLevel(logging.INFO)
+      log.propagate = False
+
+      log.info("shop opened")
+      log.debug("this detail is hidden at INFO")
+      log.warning("only 2 copies of Dune left")
+      print(stream.getvalue())
 
   - kind: code
     title: A logger you can read back

@@ -83,7 +83,10 @@ export function CodeRunner<Output>({
             change(starter);
             setOutput(null);
           }}
-          className="rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-subtle hover:text-text"
+          // Greyed out while running or checking, like Run: otherwise the old run's output and
+          // grade would turn up after the editor was reset.
+          disabled={busy !== null}
+          className="rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-subtle hover:text-text disabled:opacity-50"
         >
           Reset
         </button>

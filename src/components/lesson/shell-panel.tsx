@@ -6,6 +6,7 @@ import { shellStepCheck } from "@/lib/content/step-check";
 import { saveCode, useProgress } from "@/lib/progress";
 import type { ShellExpected } from "@/lib/shell/core";
 import type { Machine } from "@/lib/shell/machine";
+import { useAsyncAction } from "@/lib/use-async-action";
 import { StepFeedback, useStepFeedback } from "./step-feedback";
 
 // A Linux & Git "shell" step: the practice terminal. A graded step checks itself quietly after
@@ -16,7 +17,7 @@ export function ShellPanel({ step, slot, done, onDone }: { step: Extract<Step, {
   const { feedback, setFeedback, misses, pass, miss, stumble } = useStepFeedback(slot, onDone);
   const check = useMemo(() => shellStepCheck(step), [step]);
   const [saved] = useState(() => p?.code[slot] || undefined);
-  const [checking, setChecking] = useState(false);
+  const { busy: checking, start } = useAsyncAction<"check">();
   const expected = useRef<Promise<ShellExpected> | null>(null);
   const machine = useRef<Machine | null>(null);
   const typed = useRef<string[]>([]);
@@ -29,10 +30,19 @@ export function ShellPanel({ step, slot, done, onDone }: { step: Extract<Step, {
   const grade = useCallback(
     async (quiet: boolean) => {
       if (!check || !machine.current) return;
-      const core = await import("@/lib/shell/core");
-      expected.current ??= core.expectedFor(check);
+      // Everything that can fail is inside the try, downloading the checker included, so a
+      // failure always ends in a message (and the button comes back).
       try {
-        const v = await core.gradeShell(machine.current, typed.current, last.current, check, await expected.current);
+        const core = await import("@/lib/shell/core");
+        expected.current ??= core.expectedFor(check);
+        let exp: ShellExpected;
+        try {
+          exp = await expected.current;
+        } catch (e) {
+          expected.current = null; // don't keep a failed attempt: the next check tries again
+          throw e;
+        }
+        const v = await core.gradeShell(machine.current, typed.current, last.current, check, exp);
         if (v.correct) {
           if (!doneRef.current || !quiet) pass("Done! That's exactly it.");
         } else if (!quiet) miss(v.message);
@@ -77,11 +87,7 @@ export function ShellPanel({ step, slot, done, onDone }: { step: Extract<Step, {
       {check && !done && (
         <div className="flex items-center gap-2">
           <button
-            onClick={async () => {
-              setChecking(true);
-              await grade(false);
-              setChecking(false);
-            }}
+            onClick={() => void start("check", () => grade(false))}
             disabled={checking}
             className="rounded-lg bg-text px-3.5 py-1.5 text-sm font-medium text-bg transition-opacity hover:opacity-90 disabled:opacity-50"
           >

@@ -83,16 +83,20 @@ describe("CodeRunner busy state", () => {
     expect(screen.queryByText("Still working…")).toBeNull();
   });
 
-  it("Reset during a run: today the button works, and the old run's result still shows and is graded", async () => {
-    const { runs, onRan, runButton } = setup();
+  it("Reset is greyed out while running or checking, so a run's result never lands on a reset editor", async () => {
+    const { runs, grades, runButton } = setup();
+    const reset = () => screen.getByRole("button", { name: "Reset" });
     fireEvent.click(runButton());
-    const reset = screen.getByRole("button", { name: "Reset" });
-    expect(reset).toHaveProperty("disabled", false);
-    fireEvent.click(reset);
-    expect(screen.getByLabelText("editor")).toHaveProperty("value", "starter");
+    expect(reset()).toHaveProperty("disabled", true);
+    fireEvent.click(reset());
+    expect(screen.getByLabelText("editor")).toHaveProperty("value", "typed");
 
-    await act(async () => runs[0].resolve("old output"));
-    expect(screen.getByText("old output")).toBeTruthy();
-    expect(onRan).toHaveBeenCalledWith("typed", "old output");
+    await act(async () => runs[0].resolve("the output"));
+    expect(reset()).toHaveProperty("disabled", true); // still checking
+    await act(async () => grades[0].resolve());
+    expect(reset()).toHaveProperty("disabled", false);
+    fireEvent.click(reset());
+    expect(screen.getByLabelText("editor")).toHaveProperty("value", "starter");
+    expect(screen.queryByText("the output")).toBeNull();
   });
 });

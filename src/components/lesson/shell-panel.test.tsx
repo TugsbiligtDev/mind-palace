@@ -53,19 +53,28 @@ describe("ShellPanel Check my work", () => {
     expect(button()).toHaveProperty("disabled", false);
   });
 
-  it("today: when working out the expected answer fails, it says so, and every later check reuses that failure", async () => {
-    core.expectedFor.mockRejectedValue(new Error("expected answer failed"));
+  it("when working out the expected answer fails, it says so, and the next check tries again", async () => {
+    core.expectedFor.mockRejectedValueOnce(new Error("expected answer failed")).mockResolvedValue({ tests: [] });
+    core.gradeShell.mockResolvedValue({ correct: false, message: "Not yet: make the folder" });
     const button = setup();
 
     await act(async () => fireEvent.click(button()));
     expect(screen.getByText("The checker couldn't run: expected answer failed")).toBeTruthy();
     expect(button()).toHaveProperty("textContent", "Check my work");
 
-    // Every later check, automatic or pressed, reuses the failed attempt instead of trying again.
-    await act(async () => term.props!.onRan(ran("ls")));
+    // The failed attempt isn't kept: pressing again works it out afresh and grades.
     await act(async () => fireEvent.click(button()));
-    expect(core.expectedFor).toHaveBeenCalledTimes(1);
-    expect(core.gradeShell).not.toHaveBeenCalled();
-    expect(screen.getByText("The checker couldn't run: expected answer failed")).toBeTruthy();
+    expect(core.expectedFor).toHaveBeenCalledTimes(2);
+    expect(screen.getByText("Not yet: make the folder")).toBeTruthy();
+  });
+
+  it("the automatic check after a command also retries a failed expected answer", async () => {
+    core.expectedFor.mockRejectedValueOnce(new Error("expected answer failed")).mockResolvedValue({ tests: [] });
+    core.gradeShell.mockResolvedValue({ correct: false, message: "Not yet" });
+    setup();
+    await act(async () => term.props!.onRan(ran("ls")));
+    await act(async () => term.props!.onRan(ran("ls")));
+    expect(core.expectedFor).toHaveBeenCalledTimes(2);
+    expect(core.gradeShell).toHaveBeenCalledTimes(1);
   });
 });

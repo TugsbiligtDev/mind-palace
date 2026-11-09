@@ -14,20 +14,20 @@ vi.mock("@/components/shell/terminal", () => ({
   },
 }));
 vi.mock("@/lib/shell/core", () => {
-  throw new Error("pinned: checker download failed");
+  throw new Error("checker download failed");
 });
 vi.mock("@/lib/content/step-check", () => ({ shellStepCheck: () => ({ solution: "ls", tests: [] }) }));
 vi.mock("@/lib/progress", () => ({ useProgress: () => ({ code: {} }), saveCode: vi.fn() }));
 
 afterEach(cleanup);
 
-it("today: when the checker's code can't be downloaded, Check my work is stuck on Checking…", async () => {
+it("when the checker's code can't be downloaded, Check my work says so and comes back", async () => {
   render(<ShellPanel step={{ kind: "shell", body: "", setup: "" } as never} slot="s" done={false} onDone={() => {}} />);
   act(() => term.props!.onReady({} as Machine, []));
   const button = () => screen.getByRole("button", { name: /^(Check my work|Checking…)$/ });
 
   await act(async () => fireEvent.click(button()));
-  expect(button()).toHaveProperty("textContent", "Checking…");
-  expect(button()).toHaveProperty("disabled", true);
-  expect(screen.queryByText(/The checker couldn't run/)).toBeNull();
+  expect(button()).toHaveProperty("textContent", "Check my work");
+  expect(button()).toHaveProperty("disabled", false);
+  expect(screen.getByText(/The checker couldn't run/)).toBeTruthy();
 });

@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { saveCode } from "@/lib/progress";
+import { useAsyncAction } from "@/lib/use-async-action";
 import { CodeEditor, type EditorLanguage } from "./code-editor";
 
 const SLOW_MS = 3000;
@@ -33,9 +34,8 @@ export function CodeRunner<Output>({
   const [code, setCode] = useState(initial);
   const [output, setOutput] = useState<Output | null>(null);
   // "run" while the code runs, then "check" while onRan grades it (that can take several seconds).
-  const [busy, setBusy] = useState<"run" | "check" | null>(null);
+  const { phase: busy, start } = useAsyncAction<"run" | "check">();
   const codeRef = useRef(code);
-  const busyRef = useRef(false);
   const [slow, setSlow] = useState(false);
 
   const change = (v: string) => {
@@ -44,26 +44,26 @@ export function CodeRunner<Output>({
     if (slot) saveCode(slot, v);
   };
 
-  const run = useCallback(async () => {
-    // ⌘ + Enter can fire while a run or check is still going; starting another would restart the runner.
-    if (busyRef.current) return;
-    busyRef.current = true;
-    const input = codeRef.current;
-    setBusy("run");
-    // A long wait with no sign of life looks like a freeze, so say it's still working.
-    const slowTimer = setTimeout(() => setSlow(true), SLOW_MS);
-    try {
-      const out = await runCode(input);
-      setOutput(out);
-      setBusy("check");
-      await onRan?.(input, out);
-    } finally {
-      clearTimeout(slowTimer);
-      busyRef.current = false;
-      setBusy(null);
-      setSlow(false);
-    }
-  }, [runCode, onRan]);
+  // ⌘ + Enter can fire while a run or check is still going; `start` ignores it then, since
+  // starting another would restart the runner.
+  const run = useCallback(
+    () =>
+      start("run", async (setPhase) => {
+        const input = codeRef.current;
+        // A long wait with no sign of life looks like a freeze, so say it's still working.
+        const slowTimer = setTimeout(() => setSlow(true), SLOW_MS);
+        try {
+          const out = await runCode(input);
+          setOutput(out);
+          setPhase("check");
+          await onRan?.(input, out);
+        } finally {
+          clearTimeout(slowTimer);
+          setSlow(false);
+        }
+      }),
+    [start, runCode, onRan],
+  );
   const shown = output && renderOutput(output);
 
   return (

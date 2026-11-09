@@ -1,10 +1,11 @@
 "use client";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { WebRunner } from "@/components/web/web-runner";
 import type { Step } from "@/lib/content/schema";
 import { webStarter, webStepCheck } from "@/lib/content/step-check";
 import { useProgress } from "@/lib/progress";
 import { gradeWebPage } from "@/lib/web/client";
+import { useAsyncAction } from "@/lib/use-async-action";
 import type { WebFiles } from "@/lib/web/core";
 import { StepFeedback, useStepFeedback } from "./step-feedback";
 
@@ -23,29 +24,25 @@ export function WebPanel({
 }) {
   const p = useProgress();
   const { feedback, setFeedback, misses, pass, miss } = useStepFeedback(slot, onDone);
-  const [checking, setChecking] = useState(false);
+  const { busy: checking, start } = useAsyncAction<"check">();
   const check = useMemo(() => webStepCheck(step), [step]);
   const starter = webStarter(step);
   const initial = { html: p?.code[slot] ?? starter.html, css: p?.code[`${slot}:css`] ?? starter.css };
 
-  const running = useRef(false);
   const onCheck = useCallback(
     async (files: WebFiles) => {
-      if (!check || running.current) return;
-      running.current = true;
-      setChecking(true);
-      try {
-        const v = await gradeWebPage(files, check);
-        if (v.correct) pass(v.total === 1 ? "Correct! The check passes." : `Correct! All ${v.total} checks pass.`);
-        else miss(v.message);
-      } catch (e) {
-        setFeedback({ ok: false, text: `The checker couldn't run: ${(e as Error).message}` });
-      } finally {
-        running.current = false;
-        setChecking(false);
-      }
+      if (!check) return;
+      await start("check", async () => {
+        try {
+          const v = await gradeWebPage(files, check);
+          if (v.correct) pass(v.total === 1 ? "Correct! The check passes." : `Correct! All ${v.total} checks pass.`);
+          else miss(v.message);
+        } catch (e) {
+          setFeedback({ ok: false, text: `The checker couldn't run: ${(e as Error).message}` });
+        }
+      });
     },
-    [check, pass, miss, setFeedback],
+    [check, start, pass, miss, setFeedback],
   );
 
   const answer = check
